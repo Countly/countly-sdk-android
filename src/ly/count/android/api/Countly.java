@@ -267,17 +267,17 @@ class DeviceInfo
 	{
 		String result = "{";
 		
-		result += "\"" + "_device"      + "\"" + ":" + "\"" + getDevice()            + "\"";
+		result +=       "\"" + "_device"     + "\"" + ":" + "\"" + getDevice()            + "\"";
 		
-		result += "\"" + ",_os"         + "\"" + ":" + "\"" + getOS()                + "\"";
+		result += "," + "\"" + "_os"         + "\"" + ":" + "\"" + getOS()                + "\"";
 		
-		result += "\"" + ",_os_version" + "\"" + ":" + "\"" + getOSVersion()         + "\"";
+		result += "," + "\"" + "_os_version" + "\"" + ":" + "\"" + getOSVersion()         + "\"";
 		
-		result += "\"" + ",_carrier"    + "\"" + ":" + "\"" + getCarrier(context)    + "\"";
+		result += "," + "\"" + "_carrier"    + "\"" + ":" + "\"" + getCarrier(context)    + "\"";
 		
-		result += "\"" + ",_resolution" + "\"" + ":" + "\"" + getResolution(context) + "\"";
+		result += "," + "\"" + "_resolution" + "\"" + ":" + "\"" + getResolution(context) + "\"";
 		
-		result += "\"" + ",_locale"     + "\"" + ":" + "\"" + getLocale()            + "\"";
+		result += "," + "\"" + "_locale"     + "\"" + ":" + "\"" + getLocale()            + "\"";
 
 		result += "}";
 		
