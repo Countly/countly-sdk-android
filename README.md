@@ -13,7 +13,7 @@ Other Countly SDK repositories;
 ##Installation
 
 
-Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First you need to make sure that OpenUDID requirements are met, following the steps below:
+Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First step is about OpenUDID requirement and second step is integrating Countly SDK to your project:
 
 ###1. Add this to your manifest:
 
@@ -25,14 +25,10 @@ Installing Android SDK requires two very easy steps. Countly Android SDK uses Op
     &lt;/intent-filter&gt;
 &lt;/service&gt;</pre>
 
-2. Call `void OpenUDID_manager.sync(Context yourContext);` to initialize the OpenUDID
-3. Call `boolean OpenUDID_manager.isInitialized();` to check if the initialization is over (it's asynchronous)
-4. Call `String OpenUDID_manager.getOpenUDID();` to retrieve your OpenUDID
-
 ###2. Now it's time to add main Countly SDK to your project using steps below:
 
 * Add Countly.java to your project under Eclipse.
-* Call `Countly.sharedInstance().init(..)` in onCreate.
+* Call `Countly.sharedInstance().init(...)` in onCreate. init(...) function requires the URL of your Countly server.
 * Call `Countly.sharedInstance().onStart()` in onStart.
 * Call `Countly.sharedInstance().onStop()` in onStop.
 
