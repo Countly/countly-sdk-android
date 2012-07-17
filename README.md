@@ -17,6 +17,7 @@ Installing Android SDK requires two very easy steps. Countly Android SDK uses Op
 
 ###1. Add this to your manifest:
 
+* Add OpenUDID_manager.java and OpenUDID_service.java to your project under Eclipse.
 
 <pre class="prettyprint">
 &lt;service android:name=&quot;org.openudid.OpenUDID_service&quot;&gt;
