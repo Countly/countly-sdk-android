@@ -14,6 +14,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.content.Context;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -191,7 +192,7 @@ class ConnectionQueue
 					try
 					{
 						DefaultHttpClient httpClient = new DefaultHttpClient();
-						HttpGet method = new HttpGet(new URI(serverURL_ + "?" + data));			
+						HttpGet method = new HttpGet(new URI(serverURL_ + "/i?" + data));			
 						HttpResponse response = httpClient.execute(method);
 						InputStream input = response.getEntity().getContent();
 						while (input.read() != -1)
@@ -263,21 +264,34 @@ class DeviceInfo
 		return locale.getLanguage() + "_" + locale.getCountry();
 	}
 	
+	public static String appVersion(Context context)
+	{
+		String result = "1.0";
+		try {
+			result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+		} catch (NameNotFoundException e) {
+		}		
+
+		return result;
+	}
+
 	public static String getMetrics(Context context)
 	{
 		String result = "{";
 		
-		result +=       "\"" + "_device"     + "\"" + ":" + "\"" + getDevice()            + "\"";
+		result +=       "\"" + "_device"      + "\"" + ":" + "\"" + getDevice()            + "\"";
 		
-		result += "," + "\"" + "_os"         + "\"" + ":" + "\"" + getOS()                + "\"";
+		result += "," + "\"" + "_os"          + "\"" + ":" + "\"" + getOS()                + "\"";
 		
-		result += "," + "\"" + "_os_version" + "\"" + ":" + "\"" + getOSVersion()         + "\"";
+		result += "," + "\"" + "_os_version"  + "\"" + ":" + "\"" + getOSVersion()         + "\"";
 		
-		result += "," + "\"" + "_carrier"    + "\"" + ":" + "\"" + getCarrier(context)    + "\"";
+		result += "," + "\"" + "_carrier"     + "\"" + ":" + "\"" + getCarrier(context)    + "\"";
 		
-		result += "," + "\"" + "_resolution" + "\"" + ":" + "\"" + getResolution(context) + "\"";
+		result += "," + "\"" + "_resolution"  + "\"" + ":" + "\"" + getResolution(context) + "\"";
 		
-		result += "," + "\"" + "_locale"     + "\"" + ":" + "\"" + getLocale()            + "\"";
+		result += "," + "\"" + "_locale"      + "\"" + ":" + "\"" + getLocale()            + "\"";
+
+		result += "," + "\"" + "_app_version" + "\"" + ":" + "\"" + appVersion(context)            + "\"";
 
 		result += "}";
 		
