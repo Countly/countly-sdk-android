@@ -11,8 +11,7 @@ public class CountlyActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-    /** IMPORTANT: Do not forget the "i" character at the end of YOUR_SERVER */
-        Countly.sharedInstance().init(this, "http://YOUR_SERVER/i", "YOUR_APP_KEY");
+        Countly.sharedInstance().init(this, "http://YOUR_SERVER", "YOUR_APP_KEY");
     }
     
     @Override
