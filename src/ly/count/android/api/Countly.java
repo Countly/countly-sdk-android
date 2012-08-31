@@ -3,7 +3,9 @@ package ly.count.android.api;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -26,6 +28,7 @@ public class Countly
 	private static Countly sharedInstance_;
 	private Timer timer_;
 	private ConnectionQueue queue_;
+	private EventQueue eventQueue_;
 	private boolean isVisible_;
 	private double unsentSessionLength_;
 	private double lastTime_;
@@ -41,6 +44,7 @@ public class Countly
 	private Countly()
 	{
 		queue_ = new ConnectionQueue();
+		eventQueue_ = new EventQueue();
 		timer_ = new Timer();
 		timer_.schedule(new TimerTask()
 		{
@@ -76,12 +80,47 @@ public class Countly
 	{
 		isVisible_ = false;
 
+		if (eventQueue_.size() > 0)
+			queue_.recordEvents(eventQueue_.events());		
+
 		double currTime = System.currentTimeMillis() / 1000.0;
 		unsentSessionLength_ += currTime - lastTime_;
 
 		int duration = (int)unsentSessionLength_;
 		queue_.endSession(duration);
 		unsentSessionLength_ -= duration;
+	}
+	
+	public void recordEvent(String key, int count)
+	{
+		eventQueue_.recordEvent(key, count);
+
+		if (eventQueue_.size() >= 5)
+			queue_.recordEvents(eventQueue_.events());
+	}
+
+	public void recordEvent(String key, int count, double sum)
+	{
+		eventQueue_.recordEvent(key, count, sum);
+
+		if (eventQueue_.size() >= 5)
+			queue_.recordEvents(eventQueue_.events());		
+	}
+
+	public void recordEvent(String key, Map<String, String> segmentation, int count)
+	{
+		eventQueue_.recordEvent(key, segmentation, count);
+		
+		if (eventQueue_.size() >= 5)
+			queue_.recordEvents(eventQueue_.events());		
+	}
+
+	public void recordEvent(String key, Map<String, String> segmentation, int count, double sum)
+	{
+		eventQueue_.recordEvent(key, segmentation, count, sum);
+		
+		if (eventQueue_.size() >= 5)
+			queue_.recordEvents(eventQueue_.events());		
 	}
 	
 	private void onTimer()
@@ -96,6 +135,9 @@ public class Countly
 		int duration = (int)unsentSessionLength_;
 		queue_.updateSession(duration);
 		unsentSessionLength_ -= duration;
+
+		if (eventQueue_.size() > 0)
+			queue_.recordEvents(eventQueue_.events());		
 	}
 }
 
@@ -127,6 +169,7 @@ class ConnectionQueue
 		String data;
 		data  =       "app_key=" + appKey_;
 		data += "&" + "device_id=" + DeviceInfo.getUDID();
+		data += "&" + "timestamp=" + (long)(System.currentTimeMillis() / 1000.0);
 		data += "&" + "sdk_version=" + "1.0";
 		data += "&" + "begin_session=" + "1";
 		data += "&" + "metrics=" + DeviceInfo.getMetrics(context_);
@@ -141,6 +184,7 @@ class ConnectionQueue
 		String data;
 		data  =       "app_key=" + appKey_;
 		data += "&" + "device_id=" + DeviceInfo.getUDID();
+		data += "&" + "timestamp=" + (long)(System.currentTimeMillis() / 1000.0);
 		data += "&" + "session_duration=" + duration;
 
 		queue_.offer(data);		
@@ -153,12 +197,26 @@ class ConnectionQueue
 		String data;
 		data  =       "app_key=" + appKey_;
 		data += "&" + "device_id=" + DeviceInfo.getUDID();
+		data += "&" + "timestamp=" + (long)(System.currentTimeMillis() / 1000.0);
 		data += "&" + "end_session=" + "1";
 		data += "&" + "session_duration=" + duration;
 
 		queue_.offer(data);		
 		
 		tick();
+	}
+	
+	public void recordEvents(String events)
+	{
+		String data;
+		data  =       "app_key=" + appKey_;
+		data += "&" + "device_id=" + DeviceInfo.getUDID();
+		data += "&" + "timestamp=" + (long)(System.currentTimeMillis() / 1000.0);
+		data += "&" + "events=" + events;
+
+		queue_.offer(data);		
+		
+		tick();		
 	}
 	
 	private void tick()
@@ -305,4 +363,201 @@ class DeviceInfo
 
 		return result;
 	}
+}
+
+
+class Event
+{	
+	public String key = null;
+	public Map<String, String> segmentation = null;
+	public int count = 0;
+	public double sum = 0;
+	public double timestamp = 0;
+}
+
+class EventQueue
+{
+	private ArrayList<Event> events_;
+
+	public EventQueue()
+	{
+		events_ = new ArrayList<Event>();		
+	}
+
+	public int size()
+	{
+		synchronized(this)
+		{
+			return events_.size();
+		}
+	}
+	
+	public String events()
+	{
+		String result = "[";
+
+		synchronized (this)
+		{
+			for (int i = 0; i < events_.size(); ++i)
+			{
+				Event event = events_.get(i);
+				
+				result += "{";
+
+				result += "\"" + "key" + "\"" + ":" + "\"" + event.key + "\"";
+				
+				if (event.segmentation != null)
+				{
+					String segmentation = "{";
+					
+					String keys[] = event.segmentation.keySet().toArray(new String[0]);
+					
+					for (int j = 0; j < keys.length; ++j)
+					{
+						String key = keys[j];
+						String value = event.segmentation.get(key);
+						
+						segmentation += "\"" + key + "\"" + ":" + "\"" + value + "\"";
+
+						if (j + 1 < keys.length)
+							segmentation += ",";
+					}
+					
+					segmentation += "}";
+
+					result += "," + "\"" + "segmentation" + "\"" + ":" + segmentation;
+				}
+				
+				result += "," + "\"" + "count" + "\"" + ":" + event.count;
+				
+				if (event.sum > 0)
+					result += "," + "\"" + "sum" + "\"" + ":" + event.sum;
+				
+				result += "," + "\"" + "timestamp" + "\"" + ":" + (long)event.timestamp;
+
+				result += "}";
+		           
+				if (i + 1 < events_.size())
+					result += ",";
+			}
+			
+			events_.clear();
+		}
+
+		result += "]";
+		
+		try
+		{
+			result = java.net.URLEncoder.encode(result, "UTF-8");
+		} catch (UnsupportedEncodingException e)
+		{
+			
+		}
+
+		return result;
+	}
+	
+	public void recordEvent(String key, int count)
+	{
+		synchronized(this)
+		{
+			for (int i = 0; i < events_.size(); ++i)
+			{
+				Event event = events_.get(i);
+				
+				if (event.key.equals(key))
+				{
+					event.count += count;
+					event.timestamp = (event.timestamp + (System.currentTimeMillis() / 1000.0)) / 2;
+					return;
+				}
+			}
+			
+			Event event = new Event();
+			event.key = key;
+			event.count = count;
+			event.timestamp = System.currentTimeMillis() / 1000.0;
+			events_.add(event);
+		}
+	}
+
+	public void recordEvent(String key, int count, double sum)
+	{
+		synchronized(this)
+		{
+			for (int i = 0; i < events_.size(); ++i)
+			{
+				Event event = events_.get(i);
+				
+				if (event.key.equals(key))
+				{
+					event.count += count;
+					event.sum += sum;
+					event.timestamp = (event.timestamp + (System.currentTimeMillis() / 1000.0)) / 2;
+					return;
+				}
+			}
+			
+			Event event = new Event();
+			event.key = key;
+			event.count = count;
+			event.sum = sum;
+			event.timestamp = System.currentTimeMillis() / 1000.0;
+			events_.add(event);
+		}		
+	}
+
+	public void recordEvent(String key, Map<String, String> segmentation, int count)
+	{
+		synchronized(this)
+		{
+			for (int i = 0; i < events_.size(); ++i)
+			{
+				Event event = events_.get(i);
+				
+				if (event.key.equals(key) &&
+					event.segmentation != null && event.segmentation.equals(segmentation))
+				{
+					event.count += count;
+					event.timestamp = (event.timestamp + (System.currentTimeMillis() / 1000.0)) / 2;
+					return;
+				}
+			}
+			
+			Event event = new Event();
+			event.key = key;
+			event.segmentation = segmentation;
+			event.count = count;
+			event.timestamp = System.currentTimeMillis() / 1000.0;
+			events_.add(event);
+		}		
+	}
+
+	public void recordEvent(String key, Map<String, String> segmentation, int count, double sum)
+	{
+		synchronized(this)
+		{
+			for (int i = 0; i < events_.size(); ++i)
+			{
+				Event event = events_.get(i);
+				
+				if (event.key.equals(key) &&
+					event.segmentation != null && event.segmentation.equals(segmentation))
+				{
+					event.count += count;
+					event.sum += sum;
+					event.timestamp = (event.timestamp + (System.currentTimeMillis() / 1000.0)) / 2;
+					return;
+				}
+			}
+			
+			Event event = new Event();
+			event.key = key;
+			event.segmentation = segmentation;
+			event.count = count;
+			event.sum = sum;
+			event.timestamp = System.currentTimeMillis() / 1000.0;
+			events_.add(event);
+		}
+	}	
 }
