@@ -11,6 +11,7 @@ public class CountlyActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
+    /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
         Countly.sharedInstance().init(this, "http://YOUR_SERVER", "YOUR_APP_KEY");
     }
     
