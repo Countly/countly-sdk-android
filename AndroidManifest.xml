@@ -21,9 +21,9 @@
         </activity>
     </application>
 
-	<service android:name="org.openudid.OpenUDID_service">
+	<service android:name="org.OpenUDID.OpenUDID_service">
 		<intent-filter>
-			<action android:name="org.openudid.GETUDID" />
+			<action android:name="org.OpenUDID.GETUDID" />
 		</intent-filter>
 	</service>
 
