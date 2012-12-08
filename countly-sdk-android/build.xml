@@ -1,0 +1,50 @@
+<project default="package">
+    <!-- Project properties -->
+    <property name="version.num" value="12.08" />
+    <property name="project" value="countly-sdk-android" />
+
+    <!-- Standard jar stuff -->
+    <property name="jarfile" value="${project}-${version.num}.jar" />
+    <property name="sdk.dir" value="/usr/local/android-sdk/platforms/android-16/" />
+    <!-- <property name="lib.dir" value="libs" /> -->
+    <property name="build.dir" value="bin"/>
+    <property name="classes.dir"  value="${build.dir}/classes"/>
+    <buildnumber file="build.num" />
+
+    <!-- Set up classpath -->
+    <path id="classpath">
+        <!-- <fileset dir="${lib.dir}" includes="**/*.jar" /> -->
+        <fileset dir="${sdk.dir}" includes="**/*.jar" />
+    </path>
+
+    <!-- Compile java files into classes -->
+    <target name="compile">
+        <mkdir dir="${build.dir}" />
+        <mkdir dir="${classes.dir}" />
+        <javac srcdir="src" destdir="${classes.dir}" classpathref="classpath" />
+    </target>
+
+    <!-- Package a jar from compiled class files -->
+    <target name="jar" depends="compile">
+        <delete file="${jarfile}" />
+        <delete file="MANIFEST.MF" />
+        <manifest file="MANIFEST.MF">
+            <attribute name="Built-By" value="${user.name}" />
+            <attribute name="Implementation-Version" value="${version.num}-b${build.number}"/> 
+        </manifest>
+
+        <jar destfile="${jarfile}" basedir="${build.dir}/classes" includes="**/*.class" manifest="MANIFEST.MF" />
+    </target>
+
+    <!-- Clean out the build files -->
+    <target name="clean">
+        <delete dir="${build.dir}" />
+        <delete>
+            <fileset dir="." includes="${jarfile}"/>
+            <fileset file="MANIFEST.MF"/>
+        </delete>
+    </target>
+
+    <!-- Compile and package a jar -->
+    <target name="package" depends="compile,jar" />
+</project>
