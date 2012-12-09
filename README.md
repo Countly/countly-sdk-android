@@ -11,8 +11,7 @@ Other Countly SDK repositories;
 - [Countly Blackberry Webworks SDK (countly-sdk-blackberry-webworks)](https://github.com/Countly/countly-sdk-blackberry-webworks)
 
 
-##Installation
-
+##Installing Android SDK
 
 Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First step is about OpenUDID requirement and second step is integrating Countly SDK to your project:
 
