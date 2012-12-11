@@ -28,11 +28,11 @@ Installing Android SDK requires two very easy steps. Countly Android SDK uses Op
 
 Additionally, make sure that *INTERNET* permission is set if there's none in your manifest file.
 
-Countly Server source code:
+Check Countly Server source code here: 
 
 - [Countly Server (countly-server)](https://github.com/Countly/countly-server)
 
-Other Countly SDK repositories:
+There are also other Countly SDK repositories below:
 
 - [Countly iOS SDK (countly-sdk-ios)](https://github.com/Countly/countly-sdk-ios)
 - [Countly Android SDK (countly-sdk-android)](https://github.com/Countly/countly-sdk-android)
