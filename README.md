@@ -34,10 +34,10 @@ Check Countly Server source code here:
 
 There are also other Countly SDK repositories below:
 
-- [Countly iOS SDK (countly-sdk-ios)](https://github.com/Countly/countly-sdk-ios)
-- [Countly Android SDK (countly-sdk-android)](https://github.com/Countly/countly-sdk-android)
-- [Countly Windows Phone SDK (countly-sdk-windows-phone)](https://github.com/Countly/countly-sdk-windows-phone)
-- [Countly Blackberry Webworks SDK (countly-sdk-blackberry-webworks)](https://github.com/Countly/countly-sdk-blackberry-webworks)
+- [Countly iOS SDK](https://github.com/Countly/countly-sdk-ios)
+- [Countly Android SDK](https://github.com/Countly/countly-sdk-android)
+- [Countly Windows Phone SDK](https://github.com/Countly/countly-sdk-windows-phone)
+- [Countly Blackberry Webworks SDK](https://github.com/Countly/countly-sdk-blackberry-webworks)
 
 ##How can I help you with your efforts?
 Glad you asked. We need ideas, feedbacks and constructive comments. All your suggestions will be taken care with upmost importance. 
