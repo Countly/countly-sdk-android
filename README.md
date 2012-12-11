@@ -4,6 +4,8 @@ mobile devices, and visualizes this information to analyze mobile application us
 There are two parts of Countly: the server that collects and analyzes data, and mobile SDK that sends 
 this data (for iOS, Android, Windows Phone and Blackberry). Both parts are open source.
 
+This repository includes the SDK for Android.
+
 ##Installing Android SDK
 
 Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First step is about OpenUDID requirement and second step is integrating Countly SDK to your project:
