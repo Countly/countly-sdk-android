@@ -40,6 +40,8 @@ There are also other Countly SDK repositories below:
 - [Countly Android SDK](https://github.com/Countly/countly-sdk-android)
 - [Countly Windows Phone SDK](https://github.com/Countly/countly-sdk-windows-phone)
 - [Countly Blackberry Webworks SDK](https://github.com/Countly/countly-sdk-blackberry-webworks)
+- [Countly Mac OS X SDK9](https://github.com/mrballoon/countly-sdk-osx) (Community supported)
+- [Countly Appcelerator Titanium SDK](https://github.com/euforic/Titanium-Count.ly) (Community supported)
 
 ##How can I help you with your efforts?
 Glad you asked. We need ideas, feedbacks and constructive comments. All your suggestions will be taken care with upmost importance. 
