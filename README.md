@@ -24,15 +24,11 @@ Installing Android SDK requires two very easy steps. Countly Android SDK uses Op
 ###2. Add main Countly SDK to your project using steps below:
 
 * Add Countly.java to your project under Eclipse.
-* Call `Countly.sharedInstance().init(...)` in onCreate. init(...) function requires the URL of your Countly server (see below)
+* Call `Countly.sharedInstance().init(...)` in onCreate. init(...) function requires the URL of your Countly server
 * Call `Countly.sharedInstance().onStart()` in onStart.
 * Call `Countly.sharedInstance().onStop()` in onStop.
 
 Additionally, make sure that *INTERNET* permission is set if there's none in your manifest file.
-
-###3. Define your server name
- 
-Open `src/ly/count/android/api/CountlyActivity.java` and define your server name under CountlyActivity public class.
 
 ###4. Other
 
