@@ -1,4 +1,3 @@
-
 ##What's Countly?
 [Countly](http://count.ly) is an innovative, real-time, open source mobile analytics application. It collects data from 
 mobile devices, and visualizes this information to analyze mobile application usage and end-user behavior. 
@@ -22,7 +21,7 @@ Installing Android SDK requires two very easy steps. Countly Android SDK uses Op
     &lt;/intent-filter&gt;
 &lt;/service&gt;</pre>
 
-###2. Now it's time to add main Countly SDK to your project using steps below:
+###2. Add main Countly SDK to your project using steps below:
 
 * Add Countly.java to your project under Eclipse.
 * Call `Countly.sharedInstance().init(...)` in onCreate. init(...) function requires the URL of your Countly server.
@@ -30,6 +29,12 @@ Installing Android SDK requires two very easy steps. Countly Android SDK uses Op
 * Call `Countly.sharedInstance().onStop()` in onStop.
 
 Additionally, make sure that *INTERNET* permission is set if there's none in your manifest file.
+
+##3. Define your server name
+ 
+Open `src/ly/count/android/api/CountlyActivity.java` and define your server name under CountlyActivity public class.
+
+##4. Other
 
 Check Countly Server source code here: 
 
@@ -44,7 +49,6 @@ There are also other Countly SDK repositories below:
 - [Countly Mac OS X SDK](https://github.com/mrballoon/countly-sdk-osx) (Community supported)
 - [Countly Appcelerator Titanium SDK](https://github.com/euforic/Titanium-Count.ly) (Community supported)
 - [Countly Unity3D SDK](https://github.com/Countly/countly-sdk-unity) (Community supported)
-
 
 ##How can I help you with your efforts?
 Glad you asked. We need ideas, feedbacks and constructive comments. All your suggestions will be taken care with upmost importance. 
