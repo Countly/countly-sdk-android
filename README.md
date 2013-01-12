@@ -1,8 +1,8 @@
 ##What's Countly?
-[Countly](http://count.ly) is an innovative, real-time, open source mobile analytics application. It collects data from 
-mobile devices, and visualizes this information to analyze mobile application usage and end-user behavior. 
-There are two parts of Countly: the server that collects and analyzes data, and mobile SDK that sends 
-this data (for iOS, Android, Windows Phone and Blackberry). Both parts are open source.
+[Countly](http://count.ly) is an innovative, real-time, open source mobile analytics application. 
+It collects data from mobile devices, and visualizes this information to analyze mobile application 
+usage and end-user behavior. There are two parts of Countly: the server that collects and analyzes data, 
+and mobile SDK that sends this data. Both parts are open source with different licensing terms.
 
 This repository includes the SDK for Android.
 
