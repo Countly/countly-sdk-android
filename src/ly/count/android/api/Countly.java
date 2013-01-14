@@ -32,6 +32,7 @@ public class Countly
 	private boolean isVisible_;
 	private double unsentSessionLength_;
 	private double lastTime_;
+	private int activityCount_;
 
 	static public Countly sharedInstance()
 	{
@@ -57,6 +58,7 @@ public class Countly
 
 		isVisible_ = false;
 		unsentSessionLength_ = 0;
+		activityCount_ = 0;
 	}
 	
 	public void init(Context context, String serverURL, String appKey)
@@ -69,19 +71,31 @@ public class Countly
 
 	public void onStart()
 	{
+		activityCount_++;
+		if (activityCount_ == 1)
+			onStartHelper();
+	}
+
+	public void onStop()
+	{
+		activityCount_--;
+		if (activityCount_ == 0)
+			onStopHelper();
+	}
+
+	public void onStartHelper()
+	{
 		lastTime_ = System.currentTimeMillis() / 1000.0;
 
 		queue_.beginSession();
 
 		isVisible_ = true;
 	}
-	
-	public void onStop()
-	{
-		isVisible_ = false;
 
+	public void onStopHelper()
+	{
 		if (eventQueue_.size() > 0)
-			queue_.recordEvents(eventQueue_.events());		
+			queue_.recordEvents(eventQueue_.events());
 
 		double currTime = System.currentTimeMillis() / 1000.0;
 		unsentSessionLength_ += currTime - lastTime_;
@@ -89,6 +103,8 @@ public class Countly
 		int duration = (int)unsentSessionLength_;
 		queue_.endSession(duration);
 		unsentSessionLength_ -= duration;
+
+		isVisible_ = false;
 	}
 	
 	public void recordEvent(String key, int count)
