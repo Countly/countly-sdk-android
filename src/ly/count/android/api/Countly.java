@@ -54,7 +54,7 @@ public class Countly
 			{
 				onTimer();
 			}
-		}, 300 * 1000,  300 * 1000);
+		}, 60 * 1000,  60 * 1000);
 
 		isVisible_ = false;
 		unsentSessionLength_ = 0;
