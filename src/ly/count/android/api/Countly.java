@@ -54,7 +54,7 @@ public class Countly
 			{
 				onTimer();
 			}
-		}, 30 * 1000,  30 * 1000);
+		}, 300 * 1000,  300 * 1000);
 
 		isVisible_ = false;
 		unsentSessionLength_ = 0;
@@ -111,7 +111,7 @@ public class Countly
 	{
 		eventQueue_.recordEvent(key, count);
 
-		if (eventQueue_.size() >= 5)
+		if (eventQueue_.size() >= 10)
 			queue_.recordEvents(eventQueue_.events());
 	}
 
@@ -119,7 +119,7 @@ public class Countly
 	{
 		eventQueue_.recordEvent(key, count, sum);
 
-		if (eventQueue_.size() >= 5)
+		if (eventQueue_.size() >= 10)
 			queue_.recordEvents(eventQueue_.events());		
 	}
 
@@ -127,7 +127,7 @@ public class Countly
 	{
 		eventQueue_.recordEvent(key, segmentation, count);
 		
-		if (eventQueue_.size() >= 5)
+		if (eventQueue_.size() >= 10)
 			queue_.recordEvents(eventQueue_.events());		
 	}
 
@@ -135,7 +135,7 @@ public class Countly
 	{
 		eventQueue_.recordEvent(key, segmentation, count, sum);
 		
-		if (eventQueue_.size() >= 5)
+		if (eventQueue_.size() >= 10)
 			queue_.recordEvents(eventQueue_.events());		
 	}
 	
