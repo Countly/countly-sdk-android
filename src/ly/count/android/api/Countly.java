@@ -323,7 +323,7 @@ class DeviceInfo
 		DisplayMetrics metrics = new DisplayMetrics();
 		display.getMetrics(metrics);
 
-		return metrics.heightPixels + "x" + metrics.widthPixels;
+		return metrics.widthPixels + "x" + metrics.heightPixels;
 	}
 	
 	public static String getCarrier(Context context)
