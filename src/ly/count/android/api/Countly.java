@@ -325,7 +325,34 @@ class DeviceInfo
 
 		return metrics.widthPixels + "x" + metrics.heightPixels;
 	}
-	
+
+    public static String getDensity(Context context)
+    {
+        int density= context.getResources().getDisplayMetrics().densityDpi;
+
+        String densityString = "default";
+
+        switch(density)
+        {
+            case DisplayMetrics.DENSITY_LOW:
+                densityString= "LDPI";
+                break;
+            case DisplayMetrics.DENSITY_MEDIUM:
+                densityString= "MDPI";
+                break;
+            case DisplayMetrics.DENSITY_HIGH:
+                densityString= "HDPI";
+                break;
+            case DisplayMetrics.DENSITY_XHIGH:
+                densityString= "XHDPI";
+                break;
+            case DisplayMetrics.DENSITY_XXHIGH:
+                densityString= "XXHDPI";
+                break;
+        }
+        return densityString;
+    }
+
 	public static String getCarrier(Context context)
 	{
 		TelephonyManager manager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
@@ -362,7 +389,9 @@ class DeviceInfo
 		result += "," + "\"" + "_carrier"     + "\"" + ":" + "\"" + getCarrier(context)    + "\"";
 		
 		result += "," + "\"" + "_resolution"  + "\"" + ":" + "\"" + getResolution(context) + "\"";
-		
+
+        result += "," + "\"" + "_density"     + "\"" + ":" + "\"" + getDensity(context)    + "\"";
+
 		result += "," + "\"" + "_locale"      + "\"" + ":" + "\"" + getLocale()            + "\"";
 
 		result += "," + "\"" + "_app_version" + "\"" + ":" + "\"" + appVersion(context)            + "\"";
