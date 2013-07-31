@@ -260,7 +260,7 @@ class ConnectionQueue
 					{
 						if (OpenUDID_manager.isInitialized() == false)
 							break;						
-						data.replaceFirst("REPLACE_UDID", OpenUDID_manager.getOpenUDID());						
+						data = data.replaceFirst("REPLACE_UDID", OpenUDID_manager.getOpenUDID());						
 					}
 					
 					try
