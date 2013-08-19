@@ -335,6 +335,8 @@ class DeviceInfo
             	return "LDPI";
             case 160:
             	return "MDPI";
+            case 213: // -tvdpi, for simplicity -hdpi
+            	return "HDPI";
             case 240:
             	return "HDPI";
             case 320:
@@ -344,7 +346,7 @@ class DeviceInfo
             case 640:
             	return "XXXHDPI";
             default:
-            	return "MDPI";
+            	return "unknown";
         }
     }
 
