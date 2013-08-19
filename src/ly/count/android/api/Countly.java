@@ -329,28 +329,23 @@ class DeviceInfo
     public static String getDensity(Context context)
     {
         int density= context.getResources().getDisplayMetrics().densityDpi;
-
-        String densityString = "default";
-
         switch(density)
         {
-            case DisplayMetrics.DENSITY_LOW:
-                densityString= "LDPI";
-                break;
-            case DisplayMetrics.DENSITY_MEDIUM:
-                densityString= "MDPI";
-                break;
-            case DisplayMetrics.DENSITY_HIGH:
-                densityString= "HDPI";
-                break;
-            case DisplayMetrics.DENSITY_XHIGH:
-                densityString= "XHDPI";
-                break;
-            case DisplayMetrics.DENSITY_XXHIGH:
-                densityString= "XXHDPI";
-                break;
+            case 120:
+            	return "LDPI";
+            case 160:
+            	return "MDPI";
+            case 240:
+            	return "HDPI";
+            case 320:
+            	return "XHDPI";
+            case 480:
+            	return "XXHDPI";
+            case 640:
+            	return "XXXHDPI";
+            default:
+            	return "MDPI";
         }
-        return densityString;
     }
 
 	public static String getCarrier(Context context)
