@@ -32,6 +32,8 @@ Additionally, make sure that *INTERNET* permission is set if there's none in you
 
 **Note:** Make sure you use App Key (found under Management -> Applications) and not API Key. Entering API Key will not work. 
 
+**Note:** You need to call methods in "onCreate, onStart and onStop" events only for main activity.
+
 ###4. Other
 
 Check Countly Server source code here: 
