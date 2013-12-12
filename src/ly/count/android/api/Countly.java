@@ -239,7 +239,10 @@ class ConnectionQueue {
 			@Override
 			public void run() {
 				while (true) {
-					String data = queue_.peek();
+					String[] qItem = queue_.peek();
+
+					String connId = qItem[0];
+					String data = qItem[1];
 
 					if (data == null)
 						break;
@@ -262,7 +265,7 @@ class ConnectionQueue {
 
 						Log.d("Countly", "ok ->" + data);
 
-						queue_.poll();
+						queue_.delete(connId);
 					} catch (Exception e) {
 						Log.d("Countly", e.toString());
 						Log.d("Countly", "error ->" + data);
@@ -325,7 +328,7 @@ class DeviceInfo {
 	}
 
 	public static String getMetrics(Context context) {
-		String result = "";		
+		String result = "";
 		JSONObject json = new JSONObject();
 
 		try {
@@ -539,45 +542,29 @@ class CountlyDB extends SQLiteOpenHelper {
 
 	}
 
-	public String peek() {
+	public String[] peek() {
 		synchronized (this) {
 			SQLiteDatabase db = this.getReadableDatabase();
 
 			Cursor cursor = db.query(CONNECTIONS_TABLE_NAME, null, null, null, null, null, "ID DESC", "1");
 
-			String connection = null;
+			String[] connection = new String[2];
 
 			if (cursor != null && cursor.getCount() > 0) {
 				cursor.moveToFirst();
-				connection = cursor.getString(1);
-				Log.d("Countly", "Fetched: " + connection);
+				connection[0] = cursor.getString(0);
+				connection[1] = cursor.getString(1);
+				Log.d("Countly", "Fetched: " + connection[1]);
 			}
 
+			cursor.close();
 			return connection;
 		}
 	}
 
-	public String poll() {
-		synchronized (this) {
-			SQLiteDatabase db = this.getReadableDatabase();
-
-			Cursor cursor = db.query(CONNECTIONS_TABLE_NAME, null, null, null, null, null, "ID DESC", "1");
-
-			String connection = null;
-
-			if (cursor != null && cursor.getCount() > 0) {
-				cursor.moveToFirst();
-				connection = cursor.getString(1);
-				int rawId = Integer.parseInt(cursor.getString(0));
-
-				SQLiteDatabase writeDb = this.getWritableDatabase();
-				writeDb.execSQL("DELETE FROM " + CONNECTIONS_TABLE_NAME + " WHERE ID = " + rawId + ";");
-
-				Log.d("Countly", "Fetched and deleted: " + connection);
-			}
-
-			return connection;
-		}
+	public void delete(String connId) {
+		SQLiteDatabase db = this.getWritableDatabase();
+		db.execSQL("DELETE FROM " + CONNECTIONS_TABLE_NAME + " WHERE ID = " + connId + ";");
 	}
 
 	public void offer(String data) {
@@ -592,7 +579,9 @@ class CountlyDB extends SQLiteOpenHelper {
 		SQLiteDatabase db = this.getReadableDatabase();
 		Cursor cursor = db.query(CONNECTIONS_TABLE_NAME, null, null, null, null, null, "ID DESC", "1");
 
-		return !(cursor != null && cursor.getCount() > 0);
+		boolean isEmpty = !(cursor != null && cursor.getCount() > 0);
+		cursor.close();
+		return isEmpty;
 	}
 
 	// Event related functions
@@ -628,6 +617,7 @@ class CountlyDB extends SQLiteOpenHelper {
 			}
 		}
 
+		cursor.close();
 		return eventsArray;
 	}
 
@@ -651,8 +641,8 @@ class CountlyDB extends SQLiteOpenHelper {
 	}
 
 	public void clearEvents() {
-		SQLiteDatabase writeDb = this.getWritableDatabase();
-		writeDb.execSQL("DELETE FROM " + EVENTS_TABLE_NAME + ";");
+		SQLiteDatabase db = this.getWritableDatabase();
+		db.execSQL("DELETE FROM " + EVENTS_TABLE_NAME + ";");
 	}
 
 	private JSONObject eventToJSON(Event event) {
