@@ -315,7 +315,7 @@ class DeviceInfo {
 			npe.printStackTrace();
 			Log.e("Countly", "No carrier found");
 		}
-		return "No carrier";
+		return "";
 	}
 
 	public static String getLocale() {
