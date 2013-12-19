@@ -308,8 +308,14 @@ class DeviceInfo {
 	}
 
 	public static String getCarrier(Context context) {
-		TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-		return manager.getNetworkOperatorName();
+		try {
+			TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+			return manager.getNetworkOperatorName();
+		} catch (NullPointerException npe) {
+			npe.printStackTrace();
+			Log.e("Countly", "No carrier found");
+		}
+		return "";
 	}
 
 	public static String getLocale() {
