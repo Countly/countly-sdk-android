@@ -643,7 +643,8 @@ class CountlyDB extends SQLiteOpenHelper {
 
 		SQLiteDatabase db = this.getWritableDatabase();
 
-		db.execSQL("INSERT OR REPLACE INTO " + EVENTS_TABLE_NAME + "(ID, EVENT) VALUES(1, '" + json.toString() + "');");
+		String query = "INSERT OR REPLACE INTO " + EVENTS_TABLE_NAME + "(ID, EVENT) VALUES(1, ?);";
+		db.rawQuery(query, new String[] { json.toString() });
 	}
 
 	public void clearEvents() {
