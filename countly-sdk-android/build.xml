@@ -1,11 +1,11 @@
 <project default="package">
     <!-- Project properties -->
-    <property name="version.num" value="12.08" />
+    <property name="version.num" value="13.10" />
     <property name="project" value="countly-sdk-android" />
 
     <!-- Standard jar stuff -->
     <property name="jarfile" value="${project}-${version.num}.jar" />
-    <property name="sdk.dir" value="/usr/local/android-sdk/platforms/android-16/" />
+    <property name="sdk.dir" value="/projects/android-sdk/platforms/android-18/" />
     <!-- <property name="lib.dir" value="libs" /> -->
     <property name="build.dir" value="bin"/>
     <property name="classes.dir"  value="${build.dir}/classes"/>
