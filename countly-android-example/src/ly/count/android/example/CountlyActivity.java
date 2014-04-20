@@ -1,7 +1,8 @@
-package ly.count.android.api;
+package ly.count.android.example;
 
 import android.app.Activity;
 import android.os.Bundle;
+import ly.count.android.api.Countly;
 
 public class CountlyActivity extends Activity {
 	
