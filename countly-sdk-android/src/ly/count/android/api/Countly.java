@@ -4,8 +4,13 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Timer;
@@ -20,6 +25,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -39,7 +45,7 @@ public class Countly {
 	private double unsentSessionLength_;
 	private double lastTime_;
 	private int activityCount_;
-	private CountlyDB countlyDB_;
+	private CountlyStore countlyStore_;
 
 	static public Countly sharedInstance() {
 		if (sharedInstance_ == null)
@@ -65,14 +71,14 @@ public class Countly {
 
 	public void init(Context context, String serverURL, String appKey) {
 		OpenUDID_manager.sync(context);
-		countlyDB_ = new CountlyDB(context);
+        countlyStore_ = new CountlyStore(context);
 
 		queue_.setContext(context);
 		queue_.setServerURL(serverURL);
 		queue_.setAppKey(appKey);
-		queue_.setCountlyDB(countlyDB_);
+		queue_.setCountlyStore(countlyStore_);
 
-		eventQueue_ = new EventQueue(countlyDB_);
+		eventQueue_ = new EventQueue(countlyStore_);
 	}
 
 	public void onStart() {
@@ -108,6 +114,13 @@ public class Countly {
 
 		isVisible_ = false;
 	}
+
+	public void recordEvent(String key) {
+        eventQueue_.recordEvent(key);
+
+        if (eventQueue_.size() >= 10)
+            queue_.recordEvents(eventQueue_.events());
+    }
 
 	public void recordEvent(String key, int count) {
 		eventQueue_.recordEvent(key, count);
@@ -155,7 +168,7 @@ public class Countly {
 }
 
 class ConnectionQueue {
-	private CountlyDB queue_;
+	private CountlyStore store_;
 	private Thread thread_ = null;
 	private String appKey_;
 	private Context context_;
@@ -173,8 +186,8 @@ class ConnectionQueue {
 		serverURL_ = serverURL;
 	}
 
-	public void setCountlyDB(CountlyDB countlyDB) {
-		queue_ = countlyDB;
+	public void setCountlyStore(CountlyStore countlyStore) {
+		store_ = countlyStore;
 	}
 
 	public void beginSession() {
@@ -186,7 +199,7 @@ class ConnectionQueue {
 		data += "&" + "begin_session=" + "1";
 		data += "&" + "metrics=" + DeviceInfo.getMetrics(context_);
 
-		queue_.offer(data);
+        store_.addConnection(data);
 
 		tick();
 	}
@@ -198,7 +211,7 @@ class ConnectionQueue {
 		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
 		data += "&" + "session_duration=" + duration;
 
-		queue_.offer(data);
+        store_.addConnection(data);
 
 		tick();
 	}
@@ -211,7 +224,7 @@ class ConnectionQueue {
 		data += "&" + "end_session=" + "1";
 		data += "&" + "session_duration=" + duration;
 
-		queue_.offer(data);
+        store_.addConnection(data);
 
 		tick();
 	}
@@ -223,7 +236,7 @@ class ConnectionQueue {
 		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
 		data += "&" + "events=" + events;
 
-		queue_.offer(data);
+        store_.addConnection(data);
 
 		tick();
 	}
@@ -232,20 +245,19 @@ class ConnectionQueue {
 		if (thread_ != null && thread_.isAlive())
 			return;
 
-		if (queue_.isEmpty())
+		if (store_.isEmptyConnections())
 			return;
 
 		thread_ = new Thread() {
 			@Override
 			public void run() {
 				while (true) {
-					String[] qItem = queue_.peek();
+					String[] sessions = store_.connections();
 
-					String connId = qItem[0];
-					String data = qItem[1];
+                    if (sessions.length == 0)
+                        break;
 
-					if (data == null)
-						break;
+					String data = sessions[0];
 
 					int index = data.indexOf("REPLACE_UDID");
 					if (index != -1) {
@@ -265,7 +277,7 @@ class ConnectionQueue {
 
 						Log.d("Countly", "ok ->" + data);
 
-						queue_.delete(connId);
+						store_.removeConnection(data);
 					} catch (Exception e) {
 						Log.d("Countly", e.toString());
 						Log.d("Countly", "error ->" + data);
@@ -307,6 +319,29 @@ class DeviceInfo {
 		return metrics.widthPixels + "x" + metrics.heightPixels;
 	}
 
+    public static String getDensity(Context context) {
+        int density = context.getResources().getDisplayMetrics().densityDpi;
+
+        switch (density) {
+            case DisplayMetrics.DENSITY_LOW:
+                return "LDPI";
+            case DisplayMetrics.DENSITY_MEDIUM:
+                return "MDPI";
+            case DisplayMetrics.DENSITY_TV:
+                return "TVDPI";
+            case DisplayMetrics.DENSITY_HIGH:
+                return "HDPI";
+            case DisplayMetrics.DENSITY_XHIGH:
+                return "XHDPI";
+            case DisplayMetrics.DENSITY_XXHIGH:
+                return "XXHDPI";
+            case DisplayMetrics.DENSITY_XXXHIGH:
+                return "XXXHDPI";
+            default:
+                return "unknown";
+        }
+    }
+
 	public static String getCarrier(Context context) {
 		try {
 			TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
@@ -343,6 +378,7 @@ class DeviceInfo {
 			json.put("_os_version", getOSVersion());
 			json.put("_carrier", getCarrier(context));
 			json.put("_resolution", getResolution(context));
+			json.put("_density", getDensity(context));
 			json.put("_locale", getLocale());
 			json.put("_app_version", appVersion(context));
 		} catch (JSONException e) {
@@ -367,20 +403,27 @@ class Event {
 	public int count = 0;
 	public double sum = 0;
 	public int timestamp = 0;
+
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof Event)) return false;
+
+        Event e = (Event) o;
+
+        return (key == null ? e.key == null : key.equals(e.key)) &&
+                timestamp == e.timestamp && (segmentation == null ? e.segmentation == null : segmentation.equals(e.segmentation));
+    }
 }
 
 class EventQueue {
-	private ArrayList<Event> events_;
-	private CountlyDB countlyDB_;
+	private CountlyStore countlyStore_;
 
-	public EventQueue(CountlyDB countlyDB) {
-		countlyDB_ = countlyDB;
-		events_ = countlyDB_.getEvents();
+	public EventQueue(CountlyStore countlyStore) {
+        countlyStore_ = countlyStore;
 	}
 
 	public int size() {
 		synchronized (this) {
-			return events_.size();
+			return countlyStore_.events().length;
 		}
 	}
 
@@ -388,32 +431,14 @@ class EventQueue {
 		String result = "";
 
 		synchronized (this) {
-			JSONArray eventArray = new JSONArray();
+            List<Event> events = countlyStore_.eventsList();
 
-			for (int i = 0; i < events_.size(); ++i) {
-				JSONObject json = new JSONObject();
-				Event currEvent = events_.get(i);
-
-				try {
-					json.put("key", currEvent.key);
-					json.put("count", currEvent.count);
-					json.put("sum", currEvent.sum);
-					json.put("timestamp", currEvent.timestamp);
-
-					if (currEvent.segmentation != null) {
-						json.put("segmentation", new JSONObject(currEvent.segmentation));
-					}
-				} catch (JSONException e) {
-					e.printStackTrace();
-				}
-
-				eventArray.put(json);
-			}
+            JSONArray eventArray = new JSONArray();
+            for (Event e : events) eventArray.put(CountlyStore.eventToJSON(e));
 
 			result = eventArray.toString();
 
-			events_.clear();
-			countlyDB_.clearEvents();
+            countlyStore_.removeEvents(events);
 		}
 
 		try {
@@ -425,275 +450,198 @@ class EventQueue {
 		return result;
 	}
 
+	public void recordEvent(String key) {
+        recordEvent(key, null, 1, 0);
+    }
+
 	public void recordEvent(String key, int count) {
-		synchronized (this) {
-			for (int i = 0; i < events_.size(); ++i) {
-				Event event = events_.get(i);
-
-				if (event.key.equals(key)) {
-					event.count += count;
-					event.timestamp = Math.round((event.timestamp + (System.currentTimeMillis() / 1000)) / 2);
-					countlyDB_.saveEvents(events_);
-					return;
-				}
-			}
-
-			Event event = new Event();
-			event.key = key;
-			event.count = count;
-			event.timestamp = Math.round(System.currentTimeMillis() / 1000);
-			events_.add(event);
-
-			countlyDB_.saveEvents(events_);
-		}
+		recordEvent(key, null, count, 0);
 	}
 
 	public void recordEvent(String key, int count, double sum) {
-		synchronized (this) {
-			for (int i = 0; i < events_.size(); ++i) {
-				Event event = events_.get(i);
-
-				if (event.key.equals(key)) {
-					event.count += count;
-					event.sum += sum;
-					event.timestamp = Math.round((event.timestamp + (System.currentTimeMillis() / 1000)) / 2);
-					countlyDB_.saveEvents(events_);
-					return;
-				}
-			}
-
-			Event event = new Event();
-			event.key = key;
-			event.count = count;
-			event.sum = sum;
-			event.timestamp = Math.round(System.currentTimeMillis() / 1000);
-			events_.add(event);
-
-			countlyDB_.saveEvents(events_);
-		}
+        recordEvent(key, null, count, sum);
 	}
 
 	public void recordEvent(String key, Map<String, String> segmentation, int count) {
-		synchronized (this) {
-			for (int i = 0; i < events_.size(); ++i) {
-				Event event = events_.get(i);
-
-				if (event.key.equals(key) && event.segmentation != null && event.segmentation.equals(segmentation)) {
-					event.count += count;
-					event.timestamp = Math.round((event.timestamp + (System.currentTimeMillis() / 1000)) / 2);
-					countlyDB_.saveEvents(events_);
-					return;
-				}
-			}
-
-			Event event = new Event();
-			event.key = key;
-			event.segmentation = segmentation;
-			event.count = count;
-			event.timestamp = Math.round(System.currentTimeMillis() / 1000);
-			events_.add(event);
-
-			countlyDB_.saveEvents(events_);
-		}
+        recordEvent(key, segmentation, count, 0);
 	}
 
 	public void recordEvent(String key, Map<String, String> segmentation, int count, double sum) {
-		synchronized (this) {
-			for (int i = 0; i < events_.size(); ++i) {
-				Event event = events_.get(i);
-
-				if (event.key.equals(key) && event.segmentation != null && event.segmentation.equals(segmentation)) {
-					event.count += count;
-					event.sum += sum;
-					event.timestamp = Math.round((event.timestamp + (System.currentTimeMillis() / 1000)) / 2);
-					countlyDB_.saveEvents(events_);
-					return;
-				}
-			}
-
-			Event event = new Event();
-			event.key = key;
-			event.segmentation = segmentation;
-			event.count = count;
-			event.sum = sum;
-			event.timestamp = Math.round(System.currentTimeMillis() / 1000);
-			events_.add(event);
-
-			countlyDB_.saveEvents(events_);
-		}
+        synchronized (this) {
+            countlyStore_.addEvent(key, segmentation, count, sum);
+        }
 	}
 }
 
-class CountlyDB extends SQLiteOpenHelper {
+class CountlyStore {
+    private static final String TAG = "COUNTLY_STORE";
+    private static final String PREFERENCES = "COUNTLY_STORE";
+    private static final String DELIMITER = "===";
+    private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
+    private static final String EVENTS_PREFERENCE = "EVENTS";
 
-	private static final int DATABASE_VERSION = 1;
-	private static final String DATABASE_NAME = "countly";
-	private static final String CONNECTIONS_TABLE_NAME = "CONNECTIONS";
-	private static final String EVENTS_TABLE_NAME = "EVENTS";
-	private static final String CONNECTIONS_TABLE_CREATE = "CREATE TABLE " + CONNECTIONS_TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, CONNECTION TEXT NOT NULL);";
-	private static final String EVENTS_TABLE_CREATE = "CREATE TABLE " + EVENTS_TABLE_NAME + " (ID INTEGER UNIQUE NOT NULL, EVENT TEXT NOT NULL);";
+    private SharedPreferences preferences;
 
-	CountlyDB(Context context) {
-		super(context, DATABASE_NAME, null, DATABASE_VERSION);
-	}
+    protected CountlyStore(Context ctx) {
+        preferences = ctx.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
+    }
 
-	@Override
-	public void onCreate(SQLiteDatabase db) {
-		db.execSQL(CONNECTIONS_TABLE_CREATE);
-		db.execSQL(EVENTS_TABLE_CREATE);
-	}
+    public String[] connections() {
+        String array = preferences.getString(CONNECTIONS_PREFERENCE, null);
+        return array == null || "".equals(array) ? new String[0] : array.split(DELIMITER);
+    }
 
-	@Override
-	public void onUpgrade(SQLiteDatabase db, int arg1, int arg2) {
+    public String[] events() {
+        String array = preferences.getString(EVENTS_PREFERENCE, null);
+        return array == null || "".equals(array) ? new String[0] : array.split(DELIMITER);
+    }
 
-	}
+    public List<Event> eventsList() {
+        String[] array = events();
+        if (array.length == 0) return new ArrayList<Event>();
+        else {
+            List<Event> events = new ArrayList<Event>();
+            for (String s : array) {
+                try {
+                    events.add(jsonToEvent(new JSONObject(s)));
+                } catch (JSONException e) {
+                    Log.e(TAG, "Cannot parse Event json", e);
+                }
+            }
 
-	public String[] peek() {
-		synchronized (this) {
-			SQLiteDatabase db = this.getReadableDatabase();
+            Collections.sort(events, new Comparator<Event>() {
+                @Override
+                public int compare(Event e1, Event e2) {
+                    return e2.timestamp - e1.timestamp;
+                }
+            });
 
-			Cursor cursor = db.query(CONNECTIONS_TABLE_NAME, null, null, null, null, null, "ID DESC", "1");
+            return events;
+        }
+    }
 
-			String[] connection = new String[2];
+    public boolean isEmptyConnections() {
+        return connections().length == 0;
+    }
 
-			if (cursor != null && cursor.getCount() > 0) {
-				cursor.moveToFirst();
-				connection[0] = cursor.getString(0);
-				connection[1] = cursor.getString(1);
-				Log.d("Countly", "Fetched: " + connection[1]);
-			}
+    public boolean isEmptyEvents() {
+        return events().length == 0;
+    }
 
-			cursor.close();
-			return connection;
-		}
-	}
+    public void addConnection(String str) {
+        List<String> connections = new ArrayList<String>(Arrays.asList(connections()));
+        connections.add(str);
+        preferences.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
+    }
 
-	public void delete(String connId) {
-		SQLiteDatabase db = this.getWritableDatabase();
-		db.execSQL("DELETE FROM " + CONNECTIONS_TABLE_NAME + " WHERE ID = " + connId + ";");
-	}
+    public void removeConnection(String str) {
+        List<String> connections = new ArrayList<String>(Arrays.asList(connections()));
+        connections.remove(str);
+        preferences.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
+    }
 
-	public void offer(String data) {
-		SQLiteDatabase db = this.getWritableDatabase();
+    public void addEvent(Event event) {
+        List<Event> events = eventsList();
+        if (!events.contains(event)) events.add(event);
+        preferences.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
+    }
 
-		db.execSQL("INSERT INTO " + CONNECTIONS_TABLE_NAME + "(CONNECTION) VALUES('" + data + "');");
+    public void addEvent(String key, Map<String, String> segmentation, int count, double sum) {
+        List<Event> events = eventsList();
+        Event event = null;
+        for (Event e : events) if (e.key != null && e.key.equals(key)) event = e;
 
-		Log.d("Countly", "Insert into " + CONNECTIONS_TABLE_NAME + ": " + data);
-	}
+        if (event == null) {
+            event = new Event();
+            event.key = key;
+            event.segmentation = segmentation;
+            event.count = 0;
+            event.sum = 0;
+            event.timestamp = (int) (System.currentTimeMillis() / 1000);
+        } else {
+            removeEvent(event);
+            event.timestamp = Math.round((event.timestamp + (System.currentTimeMillis() / 1000)) / 2);
+        }
 
-	public boolean isEmpty() {
-		SQLiteDatabase db = this.getReadableDatabase();
-		Cursor cursor = db.query(CONNECTIONS_TABLE_NAME, null, null, null, null, null, "ID DESC", "1");
+        event.count += count;
+        event.sum += sum;
 
-		boolean isEmpty = !(cursor != null && cursor.getCount() > 0);
-		cursor.close();
-		return isEmpty;
-	}
+        addEvent(event);
+    }
 
-	// Event related functions
+    public void removeEvent(Event event) {
+        List<Event> events = eventsList();
+        events.remove(event);
+        preferences.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
+    }
 
-	public ArrayList<Event> getEvents() {
-		SQLiteDatabase db = this.getReadableDatabase();
+    public void removeEvents(Collection<Event> eventsToRemove) {
+        List<Event> events = eventsList();
+        for (Event e : eventsToRemove) events.remove(e);
+        preferences.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
+    }
 
-		Cursor cursor = db.query(EVENTS_TABLE_NAME, null, null, null, null, null, "ID = 1", "1");
-		ArrayList<Event> eventsArray = new ArrayList<Event>();
+    protected static JSONObject eventToJSON(Event event) {
+        JSONObject json = new JSONObject();
 
-		if (cursor != null && cursor.getCount() > 0) {
-			cursor.moveToFirst();
-			String events = cursor.getString(1);
+        try {
+            json.put("key", event.key);
+            json.put("count", event.count);
+            json.put("sum", event.sum);
+            json.put("timestamp", event.timestamp);
 
-			JSONObject json = new JSONObject();
+            if (event.segmentation != null) {
+                json.put("segmentation", new JSONObject(event.segmentation));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-			try {
-				json = new JSONObject(events);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
+        return json;
+    }
 
-			JSONArray jArray = json.optJSONArray("events");
+    protected static Event jsonToEvent(JSONObject json) {
+        Event event = new Event();
 
-			if (jArray != null) {
-				for (int i = 0; i < jArray.length(); i++) {
-					try {
-						eventsArray.add(jsonToEvent(new JSONObject(jArray.get(i).toString())));
-					} catch (JSONException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}
+        try {
+            event.key = json.get("key").toString();
+            event.count = Integer.valueOf(json.get("count").toString());
+            event.sum = Double.valueOf(json.get("sum").toString());
+            event.timestamp = Integer.valueOf(json.get("timestamp").toString());
 
-		cursor.close();
-		return eventsArray;
-	}
+            HashMap<String, String> segmentation = new HashMap<String, String>();
+            @SuppressWarnings("unchecked")
+            Iterator<String> nameItr = ((JSONObject) json.get("segmentation")).keys();
 
-	public void saveEvents(ArrayList<Event> events) {
-		JSONArray eventArray = new JSONArray();
-		JSONObject json = new JSONObject();
+            while (nameItr.hasNext()) {
+                String key = nameItr.next();
+                segmentation.put(key, ((JSONObject) json.get("segmentation")).getString(key));
+            }
 
-		for (int i = 0; i < events.size(); ++i) {
-			eventArray.put(eventToJSON(events.get(i)));
-		}
+            event.segmentation = segmentation;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-		try {
-			json.put("events", eventArray);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+        return event;
+    }
 
-		SQLiteDatabase db = this.getWritableDatabase();
+    private static String joinEvents(Collection<Event> collection, String delimiter) {
+        List<String> strings = new ArrayList<String>();
+        for (Event e : collection) strings.add(eventToJSON(e).toString());
+        return join(strings, delimiter);
+    }
 
-		String query = "INSERT OR REPLACE INTO " + EVENTS_TABLE_NAME + "(ID, EVENT) VALUES(1, ?);";
-		db.rawQuery(query, new String[] { json.toString() });
-	}
+    private static String join(Collection<String> collection, String delimiter) {
+        StringBuilder builder = new StringBuilder();
 
-	public void clearEvents() {
-		SQLiteDatabase db = this.getWritableDatabase();
-		db.execSQL("DELETE FROM " + EVENTS_TABLE_NAME + ";");
-	}
+        int i = 0;
+        for (String s : collection) {
+            builder.append(s);
+            if (++i < collection.size()) builder.append(delimiter);
+        }
 
-	private JSONObject eventToJSON(Event event) {
-		JSONObject json = new JSONObject();
+        return builder.toString();
+    }
 
-		try {
-			json.put("key", event.key);
-			json.put("count", event.count);
-			json.put("sum", event.sum);
-			json.put("timestamp", event.timestamp);
-
-			if (event.segmentation != null) {
-				json.put("segmentation", new JSONObject(event.segmentation));
-			}
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-
-		return json;
-	}
-
-	private Event jsonToEvent(JSONObject json) {
-		Event event = new Event();
-
-		try {
-			event.key = json.get("key").toString();
-			event.count = Integer.valueOf(json.get("count").toString());
-			event.sum = Double.valueOf(json.get("sum").toString());
-			event.timestamp = Integer.valueOf(json.get("timestamp").toString());
-
-			HashMap<String, String> segmentation = new HashMap<String, String>();
-			@SuppressWarnings("unchecked")
-			Iterator<String> nameItr = ((JSONObject) json.get("segmentation")).keys();
-
-			while (nameItr.hasNext()) {
-				String key = nameItr.next();
-				segmentation.put(key, ((JSONObject) json.get("segmentation")).getString(key));
-			}
-
-			event.segmentation = segmentation;
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-
-		return event;
-	}
 }
