@@ -10,9 +10,39 @@ This repository includes the SDK for Android.
 
 Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First step is about OpenUDID requirement and second step is integrating Countly SDK to your project:
 
-###1. Add this to your manifest:
+###1. Add Countly SDK to your project
 
-* Add OpenUDID_manager.java and OpenUDID_service.java to your project under Eclipse.
+#### Gradle users:
+Add Maven Central repository:
+<pre class="prettyprint">
+repositories {
+    mavenCentral()
+}
+</pre>
+
+Add Countly SDK dependency:
+<pre class="prettyprint">
+dependencies {
+    compile 'ly.count:sdk-android:+'
+}
+</pre>
+
+
+#### Maven users:
+<pre class="prettyprint">
+&lt;dependency&gt;
+    &lt;groupId&gt;ly.count&lt;/groupId&gt;
+    &lt;artifactId&gt;sdk-android&lt;/artifactId&gt;
+    &lt;version&gt;13.10&lt;/version&gt;
+&lt;/dependency&gt;
+</pre>
+
+#### Eclipse users:
+Download [Latest JAR](https://github.com/Countly/countly-sdk-android/releases/latest) and put it into your lib folder.
+
+###2. Add this to your manifest
+
+Add OpenUDID_manager.java and OpenUDID_service.java to your project under Eclipse.
 
 <pre class="prettyprint">
 &lt;service android:name=&quot;org.openudid.OpenUDID_service&quot;&gt;
@@ -21,9 +51,8 @@ Installing Android SDK requires two very easy steps. Countly Android SDK uses Op
     &lt;/intent-filter&gt;
 &lt;/service&gt;</pre>
 
-###2. Add main Countly SDK to your project using steps below:
+###3. Set up SDK
 
-* Add Countly.java to your project under Eclipse.
 * Call `Countly.sharedInstance().init(context, "https://YOUR_SERVER", "YOUR_APP_KEY")` in onCreate, which requires your App key and the URL of your Countly server (use `https://cloud.count.ly` for Countly Cloud).
 * Call `Countly.sharedInstance().onStart()` in onStart.
 * Call `Countly.sharedInstance().onStop()` in onStop.
