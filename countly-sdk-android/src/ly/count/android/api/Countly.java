@@ -27,9 +27,6 @@ import org.json.JSONObject;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -37,289 +34,289 @@ import android.view.Display;
 import android.view.WindowManager;
 
 public class Countly {
-	private static Countly sharedInstance_;
-	private Timer timer_;
-	private ConnectionQueue queue_;
-	private EventQueue eventQueue_;
-	private boolean isVisible_;
-	private double unsentSessionLength_;
-	private double lastTime_;
-	private int activityCount_;
-	private CountlyStore countlyStore_;
+    private static Countly sharedInstance_;
+    private Timer timer_;
+    private ConnectionQueue queue_;
+    private EventQueue eventQueue_;
+    private boolean isVisible_;
+    private double unsentSessionLength_;
+    private double lastTime_;
+    private int activityCount_;
+    private CountlyStore countlyStore_;
 
     protected static final int SESSION_DURATION_WHEN_TIME_ADJUSTED = 15;
 
-	static public Countly sharedInstance() {
-		if (sharedInstance_ == null)
-			sharedInstance_ = new Countly();
+    static public Countly sharedInstance() {
+        if (sharedInstance_ == null)
+            sharedInstance_ = new Countly();
 
-		return sharedInstance_;
-	}
+        return sharedInstance_;
+    }
 
-	private Countly() {
-		queue_ = new ConnectionQueue();
-		timer_ = new Timer();
-		timer_.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				onTimer();
-			}
-		}, 60 * 1000, 60 * 1000);
+    private Countly() {
+        queue_ = new ConnectionQueue();
+        timer_ = new Timer();
+        timer_.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                onTimer();
+            }
+        }, 60 * 1000, 60 * 1000);
 
-		isVisible_ = false;
-		unsentSessionLength_ = 0;
-		activityCount_ = 0;
-	}
+        isVisible_ = false;
+        unsentSessionLength_ = 0;
+        activityCount_ = 0;
+    }
 
-	public void init(Context context, String serverURL, String appKey) {
-		OpenUDID_manager.sync(context);
+    public void init(Context context, String serverURL, String appKey) {
+        OpenUDID_manager.sync(context);
         countlyStore_ = new CountlyStore(context);
 
-		queue_.setContext(context);
-		queue_.setServerURL(serverURL);
-		queue_.setAppKey(appKey);
-		queue_.setCountlyStore(countlyStore_);
+        queue_.setContext(context);
+        queue_.setServerURL(serverURL);
+        queue_.setAppKey(appKey);
+        queue_.setCountlyStore(countlyStore_);
 
-		eventQueue_ = new EventQueue(countlyStore_);
-	}
+        eventQueue_ = new EventQueue(countlyStore_);
+    }
 
-	public void onStart() {
-		activityCount_++;
-		if (activityCount_ == 1)
-			onStartHelper();
-	}
+    public void onStart() {
+        activityCount_++;
+        if (activityCount_ == 1)
+            onStartHelper();
+    }
 
-	public void onStop() {
-		activityCount_--;
-		if (activityCount_ == 0)
-			onStopHelper();
-	}
+    public void onStop() {
+        activityCount_--;
+        if (activityCount_ == 0)
+            onStopHelper();
+    }
 
-	public void onStartHelper() {
-		lastTime_ = System.currentTimeMillis() / 1000.0;
+    public void onStartHelper() {
+        lastTime_ = System.currentTimeMillis() / 1000.0;
 
-		queue_.beginSession();
+        queue_.beginSession();
 
-		isVisible_ = true;
-	}
+        isVisible_ = true;
+    }
 
-	public void onStopHelper() {
-		if (eventQueue_.size() > 0)
-			queue_.recordEvents(eventQueue_.events());
+    public void onStopHelper() {
+        if (eventQueue_.size() > 0)
+            queue_.recordEvents(eventQueue_.events());
 
-		double currTime = System.currentTimeMillis() / 1000.0;
-		unsentSessionLength_ += currTime - lastTime_;
+        double currTime = System.currentTimeMillis() / 1000.0;
+        unsentSessionLength_ += currTime - lastTime_;
 
-		int duration = (int) unsentSessionLength_;
-		queue_.endSession(duration);
-		unsentSessionLength_ -= duration;
+        int duration = (int) unsentSessionLength_;
+        queue_.endSession(duration);
+        unsentSessionLength_ -= duration;
 
-		isVisible_ = false;
-	}
+        isVisible_ = false;
+    }
 
-	public void recordEvent(String key) {
+    public void recordEvent(String key) {
         eventQueue_.recordEvent(key);
 
         if (eventQueue_.size() >= 10)
             queue_.recordEvents(eventQueue_.events());
     }
 
-	public void recordEvent(String key, int count) {
-		eventQueue_.recordEvent(key, count);
+    public void recordEvent(String key, int count) {
+        eventQueue_.recordEvent(key, count);
 
-		if (eventQueue_.size() >= 10)
-			queue_.recordEvents(eventQueue_.events());
-	}
+        if (eventQueue_.size() >= 10)
+            queue_.recordEvents(eventQueue_.events());
+    }
 
-	public void recordEvent(String key, int count, double sum) {
-		eventQueue_.recordEvent(key, count, sum);
+    public void recordEvent(String key, int count, double sum) {
+        eventQueue_.recordEvent(key, count, sum);
 
-		if (eventQueue_.size() >= 10)
-			queue_.recordEvents(eventQueue_.events());
-	}
+        if (eventQueue_.size() >= 10)
+            queue_.recordEvents(eventQueue_.events());
+    }
 
-	public void recordEvent(String key, Map<String, String> segmentation, int count) {
-		eventQueue_.recordEvent(key, segmentation, count);
+    public void recordEvent(String key, Map<String, String> segmentation, int count) {
+        eventQueue_.recordEvent(key, segmentation, count);
 
-		if (eventQueue_.size() >= 10)
-			queue_.recordEvents(eventQueue_.events());
-	}
+        if (eventQueue_.size() >= 10)
+            queue_.recordEvents(eventQueue_.events());
+    }
 
-	public void recordEvent(String key, Map<String, String> segmentation, int count, double sum) {
-		eventQueue_.recordEvent(key, segmentation, count, sum);
+    public void recordEvent(String key, Map<String, String> segmentation, int count, double sum) {
+        eventQueue_.recordEvent(key, segmentation, count, sum);
 
-		if (eventQueue_.size() >= 10)
-			queue_.recordEvents(eventQueue_.events());
-	}
+        if (eventQueue_.size() >= 10)
+            queue_.recordEvents(eventQueue_.events());
+    }
 
-	private void onTimer() {
-		if (isVisible_ == false)
-			return;
+    private void onTimer() {
+        if (isVisible_ == false)
+            return;
 
-		double currTime = System.currentTimeMillis() / 1000.0;
-		unsentSessionLength_ += currTime - lastTime_;
-		lastTime_ = currTime;
+        double currTime = System.currentTimeMillis() / 1000.0;
+        unsentSessionLength_ += currTime - lastTime_;
+        lastTime_ = currTime;
 
-		int duration = (int) unsentSessionLength_;
-		queue_.updateSession(duration);
-		unsentSessionLength_ -= duration;
+        int duration = (int) unsentSessionLength_;
+        queue_.updateSession(duration);
+        unsentSessionLength_ -= duration;
 
-		if (eventQueue_.size() > 0)
-			queue_.recordEvents(eventQueue_.events());
-	}
+        if (eventQueue_.size() > 0)
+            queue_.recordEvents(eventQueue_.events());
+    }
 }
 
 class ConnectionQueue {
-	private CountlyStore store_;
-	private Thread thread_ = null;
-	private String appKey_;
-	private Context context_;
-	private String serverURL_;
+    private CountlyStore store_;
+    private Thread thread_ = null;
+    private String appKey_;
+    private Context context_;
+    private String serverURL_;
 
-	public void setAppKey(String appKey) {
-		appKey_ = appKey;
-	}
+    public void setAppKey(String appKey) {
+        appKey_ = appKey;
+    }
 
-	public void setContext(Context context) {
-		context_ = context;
-	}
+    public void setContext(Context context) {
+        context_ = context;
+    }
 
-	public void setServerURL(String serverURL) {
-		serverURL_ = serverURL;
-	}
+    public void setServerURL(String serverURL) {
+        serverURL_ = serverURL;
+    }
 
-	public void setCountlyStore(CountlyStore countlyStore) {
-		store_ = countlyStore;
-	}
+    public void setCountlyStore(CountlyStore countlyStore) {
+        store_ = countlyStore;
+    }
 
-	public void beginSession() {
-		String data;
-		data = "app_key=" + appKey_;
-		data += "&" + "device_id=" + DeviceInfo.getUDID();
-		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-		data += "&" + "sdk_version=" + "2.0";
-		data += "&" + "begin_session=" + "1";
-		data += "&" + "metrics=" + DeviceInfo.getMetrics(context_);
-
-        store_.addConnection(data);
-
-		tick();
-	}
-
-	public void updateSession(int duration) {
-		String data;
-		data = "app_key=" + appKey_;
-		data += "&" + "device_id=" + DeviceInfo.getUDID();
-		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-		data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
+    public void beginSession() {
+        String data;
+        data = "app_key=" + appKey_;
+        data += "&" + "device_id=" + DeviceInfo.getUDID();
+        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
+        data += "&" + "sdk_version=" + "2.0";
+        data += "&" + "begin_session=" + "1";
+        data += "&" + "metrics=" + DeviceInfo.getMetrics(context_);
 
         store_.addConnection(data);
 
-		tick();
-	}
+        tick();
+    }
 
-	public void endSession(int duration) {
-		String data;
-		data = "app_key=" + appKey_;
-		data += "&" + "device_id=" + DeviceInfo.getUDID();
-		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-		data += "&" + "end_session=" + "1";
-		data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
-
-        store_.addConnection(data);
-
-		tick();
-	}
-
-	public void recordEvents(String events) {
-		String data;
-		data = "app_key=" + appKey_;
-		data += "&" + "device_id=" + DeviceInfo.getUDID();
-		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-		data += "&" + "events=" + events;
+    public void updateSession(int duration) {
+        String data;
+        data = "app_key=" + appKey_;
+        data += "&" + "device_id=" + DeviceInfo.getUDID();
+        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
+        data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
 
         store_.addConnection(data);
 
-		tick();
-	}
+        tick();
+    }
 
-	private void tick() {
-		if (thread_ != null && thread_.isAlive())
-			return;
+    public void endSession(int duration) {
+        String data;
+        data = "app_key=" + appKey_;
+        data += "&" + "device_id=" + DeviceInfo.getUDID();
+        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
+        data += "&" + "end_session=" + "1";
+        data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
 
-		if (store_.isEmptyConnections())
-			return;
+        store_.addConnection(data);
 
-		thread_ = new Thread() {
-			@Override
-			public void run() {
-				while (true) {
-					String[] sessions = store_.connections();
+        tick();
+    }
+
+    public void recordEvents(String events) {
+        String data;
+        data = "app_key=" + appKey_;
+        data += "&" + "device_id=" + DeviceInfo.getUDID();
+        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
+        data += "&" + "events=" + events;
+
+        store_.addConnection(data);
+
+        tick();
+    }
+
+    private void tick() {
+        if (thread_ != null && thread_.isAlive())
+            return;
+
+        if (store_.isEmptyConnections())
+            return;
+
+        thread_ = new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    String[] sessions = store_.connections();
 
                     if (sessions.length == 0)
                         break;
 
-					String data = sessions[0];
+                    String data = sessions[0];
 
-					int index = data.indexOf("REPLACE_UDID");
-					if (index != -1) {
-						if (OpenUDID_manager.isInitialized() == false)
-							break;
-						data = data.replaceFirst("REPLACE_UDID", OpenUDID_manager.getOpenUDID());
-					}
+                    int index = data.indexOf("REPLACE_UDID");
+                    if (index != -1) {
+                        if (OpenUDID_manager.isInitialized() == false)
+                            break;
+                        data = data.replaceFirst("REPLACE_UDID", OpenUDID_manager.getOpenUDID());
+                    }
 
-					try {
-						DefaultHttpClient httpClient = new DefaultHttpClient();
-						HttpGet method = new HttpGet(new URI(serverURL_ + "/i?" + data));
-						HttpResponse response = httpClient.execute(method);
-						InputStream input = response.getEntity().getContent();
-						while (input.read() != -1)
-							;
-						httpClient.getConnectionManager().shutdown();
+                    try {
+                        DefaultHttpClient httpClient = new DefaultHttpClient();
+                        HttpGet method = new HttpGet(new URI(serverURL_ + "/i?" + data));
+                        HttpResponse response = httpClient.execute(method);
+                        InputStream input = response.getEntity().getContent();
+                        while (input.read() != -1)
+                            ;
+                        httpClient.getConnectionManager().shutdown();
 
-						Log.d("Countly", "ok ->" + data);
+                        Log.d("Countly", "ok ->" + data);
 
-						store_.removeConnection(data);
-					} catch (Exception e) {
-						Log.d("Countly", e.toString());
-						Log.d("Countly", "error ->" + data);
-						break;
-					}
-				}
-			}
-		};
+                        store_.removeConnection(data);
+                    } catch (Exception e) {
+                        Log.d("Countly", e.toString());
+                        Log.d("Countly", "error ->" + data);
+                        break;
+                    }
+                }
+            }
+        };
 
-		thread_.start();
-	}
+        thread_.start();
+    }
 }
 
 class DeviceInfo {
-	public static String getUDID() {
-		return OpenUDID_manager.isInitialized() == false ? "REPLACE_UDID" : OpenUDID_manager.getOpenUDID();
-	}
+    public static String getUDID() {
+        return OpenUDID_manager.isInitialized() == false ? "REPLACE_UDID" : OpenUDID_manager.getOpenUDID();
+    }
 
-	public static String getOS() {
-		return "Android";
-	}
+    public static String getOS() {
+        return "Android";
+    }
 
-	public static String getOSVersion() {
-		return android.os.Build.VERSION.RELEASE;
-	}
+    public static String getOSVersion() {
+        return android.os.Build.VERSION.RELEASE;
+    }
 
-	public static String getDevice() {
-		return android.os.Build.MODEL;
-	}
+    public static String getDevice() {
+        return android.os.Build.MODEL;
+    }
 
-	public static String getResolution(Context context) {
-		WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    public static String getResolution(Context context) {
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 
-		Display display = wm.getDefaultDisplay();
+        Display display = wm.getDefaultDisplay();
 
-		DisplayMetrics metrics = new DisplayMetrics();
-		display.getMetrics(metrics);
+        DisplayMetrics metrics = new DisplayMetrics();
+        display.getMetrics(metrics);
 
-		return metrics.widthPixels + "x" + metrics.heightPixels;
-	}
+        return metrics.widthPixels + "x" + metrics.heightPixels;
+    }
 
     public static String getDensity(Context context) {
         int density = context.getResources().getDisplayMetrics().densityDpi;
@@ -344,67 +341,67 @@ class DeviceInfo {
         }
     }
 
-	public static String getCarrier(Context context) {
-		try {
-			TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-			return manager.getNetworkOperatorName();
-		} catch (NullPointerException npe) {
-			npe.printStackTrace();
-			Log.e("Countly", "No carrier found");
-		}
-		return "";
-	}
+    public static String getCarrier(Context context) {
+        try {
+            TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+            return manager.getNetworkOperatorName();
+        } catch (NullPointerException npe) {
+            npe.printStackTrace();
+            Log.e("Countly", "No carrier found");
+        }
+        return "";
+    }
 
-	public static String getLocale() {
-		Locale locale = Locale.getDefault();
-		return locale.getLanguage() + "_" + locale.getCountry();
-	}
+    public static String getLocale() {
+        Locale locale = Locale.getDefault();
+        return locale.getLanguage() + "_" + locale.getCountry();
+    }
 
-	public static String appVersion(Context context) {
-		String result = "1.0";
-		try {
-			result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-		} catch (NameNotFoundException e) {
-		}
+    public static String appVersion(Context context) {
+        String result = "1.0";
+        try {
+            result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+        } catch (NameNotFoundException e) {
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	public static String getMetrics(Context context) {
-		String result = "";
-		JSONObject json = new JSONObject();
+    public static String getMetrics(Context context) {
+        String result = "";
+        JSONObject json = new JSONObject();
 
-		try {
-			json.put("_device", getDevice());
-			json.put("_os", getOS());
-			json.put("_os_version", getOSVersion());
-			json.put("_carrier", getCarrier(context));
-			json.put("_resolution", getResolution(context));
-			json.put("_density", getDensity(context));
-			json.put("_locale", getLocale());
-			json.put("_app_version", appVersion(context));
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+        try {
+            json.put("_device", getDevice());
+            json.put("_os", getOS());
+            json.put("_os_version", getOSVersion());
+            json.put("_carrier", getCarrier(context));
+            json.put("_resolution", getResolution(context));
+            json.put("_density", getDensity(context));
+            json.put("_locale", getLocale());
+            json.put("_app_version", appVersion(context));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-		result = json.toString();
+        result = json.toString();
 
-		try {
-			result = java.net.URLEncoder.encode(result, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
 
-		}
+        }
 
-		return result;
-	}
+        return result;
+    }
 }
 
 class Event {
-	public String key = null;
-	public Map<String, String> segmentation = null;
-	public int count = 0;
-	public double sum = 0;
-	public int timestamp = 0;
+    public String key = null;
+    public Map<String, String> segmentation = null;
+    public int count = 0;
+    public double sum = 0;
+    public int timestamp = 0;
 
     public boolean equals(Object o) {
         if (o == null || !(o instanceof Event)) return false;
@@ -417,62 +414,62 @@ class Event {
 }
 
 class EventQueue {
-	private CountlyStore countlyStore_;
+    private CountlyStore countlyStore_;
 
-	public EventQueue(CountlyStore countlyStore) {
+    public EventQueue(CountlyStore countlyStore) {
         countlyStore_ = countlyStore;
-	}
+    }
 
-	public int size() {
-		synchronized (this) {
-			return countlyStore_.events().length;
-		}
-	}
+    public int size() {
+        synchronized (this) {
+            return countlyStore_.events().length;
+        }
+    }
 
-	public String events() {
-		String result = "";
+    public String events() {
+        String result = "";
 
-		synchronized (this) {
+        synchronized (this) {
             List<Event> events = countlyStore_.eventsList();
 
             JSONArray eventArray = new JSONArray();
             for (Event e : events) eventArray.put(CountlyStore.eventToJSON(e));
 
-			result = eventArray.toString();
+            result = eventArray.toString();
 
             countlyStore_.removeEvents(events);
-		}
+        }
 
-		try {
-			result = java.net.URLEncoder.encode(result, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
 
-		}
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	public void recordEvent(String key) {
+    public void recordEvent(String key) {
         recordEvent(key, null, 1, 0);
     }
 
-	public void recordEvent(String key, int count) {
-		recordEvent(key, null, count, 0);
-	}
+    public void recordEvent(String key, int count) {
+        recordEvent(key, null, count, 0);
+    }
 
-	public void recordEvent(String key, int count, double sum) {
+    public void recordEvent(String key, int count, double sum) {
         recordEvent(key, null, count, sum);
-	}
+    }
 
-	public void recordEvent(String key, Map<String, String> segmentation, int count) {
+    public void recordEvent(String key, Map<String, String> segmentation, int count) {
         recordEvent(key, segmentation, count, 0);
-	}
+    }
 
-	public void recordEvent(String key, Map<String, String> segmentation, int count, double sum) {
+    public void recordEvent(String key, Map<String, String> segmentation, int count, double sum) {
         synchronized (this) {
             countlyStore_.addEvent(key, segmentation, count, sum);
         }
-	}
+    }
 }
 
 class CountlyStore {
