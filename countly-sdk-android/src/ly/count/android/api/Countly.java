@@ -338,7 +338,7 @@ class DeviceInfo {
             case DisplayMetrics.DENSITY_XXXHIGH:
                 return "XXXHDPI";
             default:
-                return "unknown";
+                return "";
         }
     }
 
@@ -609,16 +609,20 @@ class CountlyStore {
             event.sum = Double.valueOf(json.get("sum").toString());
             event.timestamp = Integer.valueOf(json.get("timestamp").toString());
 
-            HashMap<String, String> segmentation = new HashMap<String, String>();
-            @SuppressWarnings("unchecked")
-            Iterator<String> nameItr = ((JSONObject) json.get("segmentation")).keys();
+            if (json.has("segmentation")) {
+                JSONObject segm = json.getJSONObject("segmentation");
+                HashMap<String, String> segmentation = new HashMap<String, String>();
+                Iterator nameItr = segm.keys();
 
-            while (nameItr.hasNext()) {
-                String key = nameItr.next();
-                segmentation.put(key, ((JSONObject) json.get("segmentation")).getString(key));
+                while (nameItr.hasNext()) {
+                    Object obj = nameItr.next();
+                    if (obj instanceof String) {
+                        segmentation.put((String) obj, ((JSONObject) json.get("segmentation")).getString((String) obj));
+                    }
+                }
+
+                event.segmentation = segmentation;
             }
-
-            event.segmentation = segmentation;
         } catch (JSONException e) {
             e.printStackTrace();
         }
