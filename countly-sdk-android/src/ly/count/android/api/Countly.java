@@ -47,6 +47,8 @@ public class Countly {
 	private int activityCount_;
 	private CountlyStore countlyStore_;
 
+    protected static final int SESSION_DURATION_WHEN_TIME_ADJUSTED = 15;
+
 	static public Countly sharedInstance() {
 		if (sharedInstance_ == null)
 			sharedInstance_ = new Countly();
@@ -209,7 +211,7 @@ class ConnectionQueue {
 		data = "app_key=" + appKey_;
 		data += "&" + "device_id=" + DeviceInfo.getUDID();
 		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-		data += "&" + "session_duration=" + duration;
+		data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
 
         store_.addConnection(data);
 
@@ -222,7 +224,7 @@ class ConnectionQueue {
 		data += "&" + "device_id=" + DeviceInfo.getUDID();
 		data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
 		data += "&" + "end_session=" + "1";
-		data += "&" + "session_duration=" + duration;
+		data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
 
         store_.addConnection(data);
 
