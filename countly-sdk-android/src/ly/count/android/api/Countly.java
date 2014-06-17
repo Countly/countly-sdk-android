@@ -256,30 +256,30 @@ class ConnectionQueue {
                     if (sessions.length == 0)
                         break;
 
-                    String data = sessions[0];
+                    String initial = sessions[0], replaced = initial;
 
-                    int index = data.indexOf("REPLACE_UDID");
+                    int index = replaced.indexOf("REPLACE_UDID");
                     if (index != -1) {
                         if (OpenUDID_manager.isInitialized() == false)
                             break;
-                        data = data.replaceFirst("REPLACE_UDID", OpenUDID_manager.getOpenUDID());
+                        replaced = replaced.replaceFirst("REPLACE_UDID", OpenUDID_manager.getOpenUDID());
                     }
 
                     try {
                         DefaultHttpClient httpClient = new DefaultHttpClient();
-                        HttpGet method = new HttpGet(new URI(serverURL_ + "/i?" + data));
+                        HttpGet method = new HttpGet(new URI(serverURL_ + "/i?" + replaced));
                         HttpResponse response = httpClient.execute(method);
                         InputStream input = response.getEntity().getContent();
                         while (input.read() != -1)
                             ;
                         httpClient.getConnectionManager().shutdown();
 
-                        Log.d("Countly", "ok ->" + data);
+                        Log.d("Countly", "ok ->" + replaced);
 
-                        store_.removeConnection(data);
+                        store_.removeConnection(initial);
                     } catch (Exception e) {
                         Log.d("Countly", e.toString());
-                        Log.d("Countly", "error ->" + data);
+                        Log.d("Countly", "error ->" + initial);
                         break;
                     }
                 }

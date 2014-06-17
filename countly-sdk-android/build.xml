@@ -1,6 +1,6 @@
 <project default="package" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
     <!-- Project properties -->
-    <property name="version.num" value="13.10" />
+    <property name="version.num" value="13.11" />
     <property name="project" value="countly-sdk-android" />
 
     <!-- Standard jar stuff -->
@@ -16,7 +16,7 @@
     <!-- Maven stuff -->
     <property name="groupId" value="ly.count" />
     <property name="artifactId" value="sdk-android" />
-    <property name="version" value="13.10-SNAPSHOT" />
+    <property name="version" value="13.11-SNAPSHOT" />
 
     <!-- defined maven snapshots and staging repository id and url -->
     <property name="ossrh-snapshots-repository-url"
