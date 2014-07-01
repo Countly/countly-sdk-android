@@ -6,3 +6,4 @@ bin/
 .settings/
 .classpath
 .project
+local.properties
