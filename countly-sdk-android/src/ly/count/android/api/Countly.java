@@ -1,650 +1,329 @@
+/*
+Copyright (c) 2012, 2013, 2014 Countly
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
 package ly.count.android.api;
 
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import org.OpenUDID.OpenUDID_manager;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.*;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.telephony.TelephonyManager;
-import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.Display;
-import android.view.WindowManager;
 
+/**
+ * This class is the public API for the Countly SDK.
+ * Get more details <a href="https://github.com/Countly/countly-sdk-android">here</a>.
+ */
 public class Countly {
-    private static Countly sharedInstance_;
-    private Timer timer_;
-    private ConnectionQueue queue_;
-    private EventQueue eventQueue_;
-    private boolean isVisible_;
-    private double unsentSessionLength_;
-    private double lastTime_;
-    private int activityCount_;
-    private CountlyStore countlyStore_;
 
-    protected static final int SESSION_DURATION_WHEN_TIME_ADJUSTED = 15;
+    /**
+     * Current version of the Count.ly SDK as a displayable string.
+     */
+    public static final String COUNTLY_SDK_VERSION_STRING = "2.0";
+    /**
+     * Default string used in the begin session metrics if the
+     * app version cannot be found.
+     */
+    public static final String DEFAULT_APP_VERSION = "1.0";
+    /**
+     * Tag used in all logging in the Count.ly SDK.
+     */
+    public static final String TAG = "Countly";
 
-    static public Countly sharedInstance() {
-        if (sharedInstance_ == null)
-            sharedInstance_ = new Countly();
+    /**
+     * Determines how many custom events can be queued locally before
+     * an attempt is made to submit them to a Count.ly server.
+     */
+    private static final int EVENT_QUEUE_SIZE_THRESHOLD = 10;
+    /**
+     * How often onTimer() is called.
+     */
+    private static final long TIMER_DELAY_IN_SECONDS = 60;
 
-        return sharedInstance_;
+    // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
+    private static class SingletonHolder {
+        static final Countly instance = new Countly();
     }
 
-    private Countly() {
-        queue_ = new ConnectionQueue();
-        timer_ = new Timer();
-        timer_.schedule(new TimerTask() {
+    private ConnectionQueue connectionQueue_;
+    @SuppressWarnings("FieldCanBeLocal")
+    private ScheduledExecutorService timerService_;
+    private EventQueue eventQueue_;
+    private long prevSessionDurationStartTime_;
+    private int activityCount_;
+
+    /**
+     * Returns the Countly singleton.
+     */
+    public static Countly sharedInstance() {
+        return SingletonHolder.instance;
+    }
+
+    /**
+     * Constructs a Countly object.
+     * Creates a new ConnectionQueue and initializes the session timer.
+     */
+    Countly() {
+        connectionQueue_ = new ConnectionQueue();
+        timerService_ = Executors.newSingleThreadScheduledExecutor();
+        timerService_.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 onTimer();
             }
-        }, 60 * 1000, 60 * 1000);
-
-        isVisible_ = false;
-        unsentSessionLength_ = 0;
-        activityCount_ = 0;
+        }, TIMER_DELAY_IN_SECONDS, TIMER_DELAY_IN_SECONDS, TimeUnit.SECONDS);
     }
 
-    public void init(Context context, String serverURL, String appKey) {
-        OpenUDID_manager.sync(context);
-        countlyStore_ = new CountlyStore(context);
+    /**
+     * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
+     * Must be called before other SDK methods can be used.
+     * @param context application context
+     * @param serverURL URL of the Countly server to submit data to; use "https://cloud.count.ly" for Countly Cloud
+     * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management > Applications
+     * @param deviceID unique ID for the device the app is running on; if you don't have one, you can use <a href="https://github.com/vieux/OpenUDID">OpenUDID</a>.
+     * @throws java.lang.IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
+     * @throws java.lang.IllegalStateException if the Countly SDK has already been initialized
+     */
+    public synchronized void init(final Context context, final String serverURL, final String appKey, final String deviceID) {
+        if (context == null) {
+            throw new IllegalArgumentException("valid context is required");
+        }
+        if (!isValidURL(serverURL)) {
+            throw new IllegalArgumentException("valid serverURL is required");
+        }
+        if (appKey == null || appKey.length() == 0) {
+            throw new IllegalArgumentException("valid appKey is required");
+        }
+        if (deviceID == null || deviceID.length() == 0) {
+            throw new IllegalArgumentException("valid deviceID is required");
+        }
+        if (eventQueue_ != null) {
+            throw new IllegalStateException("Countly has already been initialized");
+        }
 
-        queue_.setContext(context);
-        queue_.setServerURL(serverURL);
-        queue_.setAppKey(appKey);
-        queue_.setCountlyStore(countlyStore_);
+        DeviceInfo.setUDID(deviceID);
 
-        eventQueue_ = new EventQueue(countlyStore_);
+        final CountlyStore countlyStore = new CountlyStore(context);
+
+        connectionQueue_.setContext(context);
+        connectionQueue_.setServerURL(serverURL);
+        connectionQueue_.setAppKey(appKey);
+        connectionQueue_.setCountlyStore(countlyStore);
+
+        eventQueue_ = new EventQueue(countlyStore);
     }
 
-    public void onStart() {
-        activityCount_++;
-        if (activityCount_ == 1)
+    /**
+     * Tells the Countly SDK that an Activity has started. Since Android does not have an
+     * easy way to determine when an application instance starts and stops, you must call this
+     * method from every one of your Activity's onStart methods for accurate application
+     * session tracking.
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     */
+    public synchronized void onStart() {
+        if (eventQueue_ == null) {
+            throw new IllegalStateException("init must be called before onStart");
+        }
+
+        ++activityCount_;
+        if (activityCount_ == 1) {
             onStartHelper();
+        }
     }
 
-    public void onStop() {
-        activityCount_--;
-        if (activityCount_ == 0)
+    /**
+     * Called when the first Activity is started. Sends a begin session event to the server
+     * and initializes application session tracking.
+     */
+    void onStartHelper() {
+        prevSessionDurationStartTime_ = System.nanoTime();
+        connectionQueue_.beginSession();
+    }
+
+    /**
+     * Tells the Countly SDK that an Activity has stopped. Since Android does not have an
+     * easy way to determine when an application instance starts and stops, you must call this
+     * method from every one of your Activity's onStop methods for accurate application
+     * session tracking.
+     * @throws IllegalStateException if Countly SDK has not been initialized, or if
+     *                               unbalanced calls to onStart/onStop are detected
+     */
+    public synchronized void onStop() {
+        if (eventQueue_ == null) {
+            throw new IllegalStateException("init must be called before onStop");
+        }
+        if (activityCount_ == 0) {
+            throw new IllegalStateException("must call onStart before onStop");
+        }
+
+        --activityCount_;
+        if (activityCount_ == 0) {
             onStopHelper();
-    }
-
-    public void onStartHelper() {
-        lastTime_ = System.currentTimeMillis() / 1000.0;
-
-        queue_.beginSession();
-
-        isVisible_ = true;
-    }
-
-    public void onStopHelper() {
-        if (eventQueue_.size() > 0)
-            queue_.recordEvents(eventQueue_.events());
-
-        double currTime = System.currentTimeMillis() / 1000.0;
-        unsentSessionLength_ += currTime - lastTime_;
-
-        int duration = (int) unsentSessionLength_;
-        queue_.endSession(duration);
-        unsentSessionLength_ -= duration;
-
-        isVisible_ = false;
-    }
-
-    public void recordEvent(String key) {
-        eventQueue_.recordEvent(key);
-
-        if (eventQueue_.size() >= 10)
-            queue_.recordEvents(eventQueue_.events());
-    }
-
-    public void recordEvent(String key, int count) {
-        eventQueue_.recordEvent(key, count);
-
-        if (eventQueue_.size() >= 10)
-            queue_.recordEvents(eventQueue_.events());
-    }
-
-    public void recordEvent(String key, int count, double sum) {
-        eventQueue_.recordEvent(key, count, sum);
-
-        if (eventQueue_.size() >= 10)
-            queue_.recordEvents(eventQueue_.events());
-    }
-
-    public void recordEvent(String key, Map<String, String> segmentation, int count) {
-        eventQueue_.recordEvent(key, segmentation, count);
-
-        if (eventQueue_.size() >= 10)
-            queue_.recordEvents(eventQueue_.events());
-    }
-
-    public void recordEvent(String key, Map<String, String> segmentation, int count, double sum) {
-        eventQueue_.recordEvent(key, segmentation, count, sum);
-
-        if (eventQueue_.size() >= 10)
-            queue_.recordEvents(eventQueue_.events());
-    }
-
-    private void onTimer() {
-        if (isVisible_ == false)
-            return;
-
-        double currTime = System.currentTimeMillis() / 1000.0;
-        unsentSessionLength_ += currTime - lastTime_;
-        lastTime_ = currTime;
-
-        int duration = (int) unsentSessionLength_;
-        queue_.updateSession(duration);
-        unsentSessionLength_ -= duration;
-
-        if (eventQueue_.size() > 0)
-            queue_.recordEvents(eventQueue_.events());
-    }
-}
-
-class ConnectionQueue {
-    private CountlyStore store_;
-    private Thread thread_ = null;
-    private String appKey_;
-    private Context context_;
-    private String serverURL_;
-
-    public void setAppKey(String appKey) {
-        appKey_ = appKey;
-    }
-
-    public void setContext(Context context) {
-        context_ = context;
-    }
-
-    public void setServerURL(String serverURL) {
-        serverURL_ = serverURL;
-    }
-
-    public void setCountlyStore(CountlyStore countlyStore) {
-        store_ = countlyStore;
-    }
-
-    public void beginSession() {
-        String data;
-        data = "app_key=" + appKey_;
-        data += "&" + "device_id=" + DeviceInfo.getUDID();
-        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-        data += "&" + "sdk_version=" + "2.0";
-        data += "&" + "begin_session=" + "1";
-        data += "&" + "metrics=" + DeviceInfo.getMetrics(context_);
-
-        store_.addConnection(data);
-
-        tick();
-    }
-
-    public void updateSession(int duration) {
-        String data;
-        data = "app_key=" + appKey_;
-        data += "&" + "device_id=" + DeviceInfo.getUDID();
-        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-        data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
-
-        store_.addConnection(data);
-
-        tick();
-    }
-
-    public void endSession(int duration) {
-        String data;
-        data = "app_key=" + appKey_;
-        data += "&" + "device_id=" + DeviceInfo.getUDID();
-        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-        data += "&" + "end_session=" + "1";
-        data += "&" + "session_duration=" + (duration > 0 ? duration : Countly.SESSION_DURATION_WHEN_TIME_ADJUSTED);
-
-        store_.addConnection(data);
-
-        tick();
-    }
-
-    public void recordEvents(String events) {
-        String data;
-        data = "app_key=" + appKey_;
-        data += "&" + "device_id=" + DeviceInfo.getUDID();
-        data += "&" + "timestamp=" + (long) (System.currentTimeMillis() / 1000.0);
-        data += "&" + "events=" + events;
-
-        store_.addConnection(data);
-
-        tick();
-    }
-
-    private void tick() {
-        if (thread_ != null && thread_.isAlive())
-            return;
-
-        if (store_.isEmptyConnections())
-            return;
-
-        thread_ = new Thread() {
-            @Override
-            public void run() {
-                while (true) {
-                    String[] sessions = store_.connections();
-
-                    if (sessions.length == 0)
-                        break;
-
-                    String initial = sessions[0], replaced = initial;
-
-                    int index = replaced.indexOf("REPLACE_UDID");
-                    if (index != -1) {
-                        if (OpenUDID_manager.isInitialized() == false)
-                            break;
-                        replaced = replaced.replaceFirst("REPLACE_UDID", OpenUDID_manager.getOpenUDID());
-                    }
-
-                    try {
-                        DefaultHttpClient httpClient = new DefaultHttpClient();
-                        HttpGet method = new HttpGet(new URI(serverURL_ + "/i?" + replaced));
-                        HttpResponse response = httpClient.execute(method);
-                        InputStream input = response.getEntity().getContent();
-                        while (input.read() != -1)
-                            ;
-                        httpClient.getConnectionManager().shutdown();
-
-                        Log.d("Countly", "ok ->" + replaced);
-
-                        store_.removeConnection(initial);
-                    } catch (Exception e) {
-                        Log.d("Countly", e.toString());
-                        Log.d("Countly", "error ->" + initial);
-                        break;
-                    }
-                }
-            }
-        };
-
-        thread_.start();
-    }
-}
-
-class DeviceInfo {
-    public static String getUDID() {
-        return OpenUDID_manager.isInitialized() == false ? "REPLACE_UDID" : OpenUDID_manager.getOpenUDID();
-    }
-
-    public static String getOS() {
-        return "Android";
-    }
-
-    public static String getOSVersion() {
-        return android.os.Build.VERSION.RELEASE;
-    }
-
-    public static String getDevice() {
-        return android.os.Build.MODEL;
-    }
-
-    public static String getResolution(Context context) {
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-
-        Display display = wm.getDefaultDisplay();
-
-        DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
-
-        return metrics.widthPixels + "x" + metrics.heightPixels;
-    }
-
-    public static String getDensity(Context context) {
-        int density = context.getResources().getDisplayMetrics().densityDpi;
-
-        switch (density) {
-            case DisplayMetrics.DENSITY_LOW:
-                return "LDPI";
-            case DisplayMetrics.DENSITY_MEDIUM:
-                return "MDPI";
-            case DisplayMetrics.DENSITY_TV:
-                return "TVDPI";
-            case DisplayMetrics.DENSITY_HIGH:
-                return "HDPI";
-            case DisplayMetrics.DENSITY_XHIGH:
-                return "XHDPI";
-            case DisplayMetrics.DENSITY_XXHIGH:
-                return "XXHDPI";
-            case DisplayMetrics.DENSITY_XXXHIGH:
-                return "XXXHDPI";
-            default:
-                return "";
         }
     }
 
-    public static String getCarrier(Context context) {
-        try {
-            TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-            return manager.getNetworkOperatorName();
-        } catch (NullPointerException npe) {
-            npe.printStackTrace();
-            Log.e("Countly", "No carrier found");
-        }
-        return "";
-    }
+    /**
+     * Called when final Activity is stopped. Sends an end session event to the server,
+     * also sends any unsent custom events.
+     */
+    void onStopHelper() {
+        connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate());
+        prevSessionDurationStartTime_ = 0;
 
-    public static String getLocale() {
-        Locale locale = Locale.getDefault();
-        return locale.getLanguage() + "_" + locale.getCountry();
-    }
-
-    public static String appVersion(Context context) {
-        String result = "1.0";
-        try {
-            result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-        } catch (NameNotFoundException e) {
-        }
-
-        return result;
-    }
-
-    public static String getMetrics(Context context) {
-        String result = "";
-        JSONObject json = new JSONObject();
-
-        try {
-            json.put("_device", getDevice());
-            json.put("_os", getOS());
-            json.put("_os_version", getOSVersion());
-            json.put("_carrier", getCarrier(context));
-            json.put("_resolution", getResolution(context));
-            json.put("_density", getDensity(context));
-            json.put("_locale", getLocale());
-            json.put("_app_version", appVersion(context));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        result = json.toString();
-
-        try {
-            result = java.net.URLEncoder.encode(result, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-
-        }
-
-        return result;
-    }
-}
-
-class Event {
-    public String key = null;
-    public Map<String, String> segmentation = null;
-    public int count = 0;
-    public double sum = 0;
-    public int timestamp = 0;
-
-    public boolean equals(Object o) {
-        if (o == null || !(o instanceof Event)) return false;
-
-        Event e = (Event) o;
-
-        return (key == null ? e.key == null : key.equals(e.key)) &&
-                timestamp == e.timestamp && (segmentation == null ? e.segmentation == null : segmentation.equals(e.segmentation));
-    }
-}
-
-class EventQueue {
-    private CountlyStore countlyStore_;
-
-    public EventQueue(CountlyStore countlyStore) {
-        countlyStore_ = countlyStore;
-    }
-
-    public int size() {
-        synchronized (this) {
-            return countlyStore_.events().length;
+        if (eventQueue_.size() > 0) {
+            connectionQueue_.recordEvents(eventQueue_.events());
         }
     }
 
-    public String events() {
-        String result = "";
-
-        synchronized (this) {
-            List<Event> events = countlyStore_.eventsList();
-
-            JSONArray eventArray = new JSONArray();
-            for (Event e : events) eventArray.put(CountlyStore.eventToJSON(e));
-
-            result = eventArray.toString();
-
-            countlyStore_.removeEvents(events);
-        }
-
-        try {
-            result = java.net.URLEncoder.encode(result, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-
-        }
-
-        return result;
-    }
-
-    public void recordEvent(String key) {
+    /**
+     * Records a custom event with no segmentation values, a count of one and a sum of zero.
+     * @param key name of the custom event, required, must not be the empty string
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty
+     */
+    public void recordEvent(final String key) {
         recordEvent(key, null, 1, 0);
     }
 
-    public void recordEvent(String key, int count) {
+    /**
+     * Records a custom event with no segmentation values, the specified count, and a sum of zero.
+     * @param key name of the custom event, required, must not be the empty string
+     * @param count count to associate with the event, should be more than zero
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty
+     */
+    public void recordEvent(final String key, final int count) {
         recordEvent(key, null, count, 0);
     }
 
-    public void recordEvent(String key, int count, double sum) {
+    /**
+     * Records a custom event with no segmentation values, and the specified count and sum.
+     * @param key name of the custom event, required, must not be the empty string
+     * @param count count to associate with the event, should be more than zero
+     * @param sum sum to associate with the event
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty
+     */
+    public void recordEvent(final String key, final int count, final double sum) {
         recordEvent(key, null, count, sum);
     }
 
-    public void recordEvent(String key, Map<String, String> segmentation, int count) {
+    /**
+     * Records a custom event with the specified segmentation values and count, and a sum of zero.
+     * @param key name of the custom event, required, must not be the empty string
+     * @param segmentation segmentation dictionary to associate with the event, can be null
+     * @param count count to associate with the event, should be more than zero
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty
+     */
+    public void recordEvent(final String key, final Map<String, String> segmentation, final int count) {
         recordEvent(key, segmentation, count, 0);
     }
 
-    public void recordEvent(String key, Map<String, String> segmentation, int count, double sum) {
-        synchronized (this) {
-            countlyStore_.addEvent(key, segmentation, count, sum);
+    /**
+     * Records a custom event with the specified values.
+     * @param key name of the custom event, required, must not be the empty string
+     * @param segmentation segmentation dictionary to associate with the event, can be null
+     * @param count count to associate with the event, should be more than zero
+     * @param sum sum to associate with the event
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty
+     */
+    public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
+        if (eventQueue_ == null) {
+            throw new IllegalStateException("init must be called before recordEvent");
+        }
+        if (key == null || key.length() == 0) {
+            throw new IllegalArgumentException("valid key is required");
+        }
+        // TODO: should key be trimmed of leading & trailing whitespace before validation?
+        // TODO: should count always be >=1?
+
+        eventQueue_.recordEvent(key, segmentation, count, sum);
+        sendEventsIfNeeded();
+    }
+
+    /**
+     * Submits all of the locally queued events to the server if there are more than 10 of them.
+     */
+    void sendEventsIfNeeded() {
+        if (eventQueue_.size() >= EVENT_QUEUE_SIZE_THRESHOLD) {
+            connectionQueue_.recordEvents(eventQueue_.events());
         }
     }
-}
 
-class CountlyStore {
-    private static final String TAG = "COUNTLY_STORE";
-    private static final String PREFERENCES = "COUNTLY_STORE";
-    private static final String DELIMITER = "===";
-    private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
-    private static final String EVENTS_PREFERENCE = "EVENTS";
-
-    private SharedPreferences preferences;
-
-    protected CountlyStore(Context ctx) {
-        preferences = ctx.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
-    }
-
-    public String[] connections() {
-        String array = preferences.getString(CONNECTIONS_PREFERENCE, null);
-        return array == null || "".equals(array) ? new String[0] : array.split(DELIMITER);
-    }
-
-    public String[] events() {
-        String array = preferences.getString(EVENTS_PREFERENCE, null);
-        return array == null || "".equals(array) ? new String[0] : array.split(DELIMITER);
-    }
-
-    public List<Event> eventsList() {
-        String[] array = events();
-        if (array.length == 0) return new ArrayList<Event>();
-        else {
-            List<Event> events = new ArrayList<Event>();
-            for (String s : array) {
-                try {
-                    events.add(jsonToEvent(new JSONObject(s)));
-                } catch (JSONException e) {
-                    Log.e(TAG, "Cannot parse Event json", e);
-                }
+    /**
+     * Called every 60 seconds to send a session heartbeat to the server. Does nothing if there
+     * is not an active application session.
+     */
+    synchronized void onTimer() {
+        final boolean hasActiveSession = activityCount_ > 0;
+        if (hasActiveSession) {
+            connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+            if (eventQueue_.size() > 0) {
+                connectionQueue_.recordEvents(eventQueue_.events());
             }
-
-            Collections.sort(events, new Comparator<Event>() {
-                @Override
-                public int compare(Event e1, Event e2) {
-                    return e2.timestamp - e1.timestamp;
-                }
-            });
-
-            return events;
         }
     }
 
-    public boolean isEmptyConnections() {
-        return connections().length == 0;
+    /**
+     * Calculates the unsent session duration in seconds, rounded to the nearest int.
+     */
+    int roundedSecondsSinceLastSessionDurationUpdate() {
+        final long currentTimestampInNanoseconds = System.nanoTime();
+        final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
+        prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
+        return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
     }
 
-    public boolean isEmptyEvents() {
-        return events().length == 0;
+    /**
+     * Utility method to return a current timestamp that can be used in the Count.ly API.
+     */
+    static int currentTimestamp() {
+        return ((int)(System.currentTimeMillis() / 1000l));
     }
 
-    public void addConnection(String str) {
-        List<String> connections = new ArrayList<String>(Arrays.asList(connections()));
-        connections.add(str);
-        preferences.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
-    }
-
-    public void removeConnection(String str) {
-        List<String> connections = new ArrayList<String>(Arrays.asList(connections()));
-        connections.remove(str);
-        preferences.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
-    }
-
-    public void addEvent(Event event) {
-        List<Event> events = eventsList();
-        if (!events.contains(event)) events.add(event);
-        preferences.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
-    }
-
-    public void addEvent(String key, Map<String, String> segmentation, int count, double sum) {
-        List<Event> events = eventsList();
-        Event event = null;
-        for (Event e : events) if (e.key != null && e.key.equals(key)) event = e;
-
-        if (event == null) {
-            event = new Event();
-            event.key = key;
-            event.segmentation = segmentation;
-            event.count = 0;
-            event.sum = 0;
-            event.timestamp = (int) (System.currentTimeMillis() / 1000);
-        } else {
-            removeEvent(event);
-            event.timestamp = Math.round((event.timestamp + (System.currentTimeMillis() / 1000)) / 2);
-        }
-
-        event.count += count;
-        event.sum += sum;
-
-        addEvent(event);
-    }
-
-    public void removeEvent(Event event) {
-        List<Event> events = eventsList();
-        events.remove(event);
-        preferences.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
-    }
-
-    public void removeEvents(Collection<Event> eventsToRemove) {
-        List<Event> events = eventsList();
-        for (Event e : eventsToRemove) events.remove(e);
-        preferences.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
-    }
-
-    protected static JSONObject eventToJSON(Event event) {
-        JSONObject json = new JSONObject();
-
-        try {
-            json.put("key", event.key);
-            json.put("count", event.count);
-            json.put("sum", event.sum);
-            json.put("timestamp", event.timestamp);
-
-            if (event.segmentation != null) {
-                json.put("segmentation", new JSONObject(event.segmentation));
+    /**
+     * Utility method for testing validity of a URL.
+     */
+    static boolean isValidURL(final String urlStr) {
+        boolean validURL = false;
+        if (urlStr != null && urlStr.length() > 0) {
+            try {
+                new URL(urlStr);
+                validURL = true;
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return json;
-    }
-
-    protected static Event jsonToEvent(JSONObject json) {
-        Event event = new Event();
-
-        try {
-            event.key = json.get("key").toString();
-            event.count = Integer.valueOf(json.get("count").toString());
-            event.sum = Double.valueOf(json.get("sum").toString());
-            event.timestamp = Integer.valueOf(json.get("timestamp").toString());
-
-            if (json.has("segmentation")) {
-                JSONObject segm = json.getJSONObject("segmentation");
-                HashMap<String, String> segmentation = new HashMap<String, String>();
-                Iterator nameItr = segm.keys();
-
-                while (nameItr.hasNext()) {
-                    Object obj = nameItr.next();
-                    if (obj instanceof String) {
-                        segmentation.put((String) obj, ((JSONObject) json.get("segmentation")).getString((String) obj));
-                    }
-                }
-
-                event.segmentation = segmentation;
+            catch (MalformedURLException e) {
+                validURL = false;
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
         }
-
-        return event;
+        return validURL;
     }
 
-    private static String joinEvents(Collection<Event> collection, String delimiter) {
-        List<String> strings = new ArrayList<String>();
-        for (Event e : collection) strings.add(eventToJSON(e).toString());
-        return join(strings, delimiter);
-    }
-
-    private static String join(Collection<String> collection, String delimiter) {
-        StringBuilder builder = new StringBuilder();
-
-        int i = 0;
-        for (String s : collection) {
-            builder.append(s);
-            if (++i < collection.size()) builder.append(delimiter);
-        }
-
-        return builder.toString();
-    }
-
+    // for unit testing
+    ConnectionQueue getConnectionQueue() { return connectionQueue_; }
+    void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }
+    ExecutorService getTimerService() { return timerService_; }
+    EventQueue getEventQueue() { return eventQueue_; }
+    void setEventQueue(final EventQueue eventQueue) { eventQueue_ = eventQueue; }
+    long getPrevSessionDurationStartTime() { return prevSessionDurationStartTime_; }
+    void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
+    int getActivityCount() { return activityCount_; }
 }
