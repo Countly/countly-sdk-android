@@ -17,7 +17,7 @@ On top of that, I wrote complete unit tests for the entire SDK.
 
 ##Installing Android SDK
 
-Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First step is about OpenUDID requirement and second step is integrating Countly SDK to your project:
+Installing Android SDK requires two very easy steps.
 
 ###1. Add Countly SDK to your project
 
@@ -60,6 +60,6 @@ There are also other Countly SDK repositories below:
 ##How can I help you with your efforts?
 Glad you asked. We need ideas, feedbacks and constructive comments. All your suggestions will be taken care with upmost importance. 
 
-We are on [Twitter](http://twitter.com/gocountly) and [Facebook](http://www.facebook.com/Countly) if you would like to keep up with our fast progress!
+Countly is on [Twitter](http://twitter.com/gocountly) and [Facebook](http://www.facebook.com/Countly) if you would like to keep up with their fast progress!
 
 For community support page, see [http://support.count.ly](http://support.count.ly "Countly Support").
