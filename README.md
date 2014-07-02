@@ -6,58 +6,34 @@ and mobile SDK that sends this data. Both parts are open source with different l
 
 This repository includes the SDK for Android.
 
+##Why use this fork instead of the official one?
+
+At my company we started using Countly. We noticed that on Android, some of the aggregate times displayed
+in the dashboard were negative (see bug report [here](http://support.count.ly/discussions/problems/1691-time-spent-and-avg-time-spent-overflow)),
+so I started investigating how to fix this issue. Upon perusal of the Android Countly source code, I
+identified several bugs and possibilities for data loss and/or corruption, so I forked it and fixed all
+of those issues (see this [commit](https://github.com/jboehle/countly-sdk-android/commit/93e0858fe8e3b453ad67c584f1d6a42bbf52ebb4)).
+On top of that, I wrote complete unit tests for the entire SDK.
+
 ##Installing Android SDK
 
 Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First step is about OpenUDID requirement and second step is integrating Countly SDK to your project:
 
 ###1. Add Countly SDK to your project
 
-#### Gradle users:
-Add Maven Central repository:
-<pre class="prettyprint">
-repositories {
-    mavenCentral()
-}
-</pre>
+Download [Latest JAR](https://github.com/jboehle/countly-sdk-android/releases/latest) and put it into your lib folder.
 
-Add Countly SDK dependency:
-<pre class="prettyprint">
-dependencies {
-    compile 'ly.count:sdk-android:+'
-}
-</pre>
+###2. Set up SDK
 
-
-#### Maven users:
-<pre class="prettyprint">
-&lt;dependency&gt;
-    &lt;groupId&gt;ly.count&lt;/groupId&gt;
-    &lt;artifactId&gt;sdk-android&lt;/artifactId&gt;
-    &lt;version&gt;13.10&lt;/version&gt;
-&lt;/dependency&gt;
-</pre>
-
-#### Eclipse users:
-Download [Latest JAR](https://github.com/Countly/countly-sdk-android/releases/latest) and put it into your lib folder.
-
-###2. Add this to your manifest
-
-Add OpenUDID_manager.java and OpenUDID_service.java to your project under Eclipse.
-
-<pre class="prettyprint">
-&lt;service android:name=&quot;org.openudid.OpenUDID_service&quot;&gt;
-    &lt;intent-filter&gt;
-        &lt;action android:name=&quot;org.openudid.GETUDID&quot; /&gt;
-    &lt;/intent-filter&gt;
-&lt;/service&gt;</pre>
-
-###3. Set up SDK
-
-* Call `Countly.sharedInstance().init(context, "https://YOUR_SERVER", "YOUR_APP_KEY")` in onCreate, which requires your App key and the URL of your Countly server (use `https://cloud.count.ly` for Countly Cloud).
+* Call `Countly.sharedInstance().init(context, "https://YOUR_SERVER", "YOUR_APP_KEY", "UNIQUE_DEVICE_ID")` in onCreate, which requires your App key and the URL of your Countly server (use `https://cloud.count.ly` for Countly Cloud).
 * Call `Countly.sharedInstance().onStart()` in onStart.
 * Call `Countly.sharedInstance().onStop()` in onStop.
 
 Additionally, make sure that *INTERNET* permission is set if there's none in your manifest file.
+
+If your app does not already have the concept of a unique device ID or app installation ID, you can use [OpenUDID](https://github.com/vieux/OpenUDID).
+Please don't use ANDROID_ID or one of the other unreliable unique IDs provided by Android itself.
+For more info see [this](http://android-developers.blogspot.com/2011/03/identifying-app-installations.html) and [this](http://stackoverflow.com/questions/2785485/is-there-a-unique-android-device-id).
 
 **Note:** Make sure you use App Key (found under Management -> Applications) and not API Key. Entering API Key will not work. 
 
@@ -68,12 +44,12 @@ each activity, call Countly onStart and onStop.
 
 Check Countly Server source code here: 
 
-- [Countly Server (countly-server)](https://github.com/Countly/countly-server)
+- [Countly Server (countly-server)](https://github.com/jboehle/countly-server)
 
 There are also other Countly SDK repositories below:
 
 - [Countly iOS SDK](https://github.com/Countly/countly-sdk-ios)
-- [Countly Android SDK](https://github.com/Countly/countly-sdk-android)
+- [Countly Android SDK](https://github.com/jboehle/countly-sdk-android)
 - [Countly Windows Phone SDK](https://github.com/Countly/countly-sdk-windows-phone)
 - [Countly Blackberry Webworks SDK](https://github.com/Countly/countly-sdk-blackberry-webworks)
 - [Countly Blackberry Cascades SDK](https://github.com/craigmj/countly-sdk-blackberry10-cascades) (Community supported)
