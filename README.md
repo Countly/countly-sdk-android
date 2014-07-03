@@ -9,7 +9,7 @@ This repository includes the SDK for Android.
 ## Why use this fork instead of the official one?
 
 After using Countly in a production app for a while, the aggregate session times displayed
-in the dashboard were negative (see bug report [here](http://support.count.ly/discussions/problems/1691-time-spent-and-avg-time-spent-overflow)). When investigating this issue, several bugs and possibilities for data loss and/or corruption were identified in the source code, so the project was forked and those issues (and more) fixed (see this [commit](https://github.com/jboehle/countly-sdk-android/commit/93e0858fe8e3b453ad67c584f1d6a42bbf52ebb4)).
+in the dashboard were negative (see bug report [here](http://support.count.ly/discussions/problems/1691-time-spent-and-avg-time-spent-overflow)). When investigating this issue, several bugs and possibilities for data loss and/or corruption were identified in the Android SDK source code, so the project was forked and those issues (and more) were fixed (see this [commit](https://github.com/jboehle/countly-sdk-android/commit/93e0858fe8e3b453ad67c584f1d6a42bbf52ebb4)).
 
 ## Installing Android SDK
 
