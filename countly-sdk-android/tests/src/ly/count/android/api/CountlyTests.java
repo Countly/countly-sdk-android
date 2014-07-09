@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.api;
 
+import android.content.Context;
 import android.test.AndroidTestCase;
 
 import java.util.HashMap;
@@ -41,7 +42,7 @@ public class CountlyTests extends AndroidTestCase {
         mUninitedCountly = new Countly();
 
         mCountly = new Countly();
-        mCountly.init(getContext(), "http://countlytest.coupons.com", "appkey", "1234");
+        mCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
     }
 
     @Override
@@ -51,6 +52,10 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testConstructor() {
         assertNotNull(mUninitedCountly.getConnectionQueue());
+        assertNull(mUninitedCountly.getConnectionQueue().getContext());
+        assertNull(mUninitedCountly.getConnectionQueue().getServerURL());
+        assertNull(mUninitedCountly.getConnectionQueue().getAppKey());
+        assertNull(mUninitedCountly.getConnectionQueue().getCountlyStore());
         assertNotNull(mUninitedCountly.getTimerService());
         assertNull(mUninitedCountly.getEventQueue());
         assertEquals(0, mUninitedCountly.getActivityCount());
@@ -65,7 +70,7 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testInit_nullContext() {
         try {
-            mUninitedCountly.init(null, "http://countlytest.coupons.com", "appkey", "1234");
+            mUninitedCountly.init(null, "http://test.count.ly", "appkey", "1234");
             fail("expected null context to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -101,7 +106,7 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testInit_nullAppKey() {
         try {
-            mUninitedCountly.init(getContext(), "http://countlytest.coupons.com", null, "1234");
+            mUninitedCountly.init(getContext(), "http://test.count.ly", null, "1234");
             fail("expected null app key to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -110,7 +115,7 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testInit_emptyAppKey() {
         try {
-            mUninitedCountly.init(getContext(), "http://countlytest.coupons.com", "", "1234");
+            mUninitedCountly.init(getContext(), "http://test.count.ly", "", "1234");
             fail("expected empty app key to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -119,7 +124,7 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testInit_nullDeviceID() {
         try {
-            mUninitedCountly.init(getContext(), "http://countlytest.coupons.com", "appkey", null);
+            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
             fail("expected null device ID to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -128,19 +133,79 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testInit_emptyDeviceID() {
         try {
-            mUninitedCountly.init(getContext(), "http://countlytest.coupons.com", "appkey", "");
+            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "");
             fail("expected empty device ID to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
         }
     }
 
-    public void testInit_twice() {
-        mUninitedCountly.init(getContext(), "http://countlytest.coupons.com", "appkey", "1234");
+    public void testInit_twiceWithSameParams() {
+        final String deviceID = "1234";
+        final String appKey = "appkey";
+        final String serverURL = "http://test.count.ly";
+
+        mUninitedCountly.init(getContext(), serverURL, appKey, deviceID);
+        final EventQueue expectedEventQueue = mUninitedCountly.getEventQueue();
+        final ConnectionQueue expectedConnectionQueue = mUninitedCountly.getConnectionQueue();
+        final CountlyStore expectedCountlyStore = expectedConnectionQueue.getCountlyStore();
+        assertNotNull(expectedEventQueue);
+        assertNotNull(expectedConnectionQueue);
+        assertNotNull(expectedCountlyStore);
+
+        // second call with same params should succeed, no exception thrown
+        mUninitedCountly.init(getContext(), serverURL, appKey, deviceID);
+
+        assertSame(expectedEventQueue, mUninitedCountly.getEventQueue());
+        assertSame(expectedConnectionQueue, mUninitedCountly.getConnectionQueue());
+        assertSame(expectedCountlyStore, mUninitedCountly.getConnectionQueue().getCountlyStore());
+        assertEquals(deviceID, DeviceInfo.getUDID());
+        assertSame(getContext(), mUninitedCountly.getConnectionQueue().getContext());
+        assertEquals(serverURL, mUninitedCountly.getConnectionQueue().getServerURL());
+        assertEquals(appKey, mUninitedCountly.getConnectionQueue().getAppKey());
+        assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.getEventQueue().getCountlyStore());
+    }
+
+    public void testInit_twiceWithDifferentContext() {
+        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
         try {
-            mUninitedCountly.init(getContext(), "http://countlytest.coupons.com", "appkey", "1234");
-            fail("expected calling init twice to throw IllegalStateException");
-        } catch (IllegalStateException ignored) {
+            mUninitedCountly.init(mock(Context.class), "http://test.count.ly", "appkey", "1234");
+            fail("expected IllegalStateException to be thrown when calling init a second time with different Context");
+        }
+        catch (IllegalStateException ignored) {
+            // success!
+        }
+    }
+
+    public void testInit_twiceWithDifferentServerURL() {
+        mUninitedCountly.init(getContext(), "http://test1.count.ly", "appkey", "1234");
+        try {
+            mUninitedCountly.init(getContext(), "http://test2.count.ly", "appkey", "1234");
+            fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
+        }
+        catch (IllegalStateException ignored) {
+            // success!
+        }
+    }
+
+    public void testInit_twiceWithDifferentAppKey() {
+        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey1", "1234");
+        try {
+            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey2", "1234");
+            fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
+        }
+        catch (IllegalStateException ignored) {
+            // success!
+        }
+    }
+
+    public void testInit_twiceWithDifferentDeviceID() {
+        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
+        try {
+            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "4321");
+            fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
+        }
+        catch (IllegalStateException ignored) {
             // success!
         }
     }
@@ -148,7 +213,7 @@ public class CountlyTests extends AndroidTestCase {
     public void testInit_normal() {
         final String deviceID = "1234";
         final String appKey = "appkey";
-        final String serverURL = "http://countlytest.coupons.com";
+        final String serverURL = "http://test.count.ly";
 
         mUninitedCountly.init(getContext(), serverURL, appKey, deviceID);
 
@@ -159,6 +224,48 @@ public class CountlyTests extends AndroidTestCase {
         assertNotNull(mUninitedCountly.getConnectionQueue().getCountlyStore());
         assertNotNull(mUninitedCountly.getEventQueue());
         assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.getEventQueue().getCountlyStore());
+    }
+
+    public void testHalt_notInitialized() {
+        mUninitedCountly.halt();
+        assertNotNull(mUninitedCountly.getConnectionQueue());
+        assertNull(mUninitedCountly.getConnectionQueue().getContext());
+        assertNull(mUninitedCountly.getConnectionQueue().getServerURL());
+        assertNull(mUninitedCountly.getConnectionQueue().getAppKey());
+        assertNull(mUninitedCountly.getConnectionQueue().getCountlyStore());
+        assertNotNull(mUninitedCountly.getTimerService());
+        assertNull(mUninitedCountly.getEventQueue());
+        assertEquals(0, mUninitedCountly.getActivityCount());
+        assertEquals(0, mUninitedCountly.getPrevSessionDurationStartTime());
+        assertNull(DeviceInfo.getUDID());
+    }
+
+    public void testHalt() {
+        final CountlyStore mockCountlyStore = mock(CountlyStore.class);
+        mCountly.getConnectionQueue().setCountlyStore(mockCountlyStore);
+        mCountly.onStart();
+        assertTrue(0 != mCountly.getPrevSessionDurationStartTime());
+        assertTrue(0 != mCountly.getActivityCount());
+        assertNotNull(mCountly.getEventQueue());
+        assertNotNull(mCountly.getConnectionQueue().getContext());
+        assertNotNull(mCountly.getConnectionQueue().getServerURL());
+        assertNotNull(mCountly.getConnectionQueue().getAppKey());
+        assertNotNull(mCountly.getConnectionQueue().getContext());
+        assertNotNull(DeviceInfo.getUDID());
+
+        mCountly.halt();
+
+        verify(mockCountlyStore).clear();
+        assertNotNull(mCountly.getConnectionQueue());
+        assertNull(mCountly.getConnectionQueue().getContext());
+        assertNull(mCountly.getConnectionQueue().getServerURL());
+        assertNull(mCountly.getConnectionQueue().getAppKey());
+        assertNull(mCountly.getConnectionQueue().getCountlyStore());
+        assertNotNull(mCountly.getTimerService());
+        assertNull(mCountly.getEventQueue());
+        assertEquals(0, mCountly.getActivityCount());
+        assertEquals(0, mCountly.getPrevSessionDurationStartTime());
+        assertNull(DeviceInfo.getUDID());
     }
 
     public void testOnStart_initNotCalled() {
@@ -323,6 +430,7 @@ public class CountlyTests extends AndroidTestCase {
         segmentation.put("segkey1", "segvalue1");
 
         try {
+            //noinspection ConstantConditions
             mCountly.recordEvent(eventKey, segmentation, count, sum);
             fail("expected IllegalArgumentException when recordEvent called with null key");
         } catch (IllegalArgumentException ignored) {
@@ -493,7 +601,7 @@ public class CountlyTests extends AndroidTestCase {
     }
 
     public void testIsValidURL_goodURL() {
-        assertTrue(Countly.isValidURL("http://countly.corp.coupons.com"));
+        assertTrue(Countly.isValidURL("http://test.count.ly"));
     }
 
     public void testCurrentTimestamp() {
