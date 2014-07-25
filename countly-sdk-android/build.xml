@@ -1,132 +1,92 @@
-<project default="package" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
-    <!-- Project properties -->
-    <property name="version.num" value="13.11" />
-    <property name="project" value="countly-sdk-android" />
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="libcountly" default="help">
 
-    <!-- Standard jar stuff -->
-    <property name="jarfile" value="${project}-${version.num}.jar" />
-    <property name="sdk.dir" value="/projects/android-sdk/platforms/android-18/" />
-    <!-- <property name="lib.dir" value="libs" /> -->
-    <property name="src.dir" value="src"/>
-    <property name="build.dir" value="build"/>
-    <property name="dist.dir" location="build/dist" />
-    <property name="classes.dir"  value="${build.dir}/classes"/>
-    <buildnumber file="build.num" />
+    <!-- The local.properties file is created and updated by the 'android' tool.
+         It contains the path to the SDK. It should *NOT* be checked into
+         Version Control Systems. -->
+    <property file="local.properties"/>
 
-    <!-- Maven stuff -->
-    <property name="groupId" value="ly.count" />
-    <property name="artifactId" value="sdk-android" />
-    <property name="version" value="13.11-SNAPSHOT" />
+    <!-- The ant.properties file can be created by you. It is only edited by the
+         'android' tool to add properties to it.
+         This is the place to change some Ant specific build properties.
+         Here are some properties you may want to change/update:
 
-    <!-- defined maven snapshots and staging repository id and url -->
-    <property name="ossrh-snapshots-repository-url"
-        value="https://oss.sonatype.org/content/repositories/snapshots/" />
-    <property name="ossrh-staging-repository-url"
-        value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
-    <!-- there server id in the Maven settings.xml -->
-    <property name="ossrh-server-id" value="sonatype-nexus-snapshots" />
+         source.dir
+             The name of the source directory. Default is 'src'.
+         out.dir
+             The name of the output directory. Default is 'bin'.
 
-    <!-- define artifacts' name, which follows the convention of Maven -->
-    <property name="jar" value="${dist.dir}/${artifactId}-${version}.jar" />
-    <property name="javadoc-jar" value="${dist.dir}/${artifactId}-${version}-javadoc.jar" />
-    <property name="sources-jar" value="${dist.dir}/${artifactId}-${version}-sources.jar" />
+         For other overridable properties, look at the beginning of the rules
+         files in the SDK, at tools/ant/build.xml
 
-    <!-- Set up classpath -->
-    <path id="classpath">
-        <!-- <fileset dir="${lib.dir}" includes="**/*.jar" /> -->
-        <fileset dir="${sdk.dir}" includes="**/*.jar" />
-    </path>
+         Properties related to the SDK location or the project target should
+         be updated using the 'android' tool with the 'update' action.
 
-    <!-- Compile java files into classes -->
-    <target name="compile">
-        <mkdir dir="${build.dir}" />
-        <mkdir dir="${classes.dir}" />
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" />
-    </target>
+         This file is an integral part of the build system for your
+         application and should be checked into Version Control Systems.
 
-    <!-- Package a jar from compiled class files -->
-    <target name="jar" depends="compile">
-        <delete file="${jar}" />
-        <delete file="MANIFEST.MF" />
-        <manifest file="MANIFEST.MF">
-            <attribute name="Built-By" value="${user.name}" />
-            <attribute name="Implementation-Version" value="${version.num}-b${build.number}"/> 
-        </manifest>
+         -->
+    <property file="ant.properties"/>
 
-        <jar destfile="${jar}" basedir="${build.dir}/classes" includes="**/*.class" manifest="MANIFEST.MF" />
-    </target>
+    <!-- if sdk.dir was not set from one of the property file, then
+         get it from the ANDROID_HOME env var.
+         This must be done before we load project.properties since
+         the proguard config can use sdk.dir -->
+    <property environment="env"/>
+    <condition property="sdk.dir" value="${env.ANDROID_HOME}">
+        <isset property="env.ANDROID_HOME"/>
+    </condition>
 
-    <target name="dist" depends="jar">
-        <mkdir dir="${dist.dir}" />
-        <!-- build the javadoc jar -->
-        <javadoc sourcepath="${src.dir}" destdir="${dist.dir}/javadoc" />
-        <jar jarfile="${javadoc-jar}">
-            <fileset dir="${dist.dir}/javadoc" />
-        </jar>
-        <delete dir="${dist.dir}/javadoc" />
+    <!-- The project.properties file is created and updated by the 'android'
+         tool, as well as ADT.
 
-        <!-- build the sources jar -->
-        <jar jarfile="${sources-jar}">
-            <fileset dir="${src.dir}" />
-        </jar>
-    </target>
+         This contains project specific properties such as project target, and library
+         dependencies. Lower level build properties are stored in ant.properties
+         (or in .classpath for Eclipse projects).
 
-    <!-- Clean out the build files -->
-    <target name="clean">
-        <delete dir="${build.dir}" />
-        <delete>
-            <fileset dir="." includes="${jar}"/>
-            <fileset file="MANIFEST.MF"/>
-        </delete>
-    </target>
+         This file is an integral part of the build system for your
+         application and should be checked into Version Control Systems. -->
+    <loadproperties srcFile="project.properties"/>
 
-    <!-- Compile and package a jar -->
-    <target name="package" depends="compile,jar" />
+    <!-- quick check on sdk.dir -->
+    <fail
+            message="sdk.dir is missing. Make sure to generate local.properties using 'android update project' or to inject it through the ANDROID_HOME environment variable."
+            unless="sdk.dir"
+            />
 
-    <target name="deploy" depends="dist" description="deploy snapshot version to Maven snapshot repository">
-        <artifact:mvn>
-            <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file" />
-            <arg value="-Durl=${ossrh-snapshots-repository-url}" />
-            <arg value="-DrepositoryId=${ossrh-server-id}" />
-            <arg value="-DpomFile=pom.xml" />
-            <arg value="-Dfile=${jar}" />
-            <arg value="-e" />
-        </artifact:mvn>
-    </target>
+    <!--
+        Import per project custom build rules if present at the root of the project.
+        This is the place to put custom intermediary targets such as:
+            -pre-build
+            -pre-compile
+            -post-compile (This is typically used for code obfuscation.
+                           Compiled code location: ${out.classes.absolute.dir}
+                           If this is not done in place, override ${out.dex.input.absolute.dir})
+            -post-package
+            -post-build
+            -pre-clean
+    -->
+    <import file="custom_rules.xml" optional="true"/>
 
-    <!-- before this, update project version (both build.xml and pom.xml) from SNAPSHOT to RELEASE -->
-    <target name="stage" depends="dist" description="deploy release version to Maven staging repository">
-        <!-- sign and deploy the main artifact -->
-        <artifact:mvn>
-            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
-            <arg value="-Durl=${ossrh-staging-repository-url}" />
-            <arg value="-DrepositoryId=${ossrh-server-id}" />
-            <arg value="-DpomFile=pom.xml" />
-            <arg value="-Dfile=${jar}" />
-            <arg value="-Pgpg" />
-        </artifact:mvn>
+    <!-- Import the actual build file.
 
-        <!-- sign and deploy the sources artifact -->
-        <artifact:mvn>
-            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
-            <arg value="-Durl=${ossrh-staging-repository-url}" />
-            <arg value="-DrepositoryId=${ossrh-server-id}" />
-            <arg value="-DpomFile=pom.xml" />
-            <arg value="-Dfile=${sources-jar}" />
-            <arg value="-Dclassifier=sources" />
-            <arg value="-Pgpg" />
-        </artifact:mvn>
+         To customize existing targets, there are two options:
+         - Customize only one target:
+             - copy/paste the target into this file, *before* the
+               <import> task.
+             - customize it to your needs.
+         - Customize the whole content of build.xml
+             - copy/paste the content of the rules files (minus the top node)
+               into this file, replacing the <import> task.
+             - customize to your needs.
 
-        <!-- sign and deploy the javadoc artifact -->
-        <artifact:mvn>
-            <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
-            <arg value="-Durl=${ossrh-staging-repository-url}" />
-            <arg value="-DrepositoryId=${ossrh-server-id}" />
-            <arg value="-DpomFile=pom.xml" />
-            <arg value="-Dfile=${javadoc-jar}" />
-            <arg value="-Dclassifier=javadoc" />
-            <arg value="-Pgpg" />
-        </artifact:mvn>
-    </target>
+         ***********************
+         ****** IMPORTANT ******
+         ***********************
+         In all cases you must update the value of version-tag below to read 'custom' instead of an integer,
+         in order to avoid having your file be overridden by tools such as "android update project"
+    -->
+    <!-- version-tag: 1 -->
+    <import file="${sdk.dir}/tools/ant/build.xml"/>
 
 </project>

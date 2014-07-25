@@ -3,6 +3,8 @@
 gen/
 out/
 bin/
+/countly-sdk-android/build/
 .settings/
 .classpath
 .project
+local.properties
