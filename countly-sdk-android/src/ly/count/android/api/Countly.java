@@ -26,7 +26,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import android.content.Context;
-import android.os.Build;
+
+import org.OpenUDID.OpenUDID_manager;
 
 /**
  * This class is the public API for the Countly SDK.
@@ -112,9 +113,9 @@ public class Countly {
      * @param context application context
      * @param serverURL URL of the Countly server to submit data to; use "https://cloud.count.ly" for Countly Cloud
      * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management > Applications
-     * @param deviceID unique ID for the device the app is running on;
+     * @param deviceID unique ID for the device the app is running on; note that null in deviceID means that Countly will use OpenUDID
      * @throws java.lang.IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
-     * @throws java.lang.IllegalStateException if the Countly SDK has already been initialized
+     * @throws java.lang.IllegalStateException if init has previously been called with different values during the same application instance
      */
     public synchronized void init(final Context context, final String serverURL, final String appKey, final String deviceID) {
         if (context == null) {
@@ -126,23 +127,57 @@ public class Countly {
         if (appKey == null || appKey.length() == 0) {
             throw new IllegalArgumentException("valid appKey is required");
         }
-        if (deviceID == null || deviceID.length() == 0) {
+        if (deviceID != null && deviceID.length() == 0) {
             throw new IllegalArgumentException("valid deviceID is required");
         }
-        if (eventQueue_ != null) {
-            throw new IllegalStateException("Countly has already been initialized");
+        if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(serverURL) ||
+                                    !connectionQueue_.getAppKey().equals(appKey) ||
+                                    !DeviceInfo.deviceIDEqualsNullSafe(deviceID))) {
+            throw new IllegalStateException("Countly cannot be reinitialized with different values");
         }
 
-        DeviceInfo.setUDID(deviceID);
+        // if we get here and eventQueue_ != null, init is being called again with the same values,
+        // so there is nothing to do, because we are already initialized with those values
+        if (eventQueue_ == null) {
+            if (deviceID == null && !OpenUDID_manager.isInitialized()) {
+                OpenUDID_manager.sync(context);
+            } else {
+                DeviceInfo.setDeviceID(deviceID);
+            }
 
-        final CountlyStore countlyStore = new CountlyStore(context);
+            final CountlyStore countlyStore = new CountlyStore(context);
 
+            connectionQueue_.setServerURL(serverURL);
+            connectionQueue_.setAppKey(appKey);
+            connectionQueue_.setCountlyStore(countlyStore);
+
+            eventQueue_ = new EventQueue(countlyStore);
+        }
+
+        // context is allowed to be changed on the second init call
         connectionQueue_.setContext(context);
-        connectionQueue_.setServerURL(serverURL);
-        connectionQueue_.setAppKey(appKey);
-        connectionQueue_.setCountlyStore(countlyStore);
+    }
 
-        eventQueue_ = new EventQueue(countlyStore);
+    /**
+     * Immediately disables session & event tracking and clears any stored session & event data.
+     * This API is useful if your app has a tracking opt-out switch, and you want to immediately
+     * disable tracking when a user opts out. The onStart/onStop/recordEvent methods will throw
+     * IllegalStateException after calling this until Countly is reinitialized by calling init
+     * again.
+     */
+    public synchronized void halt() {
+        eventQueue_ = null;
+        final CountlyStore countlyStore = connectionQueue_.getCountlyStore();
+        if (countlyStore != null) {
+            countlyStore.clear();
+        }
+        connectionQueue_.setContext(null);
+        connectionQueue_.setServerURL(null);
+        connectionQueue_.setAppKey(null);
+        connectionQueue_.setCountlyStore(null);
+        prevSessionDurationStartTime_ = 0;
+        activityCount_ = 0;
+        DeviceInfo.setDeviceID(null);
     }
 
     /**
@@ -271,7 +306,7 @@ public class Countly {
         if (count < 1) {
             throw new IllegalArgumentException("Countly event count should be greater than zero");
         }
-        for (String k : segmentation.keySet()) {
+        if (segmentation != null) for (String k : segmentation.keySet()) {
             if (k == null || k.length() == 0) {
                 throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
             }

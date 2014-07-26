@@ -40,19 +40,19 @@ import java.util.Locale;
  * This class provides several static methods to retrieve information about
  * the current device and operating environment.
  *
- * It is important to call setUDID early, before logging any session or custom
+ * It is important to call setDeviceID early, before logging any session or custom
  * event data.
  */
 class DeviceInfo {
     private static String deviceID_;
 
     /**
-     * Returns the device ID set by the last call to setUDID.
+     * Returns the device ID set by the last call to setDeviceID.
      * It is important to set this to a non-null value that is unique per
      * device amongst all of an app's users.
-     * @return the device ID set by the last call to setUDID, or OpenUDID no device ID has been provided at app startup
+     * @return the device ID set by the last call to setDeviceID, or OpenUDID no device ID has been provided at app startup
      */
-    static String getUDID() {
+    static String getDeviceID() {
         return deviceID_ == null ? OpenUDID_manager.getOpenUDID() : deviceID_;
     }
 
@@ -62,8 +62,17 @@ class DeviceInfo {
      * device amongst all of an app's users.
      * @param deviceID unique ID representing the device that the app is running on
      */
-    static void setUDID(final String deviceID) {
+    static void setDeviceID(final String deviceID) {
         deviceID_ = deviceID;
+    }
+
+    /**
+     * Helper method for null safe comparison of current device ID and the one supplied to Countly.init
+     * @return true if supplied device ID equal to the one registered before
+     */
+    static boolean deviceIDEqualsNullSafe(String id) {
+        String deviceId = deviceID_ == null ? OpenUDID_manager.getOpenUDID() : deviceID_;
+        return (deviceId == null && id == null) || (deviceId != null && deviceId.equals(id));
     }
 
     /**

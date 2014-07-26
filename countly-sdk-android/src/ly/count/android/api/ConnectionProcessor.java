@@ -78,7 +78,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // get first event from collection
-            final String deviceId = DeviceInfo.getUDID();
+            final String deviceId = DeviceInfo.getDeviceID();
             if (deviceId == null) {
                 // When device ID is supplied by OpenUDID, in some cases it might take
                 // time for OpenUDID service to initialize. So, just wait for it.
