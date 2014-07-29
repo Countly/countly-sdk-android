@@ -68,6 +68,12 @@ public class CountlyTests extends AndroidTestCase {
         assertSame(sharedCountly, Countly.sharedInstance());
     }
 
+    public void testInitWithNoDeviceID() {
+        mUninitedCountly = spy(mUninitedCountly);
+        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey");
+        verify(mUninitedCountly).init(getContext(), "http://test.count.ly", "appkey", null);
+    }
+
     public void testInit_nullContext() {
         try {
             mUninitedCountly.init(null, "http://test.count.ly", "appkey", "1234");
