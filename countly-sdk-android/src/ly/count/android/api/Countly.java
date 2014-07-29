@@ -103,7 +103,7 @@ public class Countly {
      * @throws java.lang.IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
      * @throws java.lang.IllegalStateException if the Countly SDK has already been initialized
      */
-    public synchronized void init(final Context context, final String serverURL, final String appKey) {
+    public void init(final Context context, final String serverURL, final String appKey) {
         init(context, serverURL, appKey, null);
     }
 
