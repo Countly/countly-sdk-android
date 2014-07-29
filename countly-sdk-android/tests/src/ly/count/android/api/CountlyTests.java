@@ -234,7 +234,6 @@ public class CountlyTests extends AndroidTestCase {
         assertNull(mUninitedCountly.getEventQueue());
         assertEquals(0, mUninitedCountly.getActivityCount());
         assertEquals(0, mUninitedCountly.getPrevSessionDurationStartTime());
-        assertNull(DeviceInfo.getDeviceID());
     }
 
     public void testHalt() {
@@ -262,7 +261,6 @@ public class CountlyTests extends AndroidTestCase {
         assertNull(mCountly.getEventQueue());
         assertEquals(0, mCountly.getActivityCount());
         assertEquals(0, mCountly.getPrevSessionDurationStartTime());
-        assertNull(DeviceInfo.getDeviceID());
     }
 
     public void testOnStart_initNotCalled() {
