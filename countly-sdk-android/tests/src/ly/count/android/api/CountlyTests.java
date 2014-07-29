@@ -123,12 +123,8 @@ public class CountlyTests extends AndroidTestCase {
     }
 
     public void testInit_nullDeviceID() {
-        try {
-            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
-            fail("expected null device ID to throw IllegalArgumentException");
-        } catch (IllegalArgumentException ignored) {
-            // success!
-        }
+        // null device ID is okay because it tells Countly to use OpenUDID
+       mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
     }
 
     public void testInit_emptyDeviceID() {
@@ -168,13 +164,8 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testInit_twiceWithDifferentContext() {
         mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
-        try {
-            mUninitedCountly.init(mock(Context.class), "http://test.count.ly", "appkey", "1234");
-            fail("expected IllegalStateException to be thrown when calling init a second time with different Context");
-        }
-        catch (IllegalStateException ignored) {
-            // success!
-        }
+        // changing context is okay since SharedPrefs are global singletons
+        mUninitedCountly.init(mock(Context.class), "http://test.count.ly", "appkey", "1234");
     }
 
     public void testInit_twiceWithDifferentServerURL() {
@@ -448,6 +439,96 @@ public class CountlyTests extends AndroidTestCase {
         try {
             mCountly.recordEvent(eventKey, segmentation, count, sum);
             fail("expected IllegalArgumentException when recordEvent called with empty key");
+        } catch (IllegalArgumentException ignored) {
+            // success
+        }
+    }
+
+    public void testRecordEvent_countIsZero() {
+        final String eventKey = "";
+        final int count = 0;
+        final double sum = 3.0d;
+        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        segmentation.put("segkey1", "segvalue1");
+
+        try {
+            mCountly.recordEvent(eventKey, segmentation, count, sum);
+            fail("expected IllegalArgumentException when recordEvent called with count=0");
+        } catch (IllegalArgumentException ignored) {
+            // success
+        }
+    }
+
+    public void testRecordEvent_countIsNegative() {
+        final String eventKey = "";
+        final int count = -1;
+        final double sum = 3.0d;
+        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        segmentation.put("segkey1", "segvalue1");
+
+        try {
+            mCountly.recordEvent(eventKey, segmentation, count, sum);
+            fail("expected IllegalArgumentException when recordEvent called with a negative count");
+        } catch (IllegalArgumentException ignored) {
+            // success
+        }
+    }
+
+    public void testRecordEvent_segmentationHasNullKey() {
+        final String eventKey = "";
+        final int count = 1;
+        final double sum = 3.0d;
+        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        segmentation.put(null, "segvalue1");
+
+        try {
+            mCountly.recordEvent(eventKey, segmentation, count, sum);
+            fail("expected IllegalArgumentException when recordEvent called with segmentation with null key");
+        } catch (IllegalArgumentException ignored) {
+            // success
+        }
+    }
+
+    public void testRecordEvent_segmentationHasEmptyKey() {
+        final String eventKey = "";
+        final int count = 1;
+        final double sum = 3.0d;
+        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        segmentation.put("", "segvalue1");
+
+        try {
+            mCountly.recordEvent(eventKey, segmentation, count, sum);
+            fail("expected IllegalArgumentException when recordEvent called with segmentation with empty key");
+        } catch (IllegalArgumentException ignored) {
+            // success
+        }
+    }
+
+    public void testRecordEvent_segmentationHasNullValue() {
+        final String eventKey = "";
+        final int count = 1;
+        final double sum = 3.0d;
+        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        segmentation.put("segkey1", null);
+
+        try {
+            mCountly.recordEvent(eventKey, segmentation, count, sum);
+            fail("expected IllegalArgumentException when recordEvent called with segmentation with null value");
+        } catch (IllegalArgumentException ignored) {
+            // success
+        }
+    }
+
+    public void testRecordEvent_segmentationHasEmptyValue() {
+        final String eventKey = "";
+        final int count = 1;
+        final double sum = 3.0d;
+        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        segmentation.put("segkey1", "");
+
+        try {
+            mCountly.recordEvent(eventKey, segmentation, count, sum);
+            fail("expected IllegalArgumentException when recordEvent called with segmentation with empty value");
         } catch (IllegalArgumentException ignored) {
             // success
         }
