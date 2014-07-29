@@ -157,7 +157,6 @@ public class CountlyStore {
      * @param count count associated with the custom event, should be more than zero
      * @param sum sum associated with the custom event, if not used, pass zero.
      *            NaN and infinity values will be quietly ignored.
-     * @throws IllegalArgumentException if key is null or empty
      */
     public synchronized void addEvent(final String key, final Map<String, String> segmentation, final int timestamp, final int count, final double sum) {
         final Event event = new Event();

@@ -294,7 +294,8 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty
+     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
+     *                                  segmentation contains null or empty keys or values
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
         if (eventQueue_ == null) {
