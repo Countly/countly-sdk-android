@@ -28,15 +28,15 @@ import java.util.concurrent.*;
 import android.content.Context;
 
 /**
- * This class is the public API for the Countly SDK.
+ * This class is the public API for the Countly Android SDK.
  * Get more details <a href="https://github.com/Countly/countly-sdk-android">here</a>.
  */
 public class Countly {
 
     /**
-     * Current version of the Count.ly SDK as a displayable string.
+     * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "2.0";
+    public static final String COUNTLY_SDK_VERSION_STRING = "14.07";
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
@@ -94,10 +94,24 @@ public class Countly {
     /**
      * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
      * Must be called before other SDK methods can be used.
+     * Device ID is supplied by OpenUDID service, see <a href="https://github.com/Countly/countly-sdk-android">Countly</a> for instructions.
      * @param context application context
      * @param serverURL URL of the Countly server to submit data to; use "https://cloud.count.ly" for Countly Cloud
      * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management > Applications
-     * @param deviceID unique ID for the device the app is running on; if you don't have one, you can use <a href="https://github.com/vieux/OpenUDID">OpenUDID</a>.
+     * @throws java.lang.IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
+     * @throws java.lang.IllegalStateException if the Countly SDK has already been initialized
+     */
+    public void init(final Context context, final String serverURL, final String appKey) {
+        init(context, serverURL, appKey, null);
+    }
+
+    /**
+     * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
+     * Must be called before other SDK methods can be used.
+     * @param context application context
+     * @param serverURL URL of the Countly server to submit data to; use "https://cloud.count.ly" for Countly Cloud
+     * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management > Applications
+     * @param deviceID unique ID for the device the app is running on; note that null in deviceID means that Countly will use OpenUDID
      * @throws java.lang.IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
      * @throws java.lang.IllegalStateException if init has previously been called with different values during the same application instance
      */
@@ -111,30 +125,38 @@ public class Countly {
         if (appKey == null || appKey.length() == 0) {
             throw new IllegalArgumentException("valid appKey is required");
         }
-        if (deviceID == null || deviceID.length() == 0) {
+        if (deviceID != null && deviceID.length() == 0) {
             throw new IllegalArgumentException("valid deviceID is required");
         }
-        if (eventQueue_ != null && (connectionQueue_.getContext() != context ||
-                                    !connectionQueue_.getServerURL().equals(serverURL) ||
+        if (deviceID == null && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
+            throw new IllegalArgumentException("valid deviceID is required because OpenUDID is not available");
+        }
+        if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(serverURL) ||
                                     !connectionQueue_.getAppKey().equals(appKey) ||
-                                    !DeviceInfo.getUDID().equals(deviceID))) {
+                                    !DeviceInfo.deviceIDEqualsNullSafe(deviceID))) {
             throw new IllegalStateException("Countly cannot be reinitialized with different values");
         }
 
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
         if (eventQueue_ == null) {
-            DeviceInfo.setUDID(deviceID);
+            if (deviceID == null && !OpenUDIDAdapter.isInitialized()) {
+                OpenUDIDAdapter.sync(context);
+            } else {
+                DeviceInfo.setDeviceID(deviceID);
+            }
 
             final CountlyStore countlyStore = new CountlyStore(context);
 
-            connectionQueue_.setContext(context);
             connectionQueue_.setServerURL(serverURL);
             connectionQueue_.setAppKey(appKey);
             connectionQueue_.setCountlyStore(countlyStore);
 
             eventQueue_ = new EventQueue(countlyStore);
         }
+
+        // context is allowed to be changed on the second init call
+        connectionQueue_.setContext(context);
     }
 
     /**
@@ -156,7 +178,7 @@ public class Countly {
         connectionQueue_.setCountlyStore(null);
         prevSessionDurationStartTime_ = 0;
         activityCount_ = 0;
-        DeviceInfo.setUDID(null);
+        DeviceInfo.setDeviceID(null);
     }
 
     /**
@@ -273,17 +295,29 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty
+     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
+     *                                  segmentation contains null or empty keys or values
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
         if (eventQueue_ == null) {
-            throw new IllegalStateException("init must be called before recordEvent");
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
         if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("valid key is required");
+            throw new IllegalArgumentException("Valid Countly event key is required");
         }
-        // TODO: should key be trimmed of leading & trailing whitespace before validation?
-        // TODO: should count always be >=1?
+        if (count < 1) {
+            throw new IllegalArgumentException("Countly event count should be greater than zero");
+        }
+        if (segmentation != null) {
+            for (String k : segmentation.keySet()) {
+                if (k == null || k.length() == 0) {
+                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                }
+                if (segmentation.get(k) == null || segmentation.get(k).length() == 0) {
+                    throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
+                }
+            }
+        }
 
         eventQueue_.recordEvent(key, segmentation, count, sum);
         sendEventsIfNeeded();

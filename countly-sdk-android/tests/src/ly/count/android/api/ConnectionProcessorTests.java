@@ -40,6 +40,7 @@ public class ConnectionProcessorTests extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        DeviceInfo.setDeviceID("1234");
         mockStore = mock(CountlyStore.class);
         connectionProcessor = new ConnectionProcessor("http://server", mockStore);
     }
@@ -120,10 +121,10 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         connectionProcessor.run();
         verify(mockStore, times(2)).connections();
-        verify(connectionProcessor).urlConnectionForEventData(eventData);
+        verify(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockURLConnection).getResponseCode();
@@ -141,10 +142,10 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(300);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         connectionProcessor.run();
         verify(mockStore).connections();
-        verify(connectionProcessor).urlConnectionForEventData(eventData);
+        verify(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockURLConnection).getResponseCode();
@@ -162,10 +163,10 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final TestInputStream testInputStream = new TestInputStream();
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         connectionProcessor.run();
         verify(mockStore).connections();
-        verify(connectionProcessor).urlConnectionForEventData(eventData);
+        verify(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockURLConnection).getResponseCode();
@@ -183,10 +184,10 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Failed");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         connectionProcessor.run();
         verify(mockStore).connections();
-        verify(connectionProcessor).urlConnectionForEventData(eventData);
+        verify(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         assertTrue(testInputStream.fullyRead());
@@ -204,10 +205,10 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final CountlyResponseStream testInputStream = new CountlyResponseStream("SuCcEsS");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         connectionProcessor.run();
         verify(mockStore, times(2)).connections();
-        verify(connectionProcessor).urlConnectionForEventData(eventData);
+        verify(connectionProcessor).urlConnectionForEventData(eventData + "&device_id=" + DeviceInfo.getDeviceID());
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockURLConnection).getResponseCode();
@@ -226,13 +227,13 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final CountlyResponseStream testInputStream1 = new CountlyResponseStream("Success");
         final CountlyResponseStream testInputStream2 = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream1, testInputStream2);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData1);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData2);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData1 + "&device_id=" + DeviceInfo.getDeviceID());
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData2 + "&device_id=" + DeviceInfo.getDeviceID());
         when(mockURLConnection.getResponseCode()).thenReturn(200, 200);
         connectionProcessor.run();
         verify(mockStore, times(3)).connections();
-        verify(connectionProcessor).urlConnectionForEventData(eventData1);
-        verify(connectionProcessor).urlConnectionForEventData(eventData2);
+        verify(connectionProcessor).urlConnectionForEventData(eventData1 + "&device_id=" + DeviceInfo.getDeviceID());
+        verify(connectionProcessor).urlConnectionForEventData(eventData2 + "&device_id=" + DeviceInfo.getDeviceID());
         verify(mockURLConnection, times(2)).connect();
         verify(mockURLConnection, times(2)).getInputStream();
         verify(mockURLConnection, times(2)).getResponseCode();
@@ -268,16 +269,15 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
         final TestInputStream2 testInputStream = new TestInputStream2();
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData1);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForEventData(eventData1 + "&device_id=" + DeviceInfo.getDeviceID());
         connectionProcessor.run();
         verify(mockStore).connections();
-        verify(connectionProcessor).urlConnectionForEventData(eventData1);
-        verify(connectionProcessor, times(0)).urlConnectionForEventData(eventData2);
+        verify(connectionProcessor).urlConnectionForEventData(eventData1 + "&device_id=" + DeviceInfo.getDeviceID());
+        verify(connectionProcessor, times(0)).urlConnectionForEventData(eventData2 + "&device_id=" + DeviceInfo.getDeviceID());
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockStore, times(0)).removeConnection(anyString());
         assertTrue(testInputStream.closed);
         verify(mockURLConnection).disconnect();
     }
-
 }

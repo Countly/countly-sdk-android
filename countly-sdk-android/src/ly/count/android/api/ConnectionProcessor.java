@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.api;
 
+import android.os.Build;
 import android.util.Log;
 import org.json.JSONObject;
 
@@ -48,6 +49,11 @@ public class ConnectionProcessor implements Runnable {
     ConnectionProcessor(final String serverURL, final CountlyStore store) {
         serverURL_ = serverURL;
         store_ = store;
+
+        // HTTP connection reuse which was buggy pre-froyo
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
+            System.setProperty("http.keepAlive", "false");
+        }
     }
 
     URLConnection urlConnectionForEventData(final String eventData) throws IOException {
@@ -72,7 +78,13 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // get first event from collection
-            final String eventData = storedEvents[0];
+            final String deviceId = DeviceInfo.getDeviceID();
+            if (deviceId == null) {
+                // When device ID is supplied by OpenUDID, in some cases it might take
+                // time for OpenUDID service to initialize. So, just wait for it.
+                break;
+            }
+            final String eventData = storedEvents[0] + "&device_id=" + deviceId;
 
             URLConnection conn = null;
             BufferedInputStream responseStream = null;
@@ -114,7 +126,7 @@ public class ConnectionProcessor implements Runnable {
 
                     // successfully submitted event data to Count.ly server, so remove
                     // this one from the stored events collection
-                    store_.removeConnection(eventData);
+                    store_.removeConnection(storedEvents[0]);
                 }
                 else {
                     // warning was logged above, stop processing, let next tick take care of retrying

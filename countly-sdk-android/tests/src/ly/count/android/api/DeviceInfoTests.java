@@ -42,8 +42,8 @@ public class DeviceInfoTests extends AndroidTestCase {
 
     public void testUDID() {
         final String deviceID = "1234";
-        DeviceInfo.setUDID(deviceID);
-        assertEquals(deviceID, DeviceInfo.getUDID());
+        DeviceInfo.setDeviceID(deviceID);
+        assertEquals(deviceID, DeviceInfo.getDeviceID());
     }
 
     public void testGetOS() {

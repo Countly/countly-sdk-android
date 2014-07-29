@@ -90,16 +90,17 @@ public class CountlyStore {
                 if (event != null) {
                     events.add(event);
                 }
-            } catch (JSONException e) {
-                Log.e(Countly.TAG, "Cannot parse Event json", e);
-                // TODO: if we can't parse the JSON, shouldn't this event be removed from the shared prefs?
+            } catch (JSONException ignored) {
+                // should not happen since JSONObject is being constructed from previously stringified JSONObject
+                // events -> json objects -> json strings -> storage -> json strings -> here
             }
         }
         // order the events from least to most recent
         Collections.sort(events, new Comparator<Event>() {
             @Override
             public int compare(final Event e1, final Event e2) {
-                return e1.timestamp - e2.timestamp;
+                // returns Long.signum because int overflows for difference bigger than a month or so
+                return Long.signum(e1.timestamp - e2.timestamp);
             }
         });
         return events;
@@ -156,13 +157,8 @@ public class CountlyStore {
      * @param count count associated with the custom event, should be more than zero
      * @param sum sum associated with the custom event, if not used, pass zero.
      *            NaN and infinity values will be quietly ignored.
-     * @throws IllegalArgumentException if key is null or empty
      */
     public synchronized void addEvent(final String key, final Map<String, String> segmentation, final int timestamp, final int count, final double sum) {
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("valid key required");
-        }
-
         final Event event = new Event();
         event.key = key;
         event.segmentation = segmentation;

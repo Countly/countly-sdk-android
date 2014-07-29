@@ -45,6 +45,7 @@ public class ConnectionQueue {
     private String serverURL_;
     private Future<?> connectionProcessorFuture_;
 
+    // Getters are for unit testing
     String getAppKey() {
         return appKey_;
     }
@@ -103,7 +104,6 @@ public class ConnectionQueue {
     void beginSession() {
         checkInternalState();
         final String data = "app_key=" + appKey_
-                          + "&device_id=" + DeviceInfo.getUDID()
                           + "&timestamp=" + Countly.currentTimestamp()
                           + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                           + "&begin_session=1"
@@ -124,7 +124,6 @@ public class ConnectionQueue {
         checkInternalState();
         if (duration > 0) {
             final String data = "app_key=" + appKey_
-                              + "&device_id=" + DeviceInfo.getUDID()
                               + "&timestamp=" + Countly.currentTimestamp()
                               + "&session_duration=" + duration;
 
@@ -143,7 +142,6 @@ public class ConnectionQueue {
     void endSession(final int duration) {
         checkInternalState();
         String data = "app_key=" + appKey_
-                    + "&device_id=" + DeviceInfo.getUDID()
                     + "&timestamp=" + Countly.currentTimestamp()
                     + "&end_session=1";
         if (duration > 0) {
@@ -163,7 +161,6 @@ public class ConnectionQueue {
     void recordEvents(final String events) {
         checkInternalState();
         final String data = "app_key=" + appKey_
-                          + "&device_id=" + DeviceInfo.getUDID()
                           + "&timestamp=" + Countly.currentTimestamp()
                           + "&events=" + events;
 
