@@ -29,7 +29,6 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
-import org.OpenUDID.OpenUDID_manager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -53,7 +52,7 @@ class DeviceInfo {
      * @return the device ID set by the last call to setDeviceID, or OpenUDID no device ID has been provided at app startup
      */
     static String getDeviceID() {
-        return deviceID_ == null ? OpenUDID_manager.getOpenUDID() : deviceID_;
+        return deviceID_ == null ? OpenUDIDAdapter.getOpenUDID() : deviceID_;
     }
 
     /**
@@ -71,7 +70,7 @@ class DeviceInfo {
      * @return true if supplied device ID equal to the one registered before
      */
     static boolean deviceIDEqualsNullSafe(final String id) {
-        final String deviceId = deviceID_ == null ? OpenUDID_manager.getOpenUDID() : deviceID_;
+        final String deviceId = deviceID_ == null ? OpenUDIDAdapter.getOpenUDID() : deviceID_;
         return (deviceId == null && id == null) || (deviceId != null && deviceId.equals(id));
     }
 

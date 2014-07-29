@@ -27,8 +27,6 @@ import java.util.concurrent.*;
 
 import android.content.Context;
 
-import org.OpenUDID.OpenUDID_manager;
-
 /**
  * This class is the public API for the Countly SDK.
  * Get more details <a href="https://github.com/Countly/countly-sdk-android">here</a>.
@@ -130,6 +128,9 @@ public class Countly {
         if (deviceID != null && deviceID.length() == 0) {
             throw new IllegalArgumentException("valid deviceID is required");
         }
+        if (deviceID == null && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
+            throw new IllegalArgumentException("valid deviceID is required because OpenUDID is not available");
+        }
         if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(serverURL) ||
                                     !connectionQueue_.getAppKey().equals(appKey) ||
                                     !DeviceInfo.deviceIDEqualsNullSafe(deviceID))) {
@@ -139,8 +140,8 @@ public class Countly {
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
         if (eventQueue_ == null) {
-            if (deviceID == null && !OpenUDID_manager.isInitialized()) {
-                OpenUDID_manager.sync(context);
+            if (deviceID == null && !OpenUDIDAdapter.isInitialized()) {
+                OpenUDIDAdapter.sync(context);
             } else {
                 DeviceInfo.setDeviceID(deviceID);
             }
