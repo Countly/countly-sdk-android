@@ -306,12 +306,14 @@ public class Countly {
         if (count < 1) {
             throw new IllegalArgumentException("Countly event count should be greater than zero");
         }
-        if (segmentation != null) for (String k : segmentation.keySet()) {
-            if (k == null || k.length() == 0) {
-                throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-            }
-            if (segmentation.get(k) == null || segmentation.get(k).length() == 0) {
-                throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
+        if (segmentation != null) {
+            for (String k : segmentation.keySet()) {
+                if (k == null || k.length() == 0) {
+                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                }
+                if (segmentation.get(k) == null || segmentation.get(k).length() == 0) {
+                    throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
+                }
             }
         }
 

@@ -70,8 +70,8 @@ class DeviceInfo {
      * Helper method for null safe comparison of current device ID and the one supplied to Countly.init
      * @return true if supplied device ID equal to the one registered before
      */
-    static boolean deviceIDEqualsNullSafe(String id) {
-        String deviceId = deviceID_ == null ? OpenUDID_manager.getOpenUDID() : deviceID_;
+    static boolean deviceIDEqualsNullSafe(final String id) {
+        final String deviceId = deviceID_ == null ? OpenUDID_manager.getOpenUDID() : deviceID_;
         return (deviceId == null && id == null) || (deviceId != null && deviceId.equals(id));
     }
 
