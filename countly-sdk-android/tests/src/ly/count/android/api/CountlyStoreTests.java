@@ -273,24 +273,6 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertTrue(Arrays.equals(new String[]{"blah2", "blah1"}, store.connections()));
     }
 
-    public void testAddEvent_nullKey() {
-        try {
-            store.addEvent(null, null, Countly.currentTimestamp(), 1, 0.0d);
-            fail("Expected IllegalArgumentException when addEvent called with null key");
-        } catch (IllegalArgumentException ignored) {
-            // success!
-        }
-    }
-
-    public void testAddEvent_emptyKey() {
-        try {
-            store.addEvent("", null, Countly.currentTimestamp(), 1, 0.0d);
-            fail("Expected IllegalArgumentException when addEvent called with empty key");
-        } catch (IllegalArgumentException ignored) {
-            // success!
-        }
-    }
-
     public void testAddEvent() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
