@@ -28,15 +28,15 @@ import java.util.concurrent.*;
 import android.content.Context;
 
 /**
- * This class is the public API for the Countly SDK.
+ * This class is the public API for the Countly Android SDK.
  * Get more details <a href="https://github.com/Countly/countly-sdk-android">here</a>.
  */
 public class Countly {
 
     /**
-     * Current version of the Count.ly SDK as a displayable string.
+     * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "2.0";
+    public static final String COUNTLY_SDK_VERSION_STRING = "14.07";
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
