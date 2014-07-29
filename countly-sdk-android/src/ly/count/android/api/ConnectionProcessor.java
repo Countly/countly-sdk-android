@@ -126,7 +126,7 @@ public class ConnectionProcessor implements Runnable {
 
                     // successfully submitted event data to Count.ly server, so remove
                     // this one from the stored events collection
-                    store_.removeConnection(eventData);
+                    store_.removeConnection(storedEvents[0]);
                 }
                 else {
                     // warning was logged above, stop processing, let next tick take care of retrying
