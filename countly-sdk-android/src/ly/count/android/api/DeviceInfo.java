@@ -102,11 +102,17 @@ class DeviceInfo {
      * @return a string in the format "WxH"
      */
     static String getResolution(final Context context) {
-        final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        final Display display = wm.getDefaultDisplay();
-        final DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
-        return metrics.widthPixels + "x" + metrics.heightPixels;
+        String resolution = "";
+        try {
+            final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            final Display display = wm.getDefaultDisplay();
+            final DisplayMetrics metrics = new DisplayMetrics();
+            display.getMetrics(metrics);
+            resolution = metrics.widthPixels + "x" + metrics.heightPixels;
+        } catch (Throwable t) {
+            Log.w(Countly.TAG, "Device resolution cannot be determined");
+        }
+        return resolution;
     }
 
     /**
@@ -200,20 +206,15 @@ class DeviceInfo {
     static String getMetrics(final Context context) {
         final JSONObject json = new JSONObject();
 
-        try {
-            json.put("_device", getDevice());
-            json.put("_os", getOS());
-            json.put("_os_version", getOSVersion());
-            json.put("_carrier", getCarrier(context));
-            json.put("_resolution", getResolution(context));
-            json.put("_density", getDensity(context));
-            json.put("_locale", getLocale());
-            json.put("_app_version", getAppVersion(context));
-        }
-        catch (JSONException ignored) {
-            // shouldn't ever happen when putting String objects into a JSONObject,
-            // it can only happen when putting NaN or INFINITE doubles or floats into it
-        }
+        fillJSONIfValuesNotEmpty(json,
+                "_device", getDevice(),
+                "_os", getOS(),
+                "_os_version", getOSVersion(),
+                "_carrier", getCarrier(context),
+                "_resolution", getResolution(context),
+                "_density", getDensity(context),
+                "_locale", getLocale(),
+                "_app_version", getAppVersion(context));
 
         String result = json.toString();
 
@@ -224,5 +225,27 @@ class DeviceInfo {
         }
 
         return result;
+    }
+
+    /**
+     * Utility method to fill JSONObject with supplied objects for supplied keys.
+     * Fills json only with not-null and not-empty key/value pairs.
+     * @param json JSONObject to fill
+     * @param objects varargs of this kind: key1, value1, key2, value2, ...
+     * @throws JSONException shouldn't ever happen
+     */
+    private static void fillJSONIfValuesNotEmpty(JSONObject json, String ... objects) {
+        try {
+            if (objects.length > 0 && objects.length % 2 == 0) {
+                for (int i = 0; i < objects.length; i += 2) {
+                    String key = objects[i],
+                           value = objects[i + 1];
+                    if (value != null && value.length() > 0) json.put(key, value);
+                }
+            }
+        } catch (JSONException ignored) {
+            // shouldn't ever happen when putting String objects into a JSONObject,
+            // it can only happen when putting NaN or INFINITE doubles or floats into it
+        }
     }
 }
