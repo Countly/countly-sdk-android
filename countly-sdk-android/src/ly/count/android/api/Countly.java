@@ -68,6 +68,7 @@ public class Countly {
     private EventQueue eventQueue_;
     private long prevSessionDurationStartTime_;
     private int activityCount_;
+    private boolean disableUpdateSessionRequests_;
 
     /**
      * Returns the Countly singleton.
@@ -324,6 +325,17 @@ public class Countly {
     }
 
     /**
+     * Disable periodic session time updates.
+     * By default, Countly will send a request to the server each 30 seconds with a small update
+     * containing session duration time. This method allows you to disable such behaviour.
+     * Note that event updates will still be sent up to 30 seconds after event recording.
+     * @param disable session time updates
+     */
+    public synchronized void setDisableUpdateSessionRequests(boolean disable) {
+        disableUpdateSessionRequests_ = disable;
+    }
+
+    /**
      * Submits all of the locally queued events to the server if there are more than 10 of them.
      */
     void sendEventsIfNeeded() {
@@ -339,7 +351,9 @@ public class Countly {
     synchronized void onTimer() {
         final boolean hasActiveSession = activityCount_ > 0;
         if (hasActiveSession) {
-            connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+            if (!disableUpdateSessionRequests_) {
+                connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+            }
             if (eventQueue_.size() > 0) {
                 connectionQueue_.recordEvents(eventQueue_.events());
             }
