@@ -99,8 +99,7 @@ public class CountlyStore {
         Collections.sort(events, new Comparator<Event>() {
             @Override
             public int compare(final Event e1, final Event e2) {
-                // returns Long.signum because int overflows for difference bigger than a month or so
-                return Long.signum(e1.timestamp - e2.timestamp);
+                return e1.timestamp - e2.timestamp;
             }
         });
         return events;
