@@ -99,9 +99,12 @@ class DeviceInfo {
      * Returns the non-scaled pixel resolution of the current default display being used by the
      * WindowManager in the specified context.
      * @param context context to use to retrieve the current WindowManager
-     * @return a string in the format "WxH"
+     * @return a string in the format "WxH", or the empty string "" if resolution cannot be determined
      */
     static String getResolution(final Context context) {
+        // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
+        // were returning null, even though the documentation doesn't say they should do so; so now
+        // we catch Throwable and return empty string if that happens
         String resolution = "";
         try {
             final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
@@ -109,7 +112,8 @@ class DeviceInfo {
             final DisplayMetrics metrics = new DisplayMetrics();
             display.getMetrics(metrics);
             resolution = metrics.widthPixels + "x" + metrics.heightPixels;
-        } catch (Throwable t) {
+        }
+        catch (Throwable t) {
             Log.w(Countly.TAG, "Device resolution cannot be determined");
         }
         return resolution;
@@ -229,18 +233,19 @@ class DeviceInfo {
 
     /**
      * Utility method to fill JSONObject with supplied objects for supplied keys.
-     * Fills json only with not-null and not-empty key/value pairs.
+     * Fills json only with non-null and non-empty key/value pairs.
      * @param json JSONObject to fill
      * @param objects varargs of this kind: key1, value1, key2, value2, ...
-     * @throws JSONException shouldn't ever happen
      */
-    private static void fillJSONIfValuesNotEmpty(JSONObject json, String ... objects) {
+    private static void fillJSONIfValuesNotEmpty(final JSONObject json, final String ... objects) {
         try {
             if (objects.length > 0 && objects.length % 2 == 0) {
                 for (int i = 0; i < objects.length; i += 2) {
-                    String key = objects[i],
-                           value = objects[i + 1];
-                    if (value != null && value.length() > 0) json.put(key, value);
+                    final String key = objects[i];
+                    final String value = objects[i + 1];
+                    if (value != null && value.length() > 0) {
+                        json.put(key, value);
+                    }
                 }
             }
         } catch (JSONException ignored) {
