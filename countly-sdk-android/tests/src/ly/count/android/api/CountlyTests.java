@@ -60,6 +60,7 @@ public class CountlyTests extends AndroidTestCase {
         assertNull(mUninitedCountly.getEventQueue());
         assertEquals(0, mUninitedCountly.getActivityCount());
         assertEquals(0, mUninitedCountly.getPrevSessionDurationStartTime());
+        assertFalse(mUninitedCountly.getDisableUpdateSessionRequests());
     }
 
     public void testSharedInstance() {
@@ -660,6 +661,40 @@ public class CountlyTests extends AndroidTestCase {
         verify(mockConnectionQueue).recordEvents(eventData);
     }
 
+    public void testOnTimer_activeSession_emptyEventQueue_sessionTimeUpdatesDisabled() {
+        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
+        mCountly.setConnectionQueue(mockConnectionQueue);
+        mCountly.setDisableUpdateSessionRequests(true);
+
+        final EventQueue mockEventQueue = mock(EventQueue.class);
+        when(mockEventQueue.size()).thenReturn(0);
+        mCountly.setEventQueue(mockEventQueue);
+
+        mCountly.onStart();
+        mCountly.onTimer();
+
+        verify(mockConnectionQueue, times(0)).updateSession(anyInt());
+        verify(mockConnectionQueue, times(0)).recordEvents(anyString());
+    }
+
+    public void testOnTimer_activeSession_nonEmptyEventQueue_sessionTimeUpdatesDisabled() {
+        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
+        mCountly.setConnectionQueue(mockConnectionQueue);
+        mCountly.setDisableUpdateSessionRequests(true);
+
+        final EventQueue mockEventQueue = mock(EventQueue.class);
+        when(mockEventQueue.size()).thenReturn(1);
+        final String eventData = "blahblahblah";
+        when(mockEventQueue.events()).thenReturn(eventData);
+        mCountly.setEventQueue(mockEventQueue);
+
+        mCountly.onStart();
+        mCountly.onTimer();
+
+        verify(mockConnectionQueue, times(0)).updateSession(anyInt());
+        verify(mockConnectionQueue).recordEvents(eventData);
+    }
+
     public void testRoundedSecondsSinceLastSessionDurationUpdate() {
         long prevSessionDurationStartTime = System.nanoTime() - 1000000000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
@@ -693,5 +728,13 @@ public class CountlyTests extends AndroidTestCase {
         final int testTimestamp = (int) (System.currentTimeMillis() / 1000l);
         final int actualTimestamp = Countly.currentTimestamp();
         assertTrue(((testTimestamp - 1) <= actualTimestamp) && ((testTimestamp + 1) >= actualTimestamp));
+    }
+
+    public void testSetDisableUpdateSessionRequests() {
+        assertFalse(mCountly.getDisableUpdateSessionRequests());
+        mCountly.setDisableUpdateSessionRequests(true);
+        assertTrue(mCountly.getDisableUpdateSessionRequests());
+        mCountly.setDisableUpdateSessionRequests(false);
+        assertFalse(mCountly.getDisableUpdateSessionRequests());
     }
 }
