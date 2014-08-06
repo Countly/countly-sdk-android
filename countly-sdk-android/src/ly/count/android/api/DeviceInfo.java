@@ -237,7 +237,7 @@ class DeviceInfo {
      * @param json JSONObject to fill
      * @param objects varargs of this kind: key1, value1, key2, value2, ...
      */
-    private static void fillJSONIfValuesNotEmpty(final JSONObject json, final String ... objects) {
+    static void fillJSONIfValuesNotEmpty(final JSONObject json, final String ... objects) {
         try {
             if (objects.length > 0 && objects.length % 2 == 0) {
                 for (int i = 0; i < objects.length; i += 2) {
