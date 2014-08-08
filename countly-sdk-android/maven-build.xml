@@ -5,7 +5,7 @@
 
     <!-- Standard jar stuff -->
     <property name="jarfile" value="${project}-${version.num}.jar" />
-    <property name="sdk.dir" value="/projects/android-sdk/platforms/android-18/" />
+    <property name="sdk.dir" value="/projects/android-sdk/platforms/android-19/" />
     <!-- <property name="lib.dir" value="libs" /> -->
     <property name="src.dir" value="src"/>
     <property name="build.dir" value="build"/>
