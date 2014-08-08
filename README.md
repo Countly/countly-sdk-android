@@ -1,4 +1,4 @@
-## What's Countly?
+##What's Countly?
 [Countly](http://count.ly) is an innovative, real-time, open source mobile analytics application. 
 It collects data from mobile devices, and visualizes this information to analyze mobile application 
 usage and end-user behavior. There are two parts of Countly: the server that collects and analyzes data, 
@@ -6,46 +6,71 @@ and mobile SDK that sends this data. Both parts are open source with different l
 
 This repository includes the SDK for Android.
 
-## Why use this fork instead of the official one?
+##Installing Android SDK
 
-After using Countly in a production app for a while, the aggregate session times displayed
-in the dashboard were negative (see bug report [here](http://support.count.ly/discussions/problems/1691-time-spent-and-avg-time-spent-overflow)). When investigating this issue, several bugs and possibilities for data loss and/or corruption were identified in the Android SDK source code, so the project was forked and those issues (and more) were fixed (see this [commit](https://github.com/jboehle/countly-sdk-android/commit/93e0858fe8e3b453ad67c584f1d6a42bbf52ebb4)).
+Installing Android SDK requires two very easy steps. Countly Android SDK uses OpenUDID (which comes ready with the zip file). First step is about OpenUDID requirement and second step is integrating Countly SDK to your project:
 
-## Installing Android SDK
+###1. Add Countly SDK to your project
 
-Installing Android SDK requires two very easy steps.
+#### Gradle users:
+Add Maven Central repository:
+<pre class="prettyprint">
+repositories {
+    mavenCentral()
+}
+</pre>
 
-### 1. Add Countly SDK to your project
+Add Countly SDK dependency:
+<pre class="prettyprint">
+dependencies {
+    compile 'ly.count:sdk-android:+'
+}
+</pre>
 
-Download [Latest JAR](https://github.com/jboehle/countly-sdk-android/releases/latest) and put it into your lib folder.
 
-### 2. Set up SDK
+#### Maven users:
+<pre class="prettyprint">
+&lt;dependency&gt;
+    &lt;groupId&gt;ly.count&lt;/groupId&gt;
+    &lt;artifactId&gt;sdk-android&lt;/artifactId&gt;
+    &lt;version&gt;14.07&lt;/version&gt;
+&lt;/dependency&gt;
+</pre>
 
-* Call `Countly.sharedInstance().init(context, "https://YOUR_SERVER", "YOUR_APP_KEY", "UNIQUE_DEVICE_ID")` in onCreate, which requires your App key and the URL of your Countly server (use `https://cloud.count.ly` for Countly Cloud).
+#### Eclipse users:
+Download [Latest JAR](https://github.com/Countly/countly-sdk-android/releases/latest) and put it into your lib folder.
+
+###2. Set up SDK
+
+* Call `Countly.sharedInstance().init(this, "https://YOUR_SERVER", "YOUR_APP_KEY", "OPTIONAL_DEVICE_ID")` in your main activity onCreate, which requires your App key and the URL of your Countly server (use `https://cloud.count.ly` for Countly Cloud). You can either specify your own Device ID, or omit this parameter and add OpenUDID service (it will generate unique device ID automatically) to your `AndroidManifest.xml`:
+
+<pre class="prettyprint">
+&lt;service android:name=&quot;org.openudid.OpenUDID_service&quot;&gt;
+    &lt;intent-filter&gt;
+        &lt;action android:name=&quot;org.openudid.GETUDID&quot; /&gt;
+    &lt;/intent-filter&gt;
+&lt;/service&gt;</pre>
+
 * Call `Countly.sharedInstance().onStart()` in onStart.
 * Call `Countly.sharedInstance().onStop()` in onStop.
 
 Additionally, make sure that *INTERNET* permission is set if there's none in your manifest file.
-
-If your app does not already have the concept of a unique device ID or app installation ID, you can use [OpenUDID](https://github.com/vieux/OpenUDID).
-Please don't use ANDROID_ID or one of the other unreliable unique IDs provided by Android itself.
-For more info see [this](http://android-developers.blogspot.com/2011/03/identifying-app-installations.html) and [this](http://stackoverflow.com/questions/2785485/is-there-a-unique-android-device-id).
 
 **Note:** Make sure you use App Key (found under Management -> Applications) and not API Key. Entering API Key will not work. 
 
 **Note:** Call init only once during onCreate of main activity. After that, for each onStart and onStop for 
 each activity, call Countly onStart and onStop. 
 
-### 3. Other
+###4. Other
 
 Check Countly Server source code here: 
 
-- [Countly Server (countly-server)](https://github.com/jboehle/countly-server)
+- [Countly Server (countly-server)](https://github.com/Countly/countly-server)
 
 There are also other Countly SDK repositories below:
 
 - [Countly iOS SDK](https://github.com/Countly/countly-sdk-ios)
-- [Countly Android SDK](https://github.com/jboehle/countly-sdk-android)
+- [Countly Android SDK](https://github.com/Countly/countly-sdk-android)
 - [Countly Windows Phone SDK](https://github.com/Countly/countly-sdk-windows-phone)
 - [Countly Blackberry Webworks SDK](https://github.com/Countly/countly-sdk-blackberry-webworks)
 - [Countly Blackberry Cascades SDK](https://github.com/craigmj/countly-sdk-blackberry10-cascades) (Community supported)
@@ -53,9 +78,9 @@ There are also other Countly SDK repositories below:
 - [Countly Appcelerator Titanium SDK](https://github.com/euforic/Titanium-Count.ly) (Community supported)
 - [Countly Unity3D SDK](https://github.com/Countly/countly-sdk-unity) (Community supported)
 
-## How can I help you with your efforts?
+##How can I help you with your efforts?
 Glad you asked. We need ideas, feedbacks and constructive comments. All your suggestions will be taken care with upmost importance. 
 
-Countly is on [Twitter](http://twitter.com/gocountly) and [Facebook](http://www.facebook.com/Countly) if you would like to keep up with their fast progress!
+We are on [Twitter](http://twitter.com/gocountly) and [Facebook](http://www.facebook.com/Countly) if you would like to keep up with our fast progress!
 
 For community support page, see [http://support.count.ly](http://support.count.ly "Countly Support").

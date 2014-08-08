@@ -28,6 +28,7 @@ import android.content.res.Resources;
 import android.telephony.TelephonyManager;
 import android.test.AndroidTestCase;
 import android.util.DisplayMetrics;
+import android.view.Window;
 import android.view.WindowManager;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -63,6 +64,20 @@ public class DeviceInfoTests extends AndroidTestCase {
         ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(metrics);
         final String expected = metrics.widthPixels + "x" + metrics.heightPixels;
         assertEquals(expected, DeviceInfo.getResolution(getContext()));
+    }
+
+    public void testGetResolution_getWindowManagerReturnsNull() {
+        final Context mockContext = mock(Context.class);
+        when(mockContext.getSystemService(Context.WINDOW_SERVICE)).thenReturn(null);
+        assertEquals("", DeviceInfo.getResolution(mockContext));
+    }
+
+    public void testGetResolution_getDefaultDisplayReturnsNull() {
+        final WindowManager mockWindowMgr = mock(WindowManager.class);
+        when(mockWindowMgr.getDefaultDisplay()).thenReturn(null);
+        final Context mockContext = mock(Context.class);
+        when(mockContext.getSystemService(Context.WINDOW_SERVICE)).thenReturn(mockWindowMgr);
+        assertEquals("", DeviceInfo.getResolution(mockContext));
     }
 
     private Context mockContextForTestingDensity(final int density) {
@@ -163,7 +178,9 @@ public class DeviceInfoTests extends AndroidTestCase {
         json.put("_device", DeviceInfo.getDevice());
         json.put("_os", DeviceInfo.getOS());
         json.put("_os_version", DeviceInfo.getOSVersion());
-        json.put("_carrier", DeviceInfo.getCarrier(getContext()));
+        if (!"".equals(DeviceInfo.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
+            json.put("_carrier", DeviceInfo.getCarrier(getContext()));
+        }
         json.put("_resolution", DeviceInfo.getResolution(getContext()));
         json.put("_density", DeviceInfo.getDensity(getContext()));
         json.put("_locale", DeviceInfo.getLocale());
@@ -171,5 +188,27 @@ public class DeviceInfoTests extends AndroidTestCase {
         final String expected = URLEncoder.encode(json.toString(), "UTF-8");
         assertNotNull(expected);
         assertEquals(expected, DeviceInfo.getMetrics(getContext()));
+    }
+
+    public void testFillJSONIfValuesNotEmpty_noValues() {
+        final JSONObject mockJSON = mock(JSONObject.class);
+        DeviceInfo.fillJSONIfValuesNotEmpty(mockJSON);
+        verifyZeroInteractions(mockJSON);
+    }
+
+    public void testFillJSONIfValuesNotEmpty_oddNumberOfValues() {
+        final JSONObject mockJSON = mock(JSONObject.class);
+        DeviceInfo.fillJSONIfValuesNotEmpty(mockJSON, "key1", "value1", "key2");
+        verifyZeroInteractions(mockJSON);
+    }
+
+    public void testFillJSONIfValuesNotEmpty() throws JSONException {
+        final JSONObject json = new JSONObject();
+        DeviceInfo.fillJSONIfValuesNotEmpty(json, "key1", "value1", "key2", null, "key3", "value3", "key4", "", "key5", "value5");
+        assertEquals("value1", json.get("key1"));
+        assertFalse(json.has("key2"));
+        assertEquals("value3", json.get("key3"));
+        assertFalse(json.has("key4"));
+        assertEquals("value5", json.get("key5"));
     }
 }

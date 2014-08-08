@@ -327,11 +327,11 @@ public class Countly {
     /**
      * Disable periodic session time updates.
      * By default, Countly will send a request to the server each 30 seconds with a small update
-     * containing session duration time. This method allows you to disable such behaviour.
-     * Note that event updates will still be sent up to 30 seconds after event recording.
-     * @param disable session time updates
+     * containing session duration time. This method allows you to disable such behavior.
+     * Note that event updates will still be sent every 10 events or 30 seconds after event recording.
+     * @param disable whether or not to disable session time updates
      */
-    public synchronized void setDisableUpdateSessionRequests(boolean disable) {
+    public synchronized void setDisableUpdateSessionRequests(final boolean disable) {
         disableUpdateSessionRequests_ = disable;
     }
 
@@ -403,4 +403,5 @@ public class Countly {
     long getPrevSessionDurationStartTime() { return prevSessionDurationStartTime_; }
     void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
     int getActivityCount() { return activityCount_; }
+    boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
 }
