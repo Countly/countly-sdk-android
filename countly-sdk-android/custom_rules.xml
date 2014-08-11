@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="countly_sdk_android_custom_rules" default="-post-package">
+    <target name="-post-package">
+        <delete file="${out.dir}/countly_noOpenUDID.jar" quiet="true" />
+        <jar destfile="${out.dir}/countly_noOpenUDID.jar">
+            <zipfileset src="${out.dir}/classes.jar" excludes="org,org/OpenUDID,org/OpenUDID/**" />
+        </jar>
+    </target>
+</project>
