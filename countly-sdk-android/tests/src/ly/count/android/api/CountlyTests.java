@@ -23,8 +23,6 @@ package ly.count.android.api;
 
 import android.content.Context;
 import android.test.AndroidTestCase;
-import android.util.Log;
-import org.mockito.asm.tree.MultiANewArrayInsnNode;
 
 import java.util.HashMap;
 
