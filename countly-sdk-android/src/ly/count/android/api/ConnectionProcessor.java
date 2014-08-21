@@ -107,7 +107,7 @@ public class ConnectionProcessor implements Runnable {
                     final HttpURLConnection httpConn = (HttpURLConnection) conn;
                     final int responseCode = httpConn.getResponseCode();
                     success = responseCode >= 200 && responseCode < 300;
-                    if (!success) {
+                    if (!success && Countly.sharedInstance().isLoggingEnabled()) {
                         Log.w(Countly.TAG, "HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
                     }
                 }
@@ -116,13 +116,15 @@ public class ConnectionProcessor implements Runnable {
                 if (success) {
                     final JSONObject responseDict = new JSONObject(responseData.toString("UTF-8"));
                     success = responseDict.optString("result").equalsIgnoreCase("success");
-                    if (!success) {
+                    if (!success && Countly.sharedInstance().isLoggingEnabled()) {
                         Log.w(Countly.TAG, "Response from Countly server did not report success, it was: " + responseData.toString("UTF-8"));
                     }
                 }
 
                 if (success) {
-                    Log.d(Countly.TAG, "ok ->" + eventData);
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "ok ->" + eventData);
+                    }
 
                     // successfully submitted event data to Count.ly server, so remove
                     // this one from the stored events collection
@@ -134,7 +136,9 @@ public class ConnectionProcessor implements Runnable {
                 }
             }
             catch (Exception e) {
-                Log.w(Countly.TAG, "Got exception while trying to submit event data: " + eventData, e);
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "Got exception while trying to submit event data: " + eventData, e);
+                }
                 // if exception occurred, stop processing, let next tick take care of retrying
                 break;
             }

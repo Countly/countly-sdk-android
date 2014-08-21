@@ -23,6 +23,8 @@ package ly.count.android.api;
 
 import android.content.Context;
 import android.test.AndroidTestCase;
+import android.util.Log;
+import org.mockito.asm.tree.MultiANewArrayInsnNode;
 
 import java.util.HashMap;
 
@@ -61,6 +63,7 @@ public class CountlyTests extends AndroidTestCase {
         assertEquals(0, mUninitedCountly.getActivityCount());
         assertEquals(0, mUninitedCountly.getPrevSessionDurationStartTime());
         assertFalse(mUninitedCountly.getDisableUpdateSessionRequests());
+        assertFalse(mUninitedCountly.isLoggingEnabled());
     }
 
     public void testSharedInstance() {
@@ -736,5 +739,13 @@ public class CountlyTests extends AndroidTestCase {
         assertTrue(mCountly.getDisableUpdateSessionRequests());
         mCountly.setDisableUpdateSessionRequests(false);
         assertFalse(mCountly.getDisableUpdateSessionRequests());
+    }
+
+    public void testLoggingFlag() {
+        assertFalse(mUninitedCountly.isLoggingEnabled());
+        mUninitedCountly.setLoggingEnabled(true);
+        assertTrue(mUninitedCountly.isLoggingEnabled());
+        mUninitedCountly.setLoggingEnabled(false);
+        assertFalse(mUninitedCountly.isLoggingEnabled());
     }
 }

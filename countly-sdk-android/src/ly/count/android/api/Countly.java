@@ -69,6 +69,7 @@ public class Countly {
     private long prevSessionDurationStartTime_;
     private int activityCount_;
     private boolean disableUpdateSessionRequests_;
+    private boolean enableLogging_;
 
     /**
      * Returns the Countly singleton.
@@ -333,6 +334,18 @@ public class Countly {
      */
     public synchronized void setDisableUpdateSessionRequests(final boolean disable) {
         disableUpdateSessionRequests_ = disable;
+    }
+
+    /**
+     * Sets whether debug logging is turned on or off. Logging is disabled by default.
+     * @param enableLogging true to enable logging, false to disable logging
+     */
+    public synchronized void setLoggingEnabled(final boolean enableLogging) {
+        enableLogging_ = enableLogging;
+    }
+
+    public synchronized boolean isLoggingEnabled() {
+        return enableLogging_;
     }
 
     /**
