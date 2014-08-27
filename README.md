@@ -58,8 +58,17 @@ Additionally, make sure that *INTERNET* permission is set if there's none in you
 
 **Note:** Make sure you use App Key (found under Management -> Applications) and not API Key. Entering API Key will not work. 
 
-**Note:** Call init only once during onCreate of main activity. After that, for each onStart and onStop for 
-each activity, call Countly onStart and onStop. 
+**Note:** Call `Countly.sharedInstance().init(...)` only once during onCreate of main activity. After that, call `Countly.sharedInstance().onStart()` and `Countly.sharedInstance().onStop()` in each of your activities' `onStart()` and `onStop()` methods. 
+
+###3. Use some extra features
+**How can I make sure that requests to Countly are sent correctly?**
+
+Enable logging: `Countly.sharedInstance().setLoggingEnabled(true)`
+
+**I'm already using OpenUDID in my project, how can I remove it from build?**
+
+There is `custom_rules.xml` ant build file, check it out. Or you can just use sources instead of jars.
+
 
 ###4. Other
 
