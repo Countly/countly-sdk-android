@@ -2,6 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="ly.count.android.api"
           android:versionCode="3"
-          android:versionName="14.07" >
+          android:versionName="14.08" >
     <uses-sdk android:minSdkVersion="9"/>
 </manifest>

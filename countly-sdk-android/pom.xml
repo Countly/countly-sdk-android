@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ly.count</groupId>
     <artifactId>sdk-android</artifactId>
-    <version>14.07</version>
+    <version>14.08</version>
     <packaging>jar</packaging>
 
     <name>Countly Android SDK</name>
