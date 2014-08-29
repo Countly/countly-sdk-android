@@ -33,7 +33,7 @@ dependencies {
 &lt;dependency&gt;
     &lt;groupId&gt;ly.count&lt;/groupId&gt;
     &lt;artifactId&gt;sdk-android&lt;/artifactId&gt;
-    &lt;version&gt;14.07&lt;/version&gt;
+    &lt;version&gt;14.08&lt;/version&gt;
 &lt;/dependency&gt;
 </pre>
 
