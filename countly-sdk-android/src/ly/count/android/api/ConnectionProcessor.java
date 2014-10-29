@@ -27,7 +27,12 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -59,12 +64,51 @@ public class ConnectionProcessor implements Runnable {
     URLConnection urlConnectionForEventData(final String eventData) throws IOException {
         final String urlStr = serverURL_ + "/i?" + eventData;
         final URL url = new URL(urlStr);
-        final URLConnection conn = url.openConnection();
+        final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
         conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
         conn.setUseCaches(false);
         conn.setDoInput(true);
-        conn.setDoOutput(false);
+        String picturePath = UserData.getPicturePathFromQuery(url);
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Got picturePath: " + picturePath);
+        }
+        if(!picturePath.equals("")){
+        	//Uploading files:
+        	//http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
+        	
+        	File binaryFile = new File(picturePath);
+        	conn.setDoOutput(true);
+        	// Just generate some unique random value.
+        	String boundary = Long.toHexString(System.currentTimeMillis());
+        	// Line separator required by multipart/form-data.
+        	String CRLF = "\r\n";
+        	String charset = "UTF-8";
+        	conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+        	OutputStream output = conn.getOutputStream();
+        	PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
+        	// Send binary file.
+            writer.append("--" + boundary).append(CRLF);
+            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"" + binaryFile.getName() + "\"").append(CRLF);
+            writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
+            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
+            writer.append(CRLF).flush();
+            FileInputStream fileInputStream = new FileInputStream(binaryFile);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = fileInputStream.read(buffer)) != -1) {
+                output.write(buffer, 0, len);
+            }
+            output.flush(); // Important before continuing with writer!
+            writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
+            fileInputStream.close();
+
+            // End of multipart/form-data.
+            writer.append("--" + boundary + "--").append(CRLF).flush();
+        }
+        else{
+        	conn.setDoOutput(false);
+        }
         return conn;
     }
 
