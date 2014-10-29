@@ -69,6 +69,39 @@ Enable logging: `Countly.sharedInstance().setLoggingEnabled(true)`
 
 There is `custom_rules.xml` ant build file, check it out. Or you can just use sources instead of jars.
 
+**Provide information about user (Enterprise version only)**
+
+Provide Bundle with information about user using `Countly.sharedInstance().setUserData(bundle)`
+Possible keys are:
+<ul>
+<li>
+name - (String) providing user's full name
+</li>
+<li>
+username - (String) providing user's nickname
+</li>
+<li>
+email - (String) providing user's email address
+</li>
+<li>
+org - (String) providing user's organization's name where user works
+</li>
+<li>
+phone - (String) providing user's phone number
+</li>
+<li>
+picture - (String) providing WWW URL to user's avatar or profile picture
+</li>
+<li>
+picturePath - (String) providing local path to user's avatar or profile picture
+</li>
+<li>
+gender - (String) providing user's gender as M for male and F for female
+</li>
+<li>
+byear - (int) providing user's year of birth as integer
+</li>
+</ul>
 
 ###4. Other
 
