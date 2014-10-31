@@ -31,7 +31,7 @@ public class UserData {
 	public static String picture;
 	public static String picturePath;
 	public static String gender;
-	public static int byear = -1;
+	public static int byear = 0;
 	public static boolean isSynced = true;
 	
 	
@@ -57,13 +57,13 @@ public class UserData {
 		}
 		picture = data.getString(PICTURE_KEY);
 		gender = data.getString(GENDER_KEY, null);
-		byear = data.getInt(BYEAR_KEY, -1);
+		byear = data.getInt(BYEAR_KEY, 0);
 		isSynced = false;
 	}
 	
 	/**
-     * Returns &userdetails= prefixed url to add to request data when making request to server
-     * @return a String userdetails url part with provided user data
+     * Returns &user_details= prefixed url to add to request data when making request to server
+     * @return a String user_details url part with provided user data
      */
 	static String getDataForRequest(){
 		if(!isSynced){
@@ -75,13 +75,16 @@ public class UserData {
 				try {
 					result = java.net.URLEncoder.encode(result, "UTF-8");
 					
-					if(result != null && !result.equals(""))
-						result = "&userdetails="+result;
-					else
+					if(result != null && !result.equals("")){
+						result = "&user_details="+result;
+						if(picturePath != null)
+							result += "&"+PICTURE_PATH_KEY+"="+java.net.URLEncoder.encode(picturePath, "UTF-8");
+					}
+					else{
 						result = "";
-					
-					if(picturePath != null)
-						result += "&"+PICTURE_PATH_KEY+"="+java.net.URLEncoder.encode(picturePath, "UTF-8");
+						if(picturePath != null)
+							result += "&user_details&"+PICTURE_PATH_KEY+"="+java.net.URLEncoder.encode(picturePath, "UTF-8");
+					}
 				} catch (UnsupportedEncodingException ignored) {
 					// should never happen because Android guarantees UTF-8 support
 				}
@@ -102,21 +105,45 @@ public class UserData {
 
         try {
         	if (name != null)
-        		json.put(NAME_KEY, name);
+        		if(name == "")
+        			json.put(NAME_KEY, JSONObject.NULL);
+        		else
+        			json.put(NAME_KEY, name);
         	if (username != null)
-        		json.put(USERNAME_KEY, username);
+        		if(username == "")
+        			json.put(USERNAME_KEY, JSONObject.NULL);
+        		else
+        			json.put(USERNAME_KEY, username);
         	if (email != null)
-        		json.put(EMAIL_KEY, email);
+        		if(email == "")
+        			json.put(EMAIL_KEY, JSONObject.NULL);
+        		else
+        			json.put(EMAIL_KEY, email);
         	if (org != null)
-        		json.put(ORG_KEY, org);
+        		if(org == "")
+        			json.put(ORG_KEY, JSONObject.NULL);
+        		else
+        			json.put(ORG_KEY, org);
         	if (phone != null)
-        		json.put(PHONE_KEY, phone);
+        		if(phone == "")
+        			json.put(PHONE_KEY, JSONObject.NULL);
+        		else
+        			json.put(PHONE_KEY, phone);
         	if (picture != null)
-        		json.put(PICTURE_KEY, picture);
+        		if(picture == "")
+        			json.put(PICTURE_KEY, JSONObject.NULL);
+        		else
+        			json.put(PICTURE_KEY, picture);
         	if (gender != null)
-        		json.put(GENDER_KEY, gender);
-        	if (byear != -1)
-        		json.put(BYEAR_KEY, byear);
+        		if(gender == "")
+        			json.put(GENDER_KEY, JSONObject.NULL);
+        		else
+        			json.put(GENDER_KEY, gender);
+        	if (byear != 0)
+        		if(byear > 0)
+        			json.put(BYEAR_KEY, byear);
+        		else
+        			json.put(BYEAR_KEY, JSONObject.NULL);
         }
         catch (JSONException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -133,14 +160,14 @@ public class UserData {
      */
 	static void fromJSON(final JSONObject json) {
         if(json != null){
-            name = json.optString(NAME_KEY);
-            username = json.optString(USERNAME_KEY);
-            email = json.optString(EMAIL_KEY);
-            org = json.optString(ORG_KEY);
-            phone = json.optString(PHONE_KEY);
-            picture = json.optString(PICTURE_KEY);
-            gender = json.optString(GENDER_KEY);
-            byear = json.optInt(BYEAR_KEY);
+            name = json.optString(NAME_KEY, null);
+            username = json.optString(USERNAME_KEY, null);
+            email = json.optString(EMAIL_KEY, null);
+            org = json.optString(ORG_KEY, null);
+            phone = json.optString(PHONE_KEY, null);
+            picture = json.optString(PICTURE_KEY, null);
+            gender = json.optString(GENDER_KEY, null);
+            byear = json.optInt(BYEAR_KEY, 0);
         }
     }
 	
