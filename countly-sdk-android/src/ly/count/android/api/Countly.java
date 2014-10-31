@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import android.content.Context;
+import android.os.Bundle;
 
 /**
  * This class is the public API for the Countly Android SDK.
@@ -323,6 +324,43 @@ public class Countly {
 
         eventQueue_.recordEvent(key, segmentation, count, sum);
         sendEventsIfNeeded();
+    }
+    
+    /**
+     * Sets information about user. Possible keys are:
+     * <ul>
+     * <li>
+     * name - (String) providing user's full name
+     * </li>
+     * <li>
+     * username - (String) providing user's nickname
+     * </li>
+     * <li>
+     * email - (String) providing user's email address
+     * </li>
+     * <li>
+     * org - (String) providing user's organization's name where user works
+     * </li>
+     * <li>
+     * phone - (String) providing user's phone number
+     * </li>
+     * <li>
+     * picture - (String) providing WWW URL to user's avatar or profile picture
+     * </li>
+     * <li>
+     * picturePath - (String) providing local path to user's avatar or profile picture
+     * </li>
+     * <li>
+     * gender - (String) providing user's gender as M for male and F for female
+     * </li>
+     * <li>
+     * byear - (int) providing user's year of birth as integer
+     * </li>
+     * </ul>
+     * @param data Bundle with user data
+     */
+    public synchronized void setUserData(final Bundle data) {
+        UserData.setData(data);
     }
 
     /**
