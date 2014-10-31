@@ -103,6 +103,8 @@ byear - (int) providing user's year of birth as integer
 </li>
 </ul>
 
+Providing value as "" for strings or negative number for byear will delete the user property
+
 ###4. Other
 
 Check Countly Server source code here: 
