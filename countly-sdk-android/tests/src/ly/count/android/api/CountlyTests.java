@@ -72,7 +72,7 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testInitWithNoDeviceID() {
         mUninitedCountly = spy(mUninitedCountly);
-        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey");
+        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
         verify(mUninitedCountly).init(getContext(), "http://test.count.ly", "appkey", null);
     }
 

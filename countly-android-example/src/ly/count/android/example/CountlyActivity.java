@@ -16,7 +16,10 @@ public class CountlyActivity extends Activity {
         setContentView(R.layout.main);
 
     /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
-        Countly.sharedInstance().init(this, "http://i.busy.me", "da81b992aedf9a596296e7ffa83902f9640d5de2");
+//        Countly.sharedInstance().init(this, "https://YOUR_SERVER", "YOUR_APP_KEY");
+        Countly.sharedInstance()
+                .setLoggingEnabled(true)
+                .init(this, "http://128.199.55.79", "60758257b5a8595a96648296f4e04c4f923e4f6f", null, Countly.CountlyIdMode.ADVERTISING_ID);
 
         Countly.sharedInstance().recordEvent("test", 1);
 

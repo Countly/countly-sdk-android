@@ -124,8 +124,8 @@ public class ConnectionProcessor implements Runnable {
             // get first event from collection
             final String deviceId = DeviceInfo.getDeviceID();
             if (deviceId == null) {
-                // When device ID is supplied by OpenUDID, in some cases it might take
-                // time for OpenUDID service to initialize. So, just wait for it.
+                // When device ID is supplied by OpenUDID or by Google Advertising ID.
+                // In some cases it might take time for them to initialize. So, just wait for it.
                 break;
             }
             final String eventData = storedEvents[0] + "&device_id=" + deviceId;
