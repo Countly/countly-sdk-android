@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="ly.count.android.api"
           android:versionCode="3"
-          android:versionName="14.08">
-    <uses-sdk android:minSdkVersion="11" android:targetSdkVersion="19" />
+          android:versionName="14.11">
+    <uses-sdk android:minSdkVersion="12" android:targetSdkVersion="19" />
     <application>
         <uses-library android:name="android.test.runner"/>
     </application>
