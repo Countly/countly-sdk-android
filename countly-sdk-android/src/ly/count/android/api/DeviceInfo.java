@@ -43,37 +43,6 @@ import java.util.Locale;
  * event data.
  */
 class DeviceInfo {
-    private static String deviceID_;
-
-    /**
-     * Returns the device ID set by the last call to setDeviceID.
-     * It is important to set this to a non-null value that is unique per
-     * device amongst all of an app's users.
-     * @return the device ID set by the last call to setDeviceID, or OpenUDID no device ID has been provided at app startup
-     */
-    static String getDeviceID() {
-        return deviceID_ == null ? OpenUDIDAdapter.getOpenUDID() : deviceID_;
-    }
-
-    /**
-     * Sets the device ID that will be used in all data submissions to a Count.ly server.
-     * It is important to set this to a non-null value that is unique per
-     * device amongst all of an app's users.
-     * @param deviceID unique ID representing the device that the app is running on
-     */
-    static void setDeviceID(final String deviceID) {
-        deviceID_ = deviceID;
-    }
-
-    /**
-     * Helper method for null safe comparison of current device ID and the one supplied to Countly.init
-     * @return true if supplied device ID equal to the one registered before
-     */
-    static boolean deviceIDEqualsNullSafe(final String id) {
-        final String deviceId = deviceID_ == null ? OpenUDIDAdapter.getOpenUDID() : deviceID_;
-        return (deviceId == null && id == null) || (deviceId != null && deviceId.equals(id));
-    }
-
     /**
      * Returns the display name of the current operating system.
      */

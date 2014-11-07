@@ -58,25 +58,6 @@ public class Countly {
      */
     private static final long TIMER_DELAY_IN_SECONDS = 60;
 
-    /**
-     * Enum used in Countly.initMessaging() method which controls what kind of
-     * app installation it is. Later (in Countly Dashboard or when calling Countly API method),
-     * you'll be able to choose whether you want to send a message to test devices,
-     * or to production ones.
-     */
-    public static enum CountlyMessagingMode {
-        TEST,
-        PRODUCTION,
-    }
-
-    /**
-     * Enum used in Countly.init() method which controls what kind of ID Countly should use.
-     */
-    public static enum CountlyIdMode {
-        OPEN_UDID,
-        ADVERTISING_ID,
-    }
-
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
         static final Countly instance = new Countly();
@@ -154,7 +135,7 @@ public class Countly {
      * @throws java.lang.IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
      * @throws java.lang.IllegalStateException if init has previously been called with different values during the same application instance
      */
-    public synchronized Countly init(final Context context, final String serverURL, final String appKey, final String deviceID, CountlyIdMode idMode) {
+    public synchronized Countly init(final Context context, final String serverURL, final String appKey, final String deviceID, DeviceId.Type idMode) {
         if (context == null) {
             throw new IllegalArgumentException("valid context is required");
         }
@@ -168,47 +149,39 @@ public class Countly {
             throw new IllegalArgumentException("valid deviceID is required");
         }
         if (deviceID == null && idMode == null) {
-            if (OpenUDIDAdapter.isOpenUDIDAvailable()) idMode = CountlyIdMode.OPEN_UDID;
-            else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) idMode = CountlyIdMode.ADVERTISING_ID;
+            if (OpenUDIDAdapter.isOpenUDIDAvailable()) idMode = DeviceId.Type.OPEN_UDID;
+            else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) idMode = DeviceId.Type.ADVERTISING_ID;
         }
-        if (deviceID == null && idMode == CountlyIdMode.OPEN_UDID && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
+        if (deviceID == null && idMode == DeviceId.Type.OPEN_UDID && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
             throw new IllegalArgumentException("valid deviceID is required because OpenUDID is not available");
         }
-        if (deviceID == null && idMode == CountlyIdMode.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
+        if (deviceID == null && idMode == DeviceId.Type.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
             throw new IllegalArgumentException("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
         }
         if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(serverURL) ||
                                     !connectionQueue_.getAppKey().equals(appKey) ||
-                                    !DeviceInfo.deviceIDEqualsNullSafe(deviceID))) {
+                                    !DeviceId.deviceIDEqualsNullSafe(deviceID, idMode, connectionQueue_.getDeviceId()) )) {
             throw new IllegalStateException("Countly cannot be reinitialized with different values");
-        }
-
-        // In some cases CountlyMessaging does some background processing, so it needs a way
-        // to start Countly on itself
-        if (MessagingAdapter.isMessagingAvailable()) {
-            MessagingAdapter.storeConfiguration(context, serverURL, appKey, deviceID, idMode);
         }
 
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
         if (eventQueue_ == null) {
+            DeviceId deviceIdInstance;
             if (deviceID != null) {
-                DeviceInfo.setDeviceID(deviceID);
-            } else if (idMode == CountlyIdMode.OPEN_UDID) {
-                if (OpenUDIDAdapter.isInitialized()) {
-                    DeviceInfo.setDeviceID(deviceID);
-                } else {
-                    OpenUDIDAdapter.sync(context);
-                }
-            } else if (idMode == CountlyIdMode.ADVERTISING_ID) {
-                AdvertisingIdAdapter.setAdvertisingId(context);
+                deviceIdInstance = new DeviceId(deviceID);
+            } else {
+                deviceIdInstance = new DeviceId(idMode);
             }
 
             final CountlyStore countlyStore = new CountlyStore(context);
 
+            deviceIdInstance.init(context, countlyStore, true);
+
             connectionQueue_.setServerURL(serverURL);
             connectionQueue_.setAppKey(appKey);
             connectionQueue_.setCountlyStore(countlyStore);
+            connectionQueue_.setDeviceId(deviceIdInstance);
 
             eventQueue_ = new EventQueue(countlyStore);
         }
@@ -238,7 +211,6 @@ public class Countly {
         connectionQueue_.setCountlyStore(null);
         prevSessionDurationStartTime_ = 0;
         activityCount_ = 0;
-        DeviceInfo.setDeviceID(null);
     }
 
     /**

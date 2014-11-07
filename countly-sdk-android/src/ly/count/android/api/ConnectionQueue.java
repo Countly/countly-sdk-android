@@ -44,6 +44,7 @@ public class ConnectionQueue {
     private Context context_;
     private String serverURL_;
     private Future<?> connectionProcessorFuture_;
+    private DeviceId deviceId_;
 
     // Getters are for unit testing
     String getAppKey() {
@@ -76,6 +77,12 @@ public class ConnectionQueue {
 
     void setCountlyStore(final CountlyStore countlyStore) {
         store_ = countlyStore;
+    }
+
+    DeviceId getDeviceId() { return deviceId_; }
+
+    public void setDeviceId(DeviceId deviceId) {
+        this.deviceId_ = deviceId;
     }
 
     /**
@@ -190,7 +197,7 @@ public class ConnectionQueue {
     void tick() {
         if (!store_.isEmptyConnections() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
-            connectionProcessorFuture_ = executor_.submit(new ConnectionProcessor(serverURL_, store_));
+            connectionProcessorFuture_ = executor_.submit(new ConnectionProcessor(serverURL_, store_, deviceId_));
         }
     }
 
@@ -199,4 +206,5 @@ public class ConnectionQueue {
     void setExecutor(final ExecutorService executor) { executor_ = executor; }
     Future<?> getConnectionProcessorFuture() { return connectionProcessorFuture_; }
     void setConnectionProcessorFuture(final Future<?> connectionProcessorFuture) { connectionProcessorFuture_ = connectionProcessorFuture; }
+
 }

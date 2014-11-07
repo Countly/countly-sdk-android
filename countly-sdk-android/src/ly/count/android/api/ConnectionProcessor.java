@@ -49,11 +49,13 @@ public class ConnectionProcessor implements Runnable {
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
 
     private final CountlyStore store_;
+    private final DeviceId deviceId_;
     private final String serverURL_;
 
-    ConnectionProcessor(final String serverURL, final CountlyStore store) {
+    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId) {
         serverURL_ = serverURL;
         store_ = store;
+        deviceId_ = deviceId;
 
         // HTTP connection reuse which was buggy pre-froyo
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
@@ -122,13 +124,15 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // get first event from collection
-            final String deviceId = DeviceInfo.getDeviceID();
-            if (deviceId == null) {
+            if (deviceId_.getId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "No Device ID available yet, skipping request " + storedEvents[0]);
+                }
                 break;
             }
-            final String eventData = storedEvents[0] + "&device_id=" + deviceId;
+            final String eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
 
             URLConnection conn = null;
             BufferedInputStream responseStream = null;
@@ -201,4 +205,5 @@ public class ConnectionProcessor implements Runnable {
     // for unit testing
     String getServerURL() { return serverURL_; }
     CountlyStore getCountlyStore() { return store_; }
+    DeviceId getDeviceId() { return deviceId_; }
 }

@@ -41,12 +41,6 @@ import static org.mockito.Mockito.*;
 
 public class DeviceInfoTests extends AndroidTestCase {
 
-    public void testUDID() {
-        final String deviceID = "1234";
-        DeviceInfo.setDeviceID(deviceID);
-        assertEquals(deviceID, DeviceInfo.getDeviceID());
-    }
-
     public void testGetOS() {
         assertEquals("Android", DeviceInfo.getOS());
     }

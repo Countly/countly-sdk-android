@@ -213,6 +213,27 @@ public class CountlyStore {
         return builder.toString();
     }
 
+    /**
+     * Retrieves a preference from local store.
+     * @param key the preference key
+     */
+    public synchronized String getPreference(final String key) {
+        return preferences_.getString(key, null);
+    }
+
+    /**
+     * Adds a preference to local store.
+     * @param key the preference key
+     * @param value the preference value, supply null value to remove preference
+     */
+    public synchronized void setPreference(final String key, final String value) {
+        if (value == null) {
+            preferences_.edit().remove(key).commit();
+        } else {
+            preferences_.edit().putString(key, value).commit();
+        }
+    }
+
     // for unit testing
     synchronized void clear() {
         final SharedPreferences.Editor prefsEditor = preferences_.edit();

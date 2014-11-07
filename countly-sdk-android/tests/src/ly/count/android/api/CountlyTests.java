@@ -163,7 +163,6 @@ public class CountlyTests extends AndroidTestCase {
         assertSame(expectedEventQueue, mUninitedCountly.getEventQueue());
         assertSame(expectedConnectionQueue, mUninitedCountly.getConnectionQueue());
         assertSame(expectedCountlyStore, mUninitedCountly.getConnectionQueue().getCountlyStore());
-        assertEquals(deviceID, DeviceInfo.getDeviceID());
         assertSame(getContext(), mUninitedCountly.getConnectionQueue().getContext());
         assertEquals(serverURL, mUninitedCountly.getConnectionQueue().getServerURL());
         assertEquals(appKey, mUninitedCountly.getConnectionQueue().getAppKey());
@@ -216,7 +215,6 @@ public class CountlyTests extends AndroidTestCase {
 
         mUninitedCountly.init(getContext(), serverURL, appKey, deviceID);
 
-        assertEquals(deviceID, DeviceInfo.getDeviceID());
         assertSame(getContext(), mUninitedCountly.getConnectionQueue().getContext());
         assertEquals(serverURL, mUninitedCountly.getConnectionQueue().getServerURL());
         assertEquals(appKey, mUninitedCountly.getConnectionQueue().getAppKey());
@@ -249,7 +247,6 @@ public class CountlyTests extends AndroidTestCase {
         assertNotNull(mCountly.getConnectionQueue().getServerURL());
         assertNotNull(mCountly.getConnectionQueue().getAppKey());
         assertNotNull(mCountly.getConnectionQueue().getContext());
-        assertNotNull(DeviceInfo.getDeviceID());
 
         mCountly.halt();
 

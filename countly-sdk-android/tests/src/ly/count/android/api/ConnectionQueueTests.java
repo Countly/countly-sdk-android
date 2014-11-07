@@ -46,24 +46,19 @@ public class ConnectionQueueTests extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        DeviceInfo.setDeviceID("1234");
         freshConnQ = new ConnectionQueue();
         connQ = new ConnectionQueue();
         connQ.setAppKey("abcDeFgHiJkLmNoPQRstuVWxyz");
         connQ.setServerURL("http://countly.coupons.com");
         connQ.setContext(getContext());
         connQ.setCountlyStore(mock(CountlyStore.class));
+        connQ.setDeviceId(mock(DeviceId.class));
         connQ.setExecutor(mock(ExecutorService.class));
-    }
-
-    @Override
-    protected void tearDown() throws Exception {
-        DeviceInfo.setDeviceID(null);
-        super.tearDown();
     }
 
     public void testConstructor() {
         assertNull(freshConnQ.getCountlyStore());
+        assertNull(freshConnQ.getDeviceId());
         assertNull(freshConnQ.getAppKey());
         assertNull(freshConnQ.getContext());
         assertNull(freshConnQ.getServerURL());
@@ -91,6 +86,12 @@ public class ConnectionQueueTests extends AndroidTestCase {
         final CountlyStore store = new CountlyStore(getContext());
         freshConnQ.setCountlyStore(store);
         assertSame(store, freshConnQ.getCountlyStore());
+    }
+
+    public void testDeviceId() {
+        final DeviceId deviceId = new DeviceId("blah");
+        freshConnQ.setDeviceId(deviceId);
+        assertSame(deviceId, freshConnQ.getDeviceId());
     }
 
     public void testExecutor() {
