@@ -1,11 +1,11 @@
 <project default="package" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
     <!-- Project properties -->
-    <property name="version.num" value="14.08" />
+    <property name="version.num" value="14.11" />
     <property name="project" value="countly-sdk-android" />
 
     <!-- Standard jar stuff -->
     <property name="jarfile" value="${project}-${version.num}.jar" />
-    <property name="sdk.dir" value="/projects/android-sdk/platforms/android-19/" />
+    <property name="sdk.dir" value="/Applications/Android Studio.app/sdk/platforms/android-19/" />
     <!-- <property name="lib.dir" value="libs" /> -->
     <property name="src.dir" value="src"/>
     <property name="build.dir" value="build"/>
@@ -16,7 +16,7 @@
     <!-- Maven stuff -->
     <property name="groupId" value="ly.count" />
     <property name="artifactId" value="sdk-android" />
-    <property name="version" value="14.08-SNAPSHOT" />
+    <property name="version" value="14.11-SNAPSHOT" />
 
     <!-- defined maven snapshots and staging repository id and url -->
     <property name="ossrh-snapshots-repository-url"
@@ -38,7 +38,7 @@
     </path>
 
     <!-- Compile java files into classes -->
-    <target name="compile">
+    <target name="compile" depends="clean">
         <mkdir dir="${build.dir}" />
         <mkdir dir="${classes.dir}" />
         <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" />
