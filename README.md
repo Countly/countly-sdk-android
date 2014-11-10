@@ -85,6 +85,9 @@ Additionally, make sure that *INTERNET* permission is set if there's none in you
 **Note:** Make sure you use App Key (found under Management -> Applications) and not API Key. Entering API Key will not work. 
 
 ###3. Countly Push Notifications
+
+**Important note:** In order to use Countly Push Notifications, you must use `messaging` branch of countly-server repository and `messaging` branch of countly-sdk-android repository.
+
 Countly can send messages to your users too! To enable it, go to Google API Console and turn GCM on for your app. Then, instead of `ly.count:sdk-android:+` dependency or `sdk-android-14.11.jar`, use `ly.count:sdk-android-messaging:+` and `sdk-android-messaging-14.11.jar` respectively. Additionally, you'll need to enable GCM itself (see `countly-android-example-messaging` folder for example app built with Android Studio):
 
 **Add extra lines in `AndroidManifest.xml`**
