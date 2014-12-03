@@ -4,9 +4,9 @@ It collects data from mobile devices, and visualizes this information to analyze
 usage and end-user behavior. There are two parts of Countly: the server that collects and analyzes data, 
 and mobile SDK that sends this data. Both parts are open source with different licensing terms.
 
-## Android SDK
+##About
 
-This repository includes the SDK for Android.
+This repository includes the Countly Android SDK.
 
 Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly).
 
