@@ -10,7 +10,7 @@ This repository includes the Countly Android SDK.
 
 Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly).
 
-###Links
+###Other Github resources
 
 Check Countly Server source code here: 
 
