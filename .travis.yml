@@ -6,3 +6,6 @@ android:
     - sys-img-x86-android-tv-l
     - add-on
     - extra
+script:
+  - cd countly-sdk-android
+  - mvn install -B
