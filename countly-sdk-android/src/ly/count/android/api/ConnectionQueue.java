@@ -114,8 +114,7 @@ public class ConnectionQueue {
                           + "&timestamp=" + Countly.currentTimestamp()
                           + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                           + "&begin_session=1"
-                          + "&metrics=" + DeviceInfo.getMetrics(context_)
-        				  + UserData.getDataForRequest();
+                          + "&metrics=" + DeviceInfo.getMetrics(context_);
 
         store_.addConnection(data);
 
@@ -133,8 +132,7 @@ public class ConnectionQueue {
         if (duration > 0) {
             final String data = "app_key=" + appKey_
                               + "&timestamp=" + Countly.currentTimestamp()
-                              + "&session_duration=" + duration
-                              + UserData.getDataForRequest();
+                              + "&session_duration=" + duration;
 
             store_.addConnection(data);
 
@@ -156,11 +154,28 @@ public class ConnectionQueue {
         if (duration > 0) {
             data += "&session_duration=" + duration;
         }
-        data += UserData.getDataForRequest();
 
         store_.addConnection(data);
 
         tick();
+    }
+    
+    /**
+     * Send user data to the server.
+     * @throws java.lang.IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    void userData() {
+        checkInternalState();
+        String userdata = UserData.getDataForRequest();
+
+        if(!userdata.equals("")){
+        	String data = "app_key=" + appKey_
+                    + "&timestamp=" + Countly.currentTimestamp()
+                    + userdata;
+        	store_.addConnection(data);
+
+        	tick();
+        }
     }
 
     /**
