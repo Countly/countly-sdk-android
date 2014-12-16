@@ -6,5 +6,3 @@ android:
 script:
   - cd countly-sdk-android
   - mvn install -B
-  - cd tests
-  - ant debug installt
