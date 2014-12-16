@@ -3,6 +3,7 @@ package ly.count.android.example;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
+import java.util.HashMap;
 
 import ly.count.android.api.Countly;
 import ly.count.android.api.DeviceId;
@@ -17,6 +18,11 @@ public class CountlyActivity extends Activity {
 
     /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
         Countly.sharedInstance().init(this, "https://YOUR_SERVER", "YOUR_APP_KEY");
+		
+		/*********
+		 * Providing user data
+		 *********/
+		setUserData();
 
         Countly.sharedInstance().recordEvent("test", 1);
 
@@ -48,4 +54,26 @@ public class CountlyActivity extends Activity {
         Countly.sharedInstance().onStop();
     	super.onStop();
     }
+	
+	public void setUserData(){
+		HashMap<String, String> data = new HashMap<String, String>();
+		data.put("name", "Firstname Lastname");
+		data.put("username", "nickname");
+		data.put("email", "test@test.com");
+		data.put("organization", "Tester");
+		data.put("phone", "+123456789");
+		data.put("gender", "M");
+		//provide url to picture
+		//data.put("picture", "http://example.com/pictures/profile_pic.png");
+		//or locally from device
+		//data.put("picturePath", "/mnt/sdcard/portrait.jpg");
+		data.put("byear", "1987");
+		
+		//providing any custom key values to store with user
+		HashMap<String, String> custom = new HashMap<String, String>();
+		custom.put("country", "Turkey");
+		custom.put("city", "Istanbul");
+		custom.put("address", "My house 11");
+		Countly.sharedInstance().setUserData(data, custom);
+	}
 }
