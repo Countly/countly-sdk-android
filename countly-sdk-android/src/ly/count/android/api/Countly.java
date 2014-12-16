@@ -26,7 +26,6 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import android.content.Context;
-import android.os.Bundle;
 
 /**
  * This class is the public API for the Countly Android SDK.
@@ -386,10 +385,53 @@ public class Countly {
      * byear - (int) providing user's year of birth as integer
      * </li>
      * </ul>
-     * @param data Bundle with user data
+     * @param data Map<String, String> with user data
      */
-    public synchronized void setUserData(final Bundle data) {
+    public synchronized void setUserData(Map<String, String> data) {
+        setUserData(data, null);
+    }
+    
+    /**
+     * Sets information about user with custom properties. 
+     * In custom properties you can provide any string key values to be stored with user
+     * Possible keys are:
+     * <ul>
+     * <li>
+     * name - (String) providing user's full name
+     * </li>
+     * <li>
+     * username - (String) providing user's nickname
+     * </li>
+     * <li>
+     * email - (String) providing user's email address
+     * </li>
+     * <li>
+     * org - (String) providing user's organization's name where user works
+     * </li>
+     * <li>
+     * phone - (String) providing user's phone number
+     * </li>
+     * <li>
+     * picture - (String) providing WWW URL to user's avatar or profile picture
+     * </li>
+     * <li>
+     * picturePath - (String) providing local path to user's avatar or profile picture
+     * </li>
+     * <li>
+     * gender - (String) providing user's gender as M for male and F for female
+     * </li>
+     * <li>
+     * byear - (int) providing user's year of birth as integer
+     * </li>
+     * </ul>
+     * @param data Map<String, String> with user data
+     * @param customdata Map<String, String> with custom key values for this user
+     */
+    public synchronized void setUserData(Map<String, String> data, Map<String, String> customdata) {
         UserData.setData(data);
+        if(customdata != null)
+        	UserData.setCustomData(customdata);
+        connectionQueue_.userData();
     }
 
     /**

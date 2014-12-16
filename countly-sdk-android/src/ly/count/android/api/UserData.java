@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.os.Bundle;
 import android.util.Log;
 
 public class UserData {	
@@ -22,6 +24,7 @@ public class UserData {
 	public static final String PICTURE_PATH_KEY = "picturePath";
 	public static final String GENDER_KEY = "gender";
 	public static final String BYEAR_KEY = "byear";
+	public static final String CUSTOM_KEY = "custom";
 	
 	public static String name;
 	public static String username;
@@ -31,21 +34,28 @@ public class UserData {
 	public static String picture;
 	public static String picturePath;
 	public static String gender;
+	public static Map<String, String> custom;
 	public static int byear = 0;
 	public static boolean isSynced = true;
 	
 	
 	/**
      * Sets user data values.
-     * @param data Bundle with user data
+     * @param data Map with user data
      */
-	static void setData(Bundle data){
-		name = data.getString(NAME_KEY, null);
-		username = data.getString(USERNAME_KEY, null);
-		email = data.getString(EMAIL_KEY, null);
-		org = data.getString(ORG_KEY, null);
-		phone = data.getString(PHONE_KEY, null);
-		picturePath = data.getString(PICTURE_PATH_KEY, null);
+	static void setData(Map<String, String> data){
+		if(data.containsKey(NAME_KEY))
+			name = data.get(NAME_KEY);
+		if(data.containsKey(USERNAME_KEY))
+			username = data.get(USERNAME_KEY);
+		if(data.containsKey(EMAIL_KEY))
+			email = data.get(EMAIL_KEY);
+		if(data.containsKey(ORG_KEY))
+			org = data.get(ORG_KEY);
+		if(data.containsKey(PHONE_KEY))
+			phone = data.get(PHONE_KEY);
+		if(data.containsKey(PICTURE_PATH_KEY))
+			picturePath = data.get(PICTURE_PATH_KEY);
 		if(picturePath != null){
 			File sourceFile = new File(picturePath);
 			if (!sourceFile.isFile()) {
@@ -55,9 +65,31 @@ public class UserData {
 				picturePath = null;
 			}
 		}
-		picture = data.getString(PICTURE_KEY);
-		gender = data.getString(GENDER_KEY, null);
-		byear = data.getInt(BYEAR_KEY, 0);
+		if(data.containsKey(PICTURE_KEY))
+			picture = data.get(PICTURE_KEY);
+		if(data.containsKey(GENDER_KEY))
+			gender = data.get(GENDER_KEY);
+		if(data.containsKey(BYEAR_KEY)){
+			try {
+				byear = Integer.parseInt(data.get(BYEAR_KEY));
+			}
+			catch(NumberFormatException e){
+				if (Countly.sharedInstance().isLoggingEnabled()) {
+					Log.w(Countly.TAG, "Incorrect byear number format");
+				}
+				byear = 0;
+			}
+		}
+		isSynced = false;
+	}
+	
+	/**
+     * Sets user custom properties and values.
+     * @param data Map with user custom key/values
+     */
+	static void setCustomData(Map<String, String> data){
+		custom = new HashMap<String, String>();
+		custom.putAll(data);
 		isSynced = false;
 	}
 	
@@ -144,6 +176,12 @@ public class UserData {
         			json.put(BYEAR_KEY, byear);
         		else
         			json.put(BYEAR_KEY, JSONObject.NULL);
+        	if(custom != null){
+        		if(custom.isEmpty())
+        			json.put(CUSTOM_KEY, JSONObject.NULL);
+        		else
+        			json.put(CUSTOM_KEY, new JSONObject(custom));
+        	}
         }
         catch (JSONException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -168,6 +206,24 @@ public class UserData {
             picture = json.optString(PICTURE_KEY, null);
             gender = json.optString(GENDER_KEY, null);
             byear = json.optInt(BYEAR_KEY, 0);
+            if (!json.isNull(CUSTOM_KEY)) {
+            	JSONObject customJson;
+				try {
+					customJson = json.getJSONObject(CUSTOM_KEY);
+					HashMap<String, String> custom = new HashMap<String, String>(customJson.length());
+					Iterator<String> nameItr = customJson.keys();
+					while (nameItr.hasNext()) {
+						final String key = (String) nameItr.next();
+						if (!customJson.isNull(key)) {
+							custom.put(key, customJson.getString(key));
+						}
+					}
+				} catch (JSONException e) {
+					if (Countly.sharedInstance().isLoggingEnabled()) {
+		                Log.w(Countly.TAG, "Got exception converting an Custom Json to Custom User data", e);
+		            }
+				}
+            }
         }
     }
 	
