@@ -1,10 +1,6 @@
-.idea/
-*.iml
-gen/
-out/
-bin/
-/countly-sdk-android/build/
-.settings/
-.classpath
-.project
-local.properties
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
