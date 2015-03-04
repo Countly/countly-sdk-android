@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="ly.count.android.api"
-          android:versionCode="3"
-          android:versionName="14.11" >
-    <uses-sdk android:minSdkVersion="12"/>
-</manifest>
