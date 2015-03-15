@@ -26,8 +26,8 @@ public class MainActivity extends Activity {
         /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
         Countly.sharedInstance()
                 .init(this, "YOUR_SERVER", "YOUR_APP_KEY")
-                .initMessaging(this, MainActivity.class, "GCM_PROJECT_ID", Countly.CountlyMessagingMode.TEST)
-                .setLocation(44.594558, 33.448873);
+                .initMessaging(this, MainActivity.class, "GCM_PROJECT_ID", Countly.CountlyMessagingMode.TEST);
+//                .setLocation(LATITUDE, LONGITUDE);
 //                .setLoggingEnabled(true);
 
         Countly.sharedInstance().recordEvent("test", 1);

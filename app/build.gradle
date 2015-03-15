@@ -21,5 +21,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+//    compile project(':sdk')
     compile 'ly.count:sdk-android:15.02'
 }

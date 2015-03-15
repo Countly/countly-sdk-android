@@ -52,8 +52,8 @@ install {
                 developers {
                     developer {
                         id 'countly'
-                        name 'Artem Salpagarov'
-                        email 'artem.salpagarov@gmail.com'
+                        name 'Count.ly'
+                        email 'hello@count.ly'
                     }
                 }
                 scm {
