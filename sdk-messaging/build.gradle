@@ -1,20 +1,24 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
+apply plugin: 'bintray-release'
 
-group = "ly.count"
-version = "15.02"
-project.archivesBaseName = "sdk-android-messaging"
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.2.7'
+    }
+}
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "21.1.2"
+    compileSdkVersion 22
+    buildToolsVersion "22"
 
     defaultConfig {
         minSdkVersion 12
-        targetSdkVersion 21
+        targetSdkVersion 22
         versionCode 1
-        versionName "15.02"
+        versionName "15.03"
     }
     buildTypes {
         release {
@@ -24,86 +28,19 @@ android {
     }
 }
 
-def siteUrl = 'https://github.com/Countly/countly-sdk-android'
-def gitUrl = 'https://github.com/Countly/countly-sdk-android.git'
-
-install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            project {
-                packaging 'aar'
-
-                // Add your description here
-                name 'Countly SDK for Android with Messaging Support'
-                url siteUrl
-
-                // Set your license
-                licenses {
-                    license {
-                        name 'MIT License'
-                        url 'http://opensource.org/licenses/MIT'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'countly'
-                        name 'Artem Salpagarov'
-                        email 'artem.salpagarov@gmail.com'
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-                }
-            }
-        }
-    }
-}
-
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile "com.android.support:support-v4:21.0.3"
+    compile "com.android.support:support-v4:22.0.0"
     compile 'com.google.android.gms:play-services:6.5.87'
     compile project(':sdk')
 //    compile 'ly.count:sdk-android:15.02'
 }
 
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives javadocJar
-    archives sourcesJar
-}
-
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
-
-bintray {
-    user = properties.getProperty("bintray.user")
-    key = properties.getProperty("bintray.apikey")
-
-    configurations = ['archives']
-    pkg {
-        repo = "maven"
-        name = "sdk-android-messaging"
-        websiteUrl = siteUrl
-        vcsUrl = gitUrl
-        licenses = ["MIT"]
-        publish = true
-    }
+publish {
+    userOrg = 'countly'
+    groupId = 'ly.count.android'
+    artifactId = 'sdk-messaging'
+    version = '15.03'
+    description = 'Countly Android SDK with GCM Support'
+    website = 'https://github.com/Countly/countly-sdk-android'
 }
