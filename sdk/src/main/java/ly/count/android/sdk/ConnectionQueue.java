@@ -203,6 +203,24 @@ public class ConnectionQueue {
     }
 
     /**
+     * Attribute installation to Countly server.
+     * @param referrer query parameters
+     * @throws java.lang.IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    void sendReferrerData(String referrer) {
+        checkInternalState();
+
+        if(referrer != null){
+            String data = "app_key=" + appKey_
+                    + "&timestamp=" + Countly.currentTimestamp()
+                    + referrer;
+            store_.addConnection(data);
+
+            tick();
+        }
+    }
+
+    /**
      * Records the specified events and sends them to the server.
      * @param events URL-encoded JSON string of event data
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
