@@ -511,6 +511,17 @@ public class Countly {
     }
 
     /**
+     * Sets custom properties.
+     * In custom properties you can provide any string key values to be stored with user
+     * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     */
+    public synchronized void setCustomUserData(Map<String, String> customdata) {
+        if(customdata != null)
+            UserData.setCustomData(customdata);
+        connectionQueue_.sendUserData();
+    }
+
+    /**
      * Set user location.
      *
      * Countly detects user location based on IP address. But for geolocation-enabled apps,
