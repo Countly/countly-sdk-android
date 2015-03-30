@@ -443,7 +443,7 @@ public class Countly {
      * email - (String) providing user's email address
      * </li>
      * <li>
-     * org - (String) providing user's organization's name where user works
+     * organization - (String) providing user's organization's name where user works
      * </li>
      * <li>
      * phone - (String) providing user's phone number
@@ -482,7 +482,7 @@ public class Countly {
      * email - (String) providing user's email address
      * </li>
      * <li>
-     * org - (String) providing user's organization's name where user works
+     * organization - (String) providing user's organization's name where user works
      * </li>
      * <li>
      * phone - (String) providing user's phone number
