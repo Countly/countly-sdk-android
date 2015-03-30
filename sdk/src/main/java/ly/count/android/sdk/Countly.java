@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -89,6 +90,7 @@ public class Countly {
     private boolean disableUpdateSessionRequests_;
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
+    private Context context_;
 
     /**
      * Returns the Countly singleton.
@@ -213,8 +215,11 @@ public class Countly {
             eventQueue_ = new EventQueue(countlyStore);
         }
 
+        context_ = context;
+
         // context is allowed to be changed on the second init call
         connectionQueue_.setContext(context);
+
         return this;
     }
 
@@ -296,6 +301,16 @@ public class Countly {
         ++activityCount_;
         if (activityCount_ == 1) {
             onStartHelper();
+        }
+
+        //check if there is an install referrer data
+        String referrer = ReferrerReceiver.getReferrer(context_);
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Checking referrer: " + referrer);
+        }
+        if(referrer != null){
+            connectionQueue_.sendReferrerData(referrer);
+            ReferrerReceiver.deleteReferrer(context_);
         }
     }
 
