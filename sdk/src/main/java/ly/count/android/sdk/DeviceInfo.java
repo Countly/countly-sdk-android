@@ -177,6 +177,24 @@ class DeviceInfo {
     }
 
     /**
+     * Returns the package name of the app that installed this app
+     */
+    static String getStore(final Context context) {
+        String result = "";
+        try {
+            result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
+        } catch (Exception e) {
+        }
+        if (result == null || result.length() == 0) {
+            result = "";
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "No store found");
+            }
+        }
+        return result;
+    }
+
+    /**
      * Returns a URL-encoded JSON string containing the device metrics
      * to be associated with a begin session event.
      * See the following link for more info:
@@ -193,7 +211,8 @@ class DeviceInfo {
                 "_resolution", getResolution(context),
                 "_density", getDensity(context),
                 "_locale", getLocale(),
-                "_app_version", getAppVersion(context));
+                "_app_version", getAppVersion(context),
+                "_store", getStore(context));
 
         String result = json.toString();
 
