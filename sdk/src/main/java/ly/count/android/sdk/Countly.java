@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -89,6 +90,7 @@ public class Countly {
     private boolean disableUpdateSessionRequests_;
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
+    private Context context_;
 
     /**
      * Returns the Countly singleton.
@@ -213,8 +215,11 @@ public class Countly {
             eventQueue_ = new EventQueue(countlyStore);
         }
 
+        context_ = context;
+
         // context is allowed to be changed on the second init call
         connectionQueue_.setContext(context);
+
         return this;
     }
 
@@ -301,6 +306,16 @@ public class Countly {
         ++activityCount_;
         if (activityCount_ == 1) {
             onStartHelper();
+        }
+
+        //check if there is an install referrer data
+        String referrer = ReferrerReceiver.getReferrer(context_);
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Checking referrer: " + referrer);
+        }
+        if(referrer != null){
+            connectionQueue_.sendReferrerData(referrer);
+            ReferrerReceiver.deleteReferrer(context_);
         }
     }
 
@@ -448,7 +463,7 @@ public class Countly {
      * email - (String) providing user's email address
      * </li>
      * <li>
-     * org - (String) providing user's organization's name where user works
+     * organization - (String) providing user's organization's name where user works
      * </li>
      * <li>
      * phone - (String) providing user's phone number
@@ -487,7 +502,7 @@ public class Countly {
      * email - (String) providing user's email address
      * </li>
      * <li>
-     * org - (String) providing user's organization's name where user works
+     * organization - (String) providing user's organization's name where user works
      * </li>
      * <li>
      * phone - (String) providing user's phone number
@@ -510,6 +525,17 @@ public class Countly {
      */
     public synchronized void setUserData(Map<String, String> data, Map<String, String> customdata) {
         UserData.setData(data);
+        if(customdata != null)
+            UserData.setCustomData(customdata);
+        connectionQueue_.sendUserData();
+    }
+
+    /**
+     * Sets custom properties.
+     * In custom properties you can provide any string key values to be stored with user
+     * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     */
+    public synchronized void setCustomUserData(Map<String, String> customdata) {
         if(customdata != null)
             UserData.setCustomData(customdata);
         connectionQueue_.sendUserData();
