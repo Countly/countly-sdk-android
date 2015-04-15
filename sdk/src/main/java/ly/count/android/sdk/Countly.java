@@ -257,6 +257,11 @@ public class Countly {
             }
         }
         messagingMode_ = mode;
+
+        if (MessagingAdapter.isMessagingAvailable()) {
+            MessagingAdapter.storeConfiguration(connectionQueue_.getContext(), connectionQueue_.getServerURL(), connectionQueue_.getAppKey(), connectionQueue_.getDeviceId().getId(), connectionQueue_.getDeviceId().getType());
+        }
+
         return this;
     }
 

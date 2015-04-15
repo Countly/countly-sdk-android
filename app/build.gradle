@@ -5,6 +5,9 @@ buildscript {
         maven {
             url  "http://dl.bintray.com/countly/maven"
         }
+//        flatDir {
+//            dirs 'libs'
+//        }
     }
 }
 
@@ -29,6 +32,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-//    compile project(':sdk')
-    compile 'ly.count.android:sdk:15.02.01'
+    compile project(':sdk')
+//    compile 'ly.count.android:sdk:15.03'
+//    compile 'ly.count.android:sdk:15.03@aar'
 }

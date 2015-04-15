@@ -48,6 +48,6 @@ publish {
     groupId = 'ly.count.android'
     artifactId = 'sdk'
     version = '15.03'
-    description = 'Countly Android SDK'
+    description = 'Android SDK for Countly mobile analytics'
     website = 'https://github.com/Countly/countly-sdk-android'
 }
