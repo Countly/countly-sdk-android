@@ -24,9 +24,11 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -112,10 +114,33 @@ public class CountlyStore {
         return events;
     }
 
+    protected synchronized String eventsJSON() {
+        String result;
+
+        final List<Event> events = eventsList();
+
+        final JSONArray eventArray = new JSONArray();
+        for (Event e : events) {
+            eventArray.put(e.toJSON());
+        }
+
+        result = eventArray.toString();
+
+        removeEvents(events);
+
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        return result;
+    }
+
     /**
      * Returns true if no connections are current stored, false otherwise.
      */
-    public boolean isEmptyConnections() {
+    public boolean hasNoConnections() {
         return preferences_.getString(CONNECTIONS_PREFERENCE, "").length() == 0;
     }
 

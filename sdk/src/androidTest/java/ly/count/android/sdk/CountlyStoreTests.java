@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -213,7 +212,7 @@ public class CountlyStoreTests extends AndroidTestCase {
 
     public void testIsEmptyConnections_prefIsNull() {
         // the clear() call in setUp ensures the pref is not present
-        assertTrue(store.isEmptyConnections());
+        assertTrue(store.hasNoConnections());
     }
 
     public void testIsEmptyConnections_prefIsEmpty() {
@@ -221,42 +220,42 @@ public class CountlyStoreTests extends AndroidTestCase {
         final String connStr = "blah";
         store.addConnection(connStr);
         store.removeConnection(connStr);
-        assertTrue(store.isEmptyConnections());
+        assertTrue(store.hasNoConnections());
     }
 
     public void testIsEmptyConnections_prefIsPopulated() {
         final String connStr = "blah";
         store.addConnection(connStr);
-        assertFalse(store.isEmptyConnections());
+        assertFalse(store.hasNoConnections());
     }
 
     public void testAddConnection_nullStr() {
         store.addConnection(null);
-        assertTrue(store.isEmptyConnections());
+        assertTrue(store.hasNoConnections());
     }
 
     public void testAddConnection_emptyStr() {
         store.addConnection("");
-        assertTrue(store.isEmptyConnections());
+        assertTrue(store.hasNoConnections());
     }
 
     public void testRemoveConnection_nullStr() {
         store.addConnection("blah");
         store.removeConnection(null);
-        assertFalse(store.isEmptyConnections());
+        assertFalse(store.hasNoConnections());
     }
 
     public void testRemoveConnection_emptyStr() {
         store.addConnection("blah");
         store.removeConnection("");
-        assertFalse(store.isEmptyConnections());
+        assertFalse(store.hasNoConnections());
     }
 
     public void testRemoveConnection_firstConn() {
         store.addConnection("blah");
-        assertFalse(store.isEmptyConnections());
+        assertFalse(store.hasNoConnections());
         store.removeConnection("blah");
-        assertTrue(store.isEmptyConnections());
+        assertTrue(store.hasNoConnections());
     }
 
     public void testRemoveConnection_notFirstConn() {

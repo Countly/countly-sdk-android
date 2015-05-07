@@ -39,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -366,7 +365,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
     }
 
     public void testTick_storeHasNoConnections() {
-        when(connQ.getCountlyStore().isEmptyConnections()).thenReturn(true);
+        when(connQ.getCountlyStore().hasNoConnections()).thenReturn(true);
         connQ.tick();
         verifyZeroInteractions(connQ.getExecutor());
     }

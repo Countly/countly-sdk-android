@@ -18,7 +18,10 @@ public class DeviceId {
     }
 
     private static final String TAG = "DeviceId";
+    private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
+    private static final String PREFERENCE_KEY_ID_ROLLBACK_ID = "ly.count.android.api.DeviceId.rollback.id";
+    private static final String PREFERENCE_KEY_ID_ROLLBACK_TYPE = "ly.count.android.api.DeviceId.rollback.type";
 
     private String id;
     private Type type;
@@ -27,25 +30,36 @@ public class DeviceId {
      * Initialize DeviceId with Type of OPEN_UDID or ADVERTISING_ID
      * @param type type of ID generation strategy
      */
-    public DeviceId(Type type) {
+    public DeviceId(CountlyStore store, Type type) {
         if (type == null) {
             throw new IllegalStateException("Please specify DeviceId.Type, that is which type of device ID generation you want to use");
         } else if (type == Type.DEVELOPER_SUPPLIED) {
             throw new IllegalStateException("Please use another DeviceId constructor for device IDs supplied by developer");
         }
         this.type = type;
+
+        String storedId = store.getPreference(PREFERENCE_KEY_ID_ID);
+        if (storedId != null) {
+            this.id = storedId;
+            this.type = retrieveType(store, PREFERENCE_KEY_ID_TYPE);
+        }
     }
 
     /**
      * Initialize DeviceId with Developer-supplied id string
      * @param developerSuppliedId Device ID string supplied by developer
      */
-    public DeviceId(String developerSuppliedId) {
+    public DeviceId(CountlyStore store, String developerSuppliedId) {
         if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
             throw new IllegalStateException("Please make sure that device ID is not null or empty");
         }
         this.type = Type.DEVELOPER_SUPPLIED;
         this.id = developerSuppliedId;
+
+        String storedId = store.getPreference(PREFERENCE_KEY_ID_ID);
+        if (storedId != null && !storedId.equals(developerSuppliedId)) {
+            Countly.sharedInstance().setDeviceId(storedId);
+        }
     }
 
     /**
@@ -117,21 +131,23 @@ public class DeviceId {
     }
 
     private Type retrieveOverriddenType(CountlyStore store) {
+        return retrieveType(store, PREFERENCE_KEY_ID_TYPE);
+    }
+
+    private Type retrieveType(CountlyStore store, String preferenceName) {
         // Using strings is safer when it comes to extending Enum values list
-        String oldTypeString = store.getPreference(PREFERENCE_KEY_ID_TYPE);
-        Type oldType;
-        if (oldTypeString == null) {
-            oldType = null;
-        } else if (oldTypeString.equals(Type.DEVELOPER_SUPPLIED.toString())) {
-            oldType = Type.DEVELOPER_SUPPLIED;
-        } else if (oldTypeString.equals(Type.OPEN_UDID.toString())) {
-            oldType = Type.OPEN_UDID;
-        } else if (oldTypeString.equals(Type.ADVERTISING_ID.toString())) {
-            oldType = Type.ADVERTISING_ID;
+        String typeString = store.getPreference(preferenceName);
+        if (typeString == null) {
+            return null;
+        } else if (typeString.equals(Type.DEVELOPER_SUPPLIED.toString())) {
+            return Type.DEVELOPER_SUPPLIED;
+        } else if (typeString.equals(Type.OPEN_UDID.toString())) {
+            return Type.OPEN_UDID;
+        } else if (typeString.equals(Type.ADVERTISING_ID.toString())) {
+            return Type.ADVERTISING_ID;
         } else {
-            oldType = null;
+            return null;
         }
-        return oldType;
     }
 
     public String getId() {
@@ -156,6 +172,43 @@ public class DeviceId {
         this.type = type;
         storeOverriddenType(store, type);
         init(context, store, false);
+    }
+
+    protected String changeToDeveloperId(CountlyStore store, String newId) {
+        if (id != null && type != null && type != Type.DEVELOPER_SUPPLIED) {
+            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_ID, id);
+            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_TYPE, type.toString());
+        }
+
+        String oldId = id == null || !id.equals(newId) ? id : null;
+
+        id = newId;
+        type = Type.DEVELOPER_SUPPLIED;
+
+        store.setPreference(PREFERENCE_KEY_ID_ID, id);
+        store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
+
+        return oldId;
+    }
+
+    protected String revertFromDeveloperId(CountlyStore store) {
+        store.setPreference(PREFERENCE_KEY_ID_ID, null);
+        store.setPreference(PREFERENCE_KEY_ID_TYPE, null);
+
+        String i = store.getPreference(PREFERENCE_KEY_ID_ROLLBACK_ID);
+        Type t = retrieveType(store, PREFERENCE_KEY_ID_ROLLBACK_TYPE);
+
+        String oldId = null;
+
+        if (i != null && t != null) {
+            oldId = id == null || !id.equals(i) ? id : null;
+            this.id = i;
+            this.type = t;
+            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_ID, null);
+            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_TYPE, null);
+        }
+
+        return oldId;
     }
 
     public Type getType() {

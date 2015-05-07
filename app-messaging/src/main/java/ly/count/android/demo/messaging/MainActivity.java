@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlySession;
 import ly.count.android.sdk.messaging.CountlyMessaging;
 import ly.count.android.sdk.messaging.Message;
 
@@ -24,27 +25,44 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
-        Countly.sharedInstance()
+        Countly.enableProgrammaticSessionHandling()
+                .setLoggingEnabled(true)
                 .init(this, "YOUR_SERVER", "YOUR_APP_KEY")
                 .initMessaging(this, MainActivity.class, "GCM_PROJECT_ID", Countly.CountlyMessagingMode.TEST);
-//                .setLocation(LATITUDE, LONGITUDE);
-//                .setLoggingEnabled(true);
+
+        final CountlySession session = CountlySession.start();
+        session.setLocation(44.6039185, 33.6006774);
 
         Countly.sharedInstance().recordEvent("test", 1);
 
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                Countly.sharedInstance().recordEvent("test2", 1, 2);
+                final CountlySession additionalSession = CountlySession.start();
+                additionalSession.recordEvent("test2", 1, 2);
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        additionalSession.end();
+                    }
+                }, 55000);
             }
         }, 5000);
 
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                Countly.sharedInstance().recordEvent("test3");
+                session.recordEvent("test3");
             }
         }, 10000);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                session.end();
+            }
+        }, 45000);
 
     }
 

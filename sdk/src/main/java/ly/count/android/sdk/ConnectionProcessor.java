@@ -22,6 +22,7 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.os.Build;
+import android.os.SystemClock;
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -37,6 +38,11 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ConnectionProcessor is a Runnable that is executed on a background
@@ -48,15 +54,78 @@ import java.net.URLConnection;
 public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
+    private static final int WAIT_FOR_REQUEST_TIME_IN_SECONDS = 10;
 
     private final CountlyStore store_;
     private final DeviceId deviceId_;
     private final String serverURL_;
+    private final OnResultListener listener_;
 
-    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId) {
+
+    private static ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private static Future<?> future;
+
+    public static class Result {
+        public static final int SKIPPING_NO_DEVICE_ID = 496;
+        public static final int ERROR_EXCEPTION = 497;
+        public static final int ERROR_INVALID_RESPONSE = 498;
+        public static final int ERROR_NO_REQUESTS = 499;
+        public String request;
+        public int code;
+        public String response;
+        public JSONObject json;
+
+        public boolean isSuccess() {
+            return code >= 200 && code < 300;
+        }
+    }
+
+    public interface OnResultListener {
+        public void onResult(ConnectionProcessor.Result result);
+    }
+
+    public static void start(final CountlyStore store, final String serverURL, final DeviceId deviceId) {
+        if (future == null) handleResult(store, serverURL, deviceId, null);
+    }
+
+    private static synchronized void handleResult(final CountlyStore store, final String serverURL, final DeviceId deviceId, Result result) {
+        if (result == null || result.isSuccess()) {
+            if (result != null && result.isSuccess()) {
+                // handling result of previous request
+                store.removeConnection(result.request);
+            }
+            // just go ahead and send a request if there are any
+            if (store.hasNoConnections()) {
+                waitAndSendNextRequest(store, serverURL, deviceId, null);
+            } else {
+                future = executor.submit(new ConnectionProcessor(serverURL, store, deviceId, new OnResultListener() {
+                    @Override
+                    public void onResult(Result result) {
+                        handleResult(store, serverURL, deviceId, result);
+                    }
+                }));
+            }
+        } else {
+            // retrying a bit later in case of error
+            Log.e(Countly.TAG, "Couldn't send request, retrying in " + WAIT_FOR_REQUEST_TIME_IN_SECONDS + " seconds");
+            waitAndSendNextRequest(store, serverURL, deviceId, null);
+        }
+    }
+
+    private static void waitAndSendNextRequest(final CountlyStore store, final String serverURL, final DeviceId deviceId, Result result) {
+        future = executor.schedule(new Runnable() {
+            @Override
+            public void run() {
+                handleResult(store, serverURL, deviceId, null);
+            }
+        }, WAIT_FOR_REQUEST_TIME_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final OnResultListener listener) {
         serverURL_ = serverURL;
         store_ = store;
         deviceId_ = deviceId;
+        listener_ = listener;
 
         // HTTP connection reuse which was buggy pre-froyo
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
@@ -117,88 +186,101 @@ public class ConnectionProcessor implements Runnable {
 
     @Override
     public void run() {
-        while (true) {
-            final String[] storedEvents = store_.connections();
-            if (storedEvents == null || storedEvents.length == 0) {
-                // currently no data to send, we are done for now
-                break;
+        final ConnectionProcessor.Result result = new ConnectionProcessor.Result();
+
+        final String[] connections = store_.connections();
+        if (connections == null || connections.length == 0) {
+            // currently no data to send, we are done for now
+            result.code = Result.ERROR_NO_REQUESTS;
+            if (listener_ != null) {
+                listener_.onResult(result);
+            }
+            return;
+        }
+
+        result.request = connections[0];
+
+        // get first event from collection
+        if (deviceId_.getId() == null) {
+            // When device ID is supplied by OpenUDID or by Google Advertising ID.
+            // In some cases it might take time for them to initialize. So, just wait for it.
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "No Device ID available yet, skipping request " + connections[0]);
+            }
+            result.code = Result.SKIPPING_NO_DEVICE_ID;
+            if (listener_ != null) {
+                listener_.onResult(result);
+            }
+            return;
+        }
+        final String request = connections[0] + "&device_id=" + deviceId_.getId();
+
+        // Small hook to help previous request to end up in MongoDB before proceeding with this one
+        if (request.contains("token_session")) {
+            SystemClock.sleep(5000);
+        }
+
+        URLConnection conn = null;
+        BufferedInputStream responseStream = null;
+        try {
+            conn = urlConnectionForEventData(request);
+            conn.connect();
+
+            // consume response stream
+            responseStream = new BufferedInputStream(conn.getInputStream());
+            final ByteArrayOutputStream responseData = new ByteArrayOutputStream(256); // big enough to handle success response without reallocating
+            int c;
+            while ((c = responseStream.read()) != -1) {
+                responseData.write(c);
             }
 
-            // get first event from collection
-            if (deviceId_.getId() == null) {
-                // When device ID is supplied by OpenUDID or by Google Advertising ID.
-                // In some cases it might take time for them to initialize. So, just wait for it.
+            result.response = responseData.toString("UTF-8");
+
+            // response code has to be 2xx to be considered a success
+            boolean success = true;
+            if (conn instanceof HttpURLConnection) {
+                final HttpURLConnection httpConn = (HttpURLConnection) conn;
+                result.code = httpConn.getResponseCode();
+                success = result.isSuccess();
+                if (!success && Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "HTTP error response code was " + result.code + " from submitting event data: " + request);
+                }
+            }
+
+            // HTTP response code was good, check response JSON contains {"result":"Success"}
+            if (success) {
+                result.json = new JSONObject(result.response);
+                success = result.json.optString("result").equalsIgnoreCase("success");
+                if (!success && Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "Response from Countly server did not report success, it was: " + responseData.toString("UTF-8"));
+                }
+            }
+
+            if (success) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "No Device ID available yet, skipping request " + storedEvents[0]);
-                }
-                break;
-            }
-            final String eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
-
-            URLConnection conn = null;
-            BufferedInputStream responseStream = null;
-            try {
-                // initialize and open connection
-                conn = urlConnectionForEventData(eventData);
-                conn.connect();
-
-                // consume response stream
-                responseStream = new BufferedInputStream(conn.getInputStream());
-                final ByteArrayOutputStream responseData = new ByteArrayOutputStream(256); // big enough to handle success response without reallocating
-                int c;
-                while ((c = responseStream.read()) != -1) {
-                    responseData.write(c);
-                }
-
-                // response code has to be 2xx to be considered a success
-                boolean success = true;
-                if (conn instanceof HttpURLConnection) {
-                    final HttpURLConnection httpConn = (HttpURLConnection) conn;
-                    final int responseCode = httpConn.getResponseCode();
-                    success = responseCode >= 200 && responseCode < 300;
-                    if (!success && Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
-                    }
-                }
-
-                // HTTP response code was good, check response JSON contains {"result":"Success"}
-                if (success) {
-                    final JSONObject responseDict = new JSONObject(responseData.toString("UTF-8"));
-                    success = responseDict.optString("result").equalsIgnoreCase("success");
-                    if (!success && Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Response from Countly server did not report success, it was: " + responseData.toString("UTF-8"));
-                    }
-                }
-
-                if (success) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "ok ->" + eventData);
-                    }
-
-                    // successfully submitted event data to Count.ly server, so remove
-                    // this one from the stored events collection
-                    store_.removeConnection(storedEvents[0]);
-                }
-                else {
-                    // warning was logged above, stop processing, let next tick take care of retrying
-                    break;
+                    Log.d(Countly.TAG, "ok ->" + request);
                 }
             }
-            catch (Exception e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Got exception while trying to submit event data: " + eventData, e);
-                }
-                // if exception occurred, stop processing, let next tick take care of retrying
-                break;
+            else {
+                result.code = Result.ERROR_INVALID_RESPONSE;
             }
-            finally {
-                // free connection resources
-                if (responseStream != null) {
-                    try { responseStream.close(); } catch (IOException ignored) {}
-                }
-                if (conn != null && conn instanceof HttpURLConnection) {
-                    ((HttpURLConnection)conn).disconnect();
-                }
+        }
+        catch (Exception e) {
+            result.code = Result.ERROR_EXCEPTION;
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.w(Countly.TAG, "Got exception while trying to submit event data: " + request, e);
+            }
+        }
+        finally {
+            // free connection resources
+            if (responseStream != null) {
+                try { responseStream.close(); } catch (IOException ignored) {}
+            }
+            if (conn != null && conn instanceof HttpURLConnection) {
+                ((HttpURLConnection)conn).disconnect();
+            }
+            if (listener_ != null) {
+                listener_.onResult(result);
             }
         }
     }

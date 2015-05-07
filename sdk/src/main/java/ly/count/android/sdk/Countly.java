@@ -22,16 +22,19 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This class is the public API for the Countly Android SDK.
@@ -42,26 +45,31 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "14.12";
+    protected static final String COUNTLY_SDK_VERSION_STRING = "15.04";
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
      */
-    public static final String DEFAULT_APP_VERSION = "1.0";
+    protected static final String DEFAULT_APP_VERSION = "1.0";
     /**
      * Tag used in all logging in the Count.ly SDK.
      */
-    public static final String TAG = "Countly";
+    protected static final String TAG = "Countly";
 
     /**
      * Determines how many custom events can be queued locally before
      * an attempt is made to submit them to a Count.ly server.
      */
-    private static final int EVENT_QUEUE_SIZE_THRESHOLD = 10;
+    protected static final int EVENT_QUEUE_SIZE_THRESHOLD = 10;
     /**
      * How often onTimer() is called.
      */
-    private static final long TIMER_DELAY_IN_SECONDS = 60;
+    protected static final long TIMER_DELAY_IN_SECONDS = 60;
+
+    /**
+     * Whether developer is responsible for session handling (starting & stopping) or Countly SDK is.
+     */
+    protected static boolean programmaticSessionHandling = false;
 
     /**
      * Enum used in Countly.initMessaging() method which controls what kind of
@@ -79,16 +87,23 @@ public class Countly {
         static final Countly instance = new Countly();
     }
 
-    private ConnectionQueue connectionQueue_;
     @SuppressWarnings("FieldCanBeLocal")
-    private ScheduledExecutorService timerService_;
-    private EventQueue eventQueue_;
+    protected CountlyStore store_;
     private DeviceId deviceId_Manager_;
-    private long prevSessionDurationStartTime_;
     private int activityCount_;
     private boolean disableUpdateSessionRequests_;
-    private boolean enableLogging_;
+    protected boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
+<<<<<<< Updated upstream
+=======
+    private Context context_;
+    protected ConnectionProcessor connectionProcessor_;
+
+    protected String metrics_;
+    protected String appKey_;
+    private String serverURL_;
+    private DeviceId deviceId_;
+>>>>>>> Stashed changes
 
     /**
      * Returns the Countly singleton.
@@ -101,17 +116,34 @@ public class Countly {
      * Constructs a Countly object.
      * Creates a new ConnectionQueue and initializes the session timer.
      */
-    Countly() {
-        connectionQueue_ = new ConnectionQueue();
-        timerService_ = Executors.newSingleThreadScheduledExecutor();
-        timerService_.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                onTimer();
-            }
-        }, TIMER_DELAY_IN_SECONDS, TIMER_DELAY_IN_SECONDS, TimeUnit.SECONDS);
+    private Countly() {
     }
 
+    /**
+     * Enables manual session handling.
+     *
+     * By default, Countly SDK is responsible for session duration calculation in case app is:
+     * - calling onResume() & onPause() in each Activity for Android API < 14;
+     * - calling or not calling onResume() & onPause() in each Activity for Android API > 14.
+     *
+     * This method disables this functionality to give developer ability to control sessions
+     * programmatically, that is calling Countly.startSession() & CountlySession.end() methods
+     * whenever needed.
+     *
+     * !!!! IMPORTANT !!!! This method must be called before Countly.init(). Otherwise,
+     * additional session will be recorded.
+     *
+     * @throws java.lang.IllegalStateException if the Countly SDK has already been initialized
+     */
+    public static Countly enableProgrammaticSessionHandling() {
+        if (sharedInstance().context_ != null) {
+            throw new IllegalStateException("enableProgrammaticSessionHandling() must be called prior to Countly.init()");
+        }
+
+        programmaticSessionHandling = true;
+
+        return Countly.sharedInstance();
+    }
 
     /**
      * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
@@ -179,9 +211,9 @@ public class Countly {
         if (deviceID == null && idMode == DeviceId.Type.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
             throw new IllegalArgumentException("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
         }
-        if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(serverURL) ||
-                                    !connectionQueue_.getAppKey().equals(appKey) ||
-                                    !DeviceId.deviceIDEqualsNullSafe(deviceID, idMode, connectionQueue_.getDeviceId()) )) {
+        if (appKey_ != null && (!appKey_.equals(appKey) ||
+                                !serverURL_.equals(serverURL) ||
+                                 !DeviceId.deviceIDEqualsNullSafe(deviceID, idMode, deviceId_) )) {
             throw new IllegalStateException("Countly cannot be reinitialized with different values");
         }
 
@@ -191,31 +223,95 @@ public class Countly {
             MessagingAdapter.storeConfiguration(context, serverURL, appKey, deviceID, idMode);
         }
 
-        // if we get here and eventQueue_ != null, init is being called again with the same values,
-        // so there is nothing to do, because we are already initialized with those values
-        if (eventQueue_ == null) {
-            DeviceId deviceIdInstance;
+        if (appKey_ == null) {
+            metrics_ = DeviceInfo.getMetrics(context);
+            appKey_ = appKey;
+            serverURL_ = serverURL;
+
+            store_ = new CountlyStore(context);
+
             if (deviceID != null) {
-                deviceIdInstance = new DeviceId(deviceID);
+                deviceId_ = new DeviceId(store_, deviceID);
             } else {
-                deviceIdInstance = new DeviceId(idMode);
+                deviceId_ = new DeviceId(store_, idMode);
             }
+            deviceId_.init(context, store_, true);
 
-            final CountlyStore countlyStore = new CountlyStore(context);
-
-            deviceIdInstance.init(context, countlyStore, true);
-
-            connectionQueue_.setServerURL(serverURL);
-            connectionQueue_.setAppKey(appKey);
-            connectionQueue_.setCountlyStore(countlyStore);
-            connectionQueue_.setDeviceId(deviceIdInstance);
-
-            eventQueue_ = new EventQueue(countlyStore);
+            ConnectionProcessor.start(store_, serverURL_, deviceId_);
         }
 
+<<<<<<< Updated upstream
         // context is allowed to be changed on the second init call
         connectionQueue_.setContext(context);
+=======
+        context_ = context;
+
+        if (!programmaticSessionHandling){
+            CountlySession.startIfNoneExists();
+
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                if (context.getApplicationContext() instanceof Application) {
+                    // Thanks to this, we don't have to call onStart() / onStop() for Android 4.0+ anymore
+                    ((Application) context.getApplicationContext()).registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+                        @Override
+                        public void onActivityCreated(Activity activity, Bundle bundle) {}
+
+                        @Override
+                        public void onActivityStarted(Activity activity) {
+                            incrementActivityCount();
+                        }
+
+                        @Override
+                        public void onActivityResumed(Activity activity) {
+                        }
+                        @Override
+                        public void onActivityPaused(Activity activity) {
+//                        new Handler().postDelayed(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                decrementActivityCount();
+//                            }
+//                        }, 1000);
+                        }
+
+                        @Override
+                        public void onActivityStopped(Activity activity) {
+                            decrementActivityCount();
+                        }
+
+                        @Override
+                        public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {}
+                        @Override
+                        public void onActivityDestroyed(Activity activity) {}
+                    });
+                } else {
+                    Log.e(TAG, "Please update Countly SDK to latest version (Context.getApplicationContext() returns non-instance of Application)");
+                }
+            }
+        }
+
+>>>>>>> Stashed changes
         return this;
+    }
+
+    /**
+     * Start new session.
+     * @return
+     */
+    public synchronized CountlySession startSession() {
+        CountlySession session = new CountlySession(disableUpdateSessionRequests_ ? 0 : TIMER_DELAY_IN_SECONDS, appKey_, metrics_, store_);
+
+        //check if there is an install referrer data
+        String referrer = ReferrerReceiver.getReferrer(context_);
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Checking referrer: " + referrer);
+        }
+        if (referrer != null) {
+            session.setReferrer(referrer);
+            ReferrerReceiver.deleteReferrer(context_);
+        }
+
+        return session;
     }
 
     /**
@@ -223,7 +319,7 @@ public class Countly {
      * @return true if Countly is ready to use
      */
     public synchronized boolean isInitialized() {
-        return eventQueue_ != null;
+        return appKey_ != null;
     }
 
     /**
@@ -238,6 +334,7 @@ public class Countly {
     public Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, Countly.CountlyMessagingMode mode) {
         return initMessaging(activity, activityClass, projectID, null, mode);
     }
+
     /**
      * Initializes the Countly MessagingSDK. Call from your main Activity's onCreate() method.
      * @param activity application activity which acts as a final destination for notifications
@@ -259,7 +356,7 @@ public class Countly {
         messagingMode_ = mode;
 
         if (MessagingAdapter.isMessagingAvailable()) {
-            MessagingAdapter.storeConfiguration(connectionQueue_.getContext(), connectionQueue_.getServerURL(), connectionQueue_.getAppKey(), connectionQueue_.getDeviceId().getId(), connectionQueue_.getDeviceId().getType());
+            MessagingAdapter.storeConfiguration(context_, serverURL_, appKey_, deviceId_.getId(), deviceId_.getType());
         }
 
         return this;
@@ -273,16 +370,13 @@ public class Countly {
      * again.
      */
     public synchronized void halt() {
-        eventQueue_ = null;
-        final CountlyStore countlyStore = connectionQueue_.getCountlyStore();
-        if (countlyStore != null) {
-            countlyStore.clear();
+        if (store_ != null) {
+            store_.clear();
         }
-        connectionQueue_.setContext(null);
-        connectionQueue_.setServerURL(null);
-        connectionQueue_.setAppKey(null);
-        connectionQueue_.setCountlyStore(null);
-        prevSessionDurationStartTime_ = 0;
+        serverURL_ = null;
+        appKey_ = null;
+        deviceId_ = null;
+        CountlySession.terminateAll(true);
         activityCount_ = 0;
     }
 
@@ -294,23 +388,27 @@ public class Countly {
      * @throws IllegalStateException if Countly SDK has not been initialized
      */
     public synchronized void onStart() {
-        if (eventQueue_ == null) {
+        if (!isInitialized()) {
             throw new IllegalStateException("init must be called before onStart");
         }
 
+<<<<<<< Updated upstream
         ++activityCount_;
         if (activityCount_ == 1) {
             onStartHelper();
+=======
+        // onStart() & onStop() are required only for Android versions < 4.0
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH || !(context_.getApplicationContext() instanceof Application)) {
+            incrementActivityCount();
+>>>>>>> Stashed changes
         }
     }
 
     /**
-     * Called when the first Activity is started. Sends a begin session event to the server
-     * and initializes application session tracking.
+     * Called by Application.ActivityLifecycleCallbacks internally by Countly SDK
      */
-    void onStartHelper() {
-        prevSessionDurationStartTime_ = System.nanoTime();
-        connectionQueue_.beginSession();
+    void incrementActivityCount() {
+        ++activityCount_;
     }
 
     /**
@@ -322,37 +420,41 @@ public class Countly {
      *                               unbalanced calls to onStart/onStop are detected
      */
     public synchronized void onStop() {
-        if (eventQueue_ == null) {
+        if (!isInitialized()) {
             throw new IllegalStateException("init must be called before onStop");
         }
-        if (activityCount_ == 0) {
-            throw new IllegalStateException("must call onStart before onStop");
-        }
 
-        --activityCount_;
-        if (activityCount_ == 0) {
-            onStopHelper();
+        // onStart() & onStop() are required only for Android versions < 4.0
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH || !(context_.getApplicationContext() instanceof Application)) {
+            decrementActivityCount();
         }
     }
 
     /**
-     * Called when final Activity is stopped. Sends an end session event to the server,
-     * also sends any unsent custom events.
+     * Called by Application.ActivityLifecycleCallbacks internally by Countly SDK
      */
-    void onStopHelper() {
-        connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate());
-        prevSessionDurationStartTime_ = 0;
-
-        if (eventQueue_.size() > 0) {
-            connectionQueue_.recordEvents(eventQueue_.events());
+    void decrementActivityCount() {
+        --activityCount_;
+        if (activityCount_ <= 0) {
+            CountlySession.terminateAll(false);
         }
     }
 
     /**
      * Called when GCM Registration ID is received. Sends a token session event to the server.
      */
-    public void onRegistrationId(String registrationId) {
-        connectionQueue_.tokenSession(registrationId, messagingMode_);
+    public void onRegistrationId(final String registrationId) {
+        if (CountlySession.leading() == null) {
+            CountlySession.whenSessionIsAvailableCalls.add(new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    Countly.sharedInstance().onRegistrationId(registrationId);
+                    return null;
+                }
+            });
+        } else {
+            CountlySession.leading().setGCMToken(registrationId, messagingMode_);
+        }
     }
 
     /**
@@ -360,9 +462,10 @@ public class Countly {
      * @param key name of the custom event, required, must not be the empty string
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public void recordEvent(final String key) {
-        recordEvent(key, null, 1, 0);
+        CountlySession.leading().recordEvent(key);
     }
 
     /**
@@ -371,9 +474,10 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public void recordEvent(final String key, final int count) {
-        recordEvent(key, null, count, 0);
+        CountlySession.leading().recordEvent(key, count);
     }
 
     /**
@@ -383,9 +487,10 @@ public class Countly {
      * @param sum sum to associate with the event
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public void recordEvent(final String key, final int count, final double sum) {
-        recordEvent(key, null, count, sum);
+        CountlySession.leading().recordEvent(key, count, sum);
     }
 
     /**
@@ -395,9 +500,10 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public void recordEvent(final String key, final Map<String, String> segmentation, final int count) {
-        recordEvent(key, segmentation, count, 0);
+        CountlySession.leading().recordEvent(key, segmentation, count);
     }
 
     /**
@@ -409,30 +515,10 @@ public class Countly {
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
-        if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
-        }
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Valid Countly event key is required");
-        }
-        if (count < 1) {
-            throw new IllegalArgumentException("Countly event count should be greater than zero");
-        }
-        if (segmentation != null) {
-            for (String k : segmentation.keySet()) {
-                if (k == null || k.length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                }
-                if (segmentation.get(k) == null || segmentation.get(k).length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
-                }
-            }
-        }
-
-        eventQueue_.recordEvent(key, segmentation, count, sum);
-        sendEventsIfNeeded();
+        CountlySession.leading().recordEvent(key, segmentation, count, sum);
     }
 
     /**
@@ -467,9 +553,10 @@ public class Countly {
      * </li>
      * </ul>
      * @param data Map&lt;String, String&gt; with user data
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public synchronized void setUserData(Map<String, String> data) {
-        setUserData(data, null);
+        CountlySession.leading().setUserData(data);
     }
 
     /**
@@ -507,15 +594,26 @@ public class Countly {
      * </ul>
      * @param data Map&lt;String, String&gt; with user data
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public synchronized void setUserData(Map<String, String> data, Map<String, String> customdata) {
-        UserData.setData(data);
-        if(customdata != null)
-            UserData.setCustomData(customdata);
-        connectionQueue_.sendUserData();
+        CountlySession.leading().setUserData(data, customdata);
     }
 
     /**
+<<<<<<< Updated upstream
+=======
+     * Sets custom properties.
+     * In custom properties you can provide any string key values to be stored with user
+     * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
+     */
+    public synchronized void setCustomUserData(Map<String, String> customdata) {
+        CountlySession.leading().setCustomUserData(customdata);
+    }
+
+    /**
+>>>>>>> Stashed changes
      * Set user location.
      *
      * Countly detects user location based on IP address. But for geolocation-enabled apps,
@@ -524,14 +622,50 @@ public class Countly {
      *
      * @param lat Latitude
      * @param lon Longitude
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
      */
     public synchronized Countly setLocation(double lat, double lon) {
-        connectionQueue_.getCountlyStore().setLocation(lat, lon);
+        CountlySession.leading().setLocation(lat, lon);
+        return this;
+    }
 
-        if (disableUpdateSessionRequests_) {
-            connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+    /**
+     * Change device ID.
+     *
+     * Supplied device ID is saved and used instead of strategy defined in Countly.init() parameters
+     * for all subsequent API calls.
+     * To revert device ID back to Countly.init() parameters, use Countly.revertDeviceId().
+     * Typical use case: user login.
+     *
+     * @param newId New device ID
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
+     * @return Countly instance for easy method chaining
+     */
+    public synchronized Countly setDeviceId(String newId) {
+        if (newId != null && !"".equals(newId)) {
+            String oldId = deviceId_Manager_.changeToDeveloperId(store_, newId);
+            if (oldId != null) {
+                CountlySession.leading().changeDeviceId(oldId, deviceId_.getId());
+            }
         }
+        return this;
+    }
 
+    /**
+     * Revert device ID.
+     *
+     * Countly removes device ID saved when calling Countly.setDeviceId() and uses strategy
+     * defined in Countly.init() parameters for all subsequent API calls.
+     * Typical use case: user logout.
+     *
+     * @throws java.lang.NullPointerException if programmatic session management is enabled and no session is started yet
+     * @return Countly instance for easy method chaining
+     */
+    public synchronized Countly revertDeviceId() {
+        String oldId = deviceId_Manager_.revertFromDeveloperId(store_);
+        if (oldId != null) {
+            CountlySession.leading().changeDeviceId(oldId, deviceId_.getId());
+        }
         return this;
     }
 
@@ -545,6 +679,7 @@ public class Countly {
      */
     public synchronized Countly setDisableUpdateSessionRequests(final boolean disable) {
         disableUpdateSessionRequests_ = disable;
+        CountlySession.setUpdatesEnabled(!disable);
         return this;
     }
 
@@ -560,41 +695,6 @@ public class Countly {
 
     public synchronized boolean isLoggingEnabled() {
         return enableLogging_;
-    }
-
-    /**
-     * Submits all of the locally queued events to the server if there are more than 10 of them.
-     */
-    void sendEventsIfNeeded() {
-        if (eventQueue_.size() >= EVENT_QUEUE_SIZE_THRESHOLD) {
-            connectionQueue_.recordEvents(eventQueue_.events());
-        }
-    }
-
-    /**
-     * Called every 60 seconds to send a session heartbeat to the server. Does nothing if there
-     * is not an active application session.
-     */
-    synchronized void onTimer() {
-        final boolean hasActiveSession = activityCount_ > 0;
-        if (hasActiveSession) {
-            if (!disableUpdateSessionRequests_) {
-                connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
-            }
-            if (eventQueue_.size() > 0) {
-                connectionQueue_.recordEvents(eventQueue_.events());
-            }
-        }
-    }
-
-    /**
-     * Calculates the unsent session duration in seconds, rounded to the nearest int.
-     */
-    int roundedSecondsSinceLastSessionDurationUpdate() {
-        final long currentTimestampInNanoseconds = System.nanoTime();
-        final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
-        prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
     }
 
     /**
@@ -622,13 +722,6 @@ public class Countly {
     }
 
     // for unit testing
-    ConnectionQueue getConnectionQueue() { return connectionQueue_; }
-    void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }
-    ExecutorService getTimerService() { return timerService_; }
-    EventQueue getEventQueue() { return eventQueue_; }
-    void setEventQueue(final EventQueue eventQueue) { eventQueue_ = eventQueue; }
-    long getPrevSessionDurationStartTime() { return prevSessionDurationStartTime_; }
-    void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
     int getActivityCount() { return activityCount_; }
     boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
 }
