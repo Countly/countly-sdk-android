@@ -26,6 +26,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -89,21 +90,16 @@ public class Countly {
 
     @SuppressWarnings("FieldCanBeLocal")
     protected CountlyStore store_;
-    private DeviceId deviceId_Manager_;
     private int activityCount_;
     private boolean disableUpdateSessionRequests_;
     protected boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
-<<<<<<< Updated upstream
-=======
     private Context context_;
-    protected ConnectionProcessor connectionProcessor_;
 
     protected String metrics_;
     protected String appKey_;
     private String serverURL_;
     private DeviceId deviceId_;
->>>>>>> Stashed changes
 
     /**
      * Returns the Countly singleton.
@@ -240,10 +236,6 @@ public class Countly {
             ConnectionProcessor.start(store_, serverURL_, deviceId_);
         }
 
-<<<<<<< Updated upstream
-        // context is allowed to be changed on the second init call
-        connectionQueue_.setContext(context);
-=======
         context_ = context;
 
         if (!programmaticSessionHandling){
@@ -290,7 +282,6 @@ public class Countly {
             }
         }
 
->>>>>>> Stashed changes
         return this;
     }
 
@@ -299,7 +290,7 @@ public class Countly {
      * @return
      */
     public synchronized CountlySession startSession() {
-        CountlySession session = new CountlySession(disableUpdateSessionRequests_ ? 0 : TIMER_DELAY_IN_SECONDS, appKey_, metrics_, store_);
+        CountlySession session = new CountlySession(disableUpdateSessionRequests_ ? 0 : TIMER_DELAY_IN_SECONDS, appKey_, metrics_, store_, deviceId_);
 
         //check if there is an install referrer data
         String referrer = ReferrerReceiver.getReferrer(context_);
@@ -392,15 +383,9 @@ public class Countly {
             throw new IllegalStateException("init must be called before onStart");
         }
 
-<<<<<<< Updated upstream
-        ++activityCount_;
-        if (activityCount_ == 1) {
-            onStartHelper();
-=======
         // onStart() & onStop() are required only for Android versions < 4.0
         if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH || !(context_.getApplicationContext() instanceof Application)) {
             incrementActivityCount();
->>>>>>> Stashed changes
         }
     }
 
@@ -601,8 +586,6 @@ public class Countly {
     }
 
     /**
-<<<<<<< Updated upstream
-=======
      * Sets custom properties.
      * In custom properties you can provide any string key values to be stored with user
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
@@ -613,7 +596,6 @@ public class Countly {
     }
 
     /**
->>>>>>> Stashed changes
      * Set user location.
      *
      * Countly detects user location based on IP address. But for geolocation-enabled apps,
@@ -643,7 +625,7 @@ public class Countly {
      */
     public synchronized Countly setDeviceId(String newId) {
         if (newId != null && !"".equals(newId)) {
-            String oldId = deviceId_Manager_.changeToDeveloperId(store_, newId);
+            String oldId = deviceId_.changeToDeveloperId(store_, newId);
             if (oldId != null) {
                 CountlySession.leading().changeDeviceId(oldId, deviceId_.getId());
             }
@@ -662,7 +644,7 @@ public class Countly {
      * @return Countly instance for easy method chaining
      */
     public synchronized Countly revertDeviceId() {
-        String oldId = deviceId_Manager_.revertFromDeveloperId(store_);
+        String oldId = deviceId_.revertFromDeveloperId(store_);
         if (oldId != null) {
             CountlySession.leading().changeDeviceId(oldId, deviceId_.getId());
         }
