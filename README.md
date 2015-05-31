@@ -30,8 +30,10 @@ There are also other Countly SDK repositories below:
 ##How can I help you with your efforts?
 Glad you asked. We need ideas, feedbacks and constructive comments. All your suggestions will be taken care with upmost importance. We are on [Twitter](http://twitter.com/gocountly) and [Facebook](http://www.facebook.com/Countly) if you would like to keep up with our fast progress!
 
-For community support page, see [http://support.count.ly](http://support.count.ly "Countly Support").
-
-And, if you like download and use Countly, [why not use one of our badges](https://count.ly/brand-assets/) and give a link back to us, so others know about this wonderful platform? 
+And, if you liked Countly, [why not use one of our badges](https://count.ly/brand-assets/) and give a link back to us, so others know about this wonderful platform? 
 
 ![Light badge](https://count.ly/wp-content/uploads/2014/10/countly_badge_5.png)  ![Dark badge](https://count.ly/wp-content/uploads/2014/10/countly_badge_6.png)
+
+### Support
+
+For community support page, see [http://support.count.ly](http://support.count.ly "Countly Support").
