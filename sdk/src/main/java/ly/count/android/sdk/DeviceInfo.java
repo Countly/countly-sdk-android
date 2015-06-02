@@ -21,8 +21,19 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.app.ActivityManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.media.AudioManager;
+import android.net.ConnectivityManager;
+import android.os.BatteryManager;
+import android.os.Build;
+import android.os.Environment;
+import android.os.StatFs;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -32,6 +43,7 @@ import android.view.WindowManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
@@ -181,14 +193,19 @@ class DeviceInfo {
      */
     static String getStore(final Context context) {
         String result = "";
-        try {
-            result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
-        } catch (Exception e) {
-        }
-        if (result == null || result.length() == 0) {
-            result = "";
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "No store found");
+        if(android.os.Build.VERSION.SDK_INT >= 3 ) {
+            try {
+                result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
+            } catch (Exception e) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "Can't get Installer package");
+                }
+            }
+            if (result == null || result.length() == 0) {
+                result = "";
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "No store found");
+                }
             }
         }
         return result;
@@ -213,6 +230,225 @@ class DeviceInfo {
                 "_locale", getLocale(),
                 "_app_version", getAppVersion(context),
                 "_store", getStore(context));
+
+        String result = json.toString();
+
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException ignored) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        return result;
+    }
+
+    /**
+     * Returns the current device manufacturer.
+     */
+    static String getManufacturer() {
+        return android.os.Build.MANUFACTURER;
+    }
+
+    /**
+     * Returns the current device cpu.
+     */
+    static String getCpu() {
+        if(android.os.Build.VERSION.SDK_INT < 21 )
+            return android.os.Build.CPU_ABI;
+        else
+            return Build.SUPPORTED_ABIS[0];
+    }
+
+    /**
+     * Returns the current device openGL version.
+     */
+    static String getOpenGL(Context context) {
+        if(android.os.Build.VERSION.SDK_INT >= 3 ) {
+            final ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
+            return Integer.toString(configurationInfo.reqGlEsVersion);
+        }
+        return null;
+    }
+
+    /**
+     * Returns the current device RAM amount.
+     */
+    static String getRamCurrent(Context context) {
+        if(android.os.Build.VERSION.SDK_INT >= 16 ) {
+            ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            activityManager.getMemoryInfo(mi);
+            return Long.toString((mi.totalMem - mi.availMem) / 1048576L);
+        }
+        return null;
+    }
+
+    /**
+     * Returns the total device RAM amount.
+     */
+    static String getRamTotal(Context context) {
+        if(android.os.Build.VERSION.SDK_INT >= 16 ) {
+            ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            activityManager.getMemoryInfo(mi);
+            return Long.toString(mi.totalMem / 1048576L);
+        }
+        return null;
+    }
+
+    /**
+     * Returns the current device disk space.
+     */
+    static String getDiskCurrent() {
+        if(android.os.Build.VERSION.SDK_INT < 18 ) {
+            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+            long   total  = (statFs.getBlockCount() * statFs.getBlockSize());
+            long   free   = (statFs.getAvailableBlocks() * statFs.getBlockSize());
+            return Long.toString((total - free)/ 1048576L);
+        }
+        else{
+            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+            long   total  = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+            long   free   = (statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong());
+            return Long.toString((total - free) / 1048576L);
+        }
+    }
+
+    /**
+     * Returns the current device disk space.
+     */
+    static String getDiskTotal() {
+        if(android.os.Build.VERSION.SDK_INT < 18 ) {
+            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+            long   total  = (statFs.getBlockCount() * statFs.getBlockSize());
+            return Long.toString(total/ 1048576L);
+        }
+        else{
+            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+            long   total  = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+            return Long.toString(total/ 1048576L);
+        }
+    }
+
+    /**
+     * Returns the current device battery level.
+     */
+    static String getBatteryLevel(Context context) {
+        try {
+            Intent batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+            // Error checking that probably isn't needed but I added just in case.
+            if (level > -1 && scale > 0) {
+                return Float.toString(((float) level / (float) scale) * 100.0f);
+            }
+        }
+        catch(Exception e){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "Can't get batter level");
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the current device orientation.
+     */
+    static String getOrientation(Context context) {
+        int orientation = context.getResources().getConfiguration().orientation;
+        switch(orientation)
+        {
+            case  Configuration.ORIENTATION_LANDSCAPE:
+                return "Landscape";
+            case Configuration.ORIENTATION_PORTRAIT:
+                return "Portrait";
+            case Configuration.ORIENTATION_SQUARE:
+                return "Square";
+            case Configuration.ORIENTATION_UNDEFINED:
+                return "Unknown";
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Checks if device is rooted.
+     */
+    static String isRooted() {
+        String[] paths = { "/sbin/su", "/system/bin/su", "/system/xbin/su", "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
+                "/system/bin/failsafe/su", "/data/local/su" };
+        for (String path : paths) {
+            if (new File(path).exists()) return "true";
+        }
+        return "false";
+    }
+
+    /**
+     * Checks if device is online.
+     */
+    static String isOnline(Context context) {
+        try {
+            ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (conMgr != null && conMgr.getActiveNetworkInfo() != null
+                    && conMgr.getActiveNetworkInfo().isAvailable()
+                    && conMgr.getActiveNetworkInfo().isConnected()) {
+
+                return "true";
+            }
+            return "false";
+        }
+        catch(Exception e){}
+        return null;
+    }
+
+    /**
+     * Checks if device is muted.
+     */
+    static String isMuted(Context context) {
+        AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        switch( audio.getRingerMode() ){
+            case AudioManager.RINGER_MODE_SILENT:
+                return "true";
+            case AudioManager.RINGER_MODE_VIBRATE:
+                return "true";
+            default:
+                return "false";
+        }
+    }
+
+    /**
+     * Returns a URL-encoded JSON string containing the device crash report
+     * See the following link for more info:
+     * http://resources.count.ly/v1.0/docs/i
+     */
+    static String getCrashData(final Context context, String error, Boolean nonfatal, String logs) {
+        final JSONObject json = new JSONObject();
+
+        fillJSONIfValuesNotEmpty(json,
+                "_error", error,
+                "_nonfatal", Boolean.toString(nonfatal),
+                "_logs", logs,
+                "_device", getDevice(),
+                "_os", getOS(),
+                "_os_version", getOSVersion(),
+                "_resolution", getResolution(context),
+                "_app_version", getAppVersion(context),
+                "_manufacture", getManufacturer(),
+                "_cpu", getCpu(),
+                "_opengl", getOpenGL(context),
+                "_ram_current", getRamCurrent(context),
+                "_ram_total", getRamTotal(context),
+                "_disk_current", getDiskCurrent(),
+                "_disk_total", getDiskTotal(),
+                "_bat", getBatteryLevel(context),
+                "_orientation", getOrientation(context),
+                "_root", isRooted(),
+                "_online", isOnline(context),
+                "_muted", isMuted(context)
+                );
 
         String result = json.toString();
 
