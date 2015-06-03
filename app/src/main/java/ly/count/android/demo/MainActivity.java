@@ -3,22 +3,25 @@ package ly.count.android.demo;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.DeviceId;
 
 
 public class MainActivity extends Activity {
+    private Activity activity;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Countly.sharedInstance().setLoggingEnabled(true);
 
         /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
         Countly.sharedInstance()
@@ -26,6 +29,7 @@ public class MainActivity extends Activity {
 //                .setLocation(LATITUDE, LONGITUDE);
 //                .setLoggingEnabled(true);
 //        setUserData(); // If UserData plugin is enabled on your server
+//        enableCrashTracking();
 
 
         Countly.sharedInstance().recordEvent("test", 1);
@@ -50,6 +54,74 @@ public class MainActivity extends Activity {
                 Countly.sharedInstance().setLocation(44.5888300, 33.5224000);
             }
         }, 11000);
+
+        Button button1 = (Button) findViewById(R.id.runtime);
+        button1.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                throw new RuntimeException("This is a crash");
+            }
+        });
+
+        Button button2 = (Button) findViewById(R.id.nullpointer);
+        button2.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                String test = null;
+                test.charAt(1);
+            }
+        });
+
+        Button button3 = (Button) findViewById(R.id.division0);
+        button3.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                int test = 100/0;
+            }
+        });
+
+        Button button4 = (Button) findViewById(R.id.uithread);
+        button4.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                Thread thread = new Thread() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(activity, "Hello", Toast.LENGTH_SHORT).show();
+                    }
+                };
+
+                thread.start();
+            }
+        });
+
+        Button button5 = (Button) findViewById(R.id.stackoverflow);
+        button5.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                stackOverflow();
+            }
+        });
+
+        Button button6 = (Button) findViewById(R.id.handled);
+        button6.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                String test = null;
+                try {
+                    test.charAt(1);
+                }
+                catch(Exception e){
+                    Countly.sharedInstance().logException(e);
+                }
+            }
+        });
     }
 
     public void setUserData(){
@@ -72,6 +144,19 @@ public class MainActivity extends Activity {
         custom.put("city", "Istanbul");
         custom.put("address", "My house 11");
         Countly.sharedInstance().setUserData(data, custom);
+    }
+
+    public void enableCrashTracking(){
+        //add some custom segments, like dependency library versions
+        HashMap<String, String> data = new HashMap<String, String>();
+        data.put("Facebook", "3.5");
+        data.put("Admob", "6.5");
+        Countly.sharedInstance().setCustomCrashSegments(data);
+        Countly.sharedInstance().enableCrashReporting();
+    }
+
+    public void stackOverflow(){
+        this.stackOverflow();
     }
 
     @Override
