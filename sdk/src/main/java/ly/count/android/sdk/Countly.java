@@ -572,6 +572,14 @@ public class Countly {
     }
 
     /**
+     * Add crash breadcrumb like log record to the log that will be send together with crash report
+     * @param record String a bread crumb for the crash report
+     */
+    public synchronized void addCrashLog(String record) {
+        CrashDetails.addLog(record);
+    }
+
+    /**
      * Disable periodic session time updates.
      * By default, Countly will send a request to the server each 30 seconds with a small update
      * containing session duration time. This method allows you to disable such behavior.
