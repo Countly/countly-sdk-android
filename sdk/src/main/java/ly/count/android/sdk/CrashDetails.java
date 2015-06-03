@@ -45,16 +45,61 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * This class provides several static methods to retrieve information about
- * the current device and operating environment.
+ * the current device and operating environment for crash reporting purposes.
  *
- * It is important to call setDeviceID early, before logging any session or custom
- * event data.
  */
 class CrashDetails {
+    private static ArrayList<String> logs = new ArrayList<String>();
+    private static int startTime = Countly.currentTimestamp();
+    private static Map<String,String> customSegments = null;
+
+    /**
+     * Adds a record in the log
+     */
+    static void addLog(String record) {
+        logs.add(record);
+    }
+
+    /**
+     * Returns the collected logs.
+     */
+    static String getLogs() {
+        String allLogs = "";
+
+        for (String s : logs)
+        {
+            allLogs += s + "\n";
+        }
+        logs.clear();
+        return allLogs;
+    }
+
+    /**
+     * Adds developer provided custom segments for crash,
+     * like versions of dependency libraries.
+     */
+    static void addCustomSegments(Map<String,String> segments) {
+        customSegments = new HashMap<String, String>();
+        customSegments.putAll(segments);
+    }
+
+    /**
+     * Get custom segments json string
+     */
+    static String getCustomSegments() {
+        if(customSegments != null && !customSegments.isEmpty())
+            return new JSONObject(customSegments).toString();
+        else
+            return null;
+    }
+
 
     /**
      * Returns the current device manufacturer.
@@ -169,6 +214,13 @@ class CrashDetails {
     }
 
     /**
+     * Get app's running time before crashing.
+     */
+    static String getRunningTime() {
+        return Integer.toString(Countly.currentTimestamp() - startTime);
+    }
+
+    /**
      * Returns the current device orientation.
      */
     static String getOrientation(Context context) {
@@ -238,13 +290,14 @@ class CrashDetails {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
-    static String getCrashData(final Context context, String error, Boolean nonfatal, String logs) {
+    static String getCrashData(final Context context, String error, Boolean nonfatal) {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
                 "_error", error,
                 "_nonfatal", Boolean.toString(nonfatal),
-                "_logs", logs,
+                "_logs", getLogs(),
+                "_custom", getCustomSegments(),
                 "_device", DeviceInfo.getDevice(),
                 "_os", DeviceInfo.getOS(),
                 "_os_version", DeviceInfo.getOSVersion(),
@@ -258,6 +311,7 @@ class CrashDetails {
                 "_disk_current", getDiskCurrent(),
                 "_disk_total", getDiskTotal(),
                 "_bat", getBatteryLevel(context),
+                "_run", getRunningTime(),
                 "_orientation", getOrientation(context),
                 "_root", isRooted(),
                 "_online", isOnline(context),
