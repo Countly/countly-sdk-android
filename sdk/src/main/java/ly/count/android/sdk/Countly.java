@@ -319,6 +319,8 @@ public class Countly {
             connectionQueue_.sendReferrerData(referrer);
             ReferrerReceiver.deleteReferrer(context_);
         }
+
+        CrashDetails.inForeground();
     }
 
     /**
@@ -350,6 +352,8 @@ public class Countly {
         if (activityCount_ == 0) {
             onStopHelper();
         }
+
+        CrashDetails.inBackground();
     }
 
     /**

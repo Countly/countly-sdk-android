@@ -59,6 +59,28 @@ class CrashDetails {
     private static ArrayList<String> logs = new ArrayList<String>();
     private static int startTime = Countly.currentTimestamp();
     private static Map<String,String> customSegments = null;
+    private static boolean inBackground = true;
+
+    /**
+     * Notify when app is in foreground
+     */
+    static void inForeground() {
+        inBackground = false;
+    }
+
+    /**
+     * Notify when app is in background
+     */
+    static void inBackground() {
+        inBackground = true;
+    }
+
+    /**
+     * Returns app background state
+     */
+    static String isInBackground() {
+        return Boolean.toString(inBackground);
+    }
 
     /**
      * Adds a record in the log
@@ -315,7 +337,8 @@ class CrashDetails {
                 "_orientation", getOrientation(context),
                 "_root", isRooted(),
                 "_online", isOnline(context),
-                "_muted", isMuted(context)
+                "_muted", isMuted(context),
+                "_background", isInBackground()
                 );
 
         String result = json.toString();
