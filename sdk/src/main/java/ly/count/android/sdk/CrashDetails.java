@@ -115,9 +115,9 @@ class CrashDetails {
     /**
      * Get custom segments json string
      */
-    static String getCustomSegments() {
+    static JSONObject getCustomSegments() {
         if(customSegments != null && !customSegments.isEmpty())
-            return new JSONObject(customSegments).toString();
+            return new JSONObject(customSegments);
         else
             return null;
     }
@@ -319,7 +319,6 @@ class CrashDetails {
                 "_error", error,
                 "_nonfatal", Boolean.toString(nonfatal),
                 "_logs", getLogs(),
-                "_custom", getCustomSegments(),
                 "_device", DeviceInfo.getDevice(),
                 "_os", DeviceInfo.getOS(),
                 "_os_version", DeviceInfo.getOSVersion(),
@@ -341,6 +340,11 @@ class CrashDetails {
                 "_background", isInBackground()
                 );
 
+        try {
+            json.put("_custom", getCustomSegments());
+        } catch (JSONException e) {
+            //no custom segments
+        }
         String result = json.toString();
 
         try {
