@@ -593,7 +593,25 @@ public class Countly {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
-        connectionQueue_.sendCrashReport(sw.toString(), false);
+        connectionQueue_.sendCrashReport(sw.toString(), true);
+    }
+
+    /**
+     * Enable crash reporting to send unhandled crash reports to server
+     */
+    public synchronized void enableCrashReporting() {
+        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                StringWriter sw = new StringWriter();
+                PrintWriter pw = new PrintWriter(sw);
+                e.printStackTrace(pw);
+                connectionQueue_.sendCrashReport(sw.toString(), false);
+            }
+        };
+
+        Thread.setDefaultUncaughtExceptionHandler(handler);
     }
 
     /**
