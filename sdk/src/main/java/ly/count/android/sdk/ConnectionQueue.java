@@ -229,7 +229,7 @@ public class ConnectionQueue {
         final String data = "app_key=" + appKey_
                 + "&timestamp=" + Countly.currentTimestamp()
                 + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                + "&metrics=" + CrashDetails.getCrashData(context_, error, nonfatal);
+                + "&crash=" + CrashDetails.getCrashData(context_, error, nonfatal);
 
         store_.addConnection(data);
 
