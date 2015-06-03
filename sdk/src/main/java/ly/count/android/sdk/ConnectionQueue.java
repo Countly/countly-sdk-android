@@ -221,6 +221,22 @@ public class ConnectionQueue {
     }
 
     /**
+     * Reports a crash with device data to the server.
+     * @throws IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    void sendCrashReport(String error, boolean nonfatal) {
+        checkInternalState();
+        final String data = "app_key=" + appKey_
+                + "&timestamp=" + Countly.currentTimestamp()
+                + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                + "&metrics=" + CrashDetails.getCrashData(context_, error, nonfatal);
+
+        store_.addConnection(data);
+
+        tick();
+    }
+
+    /**
      * Records the specified events and sends them to the server.
      * @param events URL-encoded JSON string of event data
      * @throws IllegalStateException if context, app key, store, or server URL have not been set

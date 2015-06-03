@@ -26,6 +26,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
@@ -577,6 +579,17 @@ public class Countly {
      */
     public synchronized void addCrashLog(String record) {
         CrashDetails.addLog(record);
+    }
+
+    /**
+     * Log handled exception to report it to server as non fatal crash
+     * @param exception Exception to log
+     */
+    public synchronized void logException(Exception exception) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        exception.printStackTrace(pw);
+        connectionQueue_.sendCrashReport(sw.toString(), false);
     }
 
     /**
