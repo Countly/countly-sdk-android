@@ -85,7 +85,7 @@ class CrashDetails {
      * Adds developer provided custom segments for crash,
      * like versions of dependency libraries.
      */
-    static void addCustomSegments(Map<String,String> segments) {
+    static void setCustomSegments(Map<String,String> segments) {
         customSegments = new HashMap<String, String>();
         customSegments.putAll(segments);
     }

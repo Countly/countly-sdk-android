@@ -562,6 +562,16 @@ public class Countly {
     }
 
     /**
+     * Sets custom segments to be reported with crash reports
+     * In custom segments you can provide any string key values to segments crashes by
+     * @param segments Map&lt;String, String&gt; with custom key values for all crash reports
+     */
+    public synchronized void setCustomCrashSegments(Map<String, String> segments) {
+        if(segments != null)
+            CrashDetails.setCustomSegments(segments);
+    }
+
+    /**
      * Disable periodic session time updates.
      * By default, Countly will send a request to the server each 30 seconds with a small update
      * containing session duration time. This method allows you to disable such behavior.
