@@ -21,19 +21,8 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.app.ActivityManager;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.ConfigurationInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
-import android.media.AudioManager;
-import android.net.ConnectivityManager;
-import android.os.BatteryManager;
-import android.os.Build;
-import android.os.Environment;
-import android.os.StatFs;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -43,7 +32,6 @@ import android.view.WindowManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
