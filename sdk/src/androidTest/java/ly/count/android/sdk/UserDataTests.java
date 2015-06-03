@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import android.os.Bundle;
 import android.test.AndroidTestCase;
 
 import org.json.JSONException;
@@ -8,19 +7,20 @@ import org.json.JSONObject;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 
 
 public class UserDataTests extends AndroidTestCase {
 	public void testSetData(){
-		Bundle data = new Bundle();
-		data.putString("name", "Test Test");
-		data.putString("username", "test");
-		data.putString("email", "test@gmail.com");
-		data.putString("organization", "Tester");
-		data.putString("phone", "+1234567890");
-		data.putString("gender", "M");
-		data.putString("picture", "http://domain.com/test.png");
-		data.putInt("byear", 2000);
+        HashMap<String, String> data = new HashMap<String, String>();
+        data.put("name", "Test Test");
+		data.put("username", "test");
+		data.put("email", "test@gmail.com");
+		data.put("organization", "Tester");
+		data.put("phone", "+1234567890");
+		data.put("gender", "M");
+		data.put("picture", "http://domain.com/test.png");
+		data.put("byear", "2000");
         UserData.setData(data);
         
         assertEquals("Test Test", UserData.name);
@@ -30,19 +30,19 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals("+1234567890", UserData.phone);
         assertEquals("M", UserData.gender);
         assertEquals("http://domain.com/test.png", UserData.picture);
-        assertEquals(2000, UserData.byear);
+        assertEquals("2000", UserData.byear);
 	}
 	
 	public void testJSON() throws JSONException{
-        Bundle data = new Bundle();
-        data.putString("name", "Test Test");
-        data.putString("username", "test");
-        data.putString("email", "test@gmail.com");
-        data.putString("organization", "Tester");
-        data.putString("phone", "+1234567890");
-        data.putString("gender", "M");
-        data.putString("picture", "http://domain.com/test.png");
-        data.putInt("byear", 2000);
+        HashMap<String, String> data = new HashMap<String, String>();
+        data.put("name", "Test Test");
+        data.put("username", "test");
+        data.put("email", "test@gmail.com");
+        data.put("organization", "Tester");
+        data.put("phone", "+1234567890");
+        data.put("gender", "M");
+        data.put("picture", "http://domain.com/test.png");
+        data.put("byear", "2000");
         UserData.setData(data);
 
 		JSONObject json = UserData.toJSON();
@@ -53,7 +53,7 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals("+1234567890", json.getString("phone"));
         assertEquals("M", json.getString("gender"));
         assertEquals("http://domain.com/test.png", json.getString("picture"));
-        assertEquals(2000, json.getInt("byear"));
+        assertEquals("2000", json.getInt("byear"));
 	}
 	
 	public void testPicturePath() throws MalformedURLException{
