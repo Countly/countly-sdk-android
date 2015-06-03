@@ -489,8 +489,8 @@ public class Countly {
      * </ul>
      * @param data Map&lt;String, String&gt; with user data
      */
-    public synchronized void setUserData(Map<String, String> data) {
-        setUserData(data, null);
+    public synchronized Countly setUserData(Map<String, String> data) {
+        return setUserData(data, null);
     }
 
     /**
@@ -529,11 +529,12 @@ public class Countly {
      * @param data Map&lt;String, String&gt; with user data
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
      */
-    public synchronized void setUserData(Map<String, String> data, Map<String, String> customdata) {
+    public synchronized Countly setUserData(Map<String, String> data, Map<String, String> customdata) {
         UserData.setData(data);
         if(customdata != null)
             UserData.setCustomData(customdata);
         connectionQueue_.sendUserData();
+        return this;
     }
 
     /**
@@ -541,10 +542,11 @@ public class Countly {
      * In custom properties you can provide any string key values to be stored with user
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
      */
-    public synchronized void setCustomUserData(Map<String, String> customdata) {
+    public synchronized Countly setCustomUserData(Map<String, String> customdata) {
         if(customdata != null)
             UserData.setCustomData(customdata);
         connectionQueue_.sendUserData();
+        return this;
     }
 
     /**
@@ -570,36 +572,42 @@ public class Countly {
     /**
      * Sets custom segments to be reported with crash reports
      * In custom segments you can provide any string key values to segments crashes by
-     * @param segments Map&lt;String, String&gt; with custom key values for all crash reports
+     * @param segments Map&lt;String, String&gt; key segments and their values
      */
-    public synchronized void setCustomCrashSegments(Map<String, String> segments) {
+    public synchronized Countly setCustomCrashSegments(Map<String, String> segments) {
         if(segments != null)
             CrashDetails.setCustomSegments(segments);
+        return this;
     }
 
     /**
      * Add crash breadcrumb like log record to the log that will be send together with crash report
      * @param record String a bread crumb for the crash report
      */
-    public synchronized void addCrashLog(String record) {
+    public synchronized Countly addCrashLog(String record) {
         CrashDetails.addLog(record);
+        return this;
     }
 
     /**
      * Log handled exception to report it to server as non fatal crash
      * @param exception Exception to log
      */
-    public synchronized void logException(Exception exception) {
+    public synchronized Countly logException(Exception exception) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
         connectionQueue_.sendCrashReport(sw.toString(), true);
+        return this;
     }
 
     /**
      * Enable crash reporting to send unhandled crash reports to server
      */
-    public synchronized void enableCrashReporting() {
+    public synchronized Countly enableCrashReporting() {
+        //get default handler
+        final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+
         Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
 
             @Override
@@ -608,10 +616,17 @@ public class Countly {
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
                 connectionQueue_.sendCrashReport(sw.toString(), false);
+
+                //if there was another handler before
+                if(oldHandler != null){
+                    //notify it also
+                    oldHandler.uncaughtException(t,e);
+                }
             }
         };
 
         Thread.setDefaultUncaughtExceptionHandler(handler);
+        return this;
     }
 
     /**
