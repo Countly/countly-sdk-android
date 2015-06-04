@@ -27,6 +27,7 @@ import android.util.Log;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +66,9 @@ public class ConnectionProcessor implements Runnable {
     }
 
     URLConnection urlConnectionForEventData(final String eventData) throws IOException {
-        final String urlStr = serverURL_ + "/i?" + eventData;
+        String urlStr = serverURL_ + "/i?";
+        if(!eventData.contains("&crash="))
+            urlStr += eventData;
         final URL url = new URL(urlStr);
         final HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
@@ -108,6 +111,19 @@ public class ConnectionProcessor implements Runnable {
 
             // End of multipart/form-data.
             writer.append("--" + boundary + "--").append(CRLF).flush();
+        }
+        else if(eventData.contains("&crash=")){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Using post because of crash");
+            }
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            OutputStream os = conn.getOutputStream();
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+            writer.write(eventData);
+            writer.flush();
+            writer.close();
+            os.close();
         }
         else{
         	conn.setDoOutput(false);
