@@ -309,7 +309,11 @@ class CrashDetails {
             }
             return "false";
         }
-        catch(Exception e){}
+        catch(Exception e){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.w(Countly.TAG, "Got exception determining connectivity", e);
+            }
+        }
         return null;
     }
 
