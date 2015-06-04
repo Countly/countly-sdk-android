@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
+                Countly.sharedInstance().addCrashLog("Button 1 pressed");
                 throw new RuntimeException("This is a crash");
             }
         });
@@ -69,6 +70,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
+                Countly.sharedInstance().addCrashLog("Button 2 pressed");
                 String test = null;
                 test.charAt(1);
             }
@@ -79,6 +81,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
+                Countly.sharedInstance().addCrashLog("Button 3 pressed");
                 int test = 100/0;
             }
         });
@@ -88,6 +91,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
+                Countly.sharedInstance().addCrashLog("Button 4 pressed");
                 Thread thread = new Thread() {
                     @Override
                     public void run() {
@@ -104,6 +108,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
+                Countly.sharedInstance().addCrashLog("Button 5 pressed");
                 stackOverflow();
             }
         });
@@ -113,6 +118,7 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
+                Countly.sharedInstance().addCrashLog("Button 6 pressed");
                 String test = null;
                 try {
                     test.charAt(1);
