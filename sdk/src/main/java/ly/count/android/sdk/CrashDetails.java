@@ -44,11 +44,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class provides several static methods to retrieve information about
@@ -60,6 +64,32 @@ class CrashDetails {
     private static int startTime = Countly.currentTimestamp();
     private static Map<String,String> customSegments = null;
     private static boolean inBackground = true;
+    private static long totalMemory = 0;
+
+    private static long getTotalRAM() {
+        if(totalMemory == 0) {
+            RandomAccessFile reader = null;
+            String load = null;
+            try {
+                reader = new RandomAccessFile("/proc/meminfo", "r");
+                load = reader.readLine();
+
+                // Get the Number value from the string
+                Pattern p = Pattern.compile("(\\d+)");
+                Matcher m = p.matcher(load);
+                String value = "";
+                while (m.find()) {
+                    value = m.group(1);
+                }
+                reader.close();
+
+                totalMemory = Long.parseLong(value) / 1024;
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        return totalMemory;
+    }
 
     /**
      * Notify when app is in foreground
@@ -156,26 +186,17 @@ class CrashDetails {
      * Returns the current device RAM amount.
      */
     static String getRamCurrent(Context context) {
-        if(android.os.Build.VERSION.SDK_INT >= 16 ) {
-            ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
-            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            activityManager.getMemoryInfo(mi);
-            return Long.toString((mi.totalMem - mi.availMem) / 1048576L);
-        }
-        return null;
+        ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        activityManager.getMemoryInfo(mi);
+        return Long.toString(getTotalRAM() - (mi.availMem / 1048576L));
     }
 
     /**
      * Returns the total device RAM amount.
      */
     static String getRamTotal(Context context) {
-        if(android.os.Build.VERSION.SDK_INT >= 16 ) {
-            ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
-            ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            activityManager.getMemoryInfo(mi);
-            return Long.toString(mi.totalMem / 1048576L);
-        }
-        return null;
+        return Long.toString(getTotalRAM());
     }
 
     /**
