@@ -25,7 +25,7 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ConfigurationInfo;
+import android.content.pm.FeatureInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.media.AudioManager;
@@ -34,11 +34,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
-import android.telephony.TelephonyManager;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
-import android.view.WindowManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -49,7 +45,6 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -174,12 +169,21 @@ class CrashDetails {
      * Returns the current device openGL version.
      */
     static String getOpenGL(Context context) {
-        if(android.os.Build.VERSION.SDK_INT >= 3 ) {
-            final ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-            final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
-            return Integer.toString(configurationInfo.reqGlEsVersion);
+        PackageManager packageManager = context.getPackageManager();
+        FeatureInfo[] featureInfos = packageManager.getSystemAvailableFeatures();
+        if (featureInfos != null && featureInfos.length > 0) {
+            for (FeatureInfo featureInfo : featureInfos) {
+                // Null feature name means this feature is the open gl es version feature.
+                if (featureInfo.name == null) {
+                    if (featureInfo.reqGlEsVersion != FeatureInfo.GL_ES_VERSION_UNDEFINED) {
+                        return Integer.toString((featureInfo.reqGlEsVersion & 0xffff0000) >> 16);
+                    } else {
+                        return "1"; // Lack of property means OpenGL ES version 1
+                    }
+                }
+            }
         }
-        return null;
+        return "1";
     }
 
     /**
