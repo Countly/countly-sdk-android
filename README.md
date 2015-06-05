@@ -18,11 +18,9 @@ Check Countly Server source code here:
 
 There are also other Countly SDK repositories below:
 
-- [Countly iOS SDK](https://github.com/Countly/countly-sdk-ios)
+- [Countly iOS & Mac OS X SDK](https://github.com/Countly/countly-sdk-ios)
 - [Countly Android SDK](https://github.com/Countly/countly-sdk-android)
 - [Countly Windows Phone SDK](https://github.com/Countly/countly-sdk-windows-phone)
-- [Countly Blackberry Webworks SDK](https://github.com/Countly/countly-sdk-blackberry-webworks)
-- [Countly Blackberry Cascades SDK](https://github.com/craigmj/countly-sdk-blackberry10-cascades) (Community supported)
 - [Countly Mac OS X SDK](https://github.com/mrballoon/countly-sdk-osx) (Community supported)
 - [Countly Appcelerator Titanium SDK](https://github.com/euforic/Titanium-Count.ly) (Community supported)
 - [Countly Unity3D SDK](https://github.com/Countly/countly-sdk-unity) (Community supported)
