@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+//repositories {
+//    mavenLocal()
+//}
+
 android {
     compileSdkVersion 22
     buildToolsVersion "22"
@@ -22,6 +26,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':sdk-messaging')
-//    compile 'ly.count:sdk-android:15.02'
-//    compile 'ly.count:sdk-android-messaging:15.02'
+//    compile 'ly.count.android:sdk:15.06'
+//    compile 'ly.count.android:sdk-messaging:15.06'
 }

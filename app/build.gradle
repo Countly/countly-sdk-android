@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+//repositories {
+//    mavenLocal()
+//}
+
 buildscript {
     repositories {
         maven {
@@ -33,6 +37,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':sdk')
-//    compile 'ly.count.android:sdk:15.03'
-//    compile 'ly.count.android:sdk:15.03@aar'
+//    compile 'ly.count.android:sdk:15.06'
+//    compile 'ly.count.android:sdk:15.06@aar'
 }
