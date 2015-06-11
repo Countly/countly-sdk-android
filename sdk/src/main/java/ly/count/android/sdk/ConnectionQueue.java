@@ -29,6 +29,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
 /**
  * ConnectionQueue queues session and event data and periodically sends that data to
  * a Count.ly server on a background thread.
@@ -47,6 +50,7 @@ public class ConnectionQueue {
     private String serverURL_;
     private Future<?> connectionProcessorFuture_;
     private DeviceId deviceId_;
+    private SSLContext sslContext_;
 
     // Getters are for unit testing
     String getAppKey() {
@@ -71,6 +75,18 @@ public class ConnectionQueue {
 
     void setServerURL(final String serverURL) {
         serverURL_ = serverURL;
+
+        if (Countly.publicKeyPinCertificates == null) {
+            sslContext_ = null;
+        } else {
+            try {
+                TrustManager tm[] = { new CertificateTrustManager(Countly.publicKeyPinCertificates) };
+                sslContext_ = SSLContext.getInstance("TLS");
+                sslContext_.init(null, tm, null);
+            } catch (Throwable e) {
+                throw new IllegalStateException(e);
+            }
+        }
     }
 
     CountlyStore getCountlyStore() {
@@ -103,6 +119,9 @@ public class ConnectionQueue {
         }
         if (serverURL_ == null || !Countly.isValidURL(serverURL_)) {
             throw new IllegalStateException("server URL is not valid");
+        }
+        if (Countly.publicKeyPinCertificates != null && !serverURL_.startsWith("https")) {
+            throw new IllegalStateException("server must start with https once you specified public keys");
         }
     }
 
@@ -286,7 +305,7 @@ public class ConnectionQueue {
     void tick() {
         if (!store_.isEmptyConnections() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
-            connectionProcessorFuture_ = executor_.submit(new ConnectionProcessor(serverURL_, store_, deviceId_));
+            connectionProcessorFuture_ = executor_.submit(new ConnectionProcessor(serverURL_, store_, deviceId_, sslContext_));
         }
     }
 

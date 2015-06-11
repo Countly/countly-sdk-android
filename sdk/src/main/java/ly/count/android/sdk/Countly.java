@@ -23,13 +23,13 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.Bundle;
 import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,6 +65,8 @@ public class Countly {
      * How often onTimer() is called.
      */
     private static final long TIMER_DELAY_IN_SECONDS = 60;
+
+    protected static List<String> publicKeyPinCertificates;
 
     /**
      * Enum used in Countly.initMessaging() method which controls what kind of
@@ -713,6 +715,19 @@ public class Countly {
             }
         }
         return validURL;
+    }
+
+    /**
+     * Allows public key pinning.
+     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
+     * along with server URL starting with "https://". Countly will only accept connections to the server
+     * if public key of SSL certificate provided by the server matches one provided to this method.
+     * @param certificates List of SSL certificates
+     * @return Countly instance
+     */
+    public static Countly enablePublicKeyPinning(List<String> certificates) {
+        publicKeyPinCertificates = certificates;
+        return Countly.sharedInstance();
     }
 
     // for unit testing
