@@ -26,6 +26,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':sdk-messaging')
-//    compile 'ly.count.android:sdk:15.06'
-//    compile 'ly.count.android:sdk-messaging:15.06'
+//    compile 'ly.count.android:sdk:15.08'
+//    compile 'ly.count.android:sdk-messaging:15.08'
 }
