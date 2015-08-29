@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Countly.sharedInstance().addCrashLog("Button 1 pressed");
-                throw new RuntimeException("This is a crash");
+                Countly.sharedInstance().crashTest(4);
             }
         });
 
@@ -71,8 +71,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Countly.sharedInstance().addCrashLog("Button 2 pressed");
-                String test = null;
-                test.charAt(1);
+                Countly.sharedInstance().crashTest(5);
             }
         });
 
@@ -82,34 +81,18 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Countly.sharedInstance().addCrashLog("Button 3 pressed");
-                int test = 100/0;
+                Countly.sharedInstance().crashTest(2);
             }
         });
 
-        Button button4 = (Button) findViewById(R.id.uithread);
-        button4.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 4 pressed");
-                Thread thread = new Thread() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(activity, "Hello", Toast.LENGTH_SHORT).show();
-                    }
-                };
-
-                thread.start();
-            }
-        });
 
         Button button5 = (Button) findViewById(R.id.stackoverflow);
         button5.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 5 pressed");
-                stackOverflow();
+                Countly.sharedInstance().addCrashLog("Button 4 pressed");
+                Countly.sharedInstance().crashTest(1);
             }
         });
 
@@ -118,10 +101,9 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 6 pressed");
-                String test = null;
+                Countly.sharedInstance().addCrashLog("Button 5 pressed");
                 try {
-                    test.charAt(1);
+                    Countly.sharedInstance().crashTest(5);
                 }
                 catch(Exception e){
                     Countly.sharedInstance().logException(e);
