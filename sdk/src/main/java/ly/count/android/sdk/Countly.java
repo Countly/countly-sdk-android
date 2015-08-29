@@ -740,4 +740,54 @@ public class Countly {
     void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
     int getActivityCount() { return activityCount_; }
     boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
+
+    public void stackOverflow() {
+        this.stackOverflow();
+    }
+
+    public synchronized Countly crashTest(int crashNumber) {
+
+        if (crashNumber == 1){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Running crashTest 1");
+            }
+
+            stackOverflow();
+
+        }else if (crashNumber == 2){
+
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Running crashTest 2");
+            }
+
+            int test = 10/0;
+
+        }else if (crashNumber == 3){
+
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Running crashTest 3");
+            }
+
+            Object[] o = null;
+            while (true) { o = new Object[] { o }; }
+
+
+        }else if (crashNumber == 4){
+
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Running crashTest 4");
+            }
+
+            throw new RuntimeException("This is a crash");
+        }
+        else{
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Running crashTest 5");
+            }
+
+            String test = null;
+            test.charAt(1);
+        }
+        return Countly.sharedInstance();
+    }
 }
