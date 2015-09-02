@@ -1,4 +1,4 @@
-#Countly Android SDK [![Build Status](https://api.travis-ci.org/Countly/countly-sdk-android.png)](https://travis-ci.org/Countly/countly-sdk-android) 
+#Countly Android SDK [![Build Status](https://api.travis-ci.org/Countly/countly-sdk-android.png)](https://travis-ci.org/Countly/countly-sdk-android) [![Coverity Status](https://scan.coverity.com/projects/6233/badge.svg)](https://scan.coverity.com/projects/countly-countly-sdk-android)
 ##What's Countly?
 [Countly](http://count.ly) is an innovative, real-time, open source mobile analytics application. 
 It collects data from mobile devices, and visualizes this information to analyze mobile application 
