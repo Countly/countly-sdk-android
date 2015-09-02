@@ -32,7 +32,7 @@ addons:
   coverity_scan:
     project:
       name: "Countly/countly-sdk-android"
-    notification_email: ar2rsawseen@yahoo.com
+    notification_email: hello@count.ly
     build_command_prepend: "./gradlew clean"
     build_command: "./gradlew build"
     branch_pattern: master
