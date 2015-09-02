@@ -133,6 +133,8 @@ public class ConnectionQueue {
         checkInternalState();
         final String data = "app_key=" + appKey_
                           + "&timestamp=" + Countly.currentTimestamp()
+                          + "&hour=" + Countly.currentHour()
+                          + "&dow=" + Countly.currentDayOfWeek()
                           + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                           + "&begin_session=1"
                           + "&metrics=" + DeviceInfo.getMetrics(context_);
@@ -153,6 +155,8 @@ public class ConnectionQueue {
         if (duration > 0) {
             final String data = "app_key=" + appKey_
                               + "&timestamp=" + Countly.currentTimestamp()
+                              + "&hour=" + Countly.currentHour()
+                              + "&dow=" + Countly.currentDayOfWeek()
                               + "&session_duration=" + duration
                               + "&location=" + getCountlyStore().getAndRemoveLocation();
 
@@ -167,6 +171,8 @@ public class ConnectionQueue {
 
         final String data = "app_key=" + appKey_
                 + "&" + "timestamp=" + Countly.currentTimestamp()
+                + "&hour=" + Countly.currentHour()
+                + "&dow=" + Countly.currentDayOfWeek()
                 + "&" + "token_session=1"
                 + "&" + "android_token=" + token
                 + "&" + "test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
@@ -193,6 +199,8 @@ public class ConnectionQueue {
         checkInternalState();
         String data = "app_key=" + appKey_
                     + "&timestamp=" + Countly.currentTimestamp()
+                    + "&hour=" + Countly.currentHour()
+                    + "&dow=" + Countly.currentDayOfWeek()
                     + "&end_session=1";
         if (duration > 0) {
             data += "&session_duration=" + duration;
@@ -214,6 +222,8 @@ public class ConnectionQueue {
         if(!userdata.equals("")){
             String data = "app_key=" + appKey_
                     + "&timestamp=" + Countly.currentTimestamp()
+                    + "&hour=" + Countly.currentHour()
+                    + "&dow=" + Countly.currentDayOfWeek()
                     + userdata;
             store_.addConnection(data);
 
@@ -232,6 +242,8 @@ public class ConnectionQueue {
         if(referrer != null){
             String data = "app_key=" + appKey_
                     + "&timestamp=" + Countly.currentTimestamp()
+                    + "&hour=" + Countly.currentHour()
+                    + "&dow=" + Countly.currentDayOfWeek()
                     + referrer;
             store_.addConnection(data);
 
@@ -247,6 +259,8 @@ public class ConnectionQueue {
         checkInternalState();
         final String data = "app_key=" + appKey_
                 + "&timestamp=" + Countly.currentTimestamp()
+                + "&hour=" + Countly.currentHour()
+                + "&dow=" + Countly.currentDayOfWeek()
                 + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                 + "&crash=" + CrashDetails.getCrashData(context_, error, nonfatal);
 
@@ -264,6 +278,8 @@ public class ConnectionQueue {
         checkInternalState();
         final String data = "app_key=" + appKey_
                           + "&timestamp=" + Countly.currentTimestamp()
+                          + "&hour=" + Countly.currentHour()
+                          + "&dow=" + Countly.currentDayOfWeek()
                           + "&events=" + events;
 
         store_.addConnection(data);
@@ -280,6 +296,8 @@ public class ConnectionQueue {
         checkInternalState();
         final String data = "app_key=" + appKey_
                           + "&timestamp=" + Countly.currentTimestamp()
+                          + "&hour=" + Countly.currentHour()
+                          + "&dow=" + Countly.currentDayOfWeek()
                           + "&events=" + events;
 
         store_.addConnection(data);

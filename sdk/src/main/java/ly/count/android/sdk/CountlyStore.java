@@ -178,15 +178,19 @@ public class CountlyStore {
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation values for the custom event, may be null
      * @param timestamp timestamp (seconds since 1970) in GMT when the event occurred
+     * @param hour current local hour on device
+     * @param dow current day of the week on device
      * @param count count associated with the custom event, should be more than zero
      * @param sum sum associated with the custom event, if not used, pass zero.
      *            NaN and infinity values will be quietly ignored.
      */
-    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final int timestamp, final int count, final double sum) {
+    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final int timestamp, final int hour, final int dow, final int count, final double sum) {
         final Event event = new Event();
         event.key = key;
         event.segmentation = segmentation;
         event.timestamp = timestamp;
+        event.hour = hour;
+        event.dow = dow;
         event.count = count;
         event.sum = sum;
 

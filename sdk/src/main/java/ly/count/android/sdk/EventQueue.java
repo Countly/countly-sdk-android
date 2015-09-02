@@ -95,7 +95,9 @@ public class EventQueue {
      */
     void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
         final int timestamp = Countly.currentTimestamp();
-        countlyStore_.addEvent(key, segmentation, timestamp, count, sum);
+        final int hour = Countly.currentHour();
+        final int dow = Countly.currentDayOfWeek();
+        countlyStore_.addEvent(key, segmentation, timestamp, hour, dow, count, sum);
     }
 
     // for unit tests

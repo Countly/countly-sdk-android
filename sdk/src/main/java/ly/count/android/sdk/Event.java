@@ -42,12 +42,16 @@ class Event {
     private static final String COUNT_KEY = "count";
     private static final String SUM_KEY = "sum";
     private static final String TIMESTAMP_KEY = "timestamp";
+    private static final String DAY_OF_WEEK = "dow";
+    private static final String HOUR = "hour";
 
     public String key;
     public Map<String, String> segmentation;
     public int count;
     public double sum;
     public int timestamp;
+    public int hour;
+    public int dow;
 
     /**
      * Creates and returns a JSONObject containing the event data from this object.
@@ -60,6 +64,8 @@ class Event {
             json.put(KEY_KEY, key);
             json.put(COUNT_KEY, count);
             json.put(TIMESTAMP_KEY, timestamp);
+            json.put(HOUR, hour);
+            json.put(DAY_OF_WEEK, dow);
 
             if (segmentation != null) {
                 json.put(SEGMENTATION_KEY, new JSONObject(segmentation));
@@ -96,6 +102,8 @@ class Event {
             event.count = json.optInt(COUNT_KEY);
             event.sum = json.optDouble(SUM_KEY, 0.0d);
             event.timestamp = json.optInt(TIMESTAMP_KEY);
+            event.hour = json.optInt(HOUR);
+            event.dow = json.optInt(DAY_OF_WEEK);
 
             if (!json.isNull(SEGMENTATION_KEY)) {
                 final JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
@@ -130,6 +138,8 @@ class Event {
 
         return (key == null ? e.key == null : key.equals(e.key)) &&
                timestamp == e.timestamp &&
+               hour == e.hour &&
+               dow == e.dow &&
                (segmentation == null ? e.segmentation == null : segmentation.equals(e.segmentation));
     }
 

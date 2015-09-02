@@ -29,6 +29,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -698,6 +699,33 @@ public class Countly {
      */
     static int currentTimestamp() {
         return ((int)(System.currentTimeMillis() / 1000l));
+    }
+
+    /**
+     * Utility method to return a current hour of the day that can be used in the Count.ly API.
+     */
+    static int currentHour(){return Calendar.getInstance().get(Calendar.HOUR_OF_DAY); }
+
+    /**
+     * Utility method to return a current day of the week that can be used in the Count.ly API.
+     */
+    static int currentDayOfWeek(){
+        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+        switch (day) {
+            case Calendar.MONDAY:
+                return 1;
+            case Calendar.TUESDAY:
+                return 2;
+            case Calendar.WEDNESDAY:
+                return 3;
+            case Calendar.THURSDAY:
+                return 4;
+            case Calendar.FRIDAY:
+                return 5;
+            case Calendar.SATURDAY:
+                return 6;
+        }
+        return 0;
     }
 
     /**
