@@ -116,7 +116,7 @@ public class EventTests extends AndroidTestCase {
         event.sum = 3.2;
         event.segmentation = new HashMap<String, String>();
         final JSONObject jsonObj = event.toJSON();
-        assertEquals(5, jsonObj.length());
+        assertEquals(7, jsonObj.length());
         assertEquals(event.key, jsonObj.getString("key"));
         assertEquals(event.timestamp, jsonObj.getInt("timestamp"));
         assertEquals(event.count, jsonObj.getInt("count"));
