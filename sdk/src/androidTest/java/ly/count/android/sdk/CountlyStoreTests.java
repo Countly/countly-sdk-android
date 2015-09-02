@@ -173,10 +173,14 @@ public class CountlyStoreTests extends AndroidTestCase {
         final Event event1 = new Event();
         event1.key = "eventKey1";
         event1.timestamp = Countly.currentTimestamp() - 60;
+        event1.hour = Countly.currentHour();
+        event1.dow = Countly.currentDayOfWeek();
         event1.count = 1;
         final Event event2 = new Event();
         event2.key = "eventKey2";
         event2.timestamp = Countly.currentTimestamp();
+        event2.hour = Countly.currentHour();
+        event2.dow = Countly.currentDayOfWeek();
         event2.count = 1;
 
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + "===blah===" + event2.toJSON().toString();
@@ -194,10 +198,14 @@ public class CountlyStoreTests extends AndroidTestCase {
         final Event event1 = new Event();
         event1.key = "eventKey1";
         event1.timestamp = Countly.currentTimestamp() - 60;
+        event1.hour = Countly.currentHour();
+        event1.dow = Countly.currentDayOfWeek();
         event1.count = 1;
         final Event event2 = new Event();
         event2.key = "eventKey2";
         event2.timestamp = Countly.currentTimestamp();
+        event2.hour = Countly.currentHour();
+        event2.dow = Countly.currentDayOfWeek();
         event2.count = 1;
 
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + "==={\"key\":null}===" + event2.toJSON().toString();
