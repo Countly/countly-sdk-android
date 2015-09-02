@@ -37,14 +37,6 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="None UIThread"
-        android:id="@+id/uithread"
-        android:layout_below="@+id/division0"
-        android:layout_centerHorizontal="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="Handled Exception"
         android:id="@+id/handled"
         android:layout_below="@+id/stackoverflow"
@@ -56,7 +48,7 @@
         android:layout_height="wrap_content"
         android:text="StackOverflow"
         android:id="@+id/stackoverflow"
-        android:layout_below="@+id/uithread"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:layout_below="@+id/division0" />
 
 </RelativeLayout>
