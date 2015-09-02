@@ -1,5 +1,11 @@
 language: android
 sudo: false
+env:
+  global:
+# Initiating clean Gradle output
+    - TERM=dumb
+# Amount of memory granted to Gradle JVM
+    - GRADLE_OPTS="-Xmx512m -XX:MaxPermSize=512m"
 android:
   components:
     - build-tools-22.0.0
