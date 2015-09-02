@@ -3,5 +3,3 @@ android:
   components:
     - build-tools-20.0.0
     - android-L
-script:
-  - cd countly-sdk-android
