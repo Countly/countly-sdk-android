@@ -183,7 +183,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         event2.dow = Countly.currentDayOfWeek();
         event2.count = 1;
 
-        final String joinedEventsWithBadJSON = event1.toJSON().toString() + "===blah===" + event2.toJSON().toString();
+        final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::blah:::" + event2.toJSON().toString();
         final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
@@ -208,7 +208,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         event2.dow = Countly.currentDayOfWeek();
         event2.count = 1;
 
-        final String joinedEventsWithBadJSON = event1.toJSON().toString() + "==={\"key\":null}===" + event2.toJSON().toString();
+        final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::{\"key\":null}:::" + event2.toJSON().toString();
         final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
