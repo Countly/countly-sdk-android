@@ -23,7 +23,11 @@ before_script:
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
-  
+notifications:
+  email: hello@count.ly
+  hipchat:
+    rooms:
+      secure: aINedM9Exa+83NKGsgpSmEWBqEY68jD9cKKUZ3m5yNxc373E2U76+nFFkaBEGayJ2stExyHicxGphIq127m8IopjG4DX/bSD8pogtIfGIklb6tz/XQafm/gGkgN2G9SVi/ef0yRisvX01jRRVU+BENQ3G4T6s6iYjoWqvQPCjpE=
 addons:
   coverity_scan:
     project:
