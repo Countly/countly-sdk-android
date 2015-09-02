@@ -60,10 +60,12 @@ public class EventQueueTests extends AndroidTestCase {
         final double sum = 3.0d;
         final Map<String, String> segmentation = new HashMap<String, String>(1);
         final int timestamp = Countly.currentTimestamp();
+        final int hour = Countly.currentHour();
+        final int dow = Countly.currentDayOfWeek();
         final ArgumentCaptor<Integer> arg = ArgumentCaptor.forClass(Integer.class);
 
         mEventQueue.recordEvent(eventKey, segmentation, count, sum);
-        verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), arg.capture(), eq(count), eq(sum));
+        verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum));
         assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
     }
 
