@@ -76,9 +76,14 @@ class CrashDetails {
                 while (m.find()) {
                     value = m.group(1);
                 }
-                reader.close();
-
                 totalMemory = Long.parseLong(value) / 1024;
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            try {
+                if(reader != null) {
+                    reader.close();
+                }
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
