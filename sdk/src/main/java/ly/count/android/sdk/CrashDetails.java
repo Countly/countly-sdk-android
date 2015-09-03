@@ -118,14 +118,14 @@ class CrashDetails {
      * Returns the collected logs.
      */
     static String getLogs() {
-        String allLogs = "";
+        StringBuilder allLogs = new StringBuilder();
 
         for (String s : logs)
         {
-            allLogs += s + "\n";
+            allLogs.append(s + "\n");
         }
         logs.clear();
-        return allLogs;
+        return allLogs.toString();
     }
 
     /**
