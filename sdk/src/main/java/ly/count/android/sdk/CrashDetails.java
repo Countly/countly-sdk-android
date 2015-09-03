@@ -78,13 +78,13 @@ class CrashDetails {
                 }
                 totalMemory = Long.parseLong(value) / 1024;
             } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            try {
-                if(reader != null) {
-                    reader.close();
+                try {
+                    if(reader != null) {
+                        reader.close();
+                    }
+                } catch (IOException exc) {
+                    exc.printStackTrace();
                 }
-            } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }
