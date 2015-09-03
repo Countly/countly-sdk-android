@@ -114,8 +114,12 @@ public class ConnectionProcessor implements Runnable {
             FileInputStream fileInputStream = new FileInputStream(binaryFile);
             byte[] buffer = new byte[1024];
             int len;
-            while ((len = fileInputStream.read(buffer)) != -1) {
-                output.write(buffer, 0, len);
+            try {
+                while ((len = fileInputStream.read(buffer)) != -1) {
+                    output.write(buffer, 0, len);
+                }
+            }catch(IOException ex){
+                ex.printStackTrace();
             }
             output.flush(); // Important before continuing with writer!
             writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
