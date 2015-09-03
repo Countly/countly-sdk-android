@@ -618,7 +618,7 @@ public class Countly {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                connectionQueue_.sendCrashReport(sw.toString(), false);
+                Countly.sharedInstance().connectionQueue_.sendCrashReport(sw.toString(), false);
 
                 //if there was another handler before
                 if(oldHandler != null){
