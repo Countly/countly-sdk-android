@@ -76,7 +76,11 @@ class CrashDetails {
                 while (m.find()) {
                     value = m.group(1);
                 }
-                totalMemory = Long.parseLong(value) / 1024;
+                try {
+                    totalMemory = Long.parseLong(value) / 1024;
+                }catch(NumberFormatException ex){
+                    totalMemory = 0;
+                }
             } catch (IOException ex) {
                 try {
                     if(reader != null) {
