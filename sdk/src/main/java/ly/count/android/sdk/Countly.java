@@ -89,7 +89,6 @@ public class Countly {
     @SuppressWarnings("FieldCanBeLocal")
     private ScheduledExecutorService timerService_;
     private EventQueue eventQueue_;
-    private DeviceId deviceId_Manager_;
     private long prevSessionDurationStartTime_;
     private int activityCount_;
     private boolean disableUpdateSessionRequests_;
