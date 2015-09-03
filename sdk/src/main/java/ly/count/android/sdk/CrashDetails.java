@@ -209,8 +209,8 @@ class CrashDetails {
     static String getDiskCurrent() {
         if(android.os.Build.VERSION.SDK_INT < 18 ) {
             StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-            long   total  = (statFs.getBlockCount() * statFs.getBlockSize());
-            long   free   = (statFs.getAvailableBlocks() * statFs.getBlockSize());
+            long   total  = ((long)statFs.getBlockCount() * (long)statFs.getBlockSize());
+            long   free   = ((long)statFs.getAvailableBlocks() * (long)statFs.getBlockSize());
             return Long.toString((total - free)/ 1048576L);
         }
         else{
@@ -227,7 +227,7 @@ class CrashDetails {
     static String getDiskTotal() {
         if(android.os.Build.VERSION.SDK_INT < 18 ) {
             StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-            long   total  = (statFs.getBlockCount() * statFs.getBlockSize());
+            long   total  = ((long)statFs.getBlockCount() * (long)statFs.getBlockSize());
             return Long.toString(total/ 1048576L);
         }
         else{
