@@ -143,10 +143,6 @@ public class MainActivity extends Activity {
         Countly.sharedInstance().enableCrashReporting();
     }
 
-    public void stackOverflow(){
-        this.stackOverflow();
-    }
-
     @Override
     public void onStart()
     {
