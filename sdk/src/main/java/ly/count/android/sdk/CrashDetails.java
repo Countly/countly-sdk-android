@@ -248,12 +248,14 @@ class CrashDetails {
     static String getBatteryLevel(Context context) {
         try {
             Intent batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-            int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+            if(batteryIntent != null) {
+                int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
 
-            // Error checking that probably isn't needed but I added just in case.
-            if (level > -1 && scale > 0) {
-                return Float.toString(((float) level / (float) scale) * 100.0f);
+                // Error checking that probably isn't needed but I added just in case.
+                if (level > -1 && scale > 0) {
+                    return Float.toString(((float) level / (float) scale) * 100.0f);
+                }
             }
         }
         catch(Exception e){
