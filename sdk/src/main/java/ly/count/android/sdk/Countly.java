@@ -766,7 +766,7 @@ public class Countly {
     long getPrevSessionDurationStartTime() { return prevSessionDurationStartTime_; }
     void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
     int getActivityCount() { return activityCount_; }
-    boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
+    synchronized boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
 
     public void stackOverflow() {
         this.stackOverflow();
