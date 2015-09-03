@@ -36,7 +36,7 @@ public class CountlyMessagingService extends IntentService {
         GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(getApplicationContext());
         String messageType = gcm.getMessageType(intent);
 
-        if (!extras.isEmpty()) {
+        if (extras != null && !extras.isEmpty()) {
             if (GoogleCloudMessaging.MESSAGE_TYPE_MESSAGE.equals(messageType)) {
                 final Message msg = new Message(extras);
 
