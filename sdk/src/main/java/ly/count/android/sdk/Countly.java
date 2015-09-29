@@ -261,11 +261,11 @@ public class Countly {
         if (mode != null && !MessagingAdapter.isMessagingAvailable()) {
             throw new IllegalStateException("you need to include countly-messaging-sdk-android library instead of countly-sdk-android if you want to use Countly Messaging");
         } else {
+            messagingMode_ = mode;
             if (!MessagingAdapter.init(activity, activityClass, projectID, buttonNames)) {
                 throw new IllegalStateException("couldn't initialize Countly Messaging");
             }
         }
-        messagingMode_ = mode;
 
         if (MessagingAdapter.isMessagingAvailable()) {
             MessagingAdapter.storeConfiguration(connectionQueue_.getContext(), connectionQueue_.getServerURL(), connectionQueue_.getAppKey(), connectionQueue_.getDeviceId().getId(), connectionQueue_.getDeviceId().getType());
