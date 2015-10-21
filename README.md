@@ -11,15 +11,17 @@ This repository includes the Countly Android SDK.
 
 Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly).
 
-###Other Github resources
+### Other Github resources ###
 
-Check Countly Server source code here: 
+This SDK needs one of the following Countly Editions to work: 
 
-- [Countly Server (countly-server)](https://github.com/Countly/countly-server)
+* Countly Community Edition, [downloadable from Github](https://github.com/Countly/countly-server)
+* [Countly Cloud Edition](http://count.ly/cloud-edition)
+* [Countly Enterprise Edition](http://count.ly/enterprise-edition)
 
-A list of other SDKs, together with instructions on how to install and use them, can be found at:
+For more information about Countly Enterprise Edition, see [comparison of different Countly editions](https://count.ly/compare/)
 
-- [List of all Countly SDKs](http://resources.count.ly/docs/downloading-sdks)
+There are also other Countly SDK repositories (both official and community supported) on [Countly resources](http://resources.count.ly/v1.0/docs/downloading-sdks).
 
 ##How can I help you with your efforts?
 Glad you asked. We need ideas, feedbacks and constructive comments. All your suggestions will be taken care with upmost importance. We are on [Twitter](http://twitter.com/gocountly) and [Facebook](http://www.facebook.com/Countly) if you would like to keep up with our fast progress!
