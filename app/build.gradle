@@ -40,6 +40,6 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':sdk')
-//    compile 'ly.count.android:sdk:15.08'
-//    compile 'ly.count.android:sdk:15.08@aar'
+//    compile 'ly.count.android:sdk:15.08.01'
+//    compile 'ly.count.android:sdk:15.08.01@aar'
 }

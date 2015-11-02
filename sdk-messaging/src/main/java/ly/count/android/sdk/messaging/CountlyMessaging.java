@@ -160,6 +160,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         editor.commit();
     }
 
+    @SuppressWarnings("unchecked")
     protected static boolean initCountly(Context context) {
         String serverURL = getGCMPreferences(context).getString(PROPERTY_SERVER_URL, null);
         String appKey = getGCMPreferences(context).getString(PROPERTY_APP_KEY, null);

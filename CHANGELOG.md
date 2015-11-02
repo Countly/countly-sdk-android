@@ -1,3 +1,6 @@
+15.08.01
+   * Lowering required API level back to 9
+
 15.08
 
   * Bug fixes:

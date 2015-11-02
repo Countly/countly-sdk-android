@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
@@ -167,8 +168,9 @@ class CrashDetails {
     /**
      * Returns the current device cpu.
      */
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     static String getCpu() {
-        if(android.os.Build.VERSION.SDK_INT < 21 )
+        if(android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP )
             return android.os.Build.CPU_ABI;
         else
             return Build.SUPPORTED_ABIS[0];
@@ -215,6 +217,7 @@ class CrashDetails {
     /**
      * Returns the current device disk space.
      */
+    @TargetApi(18)
     static String getDiskCurrent() {
         if(android.os.Build.VERSION.SDK_INT < 18 ) {
             StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
@@ -233,6 +236,7 @@ class CrashDetails {
     /**
      * Returns the current device disk space.
      */
+    @TargetApi(18)
     static String getDiskTotal() {
         if(android.os.Build.VERSION.SDK_INT < 18 ) {
             StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
