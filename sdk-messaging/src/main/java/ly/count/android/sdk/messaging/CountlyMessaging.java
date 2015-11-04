@@ -140,7 +140,14 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     }
 
     public static void storeConfiguration(Context context, String serverURL, String appKey, String deviceID, DeviceId.Type idMode) {
-        String label = context.getString(context.getApplicationInfo().labelRes);
+        String label = "App";
+        try {
+            label = context.getString(context.getApplicationInfo().labelRes);
+        } catch (Throwable t) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.wtf(TAG, "Couldn't find android:label='@string/app_name' resource, please set it in AndroidManifest.xml", t);
+            }
+        }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.i(TAG, "Storing configuration: " + label + ", " + serverURL + ", " + appKey + ", " + deviceID + ", " + idMode);
