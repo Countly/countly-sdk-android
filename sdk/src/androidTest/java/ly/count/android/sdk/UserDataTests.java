@@ -38,6 +38,7 @@ public class UserDataTests extends AndroidTestCase {
         data.put("key1", "value1");
         data.put("key2", "value2");
         UserData.setCustomData(data);
+        UserData.setCustomProperty("key_prop", "value_prop");
 
         assertEquals("value1", UserData.custom.get("key1"));
         assertEquals("value2", UserData.custom.get("key2"));
@@ -45,15 +46,13 @@ public class UserDataTests extends AndroidTestCase {
     }
 
     public void testCustomModifiers() throws JSONException {
-        UserData.setCustomProperty("key_prop", "value_prop");
         UserData.modifyCustomData("key_inc", 1, "$inc");
         UserData.modifyCustomData("key_mul", 2, "$mul");
         UserData.modifyCustomData("key_set", "test1", "$addToSet");
         UserData.modifyCustomData("key_set", "test2", "$addToSet");
 
-        assertEquals("value_prop", UserData.custom.get("key_prop"));
         assertEquals(1, UserData.customMods.get("key_inc").getInt("$inc"));
-        assertEquals(2, UserData.customMods.get("key_inc").getInt("$mul"));
+        assertEquals(2, UserData.customMods.get("key_mul").getInt("$mul"));
         assertEquals("test1", UserData.customMods.get("key_set").getJSONArray("$addToSet").getString(0));
         assertEquals("test2", UserData.customMods.get("key_set").getJSONArray("$addToSet").getString(1));
     }
