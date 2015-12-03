@@ -492,6 +492,7 @@ public class Countly {
      * </li>
      * </ul>
      * @param data Map&lt;String, String&gt; with user data
+     * @deprecated use {@link #Countly().sharedInstance().userData.setUserData(Map<String, String>)} to set data and {@link #Countly().sharedInstance().userData.save()} to send it to server.
      */
     public synchronized Countly setUserData(Map<String, String> data) {
         return setUserData(data, null);
@@ -532,12 +533,14 @@ public class Countly {
      * </ul>
      * @param data Map&lt;String, String&gt; with user data
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     * @deprecated use {@link #Countly().sharedInstance().userData.setUserData(Map<String, String>, Map<String, String>)} to set data and {@link #Countly().sharedInstance().userData.save()} to send it to server.
      */
     public synchronized Countly setUserData(Map<String, String> data, Map<String, String> customdata) {
         UserData.setData(data);
         if(customdata != null)
             UserData.setCustomData(customdata);
         connectionQueue_.sendUserData();
+        UserData.clear();
         return this;
     }
 
@@ -545,11 +548,13 @@ public class Countly {
      * Sets custom properties.
      * In custom properties you can provide any string key values to be stored with user
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     * @deprecated use {@link #Countly().sharedInstance().userData.setCustomUserData(Map<String, String>)} to set data and {@link #Countly().sharedInstance().userData.save()} to send it to server.
      */
     public synchronized Countly setCustomUserData(Map<String, String> customdata) {
         if(customdata != null)
             UserData.setCustomData(customdata);
         connectionQueue_.sendUserData();
+        UserData.clear();
         return this;
     }
 
