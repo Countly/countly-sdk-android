@@ -32,6 +32,7 @@ import java.net.URL;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -95,7 +96,19 @@ public class Countly {
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
     private Context context_;
+
+    //user data access
     public static UserData userData;
+
+    //track views
+    private String lastView = null;
+    private int lastViewStart = 0;
+    private boolean firstView = true;
+    /*
+    TODO:
+    create setter to allow to track views automatically
+    */
+    private boolean autoViewTracker = false;
 
     /**
      * Returns the Countly singleton.
@@ -325,6 +338,14 @@ public class Countly {
         }
 
         CrashDetails.inForeground();
+
+        if(autoViewTracker){
+            /*
+            TODO:
+            Get Activity name and report it as view
+            Optionally allow users to provide map with Activity name to Logical view name conversion
+             */
+        }
     }
 
     /**
@@ -358,6 +379,9 @@ public class Countly {
         }
 
         CrashDetails.inBackground();
+
+        //report current view duration
+        reportViewDuration();
     }
 
     /**
@@ -458,6 +482,21 @@ public class Countly {
 
         eventQueue_.recordEvent(key, segmentation, count, sum);
         sendEventsIfNeeded();
+    }
+
+    public synchronized Countly recordView(String viewName){
+        reportViewDuration();
+        lastView = viewName;
+        lastViewStart = Countly.currentTimestamp();
+        HashMap<String, String> segments = new HashMap<String, String>();
+        segments.put("name", viewName);
+        segments.put("visit", "1");
+        if(firstView) {
+            firstView = false;
+            segments.put("start", "1");
+        }
+        recordEvent("[CLY]_view", segments, 1);
+        return this;
     }
 
     /**
@@ -663,6 +702,23 @@ public class Countly {
 
     public synchronized boolean isLoggingEnabled() {
         return enableLogging_;
+    }
+
+    /**
+     * Reports duration of last view
+     */
+    void reportViewDuration(){
+        if(lastView != null){
+            HashMap<String, String> segments = new HashMap<String, String>();
+            segments.put("name", lastView);
+            /*
+            TODO:
+            report event with duration
+             */
+            //recordEvent("[CLY]_view", Countly.currentTimestamp()-lastViewStart, segments);
+            lastView = null;
+            lastViewStart = 0;
+        }
     }
 
     /**
