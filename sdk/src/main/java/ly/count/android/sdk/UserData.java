@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,8 +36,223 @@ public class UserData {
     public static String picturePath;
     public static String gender;
     public static Map<String, String> custom;
+    public static Map<String, JSONObject> customMods;
     public static int byear = 0;
     public static boolean isSynced = true;
+
+    ConnectionQueue connectionQueue_;
+
+    //Public methods
+    /**
+     * Constructs a UserData object.
+     * @param connectionQueue to process userdata requests
+     */
+    UserData(ConnectionQueue connectionQueue) {
+        connectionQueue_ = connectionQueue;
+    }
+    /**
+     * Sets information about user. Possible keys are:
+     * <ul>
+     * <li>
+     * name - (String) providing user's full name
+     * </li>
+     * <li>
+     * username - (String) providing user's nickname
+     * </li>
+     * <li>
+     * email - (String) providing user's email address
+     * </li>
+     * <li>
+     * organization - (String) providing user's organization's name where user works
+     * </li>
+     * <li>
+     * phone - (String) providing user's phone number
+     * </li>
+     * <li>
+     * picture - (String) providing WWW URL to user's avatar or profile picture
+     * </li>
+     * <li>
+     * picturePath - (String) providing local path to user's avatar or profile picture
+     * </li>
+     * <li>
+     * gender - (String) providing user's gender as M for male and F for female
+     * </li>
+     * <li>
+     * byear - (int) providing user's year of birth as integer
+     * </li>
+     * </ul>
+     * @param data Map&lt;String, String&gt; with user data
+     */
+    public void setUserData(Map<String, String> data) {
+            setUserData(data, null);
+    }
+
+    /**
+     * Sets information about user with custom properties.
+     * In custom properties you can provide any string key values to be stored with user
+     * Possible keys are:
+     * <ul>
+     * <li>
+     * name - (String) providing user's full name
+     * </li>
+     * <li>
+     * username - (String) providing user's nickname
+     * </li>
+     * <li>
+     * email - (String) providing user's email address
+     * </li>
+     * <li>
+     * organization - (String) providing user's organization's name where user works
+     * </li>
+     * <li>
+     * phone - (String) providing user's phone number
+     * </li>
+     * <li>
+     * picture - (String) providing WWW URL to user's avatar or profile picture
+     * </li>
+     * <li>
+     * picturePath - (String) providing local path to user's avatar or profile picture
+     * </li>
+     * <li>
+     * gender - (String) providing user's gender as M for male and F for female
+     * </li>
+     * <li>
+     * byear - (int) providing user's year of birth as integer
+     * </li>
+     * </ul>
+     * @param data Map&lt;String, String&gt; with user data
+     * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     */
+    public void setUserData(Map<String, String> data, Map<String, String> customdata) {
+        UserData.setData(data);
+        if(customdata != null)
+            UserData.setCustomData(customdata);
+    }
+
+    /**
+     * Sets custom properties.
+     * In custom properties you can provide any string key values to be stored with user
+     * @param customdata Map&lt;String, String&gt; with custom key values for this user
+     */
+    public void setCustomUserData(Map<String, String> customdata) {
+        if(customdata != null)
+            UserData.setCustomData(customdata);
+    }
+
+    /**
+     * Sets custom provide key/value as custom property.
+     * @param key String with key for the property
+     * @param value String with value for the property
+     */
+    public void setProperty(String key, String value){
+        UserData.setCustomProperty(key, value);
+    }
+
+    /**
+     * Increment custom property value by 1.
+     * @param key String with property name to increment
+     */
+    public void increment(String key){
+        UserData.modifyCustomData(key, 1, "$inc");
+    }
+
+    /**
+     * Increment custom property value by provided value.
+     * @param key String with property name to increment
+     * @param value int value by which to increment
+     */
+    public void incrementBy(String key, int value){
+        UserData.modifyCustomData(key, value, "$inc");
+    }
+
+    /**
+     * Multiply custom property value by provided value.
+     * @param key String with property name to multiply
+     * @param value int value by which to multiply
+     */
+    public void multiply(String key, int value){
+        UserData.modifyCustomData(key, value, "$mul");
+    }
+
+    /**
+     * Save maximal value between existing and provided.
+     * @param key String with property name to check for max
+     * @param value int value to check for max
+     */
+    public void saveMax(String key, int value){
+        UserData.modifyCustomData(key, value, "$max");
+    }
+
+    /**
+     * Save minimal value between existing and provided.
+     * @param key String with property name to check for min
+     * @param value int value to check for min
+     */
+    public void saveMin(String key, int value){
+        UserData.modifyCustomData(key, value, "$min");
+    }
+
+    /**
+     * Set value only if property does not exist yet
+     * @param key String with property name to set
+     * @param value String value to set
+     */
+    public void setOnce(String key, String value){
+        UserData.modifyCustomData(key, value, "$setOnce");
+    }
+
+    /* Create array property, if property does not exist and add value to array
+     * You can only use it on array properties or properties that do not exist yet
+     * @param key String with property name for array property
+     * @param value String with value to add to array
+     */
+    public void pushValue(String key, String value){
+        UserData.modifyCustomData(key, value, "$push");
+    }
+
+    /* Create array property, if property does not exist and add value to array, only if value is not yet in the array
+     * You can only use it on array properties or properties that do not exist yet
+     * @param key String with property name for array property
+     * @param value String with value to add to array
+     */
+    public void pushUniqueValue(String key, String value){
+        UserData.modifyCustomData(key, value, "$addToSet");
+    }
+
+    /* Create array property, if property does not exist and remove value from array
+     * You can only use it on array properties or properties that do not exist yet
+     * @param key String with property name for array property
+     * @param value String with value to remove from array
+     */
+    public void pullValue(String key, String value){
+        UserData.modifyCustomData(key, value, "$pull");
+    }
+
+    /*
+     * Send provided values to server
+     */
+    public void save(){
+        connectionQueue_.sendUserData();
+        UserData.clear();
+    }
+
+    /**
+     * Clear all submitted information
+     */
+    static void clear(){
+        name = null;
+        username = null;
+        email = null;
+        org = null;
+        phone = null;
+        picture = null;
+        picturePath = null;
+        gender = null;
+        custom = null;
+        customMods = null;
+        byear = 0;
+        isSynced = true;
+    }
 
 
     /**
@@ -88,9 +304,85 @@ public class UserData {
      * @param data Map with user custom key/values
      */
     static void setCustomData(Map<String, String> data){
-        custom = new HashMap<String, String>();
+        if(custom == null)
+            custom = new HashMap<String, String>();
         custom.putAll(data);
         isSynced = false;
+    }
+
+    /**
+     * Sets custom provide key/value as custom property.
+     * @param key String with key for the property
+     * @param value String with value for the property
+     */
+    static void setCustomProperty(String key, String value){
+        if(custom == null)
+            custom = new HashMap<String, String>();
+        custom.put(key, value);
+    }
+
+    /**
+     * Atomic modifications on custom user property.
+     * @param key String with property name to modify
+     * @param value numeric value to use in modification
+     * @param mod String with modification command
+     */
+    static void modifyCustomData(String key, double value, String mod){
+        try {
+            if(customMods == null)
+                customMods = new HashMap<String, JSONObject>();
+            JSONObject ob;
+            if(!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
+                ob = new JSONObject();
+                ob.put(mod, value);
+            }
+            else{
+                JSONArray arr;
+                if(customMods.containsKey(key)){
+                    ob = customMods.get(key);
+                }
+                else{
+                    ob = new JSONObject();
+                }
+                ob.accumulate(mod, value);
+            }
+            customMods.put(key, ob);
+            isSynced = false;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Atomic modifications on custom user property.
+     * @param key String with property name to modify
+     * @param value String value to use in modification
+     * @param mod String with modification command
+     */
+    static void modifyCustomData(String key, String value, String mod){
+        try {
+            if(customMods == null)
+                customMods = new HashMap<String, JSONObject>();
+            JSONObject ob;
+            if(!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
+                ob = new JSONObject();
+                ob.put(mod, value);
+            }
+            else{
+                JSONArray arr;
+                if(customMods.containsKey(key)){
+                    ob = customMods.get(key);
+                }
+                else{
+                    ob = new JSONObject();
+                }
+                ob.accumulate(mod, value);
+            }
+            customMods.put(key, ob);
+            isSynced = false;
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -176,12 +468,20 @@ public class UserData {
                     json.put(BYEAR_KEY, byear);
                 else
                     json.put(BYEAR_KEY, JSONObject.NULL);
+
+            JSONObject ob;
             if(custom != null){
-                if(custom.isEmpty())
-                    json.put(CUSTOM_KEY, JSONObject.NULL);
-                else
-                    json.put(CUSTOM_KEY, new JSONObject(custom));
+                ob = new JSONObject(custom);
             }
+            else{
+                ob = new JSONObject();
+            }
+            if(customMods != null) {
+                for (Map.Entry<String, JSONObject> entry : customMods.entrySet()) {
+                    ob.put(entry.getKey(), entry.getValue());
+                }
+            }
+            json.put(CUSTOM_KEY, ob);
         }
         catch (JSONException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
