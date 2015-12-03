@@ -32,6 +32,46 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals("http://domain.com/test.png", UserData.picture);
         assertEquals(2000, UserData.byear);
 	}
+
+    public void testCustomData() {
+        HashMap<String, String> data = new HashMap<String, String>();
+        data.put("key1", "value1");
+        data.put("key2", "value2");
+        UserData.setCustomData(data);
+
+        assertEquals("value1", UserData.custom.get("key1"));
+        assertEquals("value2", UserData.custom.get("key2"));
+        assertEquals("value_prop", UserData.custom.get("key_prop"));
+    }
+
+    public void testCustomModifiers() throws JSONException {
+        UserData.setCustomProperty("key_prop", "value_prop");
+        UserData.modifyCustomData("key_inc", 1, "$inc");
+        UserData.modifyCustomData("key_mul", 2, "$mul");
+        UserData.modifyCustomData("key_set", "test1", "$addToSet");
+        UserData.modifyCustomData("key_set", "test2", "$addToSet");
+
+        assertEquals("value_prop", UserData.custom.get("key_prop"));
+        assertEquals(1, UserData.customMods.get("key_inc").getInt("$inc"));
+        assertEquals(2, UserData.customMods.get("key_inc").getInt("$mul"));
+        assertEquals("test1", UserData.customMods.get("key_set").getJSONArray("$addToSet").getString(0));
+        assertEquals("test2", UserData.customMods.get("key_set").getJSONArray("$addToSet").getString(1));
+    }
+
+    public void testClear() {
+        UserData.clear();
+
+        assertEquals(null, UserData.name);
+        assertEquals(null, UserData.username);
+        assertEquals(null, UserData.email);
+        assertEquals(null, UserData.org);
+        assertEquals(null, UserData.phone);
+        assertEquals(null, UserData.gender);
+        assertEquals(null, UserData.picture);
+        assertEquals(0, UserData.byear);
+        assertEquals(null, UserData.custom);
+        assertEquals(null, UserData.customMods);
+    }
 	
 	public void testJSON() throws JSONException{
         HashMap<String, String> data = new HashMap<String, String>();
@@ -45,6 +85,17 @@ public class UserDataTests extends AndroidTestCase {
         data.put("byear", "2000");
         UserData.setData(data);
 
+        HashMap<String, String> customdata = new HashMap<String, String>();
+        data.put("key1", "value1");
+        data.put("key2", "value2");
+        UserData.setCustomData(customdata);
+
+        UserData.setCustomProperty("key_prop", "value_prop");
+        UserData.modifyCustomData("key_inc", 1, "$inc");
+        UserData.modifyCustomData("key_mul", 2, "$mul");
+        UserData.modifyCustomData("key_set", "test1", "$addToSet");
+        UserData.modifyCustomData("key_set", "test2", "$addToSet");
+
 		JSONObject json = UserData.toJSON();
 		assertEquals("Test Test", json.getString("name"));
         assertEquals("test", json.getString("username"));
@@ -54,6 +105,13 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals("M", json.getString("gender"));
         assertEquals("http://domain.com/test.png", json.getString("picture"));
         assertEquals(2000, json.getInt("byear"));
+        assertEquals("value1", json.getJSONObject("custom").getString("key1"));
+        assertEquals("value2", json.getJSONObject("custom").getString("key2"));
+        assertEquals("value_prop", json.getJSONObject("custom").getString("key_prop"));
+        assertEquals(1, json.getJSONObject("custom").getJSONObject("key_inc").getInt("$inc"));
+        assertEquals(2, json.getJSONObject("custom").getJSONObject("key_mul").getInt("$mul"));
+        assertEquals("test1", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(0));
+        assertEquals("test2", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(1));
 	}
 	
 	public void testPicturePath() throws MalformedURLException{
