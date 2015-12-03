@@ -95,6 +95,7 @@ public class Countly {
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
     private Context context_;
+    public static UserData userData;
 
     /**
      * Returns the Countly singleton.
@@ -109,6 +110,7 @@ public class Countly {
      */
     Countly() {
         connectionQueue_ = new ConnectionQueue();
+        Countly.userData = new UserData(connectionQueue_);
         timerService_ = Executors.newSingleThreadScheduledExecutor();
         timerService_.scheduleWithFixedDelay(new Runnable() {
             @Override
