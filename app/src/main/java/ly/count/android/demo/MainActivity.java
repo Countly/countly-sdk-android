@@ -131,7 +131,24 @@ public class MainActivity extends Activity {
         custom.put("country", "Turkey");
         custom.put("city", "Istanbul");
         custom.put("address", "My house 11");
-        Countly.sharedInstance().setUserData(data, custom);
+
+        //set multiple custom properties
+        Countly.userData.setUserData(data, custom);
+
+        //set custom properties by one
+        Countly.userData.setProperty("test", "test");
+
+        //increment used value by 1
+        Countly.userData.incrementBy("used", 1);
+
+        //insert value to array of unique values
+        Countly.userData.pushUniqueValue("type", "morning");
+
+        //insert multiple values to same property
+        Countly.userData.pushUniqueValue("skill", "fire");
+        Countly.userData.pushUniqueValue("skill", "earth");
+
+        Countly.userData.save();
     }
 
     public void enableCrashTracking(){
