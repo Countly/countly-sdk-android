@@ -23,6 +23,8 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.util.Log;
 
 import java.io.PrintWriter;
@@ -104,10 +106,6 @@ public class Countly {
     private String lastView = null;
     private int lastViewStart = 0;
     private boolean firstView = true;
-    /*
-    TODO:
-    create setter to allow to track views automatically
-    */
     private boolean autoViewTracker = false;
 
     /**
@@ -317,7 +315,7 @@ public class Countly {
      * session tracking.
      * @throws IllegalStateException if Countly SDK has not been initialized
      */
-    public synchronized void onStart() {
+    public synchronized void onStart(Activity activity) {
         if (eventQueue_ == null) {
             throw new IllegalStateException("init must be called before onStart");
         }
@@ -340,11 +338,7 @@ public class Countly {
         CrashDetails.inForeground();
 
         if(autoViewTracker){
-            /*
-            TODO:
-            Get Activity name and report it as view
-            Optionally allow users to provide map with Activity name to Logical view name conversion
-             */
+            recordView(activity.getClass().getName());
         }
     }
 
@@ -484,6 +478,28 @@ public class Countly {
         sendEventsIfNeeded();
     }
 
+    /**
+     * Enable or disable automatic view tracking
+     * @param enable boolean for the state of automatic view tracking
+     */
+    public synchronized Countly setViewTracking(boolean enable){
+        autoViewTracker = enable;
+        return this;
+    }
+
+    /**
+     * Check state of automatic view tracking
+     * @return boolean - true if enabled, false if disabled
+     */
+    public synchronized boolean isViewTrackingEnabled(){
+        return autoViewTracker;
+    }
+
+    /* Record a view manualy, without automatic tracking
+     * or track view that is not automatically tracked
+     * like fragment, Message box or transparent Activity
+     * @param boolean - true if enabled, false if disabled
+     */
     public synchronized Countly recordView(String viewName){
         reportViewDuration();
         lastView = viewName;
