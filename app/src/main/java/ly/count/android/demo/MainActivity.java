@@ -164,7 +164,7 @@ public class MainActivity extends Activity {
     public void onStart()
     {
         super.onStart();
-        Countly.sharedInstance().onStart();
+        Countly.sharedInstance().onStart(this);
     }
 
     @Override
