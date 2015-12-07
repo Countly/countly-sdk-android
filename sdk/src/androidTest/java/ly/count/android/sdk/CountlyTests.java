@@ -248,7 +248,7 @@ public class CountlyTests extends AndroidTestCase {
     public void testHalt() {
         final CountlyStore mockCountlyStore = mock(CountlyStore.class);
         mCountly.getConnectionQueue().setCountlyStore(mockCountlyStore);
-        mCountly.onStart();
+        mCountly.onStart(null);
         assertTrue(0 != mCountly.getPrevSessionDurationStartTime());
         assertTrue(0 != mCountly.getActivityCount());
         assertNotNull(mCountly.getEventQueue());
@@ -273,7 +273,7 @@ public class CountlyTests extends AndroidTestCase {
 
     public void testOnStart_initNotCalled() {
         try {
-            mUninitedCountly.onStart();
+            mUninitedCountly.onStart(null);
             fail("expected calling onStart before init to throw IllegalStateException");
         } catch (IllegalStateException ignored) {
             // success!
@@ -284,7 +284,7 @@ public class CountlyTests extends AndroidTestCase {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
 
-        mCountly.onStart();
+        mCountly.onStart(null);
 
         assertEquals(1, mCountly.getActivityCount());
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
@@ -297,9 +297,9 @@ public class CountlyTests extends AndroidTestCase {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
 
-        mCountly.onStart(); // first call to onStart
+        mCountly.onStart(null); // first call to onStart
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
-        mCountly.onStart(); // second call to onStart
+        mCountly.onStart(null); // second call to onStart
 
         assertEquals(2, mCountly.getActivityCount());
         assertEquals(prevSessionDurationStartTime, mCountly.getPrevSessionDurationStartTime());
@@ -328,7 +328,7 @@ public class CountlyTests extends AndroidTestCase {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
 
-        mCountly.onStart();
+        mCountly.onStart(null);
         mCountly.onStop();
 
         assertEquals(0, mCountly.getActivityCount());
@@ -348,7 +348,7 @@ public class CountlyTests extends AndroidTestCase {
         final String eventStr = "blahblahblahblah";
         when(mockEventQueue.events()).thenReturn(eventStr);
 
-        mCountly.onStart();
+        mCountly.onStart(null);
         mCountly.onStop();
 
         assertEquals(0, mCountly.getActivityCount());
@@ -361,8 +361,8 @@ public class CountlyTests extends AndroidTestCase {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
 
-        mCountly.onStart();
-        mCountly.onStart();
+        mCountly.onStart(null);
+        mCountly.onStart(null);
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
         mCountly.onStop();
 
@@ -644,7 +644,7 @@ public class CountlyTests extends AndroidTestCase {
         when(mockEventQueue.size()).thenReturn(0);
         mCountly.setEventQueue(mockEventQueue);
 
-        mCountly.onStart();
+        mCountly.onStart(null);
         mCountly.onTimer();
 
         verify(mockConnectionQueue).updateSession(0);
@@ -661,7 +661,7 @@ public class CountlyTests extends AndroidTestCase {
         when(mockEventQueue.events()).thenReturn(eventData);
         mCountly.setEventQueue(mockEventQueue);
 
-        mCountly.onStart();
+        mCountly.onStart(null);
         mCountly.onTimer();
 
         verify(mockConnectionQueue).updateSession(0);
@@ -677,7 +677,7 @@ public class CountlyTests extends AndroidTestCase {
         when(mockEventQueue.size()).thenReturn(0);
         mCountly.setEventQueue(mockEventQueue);
 
-        mCountly.onStart();
+        mCountly.onStart(null);
         mCountly.onTimer();
 
         verify(mockConnectionQueue, times(0)).updateSession(anyInt());
@@ -695,7 +695,7 @@ public class CountlyTests extends AndroidTestCase {
         when(mockEventQueue.events()).thenReturn(eventData);
         mCountly.setEventQueue(mockEventQueue);
 
-        mCountly.onStart();
+        mCountly.onStart(null);
         mCountly.onTimer();
 
         verify(mockConnectionQueue, times(0)).updateSession(anyInt());
