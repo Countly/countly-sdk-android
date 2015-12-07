@@ -507,6 +507,7 @@ public class Countly {
         HashMap<String, String> segments = new HashMap<String, String>();
         segments.put("name", viewName);
         segments.put("visit", "1");
+        segments.put("segment", "Android");
         if(firstView) {
             firstView = false;
             segments.put("start", "1");
