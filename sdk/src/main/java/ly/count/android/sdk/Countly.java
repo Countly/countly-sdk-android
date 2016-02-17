@@ -495,10 +495,11 @@ public class Countly {
         return autoViewTracker;
     }
 
-    /* Record a view manualy, without automatic tracking
+    /**
+     *  Record a view manualy, without automatic tracking
      * or track view that is not automatically tracked
      * like fragment, Message box or transparent Activity
-     * @param boolean - true if enabled, false if disabled
+     * @param viewName String - name of the view
      */
     public synchronized Countly recordView(String viewName){
         reportViewDuration();
@@ -728,11 +729,9 @@ public class Countly {
         if(lastView != null){
             HashMap<String, String> segments = new HashMap<String, String>();
             segments.put("name", lastView);
-            /*
-            TODO:
-            report event with duration
-             */
-            //recordEvent("[CLY]_view", Countly.currentTimestamp()-lastViewStart, segments);
+            segments.put("dur", String.valueOf(Countly.currentTimestamp()-lastViewStart));
+            segments.put("segment", "Android");
+            recordEvent("[CLY]_view",segments,1);
             lastView = null;
             lastViewStart = 0;
         }
