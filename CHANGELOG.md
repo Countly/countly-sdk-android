@@ -1,4 +1,10 @@
+16.02
+
+  * Views support
+  * User data part updated
+
 15.08.01
+
    * Lowering required API level back to 9
 
 15.08
