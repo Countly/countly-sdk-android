@@ -23,8 +23,10 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.util.Log;
 
 import java.io.PrintWriter;
@@ -316,6 +318,7 @@ public class Countly {
      * @throws IllegalStateException if Countly SDK has not been initialized
      */
     public synchronized void onStart(Activity activity) {
+        appLaunchDeepLink = false;
         if (eventQueue_ == null) {
             throw new IllegalStateException("init must be called before onStart");
         }
@@ -720,6 +723,29 @@ public class Countly {
 
     public synchronized boolean isLoggingEnabled() {
         return enableLogging_;
+    }
+
+    private boolean appLaunchDeepLink = true;
+
+    public static void onCreate(Activity activity) {
+        Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
+
+        if (sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Activity created: " + activity.getClass().getName() + " ( main is " + launchIntent.getComponent().getClassName() + ")");
+        }
+
+        Intent intent = activity.getIntent();
+        if (intent != null) {
+            Uri data = intent.getData();
+            if (data != null) {
+                if (sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Data in activity created intent: " + data + " (appLaunchDeepLink " + sharedInstance().appLaunchDeepLink + ") " );
+                }
+                if (sharedInstance().appLaunchDeepLink) {
+                    DeviceInfo.deepLink = data.toString();
+                }
+            }
+        }
     }
 
     /**

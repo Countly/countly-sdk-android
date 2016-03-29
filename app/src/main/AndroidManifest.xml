@@ -19,6 +19,18 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <intent-filter android:label="@string/deep_link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Accepts URIs that begin with "countly://test” -->
+                <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
+                <data android:scheme="countly"
+                      android:host="test" />
+
+            </intent-filter>
         </activity>
 
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">

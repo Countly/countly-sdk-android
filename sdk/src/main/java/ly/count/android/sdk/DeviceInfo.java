@@ -64,6 +64,8 @@ class DeviceInfo {
         return android.os.Build.MODEL;
     }
 
+    static String deepLink;
+
     /**
      * Returns the non-scaled pixel resolution of the current default display being used by the
      * WindowManager in the specified context.
@@ -217,7 +219,8 @@ class DeviceInfo {
                 "_density", getDensity(context),
                 "_locale", getLocale(),
                 "_app_version", getAppVersion(context),
-                "_store", getStore(context));
+                "_store", getStore(context),
+                "_deep_link", deepLink);
 
         String result = json.toString();
 

@@ -21,7 +21,10 @@ public class MainActivity extends Activity {
         activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         Countly.sharedInstance().setLoggingEnabled(true);
+
+        Countly.onCreate(this);
 
         /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
         Countly.sharedInstance()
