@@ -140,7 +140,7 @@ public class Countly {
      * Device ID is supplied by OpenUDID service if available, otherwise Advertising ID is used.
      * BE CAUTIOUS!!!! If neither OpenUDID, nor Advertising ID is available, Countly will ignore this user.
      * @param context application context
-     * @param serverURL URL of the Countly server to submit data to; use "https://cloud.count.ly" for Countly Cloud
+     * @param serverURL URL of the Countly server to submit data to; use "https://try.count.ly" for Countly trial server
      * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management &gt; Applications
      * @return Countly instance for easy method chaining
      * @throws java.lang.IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
