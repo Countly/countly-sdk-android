@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
 
         Countly.onCreate(this);
 
-        /** You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service */
+        /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
         Countly.sharedInstance()
                 .init(this, "YOUR_SERVER", "YOUR_APP_KEY");
 //                .setLocation(LATITUDE, LONGITUDE);
