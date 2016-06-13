@@ -23,7 +23,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /** You should use tr.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
+        /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
         Countly.sharedInstance()
                 .init(this, "YOUR_SERVER", "YOUR_APP_KEY")
                 .initMessaging(this, MainActivity.class, "YOUR_PROJECT_ID(NUMBERS ONLY)", Countly.CountlyMessagingMode.TEST);
