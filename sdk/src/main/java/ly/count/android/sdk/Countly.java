@@ -755,7 +755,7 @@ public class Countly {
      * @return true if event with this key has been previously started, false otherwise
      */
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
-        Event event = timedEvents.get(key);
+        Event event = timedEvents.remove(key);
         if (event != null) {
             if (!isInitialized()) {
                 throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");

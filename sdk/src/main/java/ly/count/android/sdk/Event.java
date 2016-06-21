@@ -86,6 +86,10 @@ class Event {
             // would be if sum is NaN or infinite, so in that case, at least we will return
             // a JSON object with the rest of the fields populated
             json.put(SUM_KEY, sum);
+
+            if (dur > 0) {
+                json.put(DUR_KEY, dur);
+            }
         }
         catch (JSONException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -112,6 +116,7 @@ class Event {
             }
             event.count = json.optInt(COUNT_KEY);
             event.sum = json.optDouble(SUM_KEY, 0.0d);
+            event.dur = json.optDouble(DUR_KEY, 0.0d);
             event.timestamp = json.optInt(TIMESTAMP_KEY);
             event.hour = json.optInt(HOUR);
             event.dow = json.optInt(DAY_OF_WEEK);
