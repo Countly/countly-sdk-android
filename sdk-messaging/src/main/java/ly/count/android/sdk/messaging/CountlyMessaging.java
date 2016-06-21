@@ -225,15 +225,12 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
     private static boolean checkPlayServices(Activity activity) {
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
-        if (resultCode != ConnectionResult.SUCCESS) {
-            if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-                GooglePlayServicesUtil.getErrorDialog(resultCode, activity, PLAY_SERVICES_RESOLUTION_REQUEST).show();
-            } else {
-                Log.w(TAG, "Unable to install Play Services.");
-            }
-            return false;
-        }
-        return true;
+        return resultCode == ConnectionResult.SUCCESS;
+//        if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
+//            GooglePlayServicesUtil.getErrorDialog(resultCode, activity, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+//        } else {
+//            Log.w(TAG, "Unable to install Play Services.");
+//        }
     }
 
     private static String getRegistrationId(Activity activity, String sender) {
