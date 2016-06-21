@@ -41,6 +41,7 @@ class Event {
     private static final String KEY_KEY = "key";
     private static final String COUNT_KEY = "count";
     private static final String SUM_KEY = "sum";
+    private static final String DUR_KEY = "dur";
     private static final String TIMESTAMP_KEY = "timestamp";
     private static final String DAY_OF_WEEK = "dow";
     private static final String HOUR = "hour";
@@ -49,9 +50,19 @@ class Event {
     public Map<String, String> segmentation;
     public int count;
     public double sum;
+    public double dur;
     public int timestamp;
     public int hour;
     public int dow;
+
+    Event () {}
+
+    public Event (String key) {
+        this.key = key;
+        this.timestamp = Countly.currentTimestamp();
+        this.hour = Countly.currentHour();
+        this.dow = Countly.currentDayOfWeek();
+    }
 
     /**
      * Creates and returns a JSONObject containing the event data from this object.
