@@ -54,6 +54,8 @@ public class CountlyStore {
     private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
     private static final String LOCATION_PREFERENCE = "LOCATION";
+    private static final int MAX_EVENTS = 100;
+    private static final int MAX_REQUESTS = 1000;
 
     private final SharedPreferences preferences_;
 
@@ -126,8 +128,10 @@ public class CountlyStore {
     public synchronized void addConnection(final String str) {
         if (str != null && str.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
-            connections.add(str);
-            preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
+            if (connections.size() < MAX_REQUESTS) {
+                connections.add(str);
+                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
+            }
         }
     }
 
@@ -151,8 +155,10 @@ public class CountlyStore {
      */
     void addEvent(final Event event) {
         final List<Event> events = eventsList();
-        events.add(event);
-        preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
+        if (events.size() < MAX_EVENTS) {
+            events.add(event);
+            preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
+        }
     }
 
     /**
