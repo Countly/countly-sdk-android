@@ -72,7 +72,7 @@ public class ConnectionProcessor implements Runnable {
 
     URLConnection urlConnectionForEventData(final String eventData) throws IOException {
         String urlStr = serverURL_ + "/i?";
-        if(!eventData.contains("&crash="))
+        if(!eventData.contains("&crash=") && eventData.length() < 2048)
             urlStr += eventData;
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
@@ -128,7 +128,7 @@ public class ConnectionProcessor implements Runnable {
             // End of multipart/form-data.
             writer.append("--" + boundary + "--").append(CRLF).flush();
         }
-        else if(eventData.contains("&crash=")){
+        else if(eventData.contains("&crash=") || eventData.length() >= 2048){
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Using post because of crash");
             }
