@@ -2,12 +2,6 @@ package ly.count.android.demo;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.Handler;
-import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
-
-import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
 
@@ -26,17 +20,22 @@ public class MainActivity extends Activity {
 
         Countly.onCreate(this);
 
-        /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
+        // You should use cloud.count.ly instead of YOUR_SERVER for the line below if you are using Countly Cloud service *//*
         Countly.sharedInstance()
                 .init(this, "YOUR_SERVER", "YOUR_APP_KEY");
-//                .setLocation(LATITUDE, LONGITUDE);
-//                .setLoggingEnabled(true);
-//        setUserData(); // If UserData plugin is enabled on your server
-//        enableCrashTracking();
+        //        .setLoggingEnabled(true);
+         enableCrashTracking();
 
 
-        Countly.sharedInstance().recordEvent("test", 1);
+       /* HashMap<String, String> segmentation = new HashMap<String, String>();
+        segmentation.put("difficulyt", "medium");
+        segmentation.put("level", "10");
+        segmentation.put("mode", "");
 
+        Countly.sharedInstance().recordEvent("lost", segmentation, 1, 0.99);*/
+
+      /*  Countly.sharedInstance().recordEvent("test", 1);
+        Countly.sharedInstance().recordEvent("MainPage Enter");
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -112,12 +111,12 @@ public class MainActivity extends Activity {
                     Countly.sharedInstance().logException(e);
                 }
             }
-        });
+        });*/
     }
 
-    public void setUserData(){
+    /*public void setUserData(){
         HashMap<String, String> data = new HashMap<String, String>();
-        data.put("name", "Firstname Lastname");
+        data.put("name", "Firstname Rathod");
         data.put("username", "nickname");
         data.put("email", "test@test.com");
         data.put("organization", "Tester");
@@ -126,7 +125,7 @@ public class MainActivity extends Activity {
         //provide url to picture
         //data.put("picture", "http://example.com/pictures/profile_pic.png");
         //or locally from device
-        //data.put("picturePath", "/mnt/sdcard/portrait.jpg");
+        //data.put("picturePath", "/storage/emulated/0/DCIM/Camera/1467009615982.jpg");
         data.put("byear", "1987");
 
         //providing any custom key values to store with user
@@ -152,14 +151,14 @@ public class MainActivity extends Activity {
         Countly.userData.pushUniqueValue("skill", "earth");
 
         Countly.userData.save();
-    }
+    }*/
 
     public void enableCrashTracking(){
         //add some custom segments, like dependency library versions
-        HashMap<String, String> data = new HashMap<String, String>();
+      /*  HashMap<String, String> data = new HashMap<String, String>();
         data.put("Facebook", "3.5");
         data.put("Admob", "6.5");
-        Countly.sharedInstance().setCustomCrashSegments(data);
+        Countly.sharedInstance().setCustomCrashSegments(data);*/
         Countly.sharedInstance().enableCrashReporting();
     }
 
@@ -167,7 +166,9 @@ public class MainActivity extends Activity {
     public void onStart()
     {
         super.onStart();
+
         Countly.sharedInstance().onStart(this);
+
     }
 
     @Override

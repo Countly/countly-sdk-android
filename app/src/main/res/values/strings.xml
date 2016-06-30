@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Demo</string>
+    <string name="app_name">Countly demo application</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="deep_link">Deep Link Test</string>
-
+    <string name="spinner_title">Select Gender</string>
 </resources>

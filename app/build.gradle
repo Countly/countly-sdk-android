@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId "ly.count.android.demo"
-        minSdkVersion 12
+        minSdkVersion 13
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
@@ -40,6 +40,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':sdk')
+    compile 'com.android.support:support-v13:22.2.1'
 //    compile 'ly.count.android:sdk:16.06'
 //    compile 'ly.count.android:sdk:16.06@aar'
 }

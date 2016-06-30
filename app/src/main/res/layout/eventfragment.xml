@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+
+   <LinearLayout
+       android:layout_width="match_parent"
+       android:layout_height="match_parent"
+       android:layout_marginTop="20dp">
+
+      <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:gravity="center"
+           android:layout_gravity="center"
+
+           android:layout_marginRight="40dp"
+           android:layout_marginLeft="40dp"
+           android:orientation="vertical">
+          <TextView
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_gravity="center_horizontal"
+              android:textSize="20dp"
+              android:textColor="@color/black"
+              android:layout_marginBottom="10dp"
+              android:text="Events"/>
+           <Button
+               android:id="@+id/btn_login_event"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:text="Send Login Events"/>
+
+           <Button
+               android:id="@+id/btn_logout_event"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:text="Send Logout Events"/>
+
+           <Button
+               android:id="@+id/btn_won_event"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:text="Send Won Events"/>
+
+           <Button
+               android:id="@+id/btn_lost_event"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:text="Send Lost Events"/>
+
+           <Button
+               android:id="@+id/btn_shared_event"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:text="Send Shared Events"/>
+
+       </LinearLayout>
+
+   </LinearLayout>
+
+</LinearLayout>
