@@ -138,7 +138,7 @@ public class Message implements Parcelable {
     };
 
     Message(Parcel in) {
-        data = in.readBundle();
+        data = in.readBundle(getClass().getClassLoader());
         type = setType();
     }
 }

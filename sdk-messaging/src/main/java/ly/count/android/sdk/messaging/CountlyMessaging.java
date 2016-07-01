@@ -1,5 +1,6 @@
 package ly.count.android.sdk.messaging;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -139,6 +140,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         }
     }
 
+    @SuppressLint("CommitPrefEdits")
     public static void storeConfiguration(Context context, String serverURL, String appKey, String deviceID, DeviceId.Type idMode) {
         String label = "App";
         try {
