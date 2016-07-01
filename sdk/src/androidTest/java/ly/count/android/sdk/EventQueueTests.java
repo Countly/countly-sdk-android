@@ -58,14 +58,15 @@ public class EventQueueTests extends AndroidTestCase {
         final String eventKey = "eventKey";
         final int count = 42;
         final double sum = 3.0d;
+        final double dur = 10.0d;
         final Map<String, String> segmentation = new HashMap<String, String>(1);
         final int timestamp = Countly.currentTimestamp();
         final int hour = Countly.currentHour();
         final int dow = Countly.currentDayOfWeek();
         final ArgumentCaptor<Integer> arg = ArgumentCaptor.forClass(Integer.class);
 
-        mEventQueue.recordEvent(eventKey, segmentation, count, sum);
-        verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum));
+        mEventQueue.recordEvent(eventKey, segmentation, count, sum, dur);
+        verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
         assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
     }
 
