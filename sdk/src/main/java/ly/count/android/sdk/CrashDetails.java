@@ -92,6 +92,15 @@ class CrashDetails {
                 }
                 ex.printStackTrace();
             }
+            finally {
+                try {
+                    if(reader != null) {
+                        reader.close();
+                    }
+                } catch (IOException exc) {
+                    exc.printStackTrace();
+                }
+            }
         }
         return totalMemory;
     }
