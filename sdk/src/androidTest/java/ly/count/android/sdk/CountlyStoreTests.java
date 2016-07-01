@@ -102,14 +102,14 @@ public class CountlyStoreTests extends AndroidTestCase {
 
     public void testEvents_prefIsEmptyString() {
         // the following two calls will result in the pref being an empty string
-        store.addEvent("eventKey", null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d);
+        store.addEvent("eventKey", null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
         store.removeEvents(store.eventsList());
         assertTrue(Arrays.equals(new String[0], store.events()));
     }
 
     public void testEvents_prefHasSingleValue() throws JSONException {
         final String eventKey = "eventKey";
-        store.addEvent(eventKey, null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d);
+        store.addEvent(eventKey, null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
         final String[] eventJSONStrs = store.events();
         final JSONObject eventJSONObj = new JSONObject(eventJSONStrs[0]);
         assertEquals(eventKey, eventJSONObj.getString("key"));
@@ -119,8 +119,8 @@ public class CountlyStoreTests extends AndroidTestCase {
     public void testEvents_prefHasTwoValues() throws JSONException {
         final String eventKey1 = "eventKey1";
         final String eventKey2 = "eventKey2";
-        store.addEvent(eventKey1, null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d);
-        store.addEvent(eventKey2, null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d);
+        store.addEvent(eventKey1, null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
+        store.addEvent(eventKey2, null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
         final String[] eventJSONStrs = store.events();
         final JSONObject eventJSONObj1 = new JSONObject(eventJSONStrs[0]);
         assertEquals(eventKey1, eventJSONObj1.getString("key"));
@@ -138,7 +138,8 @@ public class CountlyStoreTests extends AndroidTestCase {
         event1.key = "eventKey1";
         event1.timestamp = Countly.currentTimestamp();
         event1.count = 1;
-        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum);
+        event1.dur = 10.0d;
+        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
         final List<Event> expected = new ArrayList<Event>(1);
         expected.add(event1);
         final List<Event> actual = store.eventsList();
@@ -150,17 +151,20 @@ public class CountlyStoreTests extends AndroidTestCase {
         event1.key = "eventKey1";
         event1.timestamp = Countly.currentTimestamp();
         event1.count = 1;
+        event1.dur = 10.0d;
         final Event event2 = new Event();
         event2.key = "eventKey2";
         event2.timestamp = Countly.currentTimestamp() - 60;
         event2.count = 1;
+        event2.dur = 10.0d;
         final Event event3 = new Event();
         event3.key = "eventKey3";
         event3.timestamp = Countly.currentTimestamp() - 30;
         event3.count = 1;
-        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum);
-        store.addEvent(event2.key, event2.segmentation, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum);
-        store.addEvent(event3.key, event3.segmentation, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum);
+        event3.dur = 10.0d;
+        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
+        store.addEvent(event2.key, event2.segmentation, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
+        store.addEvent(event3.key, event3.segmentation, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
         final List<Event> expected = new ArrayList<Event>(3);
         expected.add(event2);
         expected.add(event3);
@@ -290,11 +294,12 @@ public class CountlyStoreTests extends AndroidTestCase {
         event1.timestamp = Countly.currentTimestamp() - 60;
         event1.count = 42;
         event1.sum = 3.2;
+        event1.dur = 10.0d;
         event1.segmentation = new HashMap<String, String>(2);
         event1.segmentation.put("segKey1", "segValue1");
         event1.segmentation.put("segKey2", "segValue2");
 
-        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum);
+        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
 
         final List<Event> addedEvents = store.eventsList();
         assertEquals(1, addedEvents.size());
@@ -309,21 +314,24 @@ public class CountlyStoreTests extends AndroidTestCase {
         event1.key = "eventKey1";
         event1.timestamp = Countly.currentTimestamp() - 60;
         event1.count = 1;
+        event1.dur = 10.0d;
         final Event event2 = new Event();
         event2.key = "eventKey2";
         event2.timestamp = Countly.currentTimestamp() - 30;
         event2.count = 1;
+        event2.dur = 10.0d;
         final Event event3 = new Event();
         event3.key = "eventKey2";
         event3.timestamp = Countly.currentTimestamp();
         event3.count = 1;
+        event3.dur = 10.0d;
 
-        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum);
-        store.addEvent(event2.key, event2.segmentation, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum);
+        store.addEvent(event1.key, event1.segmentation, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
+        store.addEvent(event2.key, event2.segmentation, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
 
         final List<Event> eventsToRemove = store.eventsList();
 
-        store.addEvent(event3.key, event3.segmentation, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum);
+        store.addEvent(event3.key, event3.segmentation, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
 
         store.removeEvents(eventsToRemove);
 
@@ -337,7 +345,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
         store.addConnection("blah");
-        store.addEvent("eventKey", null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d);
+        store.addEvent("eventKey", null, Countly.currentTimestamp(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
         assertTrue(prefs.contains("EVENTS"));
         assertTrue(prefs.contains("CONNECTIONS"));
         store.clear();
