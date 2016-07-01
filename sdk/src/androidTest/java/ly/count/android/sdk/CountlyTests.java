@@ -550,6 +550,7 @@ public class CountlyTests extends AndroidTestCase {
         final String eventKey = "eventKey";
         final int count = 42;
         final double sum = 3.0d;
+        final double dur = 10.0d;
         final HashMap<String, String> segmentation = new HashMap<String, String>(1);
         segmentation.put("segkey1", "segvalue1");
 
@@ -560,7 +561,7 @@ public class CountlyTests extends AndroidTestCase {
         doNothing().when(countly).sendEventsIfNeeded();
         countly.recordEvent(eventKey, segmentation, count, sum);
 
-        verify(mockEventQueue).recordEvent(eventKey, segmentation, count, sum);
+        verify(mockEventQueue).recordEvent(eventKey, segmentation, count, sum, dur);
         verify(countly).sendEventsIfNeeded();
     }
 
