@@ -115,7 +115,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     private static final String PREFERENCES_NAME = "ly.count.android.api.messaging";
     private static final String PROPERTY_REGISTRATION_ID = "ly.count.android.api.messaging.registration.id";
     private static final String PROPERTY_REGISTRATION_VERSION = "ly.count.android.api.messaging.version";
-    private static final String PROPERTY_REGISTRATION_SENDER = "ly.count.android.api.messaging.sender";
+    static final String PROPERTY_REGISTRATION_SENDER = "ly.count.android.api.messaging.sender";
     private static final String PROPERTY_APPLICATION_TITLE = "ly.count.android.api.messaging.app.title";
     private static final String PROPERTY_SERVER_URL = "ly.count.android.api.messaging.server.url";
     private static final String PROPERTY_APP_KEY = "ly.count.android.api.messaging.app.key";
@@ -205,7 +205,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         }
     }
 
-    private static void registerInBackground(final Context context, final String sender) {
+    static void registerInBackground(final Context context, final String sender) {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
@@ -214,7 +214,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
                     Countly.sharedInstance().onRegistrationId(registrationId);
                     storeRegistrationId(context, registrationId, sender);
                 } catch (IOException ex) {
-                    Log.e(TAG, "Failed to register for GCM identificator: " + ex.getMessage());
+                    Log.e(TAG, "Failed to register for GCM identification: " + ex.getMessage());
                 }
                 return null;
             }
@@ -233,7 +233,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     }
 
 
-    private static SharedPreferences getGCMPreferences(Context context) {
+    static SharedPreferences getGCMPreferences(Context context) {
         return context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
     }
 

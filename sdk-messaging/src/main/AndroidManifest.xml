@@ -25,6 +25,14 @@
             <meta-data android:name="broadcast_action" android:value="ly.count.android.api.broadcast" />
         </service>
 
+        <service
+            android:name=".CountlyInstanceIdListenerService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.android.gms.iid.InstanceID"/>
+            </intent-filter>
+        </service>
+
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">
             <intent-filter>
                 <action android:name="org.OpenUDID.GETUDID" />
