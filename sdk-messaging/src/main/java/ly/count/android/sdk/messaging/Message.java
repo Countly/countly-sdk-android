@@ -91,9 +91,11 @@ public class Message implements Parcelable {
             if (activityClass == null) {
                 activityClass = CountlyMessaging.getMainActivityClass(context);
             }
-            Intent intent = new Intent(context, activityClass);
-            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            return intent;
+            if (activityClass != null) {
+                Intent intent = new Intent(context, activityClass);
+                intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                return intent;
+            }
         }
         return null;
     }

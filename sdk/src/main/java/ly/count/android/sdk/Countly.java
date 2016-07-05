@@ -51,7 +51,7 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "16.06";
+    public static final String COUNTLY_SDK_VERSION_STRING = "16.06.01";
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.

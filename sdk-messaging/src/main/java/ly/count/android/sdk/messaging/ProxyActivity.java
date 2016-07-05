@@ -5,6 +5,9 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+
+import ly.count.android.sdk.Countly;
 
 /**
 * Created by artem on 14/10/14.
@@ -93,7 +96,8 @@ public class ProxyActivity extends Activity {
                     if (activity != null)
                         startActivity(activity);
                     else
-                        throw new IllegalStateException("Countly Message with UNKNOWN type in ProxyActivity");
+                        Log.e(Countly.TAG, "Countly Message with UNKNOWN type in ProxyActivity");
+//                        throw new IllegalStateException("Countly Message with UNKNOWN type in ProxyActivity");
                 }
             }
         }

@@ -81,6 +81,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/jni" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/rs" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/shaders" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/build/docs" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/annotations" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/assets" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/blame" />
@@ -90,50 +91,55 @@
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/appcompat-v7/23.0.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/mediarouter-v7/23.0.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/support-v4/23.0.0/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-ads-lite/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-ads/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-analytics-impl/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-analytics/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-appindexing/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-appinvite/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-auth-base/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-auth/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-base/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-basement/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-cast/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-drive/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-fitness/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-games/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-gcm/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-identity/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-iid/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-location/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-maps/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-nearby/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-panorama/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-plus/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-safetynet/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-tagmanager-api/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-tagmanager/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-tasks/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-vision/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-wallet/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-wearable/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-analytics-impl/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-analytics/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-auth-common/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-auth-module/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-auth/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-common/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-config/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-crash/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-database-connection/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-database/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-iid/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-messaging/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-storage-common/9.0.2/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-storage/9.0.2/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-ads-lite/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-ads/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-analytics-impl/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-analytics/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-appindexing/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-appinvite/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-auth-base/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-auth/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-base/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-basement/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-cast-framework/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-cast/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-clearcut/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-contextmanager/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-drive/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-fitness/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-games/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-gass/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-gcm/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-identity/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-iid/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-location/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-maps/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-nearby/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-panorama/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-places/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-plus/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-safetynet/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-tagmanager-api/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-tagmanager/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-tasks/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-vision/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-wallet/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services-wearable/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.android.gms/play-services/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-analytics-impl/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-analytics/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-auth-common/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-auth-module/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-auth/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-common/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-config/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-crash/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-database-connection/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-database/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-iid/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-messaging/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-storage-common/9.2.0/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.google.firebase/firebase-storage/9.2.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental-safeguard" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/jniLibs" />
@@ -143,58 +149,67 @@
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/shaders" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/symbols" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/transforms" />
+      <excludeFolder url="file://$MODULE_DIR$/build/libs" />
       <excludeFolder url="file://$MODULE_DIR$/build/outputs" />
+      <excludeFolder url="file://$MODULE_DIR$/build/publications" />
+      <excludeFolder url="file://$MODULE_DIR$/build/reports" />
+      <excludeFolder url="file://$MODULE_DIR$/build/test-results" />
       <excludeFolder url="file://$MODULE_DIR$/build/tmp" />
     </content>
     <orderEntry type="jdk" jdkName="Android API 23 Platform (1)" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="play-services-panorama-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-vision-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-appinvite-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-ads-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-messaging-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-auth-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-fitness-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-appindexing-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-base-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-drive-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-tagmanager-api-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-iid-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-nearby-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-auth-9.0.2" level="project" />
+    <orderEntry type="library" exported="" name="play-services-identity-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-base-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-auth-common-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-maps-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-common-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-iid-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-appindexing-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-wearable-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-drive-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-contextmanager-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-config-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-vision-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-database-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-auth-base-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-crash-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-auth-module-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-gass-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-storage-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-auth-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-nearby-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-ads-lite-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-analytics-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-appinvite-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-ads-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-tagmanager-api-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-messaging-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-safetynet-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-games-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-cast-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-analytics-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-fitness-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-cast-framework-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-analytics-impl-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-places-9.2.0" level="project" />
     <orderEntry type="library" exported="" name="support-v4-23.0.0" level="project" />
-    <orderEntry type="library" exported="" name="play-services-analytics-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-ads-lite-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-crash-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-wallet-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-storage-common-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-auth-base-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-location-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-gcm-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-database-connection-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-wearable-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-basement-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-common-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-tagmanager-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-auth-module-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-tasks-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-analytics-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-plus-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-cast-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-database-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-auth-common-9.0.2" level="project" />
+    <orderEntry type="library" exported="" name="firebase-analytics-impl-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-auth-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-wallet-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-clearcut-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-panorama-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-location-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-tagmanager-9.2.0" level="project" />
     <orderEntry type="library" exported="" name="mediarouter-v7-23.0.0" level="project" />
-    <orderEntry type="library" exported="" name="play-services-safetynet-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-iid-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-games-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-analytics-impl-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-storage-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-config-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="firebase-analytics-impl-9.0.2" level="project" />
+    <orderEntry type="library" exported="" name="play-services-plus-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-iid-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="firebase-database-connection-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-gcm-9.2.0" level="project" />
     <orderEntry type="library" exported="" name="appcompat-v7-23.0.0" level="project" />
-    <orderEntry type="library" exported="" name="play-services-maps-9.0.2" level="project" />
-    <orderEntry type="library" exported="" name="play-services-identity-9.0.2" level="project" />
+    <orderEntry type="library" exported="" name="firebase-storage-common-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-basement-9.2.0" level="project" />
+    <orderEntry type="library" exported="" name="play-services-tasks-9.2.0" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-23.0.0" level="project" />
     <orderEntry type="module" module-name="sdk" exported="" />
   </component>
