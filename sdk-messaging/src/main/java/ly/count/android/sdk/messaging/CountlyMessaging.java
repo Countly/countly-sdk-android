@@ -17,6 +17,7 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
+import com.google.android.gms.iid.InstanceID;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -209,16 +210,33 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
+                InstanceID instanceId;
                 try {
-                    String registrationId = gcm.register(sender);
+                    instanceId = InstanceID.getInstance(context);
+                } catch (final NoClassDefFoundError | RuntimeException exception) {
+                    Log.e(TAG, "Failed to get the Instance ID singleton instance.", exception);
+                    return null;
+                }
+
+                // Perform the registration to GCM.
+                final String registrationId;
+                try {
+                    registrationId = instanceId.getToken(sender, GoogleCloudMessaging.INSTANCE_ID_SCOPE);
+                } catch (final IOException | RuntimeException exception) {
+                    Log.e(TAG, "Failed to get Instance ID token for Google Cloud Messaging.", exception);
+                    return null;
+                }
+
+                // Save the registration ID.
+                try {
                     Countly.sharedInstance().onRegistrationId(registrationId);
                     storeRegistrationId(context, registrationId, sender);
-                } catch (IOException ex) {
-                    Log.e(TAG, "Failed to register for GCM identificator: " + ex.getMessage());
+                } catch (final RuntimeException exception) {
+                    Log.e(TAG, "Failed to perform book-keeping after registration.", exception);
                 }
                 return null;
             }
-        }.execute(null, null, null);
+        }.execute();
     }
 
     private static void storeRegistrationId(Context context, String regId, String sender) {
