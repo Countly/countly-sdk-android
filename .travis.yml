@@ -39,5 +39,5 @@ addons:
       name: "Countly/countly-sdk-android"
     notification_email: hello@count.ly
     build_command_prepend: "./gradlew clean"
-    build_command: "./gradlew build"
+    build_command: "./gradlew build --stacktrace"
     branch_pattern: master
