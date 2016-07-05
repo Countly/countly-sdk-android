@@ -87,6 +87,18 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     }
     protected static Context getContext() { return context; }
     protected static Class<? extends Activity> getActivityClass() { return activityClass; }
+    @SuppressWarnings("unchecked")
+
+    protected static Class<? extends Activity> getMainActivityClass(Context context) {
+        String packageName = context.getPackageName();
+        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(packageName);
+        String className = launchIntent.getComponent().getClassName();
+        try {
+            return (Class<? extends Activity>) Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
 
     @Override
     public void onReceive (Context context, Intent intent) {

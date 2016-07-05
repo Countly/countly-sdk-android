@@ -88,6 +88,9 @@ public class Message implements Parcelable {
         } else if (hasReview()) {
             return new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + ("".equals(getReview()) ? context.getPackageName() : getReview())));
         } else if (hasMessage()) {
+            if (activityClass == null) {
+                activityClass = CountlyMessaging.getMainActivityClass(context);
+            }
             Intent intent = new Intent(context, activityClass);
             intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
             return intent;
