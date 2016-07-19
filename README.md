@@ -9,7 +9,7 @@ and mobile SDK that sends this data. Both parts are open source with different l
 
 This repository includes the Countly Android SDK.
 
-Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly), or ask us on our [Countly Analytics Community Slack channel](http://192.241.144.64:3000/).
+Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly), or ask us on our [Countly Analytics Community Slack channel](http://slack.count.ly:3000/).
 
 ### Other Github resources ###
 
