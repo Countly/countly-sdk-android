@@ -24,6 +24,7 @@ import ly.count.android.sdk.Countly;
 */
 public class CountlyMessagingService extends IntentService {
     public static final String TAG = "CountlyMessagingService";
+    public static final int NOTIFICATION_ID = 736192;
 
     public CountlyMessagingService() {
         super(TAG);
@@ -31,6 +32,7 @@ public class CountlyMessagingService extends IntentService {
 
     @Override
     protected void onHandleIntent (Intent intent) {
+        Log.i(TAG, "Handling intent");
         Bundle extras = intent.getExtras();
 
         GoogleCloudMessaging gcm = GoogleCloudMessaging.getInstance(getApplicationContext());
@@ -111,7 +113,7 @@ public class CountlyMessagingService extends IntentService {
                 builder.setSound(Uri.parse(msg.getSoundUri()));
             }
 
-            manager.notify(1, builder.build());
+            manager.notify(NOTIFICATION_ID, builder.build());
         }
     }
 
