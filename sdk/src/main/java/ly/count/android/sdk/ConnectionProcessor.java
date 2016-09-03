@@ -165,7 +165,22 @@ public class ConnectionProcessor implements Runnable {
                 }
                 break;
             }
-            final String eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
+
+            boolean deviceIdChange = storedEvents[0].contains("&device_id=");
+
+            final String eventData, newId;
+            if (deviceIdChange) {
+                newId = storedEvents[0].substring(storedEvents[0].indexOf("&device_id=") + "&device_id=".length());
+                if (newId.equals(deviceId_.getId())) {
+                    eventData = storedEvents[0];
+                    deviceIdChange = false;
+                } else {
+                    eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
+                }
+            } else {
+                newId = null;
+                eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
+            }
 
             URLConnection conn = null;
             BufferedInputStream responseStream = null;
@@ -210,6 +225,10 @@ public class ConnectionProcessor implements Runnable {
                     // successfully submitted event data to Count.ly server, so remove
                     // this one from the stored events collection
                     store_.removeConnection(storedEvents[0]);
+
+                    if (deviceIdChange) {
+                        deviceId_.changeToDeveloperId(store_, newId);
+                    }
                 }
                 else {
                     // warning was logged above, stop processing, let next tick take care of retrying

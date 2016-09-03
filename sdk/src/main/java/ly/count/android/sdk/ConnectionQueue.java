@@ -166,6 +166,20 @@ public class ConnectionQueue {
         }
     }
 
+    public void changeDeviceId (String deviceId, final int duration) {
+        checkInternalState();
+        final String data = "app_key=" + appKey_
+                + "&timestamp=" + Countly.currentTimestampMs()
+                + "&hour=" + Countly.currentHour()
+                + "&dow=" + Countly.currentDayOfWeek()
+                + "&session_duration=" + duration
+                + "&location=" + getCountlyStore().getAndRemoveLocation()
+                + "&device_id=" + deviceId;
+
+        store_.addConnection(data);
+        tick();
+    }
+
     public void tokenSession(String token, Countly.CountlyMessagingMode mode) {
         checkInternalState();
 

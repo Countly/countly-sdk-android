@@ -217,14 +217,14 @@ public class Countly {
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
         if (eventQueue_ == null) {
+            final CountlyStore countlyStore = new CountlyStore(context);
+
             DeviceId deviceIdInstance;
             if (deviceID != null) {
-                deviceIdInstance = new DeviceId(deviceID);
+                deviceIdInstance = new DeviceId(countlyStore, deviceID);
             } else {
-                deviceIdInstance = new DeviceId(idMode);
+                deviceIdInstance = new DeviceId(countlyStore, idMode);
             }
-
-            final CountlyStore countlyStore = new CountlyStore(context);
 
             deviceIdInstance.init(context, countlyStore, true);
 
@@ -430,6 +430,21 @@ public class Countly {
      */
     public void onRegistrationId(String registrationId) {
         connectionQueue_.tokenSession(registrationId, messagingMode_);
+    }
+
+    /**
+     * Changes current device id to the one specified in parameter. Merges user profile with new id
+     * (if any) with old profile.
+     */
+    public void changeDeviceId(String deviceId) {
+        if (eventQueue_ == null) {
+            throw new IllegalStateException("init must be called before changeDeviceId");
+        }
+        if (activityCount_ == 0) {
+            throw new IllegalStateException("must call onStart before changeDeviceId");
+        }
+
+        connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());
     }
 
     /**
