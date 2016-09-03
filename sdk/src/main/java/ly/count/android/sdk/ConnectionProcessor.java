@@ -36,6 +36,7 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.MessageDigest;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -56,6 +57,8 @@ public class ConnectionProcessor implements Runnable {
     private final String serverURL_;
     private final SSLContext sslContext_;
 
+    protected static String salt;
+
     ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext) {
         serverURL_ = serverURL;
         store_ = store;
@@ -70,8 +73,12 @@ public class ConnectionProcessor implements Runnable {
 
     URLConnection urlConnectionForEventData(final String eventData) throws IOException {
         String urlStr = serverURL_ + "/i?";
-        if(!eventData.contains("&crash=") && eventData.length() < 2048)
+        if(!eventData.contains("&crash=") && eventData.length() < 2048) {
             urlStr += eventData;
+            urlStr += "&checksum=" + sha1Hash(urlStr + salt);
+        } else {
+            urlStr += "checksum=" + sha1Hash(urlStr + eventData + salt);
+        }
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
         if (Countly.publicKeyPinCertificates == null) {
@@ -242,6 +249,37 @@ public class ConnectionProcessor implements Runnable {
                 }
             }
         }
+    }
+
+    private static String sha1Hash (String toHash) {
+        String hash = null;
+        try {
+            MessageDigest digest = MessageDigest.getInstance( "SHA-1" );
+            byte[] bytes = toHash.getBytes("UTF-8");
+            digest.update(bytes, 0, bytes.length);
+            bytes = digest.digest();
+
+            // This is ~55x faster than looping and String.formating()
+            hash = bytesToHex( bytes );
+        }
+        catch( Throwable e ) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Cannot tamper-protect params", e);
+            }
+        }
+        return hash;
+    }
+
+    // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
+    final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex( byte[] bytes ) {
+        char[] hexChars = new char[ bytes.length * 2 ];
+        for( int j = 0; j < bytes.length; j++ ) {
+            int v = bytes[ j ] & 0xFF;
+            hexChars[ j * 2 ] = hexArray[ v >>> 4 ];
+            hexChars[ j * 2 + 1 ] = hexArray[ v & 0x0F ];
+        }
+        return new String( hexChars );
     }
 
     // for unit testing

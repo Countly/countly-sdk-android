@@ -860,6 +860,11 @@ public class Countly {
         return enableLogging_;
     }
 
+    public synchronized Countly enableParameterTamperingProtection(String salt) {
+        ConnectionProcessor.salt = salt;
+        return this;
+    }
+
     private boolean appLaunchDeepLink = true;
 
     public static void onCreate(Activity activity) {
