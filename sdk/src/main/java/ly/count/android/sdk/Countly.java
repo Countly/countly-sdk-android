@@ -24,8 +24,6 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.util.Log;
 
@@ -51,7 +49,7 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "16.06.02";
+    public static final String COUNTLY_SDK_VERSION_STRING = "16.06.03";
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
