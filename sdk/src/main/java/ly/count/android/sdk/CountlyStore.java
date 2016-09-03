@@ -108,7 +108,7 @@ public class CountlyStore {
         Collections.sort(events, new Comparator<Event>() {
             @Override
             public int compare(final Event e1, final Event e2) {
-                return e1.timestamp - e2.timestamp;
+                return (int)(e1.timestamp - e2.timestamp);
             }
         });
         return events;
@@ -190,7 +190,7 @@ public class CountlyStore {
      * @param sum sum associated with the custom event, if not used, pass zero.
      *            NaN and infinity values will be quietly ignored.
      */
-    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final int timestamp, final int hour, final int dow, final int count, final double sum, final double dur) {
+    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final long timestamp, final int hour, final int dow, final int count, final double sum, final double dur) {
         final Event event = new Event();
         event.key = key;
         event.segmentation = segmentation;

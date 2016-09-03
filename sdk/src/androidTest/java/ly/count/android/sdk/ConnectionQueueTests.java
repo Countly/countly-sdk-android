@@ -192,7 +192,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestamp();
+        final long curTimestamp = Countly.currentTimestampMs();
         final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
@@ -240,7 +240,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestamp();
+        final long curTimestamp = Countly.currentTimestampMs();
         final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
@@ -267,7 +267,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestamp();
+        final long curTimestamp = Countly.currentTimestampMs();
         final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
@@ -286,7 +286,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestamp();
+        final long curTimestamp = Countly.currentTimestampMs();
         final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
@@ -305,7 +305,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestamp();
+        final long curTimestamp = Countly.currentTimestampMs();
         final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
@@ -334,7 +334,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestamp();
+        final long curTimestamp = Countly.currentTimestampMs();
         final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp - 1) <= actualTimestamp) && ((curTimestamp + 1) >= actualTimestamp));

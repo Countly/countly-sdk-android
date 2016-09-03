@@ -94,7 +94,7 @@ public class EventQueue {
      * @throws IllegalArgumentException if key is null or empty
      */
     void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum, final double dur) {
-        final int timestamp = Countly.currentTimestamp();
+        final long timestamp = Countly.currentTimestampMs();
         final int hour = Countly.currentHour();
         final int dow = Countly.currentDayOfWeek();
         countlyStore_.addEvent(key, segmentation, timestamp, hour, dow, count, sum, dur);

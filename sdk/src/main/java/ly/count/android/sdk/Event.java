@@ -51,7 +51,7 @@ class Event {
     public int count;
     public double sum;
     public double dur;
-    public int timestamp;
+    public long timestamp;
     public int hour;
     public int dow;
 
@@ -59,7 +59,7 @@ class Event {
 
     public Event (String key) {
         this.key = key;
-        this.timestamp = Countly.currentTimestamp();
+        this.timestamp = Countly.currentTimestampMs();
         this.hour = Countly.currentHour();
         this.dow = Countly.currentDayOfWeek();
     }
@@ -117,7 +117,7 @@ class Event {
             event.count = json.optInt(COUNT_KEY);
             event.sum = json.optDouble(SUM_KEY, 0.0d);
             event.dur = json.optDouble(DUR_KEY, 0.0d);
-            event.timestamp = json.optInt(TIMESTAMP_KEY);
+            event.timestamp = json.optLong(TIMESTAMP_KEY);
             event.hour = json.optInt(HOUR);
             event.dow = json.optInt(DAY_OF_WEEK);
 
@@ -163,6 +163,6 @@ class Event {
     public int hashCode() {
         return (key != null ? key.hashCode() : 1) ^
                (segmentation != null ? segmentation.hashCode() : 1) ^
-               (timestamp != 0 ? timestamp : 1);
+               (timestamp != 0 ? (int)timestamp : 1);
     }
 }

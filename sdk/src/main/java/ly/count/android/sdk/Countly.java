@@ -925,6 +925,16 @@ public class Countly {
         return ((int)(System.currentTimeMillis() / 1000l));
     }
 
+    private static long lastTsMs;
+    static synchronized long currentTimestampMs() {
+        long ms = System.currentTimeMillis();
+        while (lastTsMs >= ms) {
+            ms += 1;
+        }
+        lastTsMs = ms;
+        return ms;
+    }
+
     /**
      * Utility method to return a current hour of the day that can be used in the Count.ly API.
      */

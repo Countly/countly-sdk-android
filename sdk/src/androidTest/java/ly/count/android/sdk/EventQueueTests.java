@@ -60,7 +60,7 @@ public class EventQueueTests extends AndroidTestCase {
         final double sum = 3.0d;
         final double dur = 10.0d;
         final Map<String, String> segmentation = new HashMap<String, String>(1);
-        final int timestamp = Countly.currentTimestamp();
+        final int timestamp = Countly.currentTimestampMs();
         final int hour = Countly.currentHour();
         final int dow = Countly.currentDayOfWeek();
         final ArgumentCaptor<Integer> arg = ArgumentCaptor.forClass(Integer.class);
