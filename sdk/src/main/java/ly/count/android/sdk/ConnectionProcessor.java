@@ -24,8 +24,6 @@ package ly.count.android.sdk;
 import android.os.Build;
 import android.util.Log;
 
-import org.json.JSONObject;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
@@ -209,14 +207,6 @@ public class ConnectionProcessor implements Runnable {
                 }
 
                 // HTTP response code was good, check response JSON contains {"result":"Success"}
-                if (success) {
-                    final JSONObject responseDict = new JSONObject(responseData.toString("UTF-8"));
-                    success = responseDict.optString("result").equalsIgnoreCase("success");
-                    if (!success && Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Response from Countly server did not report success, it was: " + responseData.toString("UTF-8"));
-                    }
-                }
-
                 if (success) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
                         Log.d(Countly.TAG, "ok ->" + eventData);
