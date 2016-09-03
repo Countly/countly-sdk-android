@@ -47,7 +47,7 @@ public class ProxyActivity extends Activity {
                                     public void onClick(DialogInterface dialog, int which) {
                                         CountlyMessaging.recordMessageAction(msg.getId());
                                         finish();
-                                        Intent activity = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass());
+                                        Intent activity = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass(ProxyActivity.this));
                                         if(activity != null)
                                             startActivity(activity);
                                     }
@@ -65,7 +65,7 @@ public class ProxyActivity extends Activity {
                                     public void onClick(DialogInterface dialog, int which) {
                                         CountlyMessaging.recordMessageAction(msg.getId());
                                         finish();
-                                        Intent activity = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass());
+                                        Intent activity = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass(ProxyActivity.this));
                                         if(activity != null)
                                             startActivity(activity);
                                     }
@@ -92,7 +92,7 @@ public class ProxyActivity extends Activity {
                     builder.create().show();
                 } else {
                     CountlyMessaging.recordMessageAction(msg.getId());
-                    Intent activity = msg.getIntent(this, CountlyMessaging.getActivityClass());
+                    Intent activity = msg.getIntent(this, CountlyMessaging.getActivityClass(this));
                     if (activity != null)
                         startActivity(activity);
                     else

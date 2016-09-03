@@ -59,6 +59,12 @@ public class CountlyMessagingService extends IntentService {
                         }
                     }
 
+                    if (CountlyMessaging.isUIDisabled()) {
+                        Log.i(TAG, "Won't do anything since Countly Messaging UI is disabled");
+                        CountlyMessaging.completeWakefulIntent(intent);
+                        return;
+                    }
+
                     // Show message if not silent
                     if (msg.isSilent()) {
                         CountlyMessaging.recordMessageOpen(msg.getId());

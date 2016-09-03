@@ -76,6 +76,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
      * this activity is used as a final destination.
      */
     private static Class<? extends Activity> activityClass;
+    private static boolean disableUI;
 
     public static void setActivity(Activity activity) {
         setActivity(activity, activity.getClass());
@@ -86,7 +87,9 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         activityClass = claz == null ? activity.getClass() : claz;
     }
     protected static Context getContext() { return context; }
-    protected static Class<? extends Activity> getActivityClass() { return activityClass; }
+    protected static Class<? extends Activity> getActivityClass(Context context) {
+        return activityClass == null ? getMainActivityClass(context) : activityClass;
+    }
     @SuppressWarnings("unchecked")
 
     protected static Class<? extends Activity> getMainActivityClass(Context context) {
@@ -121,12 +124,13 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     private static final String PROPERTY_APP_KEY = "ly.count.android.api.messaging.app.key";
     private static final String PROPERTY_DEVICE_ID = "ly.count.android.api.messaging.device.id";
     private static final String PROPERTY_DEVICE_ID_MODE = "ly.count.android.api.messaging.device.id.mode";
+    private static final String PROPERTY_DISABLE_UI = "ly.count.android.api.messaging.disable.ui";
     private static final String PROPERTY_ACTIVITY_CLASS = "ly.count.android.api.messaging.activity.class";
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static GoogleCloudMessaging gcm;
 
 
-    public static void init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames) {
+    public static void init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames, Boolean disableUI) {
         setActivity(activity, activityClass);
 
         if (gcm != null) {
@@ -136,6 +140,9 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         if (buttonNames != null) {
             CountlyMessaging.buttonNames = buttonNames;
         }
+
+        CountlyMessaging.disableUI = disableUI;
+        getGCMPreferences(context).edit().putBoolean(PROPERTY_DISABLE_UI, disableUI).commit();
 
         if (checkPlayServices(activity) ) {
             gcm = GoogleCloudMessaging.getInstance(activity);
@@ -192,6 +199,8 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         int mode = getGCMPreferences(context).getInt(PROPERTY_DEVICE_ID_MODE, -1);
         if (mode != -1) idMode = DeviceId.Type.values()[mode];
 
+        disableUI = getGCMPreferences(context).getBoolean(PROPERTY_DISABLE_UI, false);
+
         if (serverURL == null || appKey == null) {
             return false;
         } else {
@@ -200,6 +209,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
                 activityClass = (Class<? extends Activity>) Class.forName(activityClassName);
             } catch (ClassNotFoundException e) {
                 Log.e(TAG, "Could not find class " + activityClassName, e);
+                activityClass = getMainActivityClass(context);
             }
             return true;
         }
@@ -239,7 +249,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
     private static boolean checkPlayServices(Activity activity) {
         int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
-        return resultCode == ConnectionResult.SUCCESS;
+        return resultCode == ConnectionResult.SUCCESS || resultCode == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED;
 //        if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
 //            GooglePlayServicesUtil.getErrorDialog(resultCode, activity, PLAY_SERVICES_RESOLUTION_REQUEST).show();
 //        } else {
@@ -309,5 +319,9 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         Map<String, String> segmentation = new HashMap<String, String>();
         segmentation.put("i", messageId);
         Countly.sharedInstance().recordEvent(EVENT_ACTION, segmentation, 1);
+    }
+
+    public static boolean isUIDisabled () {
+        return getGCMPreferences(context).getBoolean(PROPERTY_DISABLE_UI, false);
     }
 }
