@@ -188,29 +188,23 @@ public class ConnectionProcessor implements Runnable {
             }
 
             URLConnection conn = null;
-            BufferedInputStream responseStream = null;
             try {
                 // initialize and open connection
                 conn = urlConnectionForEventData(eventData);
                 conn.connect();
 
-                // consume response stream
-                responseStream = new BufferedInputStream(conn.getInputStream());
-                final ByteArrayOutputStream responseData = new ByteArrayOutputStream(256); // big enough to handle success response without reallocating
-                int c;
-                while ((c = responseStream.read()) != -1) {
-                    responseData.write(c);
-                }
-
                 // response code has to be 2xx to be considered a success
                 boolean success = true;
+                final int responseCode;
                 if (conn instanceof HttpURLConnection) {
                     final HttpURLConnection httpConn = (HttpURLConnection) conn;
-                    final int responseCode = httpConn.getResponseCode();
+                    responseCode = httpConn.getResponseCode();
                     success = responseCode >= 200 && responseCode < 300;
                     if (!success && Countly.sharedInstance().isLoggingEnabled()) {
                         Log.w(Countly.TAG, "HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
                     }
+                } else {
+                    responseCode = 0;
                 }
 
                 // HTTP response code was good, check response JSON contains {"result":"Success"}
@@ -226,8 +220,12 @@ public class ConnectionProcessor implements Runnable {
                     if (deviceIdChange) {
                         deviceId_.changeToDeveloperId(store_, newId);
                     }
-                }
-                else {
+                } else if (responseCode >= 400 && responseCode < 500) {
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "fail " + responseCode + " ->" + eventData);
+                    }
+                    store_.removeConnection(storedEvents[0]);
+                } else {
                     // warning was logged above, stop processing, let next tick take care of retrying
                     break;
                 }
@@ -241,9 +239,6 @@ public class ConnectionProcessor implements Runnable {
             }
             finally {
                 // free connection resources
-                if (responseStream != null) {
-                    try { responseStream.close(); } catch (IOException ignored) {}
-                }
                 if (conn != null && conn instanceof HttpURLConnection) {
                     ((HttpURLConnection)conn).disconnect();
                 }
@@ -279,7 +274,7 @@ public class ConnectionProcessor implements Runnable {
             hexChars[ j * 2 ] = hexArray[ v >>> 4 ];
             hexChars[ j * 2 + 1 ] = hexArray[ v & 0x0F ];
         }
-        return new String( hexChars );
+        return new String( hexChars ).toLowerCase();
     }
 
     // for unit testing
