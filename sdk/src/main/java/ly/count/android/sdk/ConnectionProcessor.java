@@ -75,9 +75,9 @@ public class ConnectionProcessor implements Runnable {
         String urlStr = serverURL_ + "/i?";
         if(!eventData.contains("&crash=") && eventData.length() < 2048) {
             urlStr += eventData;
-            urlStr += "&checksum=" + sha1Hash(urlStr + salt);
+            urlStr += "&checksum=" + sha1Hash(eventData + salt);
         } else {
-            urlStr += "checksum=" + sha1Hash(urlStr + eventData + salt);
+            urlStr += "checksum=" + sha1Hash(eventData + salt);
         }
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
