@@ -321,7 +321,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         Countly.sharedInstance().recordEvent(EVENT_ACTION, segmentation, 1);
     }
 
-    public static boolean isUIDisabled () {
+    public static boolean isUIDisabled (Context context) {
         return getGCMPreferences(context).getBoolean(PROPERTY_DISABLE_UI, false);
     }
 }
