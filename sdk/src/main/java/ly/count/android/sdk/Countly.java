@@ -431,15 +431,41 @@ public class Countly {
     }
 
     /**
-     * Changes current device id to the one specified in parameter. Merges user profile with new id
-     * (if any) with old profile.
+     * Changes current device id type to the one specified in parameter. Closes current session and
+     * reopens new one with new id. Doesn't merge user profiles on the server
+     * @param type Device ID type to change to
+     * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
      */
+    public void changeDeviceId(DeviceId.Type type, String deviceId) {
+        if (eventQueue_ == null) {
+            throw new IllegalStateException("init must be called before changeDeviceId");
+        }
+        if (activityCount_ == 0) {
+            throw new IllegalStateException("must call onStart before changeDeviceId");
+        }
+        if (type == null) {
+            throw new IllegalStateException("type cannot be null");
+        }
+
+        connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), connectionQueue_.getDeviceId().getId());
+        connectionQueue_.getDeviceId().changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
+        connectionQueue_.beginSession();
+    }
+
+    /**
+      * Changes current device id to the one specified in parameter. Merges user profile with new id
+      * (if any) with old profile.
+      * @param deviceId new device id
+      */
     public void changeDeviceId(String deviceId) {
         if (eventQueue_ == null) {
             throw new IllegalStateException("init must be called before changeDeviceId");
         }
         if (activityCount_ == 0) {
             throw new IllegalStateException("must call onStart before changeDeviceId");
+        }
+        if (deviceId == null || "".equals(deviceId)) {
+            throw new IllegalStateException("deviceId cannot be null or empty");
         }
 
         connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());

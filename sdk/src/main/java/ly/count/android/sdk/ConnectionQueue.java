@@ -210,6 +210,10 @@ public class ConnectionQueue {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     void endSession(final int duration) {
+        endSession(duration, null);
+    }
+
+    void endSession(final int duration, String deviceIdOverride) {
         checkInternalState();
         String data = "app_key=" + appKey_
                     + "&timestamp=" + Countly.currentTimestampMs()
@@ -218,6 +222,10 @@ public class ConnectionQueue {
                     + "&end_session=1";
         if (duration > 0) {
             data += "&session_duration=" + duration;
+        }
+
+        if (deviceIdOverride != null) {
+            data += "&override_id=" + deviceIdOverride;
         }
 
         store_.addConnection(data);

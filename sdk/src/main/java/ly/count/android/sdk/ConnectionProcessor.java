@@ -171,10 +171,14 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            boolean deviceIdOverride = storedEvents[0].contains("&override_id=");
             boolean deviceIdChange = storedEvents[0].contains("&device_id=");
 
             final String eventData, newId;
-            if (deviceIdChange) {
+            if (deviceIdOverride) {
+                eventData = storedEvents[0].replace("&override_id=", "&device_id=");
+                newId = null;
+            } else if (deviceIdChange) {
                 newId = storedEvents[0].substring(storedEvents[0].indexOf("&device_id=") + "&device_id=".length());
                 if (newId.equals(deviceId_.getId())) {
                     eventData = storedEvents[0];

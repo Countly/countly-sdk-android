@@ -192,6 +192,16 @@ public class DeviceId {
         return oldId;
     }
 
+    public void changeToId (Context context, CountlyStore store, Type type, String deviceId) {
+        this.id = deviceId;
+        this.type = type;
+
+        store.setPreference(PREFERENCE_KEY_ID_ID, deviceId);
+        store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
+
+        init(context, store, false);
+    }
+
     protected String revertFromDeveloperId(CountlyStore store) {
         store.setPreference(PREFERENCE_KEY_ID_ID, null);
         store.setPreference(PREFERENCE_KEY_ID_TYPE, null);
