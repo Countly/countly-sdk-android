@@ -275,6 +275,7 @@ public class CountlyStore {
         final SharedPreferences.Editor prefsEditor = preferences_.edit();
         prefsEditor.remove(EVENTS_PREFERENCE);
         prefsEditor.remove(CONNECTIONS_PREFERENCE);
+        prefsEditor.clear();
         prefsEditor.commit();
     }
 }
