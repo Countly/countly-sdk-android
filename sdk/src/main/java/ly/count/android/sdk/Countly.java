@@ -64,7 +64,7 @@ public class Countly {
      * Determines how many custom events can be queued locally before
      * an attempt is made to submit them to a Count.ly server.
      */
-    private static final int EVENT_QUEUE_SIZE_THRESHOLD = 10;
+    private static int EVENT_QUEUE_SIZE_THRESHOLD = 10;
     /**
      * How often onTimer() is called.
      */
@@ -860,6 +860,11 @@ public class Countly {
 
     public synchronized Countly enableParameterTamperingProtection(String salt) {
         ConnectionProcessor.salt = salt;
+        return this;
+    }
+
+    public synchronized Countly setEventQueueSizeToSend(int size) {
+        EVENT_QUEUE_SIZE_THRESHOLD = size;
         return this;
     }
 
