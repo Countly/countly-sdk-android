@@ -761,7 +761,7 @@ public class Countly {
      * @param nonfatal
      */
     public synchronized Countly logCrash(String message, boolean nonfatal) {
-        connectionQueue_.sendCrashReport(message, true);
+        connectionQueue_.sendCrashReport(message, nonfatal);
         return this;
     }
     
