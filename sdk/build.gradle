@@ -18,7 +18,7 @@ android {
         minSdkVersion 9
         targetSdkVersion 24
         versionCode 1
-        versionName "16.06.03"
+        versionName "16.06.04"
 
         testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
         testHandleProfiling true
@@ -47,7 +47,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk'
-    version = '16.06.03'
+    version = '16.06.04'
     description = 'Android SDK for Countly mobile analytics'
     website = 'https://github.com/Countly/countly-sdk-android'
 }
