@@ -38,4 +38,4 @@ And, if you liked Countly, [why not use one of our badges](https://count.ly/bran
 
 ### Support
 
-For community support page, see [http://support.count.ly](http://support.count.ly "Countly Support").
+For Community support, visit [http://community.count.ly](http://community.count.ly "Countly Community Forum").
