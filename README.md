@@ -1,5 +1,8 @@
 #Countly Android SDK [![Build Status](https://api.travis-ci.org/Countly/countly-sdk-android.png)](https://travis-ci.org/Countly/countly-sdk-android) [![Coverity Status](https://scan.coverity.com/projects/6233/badge.svg)](https://scan.coverity.com/projects/countly-countly-sdk-android)
 
+* **Slack user?** [Join our Slack community](http://slack.count.ly:3000/)
+* **Questions?** [Ask in our Community forum](http://community.count.ly)
+
 **We're hiring:** Countly is looking for Android SDK developers, full stack devs, devops and growth hackers (remote work). [Click this link for job description](https://angel.co/countly/jobs/)
 
 ##What's Countly?
