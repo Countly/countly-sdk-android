@@ -95,7 +95,8 @@ public class ConnectionQueueTests extends AndroidTestCase {
     }
 
     public void testDeviceId() {
-        final DeviceId deviceId = new DeviceId("blah");
+        final CountlyStore store = new CountlyStore(getContext());
+        final DeviceId deviceId = new DeviceId(store, "blah");
         freshConnQ.setDeviceId(deviceId);
         assertSame(deviceId, freshConnQ.getDeviceId());
     }

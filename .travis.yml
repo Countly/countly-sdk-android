@@ -1,4 +1,7 @@
 language: android
+# Setting java 1.8
+jdk:
+  - oraclejdk8
 sudo: false
 env:
   global:
@@ -13,7 +16,7 @@ android:
   components:
     - tools
     - platform-tools
-    - build-tools-23.0.3
+    - build-tools-24.0.2
     - android-24
     - extra-android-support
     - extra-google-m2repository
@@ -29,15 +32,4 @@ after_script:
   - cat /home/travis/build/Countly/countly-sdk-android/sdk-messaging/build/outputs/lint-results-debug.xml
   - cat /home/travis/build/Countly/countly-sdk-android/sdk/build/reports/androidTests/connected/index.html
 notifications:
-  email: hello@count.ly
-  hipchat:
-    rooms:
-      secure: aINedM9Exa+83NKGsgpSmEWBqEY68jD9cKKUZ3m5yNxc373E2U76+nFFkaBEGayJ2stExyHicxGphIq127m8IopjG4DX/bSD8pogtIfGIklb6tz/XQafm/gGkgN2G9SVi/ef0yRisvX01jRRVU+BENQ3G4T6s6iYjoWqvQPCjpE=
 addons:
-  coverity_scan:
-    project:
-      name: "Countly/countly-sdk-android"
-    notification_email: hello@count.ly
-    build_command_prepend: "./gradlew clean"
-    build_command: "./gradlew build --stacktrace"
-    branch_pattern: master
