@@ -22,7 +22,6 @@ Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/cou
 This SDK needs one of the following Countly Editions to work: 
 
 * Countly Community Edition, [downloadable from Github](https://github.com/Countly/countly-server)
-* [Countly Cloud Edition](http://count.ly/cloud-edition)
 * [Countly Enterprise Edition](http://count.ly/enterprise-edition)
 
 For more information about Countly Enterprise Edition, see [comparison of different Countly editions](https://count.ly/compare/)
