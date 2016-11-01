@@ -5,7 +5,7 @@ jdk:
 sudo: false
 env:
   matrix:
-    - ANDROID_TARGET=android-25 ANDROID_ABI=armeabi-v7a
+    # - ANDROID_TARGET=android-25 ANDROID_ABI=armeabi-v7a
     - ANDROID_TARGET=android-24 ANDROID_ABI=armeabi-v7a
     - ANDROID_TARGET=android-23 ANDROID_ABI=armeabi-v7a
     - ANDROID_TARGET=android-21 ANDROID_ABI=armeabi-v7a
@@ -13,26 +13,27 @@ env:
     - ANDROID_TARGET=android-16 ANDROID_ABI=armeabi-v7a
     - ANDROID_TARGET=android-14 ANDROID_ABI=armeabi-v7a
     - ANDROID_TARGET=android-11 ANDROID_ABI=armeabi-v7a    
-    - ANDROID_TARGET=android-9 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-9  ANDROID_ABI=armeabi-v7a
 
   global:
     # Initiating clean Gradle output
     - TERM=dumb
     # Amount of memory granted to Gradle JVM
-    - GRADLE_OPTS="-Xmx2048m -XX:MaxPermSize=1024m"
+    # - GRADLE_OPTS="-Xmx2048m -XX:MaxPermSize=1024m"
+    - GRADLE_OPTS="-Xmx1024m -XX:MaxPermSize=1024m"
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
     # via the "travis encrypt" command using the project repo's public key
-    # - secure: "NjcffFHd3rrH6e2S1NwUNQORM2vs2uzhBHu+22g+sXc+PeFmlWeh7tFK8fnERxRNuVcYF0Amhwu/ZSDKGAm+882p8lNiVwhw22EybxRcE/JJbsJpjdVg2fd0mzbLOc1DX+ryPoGcQaCqyhM/V0tZrtHhRvqWsM75HRmR0XSp/Sc="
+    - secure: "NjcffFHd3rrH6e2S1NwUNQORM2vs2uzhBHu+22g+sXc+PeFmlWeh7tFK8fnERxRNuVcYF0Amhwu/ZSDKGAm+882p8lNiVwhw22EybxRcE/JJbsJpjdVg2fd0mzbLOc1DX+ryPoGcQaCqyhM/V0tZrtHhRvqWsM75HRmR0XSp/Sc="
 
     # wait up to 10 minutes for adb to connect to emulator
-    - ADB_INSTALL_TIMEOUT=10
+    #- ADB_INSTALL_TIMEOUT=10
 android:
   components:
     # Base components
     - tools
     - platform-tools
-    - build-tools-25
-    - android-25
+    - build-tools-24.0.3
+    - android-24
 
     # Additional components
     - extra-android-support
