@@ -4,27 +4,55 @@ jdk:
   - oraclejdk8
 sudo: false
 env:
+  matrix:
+    - ANDROID_TARGET=android-25 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-24 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-23 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-21 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-19 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-16 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-14 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-11 ANDROID_ABI=armeabi-v7a    
+    - ANDROID_TARGET=android-9 ANDROID_ABI=armeabi-v7a
+
   global:
-# Initiating clean Gradle output
+    # Initiating clean Gradle output
     - TERM=dumb
-# Amount of memory granted to Gradle JVM
-    - GRADLE_OPTS="-Xmx1024m -XX:MaxPermSize=1024m"
+    # Amount of memory granted to Gradle JVM
+    - GRADLE_OPTS="-Xmx2048m -XX:MaxPermSize=1024m"
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
     # via the "travis encrypt" command using the project repo's public key
-    - secure: "NjcffFHd3rrH6e2S1NwUNQORM2vs2uzhBHu+22g+sXc+PeFmlWeh7tFK8fnERxRNuVcYF0Amhwu/ZSDKGAm+882p8lNiVwhw22EybxRcE/JJbsJpjdVg2fd0mzbLOc1DX+ryPoGcQaCqyhM/V0tZrtHhRvqWsM75HRmR0XSp/Sc="
+    # - secure: "NjcffFHd3rrH6e2S1NwUNQORM2vs2uzhBHu+22g+sXc+PeFmlWeh7tFK8fnERxRNuVcYF0Amhwu/ZSDKGAm+882p8lNiVwhw22EybxRcE/JJbsJpjdVg2fd0mzbLOc1DX+ryPoGcQaCqyhM/V0tZrtHhRvqWsM75HRmR0XSp/Sc="
+
+    # wait up to 10 minutes for adb to connect to emulator
+    - ADB_INSTALL_TIMEOUT=10
 android:
   components:
+    # Base components
     - tools
     - platform-tools
-    - build-tools-24.0.2
-    - android-24
+    - build-tools-25
+    - android-25
+
+    # Additional components
     - extra-android-support
     - extra-google-m2repository
     - extra-android-m2repository
     - extra-google-google_play_services
+
+    # Emulator for the tests
+    - sys-img-armeabi-v7a-android-25
+    - sys-img-armeabi-v7a-android-24
+    - sys-img-armeabi-v7a-android-23
+    - sys-img-armeabi-v7a-android-21
+    - sys-img-armeabi-v7a-android-19
+    - sys-img-armeabi-v7a-android-16
+    - sys-img-armeabi-v7a-android-14
+    - sys-img-armeabi-v7a-android-11
+    - sys-img-armeabi-v7a-android-9
 # Emulator Management: Create, Start and Wait
 before_script:
-  - echo no | android create avd --force -n test -t android-19 --abi armeabi-v7a
+  - echo no | android create avd --force -n test -t $ANDROID_TARGET --abi $ANDROID_ABI
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
