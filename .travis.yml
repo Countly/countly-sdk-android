@@ -3,47 +3,39 @@ language: android
 jdk:
   - oraclejdk8
 sudo: false
-
-cache:
-  directories:
-    - ${TRAVIS_BUILD_DIR}/gradle/caches/
-    - ${TRAVIS_BUILD_DIR}/gradle/wrapper/dists/
+#cache:
+#  directories:
+#    - ${TRAVIS_BUILD_DIR}/gradle/caches/
+#    - ${TRAVIS_BUILD_DIR}/gradle/wrapper/dists/
 
 env:
   matrix:
 
-    - EMULATOR_API_LEVEL=24 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24
+    - EMULATOR_API_LEVEL=24 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24
     - EMULATOR_API_LEVEL=24 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-24
-    - EMULATOR_API_LEVEL=24 ANDROID_ABI=arm64-v8a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-arm64-v8a-android-24
 
-    - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23
+    - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23
     - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-23
-    - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=android-tv ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-tv-23   
-    - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=google_apis ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-google_apis-23
 
-    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-22
+    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-22
     - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-22
-    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=android-tv ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-tv-22
-    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=google_apis ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-google_apis-22
 
-    - EMULATOR_API_LEVEL=21 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
+    - EMULATOR_API_LEVEL=21 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
+    - EMULATOR_API_LEVEL=21 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-21
 
     - EMULATOR_API_LEVEL=20 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-20
 
-    - EMULATOR_API_LEVEL=19 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
+    - EMULATOR_API_LEVEL=19 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
 
-    - EMULATOR_API_LEVEL=18 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-18
+    - EMULATOR_API_LEVEL=18 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-18
 
-    - EMULATOR_API_LEVEL=17 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-17
+    - EMULATOR_API_LEVEL=17 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-17
 
-    - EMULATOR_API_LEVEL=16 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-16
+    - EMULATOR_API_LEVEL=16 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-16
 
-    - EMULATOR_API_LEVEL=15 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-15
+    - EMULATOR_API_LEVEL=15 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-15
 
-    - EMULATOR_API_LEVEL=14 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-14
-
-    - EMULATOR_API_LEVEL=10 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-google_apis-10
-
+    - EMULATOR_API_LEVEL=14 ANDROID_ABI=armeabi-v7a ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-14
 
   global:
 
@@ -55,7 +47,7 @@ env:
     # Initiating clean Gradle output
     - TERM=dumb
     
-    - GRADLE_OPTS="-Xmx2048m -XX:MaxPermSize=1024m" # Amount of memory granted to Gradle JVM
+    - GRADLE_OPTS="-Xmx2048m" # Amount of memory granted to Gradle JVM
     # - GRADLE_OPTS="-Xmx1024m -XX:MaxPermSize=1024m"
     # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
     # via the "travis encrypt" command using the project repo's public key
@@ -67,8 +59,8 @@ android:
   components:
     # Base components 
     - tools # to get the new `repository-11.xml`
-    - platform-tools
     - tools # to install Android SDK tools 25.1.x
+    - platform-tools   
     
     - build-tools-$ANDROID_BUILD_TOOLS_VERSION # get the build tools version to build the project
     - android-$ANDROID_API_LEVEL # get the android sdk version to build the project
