@@ -11,30 +11,45 @@ cache:
 
 env:
   matrix:
-    - EMULATOR_API_LEVEL=25 ANDROID_ABI=x86    ABI_TAG=android-tv  ANDROID_EMULATOR_IMAGE=sys-img-x86-android-tv-25
-    - EMULATOR_API_LEVEL=25 ANDROID_ABI=x86    ABI_TAG=google_apis ANDROID_EMULATOR_IMAGE=sys-img-x86-google_apis-25
-    - EMULATOR_API_LEVEL=25 ANDROID_ABI=x86_64 ABI_TAG=google_apis ANDROID_EMULATOR_IMAGE=sys-img-x86_64-google_apis-25
 
     - EMULATOR_API_LEVEL=24 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24
     - EMULATOR_API_LEVEL=24 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-24
     - EMULATOR_API_LEVEL=24 ANDROID_ABI=arm64-v8a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-arm64-v8a-android-24
-    - EMULATOR_API_LEVEL=24 ANDROID_ABI=x86 ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-x86-android-24
 
     - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23
     - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-23
-    - EMULATOR_API_LEVEL=23 ANDROID_ABI=x86 ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-x86-android-23
-    - EMULATOR_API_LEVEL=23 ANDROID_ABI=x86 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-x86-android-wear-23
+    - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=android-tv ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-tv-23   
+    - EMULATOR_API_LEVEL=23 ANDROID_ABI=armeabi-v7a ABI_TAG=google_apis ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-google_apis-23
+
+    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-22
+    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-22
+    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=android-tv ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-tv-22
+    - EMULATOR_API_LEVEL=22 ANDROID_ABI=armeabi-v7a ABI_TAG=google_apis ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-google_apis-22
 
     - EMULATOR_API_LEVEL=21 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
+
+    - EMULATOR_API_LEVEL=20 ANDROID_ABI=armeabi-v7a ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-20
+
     - EMULATOR_API_LEVEL=19 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
+
     - EMULATOR_API_LEVEL=18 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-18
+
+    - EMULATOR_API_LEVEL=17 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-17
+
     - EMULATOR_API_LEVEL=16 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-16
+
+    - EMULATOR_API_LEVEL=15 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-15
+
+    - EMULATOR_API_LEVEL=14 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-14
+
+    - EMULATOR_API_LEVEL=10 ANDROID_ABI=armeabi-v7a ABI_TAG=default ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-google_apis-10
+
 
   global:
 
-    - ANDROID_API_LEVEL=25
-    - ANDROID_BUILD_TOOLS_VERSION=25.2.2
-    - ADB_INSTALL_TIMEOUT=10 # minutes (2 minutes by default)
+    - ANDROID_API_LEVEL=24
+    - ANDROID_BUILD_TOOLS_VERSION=24.0.2
+    - ADB_INSTALL_TIMEOUT=20 # minutes (2 minutes by default)
 
 
     # Initiating clean Gradle output
