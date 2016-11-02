@@ -5,16 +5,83 @@ jdk:
 sudo: false
 env:
   matrix:
-    # - ANDROID_TARGET=android-25 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-22 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-21 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-20 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-19 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-18 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-17 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-16 ANDROID_ABI=armeabi-v7a    
-    - ANDROID_TARGET=android-15  ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=android-10  ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=android-25 ANDROID_ABI=sys-img-x86-android-tv-25
+    - ANDROID_TARGET=android-25 ANDROID_ABI=sys-img-x86-google_apis-25
+    - ANDROID_TARGET=android-25 ANDROID_ABI=sys-img-x86_64-google_apis-25
+    
+
+    - ANDROID_TARGET=android-24 ANDROID_ABI=sys-img-armeabi-v7a-android-24
+    - ANDROID_TARGET=android-24 ANDROID_ABI=sys-img-armeabi-v7a-android-wear-24
+    - ANDROID_TARGET=android-24 ANDROID_ABI=sys-img-arm64-v8a-android-24
+    - ANDROID_TARGET=android-24 ANDROID_ABI=sys-img-x86-android-24
+    - ANDROID_TARGET=android-24 ANDROID_ABI=sys-img-x86-android-wear-24
+    - ANDROID_TARGET=android-24 ANDROID_ABI=sys-img-x86-android-tv-24
+    - ANDROID_TARGET=android-24 ANDROID_ABI=sys-img-x86-google_apis-24
+    
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-armeabi-v7a-android-23
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-armeabi-v7a-android-wear-23
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-armeabi-v7a-android-tv-23    
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-23
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-x86-android-23
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-x86-android-wear-23
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-x86-android-tv-23
+    - ANDROID_TARGET=android-23 ANDROID_ABI=sys-img-x86_64-android-23
+    
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-armeabi-v7a-android-22
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-armeabi-v7a-android-wear-22
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-armeabi-v7a-android-tv-22
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-22
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-x86-android-22
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-x86-android-wear-22
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-x86-android-tv-22
+    - ANDROID_TARGET=android-22 ANDROID_ABI=sys-img-x86_64-android-22
+
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-armeabi-v7a-android-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-armeabi-v7a-android-wear-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-armeabi-v7a-android-tv-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-x86-android-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-x86-android-wear-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-x86-android-tv-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-x86-google_apis-21
+    - ANDROID_TARGET=android-21 ANDROID_ABI=sys-img-x86_64-android-21
+
+    - ANDROID_TARGET=android-20 ANDROID_ABI=sys-img-armeabi-v7a-android-wear-20
+    - ANDROID_TARGET=android-20 ANDROID_ABI=sys-img-x86-android-wear-20
+
+    - ANDROID_TARGET=android-19 ANDROID_ABI=sys-img-armeabi-v7a-android-19
+    - ANDROID_TARGET=android-19 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-19
+    - ANDROID_TARGET=android-19 ANDROID_ABI=sys-img-x86-android-19
+    - ANDROID_TARGET=android-19 ANDROID_ABI=sys-img-x86-google_apis-19
+
+    - ANDROID_TARGET=android-18 ANDROID_ABI=sys-img-armeabi-v7a-android-18
+    - ANDROID_TARGET=android-18 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-18
+    - ANDROID_TARGET=android-18 ANDROID_ABI=sys-img-x86-android-18
+    - ANDROID_TARGET=android-18 ANDROID_ABI=sys-img-x86-google_apis-18
+
+    - ANDROID_TARGET=android-17 ANDROID_ABI=sys-img-armeabi-v7a-android-17
+    - ANDROID_TARGET=android-17 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-17
+    - ANDROID_TARGET=android-17 ANDROID_ABI=sys-img-x86-android-17
+    - ANDROID_TARGET=android-17 ANDROID_ABI=sys-img-x86-google_apis-17
+    - ANDROID_TARGET=android-17 ANDROID_ABI=sys-img-mips-android-17
+
+    - ANDROID_TARGET=android-16 ANDROID_ABI=sys-img-armeabi-v7a-android-16
+    - ANDROID_TARGET=android-16 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-16
+    - ANDROID_TARGET=android-16 ANDROID_ABI=sys-img-x86-android-16
+    - ANDROID_TARGET=android-16 ANDROID_ABI=sys-img-x86-google_apis-16
+    - ANDROID_TARGET=android-16 ANDROID_ABI=sys-img-mips-android-16
+
+    - ANDROID_TARGET=android-15 ANDROID_ABI=sys-img-armeabi-v7a-android-15
+    - ANDROID_TARGET=android-15 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-15
+    - ANDROID_TARGET=android-15 ANDROID_ABI=sys-img-x86-android-15
+    - ANDROID_TARGET=android-15 ANDROID_ABI=sys-img-x86-google_apis-15
+    - ANDROID_TARGET=android-15 ANDROID_ABI=sys-img-mips-android-15
+
+    - ANDROID_TARGET=android-14 ANDROID_ABI=sys-img-armeabi-v7a-android-14
+
+    - ANDROID_TARGET=android-10 ANDROID_ABI=sys-img-armeabi-v7a-google_apis-10
+    - ANDROID_TARGET=android-10 ANDROID_ABI=sys-img-x86-android-10
+    - ANDROID_TARGET=android-10 ANDROID_ABI=sys-img-x86-google_apis-10
 
   global:
     # Initiating clean Gradle output
@@ -33,8 +100,8 @@ android:
     # Base components
     - tools
     - platform-tools
-    - build-tools-24.0.2
-    - android-24
+    - build-tools-25.2.2
+    - android-25
 
     # Additional components
     - extra-android-support
@@ -43,14 +110,14 @@ android:
     - extra-google-google_play_services
 
     # Emulator for the tests
-    - sys-img-armeabi-v7a-android-22
-    - sys-img-armeabi-v7a-android-21
-    - sys-img-armeabi-v7a-android-wear-20
-    - sys-img-armeabi-v7a-android-19
-    - sys-img-armeabi-v7a-android-18
-    - sys-img-armeabi-v7a-android-17
-    - sys-img-armeabi-v7a-android-16
-    - sys-img-armeabi-v7a-android-15
+    # - sys-img-armeabi-v7a-android-22
+    # - sys-img-armeabi-v7a-android-21
+    # - sys-img-armeabi-v7a-android-wear-20
+    # - sys-img-armeabi-v7a-android-19
+    # - sys-img-armeabi-v7a-android-18
+    # - sys-img-armeabi-v7a-android-17
+    # - sys-img-armeabi-v7a-android-16
+    # - sys-img-armeabi-v7a-android-15
 # Emulator Management: Create, Start and Wait
 before_install:
   - android list sdk --no-ui --all --extended
@@ -60,6 +127,8 @@ before_script:
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 after_script:
+  - echo $ANDROID_TARGET 
+  - echo $ANDROID_ABI
   - cat /home/travis/build/Countly/countly-sdk-android/sdk-messaging/build/outputs/lint-results-debug.xml
   - cat /home/travis/build/Countly/countly-sdk-android/sdk/build/reports/androidTests/connected/index.html
 notifications:
