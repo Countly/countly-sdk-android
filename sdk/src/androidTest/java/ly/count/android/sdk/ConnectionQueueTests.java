@@ -194,7 +194,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = Countly.currentTimestampMs();
-        final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
+        final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
         assertEquals(Countly.COUNTLY_SDK_VERSION_STRING, queryParams.get("sdk_version"));
@@ -242,7 +242,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = Countly.currentTimestampMs();
-        final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
+        final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
         assertEquals("60", queryParams.get("session_duration"));
@@ -269,7 +269,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = Countly.currentTimestampMs();
-        final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
+        final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
         assertFalse(queryParams.containsKey("session_duration"));
@@ -288,7 +288,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = Countly.currentTimestampMs();
-        final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
+        final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
         assertFalse(queryParams.containsKey("session_duration"));
@@ -307,7 +307,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = Countly.currentTimestampMs();
-        final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
+        final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
         assertEquals("1", queryParams.get("end_session"));
@@ -336,7 +336,7 @@ public class ConnectionQueueTests extends AndroidTestCase {
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = Countly.currentTimestampMs();
-        final int actualTimestamp = Integer.parseInt(queryParams.get("timestamp"));
+        final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp - 1) <= actualTimestamp) && ((curTimestamp + 1) >= actualTimestamp));
         assertEquals(eventData, queryParams.get("events"));
