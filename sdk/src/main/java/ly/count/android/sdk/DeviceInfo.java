@@ -114,21 +114,24 @@ class DeviceInfo {
             case DisplayMetrics.DENSITY_HIGH:
                 densityStr = "HDPI";
                 break;
-            case DisplayMetrics.DENSITY_260:
-                densityStr = "XHDPI";
-                break;
+            //todo uncomment in android sdk 25
+            //case DisplayMetrics.DENSITY_260:
+            //    densityStr = "XHDPI";
+            //    break;
             case DisplayMetrics.DENSITY_280:
                 densityStr = "XHDPI";
                 break;
-            case DisplayMetrics.DENSITY_300:
-                densityStr = "XHDPI";
-                break;
+            //todo uncomment in android sdk 25
+            //case DisplayMetrics.DENSITY_300:
+            //    densityStr = "XHDPI";
+            //    break;
             case DisplayMetrics.DENSITY_XHIGH:
                 densityStr = "XHDPI";
                 break;
-            case DisplayMetrics.DENSITY_340:
-                densityStr = "XXHDPI";
-                break;
+            //todo uncomment in android sdk 25
+            //case DisplayMetrics.DENSITY_340:
+            //    densityStr = "XXHDPI";
+            //    break;
             case DisplayMetrics.DENSITY_360:
                 densityStr = "XXHDPI";
                 break;
