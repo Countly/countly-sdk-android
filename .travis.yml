@@ -11,9 +11,9 @@ sudo: false
 env:
   matrix:
 
-    #- EMULATOR_API_LEVEL=24 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24      # stalling
-    #- EMULATOR_API_LEVEL=24 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-24 # stalling
-    #- EMULATOR_API_LEVEL=23 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23      # stalling
+    - EMULATOR_API_LEVEL=24 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24      # stalling
+    - EMULATOR_API_LEVEL=24 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-24 # stalling
+    - EMULATOR_API_LEVEL=23 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23      # stalling
     - EMULATOR_API_LEVEL=23 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-23
     - EMULATOR_API_LEVEL=22 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-22
     - EMULATOR_API_LEVEL=22 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-22
@@ -41,7 +41,7 @@ android:
     # Base components 
     - tools # to get the new `repository-11.xml`
     - tools # to install Android SDK tools 25.1.x
-    - platform-tools   
+    #- platform-tools   
     
     - build-tools-$ANDROID_BUILD_TOOLS_VERSION # get the build tools version to build the project
     - android-$ANDROID_API_LEVEL # get the android sdk version to build the project
