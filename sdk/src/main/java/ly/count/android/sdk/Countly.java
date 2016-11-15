@@ -51,6 +51,10 @@ public class Countly {
      */
     public static final String COUNTLY_SDK_VERSION_STRING = "16.06.04";
     /**
+     * Used as request meta data on every request
+     */
+    public static final String COUNTLY_SDK_NAME = "java-native-android";
+    /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
      */

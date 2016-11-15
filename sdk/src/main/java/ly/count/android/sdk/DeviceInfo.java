@@ -150,6 +150,9 @@ class DeviceInfo {
             case DisplayMetrics.DENSITY_XXXHIGH:
                 densityStr = "XXXHDPI";
                 break;
+            default:
+                densityStr = "other";
+                break;
         }
         return densityStr;
     }

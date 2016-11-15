@@ -122,7 +122,9 @@ public class DeviceInfoTests extends AndroidTestCase {
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_560);
         assertEquals("XXXHDPI", DeviceInfo.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(0);
-        assertEquals("", DeviceInfo.getDensity(mockContext));
+        assertEquals("other", DeviceInfo.getDensity(mockContext));
+        mockContext = mockContextForTestingDensity(1234567890);
+        assertEquals("other", DeviceInfo.getDensity(mockContext));
     }
 
     public void testGetCarrier_nullTelephonyManager() {
