@@ -11,21 +11,21 @@ sudo: false
 env:
   matrix:
 
-    - EMULATOR_API_LEVEL=24 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24      # stalling
-    - EMULATOR_API_LEVEL=24 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-24 # stalling
-    - EMULATOR_API_LEVEL=23 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23      # stalling
-    - EMULATOR_API_LEVEL=23 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-23
-    - EMULATOR_API_LEVEL=22 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-22
-    - EMULATOR_API_LEVEL=22 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-22
-    - EMULATOR_API_LEVEL=21 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
-    - EMULATOR_API_LEVEL=21 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-21
-    - EMULATOR_API_LEVEL=20 ABI_TAG=android-wear ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-20
-    - EMULATOR_API_LEVEL=19 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
-    - EMULATOR_API_LEVEL=18 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-18
-    - EMULATOR_API_LEVEL=17 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-17
-    - EMULATOR_API_LEVEL=16 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-16
-    - EMULATOR_API_LEVEL=15 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-15
-    - EMULATOR_API_LEVEL=14 ABI_TAG=default      ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-14
+    - EMULATOR_API_LEVEL=24 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24      # stalling
+    - EMULATOR_API_LEVEL=24 ABI_TAG=android-wear #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-24 # stalling
+    - EMULATOR_API_LEVEL=23 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23      # stalling
+    - EMULATOR_API_LEVEL=23 ABI_TAG=android-wear #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-23
+    - EMULATOR_API_LEVEL=22 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-22
+    - EMULATOR_API_LEVEL=22 ABI_TAG=android-wear #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-22
+    - EMULATOR_API_LEVEL=21 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
+    - EMULATOR_API_LEVEL=21 ABI_TAG=android-wear #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-21
+    - EMULATOR_API_LEVEL=20 ABI_TAG=android-wear #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-wear-20
+    - EMULATOR_API_LEVEL=19 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
+    - EMULATOR_API_LEVEL=18 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-18
+    - EMULATOR_API_LEVEL=17 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-17
+    - EMULATOR_API_LEVEL=16 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-16
+    - EMULATOR_API_LEVEL=15 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-15
+    - EMULATOR_API_LEVEL=14 ABI_TAG=android      #ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-14
 
   global:
     - ANDROID_API_LEVEL=24
@@ -54,7 +54,8 @@ android:
     - extra-google-google_play_services
 
     # Specify the needed emulator
-    - $ANDROID_EMULATOR_IMAGE
+    - sys-img-armeabi-v7a-${ABI_TAG}-EMULATOR_API_LEVEL
+    #- $ANDROID_EMULATOR_IMAGE
 
 # Emulator Management: Create, Start and Wait
 before_install:
