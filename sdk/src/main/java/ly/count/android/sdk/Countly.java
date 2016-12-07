@@ -1045,6 +1045,14 @@ public class Countly {
         return Countly.sharedInstance();
     }
 
+    public void ShowStarRating(Context context, CountlyStarRating.RatingCallback callback){
+        CountlyStarRating.ShowStarRating(context, callback);
+    }
+
+    public void ShowStarRatingCustom(String title, String message, String dismissButton, Context context, CountlyStarRating.RatingCallback callback){
+        CountlyStarRating.ShowStarRatingCustom(context, "Awesome title", "This is a serious message for you to rate the app!", "Later", callback);
+    }
+
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }
     void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }

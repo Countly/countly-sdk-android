@@ -10,6 +10,7 @@ import android.widget.Toast;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyStarRating;
 
 
 public class MainActivity extends Activity {
@@ -111,6 +112,43 @@ public class MainActivity extends Activity {
                 catch(Exception e){
                     Countly.sharedInstance().logException(e);
                 }
+            }
+        });
+
+        Button button7 = (Button) findViewById(R.id.app_rating_default);
+        button7.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Countly.sharedInstance().ShowStarRating(activity, new CountlyStarRating.RatingCallback() {
+                    @Override
+                    public void OnRate(int rating) {
+
+                    }
+
+                    @Override
+                    public void OnDismiss() {
+
+                    }
+                });
+            }
+        });
+
+        Button button8 = (Button) findViewById(R.id.app_rating_custom);
+        button8.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Countly.sharedInstance().ShowStarRatingCustom("Awesome title", "This is a serious message for you to rate the app!", "Later", activity, new CountlyStarRating.RatingCallback() {
+                    @Override
+                    public void OnRate(int rating) {
+
+                    }
+
+                    @Override
+                    public void OnDismiss() {
+
+                    }
+                });
             }
         });
     }
