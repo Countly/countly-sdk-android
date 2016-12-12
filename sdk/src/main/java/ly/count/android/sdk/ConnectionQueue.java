@@ -136,6 +136,7 @@ public class ConnectionQueue {
                           + "&hour=" + Countly.currentHour()
                           + "&dow=" + Countly.currentDayOfWeek()
                           + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
                           + "&begin_session=1"
                           + "&metrics=" + DeviceInfo.getMetrics(context_);
 
@@ -158,7 +159,9 @@ public class ConnectionQueue {
                               + "&hour=" + Countly.currentHour()
                               + "&dow=" + Countly.currentDayOfWeek()
                               + "&session_duration=" + duration
-                              + "&location=" + getCountlyStore().getAndRemoveLocation();
+                              + "&location=" + getCountlyStore().getAndRemoveLocation()
+                              + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                              + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
 
             store_.addConnection(data);
 
@@ -174,7 +177,9 @@ public class ConnectionQueue {
                 + "&dow=" + Countly.currentDayOfWeek()
                 + "&session_duration=" + duration
                 + "&location=" + getCountlyStore().getAndRemoveLocation()
-                + "&device_id=" + deviceId;
+                + "&device_id=" + deviceId
+                + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
 
         store_.addConnection(data);
         tick();
@@ -190,7 +195,9 @@ public class ConnectionQueue {
                 + "&token_session=1"
                 + "&android_token=" + token
                 + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
-                + "&locale=" + DeviceInfo.getLocale();
+                + "&locale=" + DeviceInfo.getLocale()
+                + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
 
         // To ensure begin_session will be fully processed by the server before token_session
         final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
@@ -219,7 +226,9 @@ public class ConnectionQueue {
                     + "&timestamp=" + Countly.currentTimestampMs()
                     + "&hour=" + Countly.currentHour()
                     + "&dow=" + Countly.currentDayOfWeek()
-                    + "&end_session=1";
+                    + "&end_session=1"
+                    + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                    + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
         if (duration > 0) {
             data += "&session_duration=" + duration;
         }
@@ -246,6 +255,8 @@ public class ConnectionQueue {
                     + "&timestamp=" + Countly.currentTimestampMs()
                     + "&hour=" + Countly.currentHour()
                     + "&dow=" + Countly.currentDayOfWeek()
+                    + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                    + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
                     + userdata;
             store_.addConnection(data);
 
@@ -266,6 +277,8 @@ public class ConnectionQueue {
                     + "&timestamp=" + Countly.currentTimestampMs()
                     + "&hour=" + Countly.currentHour()
                     + "&dow=" + Countly.currentDayOfWeek()
+                    + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                    + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
                     + referrer;
             store_.addConnection(data);
 
@@ -284,6 +297,7 @@ public class ConnectionQueue {
                 + "&hour=" + Countly.currentHour()
                 + "&dow=" + Countly.currentDayOfWeek()
                 + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
                 + "&crash=" + CrashDetails.getCrashData(context_, error, nonfatal);
 
         store_.addConnection(data);
@@ -302,7 +316,9 @@ public class ConnectionQueue {
                           + "&timestamp=" + Countly.currentTimestampMs()
                           + "&hour=" + Countly.currentHour()
                           + "&dow=" + Countly.currentDayOfWeek()
-                          + "&events=" + events;
+                          + "&events=" + events
+                          + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
 
         store_.addConnection(data);
 
@@ -320,7 +336,9 @@ public class ConnectionQueue {
                           + "&timestamp=" + Countly.currentTimestampMs()
                           + "&hour=" + Countly.currentHour()
                           + "&dow=" + Countly.currentDayOfWeek()
-                          + "&events=" + events;
+                          + "&events=" + events
+                          + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
 
         store_.addConnection(data);
 

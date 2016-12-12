@@ -10,6 +10,7 @@ import android.widget.Toast;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyStarRating;
 
 
 public class MainActivity extends Activity {
@@ -28,7 +29,8 @@ public class MainActivity extends Activity {
 
         /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
         Countly.sharedInstance()
-                .init(this, "YOUR_SERVER", "YOUR_APP_KEY");
+                //.init(this, "YOUR_SERVER", "YOUR_APP_KEY");
+                .init(this, "http://kadikis.count.ly/", "8fad8ef86ace5bb44a590ea1f37e746fbbc01617");
 //                .setLocation(LATITUDE, LONGITUDE);
 //                .setLoggingEnabled(true);
 //        setUserData(); // If UserData plugin is enabled on your server
@@ -111,6 +113,33 @@ public class MainActivity extends Activity {
                 catch(Exception e){
                     Countly.sharedInstance().logException(e);
                 }
+            }
+        });
+
+        Button button7 = (Button) findViewById(R.id.app_rating_default);
+        button7.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Countly.sharedInstance().ShowStarRating(activity, new CountlyStarRating.RatingCallback() {
+                    @Override
+                    public void OnRate(int rating) {
+
+                    }
+
+                    @Override
+                    public void OnDismiss() {
+
+                    }
+                });
+            }
+        });
+
+        Button button8 = (Button) findViewById(R.id.app_rating_custom);
+        button8.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
             }
         });
     }

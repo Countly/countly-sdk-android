@@ -54,15 +54,19 @@ android:
     - extra-google-google_play_services
 
     # Specify the needed emulator
+    #- sys-img-armeabi-v7a-${ABI_TAG}-${EMULATOR_API_LEVEL}
     - $ANDROID_EMULATOR_IMAGE
 
 # Emulator Management: Create, Start and Wait
 before_install:
+  - echo $ANDROID_TARGET 
+  - echo $ANDROID_ABI
+  - echo sys-img-armeabi-v7a-${ABI_TAG}-${EMULATOR_API_LEVEL}
   - android list targets
   - android list sdk --no-ui --all --extended
 before_script:
   - echo no | android create avd --force -n test -t android-$EMULATOR_API_LEVEL --abi $ANDROID_ABI --tag $ABI_TAG
-  - emulator -avd test -no-skin -no-audio -no-window &
+  - emulator -avd test -partition-size 1024 -no-skin -no-audio -no-window &
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 after_script:

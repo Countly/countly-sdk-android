@@ -6,8 +6,8 @@
     android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
 
     <TextView android:text="@string/hello_world" android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/textView" />
+              android:layout_height="wrap_content"
+              android:id="@+id/textView" />
 
     <Button
         android:layout_width="wrap_content"
@@ -37,18 +37,35 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Handled Exception"
-        android:id="@+id/handled"
-        android:layout_below="@+id/stackoverflow"
-        android:layout_alignRight="@+id/runtime"
-        android:layout_alignEnd="@+id/runtime" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="StackOverflow"
         android:id="@+id/stackoverflow"
         android:layout_centerHorizontal="true"
         android:layout_below="@+id/division0" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Handled Exception"
+        android:id="@+id/handled"
+        android:layout_below="@+id/stackoverflow"
+        android:layout_centerHorizontal="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Star rating default"
+        android:id="@+id/app_rating_default"
+        android:layout_below="@+id/handled"
+        android:layout_centerHorizontal="true"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Star rating custom"
+        android:id="@+id/app_rating_custom"
+        android:layout_below="@+id/app_rating_default"
+        android:layout_centerHorizontal="true"/>
+
+
 
 </RelativeLayout>

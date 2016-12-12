@@ -102,10 +102,29 @@ public class DeviceInfoTests extends AndroidTestCase {
         assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_XXXHIGH);
         assertEquals("XXXHDPI", DeviceInfo.getDensity(mockContext));
+        //todo uncomment in android sdk 25
+        //mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_260);
+        //assertEquals("XHDPI", DeviceInfo.getDensity(mockContext));
+        mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_280);
+        assertEquals("XHDPI", DeviceInfo.getDensity(mockContext));
+        //todo uncomment in android sdk 25
+        //mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_300);
+        //assertEquals("XHDPI", DeviceInfo.getDensity(mockContext));
+        //todo uncomment in android sdk 25
+        //mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_340);
+        //assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_360);
+        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_400);
-        assertEquals("XMHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_420);
+        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_560);
+        assertEquals("XXXHDPI", DeviceInfo.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(0);
-        assertEquals("", DeviceInfo.getDensity(mockContext));
+        assertEquals("other", DeviceInfo.getDensity(mockContext));
+        mockContext = mockContextForTestingDensity(1234567890);
+        assertEquals("other", DeviceInfo.getDensity(mockContext));
     }
 
     public void testGetCarrier_nullTelephonyManager() {
