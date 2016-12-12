@@ -1,4 +1,4 @@
-#Countly Android SDK [![Build Status](https://api.travis-ci.org/Countly/countly-sdk-android.png)](https://travis-ci.org/Countly/countly-sdk-android) [![Coverity Status](https://scan.coverity.com/projects/6233/badge.svg)](https://scan.coverity.com/projects/countly-countly-sdk-android)
+#Countly Android SDK [![Build Status](https://api.travis-ci.org/Countly/countly-sdk-android.png)](https://travis-ci.org/Countly/countly-sdk-android) [![API](https://img.shields.io/badge/API-9%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=9)
 
 **We're hiring:** Countly is looking for Android SDK developers, full stack devs, devops and growth hackers (remote work). [Click this link for job description](https://angel.co/countly/jobs/)
 
@@ -22,7 +22,6 @@ Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/cou
 This SDK needs one of the following Countly Editions to work: 
 
 * Countly Community Edition, [downloadable from Github](https://github.com/Countly/countly-server)
-* [Countly Cloud Edition](http://count.ly/cloud-edition)
 * [Countly Enterprise Edition](http://count.ly/enterprise-edition)
 
 For more information about Countly Enterprise Edition, see [comparison of different Countly editions](https://count.ly/compare/)

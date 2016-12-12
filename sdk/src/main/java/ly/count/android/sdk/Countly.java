@@ -161,7 +161,7 @@ public class Countly {
      * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
      * Must be called before other SDK methods can be used.
      * @param context application context
-     * @param serverURL URL of the Countly server to submit data to; use "https://cloud.count.ly" for Countly Cloud
+     * @param serverURL URL of the Countly server to submit data to
      * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management &gt; Applications
      * @param deviceID unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID
      * @return Countly instance for easy method chaining
@@ -176,7 +176,7 @@ public class Countly {
      * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
      * Must be called before other SDK methods can be used.
      * @param context application context
-     * @param serverURL URL of the Countly server to submit data to; use "https://cloud.count.ly" for Countly Cloud
+     * @param serverURL URL of the Countly server to submit data to
      * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management &gt; Applications
      * @param deviceID unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID
      * @param idMode enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID
