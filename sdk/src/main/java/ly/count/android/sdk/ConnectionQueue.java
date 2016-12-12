@@ -345,14 +345,6 @@ public class ConnectionQueue {
         tick();
     }
 
-    void sendStarRating(final float ratingValue, Context context) {
-        String eventString = "{'[CLY]_star_rating' : { 'platform': 'android'," +
-                             "'app_version': '" + DeviceInfo.getAppVersion(context) + "'," +
-                             "'rating': '" + ratingValue + "'}}";
-
-        recordEvents(eventString);
-    }
-
     /**
      * Ensures that an executor has been created for ConnectionProcessor instances to be submitted to.
      */

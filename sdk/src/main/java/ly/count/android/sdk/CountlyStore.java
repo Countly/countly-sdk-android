@@ -54,6 +54,7 @@ public class CountlyStore {
     private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
     private static final String LOCATION_PREFERENCE = "LOCATION";
+    private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final int MAX_EVENTS = 100;
     private static final int MAX_REQUESTS = 1000;
 
@@ -177,6 +178,20 @@ public class CountlyStore {
             preferences_.edit().remove(LOCATION_PREFERENCE).commit();
         }
         return location;
+    }
+
+    /**
+     * Set the preferences that are used for the star rating
+     */
+    void setStarRatingPreferences(String prefs) {
+        preferences_.edit().putString(STAR_RATING_PREFERENCE, prefs).commit();
+    }
+
+    /**
+     * Get the preferences that are used for the star rating
+     */
+    String getStarRatingPreferences() {
+        return preferences_.getString(STAR_RATING_PREFERENCE, "");
     }
 
     /**
