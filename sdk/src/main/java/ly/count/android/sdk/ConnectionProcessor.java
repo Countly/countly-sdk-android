@@ -92,6 +92,7 @@ public class ConnectionProcessor implements Runnable {
         conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
         conn.setUseCaches(false);
         conn.setDoInput(true);
+        conn.setRequestMethod("GET");
         String picturePath = UserData.getPicturePathFromQuery(url);
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Got picturePath: " + picturePath);
@@ -133,7 +134,7 @@ public class ConnectionProcessor implements Runnable {
             // End of multipart/form-data.
             writer.append("--" + boundary + "--").append(CRLF).flush();
         }
-        else if(eventData.contains("&crash=") || eventData.length() >= 2048){
+        else if(eventData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Using post because of crash");
             }

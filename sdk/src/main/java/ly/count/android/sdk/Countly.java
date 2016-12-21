@@ -114,8 +114,11 @@ public class Countly {
     private boolean firstView = true;
     private boolean autoViewTracker = false;
 
+    //overrides
+    boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
+
     //star rating
-    private CountlyStarRating.RatingCallback starRatingCallback_;
+    private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
 
     /**
      * Returns the Countly singleton.
@@ -1124,6 +1127,22 @@ public class Countly {
      */
     public void setAutomaticStarRatingSessionLimit(Context context, int limit) {
         CountlyStarRating.setStarRatingInitConfig(context, limit, null, null, null);
+    }
+
+    /**
+     * Set the override for forcing to use HTTP POST for all connections to the server
+     * @param isItForced the flag for the new status, set "true" if you want it to be forced
+     */
+    public void forceHttpPost(boolean isItForced) {
+        isHttpPostForced = isItForced;
+    }
+
+    /**
+     * Get the status of the override for HTTP POST
+     * @return return "true" if HTTP POST ir forced
+     */
+    public boolean isHttpPostForced() {
+        return isHttpPostForced;
     }
 
     // for unit testing

@@ -28,8 +28,7 @@ public class MainActivity extends Activity {
 
         /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
         Countly.sharedInstance()
-                //.init(this, "YOUR_SERVER", "YOUR_APP_KEY");
-                .init(this, "http://kadikis.count.ly/", "8fad8ef86ace5bb44a590ea1f37e746fbbc01617");
+                .init(this, "YOUR_SERVER", "YOUR_APP_KEY");
 //                .setLocation(LATITUDE, LONGITUDE);
 //                .setLoggingEnabled(true);
 //        setUserData(); // If UserData plugin is enabled on your server
