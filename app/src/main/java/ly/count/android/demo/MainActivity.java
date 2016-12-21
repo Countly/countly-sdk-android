@@ -121,12 +121,12 @@ public class MainActivity extends Activity {
 
                 Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
                     @Override
-                    public void OnRate(int rating) {
+                    public void onRate(int rating) {
 
                     }
 
                     @Override
-                    public void OnDismiss() {
+                    public void onDismiss() {
 
                     }
                 });
@@ -143,11 +143,11 @@ public class MainActivity extends Activity {
 
         CountlyStarRating.RatingCallback callback = new CountlyStarRating.RatingCallback() {
             @Override
-            public void OnRate(int rating) {
+            public void onRate(int rating) {
             }
 
             @Override
-            public void OnDismiss() {
+            public void onDismiss() {
             }
         };
     }

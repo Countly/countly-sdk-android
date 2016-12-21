@@ -20,8 +20,8 @@ import java.util.Map;
 public class CountlyStarRating {
 
     public interface RatingCallback {
-        void OnRate(int rating);
-        void OnDismiss();
+        void onRate(int rating);
+        void onDismiss();
     }
 
     public static void showStarRating(Context context, final CountlyStarRating.RatingCallback callback){
@@ -37,19 +37,19 @@ public class CountlyStarRating {
             final CountlyStarRating.RatingCallback callback) {
 
         LayoutInflater inflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
-        View dialoglayout = inflater.inflate(R.layout.star_rating_layout, null);
-        RatingBar ratingBar = (RatingBar) dialoglayout.findViewById(R.id.ratingBar);
+        View dialogLayout = inflater.inflate(R.layout.star_rating_layout, null);
+        RatingBar ratingBar = (RatingBar) dialogLayout.findViewById(R.id.ratingBar);
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setTitle(title)
                 .setMessage(message)
-                .setView(dialoglayout)
+                .setView(dialogLayout)
                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
                     @Override
                     public void onCancel(DialogInterface dialogInterface) {
                         if(callback != null) {
                             //call the dismiss callback ir the user clicks the back button or clicks outside the dialog
-                            callback.OnDismiss();
+                            callback.onDismiss();
                         }
                     }
                 })
@@ -58,7 +58,7 @@ public class CountlyStarRating {
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if(callback != null) {
                             //call the dismiss callback if the user clicks the "dismiss" button
-                            callback.OnDismiss();
+                            callback.onDismiss();
                         }
                     }
                 });
@@ -78,7 +78,7 @@ public class CountlyStarRating {
 
                 dialog.cancel();
                 if(callback != null) {
-                    callback.OnRate(rating);
+                    callback.onRate(rating);
                 }
             }
         });

@@ -1,3 +1,10 @@
+16.12
+
+  * Added additional meta data to each API request
+  * Added support for the star rating plugin
+  * Added option to force HTTP POST for all requests
+  * Added support for optional parameters during initialization
+
 16.02
 
   * Views support
