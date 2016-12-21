@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import java.util.HashMap;
 
@@ -121,7 +120,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
 
-                Countly.sharedInstance().ShowStarRating(activity, new CountlyStarRating.RatingCallback() {
+                Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
                     @Override
                     public void OnRate(int rating) {
 
@@ -142,6 +141,16 @@ public class MainActivity extends Activity {
 
             }
         });
+
+        CountlyStarRating.RatingCallback callback = new CountlyStarRating.RatingCallback() {
+            @Override
+            public void OnRate(int rating) {
+            }
+
+            @Override
+            public void OnDismiss() {
+            }
+        };
     }
 
     public void setUserData(){

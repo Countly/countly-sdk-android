@@ -245,7 +245,7 @@ public class Countly {
 
         //set the star rating values
         starRatingCallback_ = starRatingCallback;
-        CountlyStarRating.SetStarRatingInitConfig(context, starRatingLimit, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+        CountlyStarRating.setStarRatingInitConfig(context, starRatingLimit, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
 
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
@@ -269,7 +269,7 @@ public class Countly {
             eventQueue_ = new EventQueue(countlyStore);
 
             //do star rating related things
-            CountlyStarRating.RegisterAppSession(context, starRatingCallback_);
+            CountlyStarRating.registerAppSession(context, starRatingCallback_);
         }
 
         context_ = context;
@@ -1084,8 +1084,8 @@ public class Countly {
      * @param context application context
      * @param callback callback for the star rating dialog "rate" and "dismiss" events
      */
-    public void ShowStarRating(Context context, CountlyStarRating.RatingCallback callback){
-        CountlyStarRating.ShowStarRating(context, callback);
+    public void showStarRating(Context context, CountlyStarRating.RatingCallback callback){
+        CountlyStarRating.showStarRating(context, callback);
     }
 
     /**
@@ -1095,8 +1095,8 @@ public class Countly {
      * @param starRatingTextMessage dialog's message text
      * @param starRatingTextDismiss dialog's dismiss buttons text
      */
-    public void SetStarRatingDialogTexts(Context context, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
-        CountlyStarRating.SetStarRatingInitConfig(context, -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+    public void setStarRatingDialogTexts(Context context, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
+        CountlyStarRating.setStarRatingInitConfig(context, -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
     }
 
     /**
@@ -1104,8 +1104,17 @@ public class Countly {
      * @param context application context
      * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
      */
-    public void SetIfStarRatingShownAutomatically(Context context, boolean IsShownAutomatically) {
-        CountlyStarRating.SetShowDialogAutomatically(context, IsShownAutomatically);
+    public void setIfStarRatingShownAutomatically(Context context, boolean IsShownAutomatically) {
+        CountlyStarRating.setShowDialogAutomatically(context, IsShownAutomatically);
+    }
+
+    /**
+     * Set if the star rating is shown only once per app lifetime
+     * @param context application context
+     * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
+     */
+    public void setStarRatingDisableAskingForEachAppVersion(Context context, boolean disableAsking) {
+        CountlyStarRating.setShowDialogAutomatically(context, disableAsking);
     }
 
     /**
@@ -1113,8 +1122,8 @@ public class Countly {
      * @param context application context
      * @param limit app session amount for the limit
      */
-    public void SetAutomaticStarRatingSessionLimit(Context context, int limit) {
-        CountlyStarRating.SetStarRatingInitConfig(context, limit, null, null, null);
+    public void setAutomaticStarRatingSessionLimit(Context context, int limit) {
+        CountlyStarRating.setStarRatingInitConfig(context, limit, null, null, null);
     }
 
     // for unit testing

@@ -384,9 +384,25 @@ public class CountlyTests extends AndroidTestCase {
         final String eventKey = "eventKey";
         final int count = 42;
         final Countly countly = spy(mCountly);
+
+
         doNothing().when(countly).recordEvent(eventKey, null, count, 0.0d);
+        //doReturn(true).when(countly).recordEvent(eventKey, null, count, 0.0d);
         countly.recordEvent(eventKey, count);
         verify(countly).recordEvent(eventKey, null, count, 0.0d);
+
+        //doNothing().when(countly).recordEvent(eventKey, null, count, 0.0d);
+        //doNothing().when(countly).recordEvent(eventKey, count);
+        //countly.recordEvent(eventKey, count);
+        //verify(countly).recordEvent(eventKey, null, count, 0.0d);
+
+        //doNothing().when(countly).recordEvent(eventKey, count);
+        //countly.recordEvent(eventKey, count);
+        //verify(countly).recordEvent(eventKey, count);
+
+        //doNothing().when(countly).recordEvent(eventKey, null, count, 0.0d);
+        //countly.recordEvent(eventKey, null, count, 0.0d);
+        //verify(countly).recordEvent(eventKey, null, count, 0.0d);
     }
 
     public void testRecordEvent_keyAndCountAndSum() {
