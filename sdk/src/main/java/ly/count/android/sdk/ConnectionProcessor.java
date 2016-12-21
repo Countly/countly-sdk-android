@@ -97,6 +97,9 @@ public class ConnectionProcessor implements Runnable {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Got picturePath: " + picturePath);
         }
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.v(Countly.TAG, "Is the HTTP POST forced: " + Countly.sharedInstance().isHttpPostForced());
+        }
         if(!picturePath.equals("")){
         	//Uploading files:
         	//http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
@@ -136,7 +139,7 @@ public class ConnectionProcessor implements Runnable {
         }
         else if(eventData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Using post because of crash");
+                Log.d(Countly.TAG, "Using post");
             }
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");

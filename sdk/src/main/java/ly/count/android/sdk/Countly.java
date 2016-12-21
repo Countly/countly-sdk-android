@@ -115,7 +115,12 @@ public class Countly {
     private boolean autoViewTracker = false;
 
     //overrides
-    boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
+    private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
+
+    //optional parameters for begin_session call
+    private String optionalParameterCountryCode = null;
+    private String optionalParameterCity = null;
+    private String optionalParameterLocation = null;
 
     //star rating
     private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
@@ -1133,7 +1138,7 @@ public class Countly {
      * Set the override for forcing to use HTTP POST for all connections to the server
      * @param isItForced the flag for the new status, set "true" if you want it to be forced
      */
-    public void forceHttpPost(boolean isItForced) {
+    public void setHttpPostForced(boolean isItForced) {
         isHttpPostForced = isItForced;
     }
 
@@ -1143,6 +1148,30 @@ public class Countly {
      */
     public boolean isHttpPostForced() {
         return isHttpPostForced;
+    }
+
+    /**
+     * Set optional parameters that are added to all begin_session requests
+     * @param country_code ISO Country code for the user's country
+     * @param city Name of the user's city
+     * @param location comma separate lat and lng values. For example, "56.42345,123.45325"
+     */
+    public void setOptionalParametersForInitialization(String country_code, String city, String location){
+        optionalParameterCountryCode = country_code;
+        optionalParameterCity = city;
+        optionalParameterLocation = location;
+    }
+
+    public String getOptionalParameterCountryCode() {
+        return optionalParameterCountryCode;
+    }
+
+    public String getOptionalParameterCity() {
+        return optionalParameterCity;
+    }
+
+    public String getOptionalParameterLocation() {
+        return optionalParameterLocation;
     }
 
     // for unit testing
