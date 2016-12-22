@@ -33,7 +33,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * This class provides several static methods to retrieve information about
@@ -177,6 +179,10 @@ class DeviceInfo {
             }
         }
         return carrier;
+    }
+
+    static int getTimezoneOffset() {
+        return TimeZone.getDefault().getOffset(new Date().getTime()) / 60000;
     }
 
     /**

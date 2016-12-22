@@ -43,7 +43,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     protected static final int NOTIFICATION_TYPE_UNKNOWN  = 0;
     protected static final int NOTIFICATION_TYPE_MESSAGE  = 1;
     protected static final int NOTIFICATION_TYPE_URL      = 1 << 1;
-    protected static final int NOTIFICATION_TYPE_REVIEW   = 1 << 2;
+//    protected static final int NOTIFICATION_TYPE_REVIEW   = 1 << 2;
 
     protected static final int NOTIFICATION_TYPE_SILENT           = 1 << 3;
 
@@ -303,13 +303,9 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         return getGCMPreferences(context).getString(PROPERTY_APPLICATION_TITLE, "");
     }
 
-    public static void recordMessageOpen(String messageId) {
-        if (!Countly.sharedInstance().isInitialized()) {
-            CountlyMessaging.initCountly(getContext());
-        }
-        Map<String, String> segmentation = new HashMap<String, String>();
-        segmentation.put("i", messageId);
-        Countly.sharedInstance().recordEvent(EVENT_OPEN, segmentation, 1);
+    public static void recordMessageAction(Context context, String messageId) {
+        CountlyMessaging.context = context;
+        recordMessageAction(messageId);
     }
 
     public static void recordMessageAction(String messageId) {
