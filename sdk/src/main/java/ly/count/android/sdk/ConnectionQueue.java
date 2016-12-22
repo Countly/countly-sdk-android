@@ -135,6 +135,7 @@ public class ConnectionQueue {
                           + "&timestamp=" + Countly.currentTimestampMs()
                           + "&hour=" + Countly.currentHour()
                           + "&dow=" + Countly.currentDayOfWeek()
+                          + "&tz=" + DeviceInfo.getTimezoneOffset()
                           + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                           + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
                           + "&begin_session=1"
