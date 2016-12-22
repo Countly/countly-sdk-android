@@ -66,7 +66,7 @@ public class CountlyMessagingService extends IntentService {
                     }
 
                     // Show message if not silent
-                    if (!msg.isSilent()) {
+                    if (!msg.isSilent() && msg.hasMessage()) {
                         // Go through proxy activity to be able to record message open & action performed events
                         Intent proxy = new Intent(getApplicationContext(), ProxyActivity.class);
                         proxy.putExtra(CountlyMessaging.EXTRA_MESSAGE, msg);
