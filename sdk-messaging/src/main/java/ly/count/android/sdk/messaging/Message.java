@@ -24,7 +24,6 @@ public class Message implements Parcelable {
 
     public String getId() { return data.getString("c.i"); }
     public String getLink() { return data.getString("c.l"); }
-    public String getReview() { return data.getString("c.r"); }
     public String getMessage() { return data.getString("message"); }
     public String getSoundUri() { return data.getString("sound"); }
     public Bundle getData() { return data; }
@@ -45,10 +44,6 @@ public class Message implements Parcelable {
             t |= CountlyMessaging.NOTIFICATION_TYPE_URL;
         }
 
-        if (getReview() != null) {
-            t |= CountlyMessaging.NOTIFICATION_TYPE_REVIEW;
-        }
-
         if ("true".equals(data.getString("c.s"))) {
             t |= CountlyMessaging.NOTIFICATION_TYPE_SILENT;
         }
@@ -62,7 +57,6 @@ public class Message implements Parcelable {
     }
 
     public boolean hasLink() { return (type & CountlyMessaging.NOTIFICATION_TYPE_URL) > 0; }
-    public boolean hasReview() { return (type & CountlyMessaging.NOTIFICATION_TYPE_REVIEW) > 0; }
     public boolean hasMessage() { return (type & CountlyMessaging.NOTIFICATION_TYPE_MESSAGE) > 0; }
     public boolean isSilent() { return (type & CountlyMessaging.NOTIFICATION_TYPE_SILENT) > 0; }
     public boolean hasSoundUri() { return (type & CountlyMessaging.NOTIFICATION_TYPE_SOUND_URI) > 0; }
@@ -85,8 +79,6 @@ public class Message implements Parcelable {
     public Intent getIntent(Context context, Class <? extends Activity> activityClass) {
         if (hasLink()) {
             return new Intent(Intent.ACTION_VIEW, Uri.parse(getLink()));
-        } else if (hasReview()) {
-            return new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + ("".equals(getReview()) ? context.getPackageName() : getReview())));
         } else if (hasMessage()) {
             if (activityClass == null) {
                 activityClass = CountlyMessaging.getMainActivityClass(context);
@@ -109,8 +101,6 @@ public class Message implements Parcelable {
      */
     public String getNotificationMessage() {
         if (hasLink()) {
-            return hasMessage() ? getMessage() : "";
-        } else if (hasReview()) {
             return hasMessage() ? getMessage() : "";
         } else if (hasMessage()) {
             return getMessage();

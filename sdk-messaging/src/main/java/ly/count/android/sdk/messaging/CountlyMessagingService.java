@@ -66,9 +66,7 @@ public class CountlyMessagingService extends IntentService {
                     }
 
                     // Show message if not silent
-                    if (msg.isSilent()) {
-                        CountlyMessaging.recordMessageOpen(msg.getId());
-                    } else {
+                    if (!msg.isSilent()) {
                         // Go through proxy activity to be able to record message open & action performed events
                         Intent proxy = new Intent(getApplicationContext(), ProxyActivity.class);
                         proxy.putExtra(CountlyMessaging.EXTRA_MESSAGE, msg);
@@ -92,8 +90,6 @@ public class CountlyMessagingService extends IntentService {
             startActivity(proxy);
         } else {
             // Notification case
-            CountlyMessaging.recordMessageOpen(msg.getId());
-
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, proxy, PendingIntent.FLAG_UPDATE_CURRENT);
 

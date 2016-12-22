@@ -34,8 +34,6 @@ public class ProxyActivity extends Activity {
 
             if (msg != null) {
                 if (extras.containsKey(CountlyMessaging.NOTIFICATION_SHOW_DIALOG)) {
-                    CountlyMessaging.recordMessageOpen(msg.getId());
-
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
                     builder.setTitle(msg.getNotificationTitle(this))
                             .setMessage(msg.getNotificationMessage());
@@ -43,24 +41,6 @@ public class ProxyActivity extends Activity {
                     if (msg.hasLink()) {
                         builder.setCancelable(true)
                                 .setPositiveButton(CountlyMessaging.buttonNames[0], new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        CountlyMessaging.recordMessageAction(msg.getId());
-                                        finish();
-                                        Intent activity = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass(ProxyActivity.this));
-                                        if(activity != null)
-                                            startActivity(activity);
-                                    }
-                                })
-                                .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                                    @Override
-                                    public void onCancel(DialogInterface dialog) {
-                                        finish();
-                                    }
-                                });
-                    } else if (msg.hasReview()) {
-                        builder.setCancelable(true)
-                                .setPositiveButton(CountlyMessaging.buttonNames[1], new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
                                         CountlyMessaging.recordMessageAction(msg.getId());
