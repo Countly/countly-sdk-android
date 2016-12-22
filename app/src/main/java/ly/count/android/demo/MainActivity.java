@@ -132,24 +132,6 @@ public class MainActivity extends Activity {
                 });
             }
         });
-
-        Button button8 = (Button) findViewById(R.id.app_rating_custom);
-        button8.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
-        CountlyStarRating.RatingCallback callback = new CountlyStarRating.RatingCallback() {
-            @Override
-            public void onRate(int rating) {
-            }
-
-            @Override
-            public void onDismiss() {
-            }
-        };
     }
 
     public void setUserData(){

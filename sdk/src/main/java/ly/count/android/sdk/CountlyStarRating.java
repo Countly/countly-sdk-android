@@ -76,7 +76,7 @@ public class CountlyStarRating {
 
                 Countly.sharedInstance().recordEvent("[CLY]_star_rating", segm, 1);
 
-                dialog.cancel();
+                dialog.dismiss();
                 if(callback != null) {
                     callback.onRate(rating);
                 }
@@ -89,7 +89,7 @@ public class CountlyStarRating {
         int sessionLimit = 5;
         int sessionAmount = 0; //session amount for the current version
         boolean isShownForCurrentVersion = false;
-        boolean automaticRatingShouldBeShown = false;
+        boolean automaticRatingShouldBeShown = true;
         boolean disabledAutomaticForNewVersions = false;
         boolean automaticHasBeenShown = false;
         String dialogTextTitle = "App rating";
@@ -142,7 +142,7 @@ public class CountlyStarRating {
                     srp.sessionLimit = json.optInt(KEY_SESSION_LIMIT, 5);
                     srp.sessionAmount = json.optInt(KEY_SESSION_AMOUNT, 0);
                     srp.isShownForCurrentVersion = json.optBoolean(KEY_IS_SHOWN_FOR_CURRENT, false);
-                    srp.automaticRatingShouldBeShown = json.optBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN, false);
+                    srp.automaticRatingShouldBeShown = json.optBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN, true);
                     srp.disabledAutomaticForNewVersions = json.optBoolean(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS, false);
                     srp.automaticHasBeenShown = json.optBoolean(KEY_AUTOMATIC_HAS_BEEN_SHOWN, false);
 
@@ -235,7 +235,7 @@ public class CountlyStarRating {
 
         //a new app version is released, reset all counters
         //if we show the rating once per apps lifetime, don't reset the counters
-        if(!currentAppVersion.equals(srp.appVersion) && !srp.disabledAutomaticForNewVersions) {
+        if(currentAppVersion != null && !currentAppVersion.equals(srp.appVersion) && !srp.disabledAutomaticForNewVersions) {
             srp.appVersion = currentAppVersion;
             srp.isShownForCurrentVersion = false;
             srp.sessionAmount = 0;

@@ -32,6 +32,41 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".ActivityExampleAPM"
+            android:label="@string/activity_name_apm" >
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleCrashReporting"
+            android:label="@string/activity_name_crash_reporting" >
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleCustomEvents"
+            android:label="@string/activity_name_custom_events" >
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleMultiThreading"
+            android:label="@string/activity_name_multithreading" >
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleOthers"
+            android:label="@string/activity_name_others" >
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleUserDetails"
+            android:label="@string/activity_name_user_detail" >
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleViewTracking"
+            android:label="@string/activity_name_view_tracking" >
+        </activity>
+
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">
             <intent-filter>
                 <action android:name="org.OpenUDID.GETUDID" />
