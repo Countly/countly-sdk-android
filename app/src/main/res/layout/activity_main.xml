@@ -10,7 +10,6 @@
         android:layout_height="wrap_content"
         android:text="Runtime Exception"
         android:id="@+id/runtime"
-        android:layout_below="@+id/textView"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="59dp" />
 
