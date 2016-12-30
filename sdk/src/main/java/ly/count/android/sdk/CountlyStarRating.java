@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -35,6 +36,13 @@ public class CountlyStarRating {
             final String message,
             final String cancelText,
             final CountlyStarRating.RatingCallback callback) {
+
+        if(!(context instanceof Activity)) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't show star rating dialog, the provided context is not based off a activity");
+            }
+            return;
+        }
 
         LayoutInflater inflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
         View dialogLayout = inflater.inflate(R.layout.star_rating_layout, null);
@@ -89,7 +97,7 @@ public class CountlyStarRating {
         int sessionLimit = 5;
         int sessionAmount = 0; //session amount for the current version
         boolean isShownForCurrentVersion = false;
-        boolean automaticRatingShouldBeShown = true;
+        boolean automaticRatingShouldBeShown = false;
         boolean disabledAutomaticForNewVersions = false;
         boolean automaticHasBeenShown = false;
         String dialogTextTitle = "App rating";

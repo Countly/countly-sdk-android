@@ -1,4 +1,8 @@
-16.12
+16.12.02
+  * Changing automatic star rating default behaviour (disabling it)
+  * Removing Context as a needed field from some function calls
+
+16.12.01
 
   * Added additional meta data to each API request
   * Added support for the star rating plugin

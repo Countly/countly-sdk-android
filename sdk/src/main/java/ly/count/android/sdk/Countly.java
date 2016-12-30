@@ -1089,49 +1089,69 @@ public class Countly {
 
     /**
      * Shows the star rating dialog
-     * @param context application context
+     * @param activity the activity that will own the dialog
      * @param callback callback for the star rating dialog "rate" and "dismiss" events
      */
-    public void showStarRating(Context context, CountlyStarRating.RatingCallback callback){
-        CountlyStarRating.showStarRating(context, callback);
+    public void showStarRating(Activity activity, CountlyStarRating.RatingCallback callback){
+        CountlyStarRating.showStarRating(activity, callback);
     }
 
     /**
      * Set's the text's for the different fields in the star rating dialog. Set value null if for some field you want to keep the old value
-     * @param context application context
      * @param starRatingTextTitle dialog's title text
      * @param starRatingTextMessage dialog's message text
      * @param starRatingTextDismiss dialog's dismiss buttons text
      */
-    public void setStarRatingDialogTexts(Context context, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
-        CountlyStarRating.setStarRatingInitConfig(context, -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+    public void setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return;
+            }
+        }
+        CountlyStarRating.setStarRatingInitConfig(context_, -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
     }
 
     /**
      * Set if the star rating
-     * @param context application context
      * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
      */
-    public void setIfStarRatingShownAutomatically(Context context, boolean IsShownAutomatically) {
-        CountlyStarRating.setShowDialogAutomatically(context, IsShownAutomatically);
+    public void setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return;
+            }
+        }
+        CountlyStarRating.setShowDialogAutomatically(context_, IsShownAutomatically);
     }
 
     /**
      * Set if the star rating is shown only once per app lifetime
-     * @param context application context
      * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
      */
-    public void setStarRatingDisableAskingForEachAppVersion(Context context, boolean disableAsking) {
-        CountlyStarRating.setShowDialogAutomatically(context, disableAsking);
+    public void setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return;
+            }
+        }
+        CountlyStarRating.setShowDialogAutomatically(context_, disableAsking);
     }
 
     /**
      * Set after how many sessions the automatic star rating will be shown for each app version
-     * @param context application context
      * @param limit app session amount for the limit
      */
-    public void setAutomaticStarRatingSessionLimit(Context context, int limit) {
-        CountlyStarRating.setStarRatingInitConfig(context, limit, null, null, null);
+    public void setAutomaticStarRatingSessionLimit(int limit) {
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return;
+            }
+        }
+        CountlyStarRating.setStarRatingInitConfig(context_, limit, null, null, null);
     }
 
     /**
