@@ -32,7 +32,7 @@ class Request {
     String response;
 
     private Request(Object... params) {
-        if (params.length == 1 && params[0] instanceof Object[]) {
+        if (params != null && params.length == 1 && params[0] instanceof Object[]) {
             this.params = new Params(params[0]);
         } else {
             this.params = new Params(params);

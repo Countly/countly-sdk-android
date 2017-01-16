@@ -9,7 +9,7 @@ class Params {
 
     Params(Object... objects) {
         params = new StringBuilder();
-        if (objects.length == 1 && (objects[0] instanceof Object[])) {
+        if (objects != null && objects.length == 1 && (objects[0] instanceof Object[])) {
             addObjects((Object[]) objects[0]);
         } else {
             addObjects(objects);

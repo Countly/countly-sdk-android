@@ -140,6 +140,7 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setFeatures(Feature... features) {
+        this.features.clear();
         if (features != null && features.length > 0) {
             this.features.addAll(Arrays.asList(features));
         }

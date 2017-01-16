@@ -13,15 +13,16 @@ import ly.count.android.sdk.Session;
 public class Requests {
 
     public static Request sessionBegin(InternalConfig config, long timestamp, Session session) {
-        return addCommon(config, timestamp, Request.build(
-                "begin_session", 1,
-                "metrics",
-        ))
-        return Request.build(
-                "app_key", config.getServerAppKey(),
-                "timestamp", timestamp,
-                "hour",
-        )
+//        return addCommon(config, timestamp, Request.build(
+//                "begin_session", 1,
+//                "metrics",
+//        ))
+//        return Request.build(
+//                "app_key", config.getServerAppKey(),
+//                "timestamp", timestamp,
+//                "hour",
+//        )
+        return null;
 //        String data = "app_key=" + appKey_
 //                + "&timestamp=" + Countly.currentTimestampMs()
 //                + "&hour=" + Countly.currentHour()
@@ -53,7 +54,7 @@ public class Requests {
      * @return current timestamp in seconds
      */
     private static int currentTimestamp(long ms) {
-        return ();
+        return 0;
     }
 
     /**
