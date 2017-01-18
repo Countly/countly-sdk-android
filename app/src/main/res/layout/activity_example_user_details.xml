@@ -4,4 +4,40 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
+    <Button
+        android:text="record user details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button29"
+        android:onClick="onClickUserData01"/>
+
+    <Button
+        android:text="custom modifiers 1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button30"
+        android:onClick="onClickUserData02"/>
+
+    <Button
+        android:text="custom modifiers 2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button31"
+        android:onClick="onClickUserData03"/>
+
+    <Button
+        android:text="user logged in"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button32"
+        android:onClick="onClickUserData04"
+        android:enabled="false"/>
+
+    <Button
+        android:text="user logged out"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button33"
+        android:onClick="onClickUserData05"
+        android:enabled="false"/>
 </LinearLayout>

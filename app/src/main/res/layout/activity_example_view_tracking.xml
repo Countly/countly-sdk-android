@@ -4,4 +4,49 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
 
+    <Button
+        android:text="turn off auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button34"/>
+
+    <Button
+        android:text="turn on auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button35"/>
+
+    <Button
+        android:text="present modal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button36"
+        android:enabled="false"/>
+
+    <Button
+        android:text="navigation controller push / pop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button37"
+        android:enabled="false"/>
+
+    <Button
+        android:text="add exception"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button38"
+        android:enabled="false"/>
+
+    <Button
+        android:text="remove exception"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button39"
+        android:enabled="false"/>
+
+    <Button
+        android:text="manual report"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button40"/>
 </LinearLayout>

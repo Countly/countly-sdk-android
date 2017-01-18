@@ -17,16 +17,19 @@ public class MainActivity extends Activity {
 
     private BroadcastReceiver messageReceiver;
 
-    /** Called when the activity is first created. */
+    /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
+    final String COUNTLY_SERVER_URL = "YOUR_SERVER";
+    final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+    final String COUNTLY_MESSAGING_PROJECT_ID = "YOUR_PROJECT_ID(NUMBERS ONLY)";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
         Countly.sharedInstance()
-                .init(this, "YOUR_SERVER", "YOUR_APP_KEY")
-                .initMessaging(this, MainActivity.class, "YOUR_PROJECT_ID(NUMBERS ONLY)", Countly.CountlyMessagingMode.TEST);
+                .init(this, COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
+                .initMessaging(this, MainActivity.class, COUNTLY_MESSAGING_PROJECT_ID, Countly.CountlyMessagingMode.TEST);
 //                .setLocation(LATITUDE, LONGITUDE);
 //                .setLoggingEnabled(true);
 

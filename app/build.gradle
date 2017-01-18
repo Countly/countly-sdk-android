@@ -1,7 +1,8 @@
 apply plugin: 'com.android.application'
 
 //repositories {
-//    mavenLocal()
+    //mavenLocal()
+    //jcenter()
 //}
 
 buildscript {
@@ -17,7 +18,7 @@ buildscript {
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24.0.2"
+    buildToolsVersion "24.0.3"
 
     defaultConfig {
         applicationId "ly.count.android.demo"
@@ -40,6 +41,5 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':sdk')
-//    compile 'ly.count.android:sdk:16.06.04'
-//    compile 'ly.count.android:sdk:16.06.04@aar'
+//    compile 'ly.count.android:sdk:16.12.1'
 }

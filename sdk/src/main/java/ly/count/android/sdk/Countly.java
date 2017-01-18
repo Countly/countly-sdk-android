@@ -891,8 +891,10 @@ public class Countly {
                 }
             }
 
+            long currentTimestamp = Countly.currentTimestampMs();
+
             event.segmentation = segmentation;
-            event.dur = Countly.currentTimestamp() - event.timestamp;
+            event.dur = (currentTimestamp - event.timestamp) / 1000.0;
             event.count = count;
             event.sum = sum;
             eventQueue_.recordEvent(event);
