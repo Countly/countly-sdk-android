@@ -8,10 +8,13 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.messaging.CountlyMessaging;
 import ly.count.android.sdk.messaging.Message;
+import me.leolin.shortcutbadger.ShortcutBadgeException;
+import me.leolin.shortcutbadger.ShortcutBadger;
 
 public class MainActivity extends Activity {
 
@@ -75,6 +78,22 @@ public class MainActivity extends Activity {
             public void onReceive(Context context, Intent intent) {
                 Message message = intent.getParcelableExtra(CountlyMessaging.BROADCAST_RECEIVER_ACTION_MESSAGE);
                 Log.i("CountlyActivity", "Got a message with data: " + message.getData());
+
+                //Badge related things
+                Bundle data = message.getData();
+                String badgeString = data.getString("badge");
+                try {
+                    if(badgeString != null) {
+                        int badgeCount = Integer.parseInt(badgeString);
+
+                        boolean succeded = ShortcutBadger.applyCount(getApplicationContext(), badgeCount);
+                        if (!succeded) {
+                            Toast.makeText(getApplicationContext(), "Unable to put badge", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                } catch (NumberFormatException exception) {
+                    Toast.makeText(getApplicationContext(), "Unable to parse given badge number", Toast.LENGTH_SHORT).show();
+                }
             }
         };
         IntentFilter filter = new IntentFilter();
