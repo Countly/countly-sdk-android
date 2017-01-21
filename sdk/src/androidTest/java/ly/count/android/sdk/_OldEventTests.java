@@ -29,7 +29,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EventTests extends AndroidTestCase {
+public class _OldEventTests extends AndroidTestCase {
     public void testConstructor() {
         final Event event = new Event();
         assertNull(event.key);

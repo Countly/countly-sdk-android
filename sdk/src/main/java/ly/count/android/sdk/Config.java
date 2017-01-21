@@ -189,6 +189,7 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setLoggingLevel(LoggingLevel loggingLevel) {
+        //todo double check, logging level can be set null, is that ok?
         this.loggingLevel = loggingLevel;
         return this;
     }

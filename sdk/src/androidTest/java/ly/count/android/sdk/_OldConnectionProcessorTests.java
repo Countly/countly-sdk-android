@@ -40,7 +40,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ConnectionProcessorTests extends AndroidTestCase {
+public class _OldConnectionProcessorTests extends AndroidTestCase {
     ConnectionProcessor connectionProcessor;
     CountlyStore mockStore;
     DeviceId mockDeviceId;

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class CountlyStoreTests extends AndroidTestCase {
+public class _OldCountlyStoreTests extends AndroidTestCase {
     CountlyStore store;
 
     @Override

@@ -45,7 +45,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class ConnectionQueueTests extends AndroidTestCase {
+public class _OldConnectionQueueTests extends AndroidTestCase {
     ConnectionQueue connQ;
     ConnectionQueue freshConnQ;
 

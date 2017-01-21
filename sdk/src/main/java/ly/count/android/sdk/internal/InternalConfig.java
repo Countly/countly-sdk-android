@@ -25,11 +25,13 @@ final class InternalConfig extends Config {
     }
 
     InternalConfig(Config config) throws MalformedURLException {
+        //todo double check, should it protect against nulls?
         super(config.getServerURL().toString(), config.getServerAppKey());
         this.features.addAll(config.getFeatures());
         this.usePOST = config.isUsePOST();
         this.loggingTag = config.getLoggingTag();
         this.loggingLevel = config.getLoggingLevel();
+        this.testMode = config.isTestModeEnabled();
         this.programmaticSessionsControl = config.isProgrammaticSessionsControl();
         this.sdkVersion = config.getSdkVersion();
     }

@@ -42,7 +42,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class DeviceInfoTests extends AndroidTestCase {
+public class _OldDeviceInfoTests extends AndroidTestCase {
 
     public void testGetOS() {
         assertEquals("Android", DeviceInfo.getOS());

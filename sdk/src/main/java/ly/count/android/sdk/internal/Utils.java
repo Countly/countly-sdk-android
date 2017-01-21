@@ -22,7 +22,7 @@ class Utils {
     static String join(Collection<Object> objects, String separator) {
         StringBuilder sb = new StringBuilder();
         for (Object object : objects) {
-            sb.append(object).append(separator);
+            sb.append(object).append(separator);//todo double check, should the seperator always be appended at the end or only between objects?
         }
         return sb.toString();
     }

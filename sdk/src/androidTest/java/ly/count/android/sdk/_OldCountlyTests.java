@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class CountlyTests extends AndroidTestCase {
+public class _OldCountlyTests extends AndroidTestCase {
     Countly mUninitedCountly;
     Countly mCountly;
 

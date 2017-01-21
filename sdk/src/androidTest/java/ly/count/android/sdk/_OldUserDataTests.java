@@ -10,7 +10,7 @@ import java.net.URL;
 import java.util.HashMap;
 
 
-public class UserDataTests extends AndroidTestCase {
+public class _OldUserDataTests extends AndroidTestCase {
 	public void testSetData(){
         HashMap<String, String> data = new HashMap<String, String>();
         data.put("name", "Test Test");

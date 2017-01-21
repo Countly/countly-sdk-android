@@ -47,6 +47,7 @@ class Params {
         return this;
     }
 
+    //todo can this receive only an even amount of objects? maybe return an error if an odd amount is returned?
     private Params addObjects(Object[] objects) {
         for (int i = 0; i < objects.length; i += 2) {
             add(objects[i] == null ? ("unknown" + i) : objects[i].toString(), objects.length > i ? objects[i + 1] : null);
