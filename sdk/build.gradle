@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'bintray-release'
+apply plugin: 'jacoco-android'
 
 buildscript {
     repositories {
@@ -7,6 +8,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.3.4'
+        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
     }
 }
 
@@ -25,6 +27,9 @@ android {
         testFunctionalTest true
     }
     buildTypes {
+        debug {
+            testCoverageEnabled = true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

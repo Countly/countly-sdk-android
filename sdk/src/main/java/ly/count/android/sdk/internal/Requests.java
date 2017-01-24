@@ -35,7 +35,7 @@ public class Requests {
 
     }
 
-    private static Request addCommon(InternalConfig config, long ms, Request request) {
+    static Request addCommon(InternalConfig config, long ms, Request request) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(ms);
 

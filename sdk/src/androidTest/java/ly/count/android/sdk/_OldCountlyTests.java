@@ -26,6 +26,8 @@ import android.test.AndroidTestCase;
 
 import java.util.HashMap;
 
+import ly.count.android.sdk.test.FillerTestClass;
+
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
@@ -37,7 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class _OldCountlyTests extends AndroidTestCase {
+public class _OldCountlyTests extends FillerTestClass {
     Countly mUninitedCountly;
     Countly mCountly;
 

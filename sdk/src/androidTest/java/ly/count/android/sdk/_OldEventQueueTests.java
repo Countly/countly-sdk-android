@@ -32,13 +32,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ly.count.android.sdk.test.FillerTestClass;
+
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class _OldEventQueueTests extends AndroidTestCase {
+public class _OldEventQueueTests extends FillerTestClass {
     EventQueue mEventQueue;
     CountlyStore mMockCountlyStore;
 

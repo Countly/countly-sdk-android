@@ -9,8 +9,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 
+import ly.count.android.sdk.test.FillerTestClass;
 
-public class _OldUserDataTests extends AndroidTestCase {
+
+public class _OldUserDataTests extends FillerTestClass {
 	public void testSetData(){
         HashMap<String, String> data = new HashMap<String, String>();
         data.put("name", "Test Test");

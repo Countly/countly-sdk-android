@@ -33,11 +33,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import ly.count.android.sdk.test.FillerTestClass;
+
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class _OldCountlyStoreTests extends AndroidTestCase {
+public class _OldCountlyStoreTests extends FillerTestClass {
     CountlyStore store;
 
     @Override

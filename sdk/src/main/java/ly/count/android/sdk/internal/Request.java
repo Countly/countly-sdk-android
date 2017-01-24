@@ -9,12 +9,12 @@ import java.util.Objects;
  */
 
 class Request {
-    private static final String P_DEVICE_ID = "device_id";
+    static final String P_DEVICE_ID = "device_id";
 
     /**
      * This string is written to request file to ensure it can be fully read from other end of queue.
      */
-    private static final String EOR = "\n[CLY][CLY][CLY]";
+    static final String EOR = "\n[CLY][CLY][CLY]";
 
     /**
      * Params without device_id
@@ -31,7 +31,7 @@ class Request {
      */
     String response;
 
-    private Request(Object... params) {
+    Request(Object... params) {
         if (params != null && params.length == 1 && params[0] instanceof Object[]) {
             this.params = new Params(params[0]);
         } else {
@@ -39,7 +39,7 @@ class Request {
         }
     }
 
-    private Request(String params) {
+    Request(String params) {
         this.params = new Params(params);
     }
 
@@ -65,7 +65,9 @@ class Request {
         if (data.lastIndexOf(EOR) != data.length() - EOR.length()) {
             return null;
         } else {
-            return new Request(data.substring(data.length() - EOR.length()));
+            //todo double check if the new line is correct, previously it was as commented bellow
+            //return new Request(data.substring(data.length() - EOR.length()));
+            return new Request(data.substring(0, data.length() - EOR.length()));
         }
     }
 }

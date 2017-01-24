@@ -1,10 +1,6 @@
 package ly.count.android.sdk;
 
-import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
-import android.os.Build;
-import android.os.Bundle;
 
 import ly.count.android.sdk.internal.Core;
 
@@ -13,19 +9,36 @@ import ly.count.android.sdk.internal.Core;
  */
 
 public class CountlyNeo {
-    private static CountlyNeo instance;
-    private final Core core;
 
-    private CountlyNeo(Config config) {
-        this.core = new Core(config);
+    interface CreationOverride {
+        Core createCore(Config config);
+    }
+
+    private static CountlyNeo instance;
+    final Core core;
+
+    CountlyNeo(Config config) {
+        this(new Core(config));
+    }
+
+    CountlyNeo(Core core) {
+        this.core = core;
     }
 
     public static void init (final Application application, final Config config) {
+        init(application, config, null);
+    }
+
+    static void init (final Application application, final Config config, final CreationOverride override) {
         if (instance != null) {
             // TODO: shutdown if already running
         }
 
-        instance = new CountlyNeo(config);
+        if(override != null) {
+            instance = new CountlyNeo(override.createCore(config));
+        } else {
+            instance = new CountlyNeo(config);
+        }
         instance.core.onApplicationCreated(application);
     }
 

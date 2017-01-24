@@ -37,12 +37,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Locale;
 
+import ly.count.android.sdk.test.FillerTestClass;
+
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class _OldDeviceInfoTests extends AndroidTestCase {
+public class _OldDeviceInfoTests extends FillerTestClass {
 
     public void testGetOS() {
         assertEquals("Android", DeviceInfo.getOS());

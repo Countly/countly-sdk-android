@@ -67,7 +67,7 @@ public class ConfigTests {
 
     @Test (expected = IllegalStateException.class)
     public void setLoggingTag_empty(){
-        config.setLoggingTag(null);
+        config.setLoggingTag("");
     }
 
     @Test
@@ -253,7 +253,9 @@ public class ConfigTests {
         Assert.assertEquals(false, features.contains(null));
         Assert.assertEquals(0, features.size());
 
-        config.setFeatures(null);
+        Config.Feature[] featureList = null;
+
+        config.setFeatures(featureList);
         features = config.getFeatures();
         Assert.assertEquals(false, features.contains(null));
         Assert.assertEquals(0, features.size());

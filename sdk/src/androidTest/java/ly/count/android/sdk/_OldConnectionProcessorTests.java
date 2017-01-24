@@ -31,6 +31,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
+import ly.count.android.sdk.test.FillerTestClass;
+
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.doReturn;
@@ -40,7 +42,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class _OldConnectionProcessorTests extends AndroidTestCase {
+public class _OldConnectionProcessorTests extends FillerTestClass {
     ConnectionProcessor connectionProcessor;
     CountlyStore mockStore;
     DeviceId mockDeviceId;

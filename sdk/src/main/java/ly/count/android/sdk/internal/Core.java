@@ -54,7 +54,7 @@ public class Core {
     /**
      * Core instance config
      */
-    private final InternalConfig config;
+    final InternalConfig config;
 
     /**
      * Core instance list of sessions created

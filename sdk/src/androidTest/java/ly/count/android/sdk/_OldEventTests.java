@@ -29,7 +29,9 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public class _OldEventTests extends AndroidTestCase {
+import ly.count.android.sdk.test.FillerTestClass;
+
+public class _OldEventTests extends FillerTestClass {
     public void testConstructor() {
         final Event event = new Event();
         assertNull(event.key);

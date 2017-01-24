@@ -141,6 +141,7 @@ public class Config {
      */
     public Config setFeatures(Feature... features) {
         this.features.clear();
+
         if (features != null && features.length > 0) {
             this.features.addAll(Arrays.asList(features));
         }

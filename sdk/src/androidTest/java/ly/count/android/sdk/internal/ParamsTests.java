@@ -10,6 +10,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Array;
+
 @RunWith(AndroidJUnit4.class)
 public class ParamsTests {
     @Before
@@ -50,7 +52,7 @@ public class ParamsTests {
     @Test
     public void setup_objects(){
         String[] vals = new String[] {"232", "fds", "tyty", "844"};
-        Params params = new Params(vals);
+        Params params = new Params(vals[0], vals[1], vals[2], vals[3]);
 
         Assert.assertEquals(vals[0].length() + vals[1].length() + vals[2].length() + vals[3].length() + 3, params.length());
         Assert.assertEquals(vals[0] + "=" + vals[1] + "&" + vals[2] + "=" + vals[3], params.toString());

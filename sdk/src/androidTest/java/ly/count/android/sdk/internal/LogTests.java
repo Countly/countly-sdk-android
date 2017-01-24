@@ -82,9 +82,10 @@ public class LogTests {
         InternalConfig internalConfig = new InternalConfig(config);
 
         Log log = new Log();
+        log.init(internalConfig);
 
         Assert.assertEquals(false, log.testMode);
-        Assert.assertEquals(0, log.level);
+        Assert.assertEquals(3, log.level);
     }
 
     @Test

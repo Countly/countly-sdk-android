@@ -33,6 +33,7 @@ public class Log extends ModuleBase {
             case ERROR:
                 level = 3;
                 break;
+            default:
             case OFF:
                 level = -1;
                 break;
