@@ -59,12 +59,12 @@ public class Core {
     /**
      * Core instance list of sessions created
      */
-    private final List<SessionImpl> sessions;
+    final List<SessionImpl> sessions;
 
     /**
      * List of {@link Module} instances built based on {@link #config}
      */
-    private final List<Module> modules;
+    final List<Module> modules;
 
     /**
      * The only Core constructor, rewrites {@link #instance}
