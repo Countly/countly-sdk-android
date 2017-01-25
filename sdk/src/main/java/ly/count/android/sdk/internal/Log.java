@@ -12,8 +12,8 @@ public class Log extends ModuleBase {
     private static String TAG = "Countly";
     private static Log instance;
 
-    int level;
-    boolean testMode;
+    private int level;
+    private boolean testMode;
 
     @Override
     public void init(InternalConfig config) {

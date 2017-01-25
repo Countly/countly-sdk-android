@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.internal.matchers.Any;
+import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
 
@@ -74,9 +75,9 @@ public class ModuleSessionsTests {
     public void single_start() {
         moduleSessions.init(internalConfig);
 
-        Assert.assertEquals(0, moduleSessions.activityCount);
+        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
         moduleSessions.onActivityStarted(contextImpl);
-        Assert.assertEquals(1, moduleSessions.activityCount);
+        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
     }
 
     @Test
@@ -86,16 +87,16 @@ public class ModuleSessionsTests {
 
         Core.instance = coreSpy;
 
-        Assert.assertEquals(0, moduleSessions.activityCount);
+        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
         moduleSessions.onActivityStopped(contextImpl);
-        Assert.assertEquals(-1, moduleSessions.activityCount);
+        Assert.assertEquals(-1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
     }
 
     @Test
     public void multiple_startStop() {
         moduleSessions.init(internalConfig);
 
-        Assert.assertEquals(0, moduleSessions.activityCount);
+        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
         moduleSessions.onActivityStarted(contextImpl);
         moduleSessions.onActivityStarted(contextImpl);
         moduleSessions.onActivityStopped(contextImpl);
@@ -105,6 +106,6 @@ public class ModuleSessionsTests {
         moduleSessions.onActivityStopped(contextImpl);
         moduleSessions.onActivityStarted(contextImpl);
         moduleSessions.onActivityStopped(contextImpl);
-        Assert.assertEquals(1, moduleSessions.activityCount);
+        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
     }
 }

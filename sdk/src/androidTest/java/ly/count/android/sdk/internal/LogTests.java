@@ -9,6 +9,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
 
@@ -46,8 +47,8 @@ public class LogTests {
         Log log = new Log();
         log.init(internalConfig);
 
-        Assert.assertEquals(true, log.testMode);
-        Assert.assertEquals(0, log.level);
+        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertEquals(0, (int)Whitebox.<Integer>getInternalState(log, "level"));
     }
 
     @Test
@@ -59,8 +60,8 @@ public class LogTests {
         Log log = new Log();
         log.init(internalConfig);
 
-        Assert.assertEquals(true, log.testMode);
-        Assert.assertEquals(1, log.level);
+        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertEquals(1, (int)Whitebox.<Integer>getInternalState(log, "level"));
     }
 
     @Test
@@ -72,8 +73,8 @@ public class LogTests {
         Log log = new Log();
         log.init(internalConfig);
 
-        Assert.assertEquals(true, log.testMode);
-        Assert.assertEquals(2, log.level);
+        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertEquals(2, (int)Whitebox.<Integer>getInternalState(log, "level"));
     }
 
     @Test
@@ -84,8 +85,8 @@ public class LogTests {
         Log log = new Log();
         log.init(internalConfig);
 
-        Assert.assertEquals(false, log.testMode);
-        Assert.assertEquals(3, log.level);
+        Assert.assertEquals(false, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertEquals(3, (int)Whitebox.<Integer>getInternalState(log, "level"));
     }
 
     @Test
@@ -96,7 +97,7 @@ public class LogTests {
         Log log = new Log();
         log.init(internalConfig);
 
-        Assert.assertEquals(false, log.testMode);
-        Assert.assertEquals(-1, log.level);
+        Assert.assertEquals(false, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertEquals(-1, (int)Whitebox.<Integer>getInternalState(log, "level"));
     }
 }

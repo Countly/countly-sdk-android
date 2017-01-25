@@ -10,16 +10,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
+import java.util.List;
 
 import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.CoreTests;
 
-import static android.support.test.InstrumentationRegistry.getContext;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.RETURNS_SMART_NULLS;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.validateMockitoUsage;
@@ -60,14 +58,14 @@ public class CountlyNeoTests {
     public void constructor_core(){
         CountlyNeo cn = new CountlyNeo(config);
 
-        CoreTests.assertConfirmConfig(config, cn.core);
+        CoreTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "core"));
     }
 
     @Test
     public void constructor_config(){
         Core core = new Core(config);
         CountlyNeo cn = new CountlyNeo(core);
-        CoreTests.assertConfirmConfig(config, cn.core);
+        CoreTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "core"));
     }
 
 }

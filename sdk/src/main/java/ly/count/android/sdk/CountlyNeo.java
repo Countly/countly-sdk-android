@@ -15,7 +15,7 @@ public class CountlyNeo {
     }
 
     private static CountlyNeo instance;
-    final Core core;
+    private final Core core;
 
     CountlyNeo(Config config) {
         this(new Core(config));

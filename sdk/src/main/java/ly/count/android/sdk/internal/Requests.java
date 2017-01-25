@@ -35,7 +35,7 @@ public class Requests {
 
     }
 
-    static Request addCommon(InternalConfig config, long ms, Request request) {
+    private static Request addCommon(InternalConfig config, long ms, Request request) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(ms);
 
@@ -72,7 +72,7 @@ public class Requests {
      * @return current day of week, 0 is Sunday
      */
     @SuppressLint("SwitchIntDef")
-    static int dow(Calendar calendar){
+    private static int dow(Calendar calendar){
         int day = calendar.get(Calendar.DAY_OF_WEEK);
         switch (day) {
             case Calendar.MONDAY:

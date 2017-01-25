@@ -54,17 +54,17 @@ public class Core {
     /**
      * Core instance config
      */
-    final InternalConfig config;
+    private final InternalConfig config;
 
     /**
      * Core instance list of sessions created
      */
-    final List<SessionImpl> sessions;
+    private final List<SessionImpl> sessions;
 
     /**
      * List of {@link Module} instances built based on {@link #config}
      */
-    final List<Module> modules;
+    private final List<Module> modules;
 
     /**
      * The only Core constructor, rewrites {@link #instance}

@@ -9,8 +9,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
+import java.util.List;
 
 import ly.count.android.sdk.Config;
 
@@ -36,7 +38,7 @@ public class CoreTests {
 
 
     public static void assertConfirmConfig(Config config, Core core){
-        TestingUtilityInternal.assertConfigsContainSameData(config, core.config);
+        TestingUtilityInternal.assertConfigsContainSameData(config, Whitebox.<InternalConfig>getInternalState(core, "config"));
     }
 
     @Test
@@ -45,10 +47,10 @@ public class CoreTests {
         Assert.assertEquals(Config.LoggingLevel.OFF, config.getLoggingLevel());
 
         Core core = new Core(config);
-        TestingUtilityInternal.assertConfigsContainSameData(config, core.config);
+        TestingUtilityInternal.assertConfigsContainSameData(config, Whitebox.<InternalConfig>getInternalState(core, "config"));
 
-        Assert.assertEquals(1, core.modules.size());
-        Assert.assertEquals(0, core.sessions.size());
+        Assert.assertEquals(1, Whitebox.<List<Module>>getInternalState(core, "modules").size());
+        Assert.assertEquals(0, Whitebox.<List<SessionImpl>>getInternalState(core, "sessions").size());
     }
 
     @Test
@@ -58,9 +60,9 @@ public class CoreTests {
         Assert.assertEquals(Config.LoggingLevel.WARN, config.getLoggingLevel());
 
         Core core = new Core(config);
-        TestingUtilityInternal.assertConfigsContainSameData(config, core.config);
+        TestingUtilityInternal.assertConfigsContainSameData(config, Whitebox.<InternalConfig>getInternalState(core, "config"));
 
-        Assert.assertEquals(2, core.modules.size());
-        Assert.assertEquals(0, core.sessions.size());
+        Assert.assertEquals(2, Whitebox.<List<Module>>getInternalState(core, "modules").size());
+        Assert.assertEquals(0, Whitebox.<List<SessionImpl>>getInternalState(core, "sessions").size());
     }
 }

@@ -7,7 +7,7 @@ package ly.count.android.sdk.internal;
  */
 
 public class ModuleSessions extends ModuleBase {
-    int activityCount;
+    private int activityCount;
 
     /**
      * @throws IllegalArgumentException when programmaticSessionsControl is on since this module is

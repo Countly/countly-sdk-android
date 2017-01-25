@@ -8,12 +8,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Objects;
 
 import ly.count.android.sdk.Config;
 
@@ -44,8 +46,8 @@ public class RequestsTests {
     }
 
     @Test (expected = NullPointerException.class)
-    public void addCommon_null(){
-        Requests.addCommon(null, 0, null);
+    public void addCommon_null() throws Exception{
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", new Class<?>[]{InternalConfig.class, long.class, Request.class}, new Object[]{null, 0, null});
     }
 
     private static Request addCommon(InternalConfig config, long ms, Request request) {
@@ -62,17 +64,17 @@ public class RequestsTests {
     }
 
     @Test
-    public void addCommon_returnsSameObject() {
+    public void addCommon_returnsSameObject() throws Exception{
         String initialParams = "aasdfg=123";
-        Request request = new Request(initialParams);
-        Request returnedRequest = Requests.addCommon(internalConfig, unixTime, request);
+        Request request = Whitebox.invokeConstructor(Request.class, initialParams);
+        Request returnedRequest = Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         Assert.assertSame(request, returnedRequest);
     }
 
     @Test
-    public void addCommon_addsCorrectFields() {
-        Request request = new Request("");
-        Requests.addCommon(internalConfig, unixTime, request);
+    public void addCommon_addsCorrectFields() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "");
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         String[] paramsParts = request.params.toString().split("&");
         List<String> paramsKeys = new ArrayList<>();
 
@@ -90,13 +92,13 @@ public class RequestsTests {
     }
 
     @Test
-    public void addCommon_simple() {
+    public void addCommon_simple() throws Exception{
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(unixTime);
 
         String initialParams = "aasdfg=123";
-        Request request = new Request(initialParams);
-        Requests.addCommon(internalConfig, unixTime, request);
+        Request request = Whitebox.invokeConstructor(Request.class, initialParams);
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
 
         String[] paramsParts = request.params.toString().split("&");
         Assert.assertEquals(true, paramsParts[0].equals(initialParams));
@@ -119,7 +121,7 @@ public class RequestsTests {
                     Assert.assertEquals(hourString, value);
                     break;
                 case "dow":
-                    String dowString = "" + Requests.dow(calendar);
+                    String dowString = "" + Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar);
                     Assert.assertEquals(dowString, value);
                     break;
                 case "sdk_name":
@@ -133,73 +135,72 @@ public class RequestsTests {
                     break;
             }
         }
-
     }
 
     @Test
-    public void addCommon_countNoInitialParams() {
-        Request request = new Request("");
+    public void addCommon_countNoInitialParams() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "");
 
-        Requests.addCommon(internalConfig, unixTime, request);
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         Assert.assertEquals(paramsAddedByAddCommon, TestingUtilityInternal.countParams(request.params));
     }
 
     @Test
-    public void addCommon_countWithInitialParamsSingle() {
-        Request request = new Request("aasdfg=123");
+    public void addCommon_countWithInitialParamsSingle() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "aasdfg=123");
         Assert.assertEquals(1, TestingUtilityInternal.countParams(request.params));
 
-        Requests.addCommon(internalConfig, unixTime, request);
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         Assert.assertEquals(1 + paramsAddedByAddCommon, TestingUtilityInternal.countParams(request.params));
     }
 
     @Test
-    public void addCommon_countWithInitialParamsMultiple() {
-        Request request = new Request("aasdfg=123&rr=12&ff=45");
+    public void addCommon_countWithInitialParamsMultiple() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "aasdfg=123&rr=12&ff=45");
         Assert.assertEquals(3, TestingUtilityInternal.countParams(request.params));
 
-        Requests.addCommon(internalConfig, unixTime, request);
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         Assert.assertEquals(3 + paramsAddedByAddCommon, TestingUtilityInternal.countParams(request.params));
     }
 
     @Test
-    public void addCommon_noDuplicateNoInitialParams() {
-        Request request = new Request("");
-        Requests.addCommon(internalConfig, unixTime, request);
+    public void addCommon_noDuplicateNoInitialParams() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "");
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         Assert.assertEquals(true, TestingUtilityInternal.noDuplicateKeysInParams(request.params));
     }
 
     @Test
-    public void addCommon_noDuplicateWithInitialParamsSingle() {
-        Request request = new Request("aa=43");
-        Requests.addCommon(internalConfig, unixTime, request);
+    public void addCommon_noDuplicateWithInitialParamsSingle() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "aa=43");
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         Assert.assertEquals(true, TestingUtilityInternal.noDuplicateKeysInParams(request.params));
     }
 
     @Test
-    public void addCommon_noDuplicateWithInitialParamsMultiple() {
-        Request request = new Request("a=3&b=4");
-        Requests.addCommon(internalConfig, unixTime, request);
+    public void addCommon_noDuplicateWithInitialParamsMultiple() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "a=3&b=4");
+        Whitebox.<Request> invokeMethod(Requests.class, "addCommon", internalConfig, unixTime, request);
         Assert.assertEquals(true, TestingUtilityInternal.noDuplicateKeysInParams(request.params));
     }
 
     @Test
-    public void dow_days(){
+    public void dow_days() throws Exception{
         Calendar calendar = new GregorianCalendar();
 
         calendar.set(2017, 0, 16);//monday
-        Assert.assertEquals(1, Requests.dow(calendar));
+        Assert.assertEquals(1, (int)Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar));
         calendar.set(2017, 0, 17);
-        Assert.assertEquals(2, Requests.dow(calendar));
+        Assert.assertEquals(2, (int)Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar));
         calendar.set(2017, 0, 18);
-        Assert.assertEquals(3, Requests.dow(calendar));
+        Assert.assertEquals(3, (int)Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar));
         calendar.set(2017, 0, 19);
-        Assert.assertEquals(4, Requests.dow(calendar));
+        Assert.assertEquals(4, (int)Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar));
         calendar.set(2017, 0, 20);
-        Assert.assertEquals(5, Requests.dow(calendar));
+        Assert.assertEquals(5, (int)Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar));
         calendar.set(2017, 0, 21);
-        Assert.assertEquals(6, Requests.dow(calendar));
+        Assert.assertEquals(6, (int)Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar));
         calendar.set(2017, 0, 22);
-        Assert.assertEquals(0, Requests.dow(calendar));
+        Assert.assertEquals(0, (int)Whitebox.<Integer>invokeMethod(Requests.class, "dow", calendar));
     }
 }

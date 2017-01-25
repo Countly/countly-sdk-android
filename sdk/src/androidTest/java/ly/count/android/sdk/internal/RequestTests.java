@@ -8,6 +8,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,8 +36,8 @@ public class RequestTests {
     }
 
     @Test
-    public void isSuccess(){
-        Request request = new Request("a=1");
+    public void isSuccess() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
         boolean[] results = new boolean[] {false, false, false, false, false, false, true, true, true, false, false, false, false, false};
 
         for (int a = 0 ; a < results.length ; a++){
@@ -46,8 +47,8 @@ public class RequestTests {
     }
 
     @Test
-    public void isError(){
-        Request request = new Request("a=1");
+    public void isError() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
         boolean[] results = new boolean[] {false, true, true, true, true, true, false, false, false, true, true, true, true, true};
 
         for (int a = 0 ; a < results.length ; a++){
@@ -57,8 +58,8 @@ public class RequestTests {
     }
 
     @Test
-    public void isSent(){
-        Request request = new Request("a=1");
+    public void isSent() throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
         boolean[] results = new boolean[] {false, true, true, true, true, true, true, true, true, true, true, true, true, true};
 
         for (int a = 0 ; a < results.length ; a++){
@@ -68,30 +69,30 @@ public class RequestTests {
     }
 
     @Test
-    public void request_constructorString(){
+    public void request_constructorString() throws Exception{
         String paramVals = "a=1&b=2";
         Params params = new Params(paramVals);
 
-        Request request = new Request(paramVals);
+        Request request = Whitebox.invokeConstructor(Request.class, paramVals);
         Params requestParams = request.params;
         Assert.assertEquals(params.toString(), requestParams.toString());
     }
 
     @Test
-    public void request_constructorObjectsNull(){
+    public void request_constructorObjectsNull() throws Exception{
         String[] paramsVals = new String[] {"asd", "123"};
         Object[] vals = new Object[]{new Object[]{paramsVals[0], paramsVals[1]}};
-        Request request = new Request(vals);
+        Request request = Whitebox.invokeConstructor(Request.class, vals);
         Assert.assertEquals(paramsVals[0] + "=" + paramsVals[1], request.params.toString());
     }
 
     @Test
-    public void request_constructorObjects(){
+    public void request_constructorObjects() throws Exception{
         String[] paramsParts = new String[] {"abc", "123", "qwe", "456"};
         String paramVals = paramsParts[0] + "=" + paramsParts[1] + "&" + paramsParts[2] + "=" + paramsParts[3];
         Params params = new Params(paramVals);
 
-        Request request = new Request(paramsParts[0], paramsParts[1], paramsParts[2], paramsParts[3]);
+        Request request = Whitebox.invokeConstructor(Request.class, paramsParts[0], paramsParts[1], paramsParts[2], paramsParts[3]);
         Params requestParams = request.params;
         Assert.assertEquals(params.toString(), requestParams.toString());
     }
@@ -108,19 +109,19 @@ public class RequestTests {
     }
 
     @Test
-    public void request_serialize(){
+    public void request_serialize() throws Exception{
         String paramVals = "a=1&b=2";
-        Request request = new Request(paramVals);
+        Request request = Whitebox.invokeConstructor(Request.class, paramVals);
 
-        String manualSerialization = paramVals + Request.EOR;
+        String manualSerialization = paramVals + Whitebox.<String>getInternalState(Request.class, "EOR");
         String serializationRes = request.serialize();
         Assert.assertEquals(manualSerialization, serializationRes);
     }
 
     @Test
-    public void request_loadSimple() {
+    public void request_loadSimple() throws Exception{
         String paramVals = "a=1&b=2";
-        Request request = new Request(paramVals);
+        Request request = Whitebox.invokeConstructor(Request.class, paramVals);
 
         String serializationRes = request.serialize();
         Request requestNew = Request.load(serializationRes);
@@ -142,52 +143,50 @@ public class RequestTests {
 
 
     @Test
-    public void isGettable_ParamsEmptyUnderLimit() throws MalformedURLException{
-        Request request = new Request("");
+    public void isGettable_ParamsEmptyUnderLimit() throws MalformedURLException, Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, "");
         Assert.assertEquals(true, request.isGettable(url, deviceID_1));
     }
 
     @Test
-    public void isGettable_ParamsFilledAboveLimitLarge() throws MalformedURLException{
+    public void isGettable_ParamsFilledAboveLimitLarge() throws MalformedURLException, Exception{
         StringBuilder sbParams = new StringBuilder();
 
         for(int a = 0 ; a < 1000 ; a++) {
             if(a != 0) sbParams.append("&");
-            sbParams.append("qq");
-            sbParams.append(a);
-            sbParams.append("=");
-            sbParams.append(a);
+            sbParams.append("qq").append(a);
+            sbParams.append("=").append(a);
         }
 
-        Request request = new Request(sbParams.toString());
+        Request request = Whitebox.invokeConstructor(Request.class, sbParams.toString());
 
         Assert.assertEquals(false, request.isGettable(url, deviceID_1));
     }
 
     @Test
-    public void isGettable_ParamsEmptyTestLimit() throws MalformedURLException{
+    public void isGettable_ParamsEmptyTestLimit() throws MalformedURLException, Exception{
         TestingGettableLimit(paramsEmpty, urlString, url, 0, deviceIDsb);
     }
 
     @Test
-    public void isGettable_ParamsEmptyTestLimitAddition() throws MalformedURLException{
+    public void isGettable_ParamsEmptyTestLimitAddition() throws MalformedURLException, Exception{
         TestingGettableLimit(paramsEmpty, urlString, url, 234, deviceIDsb);
     }
 
     @Test
-    public void isGettable_ParamsFilledTestLimit() throws MalformedURLException{
+    public void isGettable_ParamsFilledTestLimit() throws MalformedURLException, Exception{
         TestingGettableLimit(paramsFilled, urlString, url, 0, deviceIDsb);
     }
 
     @Test
-    public void isGettable_ParamsFilledTestLimitAddition() throws MalformedURLException{
+    public void isGettable_ParamsFilledTestLimitAddition() throws MalformedURLException, Exception{
         TestingGettableLimit(paramsFilled, urlString, url, 123, deviceIDsb);
     }
 
-    private void TestingGettableLimit(String params, String givenUrlString, URL givenUrl, int addition, StringBuilder sb){
-        Request request = new Request(params);
+    private void TestingGettableLimit(String params, String givenUrlString, URL givenUrl, int addition, StringBuilder sb) throws Exception{
+        Request request = Whitebox.invokeConstructor(Request.class, params);
 
-        int theLength = givenUrlString.length() + 2 + params.length() + Request.P_DEVICE_ID.length() + addition;
+        int theLength = givenUrlString.length() + 2 + params.length() + Whitebox.<String>getInternalState(Request.class, "P_DEVICE_ID").length() + addition;
         int neededLength = GET_LIMIT - theLength;
 
         for(int a = 0 ; a < neededLength ; a++) {
