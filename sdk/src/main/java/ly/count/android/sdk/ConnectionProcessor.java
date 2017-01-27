@@ -81,7 +81,7 @@ public class ConnectionProcessor implements Runnable {
         }
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
-        if (Countly.publicKeyPinCertificates == null) {
+        if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
             conn = (HttpURLConnection)url.openConnection();
         } else {
             HttpsURLConnection c = (HttpsURLConnection)url.openConnection();

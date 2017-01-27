@@ -76,11 +76,11 @@ public class ConnectionQueue {
     void setServerURL(final String serverURL) {
         serverURL_ = serverURL;
 
-        if (Countly.publicKeyPinCertificates == null) {
+        if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
             sslContext_ = null;
         } else {
             try {
-                TrustManager tm[] = { new CertificateTrustManager(Countly.publicKeyPinCertificates) };
+                TrustManager tm[] = { new CertificateTrustManager(Countly.publicKeyPinCertificates, Countly.certificatePinCertificates) };
                 sslContext_ = SSLContext.getInstance("TLS");
                 sslContext_.init(null, tm, null);
             } catch (Throwable e) {

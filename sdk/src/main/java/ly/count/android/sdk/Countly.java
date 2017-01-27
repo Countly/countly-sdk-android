@@ -75,6 +75,7 @@ public class Countly {
     private static final long TIMER_DELAY_IN_SECONDS = 60;
 
     protected static List<String> publicKeyPinCertificates;
+    protected static List<String> certificatePinCertificates;
 
     protected static final Map<String, Event> timedEvents = new HashMap<String, Event>();
 
@@ -1080,12 +1081,25 @@ public class Countly {
      * Allows public key pinning.
      * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
      * along with server URL starting with "https://". Countly will only accept connections to the server
-     * if public key of SSL certificate provided by the server matches one provided to this method.
-     * @param certificates List of SSL certificates
+     * if public key of SSL certificate provided by the server matches one provided to this method or by {@link #enableCertificatePinning(List)}.
+     * @param certificates List of SSL public keys
      * @return Countly instance
      */
     public static Countly enablePublicKeyPinning(List<String> certificates) {
         publicKeyPinCertificates = certificates;
+        return Countly.sharedInstance();
+    }
+
+    /**
+     * Allows certificate pinning.
+     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
+     * along with server URL starting with "https://". Countly will only accept connections to the server
+     * if certificate provided by the server matches one provided to this method or by {@link #enablePublicKeyPinning(List)}.
+     * @param certificates List of SSL certificates
+     * @return Countly instance
+     */
+    public static Countly enableCertificatePinning(List<String> certificates) {
+        certificatePinCertificates = certificates;
         return Countly.sharedInstance();
     }
 
