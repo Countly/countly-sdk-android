@@ -49,7 +49,7 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "16.06.04";
+    public static final String COUNTLY_SDK_VERSION_STRING = "16.12.2";
     /**
      * Used as request meta data on every request
      */
@@ -215,15 +215,23 @@ public class Countly {
      * @throws IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
      * @throws IllegalStateException if init has previously been called with different values during the same application instance
      */
-    public synchronized Countly init(final Context context, final String serverURL, final String appKey, final String deviceID, DeviceId.Type idMode,
+    public synchronized Countly init(final Context context, String serverURL, final String appKey, final String deviceID, DeviceId.Type idMode,
                                      int starRatingLimit, CountlyStarRating.RatingCallback starRatingCallback, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
 
         if (context == null) {
             throw new IllegalArgumentException("valid context is required");
         }
+
         if (!isValidURL(serverURL)) {
             throw new IllegalArgumentException("valid serverURL is required");
         }
+        if (serverURL.charAt(serverURL.length() - 1) == '/') {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "Removing trailing '/' from provided server url");
+            }
+            serverURL = serverURL.substring(0, serverURL.length() - 1);//removing trailing '/' from server url
+        }
+
         if (appKey == null || appKey.length() == 0) {
             throw new IllegalArgumentException("valid appKey is required");
         }
