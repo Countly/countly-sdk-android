@@ -190,7 +190,7 @@ public class Core {
     SessionImpl sessionBegin(SessionImpl session){
         session.begin();
         for (Module m : Core.instance.modules) {
-            m.onSessionEnded(session);
+            m.onSessionBegan(session);
         }
         return session;
     }

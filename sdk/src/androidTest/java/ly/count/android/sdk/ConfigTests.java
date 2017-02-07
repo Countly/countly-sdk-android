@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 
-import android.content.Context;
 import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
@@ -39,6 +38,15 @@ public class ConfigTests {
 
     @Test
     public void setup_urlAndKey() throws MalformedURLException{
+        URL url = new URL(serverUrl);
+        Assert.assertEquals(serverAppKey, config.getServerAppKey());
+        Assert.assertEquals(url, config.getServerURL());
+    }
+
+    @Test
+    public void setup_urlWithTrailingSlashAndKey() throws MalformedURLException{
+        String serverUrlWithTrailing = serverUrl + "/";
+        Config config = new Config(serverUrlWithTrailing, serverAppKey);
         URL url = new URL(serverUrl);
         Assert.assertEquals(serverAppKey, config.getServerAppKey());
         Assert.assertEquals(url, config.getServerURL());
@@ -292,5 +300,45 @@ public class ConfigTests {
         Assert.assertEquals(true, features.contains(Config.Feature.Crash));
         Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertEquals(false, features.contains(Config.Feature.Push));
+    }
+
+    @Test
+    public void configVersionSameAsBuildVersion() {
+        String buildVersion = ly.count.android.sdk.BuildConfig.VERSION_NAME;
+        Assert.assertEquals(buildVersion, config.getSdkVersion());
+    }
+
+    @Test
+    public void enumFeature_values() {
+        Config.Feature[] features = Config.Feature.values();
+        Assert.assertEquals(Config.Feature.Crash, features[0]);
+        Assert.assertEquals(Config.Feature.Push, features[1]);
+        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[2]);
+    }
+
+    @Test
+    public void enumLoggingLevel_values() {
+        Config.LoggingLevel[] loggingLevels = Config.LoggingLevel.values();
+        Assert.assertEquals(Config.LoggingLevel.DEBUG, loggingLevels[0]);
+        Assert.assertEquals(Config.LoggingLevel.INFO, loggingLevels[1]);
+        Assert.assertEquals(Config.LoggingLevel.WARN, loggingLevels[2]);
+        Assert.assertEquals(Config.LoggingLevel.ERROR, loggingLevels[3]);
+        Assert.assertEquals(Config.LoggingLevel.OFF, loggingLevels[4]);
+    }
+
+    @Test
+    public void enumFeature_valueOff() {
+        Assert.assertEquals(Config.Feature.Crash, Config.Feature.valueOf("Crash"));
+        Assert.assertEquals(Config.Feature.Push, Config.Feature.valueOf("Push"));
+        Assert.assertEquals(Config.Feature.PerformanceMonitoring, Config.Feature.valueOf("PerformanceMonitoring"));
+    }
+
+    @Test
+    public void enumLoggingLevel_valueOff() {
+        Assert.assertEquals(Config.LoggingLevel.DEBUG, Config.LoggingLevel.valueOf("DEBUG"));
+        Assert.assertEquals(Config.LoggingLevel.INFO, Config.LoggingLevel.valueOf("INFO"));
+        Assert.assertEquals(Config.LoggingLevel.WARN, Config.LoggingLevel.valueOf("WARN"));
+        Assert.assertEquals(Config.LoggingLevel.ERROR, Config.LoggingLevel.valueOf("ERROR"));
+        Assert.assertEquals(Config.LoggingLevel.OFF, Config.LoggingLevel.valueOf("OFF"));
     }
 }

@@ -24,7 +24,7 @@ android {
         minSdkVersion 9
         targetSdkVersion 24
         versionCode 1
-        versionName "16.12.2"
+        versionName "17.04"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         testHandleProfiling true
@@ -51,6 +51,8 @@ android {
     }
 }
 
+def powermockVersion = "1.7.0RC2"
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -61,8 +63,9 @@ dependencies {
 
     androidTestCompile 'org.mockito:mockito-core:2.0.42-beta'
 
-    androidTestCompile "org.powermock:powermock-core:1.6.5"
-    androidTestCompile "org.powermock:powermock-module-junit4:1.6.5"
+    androidTestCompile "org.powermock:powermock-core:${powermockVersion}"
+    androidTestCompile "org.powermock:powermock-module-junit4:${powermockVersion}"
+
     androidTestCompile 'com.linkedin.dexmaker:dexmaker-mockito:2.2.0'
 
     //androidTestCompile 'org.assertj:assertj-core:3.6.2'
@@ -72,7 +75,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk'
-    version = '16.12.2'
+    version = '17.04'
     description = 'Android SDK for Countly mobile analytics'
     website = 'https://github.com/Countly/countly-sdk-android'
 }

@@ -12,6 +12,7 @@ import org.mockito.internal.matchers.Any;
 import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
+import java.util.List;
 
 import ly.count.android.sdk.Config;
 
@@ -107,5 +108,55 @@ public class ModuleSessionsTests {
         moduleSessions.onActivityStarted(contextImpl);
         moduleSessions.onActivityStopped(contextImpl);
         Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+    }
+
+    @Test
+    public void activityStopped_withSessions() throws MalformedURLException {
+        Core core = TestingUtilityInternal.setupBasicCore();
+        List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
+        SessionImpl sessionTarget = new SessionImpl(123L);
+        sessionTarget.begin().end();
+        sessions.add(sessionTarget);
+
+        moduleSessions.init(internalConfig);
+
+        moduleSessions.onActivityStarted(contextImpl);
+        moduleSessions.onActivityStarted(contextImpl);
+        Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
+        Assert.assertEquals(2, sessions.size());
+        Assert.assertEquals(2, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+
+        moduleSessions.onActivityStopped(contextImpl);
+        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+
+        Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
+        Assert.assertEquals(2, sessions.size());
+    }
+
+    @Test
+    public void activityStopped_removeSession() throws MalformedURLException {
+        Core core = TestingUtilityInternal.setupBasicCore();
+        List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
+        SessionImpl sessionTarget = new SessionImpl(123L);
+        sessionTarget.begin(234L);
+        sessionTarget.end(456L);
+
+        Assert.assertEquals(0, sessions.size());
+
+        moduleSessions.init(internalConfig);
+        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+
+        moduleSessions.onActivityStarted(contextImpl);
+        sessions.clear();
+        sessions.add(sessionTarget);
+        Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
+        Assert.assertEquals(1, sessions.size());
+        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+
+        moduleSessions.onActivityStopped(contextImpl);
+        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+
+        Assert.assertEquals(false, (boolean)sessionTarget.isLeading());
+        Assert.assertEquals(0, sessions.size());
     }
 }

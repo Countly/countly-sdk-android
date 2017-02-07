@@ -117,6 +117,11 @@ public class Config {
      * @throws MalformedURLException in case {@code serverURL} is not a valid URL
      */
     public Config(String serverURL, String serverAppKey) throws MalformedURLException {
+        //the last '/' should be deleted
+        if(serverURL != null && serverURL.length() > 0 && serverURL.charAt(serverURL.length() - 1) == '/') {
+            serverURL = serverURL.substring(0, serverURL.length() - 1);
+        }
+
         this.serverURL = new URL(serverURL);
         this.serverAppKey = serverAppKey;
         this.features = new HashSet<>();

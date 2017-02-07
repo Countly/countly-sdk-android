@@ -129,7 +129,8 @@ class SessionImpl implements Session {
      * @return calculated session duration to send in seconds
      */
     private Long updateDuration(){
-        Long duration, now = System.nanoTime();
+        Long duration = -1L;
+        Long now = System.nanoTime();
         if (updated == null) {
             duration = now - began;
         } else {

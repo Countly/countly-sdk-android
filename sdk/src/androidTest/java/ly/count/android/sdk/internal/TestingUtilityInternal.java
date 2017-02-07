@@ -2,6 +2,8 @@ package ly.count.android.sdk.internal;
 
 import junit.framework.Assert;
 
+import java.net.MalformedURLException;
+
 import ly.count.android.sdk.Config;
 
 class TestingUtilityInternal {
@@ -49,5 +51,24 @@ class TestingUtilityInternal {
         Assert.assertEquals(config.getLoggingLevel(), internalConfig.getLoggingLevel());
         Assert.assertEquals(config.getServerURL(), internalConfig.getServerURL());
         Assert.assertEquals(config.getFeatures(), internalConfig.getFeatures());
+    }
+
+    public static Config setupConfig() throws MalformedURLException {
+        String serverUrl = "http://www.serverurl.com";
+        String serverAppKey = "1234";
+        return new Config(serverUrl, serverAppKey);
+    }
+
+    public static void setupLogs() throws MalformedURLException {
+        InternalConfig internalConfig = new InternalConfig(setupConfig());
+        Log log = new Log();
+        log.init(internalConfig);
+    }
+
+    static Core setupBasicCore() throws MalformedURLException {
+        TestingUtilityInternal.setupLogs();
+        Config config = TestingUtilityInternal.setupConfig();
+        Core core = new Core(config);
+        return core;
     }
 }

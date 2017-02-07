@@ -72,7 +72,7 @@ public class ParamsTests {
     }
 
     @Test
-    public void add_objects(){
+    public void add_object(){
         String key = "key";
         String value = "value";
         String combined = key + "=" + value;
@@ -82,6 +82,21 @@ public class ParamsTests {
 
         Assert.assertEquals(combined.length(), params.length());
         Assert.assertEquals(combined, params.toString());
+    }
+
+    @Test
+    public void add_objects(){
+        String[] keys = new String[] {"key", "other_key"};
+        String[] values = new String[] {"value", "other_value"};
+        String[] combined = new String[] {keys[0] + "=" + values[0], keys[1] + "=" + values[1]};
+
+        Params params = new Params();
+        params.add(keys[0], values[0], keys[1], values[1]);
+
+        String combinedParams = combined[0] + "&" + combined[1];
+
+        Assert.assertEquals(combinedParams.length(), params.length());
+        Assert.assertEquals(combinedParams, params.toString());
     }
 
     @Test
