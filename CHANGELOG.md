@@ -1,3 +1,6 @@
+16.12.3
+  * Adding certificate pinning in addition to public key pinning
+
 16.12.02
   * Changing automatic star rating default behaviour (disabling it)
   * Removing Context as a needed field from some function calls
