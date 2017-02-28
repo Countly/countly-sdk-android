@@ -486,6 +486,13 @@ public class Countly {
     }
 
     /**
+     * DON'T USE THIS!!!!
+     */
+    public void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
+        connectionQueue_.tokenSession(registrationId, mode);
+    }
+
+    /**
      * Changes current device id type to the one specified in parameter. Closes current session and
      * reopens new one with new id. Doesn't merge user profiles on the server
      * @param type Device ID type to change to
