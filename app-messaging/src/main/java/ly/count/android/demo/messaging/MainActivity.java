@@ -32,9 +32,9 @@ public class MainActivity extends Activity {
 
         Countly.sharedInstance()
                 .init(this, COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
-                .initMessaging(this, MainActivity.class, COUNTLY_MESSAGING_PROJECT_ID, Countly.CountlyMessagingMode.TEST);
+                .initMessaging(this, MainActivity.class, COUNTLY_MESSAGING_PROJECT_ID, Countly.CountlyMessagingMode.TEST)
 //                .setLocation(LATITUDE, LONGITUDE);
-//                .setLoggingEnabled(true);
+                .setLoggingEnabled(true);
 
         Countly.sharedInstance().recordEvent("test", 1);
 

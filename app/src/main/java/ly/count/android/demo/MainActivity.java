@@ -34,15 +34,12 @@ public class MainActivity extends Activity {
 
         Context appC = getApplicationContext();
 
-        //Countly.sharedInstance().setLoggingEnabled(true);
-        //enableCrashTracking();
-
         Countly.onCreate(this);
-        Countly.sharedInstance()
-        .init(appC, COUNTLY_SERVER_URL, COUNTLY_APP_KEY);
-
+        Countly.sharedInstance().setLoggingEnabled(true);
+        Countly.sharedInstance().enableCrashReporting();
         //Countly.sharedInstance().setHttpPostForced(true);
-        //Countly.sharedInstance().setOptionalParametersForInitialization("tt", null, null);
+        Countly.sharedInstance().init(appC, COUNTLY_SERVER_URL, COUNTLY_APP_KEY);
+
     }
 
     public void onClickButtonCustomEvents(View v) {

@@ -101,20 +101,20 @@ public class ConnectionProcessor implements Runnable {
             Log.v(Countly.TAG, "Is the HTTP POST forced: " + Countly.sharedInstance().isHttpPostForced());
         }
         if(!picturePath.equals("")){
-        	//Uploading files:
-        	//http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
-        	
-        	File binaryFile = new File(picturePath);
-        	conn.setDoOutput(true);
-        	// Just generate some unique random value.
-        	String boundary = Long.toHexString(System.currentTimeMillis());
-        	// Line separator required by multipart/form-data.
-        	String CRLF = "\r\n";
-        	String charset = "UTF-8";
-        	conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-        	OutputStream output = conn.getOutputStream();
-        	PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
-        	// Send binary file.
+            //Uploading files:
+            //http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
+
+            File binaryFile = new File(picturePath);
+            conn.setDoOutput(true);
+            // Just generate some unique random value.
+            String boundary = Long.toHexString(System.currentTimeMillis());
+            // Line separator required by multipart/form-data.
+            String CRLF = "\r\n";
+            String charset = "UTF-8";
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            OutputStream output = conn.getOutputStream();
+            PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
+            // Send binary file.
             writer.append("--" + boundary).append(CRLF);
             writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"" + binaryFile.getName() + "\"").append(CRLF);
             writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
@@ -137,21 +137,26 @@ public class ConnectionProcessor implements Runnable {
             // End of multipart/form-data.
             writer.append("--" + boundary + "--").append(CRLF).flush();
         }
-        else if(eventData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Using post");
+        else {
+            if(eventData.contains("&crash=") || eventData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Using HTTP POST");
+                }
+                conn.setDoOutput(true);
+                conn.setRequestMethod("POST");
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                writer.write(eventData);
+                writer.flush();
+                writer.close();
+                os.close();
             }
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            OutputStream os = conn.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-            writer.write(eventData);
-            writer.flush();
-            writer.close();
-            os.close();
-        }
-        else{
-        	conn.setDoOutput(false);
+            else{
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Using HTTP GET");
+                }
+                conn.setDoOutput(false);
+            }
         }
         return conn;
     }
@@ -195,61 +200,70 @@ public class ConnectionProcessor implements Runnable {
                 eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
             }
 
-            URLConnection conn = null;
-            try {
-                // initialize and open connection
-                conn = urlConnectionForEventData(eventData);
-                conn.connect();
+            if(!Countly.sharedInstance().isDeviceAppCrawler() && Countly.sharedInstance().ifShouldIgnoreCrawlers()) {
+                //continue with sending the request to the server
+                URLConnection conn = null;
+                try {
+                    // initialize and open connection
+                    conn = urlConnectionForEventData(eventData);
+                    conn.connect();
 
-                // response code has to be 2xx to be considered a success
-                boolean success = true;
-                final int responseCode;
-                if (conn instanceof HttpURLConnection) {
-                    final HttpURLConnection httpConn = (HttpURLConnection) conn;
-                    responseCode = httpConn.getResponseCode();
-                    success = responseCode >= 200 && responseCode < 300;
-                    if (!success && Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
+                    // response code has to be 2xx to be considered a success
+                    boolean success = true;
+                    final int responseCode;
+                    if (conn instanceof HttpURLConnection) {
+                        final HttpURLConnection httpConn = (HttpURLConnection) conn;
+                        responseCode = httpConn.getResponseCode();
+                        success = responseCode >= 200 && responseCode < 300;
+                        if (!success && Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.w(Countly.TAG, "HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
+                        }
+                    } else {
+                        responseCode = 0;
                     }
-                } else {
-                    responseCode = 0;
-                }
 
-                // HTTP response code was good, check response JSON contains {"result":"Success"}
-                if (success) {
+                    // HTTP response code was good, check response JSON contains {"result":"Success"}
+                    if (success) {
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "ok ->" + eventData);
+                        }
+
+                        // successfully submitted event data to Count.ly server, so remove
+                        // this one from the stored events collection
+                        store_.removeConnection(storedEvents[0]);
+
+                        if (deviceIdChange) {
+                            deviceId_.changeToDeveloperId(store_, newId);
+                        }
+                    } else if (responseCode >= 400 && responseCode < 500) {
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "fail " + responseCode + " ->" + eventData);
+                        }
+                        store_.removeConnection(storedEvents[0]);
+                    } else {
+                        // warning was logged above, stop processing, let next tick take care of retrying
+                        break;
+                    }
+                } catch (Exception e) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "ok ->" + eventData);
+                        Log.w(Countly.TAG, "Got exception while trying to submit event data: " + eventData, e);
                     }
-
-                    // successfully submitted event data to Count.ly server, so remove
-                    // this one from the stored events collection
-                    store_.removeConnection(storedEvents[0]);
-
-                    if (deviceIdChange) {
-                        deviceId_.changeToDeveloperId(store_, newId);
-                    }
-                } else if (responseCode >= 400 && responseCode < 500) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "fail " + responseCode + " ->" + eventData);
-                    }
-                    store_.removeConnection(storedEvents[0]);
-                } else {
-                    // warning was logged above, stop processing, let next tick take care of retrying
+                    // if exception occurred, stop processing, let next tick take care of retrying
                     break;
+                } finally {
+                    // free connection resources
+                    if (conn != null && conn instanceof HttpURLConnection) {
+                        ((HttpURLConnection) conn).disconnect();
+                    }
                 }
-            }
-            catch (Exception e) {
+            } else {
+                //device is identified as a app crawler and nothing is sent to the server
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Got exception while trying to submit event data: " + eventData, e);
+                    Log.i(Countly.TAG, "Device identified as a app crawler, skipping request " + storedEvents[0]);
                 }
-                // if exception occurred, stop processing, let next tick take care of retrying
-                break;
-            }
-            finally {
-                // free connection resources
-                if (conn != null && conn instanceof HttpURLConnection) {
-                    ((HttpURLConnection)conn).disconnect();
-                }
+
+                //remove stored data
+                store_.removeConnection(storedEvents[0]);
             }
         }
     }

@@ -31,6 +31,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +124,11 @@ public class Countly {
     private String optionalParameterCountryCode = null;
     private String optionalParameterCity = null;
     private String optionalParameterLocation = null;
+
+    //app crawlers
+    private boolean shouldIgnoreCrawlers = true;//ignore app crawlers by default
+    private boolean deviceIsAppCrawler = false;//by default assume that device is not a app crawler
+    private List<String> appCrawlerNames = new ArrayList<>(Arrays.asList("Calypso AppCrawler"));//List against which device name is checked to determine if device is app crawler
 
     //star rating
     private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
@@ -249,8 +256,8 @@ public class Countly {
             throw new IllegalArgumentException("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
         }
         if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(serverURL) ||
-                                    !connectionQueue_.getAppKey().equals(appKey) ||
-                                    !DeviceId.deviceIDEqualsNullSafe(deviceID, idMode, connectionQueue_.getDeviceId()) )) {
+                !connectionQueue_.getAppKey().equals(appKey) ||
+                !DeviceId.deviceIDEqualsNullSafe(deviceID, idMode, connectionQueue_.getDeviceId()) )) {
             throw new IllegalStateException("Countly cannot be reinitialized with different values");
         }
 
@@ -263,6 +270,9 @@ public class Countly {
         //set the star rating values
         starRatingCallback_ = starRatingCallback;
         CountlyStarRating.setStarRatingInitConfig(context, starRatingLimit, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+
+        //app crawler check
+        checkIfDeviceIsAppCrawler();
 
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
@@ -508,10 +518,10 @@ public class Countly {
     }
 
     /**
-      * Changes current device id to the one specified in parameter. Merges user profile with new id
-      * (if any) with old profile.
-      * @param deviceId new device id
-      */
+     * Changes current device id to the one specified in parameter. Merges user profile with new id
+     * (if any) with old profile.
+     * @param deviceId new device id
+     */
     public void changeDeviceId(String deviceId) {
         if (eventQueue_ == null) {
             throw new IllegalStateException("init must be called before changeDeviceId");
@@ -1216,6 +1226,51 @@ public class Countly {
 
     public String getOptionalParameterLocation() {
         return optionalParameterLocation;
+    }
+
+    private void checkIfDeviceIsAppCrawler(){
+        String deviceName = DeviceInfo.getDevice();
+
+        for(int a = 0 ; a < appCrawlerNames.size() ; a++) {
+            if(deviceName.equals(appCrawlerNames.get(a))){
+                deviceIsAppCrawler = true;
+                return;
+            }
+        }
+    }
+
+    /**
+     * Set if Countly SDK should ignore app crawlers
+     * @param shouldIgnore if crawlers should be ignored
+     */
+    public void setShouldIgnoreCrawlers(boolean shouldIgnore){
+        shouldIgnoreCrawlers = shouldIgnore;
+    }
+
+    /**
+     * Add app crawler device name to the list of names that should be ignored
+     * @param crawlerName the name to be ignored
+     */
+    public void addAppCrawlerName(String crawlerName) {
+        if(crawlerName != null && !crawlerName.isEmpty()) {
+            appCrawlerNames.add(crawlerName);
+        }
+    }
+
+    /**
+     * Return if current device is detected as a app crawler
+     * @return returns if devices is detected as a app crawler
+     */
+    public boolean isDeviceAppCrawler() {
+        return deviceIsAppCrawler;
+    }
+
+    /**
+     * Return if the countly sdk should ignore app crawlers
+     * @return
+     */
+    public boolean ifShouldIgnoreCrawlers(){
+        return shouldIgnoreCrawlers;
     }
 
     // for unit testing
