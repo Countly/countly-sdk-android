@@ -51,7 +51,7 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "16.12.2";
+    public static final String COUNTLY_SDK_VERSION_STRING = "16.12.3";
     /**
      * Used as request meta data on every request
      */
@@ -493,6 +493,13 @@ public class Countly {
      */
     public void onRegistrationId(String registrationId) {
         connectionQueue_.tokenSession(registrationId, messagingMode_);
+    }
+
+    /**
+     * DON'T USE THIS!!!!
+     */
+    public void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
+        connectionQueue_.tokenSession(registrationId, mode);
     }
 
     /**
