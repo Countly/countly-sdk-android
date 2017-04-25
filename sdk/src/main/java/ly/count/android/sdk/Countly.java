@@ -133,6 +133,8 @@ public class Countly {
     //star rating
     private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
 
+    //internal state checks
+    private boolean initWasCalled = false;
     /**
      * Returns the Countly singleton.
      */
@@ -273,6 +275,9 @@ public class Countly {
 
         //app crawler check
         checkIfDeviceIsAppCrawler();
+
+        //mark internally that init was called
+        initWasCalled = true;
 
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
@@ -1278,6 +1283,14 @@ public class Countly {
      */
     public boolean ifShouldIgnoreCrawlers(){
         return shouldIgnoreCrawlers;
+    }
+
+    /**
+     * Returns if the init function was called at least once
+     * @return if the init function was called
+     */
+    public boolean isInitCalled() {
+        return initWasCalled;
     }
 
     // for unit testing

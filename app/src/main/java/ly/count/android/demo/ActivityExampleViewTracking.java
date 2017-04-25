@@ -6,10 +6,6 @@ import android.view.View;
 
 import ly.count.android.sdk.Countly;
 
-/**
- * Created by Arturs on 21.12.2016..
- */
-
 public class ActivityExampleViewTracking extends Activity {
     Activity activity;
 

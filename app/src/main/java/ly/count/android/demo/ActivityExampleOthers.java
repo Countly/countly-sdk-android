@@ -9,10 +9,6 @@ import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStarRating;
 import ly.count.android.sdk.DeviceId;
 
-/**
- * Created by Arturs on 21.12.2016..
- */
-
 public class ActivityExampleOthers extends Activity {
     Activity activity;
 

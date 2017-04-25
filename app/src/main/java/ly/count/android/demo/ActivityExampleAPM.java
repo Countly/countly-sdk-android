@@ -5,10 +5,6 @@ import android.os.Bundle;
 
 import ly.count.android.sdk.Countly;
 
-/**
- * Created by Arturs on 21.12.2016..
- */
-
 public class ActivityExampleAPM extends Activity {
     Activity activity;
 

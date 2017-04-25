@@ -8,10 +8,6 @@ import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
 
-/**
- * Created by Arturs on 21.12.2016..
- */
-
 public class ActivityExampleUserDetails extends Activity {
     Activity activity;
 
