@@ -39,9 +39,9 @@ public class MainActivity extends Activity {
         Countly.sharedInstance().setLoggingEnabled(true);
         Countly.sharedInstance().enableCrashReporting();
         //Countly.sharedInstance().setHttpPostForced(true);
-        //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitCalled());
+        //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
         Countly.sharedInstance().init(appC, COUNTLY_SERVER_URL, COUNTLY_APP_KEY);
-        //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitCalled());
+        //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
     }
 
