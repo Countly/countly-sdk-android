@@ -19,6 +19,7 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,6 +35,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
     protected static final String NOTIFICATION_SHOW_DIALOG = "ly.count.android.api.messaging.dialog";
     protected static final String EXTRA_MESSAGE = "ly.count.android.api.messaging.message";
+    protected static final String EXTRA_ACTION_INDEX = "ly.count.android.api.messaging.action.index";
 
     protected static final String EVENT_OPEN    = "[CLY]_push_open";
     protected static final String EVENT_ACTION  = "[CLY]_push_action";
@@ -49,6 +51,9 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
     protected static final int NOTIFICATION_TYPE_SOUND_DEFAULT    = 1 << 4;
     protected static final int NOTIFICATION_TYPE_SOUND_URI        = 1 << 5;
+    protected static final int NOTIFICATION_TYPE_TITLE            = 1 << 6;
+    protected static final int NOTIFICATION_TYPE_MEDIA            = 1 << 7;
+    protected static final int NOTIFICATION_TYPE_BUTTONS          = 1 << 8;
 
     /**
      * Action for Countly Messaging BroadcastReceiver.
@@ -314,6 +319,16 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         }
         Map<String, String> segmentation = new HashMap<String, String>();
         segmentation.put("i", messageId);
+        Countly.sharedInstance().recordEvent(EVENT_ACTION, segmentation, 1);
+    }
+
+    public static void recordMessageAction(String messageId, int btnIndex) {
+        if (!Countly.sharedInstance().isInitialized()) {
+            CountlyMessaging.initCountly(getContext());
+        }
+        Map<String, String> segmentation = new HashMap<String, String>();
+        segmentation.put("i", messageId);
+        segmentation.put("b", "" + btnIndex);
         Countly.sharedInstance().recordEvent(EVENT_ACTION, segmentation, 1);
     }
 

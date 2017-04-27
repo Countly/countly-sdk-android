@@ -4,8 +4,16 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import ly.count.android.sdk.Countly;
 
@@ -29,35 +37,105 @@ public class ProxyActivity extends Activity {
         super.onStart();
 
         Bundle extras = getIntent().getExtras();
-        if(extras != null) {
+        if (extras != null) {
             final Message msg = extras.getParcelable(CountlyMessaging.EXTRA_MESSAGE);
 
             if (msg != null) {
                 if (extras.containsKey(CountlyMessaging.NOTIFICATION_SHOW_DIALOG)) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle(msg.getNotificationTitle(this))
-                            .setMessage(msg.getNotificationMessage());
+                    builder.setTitle(msg.getNotificationTitle(this));
+                    builder.setCancelable(true)
+                            .setOnCancelListener(new DialogInterface.OnCancelListener() {
+                                @Override
+                                public void onCancel(DialogInterface dialog) {
+                                    finish();
+                                }
+                            });
+                    if (msg.hasMedia()) {
+                        if (msg.hasButtons()) {
+                            final String[] titles = new String[msg.getButtons().size()];
+                            for (int i = 0; i < msg.getButtons().size(); i++) {
+                                titles[i] = msg.getButtons().get(i).title;
+                            }
+                            builder.setItems(titles, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    CountlyMessaging.recordMessageAction(msg.getId(), which + 1);
+                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which).link)));
+                                    finish();
+                                }
+                            });
+                        }
 
-                    if (msg.hasLink()) {
-                        builder.setCancelable(true)
-                                .setPositiveButton(CountlyMessaging.buttonNames[0], new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        CountlyMessaging.recordMessageAction(msg.getId());
-                                        finish();
-                                        Intent activity = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass(ProxyActivity.this));
-                                        if(activity != null)
-                                            startActivity(activity);
-                                    }
-                                })
-                                .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                                    @Override
-                                    public void onCancel(DialogInterface dialog) {
-                                        finish();
-                                    }
-                                });
+                        LinearLayout layout = new LinearLayout(this);
+                        layout.setBackgroundColor(Color.TRANSPARENT);
+                        layout.setOrientation(LinearLayout.VERTICAL);
+
+                        ImageView imageView = new ImageView(this);
+                        imageView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
+                        if (msg.hasMedia() && Message.getFromStore(msg.getMedia()) != null) {
+                            imageView.setImageBitmap((Bitmap)Message.getFromStore(msg.getMedia()));
+                        }
+                        imageView.setScaleType(ImageView.ScaleType.FIT_XY);
+                        layout.addView(imageView);
+
+                        if (msg.hasMessage()) {
+                            int padding = (int) (10 * getResources().getDisplayMetrics().density + 0.5f);
+
+                            TextView textview = new TextView(this);
+                            textview.setText(msg.getMessage());
+                            textview.setPadding(padding, padding, padding, padding);
+                            layout.addView(textview);
+                        }
+
+                        builder.setView(layout);
+                    } else if (msg.hasLink()) {
+                        if (msg.hasMessage()){
+                            builder.setMessage(msg.getNotificationMessage());
+                        }
+                        if (msg.hasButtons()) {
+                            final String[] titles = new String[msg.getButtons().size()];
+                            for (int i = 0; i < msg.getButtons().size(); i++) {
+                                titles[i] = msg.getButtons().get(i).title;
+                            }
+                            builder.setItems(titles, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    CountlyMessaging.recordMessageAction(msg.getId(), which + 1);
+                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which).link)));
+                                    finish();
+                                }
+                            });
+                        } else {
+                            builder.setPositiveButton(CountlyMessaging.buttonNames[0], new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                CountlyMessaging.recordMessageAction(msg.getId(), 0);
+                                finish();
+                                Intent activity = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass(ProxyActivity.this));
+                                if(activity != null)
+                                    startActivity(activity);
+                                }
+                            });
+                        }
                     } else if (msg.hasMessage()) {
-                        CountlyMessaging.recordMessageAction(msg.getId());
+                        if (msg.hasButtons()) {
+                            final String[] titles = new String[msg.getButtons().size()];
+                            for (int i = 0; i < msg.getButtons().size(); i++) {
+                                titles[i] = msg.getButtons().get(i).title;
+                            }
+                            builder.setItems(titles, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    CountlyMessaging.recordMessageAction(msg.getId(), which + 1);
+                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which).link)));
+                                    finish();
+                                }
+                            });
+                        } else {
+                            CountlyMessaging.recordMessageAction(msg.getId());
+                        }
+                        builder.setMessage(msg.getNotificationMessage());
                         builder.setCancelable(true);
                         builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
                             @Override
@@ -71,13 +149,18 @@ public class ProxyActivity extends Activity {
 
                     builder.create().show();
                 } else {
-                    CountlyMessaging.recordMessageAction(msg.getId());
+                    if (extras.containsKey(CountlyMessaging.EXTRA_ACTION_INDEX)) {
+                        CountlyMessaging.recordMessageAction(msg.getId(), extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX));
+                    } else {
+                        CountlyMessaging.recordMessageAction(msg.getId());
+                    }
                     Intent activity = msg.getIntent(this, CountlyMessaging.getActivityClass(this));
-                    if (activity != null)
+                    if (activity != null) {
                         startActivity(activity);
-                    else
+                    } else {
                         Log.e(Countly.TAG, "Countly Message with UNKNOWN type in ProxyActivity");
 //                        throw new IllegalStateException("Countly Message with UNKNOWN type in ProxyActivity");
+                    }
                 }
             }
         }
