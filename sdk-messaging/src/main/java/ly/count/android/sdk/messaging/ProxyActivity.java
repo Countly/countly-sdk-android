@@ -2,12 +2,15 @@ package ly.count.android.sdk.messaging;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.widget.FrameLayout;
@@ -52,20 +55,7 @@ public class ProxyActivity extends Activity {
                                 }
                             });
                     if (msg.hasMedia()) {
-                        if (msg.hasButtons()) {
-                            final String[] titles = new String[msg.getButtons().size()];
-                            for (int i = 0; i < msg.getButtons().size(); i++) {
-                                titles[i] = msg.getButtons().get(i).title;
-                            }
-                            builder.setItems(titles, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    CountlyMessaging.recordMessageAction(msg.getId(), which + 1);
-                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which).link)));
-                                    finish();
-                                }
-                            });
-                        }
+                        addButtons(builder, msg);
 
                         LinearLayout layout = new LinearLayout(this);
                         layout.setBackgroundColor(Color.TRANSPARENT);
@@ -94,18 +84,7 @@ public class ProxyActivity extends Activity {
                             builder.setMessage(msg.getNotificationMessage());
                         }
                         if (msg.hasButtons()) {
-                            final String[] titles = new String[msg.getButtons().size()];
-                            for (int i = 0; i < msg.getButtons().size(); i++) {
-                                titles[i] = msg.getButtons().get(i).title;
-                            }
-                            builder.setItems(titles, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    CountlyMessaging.recordMessageAction(msg.getId(), which + 1);
-                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which).link)));
-                                    finish();
-                                }
-                            });
+                            addButtons(builder, msg);
                         } else {
                             builder.setPositiveButton(CountlyMessaging.buttonNames[0], new DialogInterface.OnClickListener() {
                                 @Override
@@ -120,18 +99,7 @@ public class ProxyActivity extends Activity {
                         }
                     } else if (msg.hasMessage()) {
                         if (msg.hasButtons()) {
-                            final String[] titles = new String[msg.getButtons().size()];
-                            for (int i = 0; i < msg.getButtons().size(); i++) {
-                                titles[i] = msg.getButtons().get(i).title;
-                            }
-                            builder.setItems(titles, new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    CountlyMessaging.recordMessageAction(msg.getId(), which + 1);
-                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which).link)));
-                                    finish();
-                                }
-                            });
+                            addButtons(builder, msg);
                         } else {
                             CountlyMessaging.recordMessageAction(msg.getId());
                         }
@@ -149,11 +117,6 @@ public class ProxyActivity extends Activity {
 
                     builder.create().show();
                 } else {
-                    if (extras.containsKey(CountlyMessaging.EXTRA_ACTION_INDEX)) {
-                        CountlyMessaging.recordMessageAction(msg.getId(), extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX));
-                    } else {
-                        CountlyMessaging.recordMessageAction(msg.getId());
-                    }
                     Intent activity = msg.getIntent(this, CountlyMessaging.getActivityClass(this));
                     if (activity != null) {
                         startActivity(activity);
@@ -161,9 +124,57 @@ public class ProxyActivity extends Activity {
                         Log.e(Countly.TAG, "Countly Message with UNKNOWN type in ProxyActivity");
 //                        throw new IllegalStateException("Countly Message with UNKNOWN type in ProxyActivity");
                     }
+                    Log.d(Countly.TAG, TextUtils.join(", ", extras.keySet()));
+                    if (extras.containsKey(CountlyMessaging.EXTRA_ACTION_INDEX)) {
+                        CountlyMessaging.recordMessageAction(msg.getId(), extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX));
+                        for (Message.Button button : msg.getButtons()) {
+                            if (button.index == extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX)) {
+                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(button.link)));
+                                break;
+                            }
+                        }
+                    } else {
+                        CountlyMessaging.recordMessageAction(msg.getId());
+                        if (msg.hasLink()) {
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getLink())));
+                        }
+                    }
+                    finish();
+                    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    manager.cancel(msg.getId().hashCode());
                 }
             }
         }
+    }
+
+    private void addButtons(final AlertDialog.Builder builder, final Message msg) {
+        if (msg.hasButtons()) {
+//                            final String[] titles = new String[msg.getButtons().size()];
+//                            for (int i = 0; i < msg.getButtons().size(); i++) {
+//                                titles[i] = msg.getButtons().get(i).title;
+//                            }
+//                            builder.setItems(titles, new DialogInterface.OnClickListener() {
+//                                @Override
+//                                public void onClick(DialogInterface dialog, int which) {
+//                                    CountlyMessaging.recordMessageAction(msg.getId(), which + 1);
+//                                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which).link)));
+//                                    finish();
+//                                }
+//                            });
+            DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    CountlyMessaging.recordMessageAction(msg.getId(), which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getButtons().get(which == DialogInterface.BUTTON_POSITIVE ? 0 : 1).link)));
+                    finish();
+                }
+            };
+            builder.setPositiveButton(msg.getButtons().get(0).title, listener);
+            if (msg.getButtons().size() > 1) {
+                builder.setNeutralButton(msg.getButtons().get(1).title, listener);
+            }
+        }
+
     }
 
     @Override

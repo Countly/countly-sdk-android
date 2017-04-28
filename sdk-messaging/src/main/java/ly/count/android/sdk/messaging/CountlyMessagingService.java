@@ -123,6 +123,7 @@ public class CountlyMessagingService extends IntentService {
             }
 
             for (Message.Button button : msg.getButtons()) {
+                Log.d(Countly.TAG, button.index + " " + button.link);
                 Intent actionIntent = (Intent) proxy.clone();
                 actionIntent.putExtra(CountlyMessaging.EXTRA_ACTION_INDEX, button.index);
                 builder.addAction(0, button.title, PendingIntent.getActivity(getApplicationContext(), button.index, actionIntent, PendingIntent.FLAG_UPDATE_CURRENT));
@@ -134,7 +135,7 @@ public class CountlyMessagingService extends IntentService {
                 builder.setSound(Uri.parse(msg.getSoundUri()));
             }
 
-            manager.notify(NOTIFICATION_ID, builder.build());
+            manager.notify(msg.getId().hashCode(), builder.build());
         }
     }
 
