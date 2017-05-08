@@ -124,7 +124,6 @@ public class ProxyActivity extends Activity {
                         Log.e(Countly.TAG, "Countly Message with UNKNOWN type in ProxyActivity");
 //                        throw new IllegalStateException("Countly Message with UNKNOWN type in ProxyActivity");
                     }
-                    Log.d(Countly.TAG, TextUtils.join(", ", extras.keySet()));
                     if (extras.containsKey(CountlyMessaging.EXTRA_ACTION_INDEX)) {
                         CountlyMessaging.recordMessageAction(msg.getId(), extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX));
                         for (Message.Button button : msg.getButtons()) {
@@ -134,7 +133,7 @@ public class ProxyActivity extends Activity {
                             }
                         }
                     } else {
-                        CountlyMessaging.recordMessageAction(msg.getId());
+                        CountlyMessaging.recordMessageAction(msg.getId(), 0);
                         if (msg.hasLink()) {
                             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getLink())));
                         }

@@ -116,10 +116,14 @@ public class CountlyMessagingService extends IntentService {
                     .setTicker(msg.getNotificationMessage())
                     .setContentTitle(msg.getNotificationTitle(getApplicationContext()))
                     .setContentText(msg.getNotificationMessage())
-                    .setContentIntent(contentIntent);
+                    .setContentIntent(contentIntent)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(msg.getNotificationMessage()).setBigContentTitle(msg.getNotificationTitle(getApplicationContext())));
 
             if (msg.hasMedia() && Message.getFromStore(msg.getMedia()) != null) {
-                builder.setLargeIcon((Bitmap)Message.getFromStore(msg.getMedia()));
+                builder.setStyle(new NotificationCompat.BigPictureStyle()
+                        .bigPicture((Bitmap)Message.getFromStore(msg.getMedia()))
+                        .setBigContentTitle(msg.getNotificationTitle(getApplicationContext()))
+                        .setSummaryText(msg.getNotificationMessage()));
             }
 
             for (Message.Button button : msg.getButtons()) {
