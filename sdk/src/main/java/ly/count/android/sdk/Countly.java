@@ -972,7 +972,7 @@ public class Countly {
      * Returns if the countly sdk onStart function has been called at least once
      * @return true - yes, it has, false - no it has not
      */
-    public synchronized boolean HasBeenCalledOnStart() {
+    public synchronized boolean hasBeenCalledOnStart() {
         return calledAtLeastOnceOnStart;
     }
 
