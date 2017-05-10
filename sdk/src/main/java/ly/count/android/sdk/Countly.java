@@ -133,6 +133,8 @@ public class Countly {
     //star rating
     private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
 
+    //internal flags
+    private boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
 
     /**
      * Returns the Countly singleton.
@@ -438,6 +440,8 @@ public class Countly {
         if(autoViewTracker){
             recordView(activity.getClass().getName());
         }
+
+        calledAtLeastOnceOnStart = true;
     }
 
     /**
@@ -962,6 +966,14 @@ public class Countly {
     public synchronized Countly enableParameterTamperingProtection(String salt) {
         ConnectionProcessor.salt = salt;
         return this;
+    }
+
+    /**
+     * Returns if the countly sdk onStart function has been called at least once
+     * @return true - yes, it has, false - no it has not
+     */
+    public synchronized boolean HasBeenCalledOnStart() {
+        return calledAtLeastOnceOnStart;
     }
 
     public synchronized Countly setEventQueueSizeToSend(int size) {
