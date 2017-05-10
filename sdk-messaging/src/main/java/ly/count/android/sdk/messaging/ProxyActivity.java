@@ -62,11 +62,12 @@ public class ProxyActivity extends Activity {
                         layout.setOrientation(LinearLayout.VERTICAL);
 
                         ImageView imageView = new ImageView(this);
-                        imageView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM));
+                        imageView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP));
                         if (msg.hasMedia() && Message.getFromStore(msg.getMedia()) != null) {
                             imageView.setImageBitmap((Bitmap)Message.getFromStore(msg.getMedia()));
                         }
-                        imageView.setScaleType(ImageView.ScaleType.FIT_XY);
+                        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                        imageView.setAdjustViewBounds(true);
                         layout.addView(imageView);
 
                         if (msg.hasMessage()) {
