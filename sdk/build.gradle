@@ -11,14 +11,14 @@ buildscript {
 }
 
 android {
-    compileSdkVersion 24
-    buildToolsVersion "24.0.3"
+    compileSdkVersion 25
+    buildToolsVersion "25.0.3"
 
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 24
+        targetSdkVersion 25
         versionCode 1
-        versionName "16.12.3"
+        versionName "17.05"
 
         testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
         testHandleProfiling true
@@ -55,7 +55,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk'
-    version = '16.12.3'
+    version = '17.05'
     description = 'Android SDK for Countly mobile analytics'
     website = 'https://github.com/Countly/countly-sdk-android'
 }
