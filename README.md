@@ -6,14 +6,11 @@ We're hiring: Countly is looking for Android SDK developers, full stack devs, de
 * **Questions?** [Ask in our Community forum](http://community.count.ly)
 
 ## What's Countly?
-[Countly](http://count.ly) is an innovative, real-time, open source mobile analytics application. 
-It collects data from mobile devices, and visualizes this information to analyze mobile application 
-usage and end-user behavior. There are two parts of Countly: the server that collects and analyzes data, 
-and mobile SDK that sends this data. Both parts are open source with different licensing terms.
+[Countly](http://count.ly) is an innovative, real-time, open source mobile analytics application. It collects data from mobile devices, and visualizes this information to analyze mobile application usage and end-user behavior. There are two parts of Countly: the server that collects and analyzes data, and mobile SDK that sends this data. Both parts are open source with different licensing terms.
 
 ## About
 
-This repository includes the Countly Android SDK.
+This repository includes the Countly Android SDK. It can also be used to get user insights from Android TV or Wear devices.
 
 Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly), or ask us on our [Countly Analytics Community Slack channel](http://slack.count.ly:3000/).
 
