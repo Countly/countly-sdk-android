@@ -1,3 +1,9 @@
+17.05
+  * Added Rich Push Notifications support (attachments and custom action buttons)
+  * Added functionality to ignore app crawlers
+  * Added calls to retrieve device ID and ID type
+  * Added call see if onStart has been called at least once
+
 16.12.3
   * Adding certificate pinning in addition to public key pinning
 
