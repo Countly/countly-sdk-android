@@ -21,47 +21,48 @@ public class ActivityExampleCrashReporting extends Activity {
     }
 
     public void onClickCrashReporting01(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 1");
+        Countly.sharedInstance().addCrashLog("Unrecognized selector crash");
     }
 
     public void onClickCrashReporting02(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 2");
+        Countly.sharedInstance().addCrashLog("Out of bounds crash");
         int[] data = new int[]{};
         data[0] = 9;
     }
 
     public void onClickCrashReporting03(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 3");
+        Countly.sharedInstance().addCrashLog("Null pointer crash");
         Countly.sharedInstance().crashTest(3);
     }
 
     public void onClickCrashReporting04(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 4");
+        Countly.sharedInstance().addCrashLog("Invalid Geometry crash");
     }
 
     public void onClickCrashReporting05(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 5");
+        Countly.sharedInstance().addCrashLog("Assert fail crash");
         Assert.assertEquals(1, 0);
     }
 
     public void onClickCrashReporting06(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 6");
+        Countly.sharedInstance().addCrashLog("Kill process crash");
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     public void onClickCrashReporting07(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 7");
+        Countly.sharedInstance().addCrashLog("Custom crash log crash");
         Countly.sharedInstance().addCrashLog("Adding some custom crash log");
-        Countly.sharedInstance().crashTest(1);
+        Countly.sharedInstance().crashTest(2);
     }
 
     public void onClickCrashReporting08(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 8");
+        Countly.sharedInstance().addCrashLog("Recording handled exception 1");
         Countly.sharedInstance().logException(new Exception("A logged exception"));
+        Countly.sharedInstance().addCrashLog("Recording handled exception 3");
     }
 
     public void onClickCrashReporting09(View v) throws Exception {
-        Countly.sharedInstance().addCrashLog("Crash log 9");
+        Countly.sharedInstance().addCrashLog("Unhandled exception info");
         throw new Exception("A unhandled uxception");
     }
 

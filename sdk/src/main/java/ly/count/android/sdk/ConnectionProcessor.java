@@ -200,7 +200,7 @@ public class ConnectionProcessor implements Runnable {
                 eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
             }
 
-            if(!Countly.sharedInstance().isDeviceAppCrawler() && Countly.sharedInstance().ifShouldIgnoreCrawlers()) {
+            if(!(Countly.sharedInstance().isDeviceAppCrawler() && Countly.sharedInstance().ifShouldIgnoreCrawlers())) {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 try {
