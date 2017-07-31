@@ -1,14 +1,15 @@
 package ly.count.android.sdk.internal;
 
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Objects;
+import java.nio.charset.Charset;
 
 /**
- * Created by artem on 06/01/2017.
+ * Class which encapsulates request logic and manipulation: building, status of sending, etc.
  */
 
-class Request {
+class Request implements Storable {
+    private final Long id;
+
     private static final String P_DEVICE_ID = "device_id";
 
     /**
@@ -22,34 +23,19 @@ class Request {
     protected Params params;
 
     /**
-     * Response code
+     * Create request from params with current time as id.
      */
-    protected int code = -1;
-
-    /**
-     * Response string??
-     */
-    String response;
-
-    private Request(Object... params) {
-        if (params != null && params.length == 1 && params[0] instanceof Object[]) {
-            this.params = new Params(params[0]);
-        } else {
-            this.params = new Params(params);
-        }
-    }
-
-    private Request(String params) {
+    protected Request(Object... params) {
+        this.id = Utils.uniqueTimestamp();
         this.params = new Params(params);
     }
 
-    String serialize() {
-        return params + EOR;
+    /**
+     * Deserialization constructor (use existing id).
+     */
+    protected Request(Long id) {
+        this.id = id;
     }
-
-    boolean isSent() { return code != -1; }
-    boolean isSuccess() { return code >= 200 && code < 300; }
-    boolean isError() { return isSent() && !isSuccess(); }
 
     boolean isGettable(URL serverUrl, String deviceId) {
         return isGettable(serverUrl, deviceId, 0);
@@ -61,13 +47,29 @@ class Request {
 
     static Request build(Object... params){ return new Request(params); }
 
-    static Request load(String data){
-        if (data.lastIndexOf(EOR) != data.length() - EOR.length()) {
-            return null;
+    @Override
+    public Long storageId() {
+        return id;
+    }
+
+    @Override
+    public String storagePrefix() {
+        return "request";
+    }
+
+    @Override
+    public byte[] store() {
+        return (params.toString() + EOR).getBytes();
+    }
+
+    @Override
+    public boolean restore(byte[] data) {
+        String str = new String(data, Charset.forName(Utils.UTF8));
+        if (str.endsWith(EOR)) {
+            params = new Params(0, str.length() - EOR.length());
+            return true;
         } else {
-            //todo double check if the new line is correct, previously it was as commented bellow
-            //return new Request(data.substring(data.length() - EOR.length()));
-            return new Request(data.substring(0, data.length() - EOR.length()));
+            return false;
         }
     }
 }
