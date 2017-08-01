@@ -1008,7 +1008,16 @@ public class Countly {
      * Reports duration of last view
      */
     void reportViewDuration(){
-        if(lastView != null){
+        if(lastView != null && lastViewStart <= 0) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Last view start value is not normal: [" + lastViewStart + "]");
+            }
+        }
+
+        //only record view if the view name is not null and if it has a reasonable duration
+        //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
+        //and therefore will be ignored
+        if(lastView != null && lastViewStart > 0){
             HashMap<String, String> segments = new HashMap<String, String>();
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(Countly.currentTimestamp()-lastViewStart));
