@@ -1,9 +1,10 @@
 package ly.count.android.sdk.internal;
 
+import ly.count.android.sdk.User;
+
 /**
  * Class for user profile manipulation
  */
 
-public class User {
-    public static final class Modifier
+public abstract class UserImpl extends User {
 }
