@@ -20,6 +20,18 @@ public class ActivityExampleCrashReporting extends Activity {
 
     }
 
+    void EmptyFunction_1(){
+        //keep this here, it's for proguard testing
+    }
+
+    void EmptyFunction_2(){
+        //keep this here, it's for proguard testing
+    }
+    void EmptyFunction_3(){
+        //keep this here, it's for proguard testing
+    }
+
+
     public void onClickCrashReporting01(View v) {
         Countly.sharedInstance().addCrashLog("Unrecognized selector crash");
     }
@@ -64,6 +76,34 @@ public class ActivityExampleCrashReporting extends Activity {
     public void onClickCrashReporting09(View v) throws Exception {
         Countly.sharedInstance().addCrashLog("Unhandled exception info");
         throw new Exception("A unhandled uxception");
+    }
+
+    public void onClickCrashReporting10(View v) throws Exception {
+        deepFunctionCall_1();
+    }
+
+    public void onClickCrashReporting11(View v) throws Exception {
+        recursiveDeepCall(3);
+    }
+
+    void deepFunctionCall_1() throws Exception{
+        deepFunctionCall_2();
+    }
+
+    void deepFunctionCall_2() throws Exception{
+        deepFunctionCall_3();
+    }
+
+    void deepFunctionCall_3() throws Exception{
+        Utility.DeepCall_a();
+    }
+
+    void recursiveDeepCall(int depthLeft) {
+        if(depthLeft > 0){
+            recursiveDeepCall(depthLeft - 1);
+        } else {
+            Utility.AnotherRecursiveCall(3);
+        }
     }
 
     @Override

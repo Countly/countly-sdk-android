@@ -76,4 +76,18 @@
         android:layout_height="wrap_content"
         android:id="@+id/button28"
         android:onClick="onClickCrashReporting09"/>
+
+    <Button
+        android:id="@+id/button49"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCrashReporting10"
+        android:text="Deep Unhandled exception"/>
+
+    <Button
+        android:id="@+id/button48"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCrashReporting11"
+        android:text="Deep Handled exception"/>
 </LinearLayout>
