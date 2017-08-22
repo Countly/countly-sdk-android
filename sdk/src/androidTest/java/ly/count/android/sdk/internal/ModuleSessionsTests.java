@@ -44,7 +44,15 @@ public class ModuleSessionsTests {
         contextImpl = new ContextImpl(context);
         moduleSessions = new ModuleSessions();
 
-        core = new Core(config);
+        core = new Core();
+        core.init(config, getContext());
+    }
+
+    private void initModuleSessions() {
+        moduleSessions.init(internalConfig);
+        ModuleRequests requests = new ModuleRequests();
+        requests.init(internalConfig);
+        requests.onContextAcquired(contextImpl);
     }
 
     @After
@@ -74,7 +82,7 @@ public class ModuleSessionsTests {
 
     @Test
     public void single_start() {
-        moduleSessions.init(internalConfig);
+        initModuleSessions();
 
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
         moduleSessions.onActivityStarted(contextImpl);
@@ -95,7 +103,7 @@ public class ModuleSessionsTests {
 
     @Test
     public void multiple_startStop() {
-        moduleSessions.init(internalConfig);
+        initModuleSessions();
 
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
         moduleSessions.onActivityStarted(contextImpl);
@@ -112,13 +120,13 @@ public class ModuleSessionsTests {
 
     @Test
     public void activityStopped_withSessions() throws MalformedURLException {
-        Core core = TestingUtilityInternal.setupBasicCore();
+        Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
         SessionImpl sessionTarget = new SessionImpl(123L);
         sessionTarget.begin().end();
         sessions.add(sessionTarget);
 
-        moduleSessions.init(internalConfig);
+        initModuleSessions();
 
         moduleSessions.onActivityStarted(contextImpl);
         moduleSessions.onActivityStarted(contextImpl);
@@ -135,7 +143,7 @@ public class ModuleSessionsTests {
 
     @Test
     public void activityStopped_removeSession() throws MalformedURLException {
-        Core core = TestingUtilityInternal.setupBasicCore();
+        Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
         SessionImpl sessionTarget = new SessionImpl(123L);
         sessionTarget.begin(234L);
@@ -143,7 +151,7 @@ public class ModuleSessionsTests {
 
         Assert.assertEquals(0, sessions.size());
 
-        moduleSessions.init(internalConfig);
+        initModuleSessions();
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
 
         moduleSessions.onActivityStarted(contextImpl);
@@ -159,4 +167,9 @@ public class ModuleSessionsTests {
         Assert.assertEquals(false, (boolean)sessionTarget.isLeading());
         Assert.assertEquals(0, sessions.size());
     }
+
+//    @Test
+//    public void activityStopped_removeSession() throws MalformedURLException {
+//
+//    }
 }

@@ -22,116 +22,116 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Countly.sharedInstance().setLoggingEnabled(true);
-
-        Countly.onCreate(this);
-
-        /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
-        Countly.sharedInstance()
-                .init(this, "YOUR_SERVER", "YOUR_APP_KEY");
-//                .setLocation(LATITUDE, LONGITUDE);
+//        Countly.sharedInstance().setLoggingEnabled(true);
+//
+//        Countly.onCreate(this);
+//
+//        /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
+//        Countly.sharedInstance()
+//                .init(this, "YOUR_SERVER", "YOUR_APP_KEY");
+////                .setLocation(LATITUDE, LONGITUDE);
 //                .setLoggingEnabled(true);
 //        setUserData(); // If UserData plugin is enabled on your server
 //        enableCrashTracking();
 
 
-        Countly.sharedInstance().recordEvent("test", 1);
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Countly.sharedInstance().recordEvent("test2", 1, 2);
-            }
-        }, 5000);
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Countly.sharedInstance().recordEvent("test3");
-            }
-        }, 10000);
-
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Countly.sharedInstance().setLocation(44.5888300, 33.5224000);
-            }
-        }, 11000);
-
-        Button button1 = (Button) findViewById(R.id.runtime);
-        button1.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 1 pressed");
-                Countly.sharedInstance().crashTest(4);
-            }
-        });
-
-        Button button2 = (Button) findViewById(R.id.nullpointer);
-        button2.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 2 pressed");
-                Countly.sharedInstance().crashTest(5);
-            }
-        });
-
-        Button button3 = (Button) findViewById(R.id.division0);
-        button3.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 3 pressed");
-                Countly.sharedInstance().crashTest(2);
-            }
-        });
-
-
-        Button button5 = (Button) findViewById(R.id.stackoverflow);
-        button5.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 4 pressed");
-                Countly.sharedInstance().crashTest(1);
-            }
-        });
-
-        Button button6 = (Button) findViewById(R.id.handled);
-        button6.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                Countly.sharedInstance().addCrashLog("Button 5 pressed");
-                try {
-                    Countly.sharedInstance().crashTest(5);
-                }
-                catch(Exception e){
-                    Countly.sharedInstance().logException(e);
-                }
-            }
-        });
-
-        Button button7 = (Button) findViewById(R.id.app_rating_default);
-        button7.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
-                    @Override
-                    public void onRate(int rating) {
-
-                    }
-
-                    @Override
-                    public void onDismiss() {
-
-                    }
-                });
-            }
-        });
+//        Countly.sharedInstance().recordEvent("test", 1);
+//
+//        new Handler().postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                Countly.sharedInstance().recordEvent("test2", 1, 2);
+//            }
+//        }, 5000);
+//
+//        new Handler().postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                Countly.sharedInstance().recordEvent("test3");
+//            }
+//        }, 10000);
+//
+//        new Handler().postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                Countly.sharedInstance().setLocation(44.5888300, 33.5224000);
+//            }
+//        }, 11000);
+//
+//        Button button1 = (Button) findViewById(R.id.runtime);
+//        button1.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                Countly.sharedInstance().addCrashLog("Button 1 pressed");
+//                Countly.sharedInstance().crashTest(4);
+//            }
+//        });
+//
+//        Button button2 = (Button) findViewById(R.id.nullpointer);
+//        button2.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                Countly.sharedInstance().addCrashLog("Button 2 pressed");
+//                Countly.sharedInstance().crashTest(5);
+//            }
+//        });
+//
+//        Button button3 = (Button) findViewById(R.id.division0);
+//        button3.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                Countly.sharedInstance().addCrashLog("Button 3 pressed");
+//                Countly.sharedInstance().crashTest(2);
+//            }
+//        });
+//
+//
+//        Button button5 = (Button) findViewById(R.id.stackoverflow);
+//        button5.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                Countly.sharedInstance().addCrashLog("Button 4 pressed");
+//                Countly.sharedInstance().crashTest(1);
+//            }
+//        });
+//
+//        Button button6 = (Button) findViewById(R.id.handled);
+//        button6.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//                Countly.sharedInstance().addCrashLog("Button 5 pressed");
+//                try {
+//                    Countly.sharedInstance().crashTest(5);
+//                }
+//                catch(Exception e){
+//                    Countly.sharedInstance().logException(e);
+//                }
+//            }
+//        });
+//
+//        Button button7 = (Button) findViewById(R.id.app_rating_default);
+//        button7.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+//                Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
+//                    @Override
+//                    public void onRate(int rating) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onDismiss() {
+//
+//                    }
+//                });
+//            }
+//        });
     }
 
     public void setUserData(){
@@ -186,13 +186,13 @@ public class MainActivity extends Activity {
     public void onStart()
     {
         super.onStart();
-        Countly.sharedInstance().onStart(this);
+//        Countly.sharedInstance().onStart(this);
     }
 
     @Override
     public void onStop()
     {
-        Countly.sharedInstance().onStop();
+//        Countly.sharedInstance().onStop();
         super.onStop();
     }
 

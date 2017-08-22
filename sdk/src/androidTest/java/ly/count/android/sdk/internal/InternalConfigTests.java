@@ -15,6 +15,7 @@ import java.util.Set;
 
 import ly.count.android.sdk.Config;
 
+import static ly.count.android.sdk.Config.LoggingLevel.DEBUG;
 import static ly.count.android.sdk.Config.LoggingLevel.WARN;
 
 @RunWith(AndroidJUnit4.class)
@@ -43,33 +44,31 @@ public class InternalConfigTests {
 
     @Test
     public void constructor_fromConfig() throws MalformedURLException{
-        String sdkVersion = "123";
-        String loggingTaq = "abc";
-
         Config config = new Config(serverUrl, serverAppKey);
-        config.enableUsePOST();
-        config.enableTestMode();
-        config.setSdkVersion(sdkVersion);
-        config.setLoggingTag(loggingTaq);
-        config.setProgrammaticSessionsControl(true);
-        config.setLoggingLevel(WARN);
         config.setFeatures(Config.Feature.Push, Config.Feature.Crash);
+        config.setLoggingTag("tag");
+        config.setLoggingLevel(WARN);
+        config.setSdkName("name");
+        config.setSdkVersion("version");
+        config.enableUsePOST();
+        config.setSendUpdateEachSeconds(123);
+        config.setSendUpdateEachEvents(222);
+        config.setProgrammaticSessionsControl(true);
+        config.enableTestMode();
 
         InternalConfig internalConfig = new InternalConfig(config);
 
         Assert.assertEquals(new URL(serverUrl), internalConfig.getServerURL());
         Assert.assertEquals(serverAppKey, internalConfig.getServerAppKey());
-        Assert.assertEquals(true, internalConfig.isUsePOST());
-        Assert.assertEquals(true, internalConfig.isTestModeEnabled());
-        Assert.assertEquals(sdkVersion, internalConfig.getSdkVersion());
-        Assert.assertEquals(loggingTaq, internalConfig.getLoggingTag());
-        Assert.assertEquals(true, internalConfig.isProgrammaticSessionsControl());
-        Assert.assertEquals(WARN, internalConfig.getLoggingLevel());
-
-        Set<Config.Feature> features = internalConfig.getFeatures();
-
-        Assert.assertEquals(2, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.Push));
-        Assert.assertEquals(true, features.contains(Config.Feature.Crash));
+        Assert.assertEquals(config.getFeatures(), internalConfig.getFeatures());
+        Assert.assertEquals(config.getLoggingTag(), internalConfig.getLoggingTag());
+        Assert.assertEquals(config.getLoggingLevel(), internalConfig.getLoggingLevel());
+        Assert.assertEquals(config.getSdkName(), internalConfig.getSdkName());
+        Assert.assertEquals(config.getSdkVersion(), internalConfig.getSdkVersion());
+        Assert.assertEquals(config.isUsePOST(), internalConfig.isUsePOST());
+        Assert.assertEquals(config.getSendUpdateEachSeconds(), internalConfig.getSendUpdateEachSeconds());
+        Assert.assertEquals(config.getSendUpdateEachEvents(), internalConfig.getSendUpdateEachEvents());
+        Assert.assertEquals(config.isProgrammaticSessionsControl(), internalConfig.isProgrammaticSessionsControl());
+        Assert.assertEquals(config.isTestModeEnabled(), internalConfig.isTestModeEnabled());
     }
 }

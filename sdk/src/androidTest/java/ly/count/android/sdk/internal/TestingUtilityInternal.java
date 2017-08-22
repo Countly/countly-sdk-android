@@ -1,12 +1,14 @@
 package ly.count.android.sdk.internal;
 
+import android.content.*;
+
 import junit.framework.Assert;
 
 import java.net.MalformedURLException;
 
 import ly.count.android.sdk.Config;
 
-class TestingUtilityInternal {
+public class TestingUtilityInternal {
     static int countParams(Params params) {
         String paramsString = params.toString();
         return countParams(paramsString);
@@ -59,16 +61,22 @@ class TestingUtilityInternal {
         return new Config(serverUrl, serverAppKey);
     }
 
-    public static void setupLogs() throws MalformedURLException {
-        InternalConfig internalConfig = new InternalConfig(setupConfig());
+    public static InternalConfig setupLogs(Config config) throws MalformedURLException {
+        InternalConfig internalConfig = new InternalConfig(config == null ? setupConfig() : config);
         Log log = new Log();
         log.init(internalConfig);
+        return internalConfig;
     }
 
-    static Core setupBasicCore() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs();
-        Config config = TestingUtilityInternal.setupConfig();
-        Core core = new Core(config);
+    static Core setupBasicCore(android.content.Context context) throws MalformedURLException {
+        return setupBasicCore(context, null);
+    }
+
+    static Core setupBasicCore(android.content.Context context, Config config) throws MalformedURLException {
+        config = TestingUtilityInternal.setupLogs(config);
+        Core core = new Core();
+        core.init(config, context);
+        core.onContextCreated(context);
         return core;
     }
 }

@@ -35,38 +35,38 @@ public class RequestTests {
     public void cleanupEveryTests(){
     }
 
-    @Test
-    public void isSuccess() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
-        boolean[] results = new boolean[] {false, false, false, false, false, false, true, true, true, false, false, false, false, false};
-
-        for (int a = 0 ; a < results.length ; a++){
-            request.code = testResultCodes[a];
-            Assert.assertEquals(results[a], request.isSuccess());
-        }
-    }
-
-    @Test
-    public void isError() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
-        boolean[] results = new boolean[] {false, true, true, true, true, true, false, false, false, true, true, true, true, true};
-
-        for (int a = 0 ; a < results.length ; a++){
-            request.code = testResultCodes[a];
-            Assert.assertEquals(results[a], request.isError());
-        }
-    }
-
-    @Test
-    public void isSent() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
-        boolean[] results = new boolean[] {false, true, true, true, true, true, true, true, true, true, true, true, true, true};
-
-        for (int a = 0 ; a < results.length ; a++){
-            request.code = testResultCodes[a];
-            Assert.assertEquals(results[a], request.isSent());
-        }
-    }
+//    @Test
+//    public void isSuccess() throws Exception{
+//        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
+//        boolean[] results = new boolean[] {false, false, false, false, false, false, true, true, true, false, false, false, false, false};
+//
+//        for (int a = 0 ; a < results.length ; a++){
+//            request.code = testResultCodes[a];
+//            Assert.assertEquals(results[a], request.isSuccess());
+//        }
+//    }
+//
+//    @Test
+//    public void isError() throws Exception{
+//        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
+//        boolean[] results = new boolean[] {false, true, true, true, true, true, false, false, false, true, true, true, true, true};
+//
+//        for (int a = 0 ; a < results.length ; a++){
+//            request.code = testResultCodes[a];
+//            Assert.assertEquals(results[a], request.isError());
+//        }
+//    }
+//
+//    @Test
+//    public void isSent() throws Exception{
+//        Request request = Whitebox.invokeConstructor(Request.class, "a=1");
+//        boolean[] results = new boolean[] {false, true, true, true, true, true, true, true, true, true, true, true, true, true};
+//
+//        for (int a = 0 ; a < results.length ; a++){
+//            request.code = testResultCodes[a];
+//            Assert.assertEquals(results[a], request.isSent());
+//        }
+//    }
 
     @Test
     public void request_constructorString() throws Exception{
@@ -108,38 +108,38 @@ public class RequestTests {
         Assert.assertEquals(params.toString(), requestParams.toString());
     }
 
-    @Test
-    public void request_serialize() throws Exception{
-        String paramVals = "a=1&b=2";
-        Request request = Whitebox.invokeConstructor(Request.class, paramVals);
-
-        String manualSerialization = paramVals + Whitebox.<String>getInternalState(Request.class, "EOR");
-        String serializationRes = request.serialize();
-        Assert.assertEquals(manualSerialization, serializationRes);
-    }
-
-    @Test
-    public void request_loadSimple() throws Exception{
-        String paramVals = "a=1&b=2";
-        Request request = Whitebox.invokeConstructor(Request.class, paramVals);
-
-        String serializationRes = request.serialize();
-        Request requestNew = Request.load(serializationRes);
-
-        Assert.assertNotNull("Could not deserialize request", requestNew);
-        Assert.assertEquals(paramVals, requestNew.params.toString());
-    }
-
-    @Test
-    public void request_loadEmpty() {
-        Request requestNew = Request.load("");
-        Assert.assertNull(requestNew);
-    }
-
-    @Test (expected = NullPointerException.class)
-    public void request_loadNull() {
-        Request.load(null);
-    }
+//    @Test
+//    public void request_serialize() throws Exception{
+//        String paramVals = "a=1&b=2";
+//        Request request = Whitebox.invokeConstructor(Request.class, paramVals);
+//
+//        String manualSerialization = paramVals + Whitebox.<String>getInternalState(Request.class, "EOR");
+//        String serializationRes = request.serialize();
+//        Assert.assertEquals(manualSerialization, serializationRes);
+//    }
+//
+//    @Test
+//    public void request_loadSimple() throws Exception{
+//        String paramVals = "a=1&b=2";
+//        Request request = Whitebox.invokeConstructor(Request.class, paramVals);
+//
+//        String serializationRes = request.serialize();
+//        Request requestNew = Request.load(serializationRes);
+//
+//        Assert.assertNotNull("Could not deserialize request", requestNew);
+//        Assert.assertEquals(paramVals, requestNew.params.toString());
+//    }
+//
+//    @Test
+//    public void request_loadEmpty() {
+//        Request requestNew = Request.load("");
+//        Assert.assertNull(requestNew);
+//    }
+//
+//    @Test (expected = NullPointerException.class)
+//    public void request_loadNull() {
+//        Request.load(null);
+//    }
 
 
     @Test
@@ -201,9 +201,9 @@ public class RequestTests {
         Assert.assertEquals(false, request.isGettable(givenUrl, sb.toString(), addition));
     }
 
-    @Test
-    public void isGettable_aboveLimit() {
-        Request requestNew = Request.load("");
-
-    }
+//    @Test
+//    public void isGettable_aboveLimit() {
+//        Request requestNew = Request.load("");
+//
+//    }
 }

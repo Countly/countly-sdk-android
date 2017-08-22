@@ -14,6 +14,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Set;
 
+import ly.count.android.sdk.internal.TestingUtilityInternal;
+
 
 @RunWith(AndroidJUnit4.class)
 public class ConfigTests {
@@ -23,7 +25,7 @@ public class ConfigTests {
 
     @Before
     public void setupEveryTest() throws MalformedURLException {
-        config = new Config(serverUrl, serverAppKey);
+        config = TestingUtilityInternal.setupLogs(new Config(serverUrl, serverAppKey).enableTestMode());
     }
 
     @After
@@ -92,7 +94,8 @@ public class ConfigTests {
     }
 
     @Test
-    public void setLoggingLevel_allLevels(){
+    public void setLoggingLevel_allLevels() throws Exception {
+        Config config = new Config(serverUrl, serverAppKey);
         Assert.assertEquals(Config.LoggingLevel.OFF, config.getLoggingLevel());
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
         Assert.assertEquals(Config.LoggingLevel.DEBUG, config.getLoggingLevel());
@@ -107,12 +110,13 @@ public class ConfigTests {
     }
 
     @Test
-    public void configTestMode_default(){
-        Assert.assertEquals(config.isTestModeEnabled(), false);
+    public void configTestMode_default() throws Exception {
+        Assert.assertEquals(new Config(serverUrl, serverAppKey).isTestModeEnabled(), false);
     }
 
     @Test
-    public void configTestMode_enabling(){
+    public void configTestMode_enabling() throws MalformedURLException {
+        Config config = new Config(serverUrl, serverAppKey);
         Assert.assertEquals(false, config.isTestModeEnabled());
         config.enableTestMode();
         Assert.assertEquals(true, config.isTestModeEnabled());
@@ -313,7 +317,9 @@ public class ConfigTests {
         Config.Feature[] features = Config.Feature.values();
         Assert.assertEquals(Config.Feature.Crash, features[0]);
         Assert.assertEquals(Config.Feature.Push, features[1]);
-        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[2]);
+        Assert.assertEquals(Config.Feature.Attribution, features[2]);
+        Assert.assertEquals(Config.Feature.StarRating, features[3]);
+        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[4]);
     }
 
     @Test

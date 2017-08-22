@@ -1,6 +1,7 @@
 package ly.count.android.sdk.internal;
 
 
+import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Session;
 
 /**
@@ -10,6 +11,7 @@ import ly.count.android.sdk.Session;
  *     <li>Module instances must provide empty constructor with no parameters.</li>
  *     <li>Module class instance can be accessed only through this interface.</li>
  *     <li>Module class instance encapsulates all module-specific logic inside.</li>
+ *     <li>Module cannot acquire instance or call another Module.</li>
  * </ul>
  */
 interface Module {
@@ -32,19 +34,21 @@ interface Module {
     void clear (InternalConfig config);
 
     /**
-     * Application is being created.
+     * SDK got a first context. Either application or service has been started.
      *
-     * @param context {@link Context} with application set
+     * @param context {@link Context} with application or context set
      */
-    void onApplicationCreated(Context context);
+    void onContextAcquired(Context context);
 
     /**
      * Device ID has been acquired from device id provider.
      * Can be invoked multiple times throughout Module lifecycle.
+     * Parameters can be instance equal (==), meaning that id haven't changed.
      *
      * @param deviceId deviceId valid from now on
+     * @param oldDeviceId deviceId valid previously if any
      */
-    void onDeviceId(String deviceId);
+    void onDeviceId(Config.DID deviceId, Config.DID oldDeviceId);
 
     /**
      * Activity is being created.
@@ -99,12 +103,12 @@ interface Module {
      *
      * @param session session which began
      */
-    void onSessionBegan(Session session);
+    void onSessionBegan(Session session, Context context);
 
     /**
      * Session is started.
      *
      * @param session session which ended
      */
-    void onSessionEnded (Session session);
+    void onSessionEnded (Session session, Context context);
 }

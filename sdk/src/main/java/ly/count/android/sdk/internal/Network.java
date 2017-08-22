@@ -1,6 +1,9 @@
 package ly.count.android.sdk.internal;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Class managing all networking operations.
@@ -37,9 +40,35 @@ class Network {
         // APM stuff - later
     }
 
-    //    Future<Boolean> send(Request request) { - may be, null = error
+        Future<Boolean> send(Request request) { // - may be, null = error
 //    Future<Response> send(Request request) { - may be
-    Future<Request> send(Request request) {
-        return null;
+//    Future<Request> send(Request request) {
+            return new Future<Boolean>() {
+                @Override
+                public boolean cancel(boolean mayInterruptIfRunning) {
+                    return false;
+                }
+
+                @Override
+                public boolean isCancelled() {
+                    return false;
+                }
+
+                @Override
+                public boolean isDone() {
+                    return false;
+                }
+
+                @Override
+                public Boolean get() throws InterruptedException, ExecutionException {
+                    return Boolean.TRUE;
+                }
+
+                @Override
+                public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                    return Boolean.TRUE;
+                }
+            };
+//        return null;
     }
 }

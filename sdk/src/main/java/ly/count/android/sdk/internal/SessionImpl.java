@@ -1,6 +1,16 @@
 package ly.count.android.sdk.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import ly.count.android.sdk.Eve;
 import ly.count.android.sdk.Session;
+import ly.count.android.sdk.UserEditor;
 
 /**
  * This class represents session concept, that is one indivisible usage occasion of your application.
@@ -12,12 +22,7 @@ import ly.count.android.sdk.Session;
  *
  */
 
-class SessionImpl implements Session {
-    /**
-     * One second in nanoseconds
-     */
-    protected static final Double SECOND = 1000000000.0d;
-
+class SessionImpl implements Session, Storable {
     /**
      * {@link System#nanoTime()} of time when {@link Session} object is created.
      */
@@ -27,6 +32,11 @@ class SessionImpl implements Session {
      * {@link System#nanoTime()} of {@link #begin()}, {@link #update()} and {@link #end()} calls respectively.
      */
     protected Long began, updated, ended;
+
+    /**
+     * List of events still not added to request
+     */
+    protected final List<Eve> events = new ArrayList<>();
 
     /**
      * Create session with current time as id.
@@ -48,6 +58,11 @@ class SessionImpl implements Session {
     protected Params params;
 
     /**
+     * Whether to push changes to storage on every change automatically (false only for testing)
+     */
+    private boolean pushOnChange = true;
+
+    /**
      * Start this session, add corresponding request.
      *
      * @return {@code this} instance for method chaining.
@@ -57,7 +72,7 @@ class SessionImpl implements Session {
         return begin(null);
     }
 
-    protected Session begin(Long time) {
+    Session begin(Long time) {
         if (began != null) {
             Log.wtf("Session already began");
             return this;
@@ -68,7 +83,7 @@ class SessionImpl implements Session {
             began = time == null ? System.nanoTime() : time;
         }
 
-        // TODO: add request
+        ModuleRequests.sessionBegin(this);
 
         return this;
     }
@@ -90,7 +105,11 @@ class SessionImpl implements Session {
 
         Long duration = updateDuration();
 
-        // TODO: add request
+        ModuleRequests.sessionUpdate(this, duration);
+
+        if (pushOnChange) {
+            Storage.pushAsync(this);
+        }
 
         return this;
     }
@@ -105,7 +124,7 @@ class SessionImpl implements Session {
         return end(null);
     }
 
-    protected Session end(Long time) {
+    Session end(Long time) {
         if (began == null) {
             Log.wtf("Session is not began to end it");
             return this;
@@ -117,7 +136,9 @@ class SessionImpl implements Session {
 
         Long duration = updateDuration();
 
-        // TODO: add request
+        ModuleRequests.sessionEnd(this, duration);
+
+        Storage.readAsync(this);
 
         return this;
     }
@@ -129,7 +150,7 @@ class SessionImpl implements Session {
      * @return calculated session duration to send in seconds
      */
     private Long updateDuration(){
-        Long duration = -1L;
+        Long duration;
         Long now = System.nanoTime();
         if (updated == null) {
             duration = now - began;
@@ -137,14 +158,36 @@ class SessionImpl implements Session {
             duration = now - updated;
         }
         updated = now;
-        duration = Math.round(duration / SECOND);
-        return duration;
+        return Device.nsToSec(duration);
+    }
+
+    /**
+     * Create new event object, don't record it yet
+     *
+     * @return Event instance.
+     * @see Eve#record()
+     */
+    public Eve event(String key) {
+        return new EventImpl(this, key);
+    }
+
+    /**
+     * Record event, push it to storage.
+     * @param event Event to record
+     * @return this instance for method chaining
+     */
+    synchronized Session recordEvent(Eve event) {
+        events.add(event);
+        if (pushOnChange) {
+            Storage.pushAsync(this);
+        }
+        return this;
     }
 
     @Override
-    public Session addUserProfileChange() {
+    public UserEditor addUserProfileChange() {
         // TODO: implement, return edit object with commit method
-        return this;
+        return null;
     }
 
     @Override
@@ -158,6 +201,12 @@ class SessionImpl implements Session {
         return this;
     }
 
+    @Override
+    public Session addLocation(double latitude, double longitude) {
+        // TODO: implement
+        return this;
+    }
+
     // TODO: to be continued...
 
     /**
@@ -167,11 +216,14 @@ class SessionImpl implements Session {
      * @param value value of parameter, optional, will be url-encoded if provided
      * @return {@code this} instance for method chaining.
      */
-    private Session addParam(String key, Object value) {
+    public Session addParam(String key, Object value) {
         if (params == null) {
             params = new Params();
         }
         params.add(key, value);
+        if (pushOnChange) {
+            Storage.pushAsync(this);
+        }
         return this;
     }
 
@@ -197,5 +249,143 @@ class SessionImpl implements Session {
             return false;
         }
         return Core.instance.sessionLeading().getId().equals(getId());
+    }
+
+    public Long storageId() {
+        return this.id;
+    }
+
+    public String storagePrefix() {
+        return "session";
+    }
+
+    public byte[] store() {
+        ByteArrayOutputStream bytes = null;
+        ObjectOutputStream stream = null;
+        try {
+            bytes = new ByteArrayOutputStream();
+            stream = new ObjectOutputStream(bytes);
+            stream.writeLong(id);
+            stream.writeLong(began == null ? 0 : began);
+            stream.writeLong(updated == null ? 0 : updated);
+            stream.writeLong(ended == null ? 0 : ended);
+            stream.writeInt(events.size());
+            for (Eve event : events) {
+                stream.writeUTF(event.toString());
+            }
+            stream.writeUTF(params == null ? "" : params.toString());
+            stream.close();
+            return bytes.toByteArray();
+        } catch (IOException e) {
+            Log.wtf("Cannot serialize session", e);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    Log.wtf("Cannot happen", e);
+                }
+            }
+            if (bytes != null) {
+                try {
+                    bytes.close();
+                } catch (IOException e) {
+                    Log.wtf("Cannot happen", e);
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean restore(byte[] data) {
+        ByteArrayInputStream bytes = null;
+        ObjectInputStream stream = null;
+
+        try {
+            bytes = new ByteArrayInputStream(data);
+            stream = new ObjectInputStream(bytes);
+            if (id != stream.readLong()) {
+                Log.wtf("Wrong file for session deserialization");
+            }
+
+            began = stream.readLong();
+            began = began == 0 ? null : began;
+            updated = stream.readLong();
+            updated = updated == 0 ? null : updated;
+            ended = stream.readLong();
+            ended = ended == 0 ? null : ended;
+
+            int count = stream.readInt();
+            for (int i = 0; i < count; i++) {
+                Eve event = EventImpl.fromJSON(this, stream.readUTF());
+                if (event != null) {
+                    events.add(event);
+                }
+            }
+
+            String paramsString = stream.readUTF();
+            if (!"".equals(paramsString)) {
+                params = new Params(paramsString);
+            }
+
+            return true;
+        } catch (IOException e) {
+            Log.wtf("Cannot deserialize session", e);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    Log.wtf("Cannot happen", e);
+                }
+            }
+            if (bytes != null) {
+                try {
+                    bytes.close();
+                } catch (IOException e) {
+                    Log.wtf("Cannot happen", e);
+                }
+            }
+        }
+
+        return false;
+    }
+
+    SessionImpl setPushOnChange(boolean pushOnChange) {
+        this.pushOnChange = pushOnChange;
+        return this;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SessionImpl)) {
+            return false;
+        }
+
+        SessionImpl session = (SessionImpl)obj;
+        if (!id.equals(session.id)) {
+            return false;
+        }
+        if ((began != null && !began.equals(session.began) || (session.began != null && !session.began.equals(began)))) {
+            return false;
+        }
+        if ((updated != null && !updated.equals(session.updated) || (session.updated != null && !session.updated.equals(updated)))) {
+            return false;
+        }
+        if ((ended != null && !ended.equals(session.ended) || (session.ended != null && !session.ended.equals(ended)))) {
+            return false;
+        }
+        if ((params != null && !params.equals(session.params) || (session.params != null && !session.params.equals(params)))) {
+            return false;
+        }
+        if (!events.equals(session.events)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
     }
 }

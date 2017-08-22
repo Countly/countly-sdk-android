@@ -5,7 +5,7 @@ package ly.count.android.sdk;
  *
  * Any data sent to Countly server is processed in a context of Session.
  * Only one session can send requests at a time, so even if you create 2 parallel sessions,
- * they will be made consequent automatically at the time of Countly SDK choise with no
+ * they will be made consequent automatically at the time of Countly SDK choice with no
  * correctness guarantees, so please avoid having parallel sessions.
  *
  */
@@ -57,17 +57,35 @@ public interface Session {
     Session end();
 
     /**
+     * Create event object, don't add it to this session yet.
+     *
+     * @param key key for this event, cannot be null or empty
+     * @return Event instance.
+     *
+     * @see Eve#record()
+     */
+    Eve event(String key);
+
+    /**
+     * Add parameter to this session which will be sent along with next request.
+     *
+     * @param key name of parameter
+     * @param value value of parameter
+     * @return this instance for method chaining.
+     */
+    Session addParam(String key, Object value);
+
+    /**
      * Send User Profiles change to the server.
      *
      * @ee Feature is not available in Countly Community Edition
      * @return this instance for method chaining.
      */
-    Session addUserProfileChange();
+    UserEditor addUserProfileChange();
 
     /**
      * Send Crash Report to the server.
      *
-     * @ee Feature is not available in Countly Community Edition
      * @param t {@link Throwable} to log
      * @param fatal whether this crash report should be displayed as fatal in dashboard or not
      * @return this instance for method chaining.
@@ -77,13 +95,21 @@ public interface Session {
     /**
      * Send Crash Report to the server.
      *
-     * @ee Feature is not available in Countly Community Edition
      * @param t {@link Throwable} to log
      * @param fatal whether this crash report should be displayed as fatal in dashboard or not
      * @param details additional comment about this crash report
      * @return this instance for method chaining.
      */
     Session addCrashReport(Throwable t, boolean fatal, String details);
+
+    /**
+     * Send location information to the server.
+     *
+     * @param latitude geographical latitude of the user
+     * @param longitude geographical longitude of the user
+     * @return this instance for method chaining.
+     */
+    Session addLocation(double latitude, double longitude);
 
     // TODO: to be continued...
 }

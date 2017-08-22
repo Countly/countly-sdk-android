@@ -1,11 +1,46 @@
 package ly.count.android.sdk.internal;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Object for application/x-www-form-urlencoded string building and manipulation
  */
 
 class Params {
     private StringBuilder params;
+
+    static final class Obj {
+        private final String key;
+        private final JSONObject json;
+        private final Params params;
+
+        Obj(String key, Params params) {
+            this.params = params;
+            this.key = key;
+            this.json = new JSONObject();
+        }
+
+        // TODO: previous implementation omitted null & empty string values, check for correctness
+        public Obj put(String key, Object value) {
+            try {
+                json.put(key, value);
+            } catch (JSONException e) {
+                Log.wtf("Cannot put property into Params.Obj", e);
+            }
+            return this;
+        }
+
+        public Params add(){
+            params.add(key, json.toString());
+            return params;
+        }
+    }
 
     Params(Object... objects) {
         params = new StringBuilder();
@@ -47,10 +82,38 @@ class Params {
         return this;
     }
 
+    Obj obj(String key) {
+       return new Obj(key, this);
+    }
+
+    String remove(String key) {
+        List<String> pairs = new ArrayList<>(Arrays.asList(params.toString().split("&")));
+        for (String pair : pairs) {
+            String comps[] = pair.split("=");
+            if (comps.length == 2 && comps[0].equals(key)) {
+                pairs.remove(pair);
+                this.params = new StringBuilder(Utils.join(pairs, "&"));
+                return comps[1];
+            }
+        }
+        return null;
+    }
+
+    String get(String key) {
+        String[] pairs = params.toString().split("&");
+        for (String pair : pairs) {
+            String comps[] = pair.split("=");
+            if (comps.length == 2 && comps[0].equals(key)) {
+                return comps[1];
+            }
+        }
+        return null;
+    }
+
     //todo can this receive only an even amount of objects? maybe return an error if an odd amount is returned?
     private Params addObjects(Object[] objects) {
         for (int i = 0; i < objects.length; i += 2) {
-            add(objects[i] == null ? ("unknown" + i) : objects[i].toString(), objects.length > i ? objects[i + 1] : null);
+            add(objects[i] == null ? ("unknown" + i) : objects[i].toString(), objects.length > i + 1 ? objects[i + 1] : null);
         }
         return this;
     }
@@ -65,5 +128,20 @@ class Params {
 
     public String toString(){
         return params.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return params.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Params)) {
+            return false;
+        }
+        Params p = (Params)obj;
+
+        return p.params.toString().equals(params.toString());
     }
 }

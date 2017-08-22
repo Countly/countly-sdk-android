@@ -57,21 +57,21 @@ public class SessionImplTests {
         String[] vals = new String[]{"11", "22", "33"};
 
         sbParams.append(keys[0]).append("=").append(vals[0]);
-        Whitebox.<Session>invokeMethod(session, "addParam", keys[0], vals[0]);
+        session.addParam(keys[0], vals[0]);
         Assert.assertEquals(sbParams.toString(), session.params.toString());
 
         sbParams.append("&").append(keys[1]).append("=").append(vals[1]);
-        Whitebox.<Session>invokeMethod(session, "addParam", keys[1], vals[1]);
+        session.addParam(keys[1], vals[1]);
         Assert.assertEquals(sbParams.toString(), session.params.toString());
 
         sbParams.append("&").append(keys[2]).append("=").append(vals[2]);
-        Whitebox.<Session>invokeMethod(session, "addParam", keys[2], vals[2]);
+        session.addParam(keys[2], vals[2]);
         Assert.assertEquals(sbParams.toString(), session.params.toString());
     }
 
     @Test
     public void beginEndSession_doubleBegin() throws MalformedURLException{
-        TestingUtilityInternal.setupLogs();
+        TestingUtilityInternal.setupLogs(null);
 
         long sessionID = 12345;
         SessionImpl session = new SessionImpl(sessionID);
@@ -127,7 +127,7 @@ public class SessionImplTests {
     @Test
     public void secondIsCorrect() {
         long secondInMs = 1000 * 1000 * 1000;
-        Assert.assertEquals((double)secondInMs, SessionImpl.SECOND);
+        Assert.assertEquals((double)secondInMs, Device.NS_IN_SECOND);
     }
 
     @Test
@@ -144,7 +144,7 @@ public class SessionImplTests {
 
     @Test
     public void beginAfterEnd() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs();
+        TestingUtilityInternal.setupLogs(null);
 
         long timeBegin = 123L;
         long timeEnd = 345L;
@@ -163,7 +163,7 @@ public class SessionImplTests {
 
     @Test
     public void beginAfterEndSet() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs();
+        TestingUtilityInternal.setupLogs(null);
 
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl();
@@ -177,7 +177,7 @@ public class SessionImplTests {
 
     @Test
     public void endedTwice() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs();
+        TestingUtilityInternal.setupLogs(null);
         long timeBegin = 123L;
         long timeEnd = 345L;
         long timeEndSecond = 678L;
@@ -205,7 +205,7 @@ public class SessionImplTests {
     @Test
     public void updateDuration_simple() throws Exception{
         int beginOffsetSeconds = 4;
-        long timeBeginOffset = (long) (SessionImpl.SECOND * beginOffsetSeconds);
+        long timeBeginOffset = (long) (Device.NS_IN_SECOND * beginOffsetSeconds);
 
         SessionImpl session = new SessionImpl();
         final long timeGuardBase = System.nanoTime() - timeBeginOffset;
@@ -215,8 +215,8 @@ public class SessionImplTests {
         Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration");
         final long timeGuardEnd = System.nanoTime();
 
-        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / SessionImpl.SECOND);
-        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / SessionImpl.SECOND);
+        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / Device.NS_IN_SECOND);
+        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / Device.NS_IN_SECOND);
 
         Assert.assertEquals(true, duration >= timeGuardDurStart);
         Assert.assertEquals(true, duration <= timeGuardDurEnded);
@@ -225,7 +225,7 @@ public class SessionImplTests {
     @Test
     public void updateDuration_notFirstUpdate() throws Exception{
         int beginOffsetSeconds = 12;
-        long timeBeginOffset = (long) (SessionImpl.SECOND * beginOffsetSeconds);
+        long timeBeginOffset = (long) (Device.NS_IN_SECOND * beginOffsetSeconds);
 
         final long timeGuardBase = System.nanoTime() - timeBeginOffset;
         SessionImpl session = new SessionImpl();
@@ -236,8 +236,8 @@ public class SessionImplTests {
         Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration");
         final long timeGuardEnd = System.nanoTime();
 
-        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / SessionImpl.SECOND);
-        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / SessionImpl.SECOND);
+        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / Device.NS_IN_SECOND);
+        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / Device.NS_IN_SECOND);
 
         Assert.assertEquals(true, duration >= timeGuardDurStart);
         Assert.assertEquals(true, duration <= timeGuardDurEnded);
@@ -268,7 +268,7 @@ public class SessionImplTests {
 
     @Test
     public void update_simple() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs();
+        TestingUtilityInternal.setupLogs(null);
         long timeBegin = 123L;
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl();
@@ -293,13 +293,13 @@ public class SessionImplTests {
 
     @Test
     public void isLeading_null() throws MalformedURLException{
-        Core core = TestingUtilityInternal.setupBasicCore();
+        Core core = TestingUtilityInternal.setupBasicCore(getContext());
         SessionImpl session = new SessionImpl();
         Assert.assertEquals(false, (boolean)session.isLeading());
     }
     @Test
     public void isLeading_succeed() throws MalformedURLException{
-        Core core = TestingUtilityInternal.setupBasicCore();
+        Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
         SessionImpl sessionTarget = new SessionImpl(123L);
         sessions.add(sessionTarget);
@@ -307,7 +307,7 @@ public class SessionImplTests {
     }
     @Test
     public void isLeading_fail() throws MalformedURLException{
-        Core core = TestingUtilityInternal.setupBasicCore();
+        Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
 
         SessionImpl sessionOther = new SessionImpl(456L);
@@ -315,4 +315,140 @@ public class SessionImplTests {
         sessions.add(sessionOther);
         Assert.assertEquals(false, (boolean)sessionTarget.isLeading());
     }
+
+
+    public void storeRestore_simple() throws InterruptedException {
+        SessionImpl session = new SessionImpl();
+        byte[] data = session.store();
+        Assert.assertNotNull(data);
+        SessionImpl restored = new SessionImpl(session.id);
+        Assert.assertTrue(restored.restore(data));
+        Assert.assertEquals(session, restored);
+    }
+
+    @Test
+    public void storeRestore_full() throws InterruptedException {
+        SessionImpl session = new SessionImpl();
+        session.begin().event("key1")
+                .setCount(2)
+                .setDuration(3)
+                .setSum(4)
+                .addSegment("k1", "v1")
+                .addSegment("k2", "v2")
+                .record();
+
+        session.event("key2")
+                .setCount(2)
+                .setDuration(3)
+                .setSum(4)
+                .addSegment("k1", "v1")
+                .addSegment("k2", "v2")
+                .record();
+
+        Thread.sleep(100);
+        session.update();
+
+        session.addParam("param1", 1)
+                .addParam("param2", "value 2");
+
+        Thread.sleep(100);
+        session.end();
+
+        byte[] data = session.store();
+
+        Assert.assertNotNull(data);
+        SessionImpl restored = new SessionImpl(session.id);
+
+        Assert.assertTrue(restored.restore(data));
+        Assert.assertEquals(session, restored);
+    }
+
+    @Test
+    public void autostore() throws InterruptedException, MalformedURLException {
+        Core core = new Core();
+        core.init(new InternalConfig(new Config("http://count.ly/tests", "123")).setLoggerClass(Log.SystemLogger.class), getContext());
+        core.onContextCreated(getContext());
+
+        SessionImpl session = new SessionImpl();
+        session.begin().event("key1")
+                .setCount(2)
+                .setDuration(3)
+                .setSum(4)
+                .addSegment("k1", "v1")
+                .addSegment("k2", "v2")
+                .record();
+
+        List<Long> ids = Storage.list(session.storagePrefix());
+        Assert.assertNotNull(ids);
+        Assert.assertTrue(ids.contains(session.storageId()));
+
+        SessionImpl restored = Storage.pop(new SessionImpl(session.getId()));
+        Assert.assertNotNull(restored);
+        Assert.assertEquals(restored, session);
+
+        // restored is updated and stored, while session has updated = null
+        restored.update();
+
+        restored = Storage.pop(new SessionImpl(session.getId()));
+        Assert.assertNotNull(restored);
+        Assert.assertFalse(restored.equals(session));
+    }
+
+    @Test
+    public void session_lifecycle() throws InterruptedException {
+        SessionImpl session = new SessionImpl();
+        session.begin();
+        Long began = Whitebox.getInternalState(session, "began");
+        Assert.assertNotNull(began);
+        Assert.assertNull(Whitebox.getInternalState(session, "updated"));
+        Assert.assertNull(Whitebox.getInternalState(session, "ended"));
+
+        session.begin();
+        Assert.assertEquals(began, Whitebox.getInternalState(session, "began"));
+        Assert.assertNull(Whitebox.getInternalState(session, "updated"));
+        Assert.assertNull(Whitebox.getInternalState(session, "ended"));
+        began = Whitebox.getInternalState(session, "began");
+
+        session.update();
+        Assert.assertNotNull(Whitebox.getInternalState(session, "began"));
+        Assert.assertNotNull(Whitebox.getInternalState(session, "updated"));
+        Assert.assertNull(Whitebox.getInternalState(session, "ended"));
+
+        Long updated = Whitebox.getInternalState(session, "updated");
+        Assert.assertTrue(began < updated);
+
+        session.update();
+        Assert.assertNotNull(Whitebox.getInternalState(session, "began"));
+        Assert.assertNotNull(Whitebox.getInternalState(session, "updated"));
+        Assert.assertTrue(updated < (long)Whitebox.getInternalState(session, "updated"));
+        Assert.assertNull(Whitebox.getInternalState(session, "ended"));
+        updated = Whitebox.getInternalState(session, "updated");
+
+        session.end();
+        Assert.assertNotNull(Whitebox.getInternalState(session, "began"));
+        Assert.assertNotNull(Whitebox.getInternalState(session, "updated"));
+        Assert.assertNotNull(Whitebox.getInternalState(session, "ended"));
+        Assert.assertTrue(updated < (long)Whitebox.getInternalState(session, "ended"));
+        Assert.assertTrue(began < (long)Whitebox.getInternalState(session, "ended"));
+        Assert.assertTrue(began < updated);
+    }
+
+    @Test
+    public void session_updateBeforeBegin() throws InterruptedException {
+        SessionImpl session = new SessionImpl();
+        session.update();
+        Assert.assertNull(Whitebox.getInternalState(session, "began"));
+        Assert.assertNull(Whitebox.getInternalState(session, "updated"));
+        Assert.assertNull(Whitebox.getInternalState(session, "ended"));
+    }
+
+    @Test
+    public void session_endBeforeBegin() throws InterruptedException {
+        SessionImpl session = new SessionImpl();
+        session.end();
+        Assert.assertNull(Whitebox.getInternalState(session, "began"));
+        Assert.assertNull(Whitebox.getInternalState(session, "updated"));
+        Assert.assertNull(Whitebox.getInternalState(session, "ended"));
+    }
+
 }

@@ -1,5 +1,6 @@
 package ly.count.android.sdk.internal;
 
+import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Session;
 
 /**
@@ -12,7 +13,7 @@ abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void onDeviceId(String deviceId) {
+    public void onDeviceId(Config.DID deviceId, Config.DID oldDeviceId) {
     }
 
     @Override
@@ -20,7 +21,7 @@ abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void onApplicationCreated(Context context) {
+    public void onContextAcquired(Context context) {
     }
 
     @Override
@@ -52,10 +53,10 @@ abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void onSessionBegan(Session session) {
+    public void onSessionBegan(Session session, Context context) {
     }
 
     @Override
-    public void onSessionEnded(Session session) {
+    public void onSessionEnded(Session session, Context context) {
     }
 }

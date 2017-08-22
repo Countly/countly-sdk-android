@@ -1,7 +1,5 @@
 package ly.count.android.sdk.internal;
 
-import android.annotation.SuppressLint;
-
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -9,7 +7,6 @@ import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -18,12 +15,8 @@ import java.util.List;
  * Utility class
  */
 
-class Utils {
-    /**
-     * One second in nanoseconds
-     */
-    static final Double NS_IN_SECOND = 1000000000.0d;
-     static final Double NS_IN_MS = 1000000.0d;
+public class Utils {
+    private static final Utils utils = new Utils();
 
     static String UTF8 = "UTF-8";
 
@@ -59,79 +52,6 @@ class Utils {
         }
     }
 
-    private static long lastTsMs;
-
-    /**
-     * Wraps {@link System#currentTimeMillis()} to always return different value, even within
-     * same millisecond.
-     *
-     * @return unique time in ms
-     */
-    static long uniqueTimestamp() {
-        long ms = System.currentTimeMillis();
-        while (lastTsMs >= ms) {
-            ms += 1;
-        }
-        lastTsMs = ms;
-        return ms;
-    }
-
-    /**
-     * Get current day of week
-     *
-     * @return day of week value, Sunday = 0, Saturday = 6
-     */
-    @SuppressLint("SwitchIntDef")
-    static int currentDayOfWeek() {
-        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
-        switch (day) {
-            case Calendar.SUNDAY:
-                return 0;
-            case Calendar.MONDAY:
-                return 1;
-            case Calendar.TUESDAY:
-                return 2;
-            case Calendar.WEDNESDAY:
-                return 3;
-            case Calendar.THURSDAY:
-                return 4;
-            case Calendar.FRIDAY:
-                return 5;
-            case Calendar.SATURDAY:
-                return 6;
-        }
-        return 0;
-    }
-
-    /**
-     * Get current hour of day
-     *
-     * @return current hour of day
-     */
-    static int currentHour() {
-        return Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-    }
-
-    /**
-     * Convert time in nanoseconds to milliseconds
-     *
-     * @param ns time in nanoseconds
-     * @return ns in milliseconds
-     */
-    static long nsToMs(long ns) {
-        return Math.round(ns / NS_IN_MS);
-    }
-
-    /**
-     * Convert time in nanoseconds to seconds
-     *
-     * @param ns time in nanoseconds
-     * @return ns in seconds
-     */
-    static long nsToSec(long ns) {
-        return Math.round(ns / NS_IN_SECOND);
-    }
-
     /**
      * Get fields declared by class and its superclasses filtering test-related which
      * contain $ in their name
@@ -159,17 +79,41 @@ class Utils {
     }
 
     static boolean reflectiveClassExists(String cls) {
+        return utils._reflectiveClassExists(cls);
+    }
+
+    /**
+     * Check wether class exists in default class loader.
+     *
+     * @param cls Class name to check
+     * @return true if class exists, false otherwise
+     */
+    public boolean _reflectiveClassExists(String cls) {
         try {
             Class.forName(cls);
             return true;
         } catch (ClassNotFoundException e) {
+            Log.d("Class " + cls + " not found");
             return false;
         }
     }
 
+    /**
+     * Reflective method call encapsulation.
+     *
+     * @param className class to call method in
+     * @param instance instance to call on, null for static methods
+     * @param methodName method name
+     * @param args optional arguments to pass to that method
+     * @return false in case of failure, method result otherwise
+     */
     static Object reflectiveCall(String className, Object instance, String methodName, Object ...args) {
+        return utils._reflectiveCall(className, instance, methodName, args);
+    }
+
+    public Object _reflectiveCall(String className, Object instance, String methodName, Object ...args) {
         try {
-            Class<?> cls = Class.forName(className);
+            Class<?> cls = instance == null ? Class.forName(className) : instance.getClass();
             Class<?> types[] = null;
 
             if (args != null && args.length > 0) {
@@ -196,10 +140,171 @@ class Utils {
         }
     }
 
+    static Boolean reflectiveSetField(Object object, String name, Object value) {
+        return utils._reflectiveSetField(object, object.getClass(), name, value);
+    }
+
+    static Boolean reflectiveSetField(Class cls, String name, Object value) {
+        return utils._reflectiveSetField(null, cls, name, value);
+    }
+
+    Boolean _reflectiveSetField(Object object, Class cls, String name, Object value) {
+        try {
+            Field field = findField(cls, name);
+            boolean accessible = field.isAccessible();
+            if (!accessible) {
+                field.setAccessible(true);
+            }
+            field.set(object, value);
+            if (!accessible) {
+                field.setAccessible(false);
+            }
+            return true;
+        } catch (IllegalAccessException e) {
+            Log.w("Cannot access field " + name + " of " + cls, e);
+        } catch (NoSuchFieldException e) {
+            Log.w("No field " + name + " in " + cls, e);
+        }
+        return false;
+    }
+
+
+    static <T> T reflectiveGetField(Object object, String name) {
+        return utils._reflectiveGetField(object, object.getClass(), name);
+    }
+
+    static <T> T reflectiveGetField(Class cls, String name) {
+        return utils._reflectiveGetField(null, cls, name);
+    }
+
+    @SuppressWarnings("unchecked")
+    <T> T _reflectiveGetField(Object object, Class cls, String name) {
+        try {
+            Field field = findField(cls, name);
+            boolean accessible = field.isAccessible();
+            if (!accessible) {
+                field.setAccessible(true);
+            }
+            T value = (T) field.get(object);
+            if (!accessible) {
+                field.setAccessible(false);
+            }
+            return value;
+        } catch (IllegalAccessException e) {
+            Log.w("Cannot access field " + name + " of " + object.getClass(), e);
+        } catch (NoSuchFieldException e) {
+            Log.w("No field " + name + " in " + object.getClass(), e);
+        }
+        return null;
+    }
+
+    private static Field findField(Class cls, String name) throws NoSuchFieldException {
+        try {
+            return cls.getDeclaredField(name);
+        } catch (NoSuchFieldException e) {
+            if (cls.getSuperclass() == null) {
+                throw e;
+            } else {
+                return findField(cls.getSuperclass(), name);
+            }
+        }
+    }
+
+//    public static final class Reflection<T> {
+//        private T instance;
+//        private Class<?> cls;
+//
+//        Reflection(T instance) {
+//            this.instance = instance;
+//            this.cls = instance.getClass();
+//        }
+//
+//        Reflection(String className) throws ClassNotFoundException {
+//            this.cls = Class.forName(className);
+//        }
+//
+//        public Object call(String methodName, Object... args) {
+//            try {
+//                Class<?> types[] = null;
+//
+//                if (args != null && args.length > 0) {
+//                    types = new Class[args.length];
+//
+//                    for (int i = 0; i < types.length; i++) {
+//                        types[i] = args[i].getClass();
+//                    }
+//                }
+//                Method method = cls.getDeclaredMethod(methodName, types);
+//                return method.invoke(instance, args);
+//            } catch (NoSuchMethodException t) {
+//                Log.w("Cannot call " + methodName + " of " + cls.getName(), t);
+//                return false;
+//            } catch (IllegalAccessException t) {
+//                Log.w("Cannot call " + methodName + " of " + cls.getName(), t);
+//                return false;
+//            } catch (InvocationTargetException t) {
+//                Log.w("Cannot call " + methodName + " of " + cls.getName(), t);
+//                return false;
+//            }
+//        }
+//
+//        public Object get(String fieldName) {
+//            try {
+//                Field field = instance == null ? cls.getDeclaredField(fieldName): instance.getClass().getDeclaredField(fieldName);
+//                boolean accessible = field.isAccessible();
+//                if (!accessible) {
+//                    field.setAccessible(true);
+//                }
+//                Object value = field.get(instance);
+//                if (!accessible) {
+//                    field.setAccessible(false);
+//                }
+//                return value;
+//            } catch (IllegalAccessException e) {
+//                Log.w("Cannot access field " + fieldName + " of " + cls.getName(), e);
+//            } catch (NoSuchFieldException e) {
+//                Log.w("No field " + fieldName + " in " + cls.getName(), e);
+//            }
+//            return null;
+//        }
+//
+//        public Boolean set(String fieldName, Object value) {
+//            try {
+//                Field field = instance == null ? cls.getDeclaredField(fieldName): instance.getClass().getDeclaredField(fieldName);
+//                boolean accessible = field.isAccessible();
+//                if (!accessible) {
+//                    field.setAccessible(true);
+//                }
+//                field.set(instance, value);
+//                if (!accessible) {
+//                    field.setAccessible(false);
+//                }
+//                return true;
+//            } catch (IllegalAccessException e) {
+//                Log.w("Cannot access field " + fieldName + " of " + cls.getName(), e);
+//            } catch (NoSuchFieldException e) {
+//                Log.w("No field " + fieldName + " in " + cls.getName(), e);
+//            }
+//            return false;
+//        }
+//    }
+
+    /**
+     * StringUtils.isEmpty replacement.
+     *
+     * @param str string to check
+     * @return true if null or empty string, false otherwise
+     */
     public static boolean isEmpty(String str) {
         return str == null || "".equals(str);
     }
 
+    /**
+     * StringUtils.isNotEmpty replacement.
+     *
+     * @param str string to check
+     * @return false if null or empty string, true otherwise
+     */
     public static boolean isNotEmpty(String str) {
         return !isEmpty(str);
     }

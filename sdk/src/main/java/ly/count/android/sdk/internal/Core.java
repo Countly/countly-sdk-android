@@ -2,13 +2,20 @@ package ly.count.android.sdk.internal;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.ComponentCallbacks2;
+import android.content.*;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +40,11 @@ public class Core {
     static Core instance;
 
     /**
+     * TODO: check service case and change to Application if possible
+     */
+    private Context longLivingContext;
+
+    /**
      * Mappings of {@link Config.Feature} to {@link Module} class.
      * Changed by using {@link #setModuleMapping(Config.Feature, Class)}.
      */
@@ -54,31 +66,53 @@ public class Core {
     /**
      * Core instance config
      */
-    private final InternalConfig config;
+    private InternalConfig config;
 
     /**
      * Core instance list of sessions created
      */
-    private final List<SessionImpl> sessions;
+    private final List<SessionImpl> sessions = new ArrayList<>();
 
     /**
      * List of {@link Module} instances built based on {@link #config}
      */
-    private final List<Module> modules;
+    private final List<Module> modules = new ArrayList<>();
 
     /**
-     * The only Core constructor, rewrites {@link #instance}
+     * The only Core constructor
      *
-     * @param config Countly configuration
-     * @throws IllegalArgumentException in case {@code config} is inconsistent
      * for some of {@link Module}s required for {@code config}.
      */
-    public Core (Config config) throws IllegalArgumentException {
+    public Core () {
+        instance = this;
+    }
+
+    /**
+     * Init Core instance according to config supplied. In case config is null, Core reads it
+     * from storage.
+     *
+     * @param config Countly configuration
+     * @param context Initialization context, can be replaced later
+     * @return true if initialized, false if no config found and value in parameter was null
+     * @throws IllegalArgumentException in case {@code config} is inconsistent
+     */
+    public boolean init(Config config, Context context) throws IllegalArgumentException {
         try {
-            this.config = new InternalConfig(config);
-            this.modules = buildModules();
-            this.sessions = new ArrayList<>();
-            instance = this;
+            if (config == null) {
+                longLivingContext = context;
+                this.config = loadConfig();
+                if (this.config == null) {
+                    return false;
+                }
+            } else {
+                this.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
+            }
+            this.buildModules();
+
+            for (Module module : modules) {
+                module.init(this.config);
+            }
+            return true;
         } catch (MalformedURLException e) {
             throw new IllegalStateException(e);
         }
@@ -89,37 +123,35 @@ public class Core {
      * Uses {@link #moduleMappings} for Feature - Class&lt;Module&gt; mapping to enable
      * overriding by app developer.
      *
-     * @return {@link List} of {@link Module} instances defined by {@link #config}
      * @throws IllegalArgumentException in case some {@link Module} finds {@link #config} inconsistent.
      * @throws IllegalStateException when this module is run second time on the same {@code Core} instance.
      */
-    private List<Module> buildModules() throws IllegalArgumentException, IllegalStateException {
-        if (modules == null) {
-            List<Module> modules = new ArrayList<>();
+    private void buildModules() throws IllegalArgumentException, IllegalStateException {
+        if (modules.size() > 0){
+            throw new IllegalStateException("Modules can be built only once per InternalConfig instance");
+        }
 
-            if (config.getLoggingLevel() != Config.LoggingLevel.OFF) {
-                modules.add(new Log());
-            }
+        modules.add(new ModuleRequests());
+        modules.add(new ModuleDeviceId());
 
-            if (!config.isProgrammaticSessionsControl()) {
-                modules.add(new ModuleSessions());
-            }
+        if (config.getLoggingLevel() != Config.LoggingLevel.OFF) {
+            modules.add(new Log());
+        }
 
-            for (Config.Feature f : config.getFeatures()) {
-                Class<? extends Module> cls = moduleMappings.get(f);
-                if (cls == null) {
-                    Log.wtf("No module class for feature " + f);
-                } else {
-                    Module module = instantiateModule(moduleMappings.get(f));
-                    if (module != null) {
-                        modules.add(module);
-                    }
+        if (!config.isProgrammaticSessionsControl()) {
+            modules.add(new ModuleSessions());
+        }
+
+        for (Config.Feature f : config.getFeatures()) {
+            Class<? extends Module> cls = moduleMappings.get(f);
+            if (cls == null) {
+                Log.wtf("No module class for feature " + f);
+            } else {
+                Module module = instantiateModule(moduleMappings.get(f));
+                if (module != null) {
+                    modules.add(module);
                 }
             }
-
-            return modules;
-        } else {
-            throw new IllegalStateException("Modules can be built only once per InternalConfig instance");
         }
     }
 
@@ -141,6 +173,7 @@ public class Core {
         }
         return null;
     }
+
     /**
      * Add session to the list.
      * @return {@link SessionImpl} just created
@@ -162,9 +195,12 @@ public class Core {
             if (sessions.size() > 0) {
                 SessionImpl next = sessions.get(0);
                 if (next.began == null) {
-                    next.begin(session.ended + Math.round(SessionImpl.SECOND));
+                    next.begin(session.ended + Math.round(Device.NS_IN_SECOND));
                 } else if (next.began < session.ended){
-                    next.began = session.ended + Math.round(SessionImpl.SECOND);
+                    next.began = session.ended + Math.round(Device.NS_IN_SECOND);
+                }
+                if (next.updated != null) {
+                    next.updated = null;
                 }
                 return next;
             }
@@ -189,9 +225,11 @@ public class Core {
      */
     SessionImpl sessionBegin(SessionImpl session){
         session.begin();
+        ContextImpl context = new ContextImpl(longLivingContext);
         for (Module m : Core.instance.modules) {
-            m.onSessionBegan(session);
+            m.onSessionBegan(session, context);
         }
+        context.expire();
         return session;
     }
 
@@ -203,10 +241,55 @@ public class Core {
      */
     SessionImpl sessionEnd(SessionImpl session){
         session.end();
+        ContextImpl context = new ContextImpl(longLivingContext);
         for (Module m : Core.instance.modules) {
-            m.onSessionEnded(session);
+            m.onSessionEnded(session, context);
         }
+        context.expire();
         return session;
+    }
+
+    /**
+     * Initialization for cases when Countly needs to start up implicitly
+     * @param context Context instance to store
+     */
+    public void onContextCreated(Context context) {
+        longLivingContext = context.getApplicationContext();
+
+        Storage.push(this.config);
+        sendToService(CountlyService.CMD_START);
+
+        this.config.setLimited(true);
+        ContextImpl ctx = new ContextImpl(context);
+        for (Module m : modules) {
+            m.onContextAcquired(ctx);
+        }
+        ctx.expire();
+    }
+
+    public static void sendToService(int code) {
+        Intent intent = new Intent(instance.longLivingContext, CountlyService.class);
+        intent.putExtra(CountlyService.CMD, code);
+        instance.longLivingContext.startService(intent);
+    }
+
+    interface ModuleCallback {
+        void call(Module module);
+    }
+
+    /**
+     * Call the callback for each module initialized
+     *
+     * @see ModuleCallback
+     * @param callback callback to call
+     */
+    void withEachModule(ModuleCallback callback) {
+        this.config.setLimited(true);
+        ContextImpl ctx = new ContextImpl(longLivingContext);
+        for (Module m : modules) {
+            callback.call(m);
+        }
+        ctx.expire();
     }
 
     /**
@@ -215,6 +298,13 @@ public class Core {
      * it's developer responsibility. In any case, for API 14+ Countly ignores dev calls.
      */
     public void onApplicationCreated(Application application) {
+        longLivingContext = application.getApplicationContext();
+
+        Storage.push(this.config);
+        sendToService(CountlyService.CMD_START);
+
+        this.config.setLimited(false);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
             application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                 @Override
@@ -270,7 +360,7 @@ public class Core {
 
         ContextImpl context = new ContextImpl(application);
         for (Module m : modules) {
-            m.onApplicationCreated(context);
+            m.onContextAcquired(context);
         }
         context.expire();
     }
@@ -383,4 +473,239 @@ public class Core {
         context.expire();
     }
 
+    private static final String FILE_NAME_PREFIX = "[CLY]";
+    private static final String FILE_NAME_SEPARATOR = "_";
+
+    private static String getName(String ...names) {
+        if (names == null || names.length == 0 || Utils.isEmpty(names[0])) {
+            return FILE_NAME_PREFIX;
+        } else {
+            String prefix = FILE_NAME_PREFIX;
+            for (String name : names) {
+                prefix += FILE_NAME_SEPARATOR + name;
+            }
+            return prefix;
+        }
+    }
+
+    private static String extractName(String filename, String prefix) {
+        if (filename.indexOf(prefix) == 0) {
+            return filename.substring(prefix.length());
+        } else {
+            return null;
+        }
+    }
+
+    int purgeInternalStorage(String prefix) {
+        return purgeInternalStorage(instance.longLivingContext, prefix);
+    }
+
+    static int purgeInternalStorage(Context context, String prefix) {
+        prefix = getName(prefix) + FILE_NAME_SEPARATOR;
+
+        int deleted = 0;
+
+        String[] files = context.fileList();
+        for (String file : files) {
+            if (file.startsWith(prefix)) {
+                if (context.deleteFile(file)) {
+                    deleted++;
+                }
+            }
+        }
+
+        return deleted;
+    }
+
+    List<String> listDataInInternalStorage(String prefix, int slice) {
+        return listDataInInternalStorage(instance.longLivingContext, prefix, slice);
+    }
+
+    static List<String> listDataInInternalStorage(Context context, String prefix, int slice) {
+        prefix = getName(prefix) + FILE_NAME_SEPARATOR;
+
+        List<String> list = new ArrayList<>();
+        String[] files = context.fileList();
+
+        int max = slice == 0 ? Integer.MAX_VALUE : Math.abs(slice);
+        for (int i = 0; i < files.length; i++) {
+            int idx = slice >= 0 ? i : files.length - 1 - i;
+            String file = files[idx];
+            if (file.startsWith(prefix)) {
+                list.add(file.substring(prefix.length()));
+                if (list.size() >= max) {
+                    break;
+                }
+            }
+        }
+        return list;
+    }
+
+    boolean pushDataToInternalStorage(String prefix, String name, byte[] data) {
+        return pushDataToInternalStorage(instance.longLivingContext, prefix, name, data);
+    }
+
+    static boolean pushDataToInternalStorage(Context context, String prefix, String name, byte[] data) {
+        String filename = getName(prefix, name);
+
+        FileOutputStream stream = null;
+        FileLock lock = null;
+        try {
+            stream = context.openFileOutput(filename, Context.MODE_PRIVATE);
+            lock = stream.getChannel().tryLock();
+            if (lock == null) {
+                return false;
+            }
+            stream.write(data);
+            stream.close();
+            return true;
+        } catch (IOException e) {
+            System.out.println(e);
+            Log.wtf("Cannot write data to " + name, e);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    Log.wtf("Couldn't close output stream for " + name, e);
+                }
+            }
+            if (lock != null && lock.isValid()) {
+                try {
+                    lock.release();
+                } catch (IOException e) {
+                    Log.wtf("Couldn't release lock for " + name, e);
+                }
+            }
+        }
+        return false;
+    }
+
+    boolean removeDataFromInternalStorage(String prefix, String name) {
+        return removeDataFromInternalStorage(instance.longLivingContext, prefix, name);
+    }
+
+    static boolean removeDataFromInternalStorage(Context context, String prefix, String name) {
+        return context.deleteFile(getName(prefix, name));
+    }
+
+    byte[] popDataFromInternalStorage(String prefix, String name) {
+        return popDataFromInternalStorage(instance.longLivingContext, prefix, name);
+    }
+
+    static byte[] popDataFromInternalStorage(Context context, String prefix, String name) {
+        byte[] data = readDataFromInternalStorage(context, prefix, name);
+        if (data != null) {
+            context.deleteFile(getName(prefix, name));
+        }
+        return data;
+    }
+
+    byte[] readDataFromInternalStorage(String prefix, String name) {
+        return readDataFromInternalStorage(instance.longLivingContext, prefix, name);
+    }
+
+    static byte[] readDataFromInternalStorage(Context context, String prefix, String name) {
+        String filename = getName(prefix, name);
+
+        ByteArrayOutputStream buffer = null;
+        FileInputStream stream = null;
+
+        try {
+            buffer = new ByteArrayOutputStream();
+            stream = context.openFileInput(filename);
+
+            int read;
+            byte data[] = new byte[4096];
+            while((read = stream.read(data, 0, data.length)) != -1){
+                buffer.write(data, 0, read);
+            }
+
+            stream.close();
+
+            data = buffer.toByteArray();
+
+            return data;
+
+        } catch (FileNotFoundException e) {
+            return null;
+        } catch (IOException e) {
+            Log.wtf("Error while reading file " + name, e);
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException e) {
+                    Log.wtf("Couldn't close input stream for " + name, e);
+                }
+            }
+            if (buffer != null) {
+                try {
+                    buffer.close();
+                } catch (IOException e) {
+                    Log.wtf("Cannot happen", e);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    Object[] readOneFromInternalStorage(String prefix, boolean asc) {
+        return readOneFromInternalStorage(instance.longLivingContext, prefix, asc);
+
+    }
+
+    static Object[] readOneFromInternalStorage(Context context, String prefix, boolean asc) {
+        String start = getName(prefix);
+        String fileStart = start + FILE_NAME_SEPARATOR;
+
+        String[] files = context.fileList();
+
+        for (int i = 0; i < files.length; i++) {
+            int idx = asc ? i : files.length - 1 - i;
+            String file = files[idx];
+            if (file.startsWith(fileStart)) {
+                Object[] arr = new Object[2];
+                arr[0] = extractName(file, fileStart);
+                arr[1] = readDataFromInternalStorage(context, prefix, extractName(file, fileStart));
+                return arr;
+            }
+        }
+
+        return null;
+    }
+
+    private InternalConfig loadConfig() {
+        try {
+            return Storage.read(new InternalConfig());
+        } catch (MalformedURLException e) {
+            Log.wtf("Cannot happen");
+            return null;
+        }
+    }
+
+//    <service android:name=".MyInstanceIDService" android:exported="false">
+//    <intent-filter>
+//    <action android:name="com.google.android.gms.iid.InstanceID"/>
+//    </intent-filter>
+//    </service>
+//    public static class MyInstanceIDService extends InstanceIDListenerService {
+//        public void onTokenRefresh() {
+//            refreshAllTokens();
+//        }
+//
+//        private void refreshAllTokens() {
+//            // assuming you have defined TokenList as
+//            // some generalized store for your tokens
+//            ArrayList<TokenList> tokenList = TokensList.get();
+//            InstanceID iid = InstanceID.getInstance(this);
+//            for(tokenItem : tokenList) {
+//                  ModuleDeviceId.onRefresh
+//                tokenItem.token =
+//                        iid.getToken(tokenItem.authorizedEntity,tokenItem.scope,tokenItem.options);
+//                // send this tokenItem.token to your server
+//            }
+//        }
+//    };
 }

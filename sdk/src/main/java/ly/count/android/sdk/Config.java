@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import ly.count.android.sdk.internal.Log;
+import ly.count.android.sdk.internal.Utils;
 
 /**
  * Countly configuration object.
@@ -17,20 +18,129 @@ public class Config {
      * Enumeration of possible features of Countly SDK
      */
     public enum Feature {
-        Crash,
-        Push,
-        PerformanceMonitoring
+        Crash(1 << 1),
+        Push(1 << 2),
+        Attribution(1 << 3),
+        StarRating(1 << 4),
+        PerformanceMonitoring(1 << 5);
+
+        private final int index;
+
+        Feature(int index){ this.index = index; }
+
+        public int getIndex(){ return index; }
     }
 
     /**
      * Logging level for {@link Log} module
      */
     public enum LoggingLevel {
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR,
-        OFF
+        DEBUG(0),
+        INFO(1),
+        WARN(2),
+        ERROR(3),
+        OFF(4);
+
+        private final int level;
+
+        LoggingLevel(int level){ this.level = level; }
+
+        public int getLevel(){ return level; }
+
+        public boolean prints(LoggingLevel l) {
+            return level <= l.level;
+        }
+    }
+
+    /**
+     * Holder class for various ids metadata and id itself. Final, unmodifiable.
+     */
+    public static final class DID {
+        public final DeviceIdRealm realm;
+        public final DeviceIdStrategy strategy;
+        public final String entity;
+        public final String scope;
+        public final String id;
+
+        public DID(DeviceIdRealm realm, DeviceIdStrategy strategy, String id) {
+            this.realm = realm;
+            this.strategy = strategy;
+            this.id = id;
+            this.entity = null;
+            this.scope = null;
+        }
+
+        public DID(DeviceIdRealm realm, DeviceIdStrategy strategy, String id, String entity, String scope) {
+            this.realm = realm;
+            this.strategy = strategy;
+            this.id = id;
+            this.entity = entity;
+            this.scope = scope;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null || !(obj instanceof DID)) { return false; }
+            DID did = (DID) obj;
+            return did.realm == realm && did.strategy == strategy &&
+                    (did.entity == null ? entity == null : did.entity.equals(entity)) &&
+                    (did.scope == null ? scope == null : did.scope.equals(scope)) &&
+                    (did.id == null ? id == null : did.id.equals(id));
+        }
+
+        @Override
+        public int hashCode() {
+            return id.hashCode();
+        }
+    }
+
+    /**
+     * Strategy for device id generation
+     */
+    public enum DeviceIdStrategy {
+        OPEN_UDID(0),
+        ADVERTISING_ID(1),
+        INSTANCE_ID(2),
+        CUSTOM_ID(10);
+
+        private final int index;
+
+        DeviceIdStrategy(int level){
+            this.index = level;
+        }
+
+        public int getIndex(){ return index; }
+
+        public static DeviceIdStrategy fromIndex(int index){
+            if (index == OPEN_UDID.index) { return OPEN_UDID; }
+            if (index == ADVERTISING_ID.index) { return ADVERTISING_ID; }
+            if (index == INSTANCE_ID.index) { return INSTANCE_ID; }
+            if (index == CUSTOM_ID.index) { return CUSTOM_ID; }
+            return null;
+        }
+    }
+
+    /**
+     * What this device id is for
+     */
+    public enum DeviceIdRealm {
+        DEVICE_ID(0),
+        PUSH(1),
+        ADVERTISING_ID(2);
+
+        private final int index;
+
+        DeviceIdRealm(int level){
+            this.index = level;
+        }
+
+        public int getIndex(){ return index; }
+
+        public static DeviceIdRealm fromIndex(int index) {
+            if (index == DEVICE_ID.index) { return DEVICE_ID; }
+            if (index == PUSH.index) { return PUSH; }
+            return null;
+        }
     }
 
     /**
@@ -47,6 +157,21 @@ public class Config {
      * Set of Countly SDK features enabled
      */
     protected final Set<Feature> features;
+
+    /**
+     * Device id generation strategy
+     */
+    protected DeviceIdStrategy deviceIdStrategy = DeviceIdStrategy.OPEN_UDID;
+
+    /**
+     * Allow fallback from specified device id strategy to any other available strategy
+     */
+    protected boolean deviceIdFallbackAllowed = true;
+
+    /**
+     * Developer specified device id
+     */
+    protected String customDeviceId;
 
     /**
      * Tag used for logging
@@ -154,6 +279,69 @@ public class Config {
     }
 
     /**
+     * Set device id generation strategy:
+     *
+     * - {@link DeviceIdStrategy#INSTANCE_ID} to use InstanceID if available (requires Play Services).
+     * Falls back to OpenUDID if no Play Services available, default.
+     *
+     * - {@link DeviceIdStrategy#OPEN_UDID} to use OpenUDID derivative - unique, semi-persistent
+     * (stored in {@link android.content.SharedPreferences}).
+     *
+     * - {@link DeviceIdStrategy#ADVERTISING_ID} to use com.google.android.gms.ads.identifier.AdvertisingIdClient
+     * if available (requires Play Services). Falls back to OpenUDID if no Play Services available.
+     *
+     * - {@link DeviceIdStrategy#CUSTOM_ID} to use your own device id for Countly.
+     *
+     * @param strategy strategy to use instead of default OpenUDID
+     * @param customDeviceId device id for use with {@link DeviceIdStrategy#CUSTOM_ID}
+     * @return {@code this} instance for method chaining
+     */
+    public Config setDeviceIdStrategy(DeviceIdStrategy strategy, String customDeviceId) {
+        if (strategy == null) {
+            Log.wtf("DeviceIdStrategy cannot be null");
+        }
+        if (strategy == DeviceIdStrategy.CUSTOM_ID) {
+            return setCustomDeviceId(customDeviceId);
+        }
+        this.deviceIdStrategy = strategy;
+        return this;
+    }
+
+    /**
+     * Shorthand method for {@link #setDeviceIdStrategy(DeviceIdStrategy, String)}
+     *
+     * @param strategy strategy to use instead of default OpenUDID
+     * @return {@code this} instance for method chaining
+     */
+    public Config setDeviceIdStrategy(DeviceIdStrategy strategy) {
+        return setDeviceIdStrategy(strategy, null);
+    }
+
+    /**
+     * Set device id to specific string and set generation strategy to {@link DeviceIdStrategy#CUSTOM_ID}.
+     *
+     * @param customDeviceId device id for use with {@link DeviceIdStrategy#CUSTOM_ID}
+     * @return {@code this} instance for method chaining
+     */
+    public Config setCustomDeviceId(String customDeviceId) {
+        if (Utils.isEmpty(customDeviceId)) {
+            Log.wtf("DeviceIdStrategy.CUSTOM_ID strategy cannot be used without device id specified");
+        }
+        this.customDeviceId = customDeviceId;
+        this.deviceIdStrategy = DeviceIdStrategy.CUSTOM_ID;
+        return this;
+    }
+
+    /**
+     * Whether to allow fallback from unavailable device id strategy to Countly OpenUDID derivative.
+     *
+     * @param deviceIdFallbackAllowed true if fallback is allowed
+     */
+    public void setDeviceIdFallbackAllowed(boolean deviceIdFallbackAllowed) {
+        this.deviceIdFallbackAllowed = deviceIdFallbackAllowed;
+    }
+
+    /**
      * Force usage of POST method for all requests
      *
      * @return {@code this} instance for method chaining
@@ -182,7 +370,7 @@ public class Config {
      */
     public Config setLoggingTag(String loggingTag) {
         if (loggingTag == null || loggingTag.equals("")) {
-            throw new IllegalStateException("Logging tag cannot be empty");
+            Log.wtf("Logging tag cannot be empty");
         }
         this.loggingTag = loggingTag;
         return this;
@@ -330,6 +518,31 @@ public class Config {
     }
 
     /**
+     * Getter for {@link #deviceIdStrategy}
+     * @return {@link #deviceIdStrategy} value
+     */
+    public DeviceIdStrategy getDeviceIdStrategy() {
+        return deviceIdStrategy;
+    }
+
+    /**
+     * Whether to allow fallback from unavailable device id strategy to any other available.
+     *
+     * @return true if fallback is allowed
+     */
+    public boolean isDeviceIdFallbackAllowed() {
+        return deviceIdFallbackAllowed;
+    }
+
+    /**
+     * Getter for {@link #customDeviceId}
+     * @return {@link #customDeviceId} value
+     */
+    public String getCustomDeviceId() {
+        return customDeviceId;
+    }
+
+    /**
      * Getter for {@link #usePOST}
      * @return {@link #usePOST} value
      */
@@ -383,6 +596,22 @@ public class Config {
      */
     public boolean isTestModeEnabled() {
         return testMode;
+    }
+
+    /**
+     * Getter for {@link #sendUpdateEachSeconds}
+     * @return {@link #sendUpdateEachSeconds} value
+     */
+    public int getSendUpdateEachSeconds() {
+        return sendUpdateEachSeconds;
+    }
+
+    /**
+     * Getter for {@link #sendUpdateEachEvents}
+     * @return {@link #sendUpdateEachEvents} value
+     */
+    public int getSendUpdateEachEvents() {
+        return sendUpdateEachEvents;
     }
 
 }
