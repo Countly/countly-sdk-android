@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.app.Application;
-import android.content.Context;
 
 import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.Log;
@@ -36,27 +35,22 @@ public class CountlyNeo {
     /**
      * Init Countly
      *
-     * @param context either Application instance in case of normal startup, or context in case of implicit start
+     * @param application current Application instance
      * @param config config instance in case of normal startup, null otherwise
      */
-    private static void initInternal (Context context, Config config) {
+    private static void initInternal (Application application, Config config) {
         if (instance != null) {
             // TODO: shutdown if already running
             instance = null;
         }
 
-        instance = new CountlyNeo(new Core());
-        if (!instance.core.init(config, context)) {
+        Core core = Core.initForApplication(config, application);
+        if (core == null) {
             // TODO: inconsistent state, couldn't init, TBD
+            return;
         }
-
-        if (context == null) {
-            Log.wtf("Context cannot be null");
-        } else if (context instanceof Application) {
-            instance.core.onApplicationCreated((Application)context);
-        } else {
-            instance.core.onContextCreated(context);
-        }
+        instance = new CountlyNeo(core);
+        instance.core.onContextAcquired(application);
     }
 
     /**

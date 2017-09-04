@@ -2,7 +2,9 @@
   <dictionary name="artem">
     <words>
       <w>countly</w>
+      <w>deinit</w>
       <w>iids</w>
+      <w>nable</w>
     </words>
   </dictionary>
 </component>

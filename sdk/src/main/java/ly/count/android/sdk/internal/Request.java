@@ -8,7 +8,8 @@ import java.nio.charset.Charset;
  * Class which encapsulates request logic and manipulation: building, status of sending, etc.
  */
 
-class Request implements Storable {
+public class Request implements Storable {
+    public static final String MODULE = "module";
     private final Long id;
 
     private static final String P_DEVICE_ID = "device_id";
@@ -29,6 +30,21 @@ class Request implements Storable {
     protected Request(Object... params) {
         this.id = Device.uniqueTimestamp();
         this.params = new Params(params);
+    }
+
+    Request own(Class<? extends Module> module) {
+        this.params.add("module", module.getName());
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    Class<? extends Module> owner() {
+        String name = this.params.get(MODULE);
+        try {
+            return name == null ? null : (Class<? extends Module>) Class.forName(name);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
     }
 
     /**

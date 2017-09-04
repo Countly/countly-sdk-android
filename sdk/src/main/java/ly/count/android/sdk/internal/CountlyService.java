@@ -8,6 +8,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import ly.count.android.sdk.Config;
+
 /**
  * {@link Service} which monitors {@link Storage} for new requests and sends them via {@link Network}.
  *
@@ -17,6 +19,11 @@ public class CountlyService extends android.app.Service {
     static final int CMD_START = 1;
     static final int CMD_PING  = 2;
     static final int CMD_STOP  = 3;
+    static final int CMD_DEVICE_ID  = 10;
+    static final int CMD_CRASH  = 20;
+
+    static final String PARAM_ID = "id";
+    static final String PARAM_OLD_ID = "old";
 
     /**
      * Core instance is being run in {@link InternalConfig#limited} mode.
@@ -39,14 +46,15 @@ public class CountlyService extends android.app.Service {
     @Override
     public void onCreate() {
         Log.d("[service] Creating");
-        this.core = new Core();
         this.tasks = new Tasks();
         this.network = new Network();
-        if (!this.core.init(null, getApplication())) {
+        if (Core.initForService(this) == null) {
             // TODO: inconsistent state, TBD
             this.core = null;
             stop();
         } else {
+            this.core = Core.instance;
+            this.core.onLimitedContextAcquired(this);
             this.future = null;
         }
     }
@@ -73,6 +81,24 @@ public class CountlyService extends android.app.Service {
                 Log.d("[service] Stopping");
                 // clean up, prepare for shutdown
                 stop();
+            } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_DEVICE_ID) {
+                Log.d("[service] Device id");
+                // reread config & notify modules
+                Config.DID id = null;
+                Config.DID old = null;
+                boolean success = true;
+                if (intent.hasExtra(PARAM_ID)) {
+                    id = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, null);
+                    success = id.restore(intent.getByteArrayExtra(PARAM_ID));
+                }
+                if (intent.hasExtra(PARAM_OLD_ID)) {
+                    old = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, null);
+                    success = success && !old.restore(intent.getByteArrayExtra(PARAM_OLD_ID));
+                }
+                if (success) {
+                    Core.onDeviceId(id, old);
+                    check();
+                }
             }
         }
         return START_STICKY;
@@ -119,13 +145,40 @@ public class CountlyService extends android.app.Service {
                 if (request == null) {
                     return false;
                 } else {
-                    Log.d("[service] Sending request " + request.storageId() + ": " + request.toString());
+                    Log.d("[service] Preparing request: " + request);
                     try {
-                        boolean result = network.send(request).get();
-                        Log.d("[service] Request " + request.storageId() + " sent?: " + result);
-                        if (result) {
+                        boolean result;
+                        Boolean check = CountlyService.this.core.isRequestReady(request);
+                        if (check == null) {
+                            Log.d("[service] Request is not ready yet: " + request);
+                            result = false;
+                        } else if (check.equals(Boolean.FALSE)){
+                            Log.d("[service] Request won't be ready, removing: " + request);
                             Storage.remove(request);
+                            result = true;
+                        } else {
+                            Log.d("[service] Sending request: " + request.toString());
+                            result = network.send(request).get();
+                            Log.d("[service] Request " + request.storageId() + " sent?: " + result);
+                            if (result) {
+                                Storage.remove(request);
+                            }
                         }
+                        return result;
+                    } catch (InterruptedException e) {
+                        Log.i("[service] Interrupted while sending request " + request.storageId(), e);
+                        return false;
+                    } catch (ExecutionException e) {
+                        Log.i("[service] Interrupted while sending request " + request.storageId(), e);
+                        return false;
+                    } catch (CancellationException e) {
+                        Log.i("[service] Cancelled while sending request " + request.storageId(), e);
+                        return false;
+                    } catch (Throwable t) {
+                        Log.i("[service] Exception in network task " + request.storageId(), t);
+                        shutdown = true;
+                        return false;
+                    } finally {
                         synchronized (CountlyService.this) {
                             if (shutdown) {
                                 future = null;
@@ -134,24 +187,6 @@ public class CountlyService extends android.app.Service {
                                 future = tasks.run(submit());
                             }
                         }
-                        return result;
-                    } catch (InterruptedException e) {
-                        Log.i("Interrupted while sending request " + request.storageId(), e);
-                        return false;
-                    } catch (ExecutionException e) {
-                        Log.i("Interrupted while sending request " + request.storageId(), e);
-                        return false;
-                    } catch (CancellationException e) {
-                        Log.i("Cancelled while sending request " + request.storageId(), e);
-                        return false;
-                    } catch (Throwable t) {
-                        Log.i("Exception in network task " + request.storageId(), t);
-                        synchronized (CountlyService.this) {
-                            future = null;
-                            shutdown = true;
-                        }
-                        stopSelf();
-                        return false;
                     }
                 }
             }

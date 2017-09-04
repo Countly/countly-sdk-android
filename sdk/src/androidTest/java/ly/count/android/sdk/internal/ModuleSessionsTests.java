@@ -44,8 +44,7 @@ public class ModuleSessionsTests {
         contextImpl = new ContextImpl(context);
         moduleSessions = new ModuleSessions();
 
-        core = new Core();
-        core.init(config, getContext());
+        core = Core.initForApplication(config, getContext());
     }
 
     private void initModuleSessions() {

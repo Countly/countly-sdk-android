@@ -1,11 +1,17 @@
 package ly.count.android.sdk;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import ly.count.android.sdk.internal.Byteable;
 import ly.count.android.sdk.internal.Log;
 import ly.count.android.sdk.internal.Utils;
 
@@ -55,7 +61,7 @@ public class Config {
     /**
      * Holder class for various ids metadata and id itself. Final, unmodifiable.
      */
-    public static final class DID {
+    public static final class DID implements Byteable {
         public final DeviceIdRealm realm;
         public final DeviceIdStrategy strategy;
         public final String entity;
@@ -92,6 +98,93 @@ public class Config {
         public int hashCode() {
             return id.hashCode();
         }
+
+        @Override
+        public String toString() {
+            return "DID " + id + " (" + realm + ", " + strategy + ")" + (entity == null ? "" : " " + entity + ", " + scope);
+        }
+
+        @Override
+        public byte[] store() {
+            ByteArrayOutputStream bytes = null;
+            ObjectOutputStream stream = null;
+            try {
+                bytes = new ByteArrayOutputStream();
+                stream = new ObjectOutputStream(bytes);
+                stream.writeInt(realm.getIndex());
+                stream.writeInt(strategy.getIndex());
+
+                if (strategy == DeviceIdStrategy.INSTANCE_ID && realm != DeviceIdRealm.DEVICE_ID) {
+                    stream.writeUTF(id);
+                    stream.writeUTF(entity);
+                    stream.writeUTF(scope);
+                } else {
+                    stream.writeUTF(id);
+                }
+                stream.close();
+                return bytes.toByteArray();
+            } catch (IOException e) {
+                Log.wtf("Cannot serialize config", e);
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException e) {
+                        Log.wtf("Cannot happen", e);
+                    }
+                }
+                if (bytes != null) {
+                    try {
+                        bytes.close();
+                    } catch (IOException e) {
+                        Log.wtf("Cannot happen", e);
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean restore(byte[] data) {
+            ByteArrayInputStream bytes = null;
+            ObjectInputStream stream = null;
+
+            try {
+                bytes = new ByteArrayInputStream(data);
+                stream = new ObjectInputStream(bytes);
+
+                Utils.reflectiveSetField(this, "realm", DeviceIdRealm.fromIndex(stream.readInt()));
+                Utils.reflectiveSetField(this, "strategy", DeviceIdStrategy.fromIndex(stream.readInt()));
+                if (strategy == DeviceIdStrategy.INSTANCE_ID && realm != DeviceIdRealm.DEVICE_ID) {
+                    Utils.reflectiveSetField(this, "id", stream.readUTF());
+                    Utils.reflectiveSetField(this, "entity", stream.readUTF());
+                    Utils.reflectiveSetField(this, "scope", stream.readUTF());
+                } else {
+                    Utils.reflectiveSetField(this, "id", stream.readUTF());
+                }
+
+                return true;
+            } catch (IOException e) {
+                Log.wtf("Cannot deserialize config", e);
+            } finally {
+                if (stream != null) {
+                    try {
+                        stream.close();
+                    } catch (IOException e) {
+                        Log.wtf("Cannot happen", e);
+                    }
+                }
+                if (bytes != null) {
+                    try {
+                        bytes.close();
+                    } catch (IOException e) {
+                        Log.wtf("Cannot happen", e);
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 
     /**
@@ -125,7 +218,7 @@ public class Config {
      */
     public enum DeviceIdRealm {
         DEVICE_ID(0),
-        PUSH(1),
+        PUSH_TOKEN(1),
         ADVERTISING_ID(2);
 
         private final int index;
@@ -138,7 +231,8 @@ public class Config {
 
         public static DeviceIdRealm fromIndex(int index) {
             if (index == DEVICE_ID.index) { return DEVICE_ID; }
-            if (index == PUSH.index) { return PUSH; }
+            if (index == PUSH_TOKEN.index) { return PUSH_TOKEN; }
+            if (index == ADVERTISING_ID.index) { return ADVERTISING_ID; }
             return null;
         }
     }

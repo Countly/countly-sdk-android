@@ -365,9 +365,8 @@ public class SessionImplTests {
 
     @Test
     public void autostore() throws InterruptedException, MalformedURLException {
-        Core core = new Core();
-        core.init(new InternalConfig(new Config("http://count.ly/tests", "123")).setLoggerClass(Log.SystemLogger.class), getContext());
-        core.onContextCreated(getContext());
+        Core core = Core.initForApplication(new InternalConfig(new Config("http://count.ly/tests", "123")).setLoggerClass(Log.SystemLogger.class), getContext());
+        core.onLimitedContextAcquired(getContext());
 
         SessionImpl session = new SessionImpl();
         session.begin().event("key1")

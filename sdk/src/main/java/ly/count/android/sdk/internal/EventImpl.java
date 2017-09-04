@@ -14,7 +14,7 @@ import ly.count.android.sdk.Session;
  * Event base class implementation
  */
 
-class EventImpl implements Eve {
+class EventImpl implements Eve, JSONable {
     private final SessionImpl session;
     private final String key;
 
@@ -197,7 +197,7 @@ class EventImpl implements Eve {
      * Serialize to JSON format according to Countly server requirements
      * @return JSON string
      */
-    String toJSON() {
+    public String toJSON() {
         final JSONObject json = new JSONObject();
 
         try {

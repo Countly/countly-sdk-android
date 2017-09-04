@@ -2,6 +2,7 @@ package ly.count.android.sdk.internal;
 
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.*;
 import android.view.Display;
@@ -324,5 +325,14 @@ class Device {
      */
     static long nsToSec(long ns) {
         return Math.round(ns / NS_IN_SECOND);
+    }
+
+    /**
+     * Check whether API version of current device is greater or equals to {@code min}
+     * @param min minumum version that returns {@code true}
+     * @return true if API version is greater or equeal to {@code min}, false otherwise
+     */
+    static boolean API(int min) {
+        return Build.VERSION.SDK_INT >= min;
     }
 }

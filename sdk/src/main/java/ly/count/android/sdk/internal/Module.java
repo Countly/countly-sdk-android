@@ -1,6 +1,8 @@
 package ly.count.android.sdk.internal;
 
 
+import android.app.Application;
+
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Session;
 
@@ -9,8 +11,8 @@ import ly.count.android.sdk.Session;
  * Contract:
  * <ul>
  *     <li>Module instances must provide empty constructor with no parameters.</li>
- *     <li>Module class instance can be accessed only through this interface.</li>
- *     <li>Module class instance encapsulates all module-specific logic inside.</li>
+ *     <li>Module instance can be accessed only through this interface (static methods allowed for encapsulation).</li>
+ *     <li>Module instance encapsulates all module-specific logic inside.</li>
  *     <li>Module cannot acquire instance or call another Module.</li>
  * </ul>
  */
@@ -34,11 +36,19 @@ interface Module {
     void clear (InternalConfig config);
 
     /**
-     * SDK got a first context. Either application or service has been started.
+     * SDK got a first context. Called only in main mode (from {@link Application#onCreate()})
      *
-     * @param context {@link Context} with application or context set
+     * @param context {@link Context} with application instance
      */
     void onContextAcquired(Context context);
+
+    /**
+     * SDK got a first context. Called only in {@link InternalConfig#limited} mode,
+     * that is from {@link CountlyService} or {@link android.content.BroadcastReceiver}.
+     *
+     * @param context {@link Context} with application context instance
+     */
+    void onLimitedContextAcquired(Context context);
 
     /**
      * Device ID has been acquired from device id provider.
@@ -111,4 +121,14 @@ interface Module {
      * @param session session which ended
      */
     void onSessionEnded (Session session, Context context);
+
+    /**
+     * This method is called only on owning module only if module marks request as owned ({@link Request#own(Module)}.
+     * Gives a module another chance to modify request before sending. Being run in {@link CountlyService}.
+     *
+     * @param request request to check
+     * @return {@code true} if ok to send now, {@code false} if not ok to (remove request
+     * from queue), {@code null} if cannot decide yet
+     */
+    Boolean onRequest (Request request);
 }

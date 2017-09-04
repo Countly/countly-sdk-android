@@ -24,14 +24,14 @@ public class ModuleRequests extends ModuleBase {
         ModuleRequests.metrics = Device.buildMetrics(context);
     }
 
-    public static Future<Boolean> sessionBegin(Session session) {
+    public static Future<Boolean> sessionBegin(SessionImpl session) {
         Request request = addCommon(config, session, Request.build("begin_session", 1));
         request.params.add(metrics);
         // TODO: country, city, location
         return pushAsync(request);
     }
 
-    public static Future<Boolean> sessionUpdate(Session session, Long seconds) {
+    public static Future<Boolean> sessionUpdate(SessionImpl session, Long seconds) {
         Request request = addCommon(config, session, Request.build());
 
         if (seconds != null && seconds > 0) {
@@ -42,7 +42,7 @@ public class ModuleRequests extends ModuleBase {
         return pushAsync(request);
     }
 
-    public static Future<Boolean> sessionEnd(Session session, Long seconds) {
+    public static Future<Boolean> sessionEnd(SessionImpl session, Long seconds) {
         Request request = addCommon(config, session, Request.build("end_session", 1));
 
         if (seconds != null && seconds > 0) {
@@ -71,32 +71,63 @@ public class ModuleRequests extends ModuleBase {
 
     }
 
-    private static Request addCommon(InternalConfig config, Session session, Request request) {
-        request.params.add("app_key", config.getServerAppKey())
-                .add("timestamp", Device.uniqueTimestamp())
+    static Request nonSessionRequest(InternalConfig config) {
+        return addCommon(config, null, new Request());
+    }
+
+    private static Request addCommon(InternalConfig config, SessionImpl session, Request request) {
+        request.params.add("timestamp", Device.uniqueTimestamp())
                 .add("tz", Device.getTimezoneOffset())
                 .add("hour", Device.currentHour())
-                .add("dow", Device.currentDayOfWeek())
-                .add("sdk_name", config.getSdkName())
-                .add("sdk_version", config.getSdkVersion());
+                .add("dow", Device.currentDayOfWeek());
 
         if (session != null) {
             request.params.add("session_id", session.getId());
-        }
 
-        if (config.getDeviceId() != null) {
-            request.params.add("device_id", config.getDeviceId().id);
+            if (!session.events.isEmpty()) {
+                request.params.arr("events").put(session.events).add();
+            }
+
+            request.params.add(session.params);
         }
 
         return request;
     }
 
+    static Request addRequired(InternalConfig config, Request request) {
+        request.params.add("sdk_name", config.getSdkName())
+                .add("sdk_version", config.getSdkVersion())
+                .add("app_key", config.getServerAppKey())
+                .add("device_id", config.getDeviceId().id);
+        return request;
+    }
+
+    /**
+     * Common store-request logic: store & send a ping to the service.
+     *
+     * @param request Request to store
+     * @return {@link Future} which resolves to {@code} true if stored successfully, false otherwise
+     */
     public static Future<Boolean> pushAsync(Request request) {
+        return pushAsync(request, null);
+    }
+
+    /**
+     * Common store-request logic: store & send a ping to the service.
+     *
+     * @param request Request to store
+     * @param callback Callback (nullable) to call when storing is done, called in {@link Storage} {@link Thread}
+     * @return {@link Future} which resolves to {@code} true if stored successfully, false otherwise
+     */
+    public static Future<Boolean> pushAsync(Request request, final Tasks.Callback<Boolean> callback) {
         Log.d("New request " + request.storageId() + ": " + request);
         return Storage.pushAsync(request, new Tasks.Callback<Boolean>() {
             @Override
             public void call(Boolean param) throws Exception {
-                Core.sendToService(CountlyService.CMD_PING);
+                Core.sendToService(CountlyService.CMD_PING, null);
+                if (callback != null) {
+                    callback.call(param);
+                }
             }
         });
     }

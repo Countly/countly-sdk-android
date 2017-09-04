@@ -25,6 +25,10 @@ abstract class ModuleBase implements Module {
     }
 
     @Override
+    public void onLimitedContextAcquired(Context context) {
+    }
+
+    @Override
     public void onActivityCreated(Context context) {
     }
 
@@ -59,4 +63,8 @@ abstract class ModuleBase implements Module {
     @Override
     public void onSessionEnded(Session session, Context context) {
     }
+
+    @Override
+    public Boolean onRequest (Request request) { return false; }
+
 }

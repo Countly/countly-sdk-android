@@ -4,9 +4,7 @@ package ly.count.android.sdk.internal;
  * Serialization interface.
  */
 
-interface Storable {
+interface Storable extends Byteable {
     Long storageId();
     String storagePrefix();
-    byte[] store();
-    boolean restore(byte[] data);
 }

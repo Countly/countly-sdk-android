@@ -1,9 +1,12 @@
 package ly.count.android.sdk.internal;
 
+import android.net.Uri;
+
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +52,19 @@ public class Utils {
         } catch (UnsupportedEncodingException e) {
             Log.wtf("No UTF-8 encoding?", e);
             return "";
+        }
+    }
+
+    /**
+     * URLDecoder wrapper to remove try-catch
+     * @param str string to decode
+     * @return url-decoded {@code str}
+     */
+    static String urldecode(String str) {
+        try {
+            return URLDecoder.decode(str, UTF8);
+        } catch (UnsupportedEncodingException e) {
+            return null;
         }
     }
 
@@ -140,7 +156,7 @@ public class Utils {
         }
     }
 
-    static Boolean reflectiveSetField(Object object, String name, Object value) {
+    public static Boolean reflectiveSetField(Object object, String name, Object value) {
         return utils._reflectiveSetField(object, object.getClass(), name, value);
     }
 

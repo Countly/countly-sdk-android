@@ -22,11 +22,6 @@ import static ly.count.android.sdk.Config.DeviceIdStrategy.INSTANCE_ID;
 final class InternalConfig extends Config implements Storable {
 
     /**
-     * List of modules built based on Feature set selected.
-     */
-    private ArrayList<Module> modules;
-
-    /**
      * Logger class
      */
     private Class<? extends Log.Logger> loggerClass = Log.AndroidLogger.class;
@@ -37,7 +32,7 @@ final class InternalConfig extends Config implements Storable {
     private boolean limited = false;
 
     /**
-     * InstanceIds generated from Countly SDK (currently maximum 2: Countly device id + FCM).
+     * {@link ly.count.android.sdk.Config.DID} instances generated from Countly SDK (currently maximum 2: Countly device id + FCM).
      * Stored to be able to refresh them.
      */
     private List<DID> dids = new ArrayList<>();
@@ -57,7 +52,10 @@ final class InternalConfig extends Config implements Storable {
     InternalConfig(Config config) throws MalformedURLException {
         //todo double check, should it protect against nulls?
         super(config.getServerURL().toString(), config.getServerAppKey());
+        setFrom(config);
+    }
 
+    void setFrom(Config config) {
         List<Field> local = Utils.reflectiveGetDeclaredFields(getClass());
         List<Field> remot = Utils.reflectiveGetDeclaredFields(config.getClass());
 
@@ -65,7 +63,7 @@ final class InternalConfig extends Config implements Storable {
             Log.d("Config " + r.getName());
             for (Field l : local) {
                 Log.d("InternalConfig " + l.getName());
-                 if (r.getName().equals(l.getName())) {
+                if (r.getName().equals(l.getName())) {
                     try {
                         r.setAccessible(true);
                         if (l.isAccessible()) {
@@ -81,13 +79,6 @@ final class InternalConfig extends Config implements Storable {
                 }
             }
         }
-//        this.features.addAll(config.getFeatures());
-//        this.usePOST = config.isUsePOST();
-//        this.loggingTag = config.getLoggingTag();
-//        this.loggingLevel = config.getLoggingLevel();
-//        this.testMode = config.isTestModeEnabled();
-//        this.programmaticSessionsControl = config.isProgrammaticSessionsControl();
-//        this.sdkVersion = config.getSdkVersion();
     }
 
     public Class<? extends Log.Logger> getLoggerClass() {
@@ -102,6 +93,10 @@ final class InternalConfig extends Config implements Storable {
     public InternalConfig setLimited(boolean limited) {
         this.limited = limited;
         return this;
+    }
+
+    public boolean isLimited() {
+        return limited;
     }
 
     @Override
@@ -139,15 +134,10 @@ final class InternalConfig extends Config implements Storable {
             stream.writeBoolean(testMode);
             stream.writeInt(dids.size());
             for (DID did : dids) {
-                stream.writeInt(did.realm.getIndex());
-                stream.writeInt(did.strategy.getIndex());
-
-                if (did.strategy == INSTANCE_ID && did.realm != DeviceIdRealm.DEVICE_ID) {
-                    stream.writeUTF(did.id);
-                    stream.writeUTF(did.entity);
-                    stream.writeUTF(did.scope);
-                } else {
-                    stream.writeUTF(did.id);
+                byte[] b = did.store();
+                if (b != null){
+                    stream.writeInt(b.length);
+                    stream.write(b);
                 }
             }
             stream.close();
@@ -216,16 +206,10 @@ final class InternalConfig extends Config implements Storable {
             dids.clear();
             l = stream.readInt();
             while (l-- > 0) {
-                DeviceIdRealm realm = DeviceIdRealm.fromIndex(stream.readInt());
-                DeviceIdStrategy strategy = DeviceIdStrategy.fromIndex(stream.readInt());
-
-                DID did;
-                if (strategy == INSTANCE_ID && realm != DeviceIdRealm.DEVICE_ID) {
-                    did = new DID(realm, INSTANCE_ID, stream.readUTF(), stream.readUTF(), stream.readUTF());
-                } else {
-                    did = new DID(realm, strategy, stream.readUTF());
-                }
-
+                DID did = new DID(DeviceIdRealm.DEVICE_ID, INSTANCE_ID, null);
+                byte[] b = new byte[stream.readInt()];
+                stream.readFully(b);
+                did.restore(b);
                 dids.add(did);
             }
 
@@ -266,13 +250,9 @@ final class InternalConfig extends Config implements Storable {
     }
 
     public DID setDeviceId(DID id) {
-        return setDeviceId(id, DeviceIdRealm.DEVICE_ID);
-    }
-
-    public DID setDeviceId(DID id, DeviceIdRealm realm) {
         DID old = null;
         for (DID did : dids) {
-            if (did.realm == realm) {
+            if (did.realm == id.realm) {
                 old = did;
             }
         }
@@ -283,11 +263,7 @@ final class InternalConfig extends Config implements Storable {
         return old;
     }
 
-    public void addDID(DID did) {
-        this.dids.add(did);
-    }
-
-    public List<DID> getIIDs() {
-        return this.dids;
+    public boolean removeDeviceId(DID did) {
+        return this.dids.remove(did);
     }
 }

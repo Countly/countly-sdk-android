@@ -65,34 +65,19 @@ public class ModuleDeviceId extends ModuleBase {
 
                 if (Utils.isNotEmpty(config.getCustomDeviceId())) {
                     // developer specified id on SDK init
-                    config.addDID(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, config.getCustomDeviceId()));
-                    Storage.push(config);
-
-                    Log.d("Got developer id" + config.getDeviceId());
-                    Core.instance.withEachModule(new Core.ModuleCallback() {
-                        @Override
-                        public void call(Module module) {
-                            module.onDeviceId(config.getDeviceId(), null);
-                        }
-                    });
+                    Config.DID did = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, config.getCustomDeviceId());
+                    Log.d("Got developer id" + did);
+                    Core.onDeviceId(did, null);
                 } else {
                     // regular flow - acquire id using specified strategy
                     acquireId(context, new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), null), config.isDeviceIdFallbackAllowed(), new Tasks.Callback<Config.DID>() {
                         @Override
                         public void call(Config.DID id) throws Exception {
                             if (id != null) {
-                                Log.d("Got device id " + id.strategy + ": " + id.id);
-                                config.setDeviceId(id);
-                                Storage.push(config);
-
-                                Core.instance.withEachModule(new Core.ModuleCallback() {
-                                    @Override
-                                    public void call(Module module) {
-                                        module.onDeviceId(config.getDeviceId(), null);
-                                    }
-                                });
+                                Log.d("Got device id: " + id);
+                                Core.onDeviceId(id, null);
                             } else {
-                                Log.i("No device id of strategy " + config.getDeviceIdStrategy() + " is not available yet");
+                                Log.i("No device id of strategy " + config.getDeviceIdStrategy() + " is available yet");
                             }
                         }
                     });
@@ -100,25 +85,12 @@ public class ModuleDeviceId extends ModuleBase {
             } else {
                 Log.d("Migrating device id " + legacyDeviceId);
 
-                config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), legacyDeviceId));
-                Storage.push(config);
-
-                Core.instance.withEachModule(new Core.ModuleCallback() {
-                    @Override
-                    public void call(Module module) {
-                        module.onDeviceId(config.getDeviceId(), config.getDeviceId());
-                    }
-                });
+                Config.DID did = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), legacyDeviceId);
+                Core.onDeviceId(did, did);
             }
         } else {
             // second or next app launch, notify id is available
-
-            Core.instance.withEachModule(new Core.ModuleCallback() {
-                @Override
-                public void call(Module module) {
-                    module.onDeviceId(config.getDeviceId(), config.getDeviceId());
-                }
-            });
+            Core.onDeviceId(config.getDeviceId(), config.getDeviceId());
         }
     }
 
@@ -144,12 +116,7 @@ public class ModuleDeviceId extends ModuleBase {
             }
 
             // old session end & new session begin requests are supposed to happen here
-            Core.instance.withEachModule(new Core.ModuleCallback() {
-                @Override
-                public void call(Module module) {
-                    module.onDeviceId(config.getDeviceId(), old);
-                }
-            });
+            Core.onDeviceId(config.getDeviceId(), old);
         }
     }
 
@@ -164,24 +131,19 @@ public class ModuleDeviceId extends ModuleBase {
         final Config.DID old = config.getDeviceId();
         config.setDeviceId(null);
         Storage.push(config);
-
-        Core.instance.withEachModule(new Core.ModuleCallback() {
-            @Override
-            public void call(Module module) {
-                module.onDeviceId(null, old);
-            }
-        });
+        Core.onDeviceId(config.getDeviceId(), old);
     }
 
-    private Future<Config.DID> acquireId(final Context context, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
+    Future<Config.DID> acquireId(final Context context, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
         if (this.tasks == null) {
             this.tasks = new Tasks();
         }
 
+        final android.content.Context ctx = context.getContext();
         return this.tasks.run(new Tasks.Task<Config.DID>(0L) {
             @Override
             public Config.DID call() throws Exception {
-                return acquireIdSync(context.getContext(), holder, fallbackAllowed);
+                return acquireIdSync(ctx, holder, fallbackAllowed);
             }
         }, callback);
     }
@@ -292,6 +254,9 @@ public class ModuleDeviceId extends ModuleBase {
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         }
                     }
+                }  else {
+                    Log.i("INSTANCE_ID is not available " + (fallbackAllowed ? ", checking OPEN_UDID" : "fallback is not allowed"));
+                    return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                 }
 
         }

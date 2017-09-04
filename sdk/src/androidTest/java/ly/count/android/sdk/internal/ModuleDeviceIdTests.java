@@ -2,8 +2,10 @@ package ly.count.android.sdk.internal;
 
 import junit.framework.Assert;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.reflect.Whitebox;
@@ -14,7 +16,10 @@ import java.util.List;
 import ly.count.android.sdk.Config;
 
 import static android.support.test.InstrumentationRegistry.getContext;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ModuleDeviceIdTests {
@@ -25,8 +30,19 @@ public class ModuleDeviceIdTests {
     private Module dummy = null;
     private Utils utils = null;
 
+    @Before
+    public void beforeEachTest() throws Exception {
+        Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
+        Core.instance.purgeInternalStorage(null);
+        Core.instance.deinit();
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void checkStrictAdvertisingId() throws Exception {
+        utils = Mockito.spy(new Utils());
+        Utils.reflectiveSetField(Utils.class, "utils", utils);
+        doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
+
         InternalConfig config = TestingUtilityInternal.setupLogs(null);
         config.setDeviceIdFallbackAllowed(false);
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
@@ -36,6 +52,10 @@ public class ModuleDeviceIdTests {
 
     @Test(expected = IllegalArgumentException.class)
     public void checkStrictInstanceId() throws Exception {
+        utils = Mockito.spy(new Utils());
+        Utils.reflectiveSetField(Utils.class, "utils", utils);
+        doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
+
         InternalConfig config = TestingUtilityInternal.setupLogs(null);
         config.setDeviceIdFallbackAllowed(false);
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
@@ -45,6 +65,10 @@ public class ModuleDeviceIdTests {
 
     @Test
     public void checkNotStrictAdvertisingId() throws Exception {
+        utils = Mockito.spy(new Utils());
+        Utils.reflectiveSetField(Utils.class, "utils", utils);
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
+
         InternalConfig config = TestingUtilityInternal.setupLogs(null);
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
         ModuleDeviceId module = new ModuleDeviceId();
@@ -54,11 +78,32 @@ public class ModuleDeviceIdTests {
 
     @Test
     public void checkNotStrictInstanceId() throws Exception {
+        utils = Mockito.spy(new Utils());
+        Utils.reflectiveSetField(Utils.class, "utils", utils);
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
+
         InternalConfig config = TestingUtilityInternal.setupLogs(null);
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
         ModuleDeviceId module = new ModuleDeviceId();
         module.init(config);
         Assert.assertTrue(true);
+    }
+
+    @Test
+    public void checkLimitedContext() throws Exception {
+        String deviceId = "123dev";
+        config = TestingUtilityInternal.setupConfig();
+        config.setCustomDeviceId(deviceId);
+        init(false);
+
+        core.onLimitedContextAcquired(getContext());
+
+        Config.DID did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        Assert.assertNull(did);
+        Mockito.verify(dummy, never()).onDeviceId(did, null);
+
+        internalConfig = Storage.read(internalConfig);
+        Assert.assertNull(internalConfig);
     }
 
     @Test
@@ -68,7 +113,7 @@ public class ModuleDeviceIdTests {
         config.setCustomDeviceId(deviceId);
         init(false);
 
-        core.onContextCreated(getContext());
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(getContext()));
 
         Config.DID did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -94,7 +139,7 @@ public class ModuleDeviceIdTests {
 
         getContext().getSharedPreferences(Legacy.PREFERENCES, android.content.Context.MODE_PRIVATE).edit().putString(Legacy.KEY_ID_ID, legacyId).commit();
 
-        core.onContextCreated(getContext());
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(getContext()));
 
         Config.DID did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -118,12 +163,12 @@ public class ModuleDeviceIdTests {
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
         config.enableTestMode();
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(true);
+        init(false);
 
-        when(utils._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME)).thenReturn(Boolean.TRUE);
-        when(utils._reflectiveCall(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", context)).thenReturn(new ModuleDeviceId.AdvIdInfo());
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
+        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCall(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), isA(android.content.Context.class));
 
-        core.onContextCreated(context);
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
         tasks.awaitTermination();
 
@@ -148,14 +193,14 @@ public class ModuleDeviceIdTests {
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
         config.enableTestMode();
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(true);
+        init(false);
 
         getContext().getSharedPreferences(Legacy.PREFERENCES, android.content.Context.MODE_PRIVATE).edit().putString(Legacy.KEY_ID_ID, legacyId).commit();
 
-        when(utils._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME)).thenReturn(Boolean.TRUE);
-        when(utils._reflectiveCall(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", context)).thenReturn(new ModuleDeviceId.AdvIdInfo());
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
+        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCall(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), isA(android.content.Context.class));
 
-        core.onContextCreated(context);
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
 
         Assert.assertNull(Utils.reflectiveGetField(module, "tasks"));
 
@@ -171,21 +216,50 @@ public class ModuleDeviceIdTests {
         Assert.assertEquals(legacyId, did.id);
     }
 
+    @Test
+    public void checkAdvId_Fallback() throws Exception {
+        android.content.Context context = getContext();
+        ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
+        config = TestingUtilityInternal.setupConfig();
+        config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
+        config.enableTestMode();
+        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
+        init(false);
+
+        doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
+
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
+
+        Tasks tasks = Utils.reflectiveGetField(module, "tasks");
+        tasks.awaitTermination();
+
+        Config.DID did = internalConfig.getDeviceId();
+        Assert.assertNotNull(did);
+        Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+        Mockito.verify(dummy).onDeviceId(did, null);
+
+        internalConfig = Storage.read(internalConfig);
+        Assert.assertNotNull(internalConfig);
+        did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        Assert.assertNotNull(did);
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+    }
 
     @Test
     public void checkInstId_fresh() throws Exception {
         android.content.Context context = getContext();
-        ModuleDeviceId.InstIdInstance.deviceId = "123adv";
+        ModuleDeviceId.InstIdInstance.deviceId = "123inst";
         config = TestingUtilityInternal.setupConfig();
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
         config.enableTestMode();
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(true);
+        init(false);
 
-        when(utils._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME)).thenReturn(Boolean.TRUE);
-        when(utils._reflectiveCall(ModuleDeviceId.INSTANCE_ID_CLASS_NAME, null, "getInstance", context)).thenReturn(new ModuleDeviceId.InstIdInstance());
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
+        doReturn(new ModuleDeviceId.InstIdInstance()).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"), isA(android.content.Context.class));
 
-        core.onContextCreated(context);
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
         tasks.awaitTermination();
 
@@ -204,20 +278,20 @@ public class ModuleDeviceIdTests {
     @Test
     public void checkInstId_legacy() throws Exception {
         android.content.Context context = getContext();
-        ModuleDeviceId.InstIdInstance.deviceId = "123adv";
+        ModuleDeviceId.InstIdInstance.deviceId = "123inst";
         String legacyId = "123legacy";
         config = TestingUtilityInternal.setupConfig();
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
         config.enableTestMode();
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(true);
+        init(false);
 
         getContext().getSharedPreferences(Legacy.PREFERENCES, android.content.Context.MODE_PRIVATE).edit().putString(Legacy.KEY_ID_ID, legacyId).commit();
 
-        when(utils._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME)).thenReturn(Boolean.TRUE);
-        when(utils._reflectiveCall(ModuleDeviceId.INSTANCE_ID_CLASS_NAME, null, "getInstance", context)).thenReturn(new ModuleDeviceId.InstIdInstance());
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
+        doReturn(new ModuleDeviceId.InstIdInstance()).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"), isA(android.content.Context.class));
 
-        core.onContextCreated(context);
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
 
         Assert.assertNull(Utils.reflectiveGetField(module, "tasks"));
 
@@ -233,6 +307,36 @@ public class ModuleDeviceIdTests {
         Assert.assertEquals(legacyId, did.id);
     }
 
+    @Test
+    public void checkInstId_Fallback() throws Exception {
+        android.content.Context context = getContext();
+        ModuleDeviceId.InstIdInstance.deviceId = "123inst";
+        config = TestingUtilityInternal.setupConfig();
+        config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
+        config.enableTestMode();
+        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
+        init(false);
+
+        doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
+
+        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
+
+        Tasks tasks = Utils.reflectiveGetField(module, "tasks");
+        tasks.awaitTermination();
+
+        Config.DID did = internalConfig.getDeviceId();
+        Assert.assertNotNull(did);
+        Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+        Mockito.verify(dummy).onDeviceId(did, null);
+
+        internalConfig = Storage.read(internalConfig);
+        Assert.assertNotNull(internalConfig);
+        did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        Assert.assertNotNull(did);
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+    }
+
     private void init(boolean mockModule) throws MalformedURLException {
         if (config == null) {
             config = TestingUtilityInternal.setupConfig();
@@ -240,12 +344,11 @@ public class ModuleDeviceIdTests {
         }
         config.enableTestMode();
         if (core == null) {
-            core = new Core();
-            core.init(config, getContext());
+            core = Core.initForApplication(config, getContext());
         }
         dummy = Mockito.mock(Module.class);
+        List<Module> list = Whitebox.getInternalState(core, "modules");
         if (module == null) {
-            List<Module> list = Whitebox.getInternalState(core, "modules");
             for (Module m : list) {
                 if (m instanceof ModuleDeviceId) {
                     module = (ModuleDeviceId) m;
@@ -257,13 +360,9 @@ public class ModuleDeviceIdTests {
                 module = Mockito.spy(module);
                 list.add(1, module);
             }
-            list.add(dummy);
-        } else {
-            List<Module> list = Whitebox.getInternalState(core, "modules");
-            list.add(dummy);
         }
+        list.add(dummy);
         internalConfig = Utils.reflectiveGetField(core, "config");
-//        internalConfig.setLoggerClass(Log.SystemLogger.class);
         new Log().init(internalConfig);
         utils = Mockito.spy(new Utils());
         Utils.reflectiveSetField(Utils.class, "utils", utils);

@@ -1,5 +1,6 @@
 package ly.count.android.sdk.internal;
 
+import android.app.Application;
 import android.content.*;
 
 import junit.framework.Assert;
@@ -7,6 +8,15 @@ import junit.framework.Assert;
 import java.net.MalformedURLException;
 
 import ly.count.android.sdk.Config;
+
+import static android.content.Context.MODE_PRIVATE;
+import static android.content.Context.TELEPHONY_SERVICE;
+import static android.content.Context.WINDOW_SERVICE;
+import static android.support.test.InstrumentationRegistry.getContext;
+import static ly.count.android.sdk.internal.Legacy.PREFERENCES;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestingUtilityInternal {
     static int countParams(Params params) {
@@ -74,9 +84,21 @@ public class TestingUtilityInternal {
 
     static Core setupBasicCore(android.content.Context context, Config config) throws MalformedURLException {
         config = TestingUtilityInternal.setupLogs(config);
-        Core core = new Core();
-        core.init(config, context);
-        core.onContextCreated(context);
+        Core core = Core.initForApplication(config, context);
+        core.onLimitedContextAcquired(context);
         return core;
+    }
+
+    static Application mockApplication(android.content.Context context) {
+        Application app = mock(Application.class);
+        when(app.getApplicationContext()).thenReturn(getContext());
+        when(app.getResources()).thenReturn(context.getResources());
+        when(app.getSystemService(TELEPHONY_SERVICE)).thenReturn(context.getSystemService(TELEPHONY_SERVICE));
+        when(app.getSystemService(WINDOW_SERVICE)).thenReturn(context.getSystemService(WINDOW_SERVICE));
+        when(app.getPackageManager()).thenReturn(context.getPackageManager());
+        when(app.getPackageName()).thenReturn(context.getPackageName());
+        when(app.getSharedPreferences(PREFERENCES, MODE_PRIVATE)).thenReturn(context.getSharedPreferences(PREFERENCES, MODE_PRIVATE));
+        when(app.getContentResolver()).thenReturn(context.getContentResolver());
+        return app;
     }
 }

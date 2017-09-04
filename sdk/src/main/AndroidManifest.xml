@@ -3,10 +3,16 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application>
+        <receiver android:name="ly.count.android.sdk.internal.ModuleAttribution$AttributionReferrerReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.vending.INSTALL_REFERRER" />
+            </intent-filter>
+        </receiver>
+
         <uses-library android:name="android.test.runner"/>
     </application>
 
-    <!--<instrumentation android:name="ly.count.android.sdk.test.InstrumentationTestRunner"-->
-        <!--android:targetPackage="ly.count.android.sdk"/>-->
+    <service android:name="ly.count.android.sdk.internal.CountlyService">
+    </service>
 
 </manifest>

@@ -46,11 +46,10 @@ public class CoreTests {
         Assert.assertEquals(false, config.isProgrammaticSessionsControl());
         Assert.assertEquals(Config.LoggingLevel.OFF, config.getLoggingLevel());
 
-        Core core = new Core();
-        core.init(config, getContext());
+        Core core = Core.initForApplication(config, getContext());
         TestingUtilityInternal.assertConfigsContainSameData(config, Whitebox.<InternalConfig>getInternalState(core, "config"));
 
-        Assert.assertEquals(2, Whitebox.<List<Module>>getInternalState(core, "modules").size());
+        Assert.assertEquals(3, Whitebox.<List<Module>>getInternalState(core, "modules").size());
         Assert.assertEquals(0, Whitebox.<List<SessionImpl>>getInternalState(core, "sessions").size());
     }
 
@@ -60,11 +59,10 @@ public class CoreTests {
         Assert.assertEquals(false, config.isProgrammaticSessionsControl());
         Assert.assertEquals(Config.LoggingLevel.WARN, config.getLoggingLevel());
 
-        Core core = new Core();
-        core.init(config, getContext());
+        Core core = Core.initForApplication(config, getContext());
         TestingUtilityInternal.assertConfigsContainSameData(config, Whitebox.<InternalConfig>getInternalState(core, "config"));
 
-        Assert.assertEquals(3, Whitebox.<List<Module>>getInternalState(core, "modules").size());
+        Assert.assertEquals(4, Whitebox.<List<Module>>getInternalState(core, "modules").size());
         Assert.assertEquals(0, Whitebox.<List<SessionImpl>>getInternalState(core, "sessions").size());
     }
 }

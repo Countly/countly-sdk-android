@@ -24,9 +24,8 @@ public class StorageTests {
         config.setLoggerClass(Log.SystemLogger.class)
                 .setProgrammaticSessionsControl(true)
                 .setLoggingLevel(Config.LoggingLevel.DEBUG);
-        Core core = new Core();
-        core.init(config, getContext());
-        core.onContextCreated(getContext());
+        Core core = Core.initForApplication(config, getContext());
+        core.onLimitedContextAcquired(getContext());
         new Log().init(config);
         Core.instance.purgeInternalStorage(null);
     }

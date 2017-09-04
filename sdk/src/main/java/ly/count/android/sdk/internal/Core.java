@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
 
@@ -50,7 +51,8 @@ public class Core {
      */
     private static final Map<Config.Feature, Class<? extends Module>> moduleMappings = new HashMap<>();
     static {
-//        setModuleMapping(Config.Feature.Analytics, ModuleSessions.class);
+        setModuleMapping(Config.Feature.Attribution, ModuleAttribution.class);
+        setModuleMapping(Config.Feature.Push, ModulePush.class);
     }
 
     /**
@@ -87,25 +89,35 @@ public class Core {
         instance = this;
     }
 
+    void deinit () {
+        instance = null;
+    }
+
     /**
      * Init Core instance according to config supplied. In case config is null, Core reads it
      * from storage.
+     *
+     * @see #initForApplication(Config, Context)
+     * @see #initForService(CountlyService)
+     * @see #initForBroadcastReceiver(Context)
      *
      * @param config Countly configuration
      * @param context Initialization context, can be replaced later
      * @return true if initialized, false if no config found and value in parameter was null
      * @throws IllegalArgumentException in case {@code config} is inconsistent
      */
-    public boolean init(Config config, Context context) throws IllegalArgumentException {
+    private boolean init(Config config, Context context) throws IllegalArgumentException {
         try {
-            if (config == null) {
-                longLivingContext = context;
-                this.config = loadConfig();
-                if (this.config == null) {
+            longLivingContext = context;
+            this.config = loadConfig();
+            if (this.config == null) {
+                if (config != null) {
+                    this.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
+                } else {
                     return false;
                 }
-            } else {
-                this.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
+            } else if (config != null) {
+                this.config.setFrom(config);
             }
             this.buildModules();
 
@@ -116,6 +128,50 @@ public class Core {
         } catch (MalformedURLException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * Most common init sequence, that is initialization on application start.
+     *
+     * @param config startup config
+     * @param application current application instance
+     * @return Core instance initialized with config & application
+     */
+    public static Core initForApplication(Config config, Context application) {
+        if (new Core().init(config, application)) {
+            return Core.instance;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Initialization for {@link CountlyService}: just init {@link Core} to make {@link Storage} work.
+     *
+     * @param service current service instance
+     * @return config if initialization succeeded, {@code null} otherwise
+     */
+    static InternalConfig initForService(CountlyService service) {
+        return (Core.instance != null || new Core().init(null, service.getApplicationContext())) ? Core.instance.config : null;
+    }
+
+    /**
+     * Initialization for {@link BroadcastReceiver} (for {@link ly.count.android.sdk.Config.Feature#Push} &
+     * {@link ly.count.android.sdk.Config.Feature#Attribution}): just init {@link Core} to make {@link Storage} work.
+     *
+     * @param context current {@link Context}
+     * @return config if initialization succeeded, {@code null} otherwise
+     */
+    static InternalConfig initForBroadcastReceiver(Context context) {
+        return (Core.instance != null || new Core().init(null, context)) ? Core.instance.config : null;
+    }
+
+    /**
+     * Check whether Core is initialized already
+     * @return config instance if initialized, null otherwise
+     */
+    static InternalConfig initialized() {
+        return instance == null ? null : instance.config;
     }
 
     /**
@@ -170,6 +226,31 @@ public class Core {
             Log.wtf("Module constructor cannot be accessed", e);
         } catch (InvocationTargetException e) {
             Log.wtf("Module constructor cannot be invoked", e);
+        }
+        return null;
+    }
+
+    /**
+     * Return module instance by {@link ly.count.android.sdk.Config.Feature}
+     *
+     * @param feature to get a {@link Module} instance for
+     * @return {@link Module} instance or null if no such module is instantiated
+     */
+    private Module module(Config.Feature feature) {
+        return module(moduleMappings.get(feature));
+    }
+
+    /**
+     * Return module instance by {@link Module} class
+     *
+     * @param cls class to get a {@link Module} instance for
+     * @return {@link Module} instance or null if no such module is instantiated
+     */
+    private Module module(Class<? extends Module> cls) {
+        for (Module module: modules) {
+            if (module.getClass().isAssignableFrom(cls)) {
+                return module;
+            }
         }
         return null;
     }
@@ -253,23 +334,62 @@ public class Core {
      * Initialization for cases when Countly needs to start up implicitly
      * @param context Context instance to store
      */
-    public void onContextCreated(Context context) {
+    public void onLimitedContextAcquired(Context context) {
         longLivingContext = context.getApplicationContext();
 
-        Storage.push(this.config);
-        sendToService(CountlyService.CMD_START);
+        if (!(context instanceof CountlyService)) {
+            sendToService(CountlyService.CMD_START, null);
+        }
 
         this.config.setLimited(true);
         ContextImpl ctx = new ContextImpl(context);
         for (Module m : modules) {
-            m.onContextAcquired(ctx);
+            m.onLimitedContextAcquired(ctx);
         }
         ctx.expire();
     }
 
-    public static void sendToService(int code) {
+    /**
+     * Notify modules about {@link ly.count.android.sdk.Config.DID} change: adding, change or removal
+     * and store {@link InternalConfig} changes if needed
+     *
+     * @param id new id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if removing it
+     * @param old old id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if there were no id with such realm
+     */
+    public static void onDeviceId(Config.DID id, Config.DID old) {
+        if (id != null && (!id.equals(old) || !id.equals(instance.config.getDeviceId(id.realm)))) {
+            instance.config.setDeviceId(id);
+            Storage.push(instance.config);
+        } else if (id == null && old != null) {
+            if (instance.config.removeDeviceId(old)) {
+                Storage.push(instance.config);
+            }
+        }
+        for (Module module : instance.modules) {
+            module.onDeviceId(id, old);
+        }
+        Map<String, byte[]> params = null;
+        if (id != null || old != null) {
+            params = new HashMap<>();
+            if (id != null) {
+                params.put(CountlyService.PARAM_ID, id.store());
+            }
+            if (old != null) {
+                params.put(CountlyService.PARAM_OLD_ID, old.store());
+            }
+        }
+
+        sendToService(CountlyService.CMD_DEVICE_ID, params);
+    }
+
+    public static void sendToService(int code, Map<String, byte[]> params) {
         Intent intent = new Intent(instance.longLivingContext, CountlyService.class);
         intent.putExtra(CountlyService.CMD, code);
+        if (params != null) {
+            for (String key : params.keySet()) {
+                intent.putExtra(key, params.get(key));
+            }
+        }
         instance.longLivingContext.startService(intent);
     }
 
@@ -278,30 +398,16 @@ public class Core {
     }
 
     /**
-     * Call the callback for each module initialized
-     *
-     * @see ModuleCallback
-     * @param callback callback to call
-     */
-    void withEachModule(ModuleCallback callback) {
-        this.config.setLimited(true);
-        ContextImpl ctx = new ContextImpl(longLivingContext);
-        for (Module m : modules) {
-            callback.call(m);
-        }
-        ctx.expire();
-    }
-
-    /**
      * Lifecycle methods. For Android versions later or equal to Ice Cream Sandwich, developer
      * doesn't need to call those from each activity. In case app supports earlier version,
      * it's developer responsibility. In any case, for API 14+ Countly ignores dev calls.
      */
-    public void onApplicationCreated(Application application) {
+    public void onContextAcquired(Application application) {
+        Log.d("Application created");
         longLivingContext = application.getApplicationContext();
 
         Storage.push(this.config);
-        sendToService(CountlyService.CMD_START);
+        sendToService(CountlyService.CMD_START, null);
 
         this.config.setLimited(false);
 
@@ -309,51 +415,62 @@ public class Core {
             application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                 @Override
                 public void onActivityCreated(Activity activity, Bundle bundle) {
+                    Log.d("[Lifecycle] Activity created: " + activity.getClass().getSimpleName());
                     Core.this.onActivityCreatedInternal(activity, bundle);
                 }
 
                 @Override
                 public void onActivityStarted(Activity activity) {
+                    Log.d("[Lifecycle] Activity started: " + activity.getClass().getSimpleName());
                     Core.this.onActivityStartedInternal(activity);
                 }
 
                 @Override
                 public void onActivityResumed(Activity activity) {
+                    Log.d("[Lifecycle] Activity resumed: " + activity.getClass().getSimpleName());
                     Core.this.onActivityResumedInternal(activity);
                 }
 
                 @Override
                 public void onActivityPaused(Activity activity) {
+                    Log.d("[Lifecycle] Activity paused: " + activity.getClass().getSimpleName());
                     Core.this.onActivityPausedInternal(activity);
                 }
 
                 @Override
                 public void onActivityStopped(Activity activity) {
+                    Log.d("[Lifecycle] Activity stopped: " + activity.getClass().getSimpleName());
                     Core.this.onActivityStoppedInternal(activity);
                 }
 
                 @Override
                 public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+                    Log.d("[Lifecycle] Activity save state: " + activity.getClass().getSimpleName());
                     Core.this.onActivitySaveInstanceStateInternal(activity, bundle);
                 }
 
                 @Override
                 public void onActivityDestroyed(Activity activity) {
+                    Log.d("[Lifecycle] Activity destroyed: " + activity.getClass().getSimpleName());
                     Core.this.onActivityDestroyedInternal(activity);
                 }
             });
             application.registerComponentCallbacks(new ComponentCallbacks2() {
                 @Override
                 public void onTrimMemory(int i) {
+                    Log.d("[Lifecycle] Trim memory " + i);
                     Core.this.onApplicationTrimMemoryInternal(i);
                 }
 
                 @Override
                 public void onConfigurationChanged(Configuration configuration) {
+                    // TODO: Operator, screen, etc
+                    Log.d("[Lifecycle] Configuration changed: " + configuration.toString());
                 }
 
                 @Override
                 public void onLowMemory() {
+                    Log.d("[Lifecycle] Low memory");
                 }
             });
         }
@@ -367,48 +484,56 @@ public class Core {
 
     public void onApplicationTrimMemory(int level) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Trim memory " + level);
             this.onApplicationTrimMemoryInternal(level);
         }
     }
 
     public void onActivityCreated(Activity activity, Bundle bundle) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Activity created: " + activity.getClass().getSimpleName());
             this.onActivityCreatedInternal(activity, bundle);
         }
     }
 
     public void onActivityStarted(Activity activity) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Activity started: " + activity.getClass().getSimpleName());
             this.onActivityStartedInternal(activity);
         }
     }
 
     public void onActivityResumed(Activity activity) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Activity resumed: " + activity.getClass().getSimpleName());
             this.onActivityResumedInternal(activity);
         }
     }
 
     public void onActivityPaused(Activity activity) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Activity paused: " + activity.getClass().getSimpleName());
             this.onActivityPausedInternal(activity);
         }
     }
 
     public void onActivityStopped(Activity activity) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Activity stopped: " + activity.getClass().getSimpleName());
             this.onActivityStoppedInternal(activity);
         }
     }
 
     public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Activity save state: " + activity.getClass().getSimpleName());
             this.onActivitySaveInstanceStateInternal(activity, bundle);
         }
     }
 
     public void onActivityDestroyed(Activity activity) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            Log.d("[Callback] Activity destroyed: " + activity.getClass().getSimpleName());
             this.onActivityDestroyedInternal(activity);
         }
     }
@@ -541,7 +666,7 @@ public class Core {
         return list;
     }
 
-    boolean pushDataToInternalStorage(String prefix, String name, byte[] data) {
+    public boolean pushDataToInternalStorage(String prefix, String name, byte[] data) {
         return pushDataToInternalStorage(instance.longLivingContext, prefix, name, data);
     }
 
@@ -682,6 +807,39 @@ public class Core {
         } catch (MalformedURLException e) {
             Log.wtf("Cannot happen");
             return null;
+        }
+    }
+
+    /**
+     * Acquire a specific {@link ly.count.android.sdk.Config.DID} for parameters
+     * specified in {@code holder} ({@link ly.count.android.sdk.Config.DID#strategy},
+     * {@link ly.count.android.sdk.Config.DID#realm}, {@link ly.count.android.sdk.Config.DID#scope}).
+     *
+     * @param holder {@link ly.count.android.sdk.Config.DID} instance with parameters
+     * @param fallbackAllowed whether fallback to other {@link ly.count.android.sdk.Config.DID#strategy} is allowed or not
+     * @param callback callback to run (in {@link ModuleDeviceId} thread) when done, can be null
+     * @return Future which resolves to {@link ly.count.android.sdk.Config.DID} instance if succeeded or to null if not
+     */
+    Future<Config.DID> acquireId(final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
+        assert ((ModuleDeviceId)module(ModuleDeviceId.class)) != null;
+        ContextImpl ctx = new ContextImpl(longLivingContext);
+        Future<Config.DID> future = ((ModuleDeviceId)module(ModuleDeviceId.class)).acquireId(new ContextImpl(longLivingContext), holder, fallbackAllowed, callback);
+        ctx.expire();
+        return future;
+    }
+
+    Boolean isRequestReady(Request request) {
+        Class<? extends Module> cls = request.owner();
+        if (cls == null) {
+            return true;
+        } else {
+            Module module = module(cls);
+            request.params.remove(Request.MODULE);
+            if (module == null) {
+                return true;
+            } else {
+                return module.onRequest(request);
+            }
         }
     }
 

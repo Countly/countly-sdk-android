@@ -1,10 +1,12 @@
 package ly.count.android.sdk.internal;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,6 +44,39 @@ class Params {
         }
     }
 
+    static final class Arr {
+        private final String key;
+        private final Collection<String> json;
+        private final Params params;
+
+        Arr(String key, Params params) {
+            this.params = params;
+            this.key = key;
+            this.json = new ArrayList<>();
+        }
+
+        public Arr put(JSONable value) {
+            json.add(value.toJSON());
+            return this;
+        }
+
+        public Arr put(Collection collection) {
+            for (Object value : collection) if (value instanceof JSONable) {
+                json.add(((JSONable)value).toJSON());
+            }
+            return this;
+        }
+
+        public Params add() {
+            if (json.size() > 0) {
+                params.add(key, "[" + Utils.join(json, ",") + "]");
+            } else {
+                params.add(key, "[]");
+            }
+            return params;
+        }
+    }
+
     Params(Object... objects) {
         params = new StringBuilder();
         if (objects != null && objects.length == 1 && (objects[0] instanceof Object[])) {
@@ -75,6 +110,9 @@ class Params {
     }
 
     Params add(Params params) {
+        if (params == null || params.length() == 0) {
+            return this;
+        }
         if (this.params.length() > 0) {
             this.params.append("&");
         }
@@ -84,6 +122,10 @@ class Params {
 
     Obj obj(String key) {
        return new Obj(key, this);
+    }
+
+    Arr arr(String key) {
+       return new Arr(key, this);
     }
 
     String remove(String key) {
@@ -100,6 +142,9 @@ class Params {
     }
 
     String get(String key) {
+        if (params.indexOf(key + "=") == -1) {
+            return null;
+        }
         String[] pairs = params.toString().split("&");
         for (String pair : pairs) {
             String comps[] = pair.split("=");
