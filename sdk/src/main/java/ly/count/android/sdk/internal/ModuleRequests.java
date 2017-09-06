@@ -72,7 +72,7 @@ public class ModuleRequests extends ModuleBase {
     }
 
     static Request nonSessionRequest(InternalConfig config) {
-        return addCommon(config, null, new Request());
+        return addCommon(config == null ? ModuleRequests.config : config, null, new Request());
     }
 
     private static Request addCommon(InternalConfig config, SessionImpl session, Request request) {

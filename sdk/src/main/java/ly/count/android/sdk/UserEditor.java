@@ -17,12 +17,27 @@ public interface UserEditor {
      * @return this instance for method chaining
      */
     UserEditor set(String key, Object value);
+    UserEditor setCustom(String key, Object value);
 
     UserEditor setName(String value);
     UserEditor setUsername(String value);
+    UserEditor setEmail(String value);
+    UserEditor setOrg(String value);
+    UserEditor setPhone(String value);
+    UserEditor setPicture(byte[] picture);
+    UserEditor setPicturePath(String picturePath);
+    UserEditor setGender(Object gender);
+    UserEditor setBirthyear(int birthyear);
+    UserEditor setBirthyear(String birthyear);
 
-    UserEditor inc(String key, int value);
-    UserEditor mul(String key, int value);
+    UserEditor inc(String key, int by);
+    UserEditor mul(String key, double by);
+    UserEditor min(String key, double value);
+    UserEditor max(String key, double value);
+    UserEditor setOnce(String key, Object value);
+    UserEditor pull(String key, Object value);
+    UserEditor push(String key, Object value);
+    UserEditor pushUnique(String key, Object value);
     // ...
 
     User commit();
