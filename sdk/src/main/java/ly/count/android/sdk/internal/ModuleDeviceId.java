@@ -1,11 +1,5 @@
 package ly.count.android.sdk.internal;
 
-
-import android.annotation.SuppressLint;
-import android.provider.Settings;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
@@ -164,14 +158,7 @@ public class ModuleDeviceId extends ModuleBase {
                 // Courtesy OpenUDID https://github.com/vieux/OpenUDID
                 Log.i("Generating OPEN_UDID");
 
-                @SuppressLint("HardwareIds")
-                String id = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
-
-                // if ANDROID_ID is null, or it's equals to the GalaxyTab generic ANDROID_ID or bad, generates a new one
-                if (id == null || id.equals("9774d56d682e549c") || id.length() < 15) {
-                    final SecureRandom random = new SecureRandom();
-                    id = new BigInteger(64, random).toString(16);
-                }
+                String id = Core.generateOpenUDID(ctx);
 
                 return new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, id);
 

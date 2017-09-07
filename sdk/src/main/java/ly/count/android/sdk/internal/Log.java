@@ -1,8 +1,5 @@
 package ly.count.android.sdk.internal;
 
-
-import java.lang.reflect.InvocationTargetException;
-
 import ly.count.android.sdk.Config;
 
 /**

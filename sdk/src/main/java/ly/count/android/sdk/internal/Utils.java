@@ -1,7 +1,5 @@
 package ly.count.android.sdk.internal;
 
-import android.net.Uri;
-
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;

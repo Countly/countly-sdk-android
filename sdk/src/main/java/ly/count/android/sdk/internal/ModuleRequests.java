@@ -2,8 +2,6 @@ package ly.count.android.sdk.internal;
 
 import java.util.concurrent.Future;
 
-import ly.count.android.sdk.Session;
-
 /**
  * Centralized place for all requests construction & handling.
  */

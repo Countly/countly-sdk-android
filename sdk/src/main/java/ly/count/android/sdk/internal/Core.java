@@ -1,5 +1,6 @@
 package ly.count.android.sdk.internal;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.*;
@@ -7,6 +8,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
@@ -14,8 +16,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.nio.channels.FileLock;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -402,6 +406,19 @@ public class Core {
             }
         }
         instance.longLivingContext.startService(intent);
+    }
+
+    public static String generateOpenUDID(Context ctx) {
+        @SuppressLint("HardwareIds")
+        String id = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
+
+        // if ANDROID_ID is null, or it's equals to the GalaxyTab generic ANDROID_ID or bad, generates a new one
+        if (id == null || id.equals("9774d56d682e549c") || id.length() < 15) {
+            final SecureRandom random = new SecureRandom();
+            id = new BigInteger(64, random).toString(16);
+        }
+
+        return id;
     }
 
     interface ModuleCallback {
