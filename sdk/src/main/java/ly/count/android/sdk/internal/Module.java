@@ -23,8 +23,9 @@ interface Module {
      *
      * @param config Countly configuration object: can be stored locally if needed.
      * @throws IllegalArgumentException in case supplied {@link InternalConfig} is not consistent.
+     * @throws IllegalStateException if some required for this module platform feature is not available.
      */
-    void init (InternalConfig config) throws IllegalArgumentException;
+    void init (InternalConfig config) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * App user decided to opt out from analytics or developer changed important preferences.

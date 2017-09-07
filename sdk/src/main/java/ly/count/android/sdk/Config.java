@@ -218,7 +218,7 @@ public class Config {
      */
     public enum DeviceIdRealm {
         DEVICE_ID(0),
-        PUSH_TOKEN(1),
+        FCM_TOKEN(1),
         ADVERTISING_ID(2);
 
         private final int index;
@@ -231,7 +231,7 @@ public class Config {
 
         public static DeviceIdRealm fromIndex(int index) {
             if (index == DEVICE_ID.index) { return DEVICE_ID; }
-            if (index == PUSH_TOKEN.index) { return PUSH_TOKEN; }
+            if (index == FCM_TOKEN.index) { return FCM_TOKEN; }
             if (index == ADVERTISING_ID.index) { return ADVERTISING_ID; }
             return null;
         }

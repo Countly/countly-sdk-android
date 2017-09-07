@@ -121,9 +121,20 @@ public class Core {
             }
             this.buildModules();
 
+            List<Module> failed = new ArrayList<>();
             for (Module module : modules) {
-                module.init(this.config);
+                try {
+                    module.init(this.config);
+                } catch (IllegalArgumentException | IllegalStateException e) {
+                    if (this.config.isTestModeEnabled()) {
+                        throw e;
+                    } else {
+                        failed.add(module);
+                    }
+                }
             }
+            modules.removeAll(failed);
+
             return true;
         } catch (MalformedURLException e) {
             throw new IllegalStateException(e);

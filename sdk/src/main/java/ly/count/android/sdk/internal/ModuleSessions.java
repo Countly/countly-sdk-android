@@ -20,10 +20,11 @@ public class ModuleSessions extends ModuleBase {
      * for a case when it's off
      */
     @Override
-    public void init(InternalConfig config) throws IllegalArgumentException {
+    public void init(InternalConfig config) throws IllegalStateException {
         super.init(config);
         if (config.isProgrammaticSessionsControl()) {
-            throw new IllegalArgumentException("ModuleSessions must not be initialized when programmaticSessionsControl is on");
+            // should never happen actually
+            throw new IllegalStateException("ModuleSessions must not be initialized when programmaticSessionsControl is on");
         }
         updateInterval = config.getSendUpdateEachSeconds();
     }

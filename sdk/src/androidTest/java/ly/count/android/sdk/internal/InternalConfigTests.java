@@ -86,7 +86,7 @@ public class InternalConfigTests {
 
         Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, "openudid");
         Config.DID adv = new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, "adid");
-        Config.DID ptk = new Config.DID(Config.DeviceIdRealm.PUSH_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, "push token", "entity", "scope");
+        Config.DID ptk = new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, "push token", "entity", "scope");
 
         InternalConfig internalConfig = new InternalConfig(config);
         internalConfig.setDeviceId(dev);
@@ -113,9 +113,9 @@ public class InternalConfigTests {
 
         Assert.assertNotNull(internalConfig.getDeviceId());
         Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID));
-        Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.PUSH_TOKEN));
+        Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
         Assert.assertEquals(dev, internalConfig.getDeviceId());
         Assert.assertEquals(adv, internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID));
-        Assert.assertEquals(ptk, internalConfig.getDeviceId(Config.DeviceIdRealm.PUSH_TOKEN));
+        Assert.assertEquals(ptk, internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
     }
 }

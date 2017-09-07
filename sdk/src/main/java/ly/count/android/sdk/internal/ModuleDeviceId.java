@@ -34,7 +34,7 @@ public class ModuleDeviceId extends ModuleBase {
     private Tasks tasks;
 
     @Override
-    public void init(InternalConfig config) {
+    public void init(InternalConfig config) throws IllegalArgumentException {
         super.init(config);
         this.config = config;
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID && !Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME) && !config.isDeviceIdFallbackAllowed()) {
