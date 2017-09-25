@@ -1,5 +1,6 @@
 package ly.count.android.sdk.internal;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -7,8 +8,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ly.count.android.sdk.User;
 import ly.count.android.sdk.UserEditor;
@@ -120,19 +123,21 @@ class UserEditorImpl implements UserEditor {
     static final String GENDER = "gender";
     static final String BIRTHYEAR = "byear";
     static final String CUSTOM = "custom";
-    
+
     private final UserImpl user;
     private final Map<String, Object> sets;
     private final List<Op> ops;
+    private final List<String> cohortsToAdd, cohortsToRemove;
 
     UserEditorImpl(UserImpl user) {
         this.user = user;
         this.sets = new HashMap<>();
         this.ops = new ArrayList<>();
+        this.cohortsToAdd = new ArrayList<>();
+        this.cohortsToRemove = new ArrayList<>();
     }
 
-    JSONObject perform() throws JSONException{
-        JSONObject changes = new JSONObject();
+    void perform(JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved) throws JSONException{
         for (String key : sets.keySet()) {
             Object value = sets.get(key);
             switch (key) {
@@ -265,7 +270,11 @@ class UserEditorImpl implements UserEditor {
             op.apply(changes.getJSONObject(CUSTOM));
             op.apply(user.custom);
         }
-        return changes;
+
+        user.cohorts.addAll(cohortsToAdd);
+        user.cohorts.removeAll(cohortsToRemove);
+        cohortsAdded.addAll(cohortsToAdd);
+        cohortsRemoved.addAll(cohortsToRemove);
     }
 
     @Override
@@ -401,19 +410,54 @@ class UserEditorImpl implements UserEditor {
     }
 
     @Override
+    public UserEditor addToCohort(String key) {
+        if (cohortsToRemove.contains(key)) {
+            cohortsToRemove.remove(key);
+        }
+        cohortsToAdd.add(key);
+        return this;
+    }
+
+    @Override
+    public UserEditor removeFromCohort(String key) {
+        if (cohortsToAdd.contains(key)) {
+            cohortsToAdd.remove(key);
+        }
+        cohortsToRemove.add(key);
+        return this;
+    }
+
+    @Override
     public User commit() {
         try {
-            JSONObject profile = perform();
+            final JSONObject changes = new JSONObject();
+            final Set<String> cohortsAdded = new HashSet<>();
+            final Set<String> cohortsRemoved = new HashSet<>();
+
+            perform(changes, cohortsAdded, cohortsRemoved);
+
             Storage.push(user);
-            Request request = ModuleRequests.nonSessionRequest(null);
-            request.params.add("user_details", profile.toString());
-            ModuleRequests.pushAsync(request);
+
+            ModuleRequests.injectParams(new ModuleRequests.ParamsInjector() {
+                @Override
+                public void call(Params params) {
+                    params.add("user_details", changes.toString());
+                    if (cohortsAdded.size() > 0) {
+                        params.add("add_cohorts", new JSONArray(cohortsAdded).toString());
+                    }
+                    if (cohortsRemoved.size() > 0) {
+                        params.add("remove_cohorts", new JSONArray(cohortsRemoved).toString());
+                    }
+                }
+            });
         } catch (JSONException e) {
             Log.wtf("Exception while committing changes to User profile", e);
         }
 
         sets.clear();
         ops.clear();
+        cohortsToAdd.clear();
+        cohortsToRemove.clear();
 
         return user;
     }

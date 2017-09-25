@@ -1,7 +1,7 @@
 package ly.count.android.sdk.internal;
 
-import android.content.BroadcastReceiver;
-import android.content.Intent;
+import android.content.*;
+import android.content.Context;
 
 import junit.framework.Assert;
 
@@ -62,7 +62,7 @@ public class ModuleAttributionTests {
         init(false);
 
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCall(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), isA(android.content.Context.class));
+        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
@@ -93,7 +93,7 @@ public class ModuleAttributionTests {
         init(false);
 
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCall(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), isA(android.content.Context.class));
+        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
@@ -148,7 +148,7 @@ public class ModuleAttributionTests {
         Assert.assertFalse(request.params.toString().contains(ModuleAttribution.CLY_AID));
 
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCall(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), isA(android.content.Context.class));
+        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");

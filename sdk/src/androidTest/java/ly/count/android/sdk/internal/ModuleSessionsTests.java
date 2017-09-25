@@ -8,7 +8,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.internal.matchers.Any;
 import org.powermock.reflect.Whitebox;
 
 import java.net.MalformedURLException;
@@ -17,7 +16,6 @@ import java.util.List;
 import ly.count.android.sdk.Config;
 
 import static android.support.test.InstrumentationRegistry.getContext;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.validateMockitoUsage;
@@ -65,7 +63,7 @@ public class ModuleSessionsTests {
         moduleSessions.init(null);
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test (expected = IllegalStateException.class)
     public void init_withSessionControl() {
         internalConfig.enableProgrammaticSessionsControl();
 

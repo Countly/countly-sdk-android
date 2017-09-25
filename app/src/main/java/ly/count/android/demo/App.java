@@ -8,7 +8,7 @@ import ly.count.android.sdk.Config;
 import ly.count.android.sdk.CountlyNeo;
 
 /**
- * Created by artem on 04/08/2017.
+ * Demo Application subclass with an example of how to initialize Countly SDK
  */
 
 public class App extends Application {
@@ -16,7 +16,13 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         try {
-            CountlyNeo.init(this, new Config("http://artem.count.ly", "b9e35f9f278064412c2d9ebf02c88de1b034f101").enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG));
+            Config config = new Config("http://artem.count.ly", "b9e35f9f278064412c2d9ebf02c88de1b034f101")
+                    .enableTestMode()
+                    .setLoggingLevel(Config.LoggingLevel.DEBUG)
+                    .setFeatures(Config.Feature.Attribution, Config.Feature.Push, Config.Feature.Crash)
+                    .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
+
+            CountlyNeo.init(this, config);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

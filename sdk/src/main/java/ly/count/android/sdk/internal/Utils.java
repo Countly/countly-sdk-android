@@ -154,6 +154,48 @@ public class Utils {
         }
     }
 
+    /**
+     * Reflective method call encapsulation with argument types specified explicitly before each parameter.
+     *
+     * @param className class to call method in
+     * @param instance instance to call on, null for static methods
+     * @param methodName method name
+     * @param args optional arguments to pass to that method in format [arg1 class, arg1 value, arg2 class, arg2 value]
+     * @return false in case of failure, method result otherwise
+     */
+    static Object reflectiveCallStrict(String className, Object instance, String methodName, Object ...args) {
+        return utils._reflectiveCallStrict(className, instance, methodName, args);
+    }
+
+    public Object _reflectiveCallStrict(String className, Object instance, String methodName, Object ...args) {
+        try {
+            Class<?> cls = instance == null ? Class.forName(className) : instance.getClass();
+            Class<?> types[] = args == null || args.length == 0 ? null : new Class[args.length / 2];
+            Object arguments[] = args == null || args.length == 0 ? null : new Object[args.length / 2];
+
+            if (args != null && args.length > 0) {
+                for (int i = 0; i < args.length; i += 2) {
+                    types[i / 2] = (Class<?>) args[i];
+                    arguments[i / 2] = args[i + 1];
+                }
+            }
+            Method method = cls.getDeclaredMethod(methodName, types);
+            return method.invoke(instance, arguments);
+        } catch (ClassNotFoundException t) {
+            Log.w("Cannot call " + methodName + " of " + className, t);
+            return false;
+        } catch (NoSuchMethodException t) {
+            Log.w("Cannot call " + methodName + " of " + className, t);
+            return false;
+        } catch (IllegalAccessException t) {
+            Log.w("Cannot call " + methodName + " of " + className, t);
+            return false;
+        } catch (InvocationTargetException t) {
+            Log.w("Cannot call " + methodName + " of " + className, t);
+            return false;
+        }
+    }
+
     public static Boolean reflectiveSetField(Object object, String name, Object value) {
         return utils._reflectiveSetField(object, object.getClass(), name, value);
     }
@@ -321,5 +363,9 @@ public class Utils {
      */
     public static boolean isNotEmpty(String str) {
         return !isEmpty(str);
+    }
+
+    public static boolean API(int version) {
+        return Utils.API(version);
     }
 }

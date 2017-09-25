@@ -1,6 +1,8 @@
 package ly.count.android.demo;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
@@ -9,19 +11,38 @@ import android.widget.Button;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyPush;
 import ly.count.android.sdk.CountlyStarRating;
 
 
 public class MainActivity extends Activity {
-    private Activity activity;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        final CountlyPush.Message msg = getIntent().getParcelableExtra("countly_message");
+
+        if (msg != null && msg.has("typ") && msg.data("typ").equals("promo")) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(msg.title())
+                    .setMessage(msg.message());
+            builder.setCancelable(true);
+            builder.setPositiveButton(msg.buttons().get(0).title(), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    msg.recordAction(1);
+                }
+            });
+            builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                @Override
+                public void onCancel(DialogInterface dialog) {
+                    msg.recordAction(2);
+                }
+            });
+        }
 //        Countly.sharedInstance().setLoggingEnabled(true);
 //
 //        Countly.onCreate(this);

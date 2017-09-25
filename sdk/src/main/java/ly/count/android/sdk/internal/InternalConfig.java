@@ -132,6 +132,7 @@ final class InternalConfig extends Config implements Storable {
             stream.writeInt(sendUpdateEachEvents);
             stream.writeBoolean(programmaticSessionsControl);
             stream.writeBoolean(testMode);
+            stream.writeObject(pushActivityClass);
             stream.writeInt(dids.size());
             for (DID did : dids) {
                 byte[] b = did.store();
@@ -202,6 +203,7 @@ final class InternalConfig extends Config implements Storable {
             sendUpdateEachEvents = stream.readInt();
             programmaticSessionsControl = stream.readBoolean();
             testMode = stream.readBoolean();
+            pushActivityClass = (String) stream.readObject();
 
             dids.clear();
             l = stream.readInt();
@@ -214,7 +216,7 @@ final class InternalConfig extends Config implements Storable {
             }
 
             return true;
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             Log.wtf("Cannot deserialize config", e);
         } finally {
             if (stream != null) {

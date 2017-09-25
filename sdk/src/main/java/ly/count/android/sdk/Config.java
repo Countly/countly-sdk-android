@@ -64,24 +64,12 @@ public class Config {
     public static final class DID implements Byteable {
         public final DeviceIdRealm realm;
         public final DeviceIdStrategy strategy;
-        public final String entity;
-        public final String scope;
         public final String id;
 
         public DID(DeviceIdRealm realm, DeviceIdStrategy strategy, String id) {
             this.realm = realm;
             this.strategy = strategy;
             this.id = id;
-            this.entity = null;
-            this.scope = null;
-        }
-
-        public DID(DeviceIdRealm realm, DeviceIdStrategy strategy, String id, String entity, String scope) {
-            this.realm = realm;
-            this.strategy = strategy;
-            this.id = id;
-            this.entity = entity;
-            this.scope = scope;
         }
 
         @Override
@@ -89,8 +77,6 @@ public class Config {
             if (obj == null || !(obj instanceof DID)) { return false; }
             DID did = (DID) obj;
             return did.realm == realm && did.strategy == strategy &&
-                    (did.entity == null ? entity == null : did.entity.equals(entity)) &&
-                    (did.scope == null ? scope == null : did.scope.equals(scope)) &&
                     (did.id == null ? id == null : did.id.equals(id));
         }
 
@@ -101,7 +87,7 @@ public class Config {
 
         @Override
         public String toString() {
-            return "DID " + id + " (" + realm + ", " + strategy + ")" + (entity == null ? "" : " " + entity + ", " + scope);
+            return "DID " + id + " (" + realm + ", " + strategy + ")";
         }
 
         @Override
@@ -113,14 +99,7 @@ public class Config {
                 stream = new ObjectOutputStream(bytes);
                 stream.writeInt(realm.getIndex());
                 stream.writeInt(strategy.getIndex());
-
-                if (strategy == DeviceIdStrategy.INSTANCE_ID && realm != DeviceIdRealm.DEVICE_ID) {
-                    stream.writeUTF(id);
-                    stream.writeUTF(entity);
-                    stream.writeUTF(scope);
-                } else {
-                    stream.writeUTF(id);
-                }
+                stream.writeObject(id);
                 stream.close();
                 return bytes.toByteArray();
             } catch (IOException e) {
@@ -155,16 +134,10 @@ public class Config {
 
                 Utils.reflectiveSetField(this, "realm", DeviceIdRealm.fromIndex(stream.readInt()));
                 Utils.reflectiveSetField(this, "strategy", DeviceIdStrategy.fromIndex(stream.readInt()));
-                if (strategy == DeviceIdStrategy.INSTANCE_ID && realm != DeviceIdRealm.DEVICE_ID) {
-                    Utils.reflectiveSetField(this, "id", stream.readUTF());
-                    Utils.reflectiveSetField(this, "entity", stream.readUTF());
-                    Utils.reflectiveSetField(this, "scope", stream.readUTF());
-                } else {
-                    Utils.reflectiveSetField(this, "id", stream.readUTF());
-                }
+                Utils.reflectiveSetField(this, "id", stream.readObject());
 
                 return true;
-            } catch (IOException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 Log.wtf("Cannot deserialize config", e);
             } finally {
                 if (stream != null) {
@@ -329,6 +302,12 @@ public class Config {
     protected boolean testMode = false;
 
     /**
+     * Activity class to be launched on {@link android.app.Notification} tap, defaults
+     * to main app activity.
+     */
+    protected String pushActivityClass = null;
+
+    /**
      * The only Config constructor.
      *
      * @param serverURL valid {@link URL} of Countly server
@@ -486,7 +465,7 @@ public class Config {
      * Enable test mode:
      * <ul>
      *     <li>Raise exceptions when SDK is in inconsistent state as opposed to silently
-     *     trying to ignore it when testMode is off</li>
+     *     trying to ignore them when testMode is off</li>
      *     <li>Put Firebase token under {@code test} devices if {@link Feature#Push} is enabled.</li>
      * </ul>
      * Note: this method automatically sets {@link #loggingLevel} to {@link LoggingLevel#INFO} in
@@ -585,6 +564,16 @@ public class Config {
     public Config setSdkVersion(String sdkVersion) {
         this.sdkVersion = sdkVersion;
         return this;
+    }
+
+    /**
+     * Set push activity class which is to be launched when user taps on a {@link android.app.Notification}.
+     * Defaults automatically to main activity class.
+     *
+     * @param pushActivityClass activity class
+     */
+    public void setPushActivityClass(Class pushActivityClass) {
+        this.pushActivityClass = pushActivityClass.getName();
     }
 
     /**
@@ -708,5 +697,8 @@ public class Config {
         return sendUpdateEachEvents;
     }
 
+    public String getPushActivityClass() {
+        return pushActivityClass;
+    }
 }
 

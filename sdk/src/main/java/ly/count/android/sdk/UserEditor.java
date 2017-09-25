@@ -38,7 +38,9 @@ public interface UserEditor {
     UserEditor pull(String key, Object value);
     UserEditor push(String key, Object value);
     UserEditor pushUnique(String key, Object value);
-    // ...
+
+    UserEditor addToCohort(String key);
+    UserEditor removeFromCohort(String key);
 
     User commit();
 }

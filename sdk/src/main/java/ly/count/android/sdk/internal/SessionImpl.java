@@ -55,7 +55,7 @@ class SessionImpl implements Session, Storable {
     /**
      * Additional parameters to send with next request
      */
-    protected Params params;
+    protected Params params = new Params();
 
     /**
      * Whether to push changes to storage on every change automatically (false only for testing)
@@ -217,9 +217,6 @@ class SessionImpl implements Session, Storable {
      * @return {@code this} instance for method chaining.
      */
     public Session addParam(String key, Object value) {
-        if (params == null) {
-            params = new Params();
-        }
         params.add(key, value);
         if (pushOnChange) {
             Storage.pushAsync(this);
@@ -273,7 +270,7 @@ class SessionImpl implements Session, Storable {
             for (Eve event : events) {
                 stream.writeUTF(event.toString());
             }
-            stream.writeUTF(params == null ? "" : params.toString());
+            stream.writeUTF(params.toString());
             stream.close();
             return bytes.toByteArray();
         } catch (IOException e) {
@@ -323,10 +320,7 @@ class SessionImpl implements Session, Storable {
                 }
             }
 
-            String paramsString = stream.readUTF();
-            if (!"".equals(paramsString)) {
-                params = new Params(paramsString);
-            }
+            params = new Params(stream.readUTF());
 
             return true;
         } catch (IOException e) {
@@ -375,7 +369,7 @@ class SessionImpl implements Session, Storable {
         if ((ended != null && !ended.equals(session.ended) || (session.ended != null && !session.ended.equals(ended)))) {
             return false;
         }
-        if ((params != null && !params.equals(session.params) || (session.params != null && !session.params.equals(params)))) {
+        if (!params.equals(session.params)) {
             return false;
         }
         if (!events.equals(session.events)) {

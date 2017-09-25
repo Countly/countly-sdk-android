@@ -86,7 +86,7 @@ public class InternalConfigTests {
 
         Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, "openudid");
         Config.DID adv = new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, "adid");
-        Config.DID ptk = new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, "push token", "entity", "scope");
+        Config.DID ptk = new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, "push token");
 
         InternalConfig internalConfig = new InternalConfig(config);
         internalConfig.setDeviceId(dev);

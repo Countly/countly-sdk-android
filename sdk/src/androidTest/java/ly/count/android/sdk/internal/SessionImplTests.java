@@ -50,7 +50,7 @@ public class SessionImplTests {
     @Test
     public void addParams() throws Exception{
         SessionImpl session = new SessionImpl();
-        Assert.assertNull(session.params);
+        Assert.assertNotNull(session.params);
 
         StringBuilder sbParams = new StringBuilder();
         String[] keys = new String[]{"a", "b", "c"};

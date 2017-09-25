@@ -15,7 +15,7 @@ import ly.count.android.sdk.Config;
  */
 public class ModuleDeviceId extends ModuleBase {
     static final String ADVERTISING_ID_CLIENT_CLASS_NAME = "com.google.android.gms.ads.identifier.AdvertisingIdClient";
-    static final String INSTANCE_ID_CLASS_NAME = "com.google.android.gms.iid.InstanceID";
+    static final String INSTANCE_ID_CLASS_NAME = "com.google.firebase.iid.FirebaseInstanceId";
 
     /**
      * InternalConfig instance for later use
@@ -166,10 +166,10 @@ public class ModuleDeviceId extends ModuleBase {
                 if (Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME)) {
                     Log.i("Generating ADVERTISING_ID");
                     try {
-                        Object info = Utils.reflectiveCall(ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", ctx);
+                        Object info = Utils.reflectiveCallStrict(ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", android.content.Context.class, ctx);
                         Log.i("Got ADVERTISING_ID info");
-                        if (info == null) {
-                            Log.d("AdvertisingIdClient.getAdvertisingIdInfo() returned null");
+                        if (info == null || info == Boolean.FALSE) {
+                            Log.d("AdvertisingIdClient.getAdvertisingIdInfo() returned " + info);
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         } else {
                             Log.d("calling getId");
@@ -207,22 +207,22 @@ public class ModuleDeviceId extends ModuleBase {
                 if (Utils.reflectiveClassExists(INSTANCE_ID_CLASS_NAME)) {
                     Log.i("Generating INSTANCE_ID");
                     try {
-                        Object instance = Utils.reflectiveCall(INSTANCE_ID_CLASS_NAME, null, "getInstance", ctx);
-                        if (instance == null) {
-                            Log.d("InstanceId.getInstance() returned null");
+                        Object instance = Utils.reflectiveCall(INSTANCE_ID_CLASS_NAME, null, "getInstance");
+                        if (instance == null || instance == Boolean.FALSE) {
+                            Log.d("InstanceId.getInstance() returned " + instance);
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         } else {
                             Object idObj;
-                            if (holder.scope == null || holder.entity == null) {
+                            if (holder.realm == Config.DeviceIdRealm.DEVICE_ID) {
                                 idObj = Utils.reflectiveCall(instance.getClass().getName(), instance, "getId");
                             } else {
-                                idObj = Utils.reflectiveCall(instance.getClass().getName(), instance, "getToken", holder.entity, holder.scope);
+                                idObj = Utils.reflectiveCall(instance.getClass().getName(), instance, "getToken");
                             }
                             if (idObj == null || !(idObj instanceof String)) {
                                 Log.d("InstanceId.getInstance().getId() returned " + idObj);
                                 return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                             } else {
-                                return new Config.DID(holder.realm, Config.DeviceIdStrategy.INSTANCE_ID, (String) idObj, holder.entity, holder.scope);
+                                return new Config.DID(holder.realm, Config.DeviceIdStrategy.INSTANCE_ID, (String) idObj);
                             }
                         }
                     } catch (Throwable t) {

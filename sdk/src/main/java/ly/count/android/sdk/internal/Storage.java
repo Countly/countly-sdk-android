@@ -208,7 +208,6 @@ class Storage {
             public T call() throws Exception {
                 Object data[] = Core.instance.readOneFromInternalStorage(storable.storagePrefix(), asc);
                 if (data == null) {
-                    Log.d("No data for file " + name(storable));
                     return null;
                 }
                 try {

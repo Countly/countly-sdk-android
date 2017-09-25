@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * {@link Future} for {@link Task}s with the same id.
  */
 
-class Tasks {
+public class Tasks {
     static abstract class Task<T> implements Callable<T> {
         Long id;
 
@@ -23,7 +23,7 @@ class Tasks {
         abstract public T call() throws Exception;
     }
 
-    interface Callback<T> {
+    public interface Callback<T> {
         void call(T param) throws Exception;
     }
 

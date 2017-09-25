@@ -10,6 +10,10 @@ public class ModuleRequests extends ModuleBase {
     private static InternalConfig config;
     private static Params metrics;
 
+    public interface ParamsInjector {
+        void call(Params params);
+    }
+
     @Override
     public void init(InternalConfig config) {
         super.init(config);
@@ -25,6 +29,7 @@ public class ModuleRequests extends ModuleBase {
     public static Future<Boolean> sessionBegin(SessionImpl session) {
         Request request = addCommon(config, session, Request.build("begin_session", 1));
         request.params.add(metrics);
+        session.params.clear();
         // TODO: country, city, location
         return pushAsync(request);
     }
@@ -36,6 +41,7 @@ public class ModuleRequests extends ModuleBase {
             request.params.add("session_duration", seconds);
         }
 
+        session.params.clear();
         // TODO: location
         return pushAsync(request);
     }
@@ -46,6 +52,8 @@ public class ModuleRequests extends ModuleBase {
         if (seconds != null && seconds > 0) {
             request.params.add("session_duration", seconds);
         }
+
+        session.params.clear();
         // TODO: location / override_id
         return pushAsync(request);
     }
@@ -71,6 +79,17 @@ public class ModuleRequests extends ModuleBase {
 
     static Request nonSessionRequest(InternalConfig config) {
         return addCommon(config == null ? ModuleRequests.config : config, null, new Request());
+    }
+
+    // TODO: synchronization
+    static void injectParams(ParamsInjector injector) {
+        if (Core.instance.sessionLeading() == null) {
+            Request request = nonSessionRequest(config);
+            injector.call(request.params);
+            pushAsync(request);
+        } else {
+            injector.call(Core.instance.sessionLeading().params);
+        }
     }
 
     private static Request addCommon(InternalConfig config, SessionImpl session, Request request) {
@@ -122,7 +141,7 @@ public class ModuleRequests extends ModuleBase {
         return Storage.pushAsync(request, new Tasks.Callback<Boolean>() {
             @Override
             public void call(Boolean param) throws Exception {
-                Core.sendToService(CountlyService.CMD_PING, null);
+                CoreLifecycle.sendToService(Core.instance.longLivingContext, CountlyService.CMD_PING, null);
                 if (callback != null) {
                     callback.call(param);
                 }

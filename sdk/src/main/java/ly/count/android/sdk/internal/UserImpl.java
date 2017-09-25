@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import ly.count.android.sdk.User;
 import ly.count.android.sdk.UserEditor;
@@ -16,18 +18,20 @@ import ly.count.android.sdk.UserEditor;
  */
 
 public class UserImpl extends User implements Storable {
-    String name, username, email, org, phone, picturePath;
+    String id, name, username, email, org, phone, picturePath;
     byte[] picture;
     Gender gender;
     Integer birthyear;
+    Set<String> cohorts;
     Map<String, Object> custom;
 
     UserImpl() {
         custom = new HashMap<>();
+        cohorts = new HashSet<>();
     }
 
     public String id() {
-        return null;
+        return id;
     }
 
     public String name() {
@@ -66,6 +70,10 @@ public class UserImpl extends User implements Storable {
         return birthyear;
     }
 
+    public Set<String> cohorts() {
+        return cohorts;
+    }
+
     public Map<String, Object> custom() {
         return custom;
     }
@@ -90,8 +98,10 @@ public class UserImpl extends User implements Storable {
             if (picture != null) {
                 stream.write(picture);
             }
+            stream.writeObject(picturePath);
             stream.writeObject(gender == null ? null : gender.toString());
             stream.writeInt(birthyear == null ? -1 : birthyear);
+            stream.writeObject(cohorts == null || cohorts.size() == 0 ? null : cohorts);
             stream.writeObject(custom);
             stream.close();
             return bytes.toByteArray();
@@ -135,6 +145,7 @@ public class UserImpl extends User implements Storable {
                 picture = new byte[picLength];
                 stream.readFully(picture);
             }
+            picturePath = (String) stream.readObject();
 
             String g = (String) stream.readObject();
             if (g != null) {
@@ -145,6 +156,8 @@ public class UserImpl extends User implements Storable {
             if (y != -1) {
                 birthyear = y;
             }
+
+            cohorts = (Set<String>) stream.readObject();
 
             custom = (Map<String, Object>) stream.readObject();
             if (custom == null) {

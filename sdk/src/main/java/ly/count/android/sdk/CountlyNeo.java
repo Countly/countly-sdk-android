@@ -60,5 +60,24 @@ public class CountlyNeo {
      */
     public static boolean isInitialized() { return instance != null; }
 
+    /**
+     * Returns current {@link Session} if any.
+     *
+     * @return session instance if there is one, {@code null} if there is no current session or if Countly is not initialized yet
+     */
+    public static Session currentSession(){
+        return isInitialized() ? instance.core.sessionLeading() : null;
+    }
+
+    /**
+     * Returns current {@link Session} if there is one already started or new {@link Session} object
+     * if no active session is out there.
+     *
+     * @return current session instance if there is one, new session instance if there is no current session or {@code null} if Countly is not initialized yet
+     */
+    public static Session currentOrNewSession() {
+        return isInitialized() ? instance.core.sessionLeadingOrNew() : null;
+    }
+
     // TODO: add all those recordEvent / old init / other deprecated methods with check on instance not null (return doing nothing when it's null)
 }

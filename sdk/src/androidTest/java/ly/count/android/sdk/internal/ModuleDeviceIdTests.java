@@ -1,5 +1,7 @@
 package ly.count.android.sdk.internal;
 
+import android.content.*;
+
 import junit.framework.Assert;
 
 import org.junit.Before;
@@ -30,13 +32,6 @@ public class ModuleDeviceIdTests {
     private Module dummy = null;
     private Utils utils = null;
 
-    @Before
-    public void beforeEachTest() throws Exception {
-        Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
-        Core.instance.purgeInternalStorage(null);
-        Core.instance.deinit();
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void checkStrictAdvertisingId() throws Exception {
         utils = Mockito.spy(new Utils());
@@ -48,6 +43,13 @@ public class ModuleDeviceIdTests {
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
         ModuleDeviceId module = new ModuleDeviceId();
         module.init(config);
+    }
+
+    @Before
+    public void beforeEachTest() throws Exception {
+        Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
+        Core.instance.purgeInternalStorage(null);
+        Core.instance.deinit();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -166,7 +168,7 @@ public class ModuleDeviceIdTests {
         init(false);
 
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCall(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), isA(android.content.Context.class));
+        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
@@ -257,7 +259,7 @@ public class ModuleDeviceIdTests {
         init(false);
 
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
-        doReturn(new ModuleDeviceId.InstIdInstance()).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"), isA(android.content.Context.class));
+        doReturn(new ModuleDeviceId.InstIdInstance()).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
