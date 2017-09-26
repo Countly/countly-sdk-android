@@ -50,14 +50,14 @@ public class Legacy {
      * Main migration method which transfers and transcodes data from legacy {@link SharedPreferences}
      * storage to current files-based {@link Storage}.
      *
-     * @param context Context in which to do migration
+     * @param ctx Context in which to do migration
      */
     @SuppressLint("ApplySharedPref")
-    static void migrate(final Context context) {
-        String requestsStr = preferences(context).getString(KEY_CONNECTIONS, null);
-        String eventsStr = preferences(context).getString(KEY_EVENTS, null);
-        String locationStr = preferences(context).getString(KEY_LOCATION, null);
-        String starStr = preferences(context).getString(KEY_STAR, null);
+    static void migrate(final Context ctx) {
+        String requestsStr = preferences(ctx).getString(KEY_CONNECTIONS, null);
+        String eventsStr = preferences(ctx).getString(KEY_EVENTS, null);
+        String locationStr = preferences(ctx).getString(KEY_LOCATION, null);
+        String starStr = preferences(ctx).getString(KEY_STAR, null);
 
         if (Utils.isNotEmpty(requestsStr)) {
             String[] requests = requestsStr.split(DELIMITER);
@@ -70,7 +70,7 @@ public class Legacy {
                         Request request = new Request(Long.parseLong(timestamp));
                         request.params.add(params);
                         Log.d("Migrating request: " + str + ", time " + request.storageId());
-                        Storage.pushAsync(request, removeClb(context, KEY_CONNECTIONS));
+                        Storage.pushAsync(ctx, request, removeClb(ctx, KEY_CONNECTIONS));
                     } catch (NumberFormatException e) {
                         Log.wtf("Couldn't import request " + str, e);
                     }
@@ -78,7 +78,7 @@ public class Legacy {
                     Request request = new Request(Device.uniqueTimestamp());
                     Log.d("Migrating request: " + str + ", current time " + request.storageId());
                     request.params.add(params);
-                    Storage.pushAsync(request, removeClb(context, KEY_CONNECTIONS));
+                    Storage.pushAsync(ctx, request, removeClb(ctx, KEY_CONNECTIONS));
                 }
             }
         }
@@ -97,9 +97,9 @@ public class Legacy {
             if (array.length() > 0) {
                 Request request = new Request(Device.uniqueTimestamp());
                 request.params.add("events", array.toString());
-                Storage.pushAsync(request, removeClb(context, KEY_EVENTS));
+                Storage.pushAsync(ctx, request, removeClb(ctx, KEY_EVENTS));
             } else {
-                preferences(context).edit().remove(KEY_EVENTS).commit();
+                preferences(ctx).edit().remove(KEY_EVENTS).commit();
             }
         }
 
@@ -109,13 +109,13 @@ public class Legacy {
                 try {
                     double lat = Double.parseDouble(comps[0]),
                             lon = Double.parseDouble(comps[1]);
-                    ModuleRequests.location(lat, lon);
+                    ModuleRequests.location(ctx, lat, lon);
                 } catch (NumberFormatException e) {
-                    preferences(context).edit().remove(KEY_LOCATION).commit();
+                    preferences(ctx).edit().remove(KEY_LOCATION).commit();
                 }
             }
         } else {
-            preferences(context).edit().remove(KEY_LOCATION).commit();
+            preferences(ctx).edit().remove(KEY_LOCATION).commit();
         }
 
         // TODO: city/country, star rating

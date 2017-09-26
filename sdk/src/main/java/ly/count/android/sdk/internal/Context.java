@@ -15,4 +15,5 @@ interface Context {
     Application getApplication();
     Activity getActivity();
     android.content.Context getContext();
+    boolean isExpired();
 }

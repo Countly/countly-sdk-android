@@ -16,23 +16,27 @@ import java.util.Map;
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Eve;
 
+import static android.support.test.InstrumentationRegistry.getContext;
+
 /**
  * Created by artem on 06/02/2017.
  */
 
 @RunWith(AndroidJUnit4.class)
 public class EventImplTests {
+    private Context ctx;
 
     @Before
     public void setupEveryTest() throws MalformedURLException {
         String serverUrl = "http://www.serverurl.com";
         String serverAppKey = "1234";
         new Log().init(new InternalConfig(new Config(serverUrl, serverAppKey).enableTestMode()));
+        ctx = new ContextImpl(getContext());
     }
 
     @Test
     public void constructor(){
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         String key = "key";
         EventImpl event = new EventImpl(session, key);
 
@@ -49,7 +53,7 @@ public class EventImplTests {
 
     @Test
     public void constructor_deserialize(){
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         String key = "key";
         EventImpl event = (EventImpl) new EventImpl(session, key)
                 .addSegment("key1", "value1")
@@ -68,17 +72,17 @@ public class EventImplTests {
 
     @Test(expected = IllegalStateException.class)
     public void constructor_throwsIllegalStateExceptionWhenKeyIsNull() {
-        new EventImpl(new SessionImpl(), null);
+        new EventImpl(new SessionImpl(ctx), null);
     }
 
     @Test(expected = IllegalStateException.class)
     public void constructor_throwsIllegalStateExceptionWhenKeyIsEmpty() {
-        new EventImpl(new SessionImpl(), "");
+        new EventImpl(new SessionImpl(ctx), "");
     }
 
     @Test(expected = IllegalStateException.class)
     public void segmentation_throwsIllegalStateExceptionWhenNull() {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         EventImpl event = new EventImpl(session, "key");
         Assert.assertNull(Whitebox.getInternalState(event, "segmentation"));
@@ -87,7 +91,7 @@ public class EventImplTests {
 
     @Test(expected = IllegalStateException.class)
     public void segmentation_throwsIllegalStateExceptionWhenValueEmpty() {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         EventImpl event = new EventImpl(session, "key");
         Assert.assertNull(Whitebox.getInternalState(event, "segmentation"));
@@ -96,7 +100,7 @@ public class EventImplTests {
 
     @Test
     public void segmentation_addsSegment(){
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         String key = "key", k = "k";
         String v = "whatever";
 
@@ -112,7 +116,7 @@ public class EventImplTests {
 
     @Test
     public void segmentation_addsSegments(){
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         String key = "key", k1 = "k1", k2 = "k2";
         String v = "whatever";
 
@@ -129,7 +133,7 @@ public class EventImplTests {
 
     @Test
     public void segmentation_setsSegments(){
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         String key = "key", k1 = "k1", k2 = "k2", k3 = "k3";
         String v = "whatever";
 
@@ -152,27 +156,27 @@ public class EventImplTests {
 
     @Test (expected = IllegalStateException.class)
     public void sum_NaN(){
-        new EventImpl(new SessionImpl(), "key").setSum(Double.NaN);
+        new EventImpl(new SessionImpl(ctx), "key").setSum(Double.NaN);
     }
 
     @Test (expected = IllegalStateException.class)
     public void sum_Inf() {
-        new EventImpl(new SessionImpl(), "key").setSum(Double.NEGATIVE_INFINITY);
+        new EventImpl(new SessionImpl(ctx), "key").setSum(Double.NEGATIVE_INFINITY);
     }
 
     @Test (expected = IllegalStateException.class)
     public void dur_NaN(){
-        new EventImpl(new SessionImpl(), "key").setDuration(Double.NaN);
+        new EventImpl(new SessionImpl(ctx), "key").setDuration(Double.NaN);
     }
 
     @Test (expected = IllegalStateException.class)
     public void dur_Inf() {
-        new EventImpl(new SessionImpl(), "key").setDuration(Double.NEGATIVE_INFINITY);
+        new EventImpl(new SessionImpl(ctx), "key").setDuration(Double.NEGATIVE_INFINITY);
     }
 
     @Test
     public void dur_Inf_invalid() {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         Eve event = new EventImpl(session, "key");
         try {

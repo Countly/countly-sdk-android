@@ -28,6 +28,8 @@ class SessionImpl implements Session, Storable {
      */
     protected final Long id;
 
+    protected final Context ctx;
+
     /**
      * {@link System#nanoTime()} of {@link #begin()}, {@link #update()} and {@link #end()} calls respectively.
      */
@@ -41,14 +43,16 @@ class SessionImpl implements Session, Storable {
     /**
      * Create session with current time as id.
      */
-    protected SessionImpl() {
+    protected SessionImpl(Context ctx) {
         this.id = System.nanoTime();
+        this.ctx = ctx;
     }
 
     /**
      * Deserialization constructor (use existing id).
      */
-    protected SessionImpl(Long id) {
+    protected SessionImpl(Context ctx, Long id) {
+        this.ctx = ctx;
         this.id = id;
     }
 
@@ -83,7 +87,7 @@ class SessionImpl implements Session, Storable {
             began = time == null ? System.nanoTime() : time;
         }
 
-        ModuleRequests.sessionBegin(this);
+        ModuleRequests.sessionBegin(ctx, this);
 
         return this;
     }
@@ -105,10 +109,10 @@ class SessionImpl implements Session, Storable {
 
         Long duration = updateDuration();
 
-        ModuleRequests.sessionUpdate(this, duration);
+        ModuleRequests.sessionUpdate(ctx, this, duration);
 
         if (pushOnChange) {
-            Storage.pushAsync(this);
+            Storage.pushAsync(ctx, this);
         }
 
         return this;
@@ -136,9 +140,9 @@ class SessionImpl implements Session, Storable {
 
         Long duration = updateDuration();
 
-        ModuleRequests.sessionEnd(this, duration);
+        ModuleRequests.sessionEnd(ctx, this, duration);
 
-        Storage.readAsync(this);
+        Storage.readAsync(ctx, this);
 
         return this;
     }
@@ -179,7 +183,7 @@ class SessionImpl implements Session, Storable {
     synchronized Session recordEvent(Eve event) {
         events.add(event);
         if (pushOnChange) {
-            Storage.pushAsync(this);
+            Storage.pushAsync(ctx, this);
         }
         return this;
     }
@@ -219,7 +223,7 @@ class SessionImpl implements Session, Storable {
     public Session addParam(String key, Object value) {
         params.add(key, value);
         if (pushOnChange) {
-            Storage.pushAsync(this);
+            Storage.pushAsync(ctx, this);
         }
         return this;
     }

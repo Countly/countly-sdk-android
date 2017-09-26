@@ -24,6 +24,7 @@ import static org.mockito.Mockito.validateMockitoUsage;
 public class ModuleSessionsTests {
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";
+    private Context ctx = null;
 
     Config config;
     InternalConfig internalConfig;
@@ -36,6 +37,7 @@ public class ModuleSessionsTests {
 
     @Before
     public void setupEveryTest() throws MalformedURLException{
+        ctx = new ContextImpl(getContext());
         config = new Config(serverUrl, serverAppKey);
         internalConfig = new InternalConfig(config);
         context = getContext();
@@ -119,7 +121,7 @@ public class ModuleSessionsTests {
     public void activityStopped_withSessions() throws MalformedURLException {
         Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
-        SessionImpl sessionTarget = new SessionImpl(123L);
+        SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessionTarget.begin().end();
         sessions.add(sessionTarget);
 
@@ -142,7 +144,7 @@ public class ModuleSessionsTests {
     public void activityStopped_removeSession() throws MalformedURLException {
         Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
-        SessionImpl sessionTarget = new SessionImpl(123L);
+        SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessionTarget.begin(234L);
         sessionTarget.end(456L);
 

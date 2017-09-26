@@ -22,13 +22,15 @@ class Storage {
      * Stores data in device internal memory. When a storable with the same id already exists,
      * replaces it with new data.
      *
+     *
+     * @param ctx context to run in
      * @param storable Object to store
      * @return true when storing succeeded, false otherwise
      */
-    static boolean push(Storable storable) {
+    static boolean push(Context ctx, Storable storable) {
         Log.d("Pushing " + name(storable));
         try {
-            return pushAsync(storable).get();
+            return pushAsync(ctx, storable).get();
         } catch (InterruptedException | ExecutionException e) {
             Log.wtf("Interrupted while pushing " + name(storable), e);
         }
@@ -39,39 +41,42 @@ class Storage {
      * Stores data in device internal memory. When a storable with the same id already exists,
      * replaces it with new data. Runs in a storage thread provided by {@link Tasks}
      *
+     * @param ctx context to run in
      * @param storable Object to store
      * @param callback nullable callback to call when done
      * @return Future<Boolean> object which resolves as true when storing succeeded, false otherwise
      */
-    static Future<Boolean> pushAsync(final Storable storable, Tasks.Callback<Boolean> callback) {
+    static Future<Boolean> pushAsync(final Context ctx, final Storable storable, Tasks.Callback<Boolean> callback) {
         Log.d("Pushing async " + name(storable));
         return tasks.run(new Tasks.Task<Boolean>(storable.storageId()) {
             @Override
             public Boolean call() throws Exception {
-                return Core.instance.pushDataToInternalStorage(storable.storagePrefix(), "" + storable.storageId(), storable.store());
+                return Core.pushDataToInternalStorage(ctx, storable.storagePrefix(), "" + storable.storageId(), storable.store());
             }
         }, callback);
     }
 
     /**
-     * Shorthand for {@link #pushAsync(Storable, ly.count.android.sdk.internal.Tasks.Callback)}
+     * Shorthand for {@link #pushAsync(Context, Storable, ly.count.android.sdk.internal.Tasks.Callback)}
      *
+     * @param ctx context to run in
      * @param storable Object to store
      * @return Future<Boolean> object which resolves as true when storing succeeded, false otherwise
      */
-    static Future<Boolean> pushAsync(final Storable storable) {
-        return pushAsync(storable, null);
+    static Future<Boolean> pushAsync(final Context ctx, final Storable storable) {
+        return pushAsync(ctx, storable, null);
     }
     /**
      * Removes storable from storage.
      *
+     * @param ctx context to run in
      * @param storable Object to remove
      * @return true if removed, false otherwise
      */
-    static <T extends Storable> Boolean remove(T storable) {
+    static <T extends Storable> Boolean remove(final Context ctx, T storable) {
         Log.d("removing " + name(storable));
         try {
-            return removeAsync(storable).get();
+            return removeAsync(ctx, storable).get();
         } catch (InterruptedException | ExecutionException e) {
             Log.wtf("Interrupted while removing " + name(storable), e);
         }
@@ -82,14 +87,15 @@ class Storage {
      * Removes storable from storage.
      * Runs in a storage thread provided by {@link Tasks}
      *
+     * @param ctx context to run in
      * @param storable Object to remove
      * @return Future<Boolean> object which resolves to true if storable is removed, false otherwise
      */
-    static <T extends Storable> Future<Boolean> removeAsync(final T storable) {
+    static <T extends Storable> Future<Boolean> removeAsync(final Context ctx, final T storable) {
         return tasks.run(new Tasks.Task<Boolean>(-storable.storageId()) {
             @Override
             public Boolean call() throws Exception {
-                return Core.instance.removeDataFromInternalStorage(storable.storagePrefix(), "" + storable.storageId());
+                return Core.removeDataFromInternalStorage(ctx, storable.storagePrefix(), "" + storable.storageId());
             }
         });
     }
@@ -98,13 +104,14 @@ class Storage {
     /**
      * Reinitializes storable with data stored previously in device internal memory and deletes corresponding file.
      *
+     * @param ctx context to run in
      * @param storable Object to reinitialize
      * @return storable object passed as param when restoring succeeded, null otherwise
      */
-    static <T extends Storable> T pop(T storable) {
+    static <T extends Storable> T pop(Context ctx, T storable) {
         Log.d("Popping " + name(storable));
         try {
-            return popAsync(storable).get();
+            return popAsync(ctx, storable).get();
         } catch (InterruptedException | ExecutionException e) {
             Log.wtf("Interrupted while popping " + name(storable), e);
         }
@@ -115,14 +122,15 @@ class Storage {
      * Reinitializes storable with data stored previously in device internal memory.
      * Runs in a storage thread provided by {@link Tasks}
      *
+     * @param ctx context to run in
      * @param storable Object to reinitialize
      * @return Future<Storable> object which resolves as object passed as param when restoring succeeded, null otherwise
      */
-    static <T extends Storable> Future<T> popAsync(final T storable) {
+    static <T extends Storable> Future<T> popAsync(final Context ctx, final T storable) {
         return tasks.run(new Tasks.Task<T>(-storable.storageId()) {
             @Override
             public T call() throws Exception {
-                byte data[] = Core.instance.popDataFromInternalStorage(storable.storagePrefix(), "" + storable.storageId());
+                byte data[] = Core.popDataFromInternalStorage(ctx, storable.storagePrefix(), "" + storable.storageId());
                 if (data == null) {
                     Log.d("No data for file " + name(storable));
                     return null;
@@ -139,13 +147,14 @@ class Storage {
     /**
      * Reinitializes storable with data stored previously in device internal memory.
      *
+     * @param ctx context to run in
      * @param storable Object to reinitialize
      * @return storable object passed as param when reading succeeded, null otherwise
      */
-    static <T extends Storable> T read(T storable) {
+    static <T extends Storable> T read(Context ctx, T storable) {
         Log.d("read " + name(storable));
         try {
-            return readAsync(storable).get();
+            return readAsync(ctx, storable).get();
         } catch (InterruptedException | ExecutionException e) {
             Log.wtf("Interrupted while popping " + name(storable), e);
         }
@@ -156,14 +165,15 @@ class Storage {
      * Reinitializes storable with data stored previously in device internal memory.
      * Runs in a storage thread provided by {@link Tasks}
      *
+     * @param ctx context to run in
      * @param storable Object to reinitialize
      * @return Future<Storable> object which resolves as object passed as param when reading succeeded, null otherwise
      */
-    static <T extends Storable> Future<T> readAsync(final T storable) {
+    static <T extends Storable> Future<T> readAsync(final Context ctx, final T storable) {
         return tasks.run(new Tasks.Task<T>(-storable.storageId()) {
             @Override
             public T call() throws Exception {
-                byte data[] = Core.instance.readDataFromInternalStorage(storable.storagePrefix(), "" + storable.storageId());
+                byte data[] = Core.readDataFromInternalStorage(ctx, storable.storagePrefix(), "" + storable.storageId());
                 if (data == null) {
                     Log.d("No data for file " + name(storable));
                     return null;
@@ -180,14 +190,15 @@ class Storage {
     /**
      * Reinitializes first (or last if asc is false) storable with prefix from storable supplied as parameter.
      *
+     * @param ctx context to run in
      * @param storable Object to get prefix from
      * @param asc true if reading first storable, false if reading last one
      * @return storable object passed as param when reading succeeded, null otherwise
      */
-    static <T extends Storable> T readOne(T storable, boolean asc) {
+    static <T extends Storable> T readOne(Context ctx, T storable, boolean asc) {
         Log.d("readOne " + storable.storagePrefix());
         try {
-            return readOneAsync(storable, asc).get();
+            return readOneAsync(ctx, storable, asc).get();
         } catch (InterruptedException | ExecutionException e) {
             Log.wtf("Interrupted while popping " + name(storable), e);
         }
@@ -198,15 +209,16 @@ class Storage {
      * Reinitializes first (or last if asc is false) storable with prefix from storable supplied as parameter.
      * Runs in a storage thread provided by {@link Tasks}
      *
+     * @param ctx Context to run in
      * @param storable Object to get prefix from
      * @param asc true if reading first storable, false if reading last one
      * @return Future<Storable> object which resolves as object passed as param when reading succeeded, null otherwise
      */
-    static <T extends Storable> Future<T> readOneAsync(final T storable, final boolean asc) {
+    static <T extends Storable> Future<T> readOneAsync(final Context ctx, final T storable, final boolean asc) {
         return tasks.run(new Tasks.Task<T>(-storable.storageId()) {
             @Override
             public T call() throws Exception {
-                Object data[] = Core.instance.readOneFromInternalStorage(storable.storagePrefix(), asc);
+                Object data[] = Core.readOneFromInternalStorage(ctx, storable.storagePrefix(), asc);
                 if (data == null) {
                     return null;
                 }
@@ -227,14 +239,32 @@ class Storage {
         });
     }
 
-    static List<Long> list(String prefix) {
-        return list(prefix, 0);
+    /**
+     * Retrieves ids of all files stored for a specific prefix ({@link Storable#storagePrefix()}.
+     * Runs in a storage thread provided by {@link Tasks}, current thread waits for read completion.
+     *
+     * @param prefix String representing type of storable to list (prefix of file names)
+     * @return List<Long> object which resolves as list of storable ids, not null
+     */
+    static List<Long> list(Context ctx, String prefix) {
+        return list(ctx, prefix, 0);
     }
 
-    static List<Long> list(String prefix, int slice) {
+    /**
+     * Retrieves ids of files stored for a specific prefix ({@link Storable#storagePrefix()}.
+     * Runs in a storage thread provided by {@link Tasks}, current thread waits for read completion.
+     *
+     * @param prefix String representing type of storable to list (prefix of file names)
+     * @param slice integer controlling number and slice direction of results returned:
+     *              0 to return all records
+     *              1..N to return first N records ordered from first to last
+     *              -1..-N to return last N records ordered from last to first
+     * @return List<Long> object which resolves as list of storable ids, not null
+     */
+    static List<Long> list(Context ctx, String prefix, int slice) {
         Log.d("Listing " + prefix);
         try {
-            return listAsync(prefix, slice).get();
+            return listAsync(ctx, prefix, slice).get();
         } catch (InterruptedException | ExecutionException e) {
             Log.wtf("Interrupted while listing " + prefix, e);
         }
@@ -242,7 +272,7 @@ class Storage {
     }
 
     /**
-     * Retrieves ids of all files stored for a specific prefix ({@link Storable#storagePrefix()}.
+     * Retrieves ids of files stored for a specific prefix ({@link Storable#storagePrefix()}.
      * Runs in a storage thread provided by {@link Tasks}
      *
      * @param prefix String representing type of storable to list (prefix of file names)
@@ -252,12 +282,12 @@ class Storage {
      *              -1..-N to return last N records ordered from last to first
      * @return Future<List<Long>> object which resolves as list of storable ids, not null
      */
-    static Future<List<Long>> listAsync(final String prefix, final int slice) {
+    static Future<List<Long>> listAsync(final Context ctx, final String prefix, final int slice) {
         return tasks.run(new Tasks.Task<List<Long>>(-1L) {
             @Override
             public List<Long> call() throws Exception {
                 List<Long> list = new ArrayList<Long>();
-                List<String> files = Core.instance.listDataInInternalStorage(prefix, slice);
+                List<String> files = Core.listDataInInternalStorage(ctx, prefix, slice);
                 if (files == null) {
                     Log.wtf("Null list while listing storage");
                     return list;

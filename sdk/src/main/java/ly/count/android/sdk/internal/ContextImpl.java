@@ -14,10 +14,15 @@ public class ContextImpl implements Context {
     private android.content.Context context;
     private int level;
 
-    private boolean expired;
+    private boolean expired = false;
 
     public ContextImpl(Application application) {
         this.application = application;
+    }
+
+    public ContextImpl(Activity activity) {
+        this.activity = activity;
+        this.bundle = null;
     }
 
     public ContextImpl(Activity activity, Bundle bundle) {
@@ -53,11 +58,16 @@ public class ContextImpl implements Context {
         return context != null ? context : activity != null ? activity : application;
     }
 
-    public void expire() {
-        expired = true;
-        application = null;
-        activity = null;
-        bundle = null;
-        context = null;
+    @Override
+    public boolean isExpired() {
+        return expired;
     }
+
+    //    public void expire() {
+//        expired = true;
+//        application = null;
+//        activity = null;
+//        bundle = null;
+//        context = null;
+//    }
 }

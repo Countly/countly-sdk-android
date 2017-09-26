@@ -14,9 +14,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import ly.count.android.sdk.Config;
 import ly.count.android.sdk.User;
-import ly.count.android.sdk.UserEditor;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
@@ -26,7 +24,7 @@ public class UserEditorImplTests {
 
     @Before
     public void setUp() throws Exception {
-        user = new UserImpl();
+        user = new UserImpl(new ContextImpl(getContext()));
         user.name = "name";
         user.username = "username";
         user.email = "email";

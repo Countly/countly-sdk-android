@@ -1,7 +1,5 @@
 package ly.count.android.sdk.internal;
 
-import android.content.Context;
-
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -40,15 +38,15 @@ public class CoreStorage extends CoreLifecycle {
         }
     }
 
-    static int purgeInternalStorage(android.content.Context context, String prefix) {
+    static int purgeInternalStorage(Context ctx, String prefix) {
         prefix = getName(prefix) + FILE_NAME_SEPARATOR;
 
         int deleted = 0;
 
-        String[] files = context.fileList();
+        String[] files = ctx.getContext().getApplicationContext().fileList();
         for (String file : files) {
             if (file.startsWith(prefix)) {
-                if (context.deleteFile(file)) {
+                if (ctx.getContext().deleteFile(file)) {
                     deleted++;
                 }
             }
@@ -57,11 +55,11 @@ public class CoreStorage extends CoreLifecycle {
         return deleted;
     }
 
-    static List<String> listDataInInternalStorage(Context context, String prefix, int slice) {
+    static List<String> listDataInInternalStorage(Context ctx, String prefix, int slice) {
         prefix = getName(prefix) + FILE_NAME_SEPARATOR;
 
         List<String> list = new ArrayList<>();
-        String[] files = context.fileList();
+        String[] files = ctx.getContext().getApplicationContext().fileList();
 
         int max = slice == 0 ? Integer.MAX_VALUE : Math.abs(slice);
         for (int i = 0; i < files.length; i++) {
@@ -77,13 +75,13 @@ public class CoreStorage extends CoreLifecycle {
         return list;
     }
 
-    static boolean pushDataToInternalStorage(Context context, String prefix, String name, byte[] data) {
+    static boolean pushDataToInternalStorage(Context ctx, String prefix, String name, byte[] data) {
         String filename = getName(prefix, name);
 
         FileOutputStream stream = null;
         FileLock lock = null;
         try {
-            stream = context.openFileOutput(filename, Context.MODE_PRIVATE);
+            stream = ctx.getContext().getApplicationContext().openFileOutput(filename, android.content.Context.MODE_PRIVATE);
             lock = stream.getChannel().tryLock();
             if (lock == null) {
                 return false;
@@ -113,19 +111,19 @@ public class CoreStorage extends CoreLifecycle {
         return false;
     }
 
-    static boolean removeDataFromInternalStorage(Context context, String prefix, String name) {
-        return context.deleteFile(getName(prefix, name));
+    static boolean removeDataFromInternalStorage(Context ctx, String prefix, String name) {
+        return ctx.getContext().getApplicationContext().deleteFile(getName(prefix, name));
     }
 
-    static byte[] popDataFromInternalStorage(Context context, String prefix, String name) {
-        byte[] data = readDataFromInternalStorage(context, prefix, name);
+    static byte[] popDataFromInternalStorage(Context ctx, String prefix, String name) {
+        byte[] data = readDataFromInternalStorage(ctx, prefix, name);
         if (data != null) {
-            context.deleteFile(getName(prefix, name));
+            ctx.getContext().getApplicationContext().deleteFile(getName(prefix, name));
         }
         return data;
     }
 
-    static byte[] readDataFromInternalStorage(Context context, String prefix, String name) {
+    static byte[] readDataFromInternalStorage(Context ctx, String prefix, String name) {
         String filename = getName(prefix, name);
 
         ByteArrayOutputStream buffer = null;
@@ -133,7 +131,7 @@ public class CoreStorage extends CoreLifecycle {
 
         try {
             buffer = new ByteArrayOutputStream();
-            stream = context.openFileInput(filename);
+            stream = ctx.getContext().getApplicationContext().openFileInput(filename);
 
             int read;
             byte data[] = new byte[4096];
@@ -171,11 +169,11 @@ public class CoreStorage extends CoreLifecycle {
         return null;
     }
 
-    static Object[] readOneFromInternalStorage(Context context, String prefix, boolean asc) {
+    static Object[] readOneFromInternalStorage(Context ctx, String prefix, boolean asc) {
         String start = getName(prefix);
         String fileStart = start + FILE_NAME_SEPARATOR;
 
-        String[] files = context.fileList();
+        String[] files = ctx.getContext().getApplicationContext().fileList();
 
         for (int i = 0; i < files.length; i++) {
             int idx = asc ? i : files.length - 1 - i;
@@ -183,40 +181,40 @@ public class CoreStorage extends CoreLifecycle {
             if (file.startsWith(fileStart)) {
                 Object[] arr = new Object[2];
                 arr[0] = extractName(file, fileStart);
-                arr[1] = readDataFromInternalStorage(context, prefix, extractName(file, fileStart));
+                arr[1] = readDataFromInternalStorage(ctx, prefix, extractName(file, fileStart));
                 return arr;
             }
         }
 
         return null;
     }
-
-    int purgeInternalStorage(String prefix) {
-        return purgeInternalStorage(Core.instance.longLivingContext, prefix);
-    }
-
-    List<String> listDataInInternalStorage(String prefix, int slice) {
-        return listDataInInternalStorage(Core.instance.longLivingContext, prefix, slice);
-    }
-
-    public boolean pushDataToInternalStorage(String prefix, String name, byte[] data) {
-        return pushDataToInternalStorage(Core.instance.longLivingContext, prefix, name, data);
-    }
-
-    boolean removeDataFromInternalStorage(String prefix, String name) {
-        return removeDataFromInternalStorage(Core.instance.longLivingContext, prefix, name);
-    }
-
-    byte[] popDataFromInternalStorage(String prefix, String name) {
-        return popDataFromInternalStorage(Core.instance.longLivingContext, prefix, name);
-    }
-
-    byte[] readDataFromInternalStorage(String prefix, String name) {
-        return readDataFromInternalStorage(Core.instance.longLivingContext, prefix, name);
-    }
-
-    Object[] readOneFromInternalStorage(String prefix, boolean asc) {
-        return readOneFromInternalStorage(Core.instance.longLivingContext, prefix, asc);
-    }
-
+//
+//    int purgeInternalStorage(String prefix) {
+//        return purgeInternalStorage(Core.instance.longLivingContext, prefix);
+//    }
+//
+//    List<String> listDataInInternalStorage(String prefix, int slice) {
+//        return listDataInInternalStorage(Core.instance.longLivingContext, prefix, slice);
+//    }
+//
+//    public boolean pushDataToInternalStorage(String prefix, String name, byte[] data) {
+//        return pushDataToInternalStorage(Core.instance.longLivingContext, prefix, name, data);
+//    }
+//
+//    boolean removeDataFromInternalStorage(String prefix, String name) {
+//        return removeDataFromInternalStorage(Core.instance.longLivingContext, prefix, name);
+//    }
+//
+//    byte[] popDataFromInternalStorage(String prefix, String name) {
+//        return popDataFromInternalStorage(Core.instance.longLivingContext, prefix, name);
+//    }
+//
+//    byte[] readDataFromInternalStorage(String prefix, String name) {
+//        return readDataFromInternalStorage(Core.instance.longLivingContext, prefix, name);
+//    }
+//
+//    Object[] readOneFromInternalStorage(String prefix, boolean asc) {
+//        return readOneFromInternalStorage(Core.instance.longLivingContext, prefix, asc);
+//    }
+//
 }

@@ -436,9 +436,9 @@ class UserEditorImpl implements UserEditor {
 
             perform(changes, cohortsAdded, cohortsRemoved);
 
-            Storage.push(user);
+            Storage.push(user.ctx, user);
 
-            ModuleRequests.injectParams(new ModuleRequests.ParamsInjector() {
+            ModuleRequests.injectParams(user.ctx, new ModuleRequests.ParamsInjector() {
                 @Override
                 public void call(Params params) {
                     params.add("user_details", changes.toString());

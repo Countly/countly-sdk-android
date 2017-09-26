@@ -30,10 +30,10 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
-    public synchronized void onActivityStarted(Context context) {
-        super.onActivityStarted(context);
+    public synchronized void onActivityStarted(Context ctx) {
+        super.onActivityStarted(ctx);
         if (activityCount == 0) {
-            Core.instance.sessionBegin(Core.instance.sessionAdd());
+            Core.instance.sessionBegin(ctx, Core.instance.sessionAdd(ctx));
             if (updateInterval > 0) {
                 executor = Executors.newScheduledThreadPool(1);
                 executor.scheduleWithFixedDelay(new Runnable() {
@@ -50,8 +50,8 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
-    public synchronized void onActivityStopped(Context context) {
-        super.onActivityStopped(context);
+    public synchronized void onActivityStopped(Context ctx) {
+        super.onActivityStopped(ctx);
         activityCount--;
         if (activityCount == 0 && Core.instance.sessionLeading() != null) {
             if (executor != null) {
@@ -63,7 +63,7 @@ public class ModuleSessions extends ModuleBase {
                 }
                 executor = null;
             }
-            Core.instance.sessionRemove(Core.instance.sessionEnd(Core.instance.sessionLeading()));
+            Core.instance.sessionRemove(Core.instance.sessionEnd(ctx, Core.instance.sessionLeading()));
         }
     }
 }

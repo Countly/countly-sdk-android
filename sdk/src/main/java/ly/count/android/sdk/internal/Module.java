@@ -39,92 +39,93 @@ interface Module {
     /**
      * SDK got a first context. Called only in main mode (from {@link Application#onCreate()})
      *
-     * @param context {@link Context} with application instance
+     * @param ctx {@link Context} with application instance
      */
-    void onContextAcquired(Context context);
+    void onContextAcquired(Context ctx);
 
     /**
      * SDK got a first context. Called only in {@link InternalConfig#limited} mode,
      * that is from {@link CountlyService} or {@link android.content.BroadcastReceiver}.
      *
-     * @param context {@link Context} with application context instance
+     * @param ctx {@link Context} with application context instance
      */
-    void onLimitedContextAcquired(Context context);
+    void onLimitedContextAcquired(Context ctx);
 
     /**
      * Device ID has been acquired from device id provider.
      * Can be invoked multiple times throughout Module lifecycle.
      * Parameters can be instance equal (==), meaning that id haven't changed.
      *
+     * @param ctx Context to run in
      * @param deviceId deviceId valid from now on
      * @param oldDeviceId deviceId valid previously if any
      */
-    void onDeviceId(Config.DID deviceId, Config.DID oldDeviceId);
+    void onDeviceId(Context ctx, Config.DID deviceId, Config.DID oldDeviceId);
 
     /**
      * Activity is being created.
      *
-     * @param context {@link Context} with activity set
+     * @param ctx {@link Context} with activity set
      */
-    void onActivityCreated (Context context);
+    void onActivityCreated (Context ctx);
 
     /**
      * Activity is being launched.
-     * @param context {@link Context} with activity set
+     * @param ctx {@link Context} with activity set
      */
-    void onActivityStarted (Context context);
+    void onActivityStarted (Context ctx);
 
     /**
      * Activity is being resumed.
      *
-     * @param context {@link Context} with activity set
+     * @param ctx {@link Context} with activity set
      */
-    void onActivityResumed (Context context);
+    void onActivityResumed (Context ctx);
 
     /**
      * Activity is being paused.
      *
-     * @param context {@link Context} with activity set
+     * @param ctx {@link Context} with activity set
      */
-    void onActivityPaused (Context context);
+    void onActivityPaused (Context ctx);
 
     /**
      * Activity is being stopped.
      *
-     * @param context {@link Context} with activity set
+     * @param ctx {@link Context} with activity set
      */
-    void onActivityStopped (Context context);
+    void onActivityStopped (Context ctx);
 
     /**
      * Activity is saving state.
      *
-     * @param context {@link Context} with activity set
+     * @param ctx {@link Context} with activity set
      */
-    void onActivitySaveInstanceState(Context context);
+    void onActivitySaveInstanceState(Context ctx);
 
     /**
      * Activity is being destroyed.
      *
-     * @param context {@link Context} with activity set
+     * @param ctx {@link Context} with activity set
      */
-    void onActivityDestroyed (Context context);
+    void onActivityDestroyed (Context ctx);
 
     /**
      * Session is started.
      *
      * @param session session which began
      */
-    void onSessionBegan(Session session, Context context);
+    void onSessionBegan(Session session, Context ctx);
 
     /**
      * Session is started.
      *
      * @param session session which ended
      */
-    void onSessionEnded (Session session, Context context);
+    void onSessionEnded (Session session, Context ctx);
 
     /**
-     * This method is called only on owning module only if module marks request as owned ({@link Request#own(Module)}.
+     * This method is called only on owning module only if module marks request as owned ({@link Request#own(Class)}.
      * Gives a module another chance to modify request before sending. Being run in {@link CountlyService}.
      *
      * @param request request to check

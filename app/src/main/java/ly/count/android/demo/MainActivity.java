@@ -33,13 +33,13 @@ public class MainActivity extends Activity {
             builder.setPositiveButton(msg.buttons().get(0).title(), new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    msg.recordAction(1);
+                    msg.recordAction(getApplicationContext(), 1);
                 }
             });
             builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialog) {
-                    msg.recordAction(2);
+                    msg.recordAction(getApplicationContext(), 2);
                 }
             });
         }

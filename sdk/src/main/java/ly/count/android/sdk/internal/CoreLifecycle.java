@@ -3,7 +3,6 @@ package ly.count.android.sdk.internal;
 import android.app.Activity;
 import android.app.Application;
 import android.content.*;
-import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
@@ -35,17 +34,17 @@ public class CoreLifecycle {
     /**
      * TODO: check service case and change to Application if possible
      */
-    protected android.content.Context longLivingContext;
+//    protected android.content.Context longLivingContext;
 
     public static void sendToService(Context context, int code, Map<String, byte[]> params) {
-        Intent intent = new Intent(context, CountlyService.class);
+        Intent intent = new Intent(context.getContext(), CountlyService.class);
         intent.putExtra(CountlyService.CMD, code);
         if (params != null) {
             for (String key : params.keySet()) {
                 intent.putExtra(key, params.get(key));
             }
         }
-        context.startService(intent);
+        context.getContext().startService(intent);
     }
 
     /**
@@ -55,10 +54,11 @@ public class CoreLifecycle {
      */
     public void onContextAcquired(Application application) {
         Log.d("Application created");
-        longLivingContext = application.getApplicationContext();
 
-        Storage.push(this.config);
-        CoreLifecycle.sendToService(application, CountlyService.CMD_START, null);
+        Context ctx = new ContextImpl(application);
+
+        Storage.push(ctx, this.config);
+        CoreLifecycle.sendToService(ctx, CountlyService.CMD_START, null);
 
         this.config.setLimited(false);
 
@@ -126,11 +126,9 @@ public class CoreLifecycle {
             });
         }
 
-        ContextImpl context = new ContextImpl(application);
         for (Module m : modules) {
-            m.onContextAcquired(context);
+            m.onContextAcquired(ctx);
         }
-        context.expire();
     }
 
     public void onApplicationTrimMemory(int level) {
@@ -194,58 +192,51 @@ public class CoreLifecycle {
     }
 
     private void onActivityCreatedInternal(Activity activity, Bundle bundle) {
-        ContextImpl context = new ContextImpl(activity, bundle);
+        ContextImpl ctx = new ContextImpl(activity, bundle);
         for (Module m : modules) {
-            m.onActivityCreated(context);
+            m.onActivityCreated(ctx);
         }
-        context.expire();
     }
 
     private void onActivityStartedInternal(Activity activity) {
-        ContextImpl context = new ContextImpl(activity, null);
+        ContextImpl ctx = new ContextImpl(activity, null);
         for (Module m : modules) {
-            m.onActivityStarted(context);
+            m.onActivityStarted(ctx);
         }
-        context.expire();
     }
 
     private void onActivityResumedInternal(Activity activity) {
-        ContextImpl context = new ContextImpl(activity, null);
+        ContextImpl ctx = new ContextImpl(activity, null);
         for (Module m : modules) {
-            m.onActivityResumed(context);
+            m.onActivityResumed(ctx);
         }
-        context.expire();
     }
 
     private void onActivityPausedInternal(Activity activity) {
-        ContextImpl context = new ContextImpl(activity, null);
+        ContextImpl ctx = new ContextImpl(activity, null);
         for (Module m : modules) {
-            m.onActivityCreated(context);
+            m.onActivityCreated(ctx);
         }
-        context.expire();
     }
 
     private void onActivityStoppedInternal(Activity activity) {
-        ContextImpl context = new ContextImpl(activity, null);
+        ContextImpl ctx = new ContextImpl(activity, null);
         for (Module m : modules) {
-            m.onActivityStopped(context);
+            m.onActivityStopped(ctx);
         }
-        context.expire();
     }
 
     private void onActivitySaveInstanceStateInternal(Activity activity, Bundle bundle) {
-        ContextImpl context = new ContextImpl(activity, bundle);
+        ContextImpl ctx = new ContextImpl(activity, bundle);
         for (Module m : modules) {
-            m.onActivitySaveInstanceState(context);
+            m.onActivitySaveInstanceState(ctx);
         }
-        context.expire();
     }
 
     private void onActivityDestroyedInternal(Activity activity) {
-        ContextImpl context = new ContextImpl(activity, null);
+        ContextImpl ctx = new ContextImpl(activity, null);
         for (Module m : modules) {
-            m.onActivityDestroyed(context);
+            m.onActivityDestroyed(ctx);
         }
-        context.expire();
     }
 }

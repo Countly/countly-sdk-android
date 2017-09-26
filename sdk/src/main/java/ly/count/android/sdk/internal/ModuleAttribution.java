@@ -55,11 +55,11 @@ public class ModuleAttribution extends ModuleBase {
             Log.d("[ModuleAttribution] Referrer is " + referrer);
 
             if (Utils.isNotEmpty(referrer)) {
-                extractReferrer(pendingResult, referrer);
+                extractReferrer(context, pendingResult, referrer);
             }
         }
 
-        public void extractReferrer(final PendingResult[] pendingResult, String referrer) {
+        public void extractReferrer(android.content.Context context, final PendingResult[] pendingResult, String referrer) {
             if (referrer == null) {
                 return;
             }
@@ -80,7 +80,7 @@ public class ModuleAttribution extends ModuleBase {
                 // request won't be sent until advertising id is acquired
                 Request request = recordRequest(cid, uid);
 
-                ModuleRequests.pushAsync(request, new Tasks.Callback<Boolean>() {
+                ModuleRequests.pushAsync(new ContextImpl(context), request, new Tasks.Callback<Boolean>() {
                     @Override
                     public void call(Boolean success) throws Exception {
                         Log.i("[ModuleAttribution] Done adding request: " + (success ? "success" : "failure"));
@@ -107,10 +107,10 @@ public class ModuleAttribution extends ModuleBase {
 
     /**
      * Getting {@link ly.count.android.sdk.Config.DeviceIdRealm#ADVERTISING_ID} procedure.
-     * Works in line with {@link #onDeviceId(Config.DID, Config.DID)} in some cases.
+     * Works in line with {@link Module#onDeviceId(Context, Config.DID, Config.DID)} in some cases.
      */
     @Override
-    public void onContextAcquired(Context context) {
+    public void onContextAcquired(final Context ctx) {
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID) {
             Log.d("[ModuleAttribution] waiting for ModuleDeviceId to finish acquiring ADVERTISING_ID");
         } else {
@@ -120,15 +120,15 @@ public class ModuleAttribution extends ModuleBase {
                 if (did != null && did.strategy == Config.DeviceIdStrategy.ADVERTISING_ID) {
                     Log.i("[ModuleAttribution] setting id from ADVERTISING_ID device id");
                     adv = new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, did.id);
-                    Core.onDeviceId(adv, null);
+                    Core.onDeviceId(ctx, adv, null);
                 } else {
                     Log.d("[ModuleAttribution] getting ADVERTISING_ID");
-                    Core.instance.acquireId(new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, null), false, new Tasks.Callback<Config.DID>() {
+                    Core.instance.acquireId(ctx, new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, null), false, new Tasks.Callback<Config.DID>() {
                         @Override
                         public void call(Config.DID param) throws Exception {
                             if (param != null && param.id != null) {
                                 Log.i("[ModuleAttribution] getting ADVERTISING_ID succeeded: " + param);
-                                Core.onDeviceId(param, null);
+                                Core.onDeviceId(ctx, param, null);
                             } else {
                                 Log.w("[ModuleAttribution] no ADVERTISING_ID available, Countly Attribution is unavailable");
                                 advertisingIdNotAvailable = true;
@@ -138,7 +138,7 @@ public class ModuleAttribution extends ModuleBase {
                 }
             } else {
                 Log.d("[ModuleAttribution] acquired ADVERTISING_ID previously");
-                Core.onDeviceId(adv, adv);
+                Core.onDeviceId(ctx, adv, adv);
             }
         }
     }
@@ -148,11 +148,11 @@ public class ModuleAttribution extends ModuleBase {
      * Works in line with {@link #onContextAcquired(Context)}} in some cases.
      */
     @Override
-    public void onDeviceId(Config.DID deviceId, Config.DID oldDeviceId) {
+    public void onDeviceId(Context ctx, Config.DID deviceId, Config.DID oldDeviceId) {
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID && deviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
             if (deviceId.strategy == Config.DeviceIdStrategy.ADVERTISING_ID) {
                 Log.d("[ModuleAttribution] waiting for ModuleDeviceId to finish acquiring ADVERTISING_ID done: " + deviceId);
-                Core.onDeviceId(new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, deviceId.id), null);
+                Core.onDeviceId(ctx, new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, deviceId.id), null);
             } else {
                 Log.w("[ModuleAttribution] no ADVERTISING_ID available, Countly Attribution is unavailable after ModuleDeviceId flow");
                 advertisingIdNotAvailable = true;

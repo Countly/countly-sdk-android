@@ -120,21 +120,24 @@ public class CountlyPush {
          * Record action event occurrence for this message and put it to current {@link Session}.
          * If no {@link Session} is open at the moment, opens new {@link Session}.
          * Event is recorded for a whole message, not for specific button.
+         *
+         * @param context Context to record action in
          */
-        void recordAction();
+        void recordAction(Context context);
 
         /**
          * Record action event occurrence for a particular button index and put it to current {@link Session}.
          * If no {@link Session} is open at the moment, opens new {@link Session}.
          * Event is recorded for a particular button, not for a whole message.
-         * Behaviour is identical to {@link Button#recordAction()}
+         * Behaviour is identical to {@link Button#recordAction(Context)}
          *
+         * @param context Context to record action in
          * @param buttonIndex index of button to record Action on
          *
          * @see Button#index()
-         * @see Button#recordAction();
+         * @see Button#recordAction(Context);
          */
-        void recordAction(int buttonIndex);
+        void recordAction(Context context, int buttonIndex);
     }
 
     /**
@@ -165,9 +168,10 @@ public class CountlyPush {
         /**
          * Record action event for this button, usually after a click
          *
-         * @see Message#recordAction(int)
+         * @param context Context to run in
+         * @see Message#recordAction(Context, int)
          */
-        void recordAction();
+        void recordAction(Context context);
     }
 
     /**
@@ -322,7 +326,7 @@ public class CountlyPush {
                         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                msg.recordAction(0);
+                                msg.recordAction(context, 0);
                                 dialog.dismiss();
                             }
                         });
@@ -331,7 +335,7 @@ public class CountlyPush {
                     if (msg.buttons().size() > 0) {
                         addButtons(context, builder, msg);
                     } else {
-                        msg.recordAction();
+                        msg.recordAction(context);
                     }
                     builder.setTitle(msg.title());
                     builder.setMessage(msg.message());
@@ -357,7 +361,7 @@ public class CountlyPush {
             DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    msg.recordAction(which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
+                    msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
                     context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 0 : 1).link().toString())));
                     dialog.dismiss();
                 }

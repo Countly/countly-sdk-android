@@ -1,7 +1,6 @@
 package ly.count.android.sdk.internal;
 
 import android.content.*;
-import android.content.Context;
 
 import junit.framework.Assert;
 
@@ -23,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -42,11 +42,13 @@ public class ModuleAttributionTests {
     private ModuleDeviceId moduleDeviceId = null;
     private Module dummy = null;
     private Utils utils = null;
+    private Context ctx = null;
 
     @Before
     public void beforeEachTest() throws Exception {
+        ctx = new ContextImpl(getContext());
         Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
-        Core.instance.purgeInternalStorage(null);
+        Core.instance.purgeInternalStorage(ctx, null);
         Core.instance.deinit();
     }
 
@@ -77,8 +79,8 @@ public class ModuleAttributionTests {
         Assert.assertFalse(aid.id.equals(did.id));
         Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
         Assert.assertEquals(aid.strategy, Config.DeviceIdStrategy.ADVERTISING_ID);
-        Mockito.verify(dummy, times(1)).onDeviceId(did, null);
-        Mockito.verify(dummy, times(1)).onDeviceId(aid, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(aid), isNull(Config.DID.class));
     }
 
     @Test
@@ -108,8 +110,8 @@ public class ModuleAttributionTests {
         Assert.assertTrue(aid.id.equals(did.id));
         Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ADVERTISING_ID);
         Assert.assertEquals(aid.strategy, Config.DeviceIdStrategy.ADVERTISING_ID);
-        Mockito.verify(dummy, times(1)).onDeviceId(did, null);
-        Mockito.verify(dummy, times(1)).onDeviceId(aid, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(aid), isNull(Config.DID.class));
     }
 
     @Test
@@ -166,13 +168,13 @@ public class ModuleAttributionTests {
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
 
         Core.initForApplication(config, getContext());
-        Storage.push((Storable) Utils.reflectiveGetField(Core.instance, "config"));
+        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
         Core.instance.deinit();
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent("bad action");
         receiver.onReceive(getContext(), intent);
-        verify(receiver, never()).extractReferrer(isA(BroadcastReceiver.PendingResult[].class), anyString());
+        verify(receiver, never()).extractReferrer(isA(android.content.Context.class), isA(BroadcastReceiver.PendingResult[].class), anyString());
     }
 
     @Test
@@ -183,13 +185,13 @@ public class ModuleAttributionTests {
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
 
         Core.initForApplication(config, getContext());
-        Storage.push((Storable) Utils.reflectiveGetField(Core.instance, "config"));
+        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
         Core.instance.deinit();
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
         receiver.onReceive(getContext(), intent);
-        verify(receiver, never()).extractReferrer(isA(BroadcastReceiver.PendingResult[].class), anyString());
+        verify(receiver, never()).extractReferrer(isA(android.content.Context.class), isA(BroadcastReceiver.PendingResult[].class), anyString());
     }
 
     @Test
@@ -200,14 +202,14 @@ public class ModuleAttributionTests {
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
 
         Core.initForApplication(config, getContext());
-        Storage.push((Storable) Utils.reflectiveGetField(Core.instance, "config"));
+        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
         Core.instance.deinit();
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
         intent.putExtra(ModuleAttribution.EXTRA, INVALID_REFERRER);
         receiver.onReceive(getContext(), intent);
-        verify(receiver, times(1)).extractReferrer(any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(INVALID_REFERRER)));
+        verify(receiver, times(1)).extractReferrer(isA(android.content.Context.class), any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(INVALID_REFERRER)));
         verify(receiver, never()).recordRequest(anyString(), anyString());
     }
 
@@ -219,14 +221,14 @@ public class ModuleAttributionTests {
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
 
         Core.initForApplication(config, getContext());
-        Storage.push((Storable) Utils.reflectiveGetField(Core.instance, "config"));
+        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
         Core.instance.deinit();
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
         intent.putExtra(ModuleAttribution.EXTRA, TEST_REFERRER);
         receiver.onReceive(getContext(), intent);
-        verify(receiver, times(1)).extractReferrer(any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(TEST_REFERRER)));
+        verify(receiver, times(1)).extractReferrer(isA(android.content.Context.class), any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(TEST_REFERRER)));
     }
 
 
@@ -238,14 +240,14 @@ public class ModuleAttributionTests {
         config.setLoggingLevel(Config.LoggingLevel.DEBUG);
 
         Core.initForApplication(config, getContext());
-        Storage.push((Storable) Utils.reflectiveGetField(Core.instance, "config"));
+        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
         Core.instance.deinit();
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
         intent.putExtra(ModuleAttribution.EXTRA, TEST_REFERRER);
         receiver.onReceive(getContext(), intent);
-        verify(receiver, times(1)).extractReferrer(any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(TEST_REFERRER)));
+        verify(receiver, times(1)).extractReferrer(isA(android.content.Context.class), any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(TEST_REFERRER)));
         verify(receiver, times(1)).recordRequest(eq(TEST_CID), eq(TEST_UID));
     }
 

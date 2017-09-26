@@ -74,8 +74,8 @@ public class ModulePush extends ModuleBase {
             }
 
             @Override
-            public void recordAction() {
-                message.recordAction(index);
+            public void recordAction(android.content.Context context) {
+                message.recordAction(context, index);
             }
 
             @Override
@@ -195,13 +195,13 @@ public class ModulePush extends ModuleBase {
         }
 
         @Override
-        public void recordAction() {
-            recordAction(0);
+        public void recordAction(android.content.Context context) {
+            recordAction(context, 0);
         }
 
         @Override
-        public void recordAction(int buttonIndex) {
-            Core.instance.sessionLeadingOrNew()
+        public void recordAction(android.content.Context context, int buttonIndex) {
+            Core.instance.sessionLeadingOrNew(context)
                     .event(PUSH_EVENT_ACTION)
                     .addSegment(PUSH_EVENT_ACTION_INDEX_KEY, String.valueOf(buttonIndex))
                     .record();
@@ -254,30 +254,30 @@ public class ModulePush extends ModuleBase {
     }
 
     @Override
-    public void onActivityStarted(Context context) {
+    public void onActivityStarted(Context ctx) {
         if (CountlyPush.pushActivityClass == null && !config.isLimited()) {
-            CountlyPush.pushActivityClass = context.getActivity().getClass();
+            CountlyPush.pushActivityClass = ctx.getActivity().getClass();
         }
     }
 
     @Override
-    public void onActivityStopped(Context context) {
+    public void onActivityStopped(Context ctx) {
         if (config.getPushActivityClass() == null && !config.isLimited()) {
             CountlyPush.pushActivityClass = null;
         }
     }
 
     @Override
-    public void onContextAcquired(Context context) {
+    public void onContextAcquired(final Context ctx) {
         if (config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN) == null) {
-            Core.instance.acquireId(new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, null), false, new Tasks.Callback<Config.DID>() {
+            Core.instance.acquireId(ctx, new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, null), false, new Tasks.Callback<Config.DID>() {
                 @Override
                 public void call(Config.DID did) throws Exception {
                     if (did == null) {
                         Log.w("Couldn't acquire FCM token, messaging doesn't work yet");
                     } else {
                         Log.i("Got FCM token: " + did.id);
-                        Core.onDeviceId(did, null);
+                        Core.onDeviceId(ctx, did, null);
                     }
                 }
             });
@@ -285,9 +285,9 @@ public class ModulePush extends ModuleBase {
     }
 
     @Override
-    public void onDeviceId(final Config.DID deviceId, Config.DID oldDeviceId) {
+    public void onDeviceId(Context ctx, final Config.DID deviceId, Config.DID oldDeviceId) {
         if (deviceId != null && deviceId.realm == Config.DeviceIdRealm.FCM_TOKEN) {
-            ModuleRequests.injectParams(new ModuleRequests.ParamsInjector() {
+            ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
                 @Override
                 public void call(Params params) {
                     params.add("token_session", 1,

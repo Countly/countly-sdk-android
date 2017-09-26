@@ -20,9 +20,11 @@ import static android.support.test.InstrumentationRegistry.getContext;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplTests {
+    private Context ctx = null;
+
     @Before
     public void setupEveryTest(){
-        android.content.Context context = getContext();
+        ctx = new ContextImpl(getContext());
     }
 
     @After
@@ -34,7 +36,7 @@ public class SessionImplTests {
     public void constructor_empty(){
         final long allowance = 1000000000;
         long time = System.nanoTime();
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         long diff = session.getId() - time;
         Assert.assertEquals(true, diff < allowance);
@@ -43,13 +45,13 @@ public class SessionImplTests {
     @Test
     public void constructor_deserialize(){
         long targetID = 11234L;
-        SessionImpl session = new SessionImpl(targetID);
+        SessionImpl session = new SessionImpl(ctx, targetID);
         Assert.assertEquals(targetID, (long)session.getId());
     }
 
     @Test
     public void addParams() throws Exception{
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         Assert.assertNotNull(session.params);
 
         StringBuilder sbParams = new StringBuilder();
@@ -74,7 +76,7 @@ public class SessionImplTests {
         TestingUtilityInternal.setupLogs(null);
 
         long sessionID = 12345;
-        SessionImpl session = new SessionImpl(sessionID);
+        SessionImpl session = new SessionImpl(ctx, sessionID);
 
         long beginTime = 234;
         session.begin(beginTime);
@@ -97,7 +99,7 @@ public class SessionImplTests {
 
     @Test
     public void beginEndSession_valuesCorrect() {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         session.begin();
         session.end();
@@ -108,7 +110,7 @@ public class SessionImplTests {
 
     @Test
     public void beginEndSession_simple(){
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         final long timeGuardStart = System.nanoTime();
 
         session.begin();
@@ -134,7 +136,7 @@ public class SessionImplTests {
     public void getBeganAndEnded() {
         long timeBegin = 123L;
         long timeEnd = 345L;
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         session.begin(timeBegin);
         session.end(timeEnd);
 
@@ -148,7 +150,7 @@ public class SessionImplTests {
 
         long timeBegin = 123L;
         long timeEnd = 345L;
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         session.end();
         Assert.assertEquals(null, session.getBegan());
@@ -166,7 +168,7 @@ public class SessionImplTests {
         TestingUtilityInternal.setupLogs(null);
 
         long timeEnd = 345L;
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         session.ended = timeEnd;
         session.begin();
@@ -181,7 +183,7 @@ public class SessionImplTests {
         long timeBegin = 123L;
         long timeEnd = 345L;
         long timeEndSecond = 678L;
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         Assert.assertEquals(null, session.getBegan());
         Assert.assertEquals(null, session.getEnded());
@@ -207,7 +209,7 @@ public class SessionImplTests {
         int beginOffsetSeconds = 4;
         long timeBeginOffset = (long) (Device.NS_IN_SECOND * beginOffsetSeconds);
 
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         final long timeGuardBase = System.nanoTime() - timeBeginOffset;
         session.begin(timeGuardBase);
 
@@ -228,7 +230,7 @@ public class SessionImplTests {
         long timeBeginOffset = (long) (Device.NS_IN_SECOND * beginOffsetSeconds);
 
         final long timeGuardBase = System.nanoTime() - timeBeginOffset;
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         session.begin();
         Whitebox.setInternalState(session, "updated", timeGuardBase);
 
@@ -247,7 +249,7 @@ public class SessionImplTests {
     public void beginEndSession_simpleWithWait() throws InterruptedException{
         long sleepTimeMs = 500;
 
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         final long timeGuardStart = System.nanoTime();
 
         session.begin();
@@ -271,7 +273,7 @@ public class SessionImplTests {
         TestingUtilityInternal.setupLogs(null);
         long timeBegin = 123L;
         long timeEnd = 345L;
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
 
         session.update();
 
@@ -294,14 +296,14 @@ public class SessionImplTests {
     @Test
     public void isLeading_null() throws MalformedURLException{
         Core core = TestingUtilityInternal.setupBasicCore(getContext());
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         Assert.assertEquals(false, (boolean)session.isLeading());
     }
     @Test
     public void isLeading_succeed() throws MalformedURLException{
         Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
-        SessionImpl sessionTarget = new SessionImpl(123L);
+        SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessions.add(sessionTarget);
         Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
     }
@@ -310,25 +312,25 @@ public class SessionImplTests {
         Core core = TestingUtilityInternal.setupBasicCore(getContext());
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
 
-        SessionImpl sessionOther = new SessionImpl(456L);
-        SessionImpl sessionTarget = new SessionImpl(123L);
+        SessionImpl sessionOther = new SessionImpl(ctx, 456L);
+        SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessions.add(sessionOther);
         Assert.assertEquals(false, (boolean)sessionTarget.isLeading());
     }
 
 
     public void storeRestore_simple() throws InterruptedException {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         byte[] data = session.store();
         Assert.assertNotNull(data);
-        SessionImpl restored = new SessionImpl(session.id);
+        SessionImpl restored = new SessionImpl(ctx, session.id);
         Assert.assertTrue(restored.restore(data));
         Assert.assertEquals(session, restored);
     }
 
     @Test
     public void storeRestore_full() throws InterruptedException {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         session.begin().event("key1")
                 .setCount(2)
                 .setDuration(3)
@@ -357,7 +359,7 @@ public class SessionImplTests {
         byte[] data = session.store();
 
         Assert.assertNotNull(data);
-        SessionImpl restored = new SessionImpl(session.id);
+        SessionImpl restored = new SessionImpl(ctx, session.id);
 
         Assert.assertTrue(restored.restore(data));
         Assert.assertEquals(session, restored);
@@ -368,7 +370,7 @@ public class SessionImplTests {
         Core core = Core.initForApplication(new InternalConfig(new Config("http://count.ly/tests", "123")).setLoggerClass(Log.SystemLogger.class), getContext());
         core.onLimitedContextAcquired(getContext());
 
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         session.begin().event("key1")
                 .setCount(2)
                 .setDuration(3)
@@ -377,25 +379,25 @@ public class SessionImplTests {
                 .addSegment("k2", "v2")
                 .record();
 
-        List<Long> ids = Storage.list(session.storagePrefix());
+        List<Long> ids = Storage.list(ctx, session.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertTrue(ids.contains(session.storageId()));
 
-        SessionImpl restored = Storage.pop(new SessionImpl(session.getId()));
+        SessionImpl restored = Storage.pop(ctx, new SessionImpl(ctx, session.getId()));
         Assert.assertNotNull(restored);
         Assert.assertEquals(restored, session);
 
         // restored is updated and stored, while session has updated = null
         restored.update();
 
-        restored = Storage.pop(new SessionImpl(session.getId()));
+        restored = Storage.pop(ctx, new SessionImpl(ctx, session.getId()));
         Assert.assertNotNull(restored);
         Assert.assertFalse(restored.equals(session));
     }
 
     @Test
     public void session_lifecycle() throws InterruptedException {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         session.begin();
         Long began = Whitebox.getInternalState(session, "began");
         Assert.assertNotNull(began);
@@ -434,7 +436,7 @@ public class SessionImplTests {
 
     @Test
     public void session_updateBeforeBegin() throws InterruptedException {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         session.update();
         Assert.assertNull(Whitebox.getInternalState(session, "began"));
         Assert.assertNull(Whitebox.getInternalState(session, "updated"));
@@ -443,7 +445,7 @@ public class SessionImplTests {
 
     @Test
     public void session_endBeforeBegin() throws InterruptedException {
-        SessionImpl session = new SessionImpl();
+        SessionImpl session = new SessionImpl(ctx);
         session.end();
         Assert.assertNull(Whitebox.getInternalState(session, "began"));
         Assert.assertNull(Whitebox.getInternalState(session, "updated"));

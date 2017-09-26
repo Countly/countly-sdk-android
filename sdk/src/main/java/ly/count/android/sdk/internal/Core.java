@@ -3,7 +3,6 @@ package ly.count.android.sdk.internal;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.*;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -67,22 +66,22 @@ public class Core extends CoreModules {
      * Init Core instance according to config supplied. In case config is null, Core reads it
      * from storage.
      *
-     * @see #initForApplication(Config, Context)
+     * @see #initForApplication(Config, android.content.Context)
      * @see #initForService(Service)
-     * @see #initForBroadcastReceiver(Context)
+     * @see #initForBroadcastReceiver(android.content.Context)
      *
      * @param config Countly configuration
      * @param context Initialization context, can be replaced later
      * @return true if initialized, false if no config found and value in parameter was null
      * @throws IllegalArgumentException in case {@code config} is inconsistent
      */
-    private boolean init(Config config, Context context) throws IllegalArgumentException {
+    private boolean init(Config config, android.content.Context context) throws IllegalArgumentException {
         try {
+            Context ctx = new ContextImpl(context);
             if (handler == null) {
                 handler = new Handler(context.getMainLooper());
             }
-            longLivingContext = context;
-            this.config = loadConfig();
+            this.config = loadConfig(ctx);
             if (this.config == null) {
                 if (config != null) {
                     this.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
@@ -108,9 +107,9 @@ public class Core extends CoreModules {
             }
             modules.removeAll(failed);
 
-            user = loadUser();
+            user = loadUser(ctx);
             if (user == null) {
-                user = new UserImpl();
+                user = new UserImpl(ctx);
             }
 
             return true;
@@ -126,7 +125,7 @@ public class Core extends CoreModules {
      * @param application current application instance
      * @return Core instance initialized with config & application
      */
-    public static Core initForApplication(Config config, Context application) {
+    public static Core initForApplication(Config config, android.content.Context application) {
         if (new Core().init(config, application)) {
             return instance;
         } else {
@@ -151,7 +150,7 @@ public class Core extends CoreModules {
      * @param context current {@link Context}
      * @return config if initialization succeeded, {@code null} otherwise
      */
-    static InternalConfig initForBroadcastReceiver(Context context) {
+    static InternalConfig initForBroadcastReceiver(android.content.Context context) {
         return (instance != null || new Core().init(null, context)) ? instance.config : null;
     }
 
@@ -176,8 +175,8 @@ public class Core extends CoreModules {
      * Add session to the list.
      * @return {@link SessionImpl} just created
      */
-    public SessionImpl sessionAdd(){
-        sessions.add(new SessionImpl());
+    public SessionImpl sessionAdd(Context ctx){
+        sessions.add(new SessionImpl(ctx));
         return sessions.get(sessions.size() - 1);
     }
 
@@ -221,8 +220,18 @@ public class Core extends CoreModules {
      *
      * @return leading or new session object
      */
-    public SessionImpl sessionLeadingOrNew(){
-        return sessions.size() > 0 ? sessions.get(0) : sessionAdd();
+    public SessionImpl sessionLeadingOrNew(Context ctx){
+        return sessions.size() > 0 ? sessions.get(0) : sessionAdd(ctx);
+    }
+
+    /**
+     * Current leading {@link ly.count.android.sdk.Session} or new {@link ly.count.android.sdk.Session}
+     * if no leading one exists. Android context version.
+     *
+     * @return leading or new session object
+     */
+    public SessionImpl sessionLeadingOrNew(android.content.Context context){
+        return sessions.size() > 0 ? sessions.get(0) : sessionAdd(new ContextImpl(context.getApplicationContext()));
     }
 
     /**
@@ -231,13 +240,11 @@ public class Core extends CoreModules {
      * @param session session to begin
      * @return supplied session for method chaining
      */
-    SessionImpl sessionBegin(SessionImpl session){
+    SessionImpl sessionBegin(Context ctx, SessionImpl session){
         session.begin();
-        ContextImpl context = new ContextImpl(longLivingContext);
         for (Module m : instance.modules) {
-            m.onSessionBegan(session, context);
+            m.onSessionBegan(session, ctx);
         }
-        context.expire();
         return session;
     }
 
@@ -247,43 +254,40 @@ public class Core extends CoreModules {
      * @param session session to end
      * @return supplied session for method chaining
      */
-    SessionImpl sessionEnd(SessionImpl session){
+    SessionImpl sessionEnd(Context ctx, SessionImpl session){
         session.end();
-        ContextImpl context = new ContextImpl(longLivingContext);
         for (Module m : instance.modules) {
-            m.onSessionEnded(session, context);
+            m.onSessionEnded(session, ctx);
         }
-        context.expire();
         return session;
     }
 
     /**
      * Initialization for cases when Countly needs to start up implicitly
-     * @param context Context instance to store
+     * @param context Context to run in
      */
-    public void onLimitedContextAcquired(Context context) {
-        longLivingContext = context.getApplicationContext();
+    public void onLimitedContextAcquired(android.content.Context context) {
+        ContextImpl ctx = new ContextImpl(context);
 
         if (!(context instanceof CountlyService)) {
-            sendToService(context, CountlyService.CMD_START, null);
+            sendToService(ctx, CountlyService.CMD_START, null);
         }
 
         this.config.setLimited(true);
-        ContextImpl ctx = new ContextImpl(context);
         for (Module m : modules) {
             m.onLimitedContextAcquired(ctx);
         }
-        ctx.expire();
     }
 
     /**
      * Notify modules about {@link ly.count.android.sdk.Config.DID} change: adding, change or removal
      * and store {@link InternalConfig} changes if needed
      *
+     * @param ctx Context to run in
      * @param id new id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if removing it
      * @param old old id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if there were no id with such realm
      */
-    public static void onDeviceId(Config.DID id, Config.DID old) {
+    public static void onDeviceId(Context ctx, Config.DID id, Config.DID old) {
         if (instance == null || instance.config == null) {
             Log.wtf("SDK not initialized when setting device id");
             return;
@@ -291,20 +295,20 @@ public class Core extends CoreModules {
         if (!instance.config.isLimited()) {
             if (id != null && (!id.equals(old) || !id.equals(instance.config.getDeviceId(id.realm)))) {
                 instance.config.setDeviceId(id);
-                Storage.push(instance.config);
+                Storage.push(ctx, instance.config);
             } else if (id == null && old != null) {
                 if (instance.config.removeDeviceId(old)) {
-                    Storage.push(instance.config);
+                    Storage.push(ctx, instance.config);
                 }
             }
         }
 
         for (Module module : instance.modules) {
-            module.onDeviceId(id, old);
+            module.onDeviceId(ctx, id, old);
         }
 
         if (instance.config.isLimited()) {
-            instance.user = instance.loadUser();
+            instance.user = instance.loadUser(ctx);
         } else {
             Map<String, byte[]> params = null;
             if (id != null || old != null) {
@@ -317,7 +321,7 @@ public class Core extends CoreModules {
                 }
             }
 
-            sendToService(instance.longLivingContext, CountlyService.CMD_DEVICE_ID, params);
+            sendToService(ctx, CountlyService.CMD_DEVICE_ID, params);
         }
 
         if (!instance.config.isLimited() && id != null && id.realm == Config.DeviceIdRealm.DEVICE_ID) {
@@ -327,7 +331,7 @@ public class Core extends CoreModules {
 
     public static String generateOpenUDID(Context ctx) {
         @SuppressLint("HardwareIds")
-        String id = Settings.Secure.getString(ctx.getContentResolver(), Settings.Secure.ANDROID_ID);
+        String id = Settings.Secure.getString(ctx.getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
 
         // if ANDROID_ID is null, or it's equals to the GalaxyTab generic ANDROID_ID or bad, generates a new one
         if (id == null || id.equals("9774d56d682e549c") || id.length() < 15) {
@@ -338,17 +342,17 @@ public class Core extends CoreModules {
         return id;
     }
 
-    private InternalConfig loadConfig() {
+    private InternalConfig loadConfig(Context ctx) {
         try {
-            return Storage.read(new InternalConfig());
+            return Storage.read(ctx, new InternalConfig());
         } catch (MalformedURLException e) {
             Log.wtf("Cannot happen");
             return null;
         }
     }
 
-    private UserImpl loadUser() {
-        return Storage.read(new UserImpl());
+    private UserImpl loadUser(Context ctx) {
+        return Storage.read(ctx, new UserImpl(ctx));
     }
 
     // ------------------------ Specific module-related methods ------------------------------------
@@ -363,12 +367,8 @@ public class Core extends CoreModules {
      * @param callback callback to run (in {@link ModuleDeviceId} thread) when done, can be null
      * @return Future which resolves to {@link ly.count.android.sdk.Config.DID} instance if succeeded or to null if not
      */
-    Future<Config.DID> acquireId(final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
-        assert ((ModuleDeviceId)instance.module(ModuleDeviceId.class)) != null;
-        ContextImpl ctx = new ContextImpl(longLivingContext);
-        Future<Config.DID> future = ((ModuleDeviceId)module(ModuleDeviceId.class)).acquireId(new ContextImpl(longLivingContext), holder, fallbackAllowed, callback);
-        ctx.expire();
-        return future;
+    Future<Config.DID> acquireId(Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
+        return ((ModuleDeviceId)module(ModuleDeviceId.class)).acquireId(ctx, holder, fallbackAllowed, callback);
     }
 
     /**
@@ -422,12 +422,13 @@ public class Core extends CoreModules {
      * @param token token string
      */
     public static void onPushTokenRefresh(Service service, String token) {
+        Context ctx = new ContextImpl(service);
         InternalConfig config = Core.initForService(service);
         if (config != null && !config.isLimited()) {
             if (Utils.isNotEmpty(token)) {
-                Core.onDeviceId(new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, token), config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
+                Core.onDeviceId(ctx, new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, token), config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
             } else {
-                Core.onDeviceId(null, config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
+                Core.onDeviceId(ctx, null, config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
             }
         }
     }

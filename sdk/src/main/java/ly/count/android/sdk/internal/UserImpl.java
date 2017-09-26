@@ -24,10 +24,12 @@ public class UserImpl extends User implements Storable {
     Integer birthyear;
     Set<String> cohorts;
     Map<String, Object> custom;
+    Context ctx;
 
-    UserImpl() {
-        custom = new HashMap<>();
-        cohorts = new HashSet<>();
+    UserImpl(Context ctx) {
+        this.ctx = ctx;
+        this.custom = new HashMap<>();
+        this.cohorts = new HashSet<>();
     }
 
     public String id() {

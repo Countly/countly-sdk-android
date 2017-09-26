@@ -13,7 +13,7 @@ abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void onDeviceId(Config.DID deviceId, Config.DID oldDeviceId) {
+    public void onDeviceId(Context ctx, Config.DID deviceId, Config.DID oldDeviceId) {
     }
 
     @Override
@@ -21,47 +21,47 @@ abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void onContextAcquired(Context context) {
+    public void onContextAcquired(Context ctx) {
     }
 
     @Override
-    public void onLimitedContextAcquired(Context context) {
+    public void onLimitedContextAcquired(Context ctx) {
     }
 
     @Override
-    public void onActivityCreated(Context context) {
+    public void onActivityCreated(Context ctx) {
     }
 
     @Override
-    public void onActivityStarted(Context context) {
+    public void onActivityStarted(Context ctx) {
     }
 
     @Override
-    public void onActivityResumed(Context context) {
+    public void onActivityResumed(Context ctx) {
     }
 
     @Override
-    public void onActivityPaused(Context context) {
+    public void onActivityPaused(Context ctx) {
     }
 
     @Override
-    public void onActivityStopped(Context context) {
+    public void onActivityStopped(Context ctx) {
     }
 
     @Override
-    public void onActivitySaveInstanceState(Context context) {
+    public void onActivitySaveInstanceState(Context ctx) {
     }
 
     @Override
-    public void onActivityDestroyed(Context context) {
+    public void onActivityDestroyed(Context ctx) {
     }
 
     @Override
-    public void onSessionBegan(Session session, Context context) {
+    public void onSessionBegan(Session session, Context ctx) {
     }
 
     @Override
-    public void onSessionEnded(Session session, Context context) {
+    public void onSessionEnded(Session session, Context ctx) {
     }
 
     @Override

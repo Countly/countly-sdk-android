@@ -1,7 +1,5 @@
 package ly.count.android.sdk.internal;
 
-import android.content.*;
-
 import junit.framework.Assert;
 
 import org.junit.Before;
@@ -20,8 +18,10 @@ import ly.count.android.sdk.Config;
 import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ModuleDeviceIdTests {
@@ -31,6 +31,7 @@ public class ModuleDeviceIdTests {
     private ModuleDeviceId module = null;
     private Module dummy = null;
     private Utils utils = null;
+    private Context ctx = null;
 
     @Test(expected = IllegalArgumentException.class)
     public void checkStrictAdvertisingId() throws Exception {
@@ -47,8 +48,9 @@ public class ModuleDeviceIdTests {
 
     @Before
     public void beforeEachTest() throws Exception {
+        ctx = new ContextImpl(getContext());
         Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
-        Core.instance.purgeInternalStorage(null);
+        Core.instance.purgeInternalStorage(ctx, null);
         Core.instance.deinit();
     }
 
@@ -102,9 +104,9 @@ public class ModuleDeviceIdTests {
 
         Config.DID did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNull(did);
-        Mockito.verify(dummy, never()).onDeviceId(did, null);
+        Mockito.verify(dummy, never()).onDeviceId(ctx, did, null);
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNull(internalConfig);
     }
 
@@ -121,9 +123,9 @@ public class ModuleDeviceIdTests {
         Assert.assertNotNull(did);
         Assert.assertTrue(did.strategy == Config.DeviceIdStrategy.CUSTOM_ID);
         Assert.assertEquals(deviceId, did.id);
-        Mockito.verify(dummy).onDeviceId(did, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -147,9 +149,9 @@ public class ModuleDeviceIdTests {
         Assert.assertNotNull(did);
         Assert.assertTrue(did.strategy == Config.DeviceIdStrategy.CUSTOM_ID);
         Assert.assertEquals(legacyId, did.id);
-        Mockito.verify(dummy).onDeviceId(did, did);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), eq(did));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -177,9 +179,9 @@ public class ModuleDeviceIdTests {
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(ModuleDeviceId.AdvIdInfo.deviceId, did.id);
-        Mockito.verify(dummy).onDeviceId(did, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -209,9 +211,9 @@ public class ModuleDeviceIdTests {
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(legacyId, did.id);
-        Mockito.verify(dummy).onDeviceId(did, did);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), eq(did));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -239,9 +241,9 @@ public class ModuleDeviceIdTests {
         Assert.assertNotNull(did);
         Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
         Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
-        Mockito.verify(dummy).onDeviceId(did, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -268,9 +270,9 @@ public class ModuleDeviceIdTests {
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(ModuleDeviceId.InstIdInstance.deviceId, did.id);
-        Mockito.verify(dummy).onDeviceId(did, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -300,9 +302,9 @@ public class ModuleDeviceIdTests {
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(legacyId, did.id);
-        Mockito.verify(dummy).onDeviceId(did, did);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), eq(did));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
@@ -330,9 +332,9 @@ public class ModuleDeviceIdTests {
         Assert.assertNotNull(did);
         Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
         Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
-        Mockito.verify(dummy).onDeviceId(did, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
 
-        internalConfig = Storage.read(internalConfig);
+        internalConfig = Storage.read(ctx, internalConfig);
         Assert.assertNotNull(internalConfig);
         did = internalConfig.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);

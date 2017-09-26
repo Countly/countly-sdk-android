@@ -50,30 +50,18 @@ public class ContextImplTests {
         ContextImpl contextImpl = new ContextImpl(application);
 
         Assert.assertEquals(application, contextImpl.getApplication());
+        Assert.assertEquals(application, contextImpl.getContext());
         Assert.assertEquals(null, contextImpl.getActivity());
-
-        contextImpl.expire();
-
-        Assert.assertEquals(null, contextImpl.getApplication());
-        Assert.assertEquals(null, contextImpl.getActivity());
-        Assert.assertEquals(null, contextImpl.getContext());
     }
 
     @Test
     public void contextImpl_usageWithActivity(){
         Activity activity = mock(Activity.class);
-        Bundle bundle = new Bundle();
-
-        ContextImpl contextImpl = new ContextImpl(activity, bundle);
+        ContextImpl contextImpl = new ContextImpl(activity);
 
         Assert.assertEquals(null, contextImpl.getApplication());
+        Assert.assertEquals(activity, contextImpl.getContext());
         Assert.assertEquals(activity, contextImpl.getActivity());
-
-        contextImpl.expire();
-
-        Assert.assertEquals(null, contextImpl.getApplication());
-        Assert.assertEquals(null, contextImpl.getActivity());
-        Assert.assertEquals(null, contextImpl.getContext());
     }
 
     @Test
@@ -84,11 +72,5 @@ public class ContextImplTests {
         Assert.assertEquals(null, contextImpl.getApplication());
         Assert.assertEquals(null, contextImpl.getActivity());
         Assert.assertEquals(context, contextImpl.getContext());
-
-        contextImpl.expire();
-
-        Assert.assertEquals(null, contextImpl.getApplication());
-        Assert.assertEquals(null, contextImpl.getActivity());
-        Assert.assertEquals(null, contextImpl.getContext());
     }
 }

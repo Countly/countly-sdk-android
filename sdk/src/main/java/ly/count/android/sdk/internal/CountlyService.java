@@ -96,7 +96,8 @@ public class CountlyService extends android.app.Service {
                     success = success && !old.restore(intent.getByteArrayExtra(PARAM_OLD_ID));
                 }
                 if (success) {
-                    Core.onDeviceId(id, old);
+                    Context ctx = new ContextImpl(CountlyService.this);
+                    Core.onDeviceId(ctx, id, old);
                     check();
                 }
             }
@@ -141,7 +142,8 @@ public class CountlyService extends android.app.Service {
         return new Tasks.Task<Boolean>(0L) {
             @Override
             public Boolean call() throws Exception {
-                Request request = Storage.readOne(new Request(0L), true);
+                Context ctx = new ContextImpl(CountlyService.this);
+                Request request = Storage.readOne(ctx, new Request(0L), true);
                 if (request == null) {
                     return false;
                 } else {
@@ -154,14 +156,14 @@ public class CountlyService extends android.app.Service {
                             result = false;
                         } else if (check.equals(Boolean.FALSE)){
                             Log.d("[service] Request won't be ready, removing: " + request);
-                            Storage.remove(request);
+                            Storage.remove(ctx, request);
                             result = true;
                         } else {
                             Log.d("[service] Sending request: " + request.toString());
                             result = network.send(request).get();
                             Log.d("[service] Request " + request.storageId() + " sent?: " + result);
                             if (result) {
-                                Storage.remove(request);
+                                Storage.remove(ctx, request);
                             }
                         }
                         return result;

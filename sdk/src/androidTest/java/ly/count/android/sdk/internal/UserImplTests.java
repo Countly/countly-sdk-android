@@ -19,7 +19,8 @@ public class UserImplTests {
 
     @Test
     public void testStorageAllSet() throws Exception {
-        UserImpl user = new UserImpl();
+        Context ctx = new ContextImpl(getContext());
+        UserImpl user = new UserImpl(ctx);
         user.name = "name";
         user.username = "username";
         user.email = "email";
@@ -31,9 +32,9 @@ public class UserImplTests {
         user.birthyear = 1900;
 
         Core.initForBroadcastReceiver(getContext());
-        Assert.assertTrue(Storage.push(user));
+        Assert.assertTrue(Storage.push(ctx, user));
 
-        User stored = Storage.read(new UserImpl());
+        User stored = Storage.read(ctx, new UserImpl(ctx));
         Assert.assertNotNull(stored);
 
         Assert.assertEquals(user.name, stored.name());
@@ -50,13 +51,14 @@ public class UserImplTests {
 
     @Test
     public void testStorageNothingSet() throws Exception {
-        UserImpl user = new UserImpl();
+        Context ctx = new ContextImpl(getContext());
+        UserImpl user = new UserImpl(ctx);
 
         Core.initForBroadcastReceiver(getContext());
         new Log().init(new InternalConfig(TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG)));
-        Assert.assertTrue(Storage.push(user));
+        Assert.assertTrue(Storage.push(ctx, user));
 
-        User stored = Storage.read(new UserImpl());
+        User stored = Storage.read(ctx, new UserImpl(ctx));
         Assert.assertNotNull(stored);
 
         Assert.assertNull(stored.name());
@@ -73,16 +75,17 @@ public class UserImplTests {
 
     @Test
     public void testStorageSomeSet() throws Exception {
-        UserImpl user = new UserImpl();
+        Context ctx = new ContextImpl(getContext());
+        UserImpl user = new UserImpl(ctx);
         user.username = "username";
         user.gender = User.Gender.MALE;
         user.phone = "phone";
 
         Core.initForBroadcastReceiver(getContext());
         new Log().init(new InternalConfig(TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG)));
-        Assert.assertTrue(Storage.push(user));
+        Assert.assertTrue(Storage.push(ctx, user));
 
-        User stored = Storage.read(new UserImpl());
+        User stored = Storage.read(ctx, new UserImpl(ctx));
         Assert.assertNotNull(stored);
 
         Assert.assertNull(stored.name());

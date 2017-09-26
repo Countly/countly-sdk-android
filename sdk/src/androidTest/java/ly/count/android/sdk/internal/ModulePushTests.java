@@ -20,6 +20,8 @@ import ly.count.android.sdk.Config;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
@@ -31,11 +33,13 @@ public class ModulePushTests {
     private ModuleDeviceId moduleDeviceId = null;
     private Module dummy = null;
     private Utils utils = null;
+    private Context ctx = null;
 
     @Before
     public void beforeEachTest() throws Exception {
+        ctx = new ContextImpl(getContext());
         Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
-        Core.instance.purgeInternalStorage(null);
+        Core.instance.purgeInternalStorage(ctx, null);
         Core.instance.deinit();
         utils = Mockito.spy(new Utils());
         Utils.reflectiveSetField(Utils.class, "utils", utils);
@@ -81,8 +85,8 @@ public class ModulePushTests {
         Assert.assertEquals(fid.strategy, Config.DeviceIdStrategy.INSTANCE_ID);
         Assert.assertEquals(did.realm, Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertEquals(fid.realm, Config.DeviceIdRealm.FCM_TOKEN);
-        Mockito.verify(dummy, times(1)).onDeviceId(did, null);
-        Mockito.verify(dummy, times(1)).onDeviceId(fid, null);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(fid), isNull(Config.DID.class));
     }
 
     @Test
@@ -116,7 +120,7 @@ public class ModulePushTests {
     @Test
     public void checkDecodeNoId() throws Exception {
         Map<String, String> data = map();
-        data.remove("id");
+        data.remove(ModulePush.KEY_ID);
         Assert.assertNull(ModulePush.decodeMessage(data));
     }
 

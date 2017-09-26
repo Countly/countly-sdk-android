@@ -18,8 +18,11 @@ import static android.support.test.InstrumentationRegistry.getContext;
 
 @RunWith(AndroidJUnit4.class)
 public class StorageTests {
+    private Context ctx = null;
+
     @Before
     public void setupEveryTest() throws MalformedURLException {
+        ctx = new ContextImpl(getContext());
         InternalConfig config = new InternalConfig(new Config("http://count.ly/tests", "123"));
         config.setLoggerClass(Log.SystemLogger.class)
                 .setProgrammaticSessionsControl(true)
@@ -27,7 +30,7 @@ public class StorageTests {
         Core core = Core.initForApplication(config, getContext());
         core.onLimitedContextAcquired(getContext());
         new Log().init(config);
-        Core.instance.purgeInternalStorage(null);
+        Core.purgeInternalStorage(ctx, null);
     }
 
     @Test
@@ -36,17 +39,17 @@ public class StorageTests {
         String prefix = "test_prefix";
         String name = "test_storable";
 
-        Assert.assertTrue(Core.instance.pushDataToInternalStorage(prefix, name, storable.store()));
+        Assert.assertTrue(Core.pushDataToInternalStorage(ctx, prefix, name, storable.store()));
 
-        List<String> files = Core.instance.listDataInInternalStorage(prefix, 0);
+        List<String> files = Core.listDataInInternalStorage(ctx, prefix, 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.size());
 
-        byte[] data = Core.instance.popDataFromInternalStorage(prefix, name);
+        byte[] data = Core.popDataFromInternalStorage(ctx, prefix, name);
         Assert.assertNotNull(data);
         Assert.assertEquals(storable, restore(storable.storageId(), data));
 
-        files = Core.instance.listDataInInternalStorage(null, 0);
+        files = Core.listDataInInternalStorage(ctx, null, 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
     }
@@ -55,24 +58,24 @@ public class StorageTests {
     public void core_pushTwo() {
         Storable storable1 = storable(), storable2 = storable();
 
-        List<String> files = Core.instance.listDataInInternalStorage(null, 0);
+        List<String> files = Core.listDataInInternalStorage(ctx, null, 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
 
-        Assert.assertTrue(Core.instance.pushDataToInternalStorage(storable1.storagePrefix(), "" + storable1.storageId(), storable1.store()));
-        Assert.assertTrue(Core.instance.pushDataToInternalStorage(storable2.storagePrefix(), "" + storable2.storageId(), storable2.store()));
+        Assert.assertTrue(Core.pushDataToInternalStorage(ctx, storable1.storagePrefix(), "" + storable1.storageId(), storable1.store()));
+        Assert.assertTrue(Core.pushDataToInternalStorage(ctx, storable2.storagePrefix(), "" + storable2.storageId(), storable2.store()));
 
-        files = Core.instance.listDataInInternalStorage(storable1.storagePrefix(), 0);
+        files = Core.listDataInInternalStorage(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(2, files.size());
 
-        byte[] data1 = Core.instance.popDataFromInternalStorage(storable1.storagePrefix(), "" + storable1.storageId());
+        byte[] data1 = Core.popDataFromInternalStorage(ctx, storable1.storagePrefix(), "" + storable1.storageId());
 
-        files = Core.instance.listDataInInternalStorage(storable1.storagePrefix(), 0);
+        files = Core.listDataInInternalStorage(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.size());
 
-        byte[] data2 = Core.instance.popDataFromInternalStorage(storable2.storagePrefix(), "" + storable2.storageId());
+        byte[] data2 = Core.popDataFromInternalStorage(ctx, storable2.storagePrefix(), "" + storable2.storageId());
 
         Assert.assertNotNull(data1);
         Assert.assertNotNull(data2);
@@ -81,7 +84,7 @@ public class StorageTests {
         Assert.assertEquals(storable2, restore(storable2.storageId(), data2));
         Assert.assertNotSame(restore(storable1.storageId(), data1), restore(storable2.storageId(), data2));
 
-        files = Core.instance.listDataInInternalStorage(storable1.storagePrefix(), 0);
+        files = Core.listDataInInternalStorage(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
     }
@@ -91,16 +94,16 @@ public class StorageTests {
         Storable storable1 = storable(), storable2 = storable();
         Storable storable3 = storable(), storable4 = storable();
 
-        List<String> files = Core.instance.listDataInInternalStorage(null, 0);
+        List<String> files = Core.listDataInInternalStorage(ctx, null, 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
 
-        Assert.assertTrue(Storage.push(storable1));
-        Assert.assertTrue(Storage.push(storable2));
-        Assert.assertTrue(Storage.push(storable3));
-        Assert.assertTrue(Storage.push(storable4));
+        Assert.assertTrue(Storage.push(ctx, storable1));
+        Assert.assertTrue(Storage.push(ctx, storable2));
+        Assert.assertTrue(Storage.push(ctx, storable3));
+        Assert.assertTrue(Storage.push(ctx, storable4));
 
-        List<Long> ids = Storage.list(storable1.storagePrefix());
+        List<Long> ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 4);
         Assert.assertEquals(ids.get(0), storable1.storageId());
@@ -108,13 +111,13 @@ public class StorageTests {
         Assert.assertEquals(ids.get(2), storable3.storageId());
         Assert.assertEquals(ids.get(3), storable4.storageId());
 
-        ids = Storage.list(storable1.storagePrefix(), 2);
+        ids = Storage.list(ctx, storable1.storagePrefix(), 2);
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 2);
         Assert.assertEquals(ids.get(0), storable1.storageId());
         Assert.assertEquals(ids.get(1), storable2.storageId());
 
-        ids = Storage.list(storable1.storagePrefix(), -2);
+        ids = Storage.list(ctx, storable1.storagePrefix(), -2);
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 2);
         Assert.assertEquals(ids.get(0), storable4.storageId());
@@ -125,20 +128,20 @@ public class StorageTests {
     public void storage_pushPopList() {
         Storable storable1 = storable(), storable2 = storable();
 
-        List<Long> ids = Storage.list(storable1.storagePrefix());
+        List<Long> ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 0);
 
-        Assert.assertTrue(Storage.push(storable1));
+        Assert.assertTrue(Storage.push(ctx, storable1));
 
-        ids = Storage.list(storable1.storagePrefix());
+        ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 1);
         Assert.assertEquals(ids.get(0), storable1.storageId());
 
-        Assert.assertTrue(Storage.push(storable2));
+        Assert.assertTrue(Storage.push(ctx, storable2));
 
-        ids = Storage.list(storable1.storagePrefix());
+        ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 2);
         Assert.assertEquals(ids.get(0), storable1.storageId());
@@ -146,8 +149,8 @@ public class StorageTests {
 
         Storable restored1 = new Request(storable1.storageId()),
                  restored2 = new Request(storable2.storageId());
-        restored1 = Storage.pop(restored1);
-        restored2 = Storage.pop(restored2);
+        restored1 = Storage.pop(ctx, restored1);
+        restored2 = Storage.pop(ctx, restored2);
 
         Assert.assertNotNull(restored1);
         Assert.assertNotNull(restored2);
@@ -155,7 +158,7 @@ public class StorageTests {
         Assert.assertEquals(storable1, restored1);
         Assert.assertEquals(storable2, restored2);
 
-        ids = Storage.list(storable1.storagePrefix());
+        ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 0);
     }
@@ -165,29 +168,29 @@ public class StorageTests {
     public void storage_readReadOne() {
         Storable storable1 = storable(), storable2 = storable();
 
-        List<Long> ids = Storage.list(storable1.storagePrefix());
+        List<Long> ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 0);
 
-        Assert.assertTrue(Storage.push(storable1));
+        Assert.assertTrue(Storage.push(ctx, storable1));
 
-        ids = Storage.list(storable1.storagePrefix());
+        ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(ids.size(), 1);
         Assert.assertEquals(ids.get(0), storable1.storageId());
 
-        Assert.assertTrue(Storage.push(storable2));
+        Assert.assertTrue(Storage.push(ctx, storable2));
 
-        ids = Storage.list(storable1.storagePrefix());
+        ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(2, ids.size());
         Assert.assertEquals(ids.get(0), storable1.storageId());
         Assert.assertEquals(ids.get(1), storable2.storageId());
 
-        Future<Request> restored2 = Storage.readAsync(new Request(storable2.storageId())),
-                 restored1 = Storage.readAsync(new Request(storable1.storageId())),
-                 restored1TasksCopy = Storage.readAsync(new Request(storable1.storageId())),
-                 restored2Copy = Storage.readAsync(new Request(storable2.storageId()));
+        Future<Request> restored2 = Storage.readAsync(ctx, new Request(storable2.storageId())),
+                 restored1 = Storage.readAsync(ctx, new Request(storable1.storageId())),
+                 restored1TasksCopy = Storage.readAsync(ctx, new Request(storable1.storageId())),
+                 restored2Copy = Storage.readAsync(ctx, new Request(storable2.storageId()));
 
         Assert.assertNotNull(restored1);
         Assert.assertNotNull(restored1TasksCopy);
@@ -195,18 +198,18 @@ public class StorageTests {
         Assert.assertSame(restored1, restored1TasksCopy);
         Assert.assertNotSame(restored1, restored2);
 
-        Request req = Storage.read(new Request(storable1.storageId()));
+        Request req = Storage.read(ctx, new Request(storable1.storageId()));
         Assert.assertNotNull(req);
         Assert.assertEquals(storable1, req);
 
-        ids = Storage.list(storable1.storagePrefix());
+        ids = Storage.list(ctx, storable1.storagePrefix());
         Assert.assertNotNull(ids);
         Assert.assertEquals(2, ids.size());
         Assert.assertEquals(ids.get(0), storable1.storageId());
         Assert.assertEquals(ids.get(1), storable2.storageId());
 
-        req = Storage.readOne(new Request(0L), true);
-        ids = Storage.list(storable1.storagePrefix());
+        req = Storage.readOne(ctx, new Request(0L), true);
+        ids = Storage.list(ctx, storable1.storagePrefix());
 
         Assert.assertNotNull(req);
         Assert.assertEquals(storable1, req);
@@ -214,8 +217,8 @@ public class StorageTests {
         Assert.assertEquals(ids.get(0), storable1.storageId());
         Assert.assertEquals(ids.get(1), storable2.storageId());
 
-        Assert.assertEquals(Boolean.TRUE, Storage.remove(req));
-        ids = Storage.list(storable1.storagePrefix());
+        Assert.assertEquals(Boolean.TRUE, Storage.remove(ctx, req));
+        ids = Storage.list(ctx, storable1.storagePrefix());
 
         Assert.assertEquals(1, ids.size());
         Assert.assertEquals(ids.get(0), storable2.storageId());

@@ -42,16 +42,14 @@ public class ModuleDeviceId extends ModuleBase {
     /**
      * Regular logic of acquiring id of specified strategy and migration from legacy SDK.
      *
-     * @param context Context
+     * @param ctx Context
      */
     @Override
-    public void onContextAcquired(final Context context) {
-        super.onContextAcquired(context);
-
+    public void onContextAcquired(final Context ctx) {
         if (config.getDeviceId() == null) {
             // either fresh install, or migration from legacy SDK
 
-            String legacyDeviceId = Legacy.getOnce(context, Legacy.KEY_ID_ID);
+            String legacyDeviceId = Legacy.getOnce(ctx, Legacy.KEY_ID_ID);
 
             if (Utils.isEmpty(legacyDeviceId)) {
                 // fresh install = no legacy id
@@ -61,15 +59,15 @@ public class ModuleDeviceId extends ModuleBase {
                     // developer specified id on SDK init
                     Config.DID did = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, config.getCustomDeviceId());
                     Log.d("Got developer id" + did);
-                    Core.onDeviceId(did, null);
+                    Core.onDeviceId(ctx, did, null);
                 } else {
                     // regular flow - acquire id using specified strategy
-                    acquireId(context, new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), null), config.isDeviceIdFallbackAllowed(), new Tasks.Callback<Config.DID>() {
+                    acquireId(ctx, new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), null), config.isDeviceIdFallbackAllowed(), new Tasks.Callback<Config.DID>() {
                         @Override
                         public void call(Config.DID id) throws Exception {
                             if (id != null) {
                                 Log.d("Got device id: " + id);
-                                Core.onDeviceId(id, null);
+                                Core.onDeviceId(ctx, id, null);
                             } else {
                                 Log.i("No device id of strategy " + config.getDeviceIdStrategy() + " is available yet");
                             }
@@ -80,11 +78,11 @@ public class ModuleDeviceId extends ModuleBase {
                 Log.d("Migrating device id " + legacyDeviceId);
 
                 Config.DID did = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), legacyDeviceId);
-                Core.onDeviceId(did, did);
+                Core.onDeviceId(ctx, did, did);
             }
         } else {
             // second or next app launch, notify id is available
-            Core.onDeviceId(config.getDeviceId(), config.getDeviceId());
+            Core.onDeviceId(ctx, config.getDeviceId(), config.getDeviceId());
         }
     }
 
@@ -93,16 +91,16 @@ public class ModuleDeviceId extends ModuleBase {
      * - reset device id and notify modules;
      * - send corresponding request to server.
      *
-     * @param context context to run in
+     * @param ctx ctx to run in
      * @param id device id to change to
      */
-    public void login(Context context, String id) {
+    public void login(Context ctx, String id) {
         if (Utils.isEmpty(id)) {
             Log.wtf("Empty id passed to login method");
         } else {
             final Config.DID old = config.getDeviceId();
             config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, id));
-            Storage.push(config);
+            Storage.push(ctx, config);
 
             if (old != null) {
                 // have acquired an id already
@@ -110,7 +108,7 @@ public class ModuleDeviceId extends ModuleBase {
             }
 
             // old session end & new session begin requests are supposed to happen here
-            Core.onDeviceId(config.getDeviceId(), old);
+            Core.onDeviceId(ctx, config.getDeviceId(), old);
         }
     }
 
@@ -119,21 +117,20 @@ public class ModuleDeviceId extends ModuleBase {
      * - nullify device id and notify modules;
      * - send corresponding request to server.
      *
-     * @param context context to run in
+     * @param ctx context to run in
      */
-    public void logout(Context context) {
+    public void logout(Context ctx) {
         final Config.DID old = config.getDeviceId();
         config.setDeviceId(null);
-        Storage.push(config);
-        Core.onDeviceId(config.getDeviceId(), old);
+        Storage.push(ctx, config);
+        Core.onDeviceId(ctx, config.getDeviceId(), old);
     }
 
-    Future<Config.DID> acquireId(final Context context, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
+    Future<Config.DID> acquireId(final Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
         if (this.tasks == null) {
             this.tasks = new Tasks();
         }
 
-        final android.content.Context ctx = context.getContext();
         return this.tasks.run(new Tasks.Task<Config.DID>(0L) {
             @Override
             public Config.DID call() throws Exception {
@@ -146,12 +143,12 @@ public class ModuleDeviceId extends ModuleBase {
      * Synchronously gets id of the strategy supplied. In case strategy is not available, returns a fallback strategy.
      * In case strategy is available but id cannot be acquired right now, returns null.
      *
-     * @param ctx android context
+     * @param ctx Context to run in
      * @param holder DID object which holds strategy and possibly other info for id generation
      * @param fallbackAllowed whether to automatically fallback to any available alternative or not
      * @return {@link ly.count.android.sdk.Config.DID} instance with an id
      */
-    public Config.DID acquireIdSync(final android.content.Context ctx, final Config.DID holder, final boolean fallbackAllowed) {
+    public Config.DID acquireIdSync(final Context ctx, final Config.DID holder, final boolean fallbackAllowed) {
 
         switch (holder.strategy) {
             case OPEN_UDID:
@@ -166,7 +163,7 @@ public class ModuleDeviceId extends ModuleBase {
                 if (Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME)) {
                     Log.i("Generating ADVERTISING_ID");
                     try {
-                        Object info = Utils.reflectiveCallStrict(ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", android.content.Context.class, ctx);
+                        Object info = Utils.reflectiveCallStrict(ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", android.content.Context.class, ctx.getContext());
                         Log.i("Got ADVERTISING_ID info");
                         if (info == null || info == Boolean.FALSE) {
                             Log.d("AdvertisingIdClient.getAdvertisingIdInfo() returned " + info);

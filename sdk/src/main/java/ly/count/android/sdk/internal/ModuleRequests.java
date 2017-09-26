@@ -21,20 +21,20 @@ public class ModuleRequests extends ModuleBase {
     }
 
     @Override
-    public void onContextAcquired(Context context) {
-        super.onContextAcquired(context);
-        ModuleRequests.metrics = Device.buildMetrics(context);
+    public void onContextAcquired(Context ctx) {
+        super.onContextAcquired(ctx);
+        ModuleRequests.metrics = Device.buildMetrics(ctx);
     }
 
-    public static Future<Boolean> sessionBegin(SessionImpl session) {
+    public static Future<Boolean> sessionBegin(Context ctx, SessionImpl session) {
         Request request = addCommon(config, session, Request.build("begin_session", 1));
         request.params.add(metrics);
         session.params.clear();
         // TODO: country, city, location
-        return pushAsync(request);
+        return pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> sessionUpdate(SessionImpl session, Long seconds) {
+    public static Future<Boolean> sessionUpdate(Context ctx, SessionImpl session, Long seconds) {
         Request request = addCommon(config, session, Request.build());
 
         if (seconds != null && seconds > 0) {
@@ -43,10 +43,10 @@ public class ModuleRequests extends ModuleBase {
 
         session.params.clear();
         // TODO: location
-        return pushAsync(request);
+        return pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> sessionEnd(SessionImpl session, Long seconds) {
+    public static Future<Boolean> sessionEnd(Context ctx, SessionImpl session, Long seconds) {
         Request request = addCommon(config, session, Request.build("end_session", 1));
 
         if (seconds != null && seconds > 0) {
@@ -55,16 +55,16 @@ public class ModuleRequests extends ModuleBase {
 
         session.params.clear();
         // TODO: location / override_id
-        return pushAsync(request);
+        return pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> location(double latitude, double longitude) {
-        return pushAsync(addCommon(config, null, Request.build("location", latitude + "," + longitude)));
+    public static Future<Boolean> location(Context ctx, double latitude, double longitude) {
+        return pushAsync(ctx, addCommon(config, null, Request.build("location", latitude + "," + longitude)));
     }
 
-    public static Future<Boolean> changeId(InternalConfig config, Context context, String oldId) {
+    public static Future<Boolean> changeId(Context ctx, InternalConfig config, Context context, String oldId) {
         Request request = addCommon(config, null, Request.build("begin_session", 1));
-        return pushAsync(request);
+        return pushAsync(ctx, request);
 //        String data = "app_key=" + appKey_
 //                + "&timestamp=" + Countly.currentTimestampMs()
 //                + "&hour=" + Countly.currentHour()
@@ -82,11 +82,11 @@ public class ModuleRequests extends ModuleBase {
     }
 
     // TODO: synchronization
-    static void injectParams(ParamsInjector injector) {
+    static void injectParams(Context ctx, ParamsInjector injector) {
         if (Core.instance.sessionLeading() == null) {
             Request request = nonSessionRequest(config);
             injector.call(request.params);
-            pushAsync(request);
+            pushAsync(ctx, request);
         } else {
             injector.call(Core.instance.sessionLeading().params);
         }
@@ -122,26 +122,28 @@ public class ModuleRequests extends ModuleBase {
     /**
      * Common store-request logic: store & send a ping to the service.
      *
+     * @param ctx Context to run in
      * @param request Request to store
      * @return {@link Future} which resolves to {@code} true if stored successfully, false otherwise
      */
-    public static Future<Boolean> pushAsync(Request request) {
-        return pushAsync(request, null);
+    public static Future<Boolean> pushAsync(Context ctx, Request request) {
+        return pushAsync(ctx, request, null);
     }
 
     /**
      * Common store-request logic: store & send a ping to the service.
      *
+     * @param ctx Context to run in
      * @param request Request to store
      * @param callback Callback (nullable) to call when storing is done, called in {@link Storage} {@link Thread}
      * @return {@link Future} which resolves to {@code} true if stored successfully, false otherwise
      */
-    public static Future<Boolean> pushAsync(Request request, final Tasks.Callback<Boolean> callback) {
+    public static Future<Boolean> pushAsync(final Context ctx, Request request, final Tasks.Callback<Boolean> callback) {
         Log.d("New request " + request.storageId() + ": " + request);
-        return Storage.pushAsync(request, new Tasks.Callback<Boolean>() {
+        return Storage.pushAsync(ctx, request, new Tasks.Callback<Boolean>() {
             @Override
             public void call(Boolean param) throws Exception {
-                CoreLifecycle.sendToService(Core.instance.longLivingContext, CountlyService.CMD_PING, null);
+                CoreLifecycle.sendToService(ctx, CountlyService.CMD_PING, null);
                 if (callback != null) {
                     callback.call(param);
                 }

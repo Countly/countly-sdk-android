@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Application;
+import android.content.Context;
 
 import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.Log;
@@ -75,8 +76,8 @@ public class CountlyNeo {
      *
      * @return current session instance if there is one, new session instance if there is no current session or {@code null} if Countly is not initialized yet
      */
-    public static Session currentOrNewSession() {
-        return isInitialized() ? instance.core.sessionLeadingOrNew() : null;
+    public static Session currentOrNewSession(Context context) {
+        return isInitialized() ? instance.core.sessionLeadingOrNew(context) : null;
     }
 
     // TODO: add all those recordEvent / old init / other deprecated methods with check on instance not null (return doing nothing when it's null)
