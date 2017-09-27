@@ -19,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class TestingUtilityInternal {
+    public static String LOG_TAG = "CountlyTests";
+
     static int countParams(Params params) {
         String paramsString = params.toString();
         return countParams(paramsString);

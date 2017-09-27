@@ -160,7 +160,8 @@ public class CountlyService extends android.app.Service {
                             result = true;
                         } else {
                             Log.d("[service] Sending request: " + request.toString());
-                            result = network.send(request).get();
+                            Network.NetworkResponse nr = network.send(request).get();
+                            result = nr.requestSucceeded;
                             Log.d("[service] Request " + request.storageId() + " sent?: " + result);
                             if (result) {
                                 Storage.remove(ctx, request);
