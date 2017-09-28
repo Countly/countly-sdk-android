@@ -1073,7 +1073,7 @@ public class Countly {
     private static long lastTsMs;
     static synchronized long currentTimestampMs() {
         long ms = System.currentTimeMillis();
-        while (lastTsMs >= ms) {
+        while (lastTsMs == ms) {
             ms += 1;
         }
         lastTsMs = ms;
