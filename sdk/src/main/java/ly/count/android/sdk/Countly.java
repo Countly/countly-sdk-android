@@ -34,6 +34,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -1070,14 +1071,41 @@ public class Countly {
         return ((int)(System.currentTimeMillis() / 1000l));
     }
 
-    private static long lastTsMs;
-    static synchronized long currentTimestampMs() {
-        long ms = System.currentTimeMillis();
-        while (lastTsMs == ms) {
-            ms += 1;
+    static class TimeUniquesEnsurer {
+        List<Long> lastTsMs = new ArrayList<>(10);
+        long addition = 0;
+
+        long currentTimeMillis() {
+            return System.currentTimeMillis() + addition;
         }
-        lastTsMs = ms;
-        return ms;
+
+        synchronized long uniqueTimestamp() {
+            long ms = currentTimeMillis();
+
+            // change time back case
+            if (lastTsMs.size() > 2) {
+                long min = Collections.min(lastTsMs);
+                if (ms < min) {
+                    lastTsMs.clear();
+                    lastTsMs.add(ms);
+                    return ms;
+                }
+            }
+            // usual case
+            while (lastTsMs.contains(ms)) {
+                ms += 1;
+            }
+            while (lastTsMs.size() >= 10) {
+                lastTsMs.remove(0);
+            }
+            lastTsMs.add(ms);
+            return ms;
+        }
+    }
+    private static TimeUniquesEnsurer timeGenerator = new TimeUniquesEnsurer();
+
+    static synchronized long currentTimestampMs() {
+        return timeGenerator.uniqueTimestamp();
     }
 
     /**
