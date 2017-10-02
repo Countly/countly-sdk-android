@@ -67,6 +67,16 @@ public interface Session {
     Eve event(String key);
 
     /**
+     * Get current User Profile.
+     * Note that data is not downloaded from server. Only properties set in current app
+     * installation are returned in {@link User} object.
+     *
+     * @ee Feature is not available in Countly Community Edition
+     * @return this instance for method chaining.
+     */
+    User user();
+
+    /**
      * Add parameter to this session which will be sent along with next request.
      *
      * @param key name of parameter
@@ -74,14 +84,6 @@ public interface Session {
      * @return this instance for method chaining.
      */
     Session addParam(String key, Object value);
-
-    /**
-     * Send User Profiles change to the server.
-     *
-     * @ee Feature is not available in Countly Community Edition
-     * @return this instance for method chaining.
-     */
-    UserEditor addUserProfileChange();
 
     /**
      * Send Crash Report to the server.

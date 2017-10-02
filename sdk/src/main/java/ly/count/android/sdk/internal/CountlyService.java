@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -34,9 +36,13 @@ public class CountlyService extends android.app.Service {
      * Tasks {@link Thread} is used to wait for {}
      */
     private Tasks tasks;
+    private InternalConfig config;
     private Network network;
     private Future<Boolean> future = null;
     private boolean shutdown = false;
+    private Context ctx = null;
+    private List<Long> crashes = null;
+    private List<Long> sessions = null;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -46,9 +52,13 @@ public class CountlyService extends android.app.Service {
     @Override
     public void onCreate() {
         Log.d("[service] Creating");
-        this.tasks = new Tasks();
+        this.ctx = new ContextImpl(getApplicationContext());
+        this.crashes = new ArrayList<>();
+        this.sessions = new ArrayList<>();
+        this.tasks = new Tasks("service");
         this.network = new Network();
-        if (Core.initForService(this) == null) {
+        this.config = Core.initForService(this);
+        if (config == null) {
             // TODO: inconsistent state, TBD
             this.core = null;
             stop();
@@ -120,8 +130,33 @@ public class CountlyService extends android.app.Service {
         Log.d("[service] Trim Memory " + level);
     }
 
-    private void start() {
-        check();
+    void start() {
+        future = tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
+            @Override
+            public Boolean call() throws Exception {
+                crashes = new ArrayList<Long>();
+
+                for (Long id : crashes) {
+                    Log.i("[service] Found unsent crash " + id);
+                    // TODO: send crashes
+                }
+
+                sessions = Storage.list(ctx, SessionImpl.getStoragePrefix());
+                Log.d("[service] recovering " + sessions.size() + " sessions");
+                for (Long id : sessions) {
+                    Log.d("[service] recovering session " + id);
+                    SessionImpl session = Storage.read(ctx, new SessionImpl(ctx, id));
+                    if (session == null) {
+                        Log.e("[service] no session with id " + id + " found while recovering");
+                    } else {
+                        Boolean success = session.recover(config);
+                        Log.d("[service] session " + id + " recovery " + (success == null ? "won't recover" : success ? "success" : "failure"));
+                    }
+                }
+                check();
+                return true;
+            }
+        });
     }
 
     private synchronized void stop() {
@@ -138,11 +173,10 @@ public class CountlyService extends android.app.Service {
         }
     }
 
-    private Tasks.Task<Boolean> submit() {
-        return new Tasks.Task<Boolean>(0L) {
+    public Tasks.Task<Boolean> submit() {
+        return new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
             @Override
             public Boolean call() throws Exception {
-                Context ctx = new ContextImpl(CountlyService.this);
                 Request request = Storage.readOne(ctx, new Request(0L), true);
                 if (request == null) {
                     return false;

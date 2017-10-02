@@ -65,6 +65,25 @@ public class Log extends ModuleBase {
     private Config.LoggingLevel level;
     private boolean testMode;
 
+    public static final class Module {
+        String name;
+
+        Module(String name) {
+            this.name = name;
+        }
+
+        public void d(String message) { Log.d("[" + name + "] " + message); }
+        public void d(String message, Throwable throwable) { Log.d("[" + name + "] " + message, throwable); }
+        public void i(String message) { Log.i("[" + name + "] " + message); }
+        public void i(String message, Throwable throwable) { Log.i("[" + name + "] " + message, throwable); }
+        public void w(String message) { Log.w("[" + name + "] " + message); }
+        public void w(String message, Throwable throwable) { Log.w("[" + name + "] " + message, throwable); }
+        public void e(String message) { Log.e("[" + name + "] " + message); }
+        public void e(String message, Throwable throwable) { Log.e("[" + name + "] " + message, throwable); }
+        public void wtf(String message) { Log.wtf("[" + name + "] " + message); }
+        public void wtf(String message, Throwable throwable) { Log.wtf("[" + name + "] " + message, throwable); }
+    }
+
     @Override
     public void init(InternalConfig config) {
         instance = this;
@@ -82,6 +101,10 @@ public class Log extends ModuleBase {
                 System.out.println("Couldn't instantiate logger" + t.getLocalizedMessage());
             }
         }
+    }
+
+    public static Module module(String name) {
+        return new Module(name);
     }
 
     /**

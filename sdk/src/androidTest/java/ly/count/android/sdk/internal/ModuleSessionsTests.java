@@ -146,7 +146,7 @@ public class ModuleSessionsTests {
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
         SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessionTarget.begin(234L);
-        sessionTarget.end(456L);
+        sessionTarget.end(456L, null);
 
         Assert.assertEquals(0, sessions.size());
 

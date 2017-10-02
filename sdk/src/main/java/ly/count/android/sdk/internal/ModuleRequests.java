@@ -46,7 +46,7 @@ public class ModuleRequests extends ModuleBase {
         return pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> sessionEnd(Context ctx, SessionImpl session, Long seconds) {
+    public static Future<Boolean> sessionEnd(Context ctx, SessionImpl session, Long seconds, Tasks.Callback<Boolean> callback) {
         Request request = addCommon(config, session, Request.build("end_session", 1));
 
         if (seconds != null && seconds > 0) {
@@ -55,7 +55,7 @@ public class ModuleRequests extends ModuleBase {
 
         session.params.clear();
         // TODO: location / override_id
-        return pushAsync(ctx, request);
+        return pushAsync(ctx, request, callback);
     }
 
     public static Future<Boolean> location(Context ctx, double latitude, double longitude) {

@@ -12,7 +12,7 @@ import java.util.concurrent.Future;
  */
 
 class Storage {
-    private static final Tasks tasks = new Tasks();
+    private static final Tasks tasks = new Tasks("storage");
 
     static String name(Storable storable) {
         return storable.storagePrefix() + "_" + storable.storageId();
@@ -76,7 +76,7 @@ class Storage {
     static <T extends Storable> Boolean remove(final Context ctx, T storable) {
         Log.d("removing " + name(storable));
         try {
-            return removeAsync(ctx, storable).get();
+            return removeAsync(ctx, storable, null).get();
         } catch (InterruptedException | ExecutionException e) {
             Log.wtf("Interrupted while removing " + name(storable), e);
         }
@@ -91,13 +91,13 @@ class Storage {
      * @param storable Object to remove
      * @return Future<Boolean> object which resolves to true if storable is removed, false otherwise
      */
-    static <T extends Storable> Future<Boolean> removeAsync(final Context ctx, final T storable) {
-        return tasks.run(new Tasks.Task<Boolean>(-storable.storageId()) {
+    static <T extends Storable> Future<Boolean> removeAsync(final Context ctx, final T storable, Tasks.Callback<Boolean> callback) {
+        return tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
             @Override
             public Boolean call() throws Exception {
                 return Core.removeDataFromInternalStorage(ctx, storable.storagePrefix(), "" + storable.storageId());
             }
-        });
+        }, callback);
     }
 
 
@@ -170,6 +170,19 @@ class Storage {
      * @return Future<Storable> object which resolves as object passed as param when reading succeeded, null otherwise
      */
     static <T extends Storable> Future<T> readAsync(final Context ctx, final T storable) {
+        return readAsync(ctx, storable, null);
+    }
+
+    /**
+     * Reinitializes storable with data stored previously in device internal memory.
+     * Runs in a storage thread provided by {@link Tasks}
+     *
+     * @param ctx context to run in
+     * @param storable Object to reinitialize
+     * @param callback Callback to call with read result
+     * @return Future<Storable> object which resolves as object passed as param when reading succeeded, null otherwise
+     */
+    static <T extends Storable> Future<T> readAsync(final Context ctx, final T storable, final Tasks.Callback<T> callback) {
         return tasks.run(new Tasks.Task<T>(-storable.storageId()) {
             @Override
             public T call() throws Exception {
@@ -178,11 +191,14 @@ class Storage {
                     Log.d("No data for file " + name(storable));
                     return null;
                 }
+                T ret = null;
                 if (storable.restore(data)) {
-                    return storable;
-                } else {
-                    return null;
+                    ret = storable;
                 }
+                if (callback != null) {
+                    callback.call(ret);
+                }
+                return ret;
             }
         });
     }
@@ -283,7 +299,7 @@ class Storage {
      * @return Future<List<Long>> object which resolves as list of storable ids, not null
      */
     static Future<List<Long>> listAsync(final Context ctx, final String prefix, final int slice) {
-        return tasks.run(new Tasks.Task<List<Long>>(-1L) {
+        return tasks.run(new Tasks.Task<List<Long>>(Tasks.ID_STRICT) {
             @Override
             public List<Long> call() throws Exception {
                 List<Long> list = new ArrayList<Long>();
@@ -302,6 +318,21 @@ class Storage {
                 return list;
             }
         });
+    }
+
+    static void await() {
+        Log.d("Waiting for storage tasks to complete");
+        try {
+            tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
+                @Override
+                public Boolean call() throws Exception {
+                    Log.d("Waiting for storage tasks to complete DONE");
+                    return null;
+                }
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.wtf("Interrupted while waiting", e);
+        }
     }
 
 //    static synchronized List<Storable> popAll(String prefix, Class<? extends Storable> claz) {

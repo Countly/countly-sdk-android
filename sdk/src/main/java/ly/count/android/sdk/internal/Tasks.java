@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -14,7 +15,11 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class Tasks {
-    static abstract class Task<T> implements Callable<T> {
+    public final Log.Module L;
+    public static final Long ID_STRICT = 0L;
+    public static final Long ID_LIST = -1L;
+
+    public static abstract class Task<T> implements Callable<T> {
         Long id;
 
         Task(Long id) {
@@ -38,9 +43,15 @@ public class Tasks {
      */
     private final Map<Long, Future> pending;
 
-    Tasks() {
-        executor = Executors.newSingleThreadExecutor();
+    Tasks(final String name) {
+        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable runnable) {
+                return new Thread(runnable, name);
+            }
+        });
         pending = new HashMap<>();
+        L = Log.module(name + " tasks");
     }
 
     /**
@@ -68,6 +79,7 @@ public class Tasks {
      */
     <T> Future<T> run(final Task<T> task, final Callback<T> callback) {
         synchronized (pending) {
+            L.d("pending " + pending.keySet() + ", running " + task.id);
             if (!task.id.equals(0L)) {
                 @SuppressWarnings("unchecked")
                 Future<T> existing = pending.get(task.id);
@@ -75,6 +87,7 @@ public class Tasks {
                 // In case task with same id is already in queue and isn't running yet, return its future instead of adding another task
                 if (existing != null) {
                     if (!existing.isDone() && !existing.isCancelled() && (running == null || !running.equals(task.id))) {
+                        L.d(task.id + " exists");
                         return existing;
                     }
                 }
@@ -90,6 +103,7 @@ public class Tasks {
                             pending.remove(task.id);
                             running = null;
                         }
+                        L.d("pending " + pending.keySet() + ", done running " + task.id);
                     }
                     if (callback != null) {
                         callback.call(result);
@@ -108,11 +122,13 @@ public class Tasks {
 
     void shutdown() {
         if (!executor.isShutdown() && !executor.isTerminated()) {
+            L.i("shutting down");
             executor.shutdown();
         }
     }
 
     void awaitTermination() throws InterruptedException {
-        executor.awaitTermination(10L, TimeUnit.SECONDS);
+        L.i("terminating");
+        executor.awaitTermination(3L, TimeUnit.SECONDS);
     }
 }

@@ -128,10 +128,10 @@ public class ModuleDeviceId extends ModuleBase {
 
     Future<Config.DID> acquireId(final Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
         if (this.tasks == null) {
-            this.tasks = new Tasks();
+            this.tasks = new Tasks("deviceId");
         }
 
-        return this.tasks.run(new Tasks.Task<Config.DID>(0L) {
+        return this.tasks.run(new Tasks.Task<Config.DID>(Tasks.ID_STRICT) {
             @Override
             public Config.DID call() throws Exception {
                 return acquireIdSync(ctx, holder, fallbackAllowed);

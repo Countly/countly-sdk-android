@@ -7,9 +7,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Eve;
 import ly.count.android.sdk.Session;
+import ly.count.android.sdk.User;
 import ly.count.android.sdk.UserEditor;
 
 /**
@@ -41,6 +45,16 @@ class SessionImpl implements Session, Storable {
     protected final List<Eve> events = new ArrayList<>();
 
     /**
+     * Additional parameters to send with next request
+     */
+    protected Params params = new Params();
+
+    /**
+     * Whether to push changes to storage on every change automatically (false only for testing)
+     */
+    private boolean pushOnChange = true;
+
+    /**
      * Create session with current time as id.
      */
     protected SessionImpl(Context ctx) {
@@ -57,39 +71,32 @@ class SessionImpl implements Session, Storable {
     }
 
     /**
-     * Additional parameters to send with next request
-     */
-    protected Params params = new Params();
-
-    /**
-     * Whether to push changes to storage on every change automatically (false only for testing)
-     */
-    private boolean pushOnChange = true;
-
-    /**
      * Start this session, add corresponding request.
      *
      * @return {@code this} instance for method chaining.
      */
     @Override
     public Session begin() {
-        return begin(null);
+        begin(null);
+        return this;
     }
 
-    Session begin(Long time) {
+    Future<Boolean> begin(Long now) {
         if (began != null) {
             Log.wtf("Session already began");
-            return this;
+            return null;
         } else if (ended != null) {
             Log.wtf("Session already ended");
-            return this;
+            return null;
         } else {
-            began = time == null ? System.nanoTime() : time;
+            began = now == null ? System.nanoTime() : now;
         }
 
-        ModuleRequests.sessionBegin(ctx, this);
+        if (pushOnChange) {
+            Storage.pushAsync(ctx, this);
+        }
 
-        return this;
+        return ModuleRequests.sessionBegin(ctx, this);
     }
 
     /**
@@ -99,23 +106,26 @@ class SessionImpl implements Session, Storable {
      */
     @Override
     public Session update() {
+        update(null);
+        return this;
+    }
+
+    Future<Boolean> update(Long now) {
         if (began == null) {
             Log.wtf("Session is not began to update it");
-            return this;
+            return null;
         } else if (ended != null) {
             Log.wtf("Session is already ended to update it");
-            return this;
+            return null;
         }
 
-        Long duration = updateDuration();
-
-        ModuleRequests.sessionUpdate(ctx, this, duration);
+        Long duration = updateDuration(now);
 
         if (pushOnChange) {
             Storage.pushAsync(ctx, this);
         }
 
-        return this;
+        return ModuleRequests.sessionUpdate(ctx, this, duration);
     }
 
     /**
@@ -125,26 +135,58 @@ class SessionImpl implements Session, Storable {
      */
     @Override
     public Session end() {
-        return end(null);
+        end(null, null);
+        return this;
     }
 
-    Session end(Long time) {
+    Future<Boolean> end(Long now, final Tasks.Callback<Boolean> callback) {
         if (began == null) {
             Log.wtf("Session is not began to end it");
-            return this;
+            return null;
         } else if (ended != null) {
             Log.wtf("Session already ended");
-            return this;
+            return null;
         }
-        ended = time == null ? System.nanoTime() : time;
+        ended = now == null ? System.nanoTime() : now;
 
-        Long duration = updateDuration();
+        Storage.pushAsync(ctx, this);
 
-        ModuleRequests.sessionEnd(ctx, this, duration);
+        Long duration = updateDuration(null);
 
-        Storage.readAsync(ctx, this);
+        return ModuleRequests.sessionEnd(ctx, this, duration, new Tasks.Callback<Boolean>() {
+            @Override
+            public void call(Boolean removed) throws Exception {
+                if (!removed) {
+                    Log.wtf("Unable to record session end request");
+                }
+                Storage.removeAsync(ctx, SessionImpl.this, callback);
+            }
+        });
+    }
 
-        return this;
+    Boolean recover(Config config) {
+        if (Device.nsToSec(System.nanoTime() - id) < config.getSessionCooldownPeriod() * 2) {
+            return null;
+        } else {
+            Future<Boolean> future = null;
+            if (began == null) {
+                return Storage.remove(ctx, this);
+            } else if (ended == null && updated == null) {
+                future = end(began + Device.secToNs(config.getSessionCooldownPeriod()), null);
+            } else if (ended == null) {
+                future = end(updated + Device.secToNs(config.getSessionCooldownPeriod()), null);
+            } else {
+                // began != null && ended != null
+                return Storage.remove(ctx, this);
+            }
+
+            try {
+                return future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                Log.wtf("Interrupted while resolving session recovery future", e);
+                return false;
+            }
+        }
     }
 
     /**
@@ -153,9 +195,10 @@ class SessionImpl implements Session, Storable {
      *
      * @return calculated session duration to send in seconds
      */
-    private Long updateDuration(){
+    private Long updateDuration(Long now){
+        now = now == null ? System.nanoTime() : now;
         Long duration;
-        Long now = System.nanoTime();
+
         if (updated == null) {
             duration = now - began;
         } else {
@@ -189,9 +232,8 @@ class SessionImpl implements Session, Storable {
     }
 
     @Override
-    public UserEditor addUserProfileChange() {
-        // TODO: implement, return edit object with commit method
-        return null;
+    public User user() {
+        return Core.instance.user();
     }
 
     @Override
@@ -207,8 +249,7 @@ class SessionImpl implements Session, Storable {
 
     @Override
     public Session addLocation(double latitude, double longitude) {
-        // TODO: implement
-        return this;
+        return addParam("location", latitude + "," + longitude);
     }
 
     // TODO: to be continued...
@@ -257,6 +298,10 @@ class SessionImpl implements Session, Storable {
     }
 
     public String storagePrefix() {
+        return getStoragePrefix();
+    }
+
+    static String getStoragePrefix() {
         return "session";
     }
 

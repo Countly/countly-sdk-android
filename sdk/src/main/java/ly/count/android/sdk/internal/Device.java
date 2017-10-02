@@ -8,8 +8,11 @@ import android.util.*;
 import android.view.Display;
 import android.view.WindowManager;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -25,7 +28,39 @@ class Device {
      */
     static final Double NS_IN_SECOND = 1000000000.0d;
     static final Double NS_IN_MS = 1000000.0d;
-    private static long lastTsMs;
+
+    static class TimeUniquenessEnsurer {
+        List<Long> lastTsMs = new ArrayList<>(10);
+        long addition = 0;
+
+        long currentTimeMillis() {
+            return System.currentTimeMillis() + addition;
+        }
+
+        synchronized long uniqueTimestamp() {
+            long ms = currentTimeMillis();
+
+            // change time back case
+            if (lastTsMs.size() > 2) {
+                long min = Collections.min(lastTsMs);
+                if (ms < min) {
+                    lastTsMs.clear();
+                    lastTsMs.add(ms);
+                    return ms;
+                }
+            }
+            // usual case
+            while (lastTsMs.contains(ms)) {
+                ms += 1;
+            }
+            while (lastTsMs.size() >= 10) {
+                lastTsMs.remove(0);
+            }
+            lastTsMs.add(ms);
+            return ms;
+        }
+    }
+    private static TimeUniquenessEnsurer timeGenerator = new TimeUniquenessEnsurer();
 
     /**
      * Get operation system name
@@ -105,9 +140,9 @@ class Device {
                 densityStr = "HDPI";
                 break;
             //todo uncomment in android sdk 25
-            //case DisplayMetrics.DENSITY_260:
-            //    densityStr = "XHDPI";
-            //    break;
+            case DisplayMetrics.DENSITY_260:
+                densityStr = "XHDPI";
+                break;
             case DisplayMetrics.DENSITY_280:
                 densityStr = "XHDPI";
                 break;
@@ -258,17 +293,12 @@ class Device {
 
     /**
      * Wraps {@link System#currentTimeMillis()} to always return different value, even within
-     * same millisecond.
+     * same millisecond and even when time changes. Works in a limited window of 10 timestamps for now.
      *
      * @return unique time in ms
      */
     static synchronized long uniqueTimestamp() {
-        long ms = System.currentTimeMillis();
-        while (lastTsMs >= ms) {
-            ms += 1;
-        }
-        lastTsMs = ms;
-        return ms;
+        return timeGenerator.uniqueTimestamp();
     }
 
     /**
@@ -325,6 +355,16 @@ class Device {
      */
     static long nsToSec(long ns) {
         return Math.round(ns / NS_IN_SECOND);
+    }
+
+    /**
+     * Convert time in seconds to nanoseconds
+     *
+     * @param sec time in seconds
+     * @return sec in nanoseconds
+     */
+    static long secToNs(long sec) {
+        return Math.round(sec * NS_IN_SECOND);
     }
 
     /**

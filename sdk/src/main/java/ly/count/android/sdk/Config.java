@@ -285,6 +285,12 @@ public class Config {
     protected int sendUpdateEachEvents = 10;
 
     /**
+     * Minimal amount of time between sessions in seconds.
+     * For now used only when recovering from a crash as a session extension period.
+     */
+    protected int sessionCooldownPeriod = 30;
+
+    /**
      * Take control of the way Countly detects sessions and turn off default
      * {@link android.app.Activity}-based mechanism (first activity start starts session,
      * last activity stop stops it).
@@ -520,6 +526,18 @@ public class Config {
     }
 
     /**
+     * Set minimal amount of time between sessions in seconds.
+     * For now used only when recovering from a crash as a session extension period.
+     *
+     * @param sessionCooldownPeriod min time interval between two sessions
+     * @return {@code this} instance for method chaining
+     */
+    public Config setSessionCooldownPeriod(int sessionCooldownPeriod) {
+        this.sessionCooldownPeriod = sessionCooldownPeriod;
+        return this;
+    }
+
+    /**
      * Take control of the way Countly detects sessions and turn off default
      * {@link android.app.Activity}-based mechanism (first activity start starts session,
      * last activity stop stops it).
@@ -687,6 +705,14 @@ public class Config {
      */
     public int getSendUpdateEachSeconds() {
         return sendUpdateEachSeconds;
+    }
+
+    /**
+     * Getter for {@link #sessionCooldownPeriod}
+     * @return {@link #sessionCooldownPeriod} value
+     */
+    public int getSessionCooldownPeriod() {
+        return sessionCooldownPeriod;
     }
 
     /**

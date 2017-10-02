@@ -19,7 +19,7 @@ public class TasksTests {
 
     @Before
     public void setupEveryTest(){
-        tasks = new Tasks();
+        tasks = new Tasks("test");
     }
 
     @After
@@ -35,7 +35,7 @@ public class TasksTests {
 
     @Test
     public void testShutdown() throws Exception {
-        Tasks other = new Tasks();
+        Tasks other = new Tasks("test");
         other.run(new Tasks.Task<Object>(0L) {
             @Override
             public Object call() throws Exception {

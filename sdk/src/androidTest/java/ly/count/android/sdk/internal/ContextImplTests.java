@@ -47,21 +47,35 @@ public class ContextImplTests {
     @Test
     public void contextImpl_usageWithApplication(){
         Application application = mock(Application.class);
+        doReturn(getContext()).when(application).getApplicationContext();
         ContextImpl contextImpl = new ContextImpl(application);
 
         Assert.assertEquals(application, contextImpl.getApplication());
         Assert.assertEquals(application, contextImpl.getContext());
         Assert.assertEquals(null, contextImpl.getActivity());
+
+        contextImpl.expire();
+
+        Assert.assertEquals(null, contextImpl.getApplication());
+        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertEquals(getContext(), contextImpl.getContext());
     }
 
     @Test
     public void contextImpl_usageWithActivity(){
         Activity activity = mock(Activity.class);
+        doReturn(getContext()).when(activity).getApplicationContext();
         ContextImpl contextImpl = new ContextImpl(activity);
 
         Assert.assertEquals(null, contextImpl.getApplication());
         Assert.assertEquals(activity, contextImpl.getContext());
         Assert.assertEquals(activity, contextImpl.getActivity());
+
+        contextImpl.expire();
+
+        Assert.assertEquals(null, contextImpl.getApplication());
+        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertEquals(getContext(), contextImpl.getContext());
     }
 
     @Test
@@ -72,5 +86,11 @@ public class ContextImplTests {
         Assert.assertEquals(null, contextImpl.getApplication());
         Assert.assertEquals(null, contextImpl.getActivity());
         Assert.assertEquals(context, contextImpl.getContext());
+
+        contextImpl.expire();
+
+        Assert.assertEquals(null, contextImpl.getApplication());
+        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertEquals(context.getApplicationContext(), contextImpl.getContext());
     }
 }

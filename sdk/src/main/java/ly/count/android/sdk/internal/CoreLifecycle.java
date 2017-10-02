@@ -31,11 +31,6 @@ public class CoreLifecycle {
      */
     protected final List<Module> modules = new ArrayList<>();
 
-    /**
-     * TODO: check service case and change to Application if possible
-     */
-//    protected android.content.Context longLivingContext;
-
     public static void sendToService(Context context, int code, Map<String, byte[]> params) {
         Intent intent = new Intent(context.getContext(), CountlyService.class);
         intent.putExtra(CountlyService.CMD, code);

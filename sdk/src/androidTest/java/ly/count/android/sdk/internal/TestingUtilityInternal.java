@@ -75,6 +75,7 @@ public class TestingUtilityInternal {
 
     public static InternalConfig setupLogs(Config config) throws MalformedURLException {
         InternalConfig internalConfig = new InternalConfig(config == null ? setupConfig() : config);
+        internalConfig.setLoggingLevel(Config.LoggingLevel.DEBUG);
         Log log = new Log();
         log.init(internalConfig);
         return internalConfig;

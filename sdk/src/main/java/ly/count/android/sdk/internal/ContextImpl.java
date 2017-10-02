@@ -63,11 +63,10 @@ public class ContextImpl implements Context {
         return expired;
     }
 
-    //    public void expire() {
-//        expired = true;
-//        application = null;
-//        activity = null;
-//        bundle = null;
-//        context = null;
-//    }
+    public void expire() {
+        context = getContext().getApplicationContext();
+        application = null;
+        activity = null;
+        bundle = null;
+    }
 }

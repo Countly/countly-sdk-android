@@ -455,9 +455,9 @@ public class Core extends CoreModules {
     }
 
     void downloadMediaData(final CountlyPush.Message message, final Tasks.Callback<Bitmap> callback) {
-        final Tasks tasks = new Tasks();
+        final Tasks tasks = new Tasks("download");
 
-        tasks.run(new Tasks.Task<byte[]>(0L) {
+        tasks.run(new Tasks.Task<byte[]>(Tasks.ID_STRICT) {
             @Override
             public byte[] call() throws Exception {
                 if (message.media() == null) {

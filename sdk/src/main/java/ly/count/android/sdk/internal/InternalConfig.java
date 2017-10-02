@@ -60,9 +60,7 @@ final class InternalConfig extends Config implements Storable {
         List<Field> remot = Utils.reflectiveGetDeclaredFields(config.getClass());
 
         for (Field r : remot) {
-            Log.d("Config " + r.getName());
             for (Field l : local) {
-                Log.d("InternalConfig " + l.getName());
                 if (r.getName().equals(l.getName())) {
                     try {
                         r.setAccessible(true);
@@ -106,6 +104,10 @@ final class InternalConfig extends Config implements Storable {
 
     @Override
     public String storagePrefix() {
+        return getStoragePrefix();
+    }
+
+    public static String getStoragePrefix() {
         return "config";
     }
 
@@ -130,6 +132,7 @@ final class InternalConfig extends Config implements Storable {
             stream.writeBoolean(usePOST);
             stream.writeInt(sendUpdateEachSeconds);
             stream.writeInt(sendUpdateEachEvents);
+            stream.writeInt(sessionCooldownPeriod);
             stream.writeBoolean(programmaticSessionsControl);
             stream.writeBoolean(testMode);
             stream.writeObject(pushActivityClass);
@@ -201,6 +204,7 @@ final class InternalConfig extends Config implements Storable {
             usePOST = stream.readBoolean();
             sendUpdateEachSeconds = stream.readInt();
             sendUpdateEachEvents = stream.readInt();
+            sessionCooldownPeriod = stream.readInt();
             programmaticSessionsControl = stream.readBoolean();
             testMode = stream.readBoolean();
             pushActivityClass = (String) stream.readObject();

@@ -14,7 +14,6 @@ import java.net.MalformedURLException;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Session;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
@@ -81,20 +80,17 @@ public class SessionImplTests {
         long beginTime = 234;
         session.begin(beginTime);
 
-        Session tmpSession = session.begin(345L);
-        Assert.assertSame(session, tmpSession);
-        Assert.assertEquals(sessionID, (long)tmpSession.getId());
-        Assert.assertEquals(beginTime, (long)tmpSession.getBegan());
+        session.begin(345L);
+        Assert.assertEquals(sessionID, (long)session.getId());
+        Assert.assertEquals(beginTime, (long)session.getBegan());
 
-        tmpSession = session.end();
-        Assert.assertSame(session, tmpSession);
-        Assert.assertEquals(sessionID, (long)tmpSession.getId());
-        Assert.assertEquals(beginTime, (long)tmpSession.getBegan());
+        session.end();
+        Assert.assertEquals(sessionID, (long)session.getId());
+        Assert.assertEquals(beginTime, (long)session.getBegan());
 
-        tmpSession = session.begin();
-        Assert.assertSame(session, tmpSession);
-        Assert.assertEquals(sessionID, (long)tmpSession.getId());
-        Assert.assertEquals(beginTime, (long)tmpSession.getBegan());
+        session.begin();
+        Assert.assertEquals(sessionID, (long)session.getId());
+        Assert.assertEquals(beginTime, (long)session.getBegan());
     }
 
     @Test
@@ -138,7 +134,7 @@ public class SessionImplTests {
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
         session.begin(timeBegin);
-        session.end(timeEnd);
+        session.end(timeEnd, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
@@ -157,7 +153,7 @@ public class SessionImplTests {
         Assert.assertEquals(null, session.getEnded());
 
         session.begin(timeBegin);
-        session.end(timeEnd);
+        session.end(timeEnd, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
@@ -193,12 +189,12 @@ public class SessionImplTests {
         Assert.assertEquals(timeBegin, (long) session.getBegan());
         Assert.assertEquals(null, session.getEnded());
 
-        session.end(timeEnd);
+        session.end(timeEnd, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
 
-        session.end(timeEndSecond);
+        session.end(timeEndSecond, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
@@ -214,7 +210,7 @@ public class SessionImplTests {
         session.begin(timeGuardBase);
 
         final long timeGuardStart = System.nanoTime();
-        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration");
+        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration", null);
         final long timeGuardEnd = System.nanoTime();
 
         final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / Device.NS_IN_SECOND);
@@ -235,7 +231,7 @@ public class SessionImplTests {
         Whitebox.setInternalState(session, "updated", timeGuardBase);
 
         final long timeGuardStart = System.nanoTime();
-        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration");
+        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration", null);
         final long timeGuardEnd = System.nanoTime();
 
         final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / Device.NS_IN_SECOND);
@@ -286,7 +282,7 @@ public class SessionImplTests {
         Assert.assertEquals(timeBegin, (long) session.getBegan());
         Assert.assertEquals(null, session.getEnded());
 
-        session.end(timeEnd);
+        session.end(timeEnd, null);
         session.update();
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
@@ -450,6 +446,104 @@ public class SessionImplTests {
         Assert.assertNull(Whitebox.getInternalState(session, "began"));
         Assert.assertNull(Whitebox.getInternalState(session, "updated"));
         Assert.assertNull(Whitebox.getInternalState(session, "ended"));
+    }
+
+    @Test
+    public void session_recoverNoUpdate() throws Exception {
+        Core.purgeInternalStorage(ctx, null);
+
+        SessionImpl session = new SessionImpl(ctx);
+        session.begin(System.nanoTime() - Device.nsToSec(20));
+
+        Thread.sleep(300);
+
+        session = Storage.read(ctx, session);
+        Assert.assertNotNull(session);
+
+        session.recover(new InternalConfig(TestingUtilityInternal.setupConfig()));
+        Thread.sleep(300);
+
+        session = Storage.read(ctx, session);
+        Assert.assertNull(session);
+
+        List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(2, requests.size());
+
+        Request begin = Storage.read(ctx, new Request(requests.get(0)));
+        Request end = Storage.read(ctx, new Request(requests.get(1)));
+
+        Assert.assertNotNull(begin);
+        Assert.assertNotNull(end);
+        Assert.assertTrue(begin.params.toString().contains("begin_session"));
+        Assert.assertTrue(end.params.toString().contains("end_session"));
+    }
+
+    @Test
+    public void session_recoverWithUpdate() throws Exception {
+        Core.purgeInternalStorage(ctx, null);
+
+        SessionImpl session = new SessionImpl(ctx);
+        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.update(System.nanoTime() - Device.secToNs(10));
+
+        Thread.sleep(300);
+
+        session = Storage.read(ctx, session);
+        Assert.assertNotNull(session);
+
+        session.recover(new InternalConfig(TestingUtilityInternal.setupConfig()));
+        Thread.sleep(300);
+
+        session = Storage.read(ctx, session);
+        Assert.assertNull(session);
+
+        List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(3, requests.size());
+
+        Request begin = Storage.read(ctx, new Request(requests.get(0)));
+        Request update = Storage.read(ctx, new Request(requests.get(1)));
+        Request end = Storage.read(ctx, new Request(requests.get(2)));
+
+        Assert.assertNotNull(begin);
+        Assert.assertNotNull(update);
+        Assert.assertNotNull(end);
+        Assert.assertTrue(begin.params.toString().contains("begin_session"));
+        Assert.assertTrue(update.params.toString().contains("session_duration"));
+        Assert.assertTrue(end.params.toString().contains("end_session"));
+    }
+
+    @Test
+    public void session_recoversNothingWithEnd() throws Exception {
+        Core.purgeInternalStorage(ctx, null);
+
+        SessionImpl session = new SessionImpl(ctx);
+        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.update(System.nanoTime() - Device.secToNs(10));
+        session.end();
+
+        Storage.await();
+
+        Assert.assertNull(Storage.read(ctx, session));
+
+        session.recover(new InternalConfig(TestingUtilityInternal.setupConfig()));
+        Storage.await();
+
+        session = Storage.read(ctx, session);
+        Assert.assertNull(session);
+
+        List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(3, requests.size());
+
+        Request begin = Storage.read(ctx, new Request(requests.get(0)));
+        Request update = Storage.read(ctx, new Request(requests.get(1)));
+        Request end = Storage.read(ctx, new Request(requests.get(2)));
+
+        Assert.assertNotNull(begin);
+        Assert.assertNotNull(update);
+        Assert.assertNotNull(end);
+        Assert.assertTrue(begin.params.toString().contains("begin_session"));
+        Assert.assertTrue(update.params.toString().contains("session_duration"));
+        Assert.assertTrue(end.params.toString().contains("end_session"));
     }
 
 }
