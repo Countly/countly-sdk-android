@@ -52,7 +52,7 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "17.05";
+    public static final String COUNTLY_SDK_VERSION_STRING = "17.09";
     /**
      * Used as request meta data on every request
      */

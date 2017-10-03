@@ -31,5 +31,5 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':sdk-messaging')
     compile "me.leolin:ShortcutBadger:1.1.10@aar"
-    //compile 'ly.count.android:sdk-messaging:17.05'
+    //compile 'ly.count.android:sdk-messaging:17.09'
 }
