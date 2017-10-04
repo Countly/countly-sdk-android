@@ -102,6 +102,7 @@ public class TestingUtilityInternal {
         when(app.getPackageName()).thenReturn(context.getPackageName());
         when(app.getSharedPreferences(PREFERENCES, MODE_PRIVATE)).thenReturn(context.getSharedPreferences(PREFERENCES, MODE_PRIVATE));
         when(app.getContentResolver()).thenReturn(context.getContentResolver());
+        when(app.getMainLooper()).thenReturn(context.getMainLooper());
         return app;
     }
 }

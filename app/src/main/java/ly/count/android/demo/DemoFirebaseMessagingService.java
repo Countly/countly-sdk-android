@@ -36,7 +36,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
                 // so we report Actioned metric back to server:
 
                 // AppDownloadManager.initiateBackgroundDownload(message.link());
-                message.recordAction();
+                message.recordAction(getApplicationContext());
                 return;
             } else if (message.data("typ").equals("promo")) {
                 // Now we want to override default Countly UI for a promo message type.
@@ -56,7 +56,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
 //                btn1.setOnClickListener(new View.OnClickListener() {
 //                    @Override
 //                    public void onClick(View v) {
-//                        msg.recordAction(1);
+//                        msg.recordAction(getApplicationContext(), 1);
 //                    }
 //                });
 //
@@ -65,7 +65,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
 //                btn2.setOnClickListener(new View.OnClickListener() {
 //                    @Override
 //                    public void onClick(View v) {
-//                        msg.recordAction(2);
+//                        msg.recordAction(getApplicationContext(), 2);
 //                    }
 //                });
                 return;

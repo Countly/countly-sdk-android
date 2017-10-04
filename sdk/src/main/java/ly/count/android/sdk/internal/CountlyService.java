@@ -26,6 +26,7 @@ public class CountlyService extends android.app.Service {
 
     static final String PARAM_ID = "id";
     static final String PARAM_OLD_ID = "old";
+    static final String PARAM_CRASH_ID = "crash_id";
 
     /**
      * Core instance is being run in {@link InternalConfig#limited} mode.
@@ -65,6 +66,7 @@ public class CountlyService extends android.app.Service {
         } else {
             this.core = Core.instance;
             this.core.onLimitedContextAcquired(this);
+            this.network.init(config);
             this.future = null;
         }
     }
@@ -91,6 +93,10 @@ public class CountlyService extends android.app.Service {
                 Log.d("[service] Stopping");
                 // clean up, prepare for shutdown
                 stop();
+            } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_CRASH && intent.hasExtra(PARAM_CRASH_ID)) {
+                Long id = intent.getLongExtra(PARAM_CRASH_ID, -1L);
+                Log.d("[service] Got a crash " + id);
+                processCrash(id);
             } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_DEVICE_ID) {
                 Log.d("[service] Device id");
                 // reread config & notify modules
@@ -137,8 +143,8 @@ public class CountlyService extends android.app.Service {
                 crashes = new ArrayList<Long>();
 
                 for (Long id : crashes) {
-                    Log.i("[service] Found unsent crash " + id);
-                    // TODO: send crashes
+                    Log.i("[service] Found unprocessed crash " + id);
+                    processCrash(id);
                 }
 
                 sessions = Storage.list(ctx, SessionImpl.getStoragePrefix());
@@ -157,6 +163,26 @@ public class CountlyService extends android.app.Service {
                 return true;
             }
         });
+    }
+
+    private boolean processCrash(Long id) {
+        CrashImpl crash = new CrashImpl(id);
+        crash = Storage.read(ctx, crash);
+        if (crash == null) {
+            Log.e("[service] Cannot read crash from storage, skipping");
+            return false;
+        }
+
+        Request request = ModuleRequests.nonSessionRequest(config);
+        ModuleCrash.putCrashIntoParams(crash, request.params);
+        if (Storage.push(ctx, request)) {
+            Log.i("[service] Added request " + request.storageId() + " instead of crash " + crash.storageId());
+            Boolean success = Storage.remove(ctx, crash);
+            return success == null ? false : success;
+        } else {
+            Log.e("[service] Couldn't write request " + request.storageId() + " instead of crash " + crash.storageId());
+            return false;
+        }
     }
 
     private synchronized void stop() {

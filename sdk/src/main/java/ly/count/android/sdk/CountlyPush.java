@@ -397,6 +397,7 @@ public class CountlyPush {
 
     /**
      * Check whether app is running in foreground.
+     * Also available as {@link ly.count.android.sdk.internal.Device#isAppRunningInForeground(Context)}
      *
      * @param context context to check in
      * @return {@code true} if running in foreground, {@code false} otherwise

@@ -238,12 +238,12 @@ class SessionImpl implements Session, Storable {
 
     @Override
     public Session addCrashReport(Throwable t, boolean fatal) {
-        return addCrashReport(t, fatal, null);
+        return addCrashReport(t, fatal, null, null);
     }
 
     @Override
-    public Session addCrashReport(Throwable t, boolean fatal, String details) {
-        // TODO: implement
+    public Session addCrashReport(Throwable t, boolean fatal, String name, String details) {
+        Core.onCrash(ctx, t, fatal, name, details);
         return this;
     }
 

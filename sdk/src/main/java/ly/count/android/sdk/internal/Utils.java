@@ -1,5 +1,7 @@
 package ly.count.android.sdk.internal;
 
+import android.os.Build;
+
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -366,6 +368,6 @@ public class Utils {
     }
 
     public static boolean API(int version) {
-        return Utils.API(version);
+        return Build.VERSION.SDK_INT >= version;
     }
 }

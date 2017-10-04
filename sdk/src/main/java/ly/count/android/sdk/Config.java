@@ -308,6 +308,14 @@ public class Config {
     protected boolean testMode = false;
 
     /**
+     * When not {@code null}, more than {@code 0} and {@link Feature#Crash} is enabled,
+     * Countly watches main thread for unresponsiveness.
+     * When main thread doesn't respond for time more than this property in seconds,
+     * SDK reports ANR crash back to Countly server.
+     */
+    protected int crashReportingANRTimeout = 5;
+
+    /**
      * Activity class to be launched on {@link android.app.Notification} tap, defaults
      * to main app activity.
      */
@@ -585,13 +593,41 @@ public class Config {
     }
 
     /**
+     * Change timeout when ANR is detected. ANR reporting is enabled by default once you enable {@link Feature#Crash}.
+     * Default timeout is 5 seconds.
+     * To disable ANR reporting, use {@link #disableANRCrashReporting()}.
+     *
+     * @param timeoutInSeconds how much time main thread must be blocked before ANR is detected
+     * @return {@code this} instance for method chaining
+     */
+    public Config setCrashReportingANRTimeout(int timeoutInSeconds) {
+        if (timeoutInSeconds < 0) {
+            Log.wtf("ANR timeout less than zero doesn't make sense");
+        }
+        this.crashReportingANRTimeout = timeoutInSeconds;
+        return this;
+    }
+
+    /**
+     * Disable ANR detection and thus reporting to Countly server.
+     *
+     * @return {@code this} instance for method chaining
+     */
+    public Config disableANRCrashReporting() {
+        this.crashReportingANRTimeout = 0;
+        return this;
+    }
+
+    /**
      * Set push activity class which is to be launched when user taps on a {@link android.app.Notification}.
      * Defaults automatically to main activity class.
      *
      * @param pushActivityClass activity class
+     * @return {@code this} instance for method chaining
      */
-    public void setPushActivityClass(Class pushActivityClass) {
+    public Config setPushActivityClass(Class pushActivityClass) {
         this.pushActivityClass = pushActivityClass.getName();
+        return this;
     }
 
     /**
@@ -723,6 +759,18 @@ public class Config {
         return sendUpdateEachEvents;
     }
 
+    /**
+     * Getter for {@link #crashReportingANRTimeout}
+     * @return {@link #crashReportingANRTimeout} value
+     */
+    public int getCrashReportingANRTimeout() {
+        return crashReportingANRTimeout;
+    }
+
+    /**
+     * Getter for {@link #pushActivityClass}
+     * @return {@link #pushActivityClass} value
+     */
     public String getPushActivityClass() {
         return pushActivityClass;
     }

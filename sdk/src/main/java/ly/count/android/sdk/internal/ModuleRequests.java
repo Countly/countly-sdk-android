@@ -30,7 +30,6 @@ public class ModuleRequests extends ModuleBase {
         Request request = addCommon(config, session, Request.build("begin_session", 1));
         request.params.add(metrics);
         session.params.clear();
-        // TODO: country, city, location
         return pushAsync(ctx, request);
     }
 
@@ -42,7 +41,6 @@ public class ModuleRequests extends ModuleBase {
         }
 
         session.params.clear();
-        // TODO: location
         return pushAsync(ctx, request);
     }
 
@@ -54,7 +52,6 @@ public class ModuleRequests extends ModuleBase {
         }
 
         session.params.clear();
-        // TODO: location / override_id
         return pushAsync(ctx, request, callback);
     }
 

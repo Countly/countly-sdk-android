@@ -546,4 +546,38 @@ public class SessionImplTests {
         Assert.assertTrue(end.params.toString().contains("end_session"));
     }
 
+    @Test
+    public void session_crashRecorded() throws Exception {
+        Core.purgeInternalStorage(ctx, null);
+
+        Config config = TestingUtilityInternal.setupConfig().enableTestMode()
+                .setLoggingLevel(Config.LoggingLevel.DEBUG).addFeature(Config.Feature.Crash);
+        Core.initForApplication(config, TestingUtilityInternal.mockApplication(getContext()));
+
+        SessionImpl session = new SessionImpl(ctx);
+        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.addCrashReport(new IllegalStateException("Illegal state out here"), false, "crashname", "crashdetails");
+        session.end();
+
+        Storage.await();
+
+        Assert.assertNull(Storage.read(ctx, session));
+
+        List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(2, requests.size());
+
+        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
+        Assert.assertEquals(1, crashes.size());
+
+        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
+        Assert.assertNotNull(crash);
+
+        String json = crash.getJSON();
+        Assert.assertTrue(json.contains("\"_nonfatal\":true"));
+        Assert.assertTrue(json.contains("\"_name\":\"crashname\""));
+        Assert.assertTrue(json.contains("\"_logs\":\"crashdetails\""));
+        Assert.assertTrue(json.contains("IllegalStateException"));
+        Assert.assertTrue(json.contains("Illegal state out here"));
+        Assert.assertTrue(json.contains("session_crashRecorded"));
+    }
 }

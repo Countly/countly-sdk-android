@@ -31,15 +31,24 @@ public class CoreLifecycle {
      */
     protected final List<Module> modules = new ArrayList<>();
 
-    public static void sendToService(Context context, int code, Map<String, byte[]> params) {
-        Intent intent = new Intent(context.getContext(), CountlyService.class);
+    public static void sendToService(Context ctx, int code, Map<String, Object> params) {
+        Intent intent = new Intent(ctx.getContext(), CountlyService.class);
         intent.putExtra(CountlyService.CMD, code);
         if (params != null) {
             for (String key : params.keySet()) {
-                intent.putExtra(key, params.get(key));
+                Object value = params.get(key);
+                if (value instanceof byte[]) {
+                    intent.putExtra(key, (byte[])value);
+                } else if (value instanceof String) {
+                    intent.putExtra(key, (String)value);
+                } else if (value instanceof Long) {
+                    intent.putExtra(key, (Long)value);
+                } else {
+                    Log.wtf("Unsupported type for service intent: " + value);
+                }
             }
         }
-        context.getContext().startService(intent);
+        ctx.getContext().startService(intent);
     }
 
     /**

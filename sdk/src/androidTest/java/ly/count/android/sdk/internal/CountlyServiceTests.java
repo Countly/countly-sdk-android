@@ -29,7 +29,7 @@ public class CountlyServiceTests {
         doReturn(getContext()).when(service).getApplicationContext();
 
         Core.purgeInternalStorage(ctx, null);
-        Storage.push(ctx, new InternalConfig(TestingUtilityInternal.setupLogs(TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG))));
+        Storage.push(ctx, new InternalConfig(TestingUtilityInternal.setupLogs(TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG).addFeature(Config.Feature.Crash))));
         if (Core.instance != null) {
             Core.instance.deinit();
         }
@@ -124,5 +124,56 @@ public class CountlyServiceTests {
 
         Assert.assertEquals(0, Storage.list(ctx, SessionImpl.getStoragePrefix()).size());
         Assert.assertEquals(2, Storage.list(ctx, Request.getStoragePrefix()).size());
+    }
+
+    @Test
+    public void receiving_crash() throws Exception {
+        SessionImpl session = new SessionImpl(ctx);
+        session.begin();
+
+        Storage.await();
+
+        List<Long> sessions = Storage.list(ctx, SessionImpl.getStoragePrefix());
+        Assert.assertEquals(1, sessions.size());
+        Assert.assertEquals(1, Storage.list(ctx, Request.getStoragePrefix()).size());
+
+        service.onCreate();
+
+        doReturn(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
+            @Override
+            public Boolean call() throws Exception {
+                Log.d("+++++++");
+                Thread.sleep(1000);
+                return null;
+            }
+        }).when(service).submit();
+
+        Intent intent = new Intent();
+        intent.putExtra(CountlyService.CMD, CountlyService.CMD_START);
+        service.onStartCommand(intent, 0, 0);
+
+        session.addCrashReport(new IllegalStateException("Some bad state"), false);
+
+        Storage.await();
+
+        CrashImpl crash = Storage.read(ctx, new CrashImpl(Storage.list(ctx, CrashImpl.getStoragePrefix()).get(0)));
+        Assert.assertNotNull(crash);
+
+        intent.putExtra(CountlyService.CMD, CountlyService.CMD_CRASH);
+        intent.putExtra(CountlyService.PARAM_CRASH_ID, crash.storageId());
+
+        service.onStartCommand(intent, 0, 0);
+
+        Tasks tasks = Utils.reflectiveGetField(service, "tasks");
+        tasks.awaitTermination();
+
+        List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(1, Storage.list(ctx, SessionImpl.getStoragePrefix()).size());
+        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+        Assert.assertEquals(2, requests.size());
+
+        Request crashRequest = Storage.read(ctx, new Request(requests.get(1)));
+        Assert.assertNotNull(crashRequest);
+        Assert.assertTrue(crashRequest.params.toString().contains("crash=" + Utils.urlencode("{")));
     }
 }

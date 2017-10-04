@@ -1,13 +1,28 @@
 package ly.count.android.sdk.internal;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.ActivityManager;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.FeatureInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.media.AudioManager;
+import android.net.ConnectivityManager;
+import android.os.BatteryManager;
 import android.os.Build;
+import android.os.Debug;
+import android.os.Environment;
+import android.os.StatFs;
 import android.telephony.TelephonyManager;
 import android.util.*;
 import android.view.Display;
 import android.view.WindowManager;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -15,6 +30,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import ly.count.android.sdk.Countly;
 
@@ -28,6 +45,7 @@ class Device {
      */
     static final Double NS_IN_SECOND = 1000000000.0d;
     static final Double NS_IN_MS = 1000000.0d;
+    static final Long BYTES_IN_MB = 1024L * 1024;
 
     static class TimeUniquenessEnsurer {
         List<Long> lastTsMs = new ArrayList<>(10);
@@ -67,7 +85,7 @@ class Device {
      *
      * @return the display name of the current operating system.
      */
-    private static String getOS() {
+    static String getOS() {
         return "Android";
     }
 
@@ -76,7 +94,7 @@ class Device {
      *
      * @return current operating system version as a displayable string.
      */
-    private static String getOSVersion() {
+    static String getOSVersion() {
         return android.os.Build.VERSION.RELEASE;
     }
 
@@ -85,7 +103,7 @@ class Device {
      *
      * @return device model name.
      */
-    private static String getDevice() {
+    public static String getDevice() {
         return android.os.Build.MODEL;
     }
 
@@ -96,7 +114,7 @@ class Device {
      * @param context context to use to retrieve the current WindowManager
      * @return a string in the format "WxH", or the empty string "" if resolution cannot be determined
      */
-    private static String getResolution(final android.content.Context context) {
+    static String getResolution(final android.content.Context context) {
         // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
         // were returning null, even though the documentation doesn't say they should do so; so now
         // we catch Throwable and return empty string if that happens
@@ -123,7 +141,7 @@ class Device {
      * @return a string constant representing the current display density, or the
      *         empty string if the density is unknown
      */
-    private static String getDensity(final android.content.Context context) {
+    static String getDensity(final android.content.Context context) {
         String densityStr = "";
         final int density = context.getResources().getDisplayMetrics().densityDpi;
         switch (density) {
@@ -139,24 +157,21 @@ class Device {
             case DisplayMetrics.DENSITY_HIGH:
                 densityStr = "HDPI";
                 break;
-            //todo uncomment in android sdk 25
             case DisplayMetrics.DENSITY_260:
                 densityStr = "XHDPI";
                 break;
             case DisplayMetrics.DENSITY_280:
                 densityStr = "XHDPI";
                 break;
-            //todo uncomment in android sdk 25
-            //case DisplayMetrics.DENSITY_300:
-            //    densityStr = "XHDPI";
-            //    break;
+            case DisplayMetrics.DENSITY_300:
+                densityStr = "XHDPI";
+                break;
             case DisplayMetrics.DENSITY_XHIGH:
                 densityStr = "XHDPI";
                 break;
-            //todo uncomment in android sdk 25
-            //case DisplayMetrics.DENSITY_340:
-            //    densityStr = "XXHDPI";
-            //    break;
+            case DisplayMetrics.DENSITY_340:
+                densityStr = "XXHDPI";
+                break;
             case DisplayMetrics.DENSITY_360:
                 densityStr = "XXHDPI";
                 break;
@@ -190,7 +205,7 @@ class Device {
      * @return the display name of the current network operator, or the empty
      *         string if it cannot be accessed or determined
      */
-    private static String getCarrier(final android.content.Context context) {
+    static String getCarrier(final android.content.Context context) {
         String carrier = "";
         final TelephonyManager manager = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
         if (manager != null) {
@@ -219,7 +234,7 @@ class Device {
      *
      * @return current locale (ex. "en_US").
      */
-    private static String getLocale() {
+    static String getLocale() {
         final Locale locale = Locale.getDefault();
         return locale.getLanguage() + "_" + locale.getCountry();
     }
@@ -230,8 +245,8 @@ class Device {
      * @return string stored in the specified context's package info versionName field,
      * or "1.0" if versionName is not present.
      */
-    private static String getAppVersion(final android.content.Context context) {
-        String result = Countly.DEFAULT_APP_VERSION;
+    static String getAppVersion(final android.content.Context context) {
+        String result = "1.0";
         try {
             result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
         }
@@ -248,21 +263,19 @@ class Device {
      *
      * @return package name of the store
      */
-    private static String getStore(final android.content.Context context) {
+    static String getStore(final android.content.Context context) {
         String result = "";
-        if(android.os.Build.VERSION.SDK_INT >= 3 ) {
-            try {
-                result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
-            } catch (Exception e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    android.util.Log.i(Countly.TAG, "Can't get Installer package");
-                }
+        try {
+            result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
+        } catch (Exception e) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                android.util.Log.i(Countly.TAG, "Can't get Installer package");
             }
-            if (result == null || result.length() == 0) {
-                result = "";
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    android.util.Log.i(Countly.TAG, "No store found");
-                }
+        }
+        if (result == null || result.length() == 0) {
+            result = "";
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                android.util.Log.i(Countly.TAG, "No store found");
             }
         }
         return result;
@@ -374,5 +387,261 @@ class Device {
      */
     static boolean API(int min) {
         return Build.VERSION.SDK_INT >= min;
+    }
+
+    /**
+     * Get total RAM in Mb
+     *
+     * @return total RAM in Mb or null if cannot determine
+     */
+    public static Long getRAMTotal() {
+        RandomAccessFile reader = null;
+        try {
+            reader = new RandomAccessFile("/proc/meminfo", "r");
+            String load = reader.readLine();
+
+            // Get the Number value from the string
+            Pattern p = Pattern.compile("(\\d+)");
+            Matcher m = p.matcher(load);
+            String value = "";
+            while (m.find()) {
+                value = m.group(1);
+            }
+            return Long.parseLong(value) / 1024;
+        } catch (NumberFormatException e){
+            Log.e("Cannot parse meminfo", e);
+            return null;
+        } catch (IOException e) {
+            Log.e("Cannot read meminfo", e);
+            return null;
+        }
+        finally {
+            try {
+                if (reader != null) {
+                    reader.close();
+                }
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    /**
+     * Get current device manufacturer name.
+     *
+     * @return device manufacturer string
+     */
+    public static String getManufacturer() {
+        return Build.MANUFACTURER;
+    }
+
+    /**
+     * Get current device cpu.
+     *
+     * @return main CPU ABI
+     */
+    public static String getCpu() {
+        if (Utils.API(Build.VERSION_CODES.LOLLIPOP)) {
+            return Build.SUPPORTED_ABIS[0];
+        } else {
+            return Build.CPU_ABI;
+        }
+    }
+
+    /**
+     * Get current device OpenGL version.
+     *
+     * @return OpenGL version, falls back to 1 if cannot determine
+     */
+    public static Integer getOpenGL(android.content.Context context) {
+        PackageManager packageManager = context.getPackageManager();
+        FeatureInfo[] featureInfos = packageManager.getSystemAvailableFeatures();
+        if (featureInfos == null || featureInfos.length == 0) {
+            return 1;
+        }
+        for (FeatureInfo featureInfo : featureInfos) {
+            // Null feature name means this feature is the open gl es version feature.
+            if (featureInfo.name == null) {
+                if (featureInfo.reqGlEsVersion != FeatureInfo.GL_ES_VERSION_UNDEFINED) {
+                    return (featureInfo.reqGlEsVersion & 0xffff0000) >> 16;
+                } else {
+                    return 1; // Lack of property means OpenGL ES version 1
+                }
+            }
+        }
+        return 1;
+    }
+
+    /**
+     * Get current device RAM amount.
+     *
+     * @return currently available RAM in Mb or {@code null} if couldn't determine
+     */
+    public static Long getRAMAvailable(android.content.Context context) {
+        Long total = getRAMTotal();
+        if (total == null) {
+            return null;
+        }
+        total = total * BYTES_IN_MB;
+        ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        activityManager.getMemoryInfo(mi);
+        return (total - mi.availMem) / BYTES_IN_MB;
+    }
+
+    /**
+     * Get current device disk space.
+     *
+     * @return currently available disk space in Mb
+     */
+    public static Long getDiskAvailable() {
+        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+        long total = getDiskTotal() * BYTES_IN_MB, free;
+        if (Utils.API(18)) {
+            free = (statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong());
+        }  else {
+            free = ((long)statFs.getAvailableBlocks() * (long)statFs.getBlockSize());
+        }
+        return (total - free) / BYTES_IN_MB;
+    }
+
+    /**
+     * Get total device disk space.
+     *
+     * @return total device disk space in Mb
+     */
+    public static Long getDiskTotal() {
+        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+        long total;
+        if (Utils.API(18)) {
+            total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+        }  else {
+            total = ((long)statFs.getBlockCount() * (long)statFs.getBlockSize());
+        }
+        return total / BYTES_IN_MB;
+    }
+
+    /**
+     * Get current device battery level.
+     *
+     * @return device battery left in percent or {@code null} if couldn't determine
+     */
+    public static Float getBatteryLevel(android.content.Context context) {
+        try {
+            Intent batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            if(batteryIntent != null) {
+                int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+                // Error checking that probably isn't needed but I added just in case.
+                if (level > -1 && scale > 0) {
+                    return 100.0f * (float) level / (float) scale;
+                }
+            }
+        } catch (Exception e) {
+            Log.w("Can't get batter level", e);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get current device orientation.
+     *
+     * @return orientation name or {@code null} if couldn't determine
+     */
+    public static String getOrientation(android.content.Context context) {
+        int orientation = context.getResources().getConfiguration().orientation;
+        switch (orientation) {
+            case  Configuration.ORIENTATION_LANDSCAPE:
+                return "Landscape";
+            case Configuration.ORIENTATION_PORTRAIT:
+                return "Portrait";
+            case Configuration.ORIENTATION_UNDEFINED:
+                return "Unknown";
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Check if device is rooted.
+     *
+     * @return {@code true} if rooted, {@code false} otherwise
+     */
+    public static Boolean isRooted() {
+        String[] paths = {
+                "/sbin/su", "/system/bin/su", "/system/xbin/su",
+                "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
+                "/system/bin/failsafe/su", "/data/local/su" };
+        for (String path : paths) {
+            if (new File(path).exists()) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if device is online.
+     *
+     * @return {@code true} if has connectivity, {@code false} if doesn't, {@code null} if cannot determine
+     */
+    public static Boolean isOnline(android.content.Context context) {
+        try {
+            ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+            if (conMgr != null && conMgr.getActiveNetworkInfo() != null
+                    && conMgr.getActiveNetworkInfo().isAvailable()
+                    && conMgr.getActiveNetworkInfo().isConnected()) {
+
+                return true;
+            }
+            return false;
+        } catch(Exception e) {
+            Log.w("Exception while determining connectivity", e);
+        }
+        return null;
+    }
+
+    /**
+     * Check if device is muted.
+     *
+     * @return {@code true} if muted, {@code false} if not, {@code null}  if cannot determine
+     */
+    public static Boolean isMuted(android.content.Context context) {
+        AudioManager audio = (AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
+        if (audio == null) {
+            return null;
+        }
+        switch( audio.getRingerMode() ){
+            case AudioManager.RINGER_MODE_SILENT:
+                return true;
+            case AudioManager.RINGER_MODE_VIBRATE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Check whether app is running in foreground.
+     *
+     * @param context context to check in
+     * @return {@code true} if running in foreground, {@code false} otherwise
+     */
+    public static boolean isAppRunningInForeground (android.content.Context context) {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
+        if (appProcesses == null) {
+            return false;
+        }
+        final String packageName = context.getPackageName();
+        for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+            if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && appProcess.processName.equals(packageName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isDebuggerConnected() {
+        return Debug.isDebuggerConnected();
     }
 }

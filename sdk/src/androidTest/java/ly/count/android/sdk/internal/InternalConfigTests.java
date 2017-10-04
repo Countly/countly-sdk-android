@@ -53,6 +53,7 @@ public class InternalConfigTests {
         config.setSendUpdateEachEvents(222);
         config.setProgrammaticSessionsControl(true);
         config.enableTestMode();
+        config.setCrashReportingANRTimeout(1);
 
         InternalConfig internalConfig = new InternalConfig(config);
 
@@ -68,6 +69,7 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getSendUpdateEachEvents(), internalConfig.getSendUpdateEachEvents());
         Assert.assertEquals(config.isProgrammaticSessionsControl(), internalConfig.isProgrammaticSessionsControl());
         Assert.assertEquals(config.isTestModeEnabled(), internalConfig.isTestModeEnabled());
+        Assert.assertEquals(config.getCrashReportingANRTimeout(), internalConfig.getCrashReportingANRTimeout());
     }
 
     @Test
@@ -82,6 +84,7 @@ public class InternalConfigTests {
         config.setSendUpdateEachSeconds(123);
         config.setSendUpdateEachEvents(222);
         config.setProgrammaticSessionsControl(true);
+        config.setCrashReportingANRTimeout(2);
         config.enableTestMode();
 
         Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, "openudid");
@@ -110,6 +113,7 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getSendUpdateEachEvents(), internalConfig.getSendUpdateEachEvents());
         Assert.assertEquals(config.isProgrammaticSessionsControl(), internalConfig.isProgrammaticSessionsControl());
         Assert.assertEquals(config.isTestModeEnabled(), internalConfig.isTestModeEnabled());
+        Assert.assertEquals(config.getCrashReportingANRTimeout(), internalConfig.getCrashReportingANRTimeout());
 
         Assert.assertNotNull(internalConfig.getDeviceId());
         Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID));

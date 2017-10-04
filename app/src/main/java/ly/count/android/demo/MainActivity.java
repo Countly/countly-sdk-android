@@ -13,6 +13,7 @@ import java.util.HashMap;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyPush;
 import ly.count.android.sdk.CountlyStarRating;
+import ly.count.android.sdk.internal.ModuleCrash;
 
 
 public class MainActivity extends Activity {
@@ -79,50 +80,40 @@ public class MainActivity extends Activity {
 //            }
 //        }, 11000);
 //
-//        Button button1 = (Button) findViewById(R.id.runtime);
-//        button1.setOnClickListener(new View.OnClickListener() {
-//
-//            @Override
-//            public void onClick(View v) {
-//                Countly.sharedInstance().addCrashLog("Button 1 pressed");
-//                Countly.sharedInstance().crashTest(4);
-//            }
-//        });
-//
-//        Button button2 = (Button) findViewById(R.id.nullpointer);
-//        button2.setOnClickListener(new View.OnClickListener() {
-//
-//            @Override
-//            public void onClick(View v) {
-//                Countly.sharedInstance().addCrashLog("Button 2 pressed");
-//                Countly.sharedInstance().crashTest(5);
-//            }
-//        });
-//
-//        Button button3 = (Button) findViewById(R.id.division0);
-//        button3.setOnClickListener(new View.OnClickListener() {
-//
-//            @Override
-//            public void onClick(View v) {
-//                Countly.sharedInstance().addCrashLog("Button 3 pressed");
-//                Countly.sharedInstance().crashTest(2);
-//            }
-//        });
-//
-//
-//        Button button5 = (Button) findViewById(R.id.stackoverflow);
-//        button5.setOnClickListener(new View.OnClickListener() {
-//
-//            @Override
-//            public void onClick(View v) {
-//                Countly.sharedInstance().addCrashLog("Button 4 pressed");
-//                Countly.sharedInstance().crashTest(1);
-//            }
-//        });
-//
+        Button button1 = (Button) findViewById(R.id.runtime);
+        button1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ModuleCrash.crashTest(ModuleCrash.CrashType.RUNTIME_EXCEPTION);
+            }
+        });
+
+        Button button2 = (Button) findViewById(R.id.nullpointer);
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ModuleCrash.crashTest(ModuleCrash.CrashType.NULLPOINTER_EXCEPTION);
+            }
+        });
+
+        Button button3 = (Button) findViewById(R.id.division0);
+        button3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ModuleCrash.crashTest(ModuleCrash.CrashType.DIVISION_BY_ZERO);
+            }
+        });
+
+        Button button5 = (Button) findViewById(R.id.stackoverflow);
+        button5.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ModuleCrash.crashTest(ModuleCrash.CrashType.STACK_OVERFLOW);
+            }
+        });
+
 //        Button button6 = (Button) findViewById(R.id.handled);
 //        button6.setOnClickListener(new View.OnClickListener() {
-//
 //            @Override
 //            public void onClick(View v) {
 //                Countly.sharedInstance().addCrashLog("Button 5 pressed");
@@ -134,7 +125,7 @@ public class MainActivity extends Activity {
 //                }
 //            }
 //        });
-//
+
 //        Button button7 = (Button) findViewById(R.id.app_rating_default);
 //        button7.setOnClickListener(new View.OnClickListener() {
 //            @Override

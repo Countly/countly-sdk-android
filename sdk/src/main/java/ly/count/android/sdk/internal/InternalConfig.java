@@ -135,6 +135,7 @@ final class InternalConfig extends Config implements Storable {
             stream.writeInt(sessionCooldownPeriod);
             stream.writeBoolean(programmaticSessionsControl);
             stream.writeBoolean(testMode);
+            stream.writeInt(crashReportingANRTimeout);
             stream.writeObject(pushActivityClass);
             stream.writeInt(dids.size());
             for (DID did : dids) {
@@ -207,6 +208,7 @@ final class InternalConfig extends Config implements Storable {
             sessionCooldownPeriod = stream.readInt();
             programmaticSessionsControl = stream.readBoolean();
             testMode = stream.readBoolean();
+            crashReportingANRTimeout = stream.readInt();
             pushActivityClass = (String) stream.readObject();
 
             dids.clear();

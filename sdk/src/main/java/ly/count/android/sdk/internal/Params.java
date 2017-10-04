@@ -29,6 +29,12 @@ class Params {
         // TODO: previous implementation omitted null & empty string values, check for correctness
         public Obj put(String key, Object value) {
             try {
+                if (value instanceof Double) {
+                    Double v = (Double) value;
+                    if (v.isInfinite() || v.isNaN()) {
+                        value = null;
+                    }
+                }
                 json.put(key, value);
             } catch (JSONException e) {
                 Log.wtf("Cannot put property into Params.Obj", e);
@@ -115,6 +121,13 @@ class Params {
             this.params.append("&");
         }
         this.params.append(params.toString());
+        return this;
+    }
+
+    Params add(String string) {
+        if (params != null) {
+            this.params.append(string);
+        }
         return this;
     }
 

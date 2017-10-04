@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.provider.Settings;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
@@ -310,7 +311,7 @@ public class Core extends CoreModules {
         if (instance.config.isLimited()) {
             instance.user = instance.loadUser(ctx);
         } else {
-            Map<String, byte[]> params = null;
+            Map<String, Object> params = null;
             if (id != null || old != null) {
                 params = new HashMap<>();
                 if (id != null) {
@@ -415,6 +416,22 @@ public class Core extends CoreModules {
 //        return false;
 //    }
 //
+
+    /**
+     * Record crash report and send it to the server.
+     *
+     * @param ctx Context to run in
+     * @param throwable Throwable to record
+     * @param fatal {@code true} if Exception was bad (crashing app or some fatal malfunction), {@code false} otherwise
+     * @param details optional details string
+     */
+    public static void onCrash(Context ctx, Throwable throwable, boolean fatal, String name, String details) {
+        ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.Crash);
+        if (module != null) {
+            module.onCrash(ctx, throwable, fatal, name, details);
+        }
+    }
+
     /**
      * {@link CountlyPush#onTokenRefresh(Service, String)} protected logic
      *
@@ -463,11 +480,15 @@ public class Core extends CoreModules {
                 if (message.media() == null) {
                     return null;
                 }
+                HttpURLConnection connection = null;
+                InputStream input = null;
                 try {
-                    HttpURLConnection connection = (HttpURLConnection) message.media().openConnection();
+                    connection = (HttpURLConnection) message.media().openConnection();
                     connection.setDoInput(true);
+                    connection.setConnectTimeout(15000);
+                    connection.setReadTimeout(15000);
                     connection.connect();
-                    InputStream input = connection.getInputStream();
+                    input = connection.getInputStream();
                     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                     byte[] buf = new byte[16384];
                     int read;
@@ -479,6 +500,17 @@ public class Core extends CoreModules {
                 } catch (Exception e) {
                     Log.e("Cannot download message media", e);
                     return null;
+                } finally {
+                    if (input != null) {
+                        try {
+                            input.close();
+                        } catch (IOException ignored) {}
+                    }
+                    if (connection != null) {
+                        try {
+                            connection.disconnect();
+                        } catch (Throwable ignored) {}
+                    }
                 }
             }
         }, new Tasks.Callback<byte[]>() {

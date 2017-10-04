@@ -99,10 +99,11 @@ public interface Session {
      *
      * @param t {@link Throwable} to log
      * @param fatal whether this crash report should be displayed as fatal in dashboard or not
-     * @param details additional comment about this crash report
+     * @param name (optional, can be {@code null}) name of the report, falls back to first line of stack trace by default
+     * @param details (optional, can be {@code null}) additional comment about this crash report
      * @return this instance for method chaining.
      */
-    Session addCrashReport(Throwable t, boolean fatal, String details);
+    Session addCrashReport(Throwable t, boolean fatal, String name, String details);
 
     /**
      * Send location information to the server.

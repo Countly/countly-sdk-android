@@ -20,6 +20,7 @@ public class CoreModules extends CoreStorage {
     protected static final Map<Config.Feature, Class<? extends Module>> moduleMappings = new HashMap<>();
 
     static {
+        setModuleMapping(Config.Feature.Crash, ModuleCrash.class);
         setModuleMapping(Config.Feature.Attribution, ModuleAttribution.class);
         setModuleMapping(Config.Feature.Push, ModulePush.class);
     }
