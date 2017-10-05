@@ -15,26 +15,41 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Arturs on 29.11.2016..
- */
 public class CountlyStarRating {
 
+    /**
+     * Callbacks for star rating dialog
+     */
     public interface RatingCallback {
         void onRate(int rating);
         void onDismiss();
     }
 
+    /**
+     * Call to manually show star rating dialog
+     * @param context
+     * @param callback
+     */
     public static void showStarRating(Context context, final CountlyStarRating.RatingCallback callback){
         StarRatingPreferences srp = loadStarRatingPreferences(context);
-        showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, callback);
+        showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
 
+    /**
+     * Method that created the star rating dialog
+     * @param context
+     * @param title
+     * @param message
+     * @param cancelText
+     * @param isCancellable
+     * @param callback
+     */
     public static void showStarRatingCustom(
             final Context context,
             final String title,
             final String message,
             final String cancelText,
+            final boolean isCancellable,
             final CountlyStarRating.RatingCallback callback) {
 
         if(!(context instanceof Activity)) {
@@ -51,6 +66,7 @@ public class CountlyStarRating {
         final AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setTitle(title)
                 .setMessage(message)
+                .setCancelable(isCancellable)
                 .setView(dialogLayout)
                 .setOnCancelListener(new DialogInterface.OnCancelListener() {
                     @Override
@@ -92,14 +108,18 @@ public class CountlyStarRating {
         });
     }
 
+    /**
+     * Class that handles star rating internal state
+     */
     static class StarRatingPreferences {
         String appVersion = ""; //the name of the current version that we keep track of
-        int sessionLimit = 5;
+        int sessionLimit = 5; //session limit for the automatic star rating
         int sessionAmount = 0; //session amount for the current version
-        boolean isShownForCurrentVersion = false;
-        boolean automaticRatingShouldBeShown = false;
-        boolean disabledAutomaticForNewVersions = false;
-        boolean automaticHasBeenShown = false;
+        boolean isShownForCurrentVersion = false; //if automatic star rating has been shown for the current version
+        boolean automaticRatingShouldBeShown = false; //if the automatic star rating should be shown
+        boolean disabledAutomaticForNewVersions = false; //if the automatic star star should not be shown for every new apps version
+        boolean automaticHasBeenShown = false; //if automatic star rating has been shown for any app's version
+        boolean isDialogCancellable = true; //if star rating dialog is cancellable
         String dialogTextTitle = "App rating";
         String dialogTextMessage = "Please rate this app";
         String dialogTextDismiss = "Cancel";
@@ -111,10 +131,15 @@ public class CountlyStarRating {
         private static String KEY_AUTOMATIC_RATING_IS_SHOWN = "sr_is_automatic_shown";
         private static String KEY_DISABLE_AUTOMATIC_NEW_VERSIONS = "sr_is_disable_automatic_new";
         private static String KEY_AUTOMATIC_HAS_BEEN_SHOWN = "sr_automatic_has_been_shown";
+        private static String KEY_DIALOG_IS_CANCELLABLE = "sr_automatic_dialog_is_cancellable";
         private static String KEY_DIALOG_TEXT_TITLE = "sr_text_title";
         private static String KEY_DIALOG_TEXT_MESSAGE = "sr_text_message";
         private static String KEY_DIALOG_TEXT_DISMISS = "sr_text_dismiss";
 
+        /**
+         * Create a JSONObject from the current state
+         * @return
+         */
         JSONObject toJSON() {
             final JSONObject json = new JSONObject();
 
@@ -126,6 +151,7 @@ public class CountlyStarRating {
                 json.put(KEY_AUTOMATIC_RATING_IS_SHOWN, automaticRatingShouldBeShown);
                 json.put(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS, disabledAutomaticForNewVersions);
                 json.put(KEY_AUTOMATIC_HAS_BEEN_SHOWN, automaticHasBeenShown);
+                json.put(KEY_DIALOG_IS_CANCELLABLE, isDialogCancellable);
                 json.put(KEY_DIALOG_TEXT_TITLE, dialogTextTitle);
                 json.put(KEY_DIALOG_TEXT_MESSAGE, dialogTextMessage);
                 json.put(KEY_DIALOG_TEXT_DISMISS, dialogTextDismiss);
@@ -140,6 +166,11 @@ public class CountlyStarRating {
             return json;
         }
 
+        /**
+         * Load the preference state from a JSONObject
+         * @param json
+         * @return
+         */
         static StarRatingPreferences fromJSON(final JSONObject json) {
 
             StarRatingPreferences srp = new StarRatingPreferences();
@@ -153,6 +184,7 @@ public class CountlyStarRating {
                     srp.automaticRatingShouldBeShown = json.optBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN, true);
                     srp.disabledAutomaticForNewVersions = json.optBoolean(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS, false);
                     srp.automaticHasBeenShown = json.optBoolean(KEY_AUTOMATIC_HAS_BEEN_SHOWN, false);
+                    srp.isDialogCancellable = json.optBoolean(KEY_DIALOG_IS_CANCELLABLE, true);
 
                     if(!json.isNull(KEY_DIALOG_TEXT_TITLE)) {
                         srp.dialogTextTitle = json.getString(KEY_DIALOG_TEXT_TITLE);
@@ -177,6 +209,14 @@ public class CountlyStarRating {
         }
     }
 
+    /**
+     * Setting things that would be provided during initial config
+     * @param context
+     * @param limit limit for automatic rating
+     * @param starRatingTextTitle provided title
+     * @param starRatingTextMessage provided message
+     * @param starRatingTextDismiss provided dismiss text
+     */
     public static void setStarRatingInitConfig(Context context, int limit, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
         StarRatingPreferences srp = loadStarRatingPreferences(context);
 
@@ -199,6 +239,11 @@ public class CountlyStarRating {
         saveStarRatingPreferences(context, srp);
     }
 
+    /**
+     * Returns a object with the loaded preferences
+     * @param context
+     * @return
+     */
     private static StarRatingPreferences loadStarRatingPreferences(Context context) {
         CountlyStore cs = new CountlyStore(context);
         String srpString = cs.getStarRatingPreferences();
@@ -219,23 +264,45 @@ public class CountlyStarRating {
         return srp;
     }
 
+    /**
+     * Save the star rating preferences object
+     * @param context
+     * @param srp
+     */
     private static void saveStarRatingPreferences(Context context, StarRatingPreferences srp) {
         CountlyStore cs = new CountlyStore(context);
         cs.setStarRatingPreferences(srp.toJSON().toString());
     }
 
+    /**
+     * Set if the star rating dialog should be shown automatically
+     * @param context
+     * @param shouldShow
+     */
     public static void setShowDialogAutomatically(Context context, boolean shouldShow) {
         StarRatingPreferences srp = loadStarRatingPreferences(context);
         srp.automaticRatingShouldBeShown = shouldShow;
         saveStarRatingPreferences(context, srp);
     }
 
+    /**
+     * Set if automatic star rating should be disabled for each new version.
+     * By default automatic star rating will be shown for every new app version.
+     * If this is set to true, star rating will be shown only once over apps lifetime
+     * @param context
+     * @param disableAsking if set true, will not show star rating for every new app version
+     */
     public static void setStarRatingDisableAskingForEachAppVersion(Context context, boolean disableAsking) {
         StarRatingPreferences srp = loadStarRatingPreferences(context);
         srp.disabledAutomaticForNewVersions = disableAsking;
         saveStarRatingPreferences(context, srp);
     }
 
+    /**
+     * Register that a apps session has transpired. Will increase session counter and show automatic star rating if needed.
+     * @param context
+     * @param starRatingCallback
+     */
     public static void registerAppSession(Context context, RatingCallback starRatingCallback) {
         StarRatingPreferences srp = loadStarRatingPreferences(context);
 
@@ -256,6 +323,45 @@ public class CountlyStarRating {
             srp.automaticHasBeenShown = true;
         }
 
+        saveStarRatingPreferences(context, srp);
+    }
+
+    /**
+     * Returns the session limit set for automatic star rating
+     */
+    public static int getAutomaticStarRatingSessionLimit(Context context){
+        StarRatingPreferences srp = loadStarRatingPreferences(context);
+        return srp.sessionLimit;
+    }
+
+    /**
+     * Returns how many sessions has star rating counted internally
+     * @param context
+     * @return
+     */
+    public static int getCurrentVersionsSessionCount(Context context){
+        StarRatingPreferences srp = loadStarRatingPreferences(context);
+        return srp.sessionAmount;
+    }
+
+    /**
+     * Set the automatic star rating session count back to 0
+     * @param context
+     */
+    public static void clearAutomaticStarRatingSessionCount(Context context){
+        StarRatingPreferences srp = loadStarRatingPreferences(context);
+        srp.sessionAmount = 0;
+        saveStarRatingPreferences(context, srp);
+    }
+
+    /**
+     * Set if the star rating dialog is cancellable
+     * @param context
+     * @param isCancellable
+     */
+    public static void setIfRatingDialogIsCancellable(Context context, boolean isCancellable){
+        StarRatingPreferences srp = loadStarRatingPreferences(context);
+        srp.isDialogCancellable = isCancellable;
         saveStarRatingPreferences(context, srp);
     }
 }

@@ -52,7 +52,7 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "17.09";
+    public static final String COUNTLY_SDK_VERSION_STRING = "17.09.1";
     /**
      * Used as request meta data on every request
      */
@@ -1204,7 +1204,7 @@ public class Countly {
     }
 
     /**
-     * Set if the star rating
+     * Set if the star rating should be shown automatically
      * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
      */
     public void setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
@@ -1228,7 +1228,7 @@ public class Countly {
                 return;
             }
         }
-        CountlyStarRating.setShowDialogAutomatically(context_, disableAsking);
+        CountlyStarRating.setStarRatingDisableAskingForEachAppVersion(context_, disableAsking);
     }
 
     /**
@@ -1243,6 +1243,60 @@ public class Countly {
             }
         }
         CountlyStarRating.setStarRatingInitConfig(context_, limit, null, null, null);
+    }
+
+    /**
+     * Returns the session limit set for automatic star rating
+     */
+    public int getAutomaticStarRatingSessionLimit(){
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return -1;
+            }
+        }
+        return CountlyStarRating.getAutomaticStarRatingSessionLimit(context_);
+    }
+
+    /**
+     * Returns how many sessions has star rating counted internally for the current apps version
+     * @return
+     */
+    public int getStarRatingsCurrentVersionsSessionCount(){
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return -1;
+            }
+        }
+        return CountlyStarRating.getCurrentVersionsSessionCount(context_);
+    }
+
+    /**
+     * Set the automatic star rating session count back to 0
+     */
+    public void clearAutomaticStarRatingSessionCount(){
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return;
+            }
+        }
+        CountlyStarRating.clearAutomaticStarRatingSessionCount(context_);
+    }
+
+    /**
+     * Set if the star rating dialog is cancellable
+     * @param isCancellable
+     */
+    public void setIfStarRatingDialogIsCancellable(boolean isCancellable){
+        if(context_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return;
+            }
+        }
+        CountlyStarRating.setIfRatingDialogIsCancellable(context_, isCancellable);
     }
 
     /**

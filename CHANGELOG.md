@@ -1,5 +1,9 @@
+17.09.1
+  * Adding additional calls for manipulating the star rating dialog
+
 17.09
   * Fixed app crawler filtering & ANR if substantially changing device date back in time
+
 17.05
   * Added Rich Push Notifications support (attachments and custom action buttons)
   * Added functionality to ignore app crawlers
