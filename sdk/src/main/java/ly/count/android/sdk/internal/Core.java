@@ -172,12 +172,12 @@ public class Core extends CoreModules {
      * @param context Context to run in
      * @param clear whether to clear SDK data or not
      */
-    static void stop(android.content.Context context, boolean clear) {
+    public void stop(android.content.Context context, boolean clear) {
         Log.i("Stopping Countly SDK" + (clear ? " and clearing all data" : ""));
 
         ContextImpl ctx = new ContextImpl(context);
 
-        for (Module module : instance.modules) {
+        for (Module module : modules) {
             try {
                 module.stop(ctx, clear);
                 Utils.reflectiveSetField(module, "active", false);
@@ -185,14 +185,14 @@ public class Core extends CoreModules {
                 Log.wtf("Exception while stopping " + module.getClass(), e);
             }
         }
-        instance.modules.clear();
+        modules.clear();
 
-        if (instance.sessions.size() > 0 && !clear) {
-            for (SessionImpl session : instance.sessions) {
+        if (sessions.size() > 0 && !clear) {
+            for (SessionImpl session : sessions) {
                 session.end();
             }
         }
-        instance.sessions.clear();
+        sessions.clear();
 
         Storage.await();
 
@@ -203,9 +203,9 @@ public class Core extends CoreModules {
         ctx.expire();
 
         handler = null;
-        instance.user = null;
+        user = null;
 
-        instance.deinit();
+        deinit();
     }
 
     /**

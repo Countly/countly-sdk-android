@@ -34,6 +34,21 @@ public class CountlyNeo {
     }
 
     /**
+     * Stop Countly SDK. Stops all tasks and releases resources.
+     * Waits for some tasks to complete, might block for some time.
+     * Also clears all the data if called with {@code clearData = true}.
+     *
+     * @param context Context to run in
+     * @param clearData whether to clear all Countly data or not
+     */
+    public static void stop (final Context context, boolean clearData) {
+        if (instance != null) {
+            instance.core.stop(context, clearData);
+            instance = null;
+        }
+    }
+
+    /**
      * Init Countly
      *
      * @param application current Application instance
@@ -41,8 +56,8 @@ public class CountlyNeo {
      */
     private static void initInternal (Application application, Config config) {
         if (instance != null) {
-            // TODO: shutdown if already running
-            instance = null;
+            Log.wtf("Countly shouldn't be initialized twice. Please either use Countly.isInitialized() to check status or call Countly.stop() before second Countly.init().");
+            stop(application, false);
         }
 
         Core core = Core.initForApplication(config, application);
@@ -67,6 +82,10 @@ public class CountlyNeo {
      * @return session instance if there is one, {@code null} if there is no current session or if Countly is not initialized yet
      */
     public static Session currentSession(){
+        if (!isInitialized()) {
+            Log.wtf("Countly SDK is not initialized yet.");
+            return null;
+        }
         return isInitialized() ? instance.core.sessionLeading() : null;
     }
 
@@ -77,6 +96,10 @@ public class CountlyNeo {
      * @return current session instance if there is one, new session instance if there is no current session or {@code null} if Countly is not initialized yet
      */
     public static Session currentOrNewSession(Context context) {
+        if (!isInitialized()) {
+            Log.wtf("Countly SDK is not initialized yet.");
+            return null;
+        }
         return isInitialized() ? instance.core.sessionLeadingOrNew(context) : null;
     }
 
