@@ -31,10 +31,24 @@ interface Module {
      * App user decided to opt out from analytics or developer changed important preferences.
      * Clear all module-related data, close any resources and prepare to start from clean sheet.
      * This method is guaranteed to be the latest method call to this module instance.
+     * <ul>
+     *     <li>Stop all tasks, clear all context references.</li>
+     *     <li>Not a single function call can be fired from this object after the method returns.</li>
+     *     <li>Remove all module-related {@link Storable} files if {@code clear} is {@code true}</li>
+     * </ul>
      *
-     * @param config Countly configuration object, must not be stored.
+     * @param ctx {@link Context} to run in
+     * @param clear {@code true} if module must clear it's data files, {@code false} otherwise
      */
-    void clear (InternalConfig config);
+    void stop(Context ctx, boolean clear);
+
+    /**
+     * A method to be used by module itself to determine if it was initialized by {@link #init(InternalConfig)}
+     * and haven't been stopped yet by {@link #stop(Context, boolean)}.
+     *
+     * @return {@code true} if module is allowed to continue to run, {@code false} otherwise
+     */
+    boolean isActive();
 
     /**
      * SDK got a first context. Called only in main mode (from {@link Application#onCreate()})
@@ -133,4 +147,11 @@ interface Module {
      * from queue), {@code null} if cannot decide yet
      */
     Boolean onRequest (Request request);
+
+    /**
+     * Called when {@link android.content.res.Configuration} changes.
+     *
+     * @param ctx {@link Context} with only context set
+     */
+    void onConfigurationChanged(Context ctx);
 }

@@ -17,6 +17,7 @@ public class ModuleCrash extends ModuleBase {
     private int anrTimeout = 0;
     private volatile int tick = 0;
     private int tickToCheck = 0;
+    private Thread.UncaughtExceptionHandler previousHandler = null;
     private Context context = null;
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private Runnable ticker = new Runnable() {
@@ -55,13 +56,35 @@ public class ModuleCrash extends ModuleBase {
     }
 
     @Override
+    public void stop(Context ctx, boolean clear) {
+        try {
+            executorService.shutdownNow();
+            if (previousHandler != null) {
+                Thread.setDefaultUncaughtExceptionHandler(previousHandler);
+            }
+            if (clear) {
+                Core.purgeInternalStorage(ctx, CrashImpl.getStoragePrefix());
+            }
+            context = null;
+            ticker = null;
+            checker = null;
+            executorService = null;
+        } catch (Throwable t) {
+            Log.e("Exception while stopping crash reporting", t);
+        }
+    }
+
+    @Override
     public void onContextAcquired(final Context ctx) {
         if (!limited) {
             final Thread.UncaughtExceptionHandler handler = Thread.getDefaultUncaughtExceptionHandler();
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 @Override
                 public void uncaughtException(Thread thread, Throwable throwable) {
-                    onCrash(ctx, throwable, true, null, null);
+                    // needed since following UncaughtExceptionHandler can keep reference to this one
+                    if (isActive()) {
+                        onCrash(ctx, throwable, true, null, null);
+                    }
 
                     if (handler != null) {
                         handler.uncaughtException(thread, throwable);
@@ -78,6 +101,9 @@ public class ModuleCrash extends ModuleBase {
     }
 
     public void nextTick() {
+        if (!isActive()) {
+            return;
+        }
         Log.d("[crash] next tick " + tick);
         tickToCheck = tick;
         Core.handler.post(ticker);

@@ -126,7 +126,7 @@ public class Tasks {
             executor.shutdown();
         }
     }
-
+    //TODO: modify shutdown & awaitTermination to correct ones
     void awaitTermination() throws InterruptedException {
         L.i("terminating");
         executor.awaitTermination(3L, TimeUnit.SECONDS);

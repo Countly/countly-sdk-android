@@ -8,6 +8,8 @@ import ly.count.android.sdk.Session;
  */
 
 abstract class ModuleBase implements Module {
+    private boolean active = false;
+
     @Override
     public void init(InternalConfig config) {
     }
@@ -17,7 +19,12 @@ abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void clear(InternalConfig config) {
+    public void stop(Context ctx, boolean clear) {
+    }
+
+    @Override
+    public boolean isActive() {
+        return active;
     }
 
     @Override
@@ -66,5 +73,8 @@ abstract class ModuleBase implements Module {
 
     @Override
     public Boolean onRequest (Request request) { return false; }
+
+    @Override
+    public void onConfigurationChanged(Context ctx) {}
 
 }

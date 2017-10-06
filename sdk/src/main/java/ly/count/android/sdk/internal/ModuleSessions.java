@@ -4,6 +4,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import ly.count.android.sdk.Session;
+
 /**
  * Sessions module responsible for default sessions handling: starting a session when
  * first {@link android.app.Activity} is started, stopping it when
@@ -13,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class ModuleSessions extends ModuleBase {
     private int activityCount;
     private int updateInterval = 0;
-    private static ScheduledExecutorService executor;
+    private ScheduledExecutorService executor = null;
 
     /**
      * @throws IllegalArgumentException when programmaticSessionsControl is on since this module is
@@ -30,6 +32,33 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
+    public boolean isActive() {
+        return super.isActive() || executor != null;
+    }
+
+    @Override
+    public void stop(Context ctx, boolean clear) {
+        if (executor != null) {
+            try {
+                executor.shutdown();
+                if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                    executor.shutdownNow();
+                    if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                        Log.e("Sessions update thread must be locked");
+                    }
+                }
+            } catch (Throwable t) {
+                Log.e("Error while stopping session update thread", t);
+            }
+            executor = null;
+        }
+
+        if (clear) {
+            Core.purgeInternalStorage(ctx, SessionImpl.getStoragePrefix());
+        }
+    }
+
+    @Override
     public synchronized void onActivityStarted(Context ctx) {
         super.onActivityStarted(ctx);
         if (activityCount == 0) {
@@ -39,7 +68,7 @@ public class ModuleSessions extends ModuleBase {
                 executor.scheduleWithFixedDelay(new Runnable() {
                     @Override
                     public void run() {
-                        if (executor != null && Core.instance.sessionLeading() != null) {
+                        if (isActive() && Core.instance.sessionLeading() != null) {
                             Core.instance.sessionLeading().update();
                         }
                     }
@@ -57,9 +86,12 @@ public class ModuleSessions extends ModuleBase {
             if (executor != null) {
                 try {
                     executor.shutdown();
-                    executor.awaitTermination(1, TimeUnit.SECONDS);
+                    if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                        executor.shutdownNow();
+                    }
                 } catch (InterruptedException e) {
                     Log.w("Interrupted while waiting for session update executor to stop", e);
+                    executor.shutdownNow();
                 }
                 executor = null;
             }

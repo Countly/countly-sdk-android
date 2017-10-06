@@ -37,6 +37,8 @@ public class ModulePush extends ModuleBase {
     public static final String KEY_BUTTONS_TITLE = "t";
     public static final String KEY_BUTTONS_LINK = "l";
 
+    private String localeSent = null;
+
     static class MessageImpl implements CountlyPush.Message {
         final String id;
         private final String title, message, sound;
@@ -287,12 +289,27 @@ public class ModulePush extends ModuleBase {
     @Override
     public void onDeviceId(Context ctx, final Config.DID deviceId, Config.DID oldDeviceId) {
         if (deviceId != null && deviceId.realm == Config.DeviceIdRealm.FCM_TOKEN) {
+            localeSent = Device.getLocale();
             ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
                 @Override
                 public void call(Params params) {
                     params.add("token_session", 1,
+                            "locale", localeSent,
                             "android_token", deviceId.id,
                             "test_mode", config.isTestModeEnabled() ? 2 : 0);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Context ctx) {
+        // send updated locale in case it has been changed
+        if (Utils.isNotEqual(localeSent, Device.getLocale())) {
+            ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
+                @Override
+                public void call(Params params) {
+                    params.add("token_session", 1, "locale", Device.getLocale());
                 }
             });
         }

@@ -98,6 +98,7 @@ public class Core extends CoreModules {
             for (Module module : modules) {
                 try {
                     module.init(this.config);
+                    Utils.reflectiveSetField(module, "active", true);
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     if (this.config.isTestModeEnabled()) {
                         throw e;
@@ -161,6 +162,50 @@ public class Core extends CoreModules {
      */
     static InternalConfig initialized() {
         return instance == null ? null : instance.config;
+    }
+
+    /**
+     * Stop SDK and possibly clear all SDK data.
+     * Once stopped, Countly must be reinitialized using {@link #init(Config, android.content.Context)} again in order
+     * to be used.
+     *
+     * @param context Context to run in
+     * @param clear whether to clear SDK data or not
+     */
+    static void stop(android.content.Context context, boolean clear) {
+        Log.i("Stopping Countly SDK" + (clear ? " and clearing all data" : ""));
+
+        ContextImpl ctx = new ContextImpl(context);
+
+        for (Module module : instance.modules) {
+            try {
+                module.stop(ctx, clear);
+                Utils.reflectiveSetField(module, "active", false);
+            } catch (Throwable e) {
+                Log.wtf("Exception while stopping " + module.getClass(), e);
+            }
+        }
+        instance.modules.clear();
+
+        if (instance.sessions.size() > 0 && !clear) {
+            for (SessionImpl session : instance.sessions) {
+                session.end();
+            }
+        }
+        instance.sessions.clear();
+
+        Storage.await();
+
+        if (clear) {
+            purgeInternalStorage(ctx, null);
+        }
+
+        ctx.expire();
+
+        handler = null;
+        instance.user = null;
+
+        instance.deinit();
     }
 
     /**

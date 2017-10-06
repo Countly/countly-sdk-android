@@ -59,6 +59,18 @@ public class ModuleCrashTests {
         Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
         Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
 
+        Core.stop(getContext(), false);
+
+        Thread.sleep(config.getCrashReportingANRTimeout() * 1000);
+
+        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
+
+        Thread.sleep(config.getCrashReportingANRTimeout() * 1000);
+
+        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
+
 //        Assert.assertNotSame(Whitebox.getInternalState(module, "tick"), Whitebox.getInternalState(module, "tickToCheck"));
     }
 

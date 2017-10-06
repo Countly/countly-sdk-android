@@ -17,9 +17,9 @@ public class CoreModules extends CoreStorage {
      * Mappings of {@link Config.Feature} to {@link Module} class.
      * Changed by using {@link #setModuleMapping(Config.Feature, Class)}.
      */
-    protected static final Map<Config.Feature, Class<? extends Module>> moduleMappings = new HashMap<>();
+    protected final Map<Config.Feature, Class<? extends Module>> moduleMappings = new HashMap<>();
 
-    static {
+    {
         setModuleMapping(Config.Feature.Crash, ModuleCrash.class);
         setModuleMapping(Config.Feature.Attribution, ModuleAttribution.class);
         setModuleMapping(Config.Feature.Push, ModulePush.class);
@@ -31,7 +31,7 @@ public class CoreModules extends CoreStorage {
      * @param feature feature to map
      * @param cls {@link Module} class to use for this feature
      */
-    public static void setModuleMapping(Config.Feature feature, Class<? extends Module> cls) {
+    public void setModuleMapping(Config.Feature feature, Class<? extends Module> cls) {
         moduleMappings.put(feature, cls);
     }
 

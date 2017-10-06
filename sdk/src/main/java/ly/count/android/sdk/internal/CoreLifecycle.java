@@ -56,7 +56,7 @@ public class CoreLifecycle {
      * doesn't need to call those from each activity. In case app supports earlier version,
      * it's developer responsibility. In any case, for API 14+ Countly ignores dev calls.
      */
-    public void onContextAcquired(Application application) {
+    public void onContextAcquired(final Application application) {
         Log.d("Application created");
 
         Context ctx = new ContextImpl(application);
@@ -121,6 +121,7 @@ public class CoreLifecycle {
                 public void onConfigurationChanged(Configuration configuration) {
                     // TODO: Operator, screen, etc
                     Log.d("[Lifecycle] Configuration changed: " + configuration.toString());
+                    CoreLifecycle.this.onConfigurationChangedInternal(application, configuration);
                 }
 
                 @Override
@@ -191,8 +192,21 @@ public class CoreLifecycle {
         }
     }
 
+    public void onConfigurationChanged(Application application, Configuration configuration) {
+        if (!Utils.API(Build.VERSION_CODES.ICE_CREAM_SANDWICH)) {
+            this.onConfigurationChangedInternal(application, configuration);
+        }
+    }
+
     private void onApplicationTrimMemoryInternal(int level) {
         // TODO: think about recording crash report
+    }
+
+    private void onConfigurationChangedInternal(Application application, Configuration configuration) {
+        ContextImpl ctx = new ContextImpl(application);
+        for (Module m : modules) {
+            m.onConfigurationChanged(ctx);
+        }
     }
 
     private void onActivityCreatedInternal(Activity activity, Bundle bundle) {

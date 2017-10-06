@@ -370,4 +370,15 @@ public class Utils {
     public static boolean API(int version) {
         return Build.VERSION.SDK_INT >= version;
     }
+
+    public static boolean isNotEqual(Object a, Object b) {
+        return !isEqual(a, b);
+    }
+
+    public static boolean isEqual(Object a, Object b) {
+        if (a == null || b == null || a == b) {
+            return a == b;
+        }
+        return a.equals(b);
+    }
 }
