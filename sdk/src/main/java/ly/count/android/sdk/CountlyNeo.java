@@ -11,6 +11,8 @@ import ly.count.android.sdk.internal.Log;
  */
 
 public class CountlyNeo {
+    private static final Log.Module L = Log.module("Countly");
+
     private static CountlyNeo instance;
     private final Core core;
 
@@ -27,7 +29,7 @@ public class CountlyNeo {
      */
     public static void init (final Application application, final Config config) {
         if (config == null) {
-            Log.wtf("Config cannot be null");
+            L.wtf("Config cannot be null");
         } else {
             initInternal(application, config);
         }
@@ -56,7 +58,7 @@ public class CountlyNeo {
      */
     private static void initInternal (Application application, Config config) {
         if (instance != null) {
-            Log.wtf("Countly shouldn't be initialized twice. Please either use Countly.isInitialized() to check status or call Countly.stop() before second Countly.init().");
+            L.wtf("Countly shouldn't be initialized twice. Please either use Countly.isInitialized() to check status or call Countly.stop() before second Countly.init().");
             stop(application, false);
         }
 
@@ -83,7 +85,7 @@ public class CountlyNeo {
      */
     public static Session currentSession(){
         if (!isInitialized()) {
-            Log.wtf("Countly SDK is not initialized yet.");
+            L.wtf("Countly SDK is not initialized yet.");
             return null;
         }
         return isInitialized() ? instance.core.sessionLeading() : null;
@@ -97,7 +99,7 @@ public class CountlyNeo {
      */
     public static Session currentOrNewSession(Context context) {
         if (!isInitialized()) {
-            Log.wtf("Countly SDK is not initialized yet.");
+            L.wtf("Countly SDK is not initialized yet.");
             return null;
         }
         return isInitialized() ? instance.core.sessionLeadingOrNew(context) : null;

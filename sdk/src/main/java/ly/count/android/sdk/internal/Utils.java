@@ -19,6 +19,8 @@ import java.util.List;
  */
 
 public class Utils {
+    private static final Log.Module L = Log.module("Utils");
+
     private static final Utils utils = new Utils();
 
     static String UTF8 = "UTF-8";
@@ -50,7 +52,7 @@ public class Utils {
         try {
             return URLEncoder.encode(str, UTF8);
         } catch (UnsupportedEncodingException e) {
-            Log.wtf("No UTF-8 encoding?", e);
+            L.wtf("No UTF-8 encoding?", e);
             return "";
         }
     }
@@ -109,7 +111,7 @@ public class Utils {
             Class.forName(cls);
             return true;
         } catch (ClassNotFoundException e) {
-            Log.d("Class " + cls + " not found");
+            L.d("Class " + cls + " not found");
             return false;
         }
     }
@@ -142,16 +144,16 @@ public class Utils {
             Method method = cls.getDeclaredMethod(methodName, types);
             return method.invoke(instance, args);
         } catch (ClassNotFoundException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (NoSuchMethodException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (IllegalAccessException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (InvocationTargetException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         }
     }
@@ -184,16 +186,16 @@ public class Utils {
             Method method = cls.getDeclaredMethod(methodName, types);
             return method.invoke(instance, arguments);
         } catch (ClassNotFoundException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (NoSuchMethodException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (IllegalAccessException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (InvocationTargetException t) {
-            Log.w("Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         }
     }
@@ -219,9 +221,9 @@ public class Utils {
             }
             return true;
         } catch (IllegalAccessException e) {
-            Log.w("Cannot access field " + name + " of " + cls, e);
+            L.w("Cannot access field " + name + " of " + cls, e);
         } catch (NoSuchFieldException e) {
-            Log.w("No field " + name + " in " + cls, e);
+            L.w("No field " + name + " in " + cls, e);
         }
         return false;
     }
@@ -249,9 +251,9 @@ public class Utils {
             }
             return value;
         } catch (IllegalAccessException e) {
-            Log.w("Cannot access field " + name + " of " + object.getClass(), e);
+            L.w("Cannot access field " + name + " of " + object.getClass(), e);
         } catch (NoSuchFieldException e) {
-            Log.w("No field " + name + " in " + object.getClass(), e);
+            L.w("No field " + name + " in " + object.getClass(), e);
         }
         return null;
     }
@@ -295,13 +297,13 @@ public class Utils {
 //                Method method = cls.getDeclaredMethod(methodName, types);
 //                return method.invoke(instance, args);
 //            } catch (NoSuchMethodException t) {
-//                Log.w("Cannot call " + methodName + " of " + cls.getName(), t);
+//                L.w("Cannot call " + methodName + " of " + cls.getName(), t);
 //                return false;
 //            } catch (IllegalAccessException t) {
-//                Log.w("Cannot call " + methodName + " of " + cls.getName(), t);
+//                L.w("Cannot call " + methodName + " of " + cls.getName(), t);
 //                return false;
 //            } catch (InvocationTargetException t) {
-//                Log.w("Cannot call " + methodName + " of " + cls.getName(), t);
+//                L.w("Cannot call " + methodName + " of " + cls.getName(), t);
 //                return false;
 //            }
 //        }
@@ -319,9 +321,9 @@ public class Utils {
 //                }
 //                return value;
 //            } catch (IllegalAccessException e) {
-//                Log.w("Cannot access field " + fieldName + " of " + cls.getName(), e);
+//                L.w("Cannot access field " + fieldName + " of " + cls.getName(), e);
 //            } catch (NoSuchFieldException e) {
-//                Log.w("No field " + fieldName + " in " + cls.getName(), e);
+//                L.w("No field " + fieldName + " in " + cls.getName(), e);
 //            }
 //            return null;
 //        }
@@ -339,9 +341,9 @@ public class Utils {
 //                }
 //                return true;
 //            } catch (IllegalAccessException e) {
-//                Log.w("Cannot access field " + fieldName + " of " + cls.getName(), e);
+//                L.w("Cannot access field " + fieldName + " of " + cls.getName(), e);
 //            } catch (NoSuchFieldException e) {
-//                Log.w("No field " + fieldName + " in " + cls.getName(), e);
+//                L.w("No field " + fieldName + " in " + cls.getName(), e);
 //            }
 //            return false;
 //        }

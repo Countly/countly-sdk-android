@@ -27,6 +27,8 @@ import ly.count.android.sdk.UserEditor;
  */
 
 class SessionImpl implements Session, Storable {
+    private static final Log.Module L = Log.module("SessionImpl");
+
     /**
      * {@link System#nanoTime()} of time when {@link Session} object is created.
      */
@@ -83,10 +85,10 @@ class SessionImpl implements Session, Storable {
 
     Future<Boolean> begin(Long now) {
         if (began != null) {
-            Log.wtf("Session already began");
+            L.wtf("Session already began");
             return null;
         } else if (ended != null) {
-            Log.wtf("Session already ended");
+            L.wtf("Session already ended");
             return null;
         } else {
             began = now == null ? System.nanoTime() : now;
@@ -112,10 +114,10 @@ class SessionImpl implements Session, Storable {
 
     Future<Boolean> update(Long now) {
         if (began == null) {
-            Log.wtf("Session is not began to update it");
+            L.wtf("Session is not began to update it");
             return null;
         } else if (ended != null) {
-            Log.wtf("Session is already ended to update it");
+            L.wtf("Session is already ended to update it");
             return null;
         }
 
@@ -141,10 +143,10 @@ class SessionImpl implements Session, Storable {
 
     Future<Boolean> end(Long now, final Tasks.Callback<Boolean> callback) {
         if (began == null) {
-            Log.wtf("Session is not began to end it");
+            L.wtf("Session is not began to end it");
             return null;
         } else if (ended != null) {
-            Log.wtf("Session already ended");
+            L.wtf("Session already ended");
             return null;
         }
         ended = now == null ? System.nanoTime() : now;
@@ -157,7 +159,7 @@ class SessionImpl implements Session, Storable {
             @Override
             public void call(Boolean removed) throws Exception {
                 if (!removed) {
-                    Log.wtf("Unable to record session end request");
+                    L.wtf("Unable to record session end request");
                 }
                 Storage.removeAsync(ctx, SessionImpl.this, callback);
             }
@@ -183,7 +185,7 @@ class SessionImpl implements Session, Storable {
             try {
                 return future.get();
             } catch (InterruptedException | ExecutionException e) {
-                Log.wtf("Interrupted while resolving session recovery future", e);
+                L.wtf("Interrupted while resolving session recovery future", e);
                 return false;
             }
         }
@@ -287,7 +289,7 @@ class SessionImpl implements Session, Storable {
     @Override
     public Boolean isLeading() {
         if (Core.instance.sessionLeading() == null) {
-            Log.wtf("Leading session is null");
+            L.wtf("Leading session is null");
             return false;
         }
         return Core.instance.sessionLeading().getId().equals(getId());
@@ -323,20 +325,20 @@ class SessionImpl implements Session, Storable {
             stream.close();
             return bytes.toByteArray();
         } catch (IOException e) {
-            Log.wtf("Cannot serialize session", e);
+            L.wtf("Cannot serialize session", e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
             if (bytes != null) {
                 try {
                     bytes.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
         }
@@ -351,7 +353,7 @@ class SessionImpl implements Session, Storable {
             bytes = new ByteArrayInputStream(data);
             stream = new ObjectInputStream(bytes);
             if (id != stream.readLong()) {
-                Log.wtf("Wrong file for session deserialization");
+                L.wtf("Wrong file for session deserialization");
             }
 
             began = stream.readLong();
@@ -373,20 +375,20 @@ class SessionImpl implements Session, Storable {
 
             return true;
         } catch (IOException e) {
-            Log.wtf("Cannot deserialize session", e);
+            L.wtf("Cannot deserialize session", e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
             if (bytes != null) {
                 try {
                     bytes.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
         }

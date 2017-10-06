@@ -13,6 +13,8 @@ import ly.count.android.sdk.Config;
  */
 
 public class CoreModules extends CoreStorage {
+    private static final Log.Module L = Log.module("CoreModules");
+
     /**
      * Mappings of {@link Config.Feature} to {@link Module} class.
      * Changed by using {@link #setModuleMapping(Config.Feature, Class)}.
@@ -62,7 +64,7 @@ public class CoreModules extends CoreStorage {
         for (Config.Feature f : config.getFeatures()) {
             Class<? extends Module> cls = moduleMappings.get(f);
             if (cls == null) {
-                Log.wtf("No module class for feature " + f);
+                L.wtf("No module class for feature " + f);
             } else {
                 Module module = instantiateModule(moduleMappings.get(f));
                 if (module != null) {
@@ -82,11 +84,11 @@ public class CoreModules extends CoreStorage {
         try {
             return (Module)cls.getConstructors()[0].newInstance();
         } catch (InstantiationException e) {
-            Log.wtf("Module cannot be instantiated", e);
+            L.wtf("Module cannot be instantiated", e);
         } catch (IllegalAccessException e) {
-            Log.wtf("Module constructor cannot be accessed", e);
+            L.wtf("Module constructor cannot be accessed", e);
         } catch (InvocationTargetException e) {
-            Log.wtf("Module constructor cannot be invoked", e);
+            L.wtf("Module constructor cannot be invoked", e);
         }
         return null;
     }

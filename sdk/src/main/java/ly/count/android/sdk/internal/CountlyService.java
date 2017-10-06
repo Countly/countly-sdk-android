@@ -17,6 +17,8 @@ import ly.count.android.sdk.Config;
  *
  */
 public class CountlyService extends android.app.Service {
+    private static final Log.Module L = Log.module("Service");
+
     static final String CMD = "ly.count.CMD";
     static final int CMD_START = 1;
     static final int CMD_PING  = 2;
@@ -52,7 +54,7 @@ public class CountlyService extends android.app.Service {
 
     @Override
     public void onCreate() {
-        Log.d("[service] Creating");
+        L.d("Creating");
         this.ctx = new ContextImpl(getApplicationContext());
         this.crashes = new ArrayList<>();
         this.sessions = new ArrayList<>();
@@ -74,31 +76,31 @@ public class CountlyService extends android.app.Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (this.core == null) {
-            Log.d("[service] No core, stopping");
+            L.d("No core, stopping");
             stopSelf(startId);
         } else {
             if (intent == null) {
                 // service restarted after being killed - restart queue
-                Log.d("[service] No intent, restarting");
+                L.d("No intent, restarting");
                 start();
             } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_START) {
                 // service started on app launch - restart queue
-                Log.d("[service] Starting");
+                L.d("Starting");
                 start();
             } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_PING) {
                 // possibly request have been added
-                Log.d("[service] Ping");
+                L.d("Ping");
                 check();
             } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_STOP) {
-                Log.d("[service] Stopping");
+                L.d("Stopping");
                 // clean up, prepare for shutdown
                 stop();
             } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_CRASH && intent.hasExtra(PARAM_CRASH_ID)) {
                 Long id = intent.getLongExtra(PARAM_CRASH_ID, -1L);
-                Log.d("[service] Got a crash " + id);
+                L.d("Got a crash " + id);
                 processCrash(id);
             } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_DEVICE_ID) {
-                Log.d("[service] Device id");
+                L.d("Device id");
                 // reread config & notify modules
                 Config.DID id = null;
                 Config.DID old = null;
@@ -123,17 +125,17 @@ public class CountlyService extends android.app.Service {
 
     @Override
     public void onDestroy() {
-        Log.d("[service] Destroying");
+        L.d("Destroying");
     }
 
     @Override
     public void onLowMemory() {
-        Log.d("[service] Low Memory");
+        L.d("Low Memory");
     }
 
     @Override
     public void onTrimMemory(int level) {
-        Log.d("[service] Trim Memory " + level);
+        L.d("Trim Memory " + level);
     }
 
     void start() {
@@ -143,20 +145,20 @@ public class CountlyService extends android.app.Service {
                 crashes = new ArrayList<Long>();
 
                 for (Long id : crashes) {
-                    Log.i("[service] Found unprocessed crash " + id);
+                    L.i("Found unprocessed crash " + id);
                     processCrash(id);
                 }
 
                 sessions = Storage.list(ctx, SessionImpl.getStoragePrefix());
-                Log.d("[service] recovering " + sessions.size() + " sessions");
+                L.d("recovering " + sessions.size() + " sessions");
                 for (Long id : sessions) {
-                    Log.d("[service] recovering session " + id);
+                    L.d("recovering session " + id);
                     SessionImpl session = Storage.read(ctx, new SessionImpl(ctx, id));
                     if (session == null) {
-                        Log.e("[service] no session with id " + id + " found while recovering");
+                        L.e("no session with id " + id + " found while recovering");
                     } else {
                         Boolean success = session.recover(config);
-                        Log.d("[service] session " + id + " recovery " + (success == null ? "won't recover" : success ? "success" : "failure"));
+                        L.d("session " + id + " recovery " + (success == null ? "won't recover" : success ? "success" : "failure"));
                     }
                 }
                 check();
@@ -169,18 +171,18 @@ public class CountlyService extends android.app.Service {
         CrashImpl crash = new CrashImpl(id);
         crash = Storage.read(ctx, crash);
         if (crash == null) {
-            Log.e("[service] Cannot read crash from storage, skipping");
+            L.e("Cannot read crash from storage, skipping");
             return false;
         }
 
         Request request = ModuleRequests.nonSessionRequest(config);
         ModuleCrash.putCrashIntoParams(crash, request.params);
         if (Storage.push(ctx, request)) {
-            Log.i("[service] Added request " + request.storageId() + " instead of crash " + crash.storageId());
+            L.i("Added request " + request.storageId() + " instead of crash " + crash.storageId());
             Boolean success = Storage.remove(ctx, crash);
             return success == null ? false : success;
         } else {
-            Log.e("[service] Couldn't write request " + request.storageId() + " instead of crash " + crash.storageId());
+            L.e("Couldn't write request " + request.storageId() + " instead of crash " + crash.storageId());
             return false;
         }
     }
@@ -188,7 +190,7 @@ public class CountlyService extends android.app.Service {
     private synchronized void stop() {
         shutdown = true;
         if (future == null || future.isDone()) {
-            Log.d("[service] Nothing is going on, stopping");
+            L.d("Nothing is going on, stopping");
             stopSelf();
         }
     }
@@ -207,38 +209,38 @@ public class CountlyService extends android.app.Service {
                 if (request == null) {
                     return false;
                 } else {
-                    Log.d("[service] Preparing request: " + request);
+                    L.d("Preparing request: " + request);
                     try {
                         boolean result;
                         Boolean check = CountlyService.this.core.isRequestReady(request);
                         if (check == null) {
-                            Log.d("[service] Request is not ready yet: " + request);
+                            L.d("Request is not ready yet: " + request);
                             result = false;
                         } else if (check.equals(Boolean.FALSE)){
-                            Log.d("[service] Request won't be ready, removing: " + request);
+                            L.d("Request won't be ready, removing: " + request);
                             Storage.remove(ctx, request);
                             result = true;
                         } else {
-                            Log.d("[service] Sending request: " + request.toString());
+                            L.d("Sending request: " + request.toString());
                             Network.NetworkResponse nr = network.send(request).get();
                             result = nr.requestSucceeded;
-                            Log.d("[service] Request " + request.storageId() + " sent?: " + result);
+                            L.d("Request " + request.storageId() + " sent?: " + result);
                             if (result) {
                                 Storage.remove(ctx, request);
                             }
                         }
                         return result;
                     } catch (InterruptedException e) {
-                        Log.i("[service] Interrupted while sending request " + request.storageId(), e);
+                        L.i("Interrupted while sending request " + request.storageId(), e);
                         return false;
                     } catch (ExecutionException e) {
-                        Log.i("[service] Interrupted while sending request " + request.storageId(), e);
+                        L.i("Interrupted while sending request " + request.storageId(), e);
                         return false;
                     } catch (CancellationException e) {
-                        Log.i("[service] Cancelled while sending request " + request.storageId(), e);
+                        L.i("Cancelled while sending request " + request.storageId(), e);
                         return false;
                     } catch (Throwable t) {
-                        Log.i("[service] Exception in network task " + request.storageId(), t);
+                        L.i("Exception in network task " + request.storageId(), t);
                         shutdown = true;
                         return false;
                     } finally {

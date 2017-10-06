@@ -17,6 +17,8 @@ import ly.count.android.sdk.User;
 import ly.count.android.sdk.UserEditor;
 
 class UserEditorImpl implements UserEditor {
+    private static final Log.Module L = Log.module("UserEditorImpl");
+
     static class Op {
         static final String INC = "$inc";
         static final String MUL = "$mul";
@@ -145,7 +147,7 @@ class UserEditorImpl implements UserEditor {
                     if (value == null || value instanceof String) {
                         user.name = (String) value;
                     } else {
-                        Log.w("user.name will be cast to String");
+                        L.w("user.name will be cast to String");
                         user.name = value.toString();
                     }
                     changes.put(NAME, value == null ? JSONObject.NULL : user.name);
@@ -154,7 +156,7 @@ class UserEditorImpl implements UserEditor {
                     if (value == null || value instanceof String) {
                         user.username = (String) value;
                     } else {
-                        Log.w("user.username will be cast to String");
+                        L.w("user.username will be cast to String");
                         user.username = value.toString();
                     }
                     changes.put(USERNAME, value == null ? JSONObject.NULL : user.username);
@@ -163,7 +165,7 @@ class UserEditorImpl implements UserEditor {
                     if (value == null || value instanceof String) {
                         user.email = (String) value;
                     } else {
-                        Log.w("user.email will be cast to String");
+                        L.w("user.email will be cast to String");
                         user.email = value.toString();
                     }
                     changes.put(EMAIL, value == null ? JSONObject.NULL : user.email);
@@ -172,7 +174,7 @@ class UserEditorImpl implements UserEditor {
                     if (value == null || value instanceof String) {
                         user.org = (String) value;
                     } else {
-                        Log.w("user.org will be cast to String");
+                        L.w("user.org will be cast to String");
                         user.org = value.toString();
                     }
                     changes.put(ORG, value == null ? JSONObject.NULL : user.org);
@@ -181,7 +183,7 @@ class UserEditorImpl implements UserEditor {
                     if (value == null || value instanceof String) {
                         user.phone = (String) value;
                     } else {
-                        Log.w("user.phone will be cast to String");
+                        L.w("user.phone will be cast to String");
                         user.phone = value.toString();
                     }
                     changes.put(PHONE, value == null ? JSONObject.NULL : user.phone);
@@ -195,7 +197,7 @@ class UserEditorImpl implements UserEditor {
                         user.picture = (byte[]) value;
                         changes.put(PICTURE_PATH, PICTURE_IN_USER_PROFILE);
                     } else {
-                        Log.wtf("Won't set user picture (must be of type byte[])");
+                        L.wtf("Won't set user picture (must be of type byte[])");
                     }
                     break;
                 case PICTURE_PATH:
@@ -208,10 +210,10 @@ class UserEditorImpl implements UserEditor {
                             user.picturePath = new URI((String) value).toString();
                             changes.put(PICTURE_PATH, user.picturePath);
                         } catch (URISyntaxException e) {
-                            Log.wtf("Supplied picturePath is not parsable to java.net.URI");
+                            L.wtf("Supplied picturePath is not parsable to java.net.URI");
                         }
                     } else {
-                        Log.wtf("Won't set user picturePath (must be String or null)");
+                        L.wtf("Won't set user picturePath (must be String or null)");
                     }
                     break;
                 case GENDER:
@@ -221,13 +223,13 @@ class UserEditorImpl implements UserEditor {
                     } else if (value instanceof String) {
                         User.Gender gender = User.Gender.fromString((String) value);
                         if (gender == null) {
-                            Log.wtf("Cannot parse gender string: " + value + " (must be one of 'F' & 'M')");
+                            L.wtf("Cannot parse gender string: " + value + " (must be one of 'F' & 'M')");
                         } else {
                             user.gender = gender;
                             changes.put(GENDER, user.gender.toString());
                         }
                     } else {
-                        Log.wtf("Won't set user gender (must be of type User.Gender or one of following Strings: 'F', 'M')");
+                        L.wtf("Won't set user gender (must be of type User.Gender or one of following Strings: 'F', 'M')");
                     }
                     break;
                 case BIRTHYEAR:
@@ -239,10 +241,10 @@ class UserEditorImpl implements UserEditor {
                             user.birthyear = Integer.parseInt((String) value);
                             changes.put(BIRTHYEAR, user.birthyear);
                         } catch (NumberFormatException e) {
-                            Log.wtf("user.birthyear must be either Integer or String which can be parsed to Integer", e);
+                            L.wtf("user.birthyear must be either Integer or String which can be parsed to Integer", e);
                         }
                     } else {
-                        Log.wtf("Won't set user birthyear (must be of type Integer or String which can be parsed to Integer)");
+                        L.wtf("Won't set user birthyear (must be of type Integer or String which can be parsed to Integer)");
                     }
                     break;
                 default:
@@ -258,7 +260,7 @@ class UserEditorImpl implements UserEditor {
                             user.custom.put(key, value);
                         }
                     } else {
-                        Log.wtf("Type of value " + value + " '" + value.getClass().getSimpleName() + "' is not supported yet, thus user property is not stored");
+                        L.wtf("Type of value " + value + " '" + value.getClass().getSimpleName() + "' is not supported yet, thus user property is not stored");
                     }
                     break;
             }
@@ -372,7 +374,7 @@ class UserEditorImpl implements UserEditor {
     @Override
     public UserEditor setOnce(String key, Object value) {
         if (value == null) {
-            Log.wtf("$setOnce operation operand cannot be null: key " + key);
+            L.wtf("$setOnce operation operand cannot be null: key " + key);
             return this;
         } else {
             return setCustomOp(Op.SET_ONCE, key, value);
@@ -382,7 +384,7 @@ class UserEditorImpl implements UserEditor {
     @Override
     public UserEditor pull(String key, Object value) {
         if (value == null) {
-            Log.wtf("$pull operation operand cannot be null: key " + key);
+            L.wtf("$pull operation operand cannot be null: key " + key);
             return this;
         } else {
             return setCustomOp(Op.PULL, key, value);
@@ -392,7 +394,7 @@ class UserEditorImpl implements UserEditor {
     @Override
     public UserEditor push(String key, Object value) {
         if (value == null) {
-            Log.wtf("$push operation operand cannot be null: key " + key);
+            L.wtf("$push operation operand cannot be null: key " + key);
             return this;
         } else {
             return setCustomOp(Op.PUSH, key, value);
@@ -402,7 +404,7 @@ class UserEditorImpl implements UserEditor {
     @Override
     public UserEditor pushUnique(String key, Object value) {
         if (value == null) {
-            Log.wtf("pushUnique / $addToSet operation operand cannot be null: key " + key);
+            L.wtf("pushUnique / $addToSet operation operand cannot be null: key " + key);
             return this;
         } else {
             return setCustomOp(Op.PUSH_UNIQUE, key, value);
@@ -451,7 +453,7 @@ class UserEditorImpl implements UserEditor {
                 }
             });
         } catch (JSONException e) {
-            Log.wtf("Exception while committing changes to User profile", e);
+            L.wtf("Exception while committing changes to User profile", e);
         }
 
         sets.clear();

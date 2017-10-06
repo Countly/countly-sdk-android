@@ -8,6 +8,7 @@ import android.os.Bundle;
  * {@link Context} implementation
  */
 public class ContextImpl implements Context {
+    private static final Log.Module L = Log.module("ContextImpl");
     private Application application;
     private Activity activity;
     private Bundle bundle;
@@ -37,7 +38,7 @@ public class ContextImpl implements Context {
     @Override
     public Application getApplication() {
         if (expired) {
-            Log.wtf("Context is expired");
+            L.wtf("Context is expired");
         }
         return application;
     }
@@ -45,7 +46,7 @@ public class ContextImpl implements Context {
     @Override
     public Activity getActivity() {
         if (expired) {
-            Log.wtf("Context is expired");
+            L.wtf("Context is expired");
         }
         return activity;
     }
@@ -53,7 +54,7 @@ public class ContextImpl implements Context {
     @Override
     public android.content.Context getContext() {
         if (expired) {
-            Log.wtf("Context is expired");
+            L.wtf("Context is expired");
         }
         return context != null ? context : activity != null ? activity : application;
     }

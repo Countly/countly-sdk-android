@@ -40,6 +40,8 @@ import ly.count.android.sdk.Countly;
  */
 
 class Device {
+    private static final Log.Module L = Log.module("Device");
+
     /**
      * One second in nanoseconds
      */
@@ -127,9 +129,7 @@ class Device {
             resolution = metrics.widthPixels + "x" + metrics.heightPixels;
         }
         catch (Throwable t) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                android.util.Log.i(Countly.TAG, "Device resolution cannot be determined");
-            }
+            L.w("Device resolution cannot be determined", t);
         }
         return resolution;
     }
@@ -213,9 +213,7 @@ class Device {
         }
         if (carrier == null || carrier.length() == 0) {
             carrier = "";
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                android.util.Log.i(Countly.TAG, "No carrier found");
-            }
+            L.w("No carrier found");
         }
         return carrier;
     }
@@ -251,9 +249,7 @@ class Device {
             result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
         }
         catch (PackageManager.NameNotFoundException e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                android.util.Log.i(Countly.TAG, "No app version found");
-            }
+            L.w("No app version found", e);
         }
         return result;
     }
@@ -268,15 +264,11 @@ class Device {
         try {
             result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
         } catch (Exception e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                android.util.Log.i(Countly.TAG, "Can't get Installer package");
-            }
+            L.w("Can't get Installer package", e);
         }
         if (result == null || result.length() == 0) {
             result = "";
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                android.util.Log.i(Countly.TAG, "No store found");
-            }
+            L.w("No store found");
         }
         return result;
     }
@@ -409,10 +401,10 @@ class Device {
             }
             return Long.parseLong(value) / 1024;
         } catch (NumberFormatException e){
-            Log.e("Cannot parse meminfo", e);
+            L.e("Cannot parse meminfo", e);
             return null;
         } catch (IOException e) {
-            Log.e("Cannot read meminfo", e);
+            L.e("Cannot read meminfo", e);
             return null;
         }
         finally {
@@ -538,7 +530,7 @@ class Device {
                 }
             }
         } catch (Exception e) {
-            Log.w("Can't get batter level", e);
+            L.w("Can't get batter level", e);
         }
 
         return null;
@@ -595,7 +587,7 @@ class Device {
             }
             return false;
         } catch(Exception e) {
-            Log.w("Exception while determining connectivity", e);
+            L.w("Exception while determining connectivity", e);
         }
         return null;
     }

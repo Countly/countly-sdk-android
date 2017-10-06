@@ -20,6 +20,7 @@ import static ly.count.android.sdk.Config.DeviceIdStrategy.INSTANCE_ID;
  * Only members of {@link InternalConfig} can be changed, members of {@link Config} are non-modifiable.
  */
 final class InternalConfig extends Config implements Storable {
+    private static final Log.Module L = Log.module("InternalConfig");
 
     /**
      * Logger class
@@ -72,7 +73,7 @@ final class InternalConfig extends Config implements Storable {
                             l.setAccessible(false);
                         }
                     } catch (IllegalAccessException | IllegalArgumentException iae) {
-                        Log.w("Cannot access field " + r.getName(), iae);
+                        L.w("Cannot access field " + r.getName(), iae);
                     }
                 }
             }
@@ -148,20 +149,20 @@ final class InternalConfig extends Config implements Storable {
             stream.close();
             return bytes.toByteArray();
         } catch (IOException e) {
-            Log.wtf("Cannot serialize config", e);
+            L.wtf("Cannot serialize config", e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
             if (bytes != null) {
                 try {
                     bytes.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
         }
@@ -181,7 +182,7 @@ final class InternalConfig extends Config implements Storable {
                 Utils.reflectiveSetField(this, "serverURL", new URL(stream.readUTF()));
                 Utils.reflectiveSetField(this, "serverAppKey", stream.readUTF());
             } catch (Exception e) {
-                Log.wtf("Cannot happen", e);
+                L.wtf("Cannot happen", e);
             }
 
             int ftrs = stream.readInt();
@@ -223,20 +224,20 @@ final class InternalConfig extends Config implements Storable {
 
             return true;
         } catch (IOException | ClassNotFoundException e) {
-            Log.wtf("Cannot deserialize config", e);
+            L.wtf("Cannot deserialize config", e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
             if (bytes != null) {
                 try {
                     bytes.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
         }

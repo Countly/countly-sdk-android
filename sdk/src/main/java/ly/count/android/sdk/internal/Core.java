@@ -35,6 +35,8 @@ import ly.count.android.sdk.CountlyPush;
  *
  */
 public class Core extends CoreModules {
+    private static final Log.Module L = Log.module("Core");
+
     /**
      * Handler for main thread
      */
@@ -173,7 +175,7 @@ public class Core extends CoreModules {
      * @param clear whether to clear SDK data or not
      */
     public void stop(android.content.Context context, boolean clear) {
-        Log.i("Stopping Countly SDK" + (clear ? " and clearing all data" : ""));
+        L.i("Stopping Countly SDK" + (clear ? " and clearing all data" : ""));
 
         ContextImpl ctx = new ContextImpl(context);
 
@@ -182,7 +184,7 @@ public class Core extends CoreModules {
                 module.stop(ctx, clear);
                 Utils.reflectiveSetField(module, "active", false);
             } catch (Throwable e) {
-                Log.wtf("Exception while stopping " + module.getClass(), e);
+                L.wtf("Exception while stopping " + module.getClass(), e);
             }
         }
         modules.clear();
@@ -335,7 +337,7 @@ public class Core extends CoreModules {
      */
     public static void onDeviceId(Context ctx, Config.DID id, Config.DID old) {
         if (instance == null || instance.config == null) {
-            Log.wtf("SDK not initialized when setting device id");
+            L.wtf("SDK not initialized when setting device id");
             return;
         }
         if (!instance.config.isLimited()) {
@@ -392,7 +394,7 @@ public class Core extends CoreModules {
         try {
             return Storage.read(ctx, new InternalConfig());
         } catch (MalformedURLException e) {
-            Log.wtf("Cannot happen");
+            L.wtf("Cannot happen");
             return null;
         }
     }
@@ -451,12 +453,12 @@ public class Core extends CoreModules {
 //        if (config != null) {
 //            ModulePush push = (ModulePush) instance.module(ModulePush.class);
 //            if (push == null) {
-//                Log.wtf("No ModulePush found, won't process message");
+//                L.wtf("No ModulePush found, won't process message");
 //            } else {
 //                return push.displayMessage(data);
 //            }
 //        } else {
-//            Log.wtf("No config found, won't process message");
+//            L.wtf("No config found, won't process message");
 //        }
 //        return false;
 //    }
@@ -543,7 +545,7 @@ public class Core extends CoreModules {
                     bytes.flush();
                     return bytes.toByteArray();
                 } catch (Exception e) {
-                    Log.e("Cannot download message media", e);
+                    L.e("Cannot download message media", e);
                     return null;
                 } finally {
                     if (input != null) {
@@ -572,7 +574,7 @@ public class Core extends CoreModules {
                             }
                             tasks.shutdown();
                         } catch (Exception e) {
-                            Log.e("Exception in message media download callback", e);
+                            L.e("Exception in message media download callback", e);
                         }
                     }
                 });

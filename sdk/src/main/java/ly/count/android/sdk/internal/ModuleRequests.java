@@ -7,6 +7,8 @@ import java.util.concurrent.Future;
  */
 
 public class ModuleRequests extends ModuleBase {
+    private static final Log.Module L = Log.module("ModuleRequests");
+
     private static InternalConfig config;
     private static Params metrics;
 
@@ -136,7 +138,7 @@ public class ModuleRequests extends ModuleBase {
      * @return {@link Future} which resolves to {@code} true if stored successfully, false otherwise
      */
     public static Future<Boolean> pushAsync(final Context ctx, Request request, final Tasks.Callback<Boolean> callback) {
-        Log.d("New request " + request.storageId() + ": " + request);
+        L.d("New request " + request.storageId() + ": " + request);
         return Storage.pushAsync(ctx, request, new Tasks.Callback<Boolean>() {
             @Override
             public void call(Boolean param) throws Exception {

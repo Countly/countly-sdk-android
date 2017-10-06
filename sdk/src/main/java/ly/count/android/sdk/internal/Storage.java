@@ -12,6 +12,8 @@ import java.util.concurrent.Future;
  */
 
 class Storage {
+    private static final Log.Module L = Log.module("Storage");
+
     private static final Tasks tasks = new Tasks("storage");
 
     static String name(Storable storable) {
@@ -28,11 +30,11 @@ class Storage {
      * @return true when storing succeeded, false otherwise
      */
     static boolean push(Context ctx, Storable storable) {
-        Log.d("Pushing " + name(storable));
+        L.d("Pushing " + name(storable));
         try {
             return pushAsync(ctx, storable).get();
         } catch (InterruptedException | ExecutionException e) {
-            Log.wtf("Interrupted while pushing " + name(storable), e);
+            L.wtf("Interrupted while pushing " + name(storable), e);
         }
         return false;
     }
@@ -47,7 +49,7 @@ class Storage {
      * @return Future<Boolean> object which resolves as true when storing succeeded, false otherwise
      */
     static Future<Boolean> pushAsync(final Context ctx, final Storable storable, Tasks.Callback<Boolean> callback) {
-        Log.d("Pushing async " + name(storable));
+        L.d("Pushing async " + name(storable));
         return tasks.run(new Tasks.Task<Boolean>(storable.storageId()) {
             @Override
             public Boolean call() throws Exception {
@@ -74,11 +76,11 @@ class Storage {
      * @return true if removed, false otherwise
      */
     static <T extends Storable> Boolean remove(final Context ctx, T storable) {
-        Log.d("removing " + name(storable));
+        L.d("removing " + name(storable));
         try {
             return removeAsync(ctx, storable, null).get();
         } catch (InterruptedException | ExecutionException e) {
-            Log.wtf("Interrupted while removing " + name(storable), e);
+            L.wtf("Interrupted while removing " + name(storable), e);
         }
         return null;
     }
@@ -109,11 +111,11 @@ class Storage {
      * @return storable object passed as param when restoring succeeded, null otherwise
      */
     static <T extends Storable> T pop(Context ctx, T storable) {
-        Log.d("Popping " + name(storable));
+        L.d("Popping " + name(storable));
         try {
             return popAsync(ctx, storable).get();
         } catch (InterruptedException | ExecutionException e) {
-            Log.wtf("Interrupted while popping " + name(storable), e);
+            L.wtf("Interrupted while popping " + name(storable), e);
         }
         return null;
     }
@@ -132,7 +134,7 @@ class Storage {
             public T call() throws Exception {
                 byte data[] = Core.popDataFromInternalStorage(ctx, storable.storagePrefix(), "" + storable.storageId());
                 if (data == null) {
-                    Log.d("No data for file " + name(storable));
+                    L.d("No data for file " + name(storable));
                     return null;
                 }
                 if (storable.restore(data)) {
@@ -152,11 +154,11 @@ class Storage {
      * @return storable object passed as param when reading succeeded, null otherwise
      */
     static <T extends Storable> T read(Context ctx, T storable) {
-        Log.d("read " + name(storable));
+        L.d("read " + name(storable));
         try {
             return readAsync(ctx, storable).get();
         } catch (InterruptedException | ExecutionException e) {
-            Log.wtf("Interrupted while popping " + name(storable), e);
+            L.wtf("Interrupted while popping " + name(storable), e);
         }
         return null;
     }
@@ -188,7 +190,7 @@ class Storage {
             public T call() throws Exception {
                 byte data[] = Core.readDataFromInternalStorage(ctx, storable.storagePrefix(), "" + storable.storageId());
                 if (data == null) {
-                    Log.d("No data for file " + name(storable));
+                    L.d("No data for file " + name(storable));
                     return null;
                 }
                 T ret = null;
@@ -212,11 +214,11 @@ class Storage {
      * @return storable object passed as param when reading succeeded, null otherwise
      */
     static <T extends Storable> T readOne(Context ctx, T storable, boolean asc) {
-        Log.d("readOne " + storable.storagePrefix());
+        L.d("readOne " + storable.storagePrefix());
         try {
             return readOneAsync(ctx, storable, asc).get();
         } catch (InterruptedException | ExecutionException e) {
-            Log.wtf("Interrupted while popping " + name(storable), e);
+            L.wtf("Interrupted while popping " + name(storable), e);
         }
         return null;
     }
@@ -248,7 +250,7 @@ class Storage {
                         return null;
                     }
                 } catch (NumberFormatException e) {
-                    Log.wtf("Wrong file name in readOneAsync", e);
+                    L.wtf("Wrong file name in readOneAsync", e);
                     return null;
                 }
             }
@@ -278,11 +280,11 @@ class Storage {
      * @return List<Long> object which resolves as list of storable ids, not null
      */
     static List<Long> list(Context ctx, String prefix, int slice) {
-        Log.d("Listing " + prefix);
+        L.d("Listing " + prefix);
         try {
             return listAsync(ctx, prefix, slice).get();
         } catch (InterruptedException | ExecutionException e) {
-            Log.wtf("Interrupted while listing " + prefix, e);
+            L.wtf("Interrupted while listing " + prefix, e);
         }
         return null;
     }
@@ -305,14 +307,14 @@ class Storage {
                 List<Long> list = new ArrayList<Long>();
                 List<String> files = Core.listDataInInternalStorage(ctx, prefix, slice);
                 if (files == null) {
-                    Log.wtf("Null list while listing storage");
+                    L.wtf("Null list while listing storage");
                     return list;
                 }
                 for (String file : files) {
                     try {
                         list.add(Long.parseLong(file));
                     } catch (Throwable t) {
-                        Log.wtf("Exception while parsing storable id", t);
+                        L.wtf("Exception while parsing storable id", t);
                     }
                 }
                 return list;
@@ -321,24 +323,24 @@ class Storage {
     }
 
     static void await() {
-        Log.d("Waiting for storage tasks to complete");
+        L.d("Waiting for storage tasks to complete");
         try {
             tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
                 @Override
                 public Boolean call() throws Exception {
-                    Log.d("Waiting for storage tasks to complete DONE");
+                    L.d("Waiting for storage tasks to complete DONE");
                     return null;
                 }
             }).get();
         } catch (InterruptedException | ExecutionException e) {
-            Log.wtf("Interrupted while waiting", e);
+            L.wtf("Interrupted while waiting", e);
         }
     }
 
 //    static synchronized List<Storable> popAll(String prefix, Class<? extends Storable> claz) {
 //        List<String> names = Core.instance.listDataFromInternalStorage(prefix);
 //        List<Storable> list = new ArrayList<>();
-//        Log.d("Loading " + names.size() + " files prefixed with " + prefix + ": " + names);
+//        L.d("Loading " + names.size() + " files prefixed with " + prefix + ": " + names);
 //        try {
 //            Constructor<? extends Storable> constructor = claz.getConstructor(Long.class);
 //
@@ -352,17 +354,17 @@ class Storage {
 //                }
 //            }
 //        } catch (NumberFormatException e) {
-//            Log.wtf("Storage error - bad file name detected", e);
+//            L.wtf("Storage error - bad file name detected", e);
 //        } catch (NoSuchMethodException e) {
-//            Log.wtf("Cannot happen", e);
+//            L.wtf("Cannot happen", e);
 //        } catch (IllegalAccessException e) {
-//            Log.wtf("IllegalAccessException which cannot happen", e);
+//            L.wtf("IllegalAccessException which cannot happen", e);
 //        } catch (InstantiationException e) {
-//            Log.wtf("InstantiationException which cannot happen", e);
+//            L.wtf("InstantiationException which cannot happen", e);
 //        } catch (InvocationTargetException e) {
-//            Log.wtf("InvocationTargetException which cannot happen", e);
+//            L.wtf("InvocationTargetException which cannot happen", e);
 //        }
-//        Log.d("Loaded " + list.size() + " files prefixed with " + prefix);
+//        L.d("Loaded " + list.size() + " files prefixed with " + prefix);
 //        return list;
 //    }
 }

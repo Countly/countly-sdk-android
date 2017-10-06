@@ -23,6 +23,8 @@ import ly.count.android.sdk.CountlyPush;
  */
 
 public class ModulePush extends ModuleBase {
+    private static final Log.Module L = Log.module("ModulePush");
+
     public static final String PUSH_EVENT_ACTION  = "[CLY]_push_action";
     public static final String PUSH_EVENT_ACTION_INDEX_KEY  = "i";
 
@@ -99,7 +101,7 @@ public class ModulePush extends ModuleBase {
             try {
                 b = data.containsKey(KEY_BADGE) ? Integer.parseInt(data.get(KEY_BADGE)) : null;
             } catch (NumberFormatException e) {
-                Log.w("Bad badge value received, ignoring");
+                L.w("Bad badge value received, ignoring");
             }
             this.badge = b;
 
@@ -107,7 +109,7 @@ public class ModulePush extends ModuleBase {
             try {
                 u = data.containsKey(KEY_LINK) ? new URL(data.get(KEY_LINK)) : null ;
             } catch (MalformedURLException e) {
-                Log.w("Bad link value received, ignoring");
+                L.w("Bad link value received, ignoring");
             }
             this.link = u;
 
@@ -115,7 +117,7 @@ public class ModulePush extends ModuleBase {
             try {
                 u = data.containsKey(KEY_MEDIA) ? new URL(data.get(KEY_MEDIA)) : null ;
             } catch (MalformedURLException e) {
-                Log.w("Bad media value received, ignoring");
+                L.w("Bad media value received, ignoring");
             }
             this.media = u;
 
@@ -132,7 +134,7 @@ public class ModulePush extends ModuleBase {
                             try {
                                 u = new URL(btn.getString(KEY_BUTTONS_LINK));
                             } catch (MalformedURLException e) {
-                                Log.w("Bad button link value received, ignoring");
+                                L.w("Bad button link value received, ignoring");
                             }
                             if (u != null) {
                                 this.buttons.add(new Button(this, i, btn.getString(KEY_BUTTONS_TITLE), u));
@@ -140,7 +142,7 @@ public class ModulePush extends ModuleBase {
                         }
                     }
                 } catch (Throwable e) {
-                    Log.w("Failed to parse buttons JSON", e);
+                    L.w("Failed to parse buttons JSON", e);
                 }
             }
 
@@ -250,7 +252,7 @@ public class ModulePush extends ModuleBase {
             try {
                 CountlyPush.pushActivityClass = (Class<? extends Activity>) Class.forName(config.getPushActivityClass());
             } catch (Throwable e) {
-                Log.wtf("No class found for push activity class name " + config.getPushActivityClass(), e);
+                L.wtf("No class found for push activity class name " + config.getPushActivityClass(), e);
             }
         }
     }
@@ -276,9 +278,9 @@ public class ModulePush extends ModuleBase {
                 @Override
                 public void call(Config.DID did) throws Exception {
                     if (did == null) {
-                        Log.w("Couldn't acquire FCM token, messaging doesn't work yet");
+                        L.w("Couldn't acquire FCM token, messaging doesn't work yet");
                     } else {
-                        Log.i("Got FCM token: " + did.id);
+                        L.i("Got FCM token: " + did.id);
                         Core.onDeviceId(ctx, did, null);
                     }
                 }
@@ -322,7 +324,7 @@ public class ModulePush extends ModuleBase {
 
     static void subscribe(String topic) {
         if (Utils.isEmpty(topic)) {
-            Log.wtf("Topic cannot be null or empty");
+            L.wtf("Topic cannot be null or empty");
         } else {
 //            eFgsAAZPfIU
             Core.instance.user().edit().addToCohort(topic).commit();
@@ -331,17 +333,17 @@ public class ModulePush extends ModuleBase {
             if (instance != null && instance != Boolean.FALSE) {
                 Object result = Utils.reflectiveCall(null, instance, "subscribeToTopic", topic);
                 if (result == Boolean.FALSE) {
-                    Log.w("Couldn't subscribe to Firebase topic on firebase, but still adding user to this cohort");
+                    L.w("Couldn't subscribe to Firebase topic on firebase, but still adding user to this cohort");
                 }
             } else {
-                Log.w("Couldn't subscribe to Firebase topic on firebase (getInstance returned " + instance + "), but still adding user to this cohort");
+                L.w("Couldn't subscribe to Firebase topic on firebase (getInstance returned " + instance + "), but still adding user to this cohort");
             }
         }
     }
 
     static void unsubscribe(String topic) {
         if (Utils.isEmpty(topic)) {
-            Log.wtf("Topic cannot be null or empty");
+            L.wtf("Topic cannot be null or empty");
         } else {
             Core.instance.user().edit().removeFromCohort(topic).commit();
 
@@ -349,10 +351,10 @@ public class ModulePush extends ModuleBase {
             if (instance != null && instance != Boolean.FALSE) {
                 Object result = Utils.reflectiveCall(null, instance, "unsubscribeFromTopic", topic);
                 if (result == Boolean.FALSE) {
-                    Log.w("Couldn't unsubscribe from Firebase topic on firebase, but still removing this cohort from the user");
+                    L.w("Couldn't unsubscribe from Firebase topic on firebase, but still removing this cohort from the user");
                 }
             } else {
-                Log.w("Couldn't unsubscribe from Firebase topic on firebase (getInstance returned " + instance + "), but still removing this cohort from the user");
+                L.w("Couldn't unsubscribe from Firebase topic on firebase (getInstance returned " + instance + "), but still removing this cohort from the user");
             }
         }
     }

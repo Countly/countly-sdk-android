@@ -16,6 +16,8 @@ import ly.count.android.sdk.Crash;
  */
 
 public class CrashImpl implements Crash, Storable {
+    private static final Log.Module L = Log.module("CrashImpl");
+
     private final Long id;
     private final JSONObject data;
 
@@ -32,7 +34,7 @@ public class CrashImpl implements Crash, Storable {
     @Override
     public CrashImpl setThrowable(Throwable throwable) {
         if (throwable == null) {
-            Log.wtf("Throwable cannot be null");
+            L.wtf("Throwable cannot be null");
             return this;
         } else {
             StringWriter sw = new StringWriter();
@@ -70,7 +72,7 @@ public class CrashImpl implements Crash, Storable {
             try {
                 this.data.put(key, value);
             } catch (JSONException e) {
-                Log.wtf("Couldn't add " + key + " to a crash", e);
+                L.wtf("Couldn't add " + key + " to a crash", e);
             }
         }
         return this;
@@ -81,7 +83,7 @@ public class CrashImpl implements Crash, Storable {
         try {
             return data.toString().getBytes(Utils.UTF8);
         } catch (UnsupportedEncodingException e) {
-            Log.wtf("UTF is not supported", e);
+            L.wtf("UTF is not supported", e);
             return null;
         }
     }
@@ -97,11 +99,11 @@ public class CrashImpl implements Crash, Storable {
                     this.data.put(k, obj.get(k));
                 }
             } catch (JSONException e) {
-                Log.e("Couldn't decode crash data successfully", e);
+                L.e("Couldn't decode crash data successfully", e);
             }
             return true;
         } catch (UnsupportedEncodingException e) {
-            Log.wtf("Cannot deserialize crash", e);
+            L.wtf("Cannot deserialize crash", e);
         }
 
         return false;

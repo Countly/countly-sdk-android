@@ -14,6 +14,8 @@ import ly.count.android.sdk.Config;
  * </ul>
  */
 public class ModuleDeviceId extends ModuleBase {
+    private static final Log.Module L = Log.module("ModuleDeviceId");
+
     static final String ADVERTISING_ID_CLIENT_CLASS_NAME = "com.google.android.gms.ads.identifier.AdvertisingIdClient";
     static final String INSTANCE_ID_CLASS_NAME = "com.google.firebase.iid.FirebaseInstanceId";
 
@@ -53,12 +55,12 @@ public class ModuleDeviceId extends ModuleBase {
 
             if (Utils.isEmpty(legacyDeviceId)) {
                 // fresh install = no legacy id
-                Log.i("Acquiring device id");
+                L.i("Acquiring device id");
 
                 if (Utils.isNotEmpty(config.getCustomDeviceId())) {
                     // developer specified id on SDK init
                     Config.DID did = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, config.getCustomDeviceId());
-                    Log.d("Got developer id" + did);
+                    L.d("Got developer id" + did);
                     Core.onDeviceId(ctx, did, null);
                 } else {
                     // regular flow - acquire id using specified strategy
@@ -66,16 +68,16 @@ public class ModuleDeviceId extends ModuleBase {
                         @Override
                         public void call(Config.DID id) throws Exception {
                             if (id != null) {
-                                Log.d("Got device id: " + id);
+                                L.d("Got device id: " + id);
                                 Core.onDeviceId(ctx, id, null);
                             } else {
-                                Log.i("No device id of strategy " + config.getDeviceIdStrategy() + " is available yet");
+                                L.i("No device id of strategy " + config.getDeviceIdStrategy() + " is available yet");
                             }
                         }
                     });
                 }
             } else {
-                Log.d("Migrating device id " + legacyDeviceId);
+                L.d("Migrating device id " + legacyDeviceId);
 
                 Config.DID did = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), legacyDeviceId);
                 Core.onDeviceId(ctx, did, did);
@@ -96,7 +98,7 @@ public class ModuleDeviceId extends ModuleBase {
      */
     public void login(Context ctx, String id) {
         if (Utils.isEmpty(id)) {
-            Log.wtf("Empty id passed to login method");
+            L.wtf("Empty id passed to login method");
         } else {
             final Config.DID old = config.getDeviceId();
             config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, id));
@@ -153,7 +155,7 @@ public class ModuleDeviceId extends ModuleBase {
         switch (holder.strategy) {
             case OPEN_UDID:
                 // Courtesy OpenUDID https://github.com/vieux/OpenUDID
-                Log.i("Generating OPEN_UDID");
+                L.i("Generating OPEN_UDID");
 
                 String id = Core.generateOpenUDID(ctx);
 
@@ -161,17 +163,17 @@ public class ModuleDeviceId extends ModuleBase {
 
             case ADVERTISING_ID:
                 if (Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME)) {
-                    Log.i("Generating ADVERTISING_ID");
+                    L.i("Generating ADVERTISING_ID");
                     try {
                         Object info = Utils.reflectiveCallStrict(ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", android.content.Context.class, ctx.getContext());
-                        Log.i("Got ADVERTISING_ID info");
+                        L.i("Got ADVERTISING_ID info");
                         if (info == null || info == Boolean.FALSE) {
-                            Log.d("AdvertisingIdClient.getAdvertisingIdInfo() returned " + info);
+                            L.d("AdvertisingIdClient.getAdvertisingIdInfo() returned " + info);
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         } else {
-                            Log.d("calling getId");
+                            L.d("calling getId");
                             Object idObj = Utils.reflectiveCall(info.getClass().getCanonicalName(), info, "getId");
-                            Log.d("AdvertisingIdClient.getAdvertisingIdInfo().getId() returned " + idObj);
+                            L.d("AdvertisingIdClient.getAdvertisingIdInfo().getId() returned " + idObj);
                             if (idObj == null || !(idObj instanceof String)) {
                                 return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                             } else {
@@ -183,30 +185,30 @@ public class ModuleDeviceId extends ModuleBase {
                                 || t.getCause().getClass().toString().contains("GooglePlayServicesRepairableException"))) {
                             // recoverable, let device ID be null, which will result in storing all requests locally
                             // and rerunning them whenever Advertising ID becomes available
-                            Log.i("Advertising ID cannot be determined yet");
+                            L.i("Advertising ID cannot be determined yet");
                             return null;
                         } else if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesNotAvailableException")) {
                             // non-recoverable, fallback to OpenUDID
-                            Log.i("Advertising ID cannot be determined because Play Services are not available");
+                            L.i("Advertising ID cannot be determined because Play Services are not available");
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         } else {
                             // unexpected
-                            Log.w("Couldn't get advertising ID", t);
+                            L.w("Couldn't get advertising ID", t);
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         }
                     }
                 }  else {
-                    Log.i("ADVERTISING_ID is not available " + (fallbackAllowed ? ", checking OPEN_UDID" : "fallback is not allowed"));
+                    L.i("ADVERTISING_ID is not available " + (fallbackAllowed ? ", checking OPEN_UDID" : "fallback is not allowed"));
                     return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                 }
 
             case INSTANCE_ID:
                 if (Utils.reflectiveClassExists(INSTANCE_ID_CLASS_NAME)) {
-                    Log.i("Generating INSTANCE_ID");
+                    L.i("Generating INSTANCE_ID");
                     try {
                         Object instance = Utils.reflectiveCall(INSTANCE_ID_CLASS_NAME, null, "getInstance");
                         if (instance == null || instance == Boolean.FALSE) {
-                            Log.d("InstanceId.getInstance() returned " + instance);
+                            L.d("InstanceId.getInstance() returned " + instance);
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         } else {
                             Object idObj;
@@ -216,7 +218,7 @@ public class ModuleDeviceId extends ModuleBase {
                                 idObj = Utils.reflectiveCall(instance.getClass().getName(), instance, "getToken");
                             }
                             if (idObj == null || !(idObj instanceof String)) {
-                                Log.d("InstanceId.getInstance().getId() returned " + idObj);
+                                L.d("InstanceId.getInstance().getId() returned " + idObj);
                                 return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                             } else {
                                 return new Config.DID(holder.realm, Config.DeviceIdStrategy.INSTANCE_ID, (String) idObj);
@@ -226,20 +228,20 @@ public class ModuleDeviceId extends ModuleBase {
                         if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesAvailabilityException")) {
                             // recoverable, let device ID be null, which will result in storing all requests locally
                             // and rerunning them whenever Advertising ID becomes available
-                            Log.i("Advertising ID cannot be determined yet");
+                            L.i("Advertising ID cannot be determined yet");
                             return null;
                         } else if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesNotAvailableException")) {
                             // non-recoverable, fallback to OpenUDID
-                            Log.i("Advertising ID cannot be determined because Play Services are not available");
+                            L.i("Advertising ID cannot be determined because Play Services are not available");
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         } else {
                             // unexpected
-                            Log.w("Couldn't get advertising ID", t);
+                            L.w("Couldn't get advertising ID", t);
                             return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                         }
                     }
                 }  else {
-                    Log.i("INSTANCE_ID is not available " + (fallbackAllowed ? ", checking OPEN_UDID" : "fallback is not allowed"));
+                    L.i("INSTANCE_ID is not available " + (fallbackAllowed ? ", checking OPEN_UDID" : "fallback is not allowed"));
                     return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
                 }
 

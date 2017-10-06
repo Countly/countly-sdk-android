@@ -15,6 +15,8 @@ import ly.count.android.sdk.Session;
  */
 
 class EventImpl implements Eve, JSONable {
+    private static final Log.Module L = Log.module("EventImpl");
+
     private final SessionImpl session;
     private final String key;
 
@@ -37,11 +39,11 @@ class EventImpl implements Eve, JSONable {
     EventImpl(SessionImpl session, String key) {
         if (session == null) {
             invalid = true;
-            Log.wtf("Session cannot be null for an event");
+            L.wtf("Session cannot be null for an event");
         }
         if (key == null || "".equals(key)) {
             invalid = true;
-            Log.wtf("Event key cannot be null or empty");
+            L.wtf("Event key cannot be null or empty");
         }
         this.session = session;
         this.key = key;
@@ -64,13 +66,13 @@ class EventImpl implements Eve, JSONable {
     public Eve addSegment(String key, String value) {
         if (key == null || "".equals(key)) {
             invalid = true;
-            Log.wtf("Segmentation key " + key + " for event " + this.key + " is empty");
+            L.wtf("Segmentation key " + key + " for event " + this.key + " is empty");
             return this;
         }
 
         if (value == null || "".equals(value)) {
             invalid = true;
-            Log.wtf("Segmentation value " + value + " (" + key + ") for event " + this.key + " is empty");
+            L.wtf("Segmentation value " + value + " (" + key + ") for event " + this.key + " is empty");
             return this;
         }
 
@@ -87,13 +89,13 @@ class EventImpl implements Eve, JSONable {
     public Eve addSegments(String... segmentation) {
         if (segmentation == null || segmentation.length == 0) {
             invalid = true;
-            Log.wtf("Segmentation varargs array is empty");
+            L.wtf("Segmentation varargs array is empty");
             return this;
         }
 
         if (segmentation.length % 2 != 0) {
             invalid = true;
-            Log.wtf("Segmentation varargs array length is not even");
+            L.wtf("Segmentation varargs array length is not even");
             return this;
         }
 
@@ -107,7 +109,7 @@ class EventImpl implements Eve, JSONable {
     public Eve setSegmentation(Map<String, String> segmentation) {
         if (segmentation == null) {
             invalid = true;
-            Log.wtf("Segmentation map is null");
+            L.wtf("Segmentation map is null");
             return this;
         }
 
@@ -123,7 +125,7 @@ class EventImpl implements Eve, JSONable {
     public Eve setCount(int count) {
         if (count == 0) {
             invalid = true;
-            Log.wtf("Event " + key + " count cannot be 0");
+            L.wtf("Event " + key + " count cannot be 0");
             return this;
         }
         this.count = count;
@@ -134,7 +136,7 @@ class EventImpl implements Eve, JSONable {
     public Eve setSum(double sum) {
         if (Double.isInfinite(sum) || Double.isNaN(sum)) {
             invalid = true;
-            Log.wtf("NaN infinite value cannot be event '" + key + "' sum");
+            L.wtf("NaN infinite value cannot be event '" + key + "' sum");
         } else {
             this.sum = sum;
         }
@@ -145,7 +147,7 @@ class EventImpl implements Eve, JSONable {
     public Eve setDuration(double duration) {
         if (Double.isInfinite(duration) || Double.isNaN(duration)) {
             invalid = true;
-            Log.wtf("NaN or infinite value cannot be event '" + key + "' duration");
+            L.wtf("NaN or infinite value cannot be event '" + key + "' duration");
         } else {
             this.duration = duration;
         }
@@ -219,7 +221,7 @@ class EventImpl implements Eve, JSONable {
                 json.put(DUR_KEY, duration);
             }
         } catch (JSONException e) {
-            Log.wtf("Cannot serialize event to JSON", e);
+            L.wtf("Cannot serialize event to JSON", e);
         }
 
         return json.toString();
@@ -234,7 +236,7 @@ class EventImpl implements Eve, JSONable {
             JSONObject json = new JSONObject(jsonString);
 
             if (!json.has(KEY_KEY) || json.isNull(KEY_KEY)) {
-                Log.wtf("Bad JSON for deserialization of event: " + jsonString);
+                L.wtf("Bad JSON for deserialization of event: " + jsonString);
                 return null;
             }
             EventImpl event = new EventImpl(session, json.getString(KEY_KEY));
@@ -265,7 +267,7 @@ class EventImpl implements Eve, JSONable {
 
             return event;
         } catch (JSONException e) {
-            Log.wtf("Cannot deserialize event from JSON", e);
+            L.wtf("Cannot deserialize event from JSON", e);
         }
 
         return null;

@@ -18,6 +18,8 @@ import ly.count.android.sdk.UserEditor;
  */
 
 public class UserImpl extends User implements Storable {
+    private static final Log.Module L = Log.module("UserImpl");
+
     String id, name, username, email, org, phone, picturePath;
     byte[] picture;
     Gender gender;
@@ -108,20 +110,20 @@ public class UserImpl extends User implements Storable {
             stream.close();
             return bytes.toByteArray();
         } catch (IOException e) {
-            Log.wtf("Cannot serialize session", e);
+            L.wtf("Cannot serialize session", e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
             if (bytes != null) {
                 try {
                     bytes.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
         }
@@ -168,20 +170,20 @@ public class UserImpl extends User implements Storable {
 
             return true;
         } catch (IOException | ClassNotFoundException e) {
-            Log.wtf("Cannot deserialize session", e);
+            L.wtf("Cannot deserialize session", e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
             if (bytes != null) {
                 try {
                     bytes.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
         }

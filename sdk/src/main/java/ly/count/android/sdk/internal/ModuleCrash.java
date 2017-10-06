@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
  */
 
 public class ModuleCrash extends ModuleBase {
+    private static final Log.Module L = Log.module("ModuleCrash");
+
     private long started = 0;
     private boolean limited = false;
 
@@ -23,7 +25,7 @@ public class ModuleCrash extends ModuleBase {
     private Runnable ticker = new Runnable() {
         @Override
         public void run() {
-            Log.d("[crash] ticker " + tick + " => " + (tick + 1) + " / " + tickToCheck);
+            L.d("ticker " + tick + " => " + (tick + 1) + " / " + tickToCheck);
             tick++;
         }
     };
@@ -31,11 +33,11 @@ public class ModuleCrash extends ModuleBase {
     private Runnable checker = new Runnable() {
         @Override
         public void run() {
-            Log.d("[crash] checker " + tick + " / " + tickToCheck);
+            L.d("checker " + tick + " / " + tickToCheck);
             if (tick <= tickToCheck) {
                 // TODO: report all stacktraces here
                 onCrash(context, new IllegalStateException("ANR"), true, null, null);
-                Log.e("ANR detected. Waiting 3 x crashReportingANRTimeout and resuming watching for ANR.");
+                L.e("ANR detected. Waiting 3 x crashReportingANRTimeout and resuming watching for ANR.");
                 executorService.schedule(new Runnable() {
                     @Override
                     public void run() {
@@ -70,7 +72,7 @@ public class ModuleCrash extends ModuleBase {
             checker = null;
             executorService = null;
         } catch (Throwable t) {
-            Log.e("Exception while stopping crash reporting", t);
+            L.e("Exception while stopping crash reporting", t);
         }
     }
 
@@ -104,7 +106,7 @@ public class ModuleCrash extends ModuleBase {
         if (!isActive()) {
             return;
         }
-        Log.d("[crash] next tick " + tick);
+        L.d("next tick " + tick);
         tickToCheck = tick;
         Core.handler.post(ticker);
         executorService.schedule(checker, anrTimeout, TimeUnit.SECONDS);
@@ -118,7 +120,7 @@ public class ModuleCrash extends ModuleBase {
         long running = started == 0 ? 0 : Device.nsToMs(System.nanoTime() - started);
         crash.putMetrics(ctx, running);
         if (!Storage.push(ctx, crash)) {
-            Log.e("Couldn't persist a crash, so dumping it here: " + crash.getJSON());
+            L.e("Couldn't persist a crash, so dumping it here: " + crash.getJSON());
         } else {
             Map<String, Object> params = new HashMap<>();
             params.put(CountlyService.PARAM_CRASH_ID, crash.storageId());

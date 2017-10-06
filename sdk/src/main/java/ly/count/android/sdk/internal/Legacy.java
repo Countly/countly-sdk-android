@@ -12,6 +12,8 @@ import org.json.JSONObject;
  */
 
 public class Legacy {
+    private static final Log.Module L = Log.module("Legacy");
+
     static final String PREFERENCES = "COUNTLY_STORE";
 
     static final String KEY_CONNECTIONS = "CONNECTIONS";
@@ -61,7 +63,7 @@ public class Legacy {
 
         if (Utils.isNotEmpty(requestsStr)) {
             String[] requests = requestsStr.split(DELIMITER);
-            Log.d("Migrating " + requests.length + " requests");
+            L.d("Migrating " + requests.length + " requests");
             for (String str : requests) {
                 Params params = new Params(str);
                 String timestamp = params.get("timestamp");
@@ -69,14 +71,14 @@ public class Legacy {
                     try {
                         Request request = new Request(Long.parseLong(timestamp));
                         request.params.add(params);
-                        Log.d("Migrating request: " + str + ", time " + request.storageId());
+                        L.d("Migrating request: " + str + ", time " + request.storageId());
                         Storage.pushAsync(ctx, request, removeClb(ctx, KEY_CONNECTIONS));
                     } catch (NumberFormatException e) {
-                        Log.wtf("Couldn't import request " + str, e);
+                        L.wtf("Couldn't import request " + str, e);
                     }
                 } else {
                     Request request = new Request(Device.uniqueTimestamp());
-                    Log.d("Migrating request: " + str + ", current time " + request.storageId());
+                    L.d("Migrating request: " + str + ", current time " + request.storageId());
                     request.params.add(params);
                     Storage.pushAsync(ctx, request, removeClb(ctx, KEY_CONNECTIONS));
                 }
@@ -85,13 +87,13 @@ public class Legacy {
 
         if (Utils.isNotEmpty(eventsStr)) {
             String[] events = eventsStr.split(DELIMITER);
-            Log.d("Migrating " + events.length + " events");
+            L.d("Migrating " + events.length + " events");
             JSONArray array = new JSONArray();
             for (String str : events) {
                 try {
                     array.put(new JSONObject(str));
                 } catch (JSONException e) {
-                    Log.w("Couldn't parse event json: " + str);
+                    L.w("Couldn't parse event json: " + str);
                 }
             }
             if (array.length() > 0) {

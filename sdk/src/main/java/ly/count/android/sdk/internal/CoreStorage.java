@@ -14,6 +14,7 @@ import java.util.List;
  */
 
 public class CoreStorage extends CoreLifecycle {
+    private static final Log.Module L = Log.module("CoreStorage");
 
     private static final String FILE_NAME_PREFIX = "[CLY]";
     private static final String FILE_NAME_SEPARATOR = "_";
@@ -91,20 +92,20 @@ public class CoreStorage extends CoreLifecycle {
             return true;
         } catch (IOException e) {
             System.out.println(e);
-            Log.wtf("Cannot write data to " + name, e);
+            L.wtf("Cannot write data to " + name, e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Couldn't close output stream for " + name, e);
+                    L.wtf("Couldn't close output stream for " + name, e);
                 }
             }
             if (lock != null && lock.isValid()) {
                 try {
                     lock.release();
                 } catch (IOException e) {
-                    Log.wtf("Couldn't release lock for " + name, e);
+                    L.wtf("Couldn't release lock for " + name, e);
                 }
             }
         }
@@ -148,20 +149,20 @@ public class CoreStorage extends CoreLifecycle {
         } catch (FileNotFoundException e) {
             return null;
         } catch (IOException e) {
-            Log.wtf("Error while reading file " + name, e);
+            L.wtf("Error while reading file " + name, e);
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {
-                    Log.wtf("Couldn't close input stream for " + name, e);
+                    L.wtf("Couldn't close input stream for " + name, e);
                 }
             }
             if (buffer != null) {
                 try {
                     buffer.close();
                 } catch (IOException e) {
-                    Log.wtf("Cannot happen", e);
+                    L.wtf("Cannot happen", e);
                 }
             }
         }

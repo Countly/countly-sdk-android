@@ -13,6 +13,8 @@ import java.util.List;
  */
 
 class Params {
+    private static final Log.Module L = Log.module("Params");
+
     private StringBuilder params;
 
     static final class Obj {
@@ -37,7 +39,7 @@ class Params {
                 }
                 json.put(key, value);
             } catch (JSONException e) {
-                Log.wtf("Cannot put property into Params.Obj", e);
+                L.wtf("Cannot put property into Params.Obj", e);
             }
             return this;
         }

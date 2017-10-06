@@ -249,17 +249,19 @@ public class CountlyPush {
                 }
             }
 
-            if (msg.media() != null) {
+            if (Utils.API(16) && msg.media() != null) {
                 Core.downloadMedia(msg, new Tasks.Callback<Bitmap>() {
                     @Override
                     public void call(Bitmap bitmap) throws Exception {
-                        if (bitmap != null) {
-                            builder.setStyle(new Notification.BigPictureStyle()
-                                    .bigPicture(bitmap)
-                                    .setBigContentTitle(msg.title())
-                                    .setSummaryText(msg.message()));
+                        if (Utils.API(16)) {
+                            if (bitmap != null) {
+                                builder.setStyle(new Notification.BigPictureStyle()
+                                        .bigPicture(bitmap)
+                                        .setBigContentTitle(msg.title())
+                                        .setSummaryText(msg.message()));
+                            }
+                            manager.notify(msg.hashCode(), builder.build());
                         }
-                        manager.notify(msg.hashCode(), builder.build());
                     }
                 });
             } else {
