@@ -14,7 +14,6 @@ import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Eve;
 import ly.count.android.sdk.Session;
 import ly.count.android.sdk.User;
-import ly.count.android.sdk.UserEditor;
 
 /**
  * This class represents session concept, that is one indivisible usage occasion of your application.
@@ -98,7 +97,11 @@ class SessionImpl implements Session, Storable {
             Storage.pushAsync(ctx, this);
         }
 
-        return ModuleRequests.sessionBegin(ctx, this);
+        Future<Boolean> ret = ModuleRequests.sessionBegin(ctx, this);
+
+        Core.instance.onSessionBegan(ctx, this);
+
+        return ret;
     }
 
     /**
@@ -133,12 +136,12 @@ class SessionImpl implements Session, Storable {
     /**
      * End this session, add corresponding request.
      *
-     * @return {@code this} instance for method chaining.
+     * @return next {@link Session} instance in stack if any, {@code null} otherwise.
      */
     @Override
     public Session end() {
         end(null, null);
-        return this;
+        return Core.instance.sessionLeading();
     }
 
     Future<Boolean> end(Long now, final Tasks.Callback<Boolean> callback) {
@@ -155,7 +158,7 @@ class SessionImpl implements Session, Storable {
 
         Long duration = updateDuration(null);
 
-        return ModuleRequests.sessionEnd(ctx, this, duration, new Tasks.Callback<Boolean>() {
+        Future<Boolean> ret = ModuleRequests.sessionEnd(ctx, this, duration, new Tasks.Callback<Boolean>() {
             @Override
             public void call(Boolean removed) throws Exception {
                 if (!removed) {
@@ -164,6 +167,11 @@ class SessionImpl implements Session, Storable {
                 Storage.removeAsync(ctx, SessionImpl.this, callback);
             }
         });
+
+        Core.instance.onSessionEnded(ctx, this);
+        Core.instance.sessionRemove(this);
+
+        return ret;
     }
 
     Boolean recover(Config config) {
@@ -189,6 +197,11 @@ class SessionImpl implements Session, Storable {
                 return false;
             }
         }
+    }
+
+    @Override
+    public boolean isActive() {
+        return began != null && ended != null;
     }
 
     /**

@@ -4,7 +4,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import ly.count.android.sdk.Session;
+import ly.count.android.sdk.Config;
 
 /**
  * Sessions module responsible for default sessions handling: starting a session when
@@ -61,12 +61,27 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
+    public void onDeviceId(Context ctx, Config.DID deviceId, Config.DID oldDeviceId) {
+        SessionImpl leading = Core.instance.sessionLeading();
+
+        // device id changed
+        if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
+
+        } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
+            // device id is unset
+            if (leading != null) {
+                leading.end();
+            }
+        }
+    }
+
+    @Override
     public synchronized void onActivityStarted(Context ctx) {
         super.onActivityStarted(ctx);
         if (activityCount == 0) {
             Log.i("starting new session");
-            Core.instance.sessionBegin(ctx, Core.instance.sessionAdd(ctx));
-            if (updateInterval > 0) {
+            Core.instance.sessionAdd(ctx).begin();
+            if (updateInterval > 0 && executor == null) {
                 executor = Executors.newScheduledThreadPool(1);
                 executor.scheduleWithFixedDelay(new Runnable() {
                     @Override
@@ -100,7 +115,7 @@ public class ModuleSessions extends ModuleBase {
                 }
                 executor = null;
             }
-            Core.instance.sessionRemove(Core.instance.sessionEnd(ctx, Core.instance.sessionLeading()));
+            Core.instance.sessionLeading().end();
         }
     }
 }

@@ -57,6 +57,15 @@ public interface Session {
     Session end();
 
     /**
+     * Whether this session was started and haven't been ended yet.
+     *
+     * @see #begin()
+     * @see #end()
+     * @return {@code true} if session was started and haven't been ended yet, {@code false} otherwise
+     */
+    boolean isActive();
+
+    /**
      * Create event object, don't add it to this session yet.
      *
      * @param key key for this event, cannot be null or empty

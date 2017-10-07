@@ -68,67 +68,67 @@ public class CoreLifecycle {
 
         this.config.setLimited(false);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (Utils.API(14)) {
             application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                 @Override
                 public void onActivityCreated(Activity activity, Bundle bundle) {
-                    L.d("[Lifecycle] Activity created: " + activity.getClass().getSimpleName());
+                    L.d("Activity created: " + activity.getClass().getSimpleName());
                     CoreLifecycle.this.onActivityCreatedInternal(activity, bundle);
                 }
 
                 @Override
                 public void onActivityStarted(Activity activity) {
-                    L.d("[Lifecycle] Activity started: " + activity.getClass().getSimpleName());
+                    L.d("Activity started: " + activity.getClass().getSimpleName());
                     CoreLifecycle.this.onActivityStartedInternal(activity);
                 }
 
                 @Override
                 public void onActivityResumed(Activity activity) {
-                    L.d("[Lifecycle] Activity resumed: " + activity.getClass().getSimpleName());
+                    L.d("Activity resumed: " + activity.getClass().getSimpleName());
                     CoreLifecycle.this.onActivityResumedInternal(activity);
                 }
 
                 @Override
                 public void onActivityPaused(Activity activity) {
-                    L.d("[Lifecycle] Activity paused: " + activity.getClass().getSimpleName());
+                    L.d("Activity paused: " + activity.getClass().getSimpleName());
                     CoreLifecycle.this.onActivityPausedInternal(activity);
                 }
 
                 @Override
                 public void onActivityStopped(Activity activity) {
-                    L.d("[Lifecycle] Activity stopped: " + activity.getClass().getSimpleName());
+                    L.d("Activity stopped: " + activity.getClass().getSimpleName());
                     CoreLifecycle.this.onActivityStoppedInternal(activity);
                 }
 
                 @Override
                 public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-                    L.d("[Lifecycle] Activity save state: " + activity.getClass().getSimpleName());
+                    L.d("Activity save state: " + activity.getClass().getSimpleName());
                     CoreLifecycle.this.onActivitySaveInstanceStateInternal(activity, bundle);
                 }
 
                 @Override
                 public void onActivityDestroyed(Activity activity) {
-                    L.d("[Lifecycle] Activity destroyed: " + activity.getClass().getSimpleName());
+                    L.d("Activity destroyed: " + activity.getClass().getSimpleName());
                     CoreLifecycle.this.onActivityDestroyedInternal(activity);
                 }
             });
             application.registerComponentCallbacks(new ComponentCallbacks2() {
                 @Override
                 public void onTrimMemory(int i) {
-                    L.d("[Lifecycle] Trim memory " + i);
+                    L.d("Trim memory " + i);
                     CoreLifecycle.this.onApplicationTrimMemoryInternal(i);
                 }
 
                 @Override
                 public void onConfigurationChanged(Configuration configuration) {
                     // TODO: Operator, screen, etc
-                    L.d("[Lifecycle] Configuration changed: " + configuration.toString());
+                    L.d("Configuration changed: " + configuration.toString());
                     CoreLifecycle.this.onConfigurationChangedInternal(application, configuration);
                 }
 
                 @Override
                 public void onLowMemory() {
-                    L.d("[Lifecycle] Low memory");
+                    L.d("Low memory");
                 }
             });
         }
@@ -139,56 +139,56 @@ public class CoreLifecycle {
     }
 
     public void onApplicationTrimMemory(int level) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Trim memory " + level);
             this.onApplicationTrimMemoryInternal(level);
         }
     }
 
     public void onActivityCreated(Activity activity, Bundle bundle) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Activity created: " + activity.getClass().getSimpleName());
             this.onActivityCreatedInternal(activity, bundle);
         }
     }
 
     public void onActivityStarted(Activity activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Activity started: " + activity.getClass().getSimpleName());
             this.onActivityStartedInternal(activity);
         }
     }
 
     public void onActivityResumed(Activity activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Activity resumed: " + activity.getClass().getSimpleName());
             this.onActivityResumedInternal(activity);
         }
     }
 
     public void onActivityPaused(Activity activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Activity paused: " + activity.getClass().getSimpleName());
             this.onActivityPausedInternal(activity);
         }
     }
 
     public void onActivityStopped(Activity activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Activity stopped: " + activity.getClass().getSimpleName());
             this.onActivityStoppedInternal(activity);
         }
     }
 
     public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Activity save state: " + activity.getClass().getSimpleName());
             this.onActivitySaveInstanceStateInternal(activity, bundle);
         }
     }
 
     public void onActivityDestroyed(Activity activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+        if (!Utils.API(14)) {
             L.d("[Callback] Activity destroyed: " + activity.getClass().getSimpleName());
             this.onActivityDestroyedInternal(activity);
         }

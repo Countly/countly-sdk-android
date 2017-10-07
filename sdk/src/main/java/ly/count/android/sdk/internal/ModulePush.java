@@ -301,6 +301,15 @@ public class ModulePush extends ModuleBase {
                             "test_mode", config.isTestModeEnabled() ? 2 : 0);
                 }
             });
+        } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == Config.DeviceIdRealm.FCM_TOKEN) {
+            ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
+                @Override
+                public void call(Params params) {
+                    params.add("token_session", 1,
+                            "android_token", "",
+                            "test_mode", config.isTestModeEnabled() ? 2 : 0);
+                }
+            });
         }
     }
 

@@ -224,7 +224,7 @@ public class Core extends CoreModules {
      * Add session to the list.
      * @return {@link SessionImpl} just created
      */
-    public SessionImpl sessionAdd(Context ctx){
+    SessionImpl sessionAdd(Context ctx){
         sessions.add(new SessionImpl(ctx));
         return sessions.get(sessions.size() - 1);
     }
@@ -235,18 +235,15 @@ public class Core extends CoreModules {
      * @param session {@link SessionImpl} to remove
      * @return {@link SessionImpl} instance in case next session already created
      */
-    public SessionImpl sessionRemove(SessionImpl session){
+    SessionImpl sessionRemove(SessionImpl session){
         if (sessions.contains(session)) {
             sessions.remove(session);
             if (sessions.size() > 0) {
                 SessionImpl next = sessions.get(0);
                 if (next.began == null) {
                     next.begin(session.ended + Math.round(Device.NS_IN_SECOND));
-                } else if (next.began < session.ended){
-                    next.began = session.ended + Math.round(Device.NS_IN_SECOND);
-                }
-                if (next.updated != null) {
-                    next.updated = null;
+                } else if (next.began < session.ended) {
+                    Log.w("Sessions are overlapping. Next session starts before previous one ended.");
                 }
                 return next;
             }
@@ -284,13 +281,12 @@ public class Core extends CoreModules {
     }
 
     /**
-     * Begin session and notify all {@link Module} instances
+     * Notify all {@link Module} instances about new session has just been started
      *
      * @param session session to begin
      * @return supplied session for method chaining
      */
-    SessionImpl sessionBegin(Context ctx, SessionImpl session){
-        session.begin();
+    SessionImpl onSessionBegan(Context ctx, SessionImpl session){
         for (Module m : instance.modules) {
             m.onSessionBegan(session, ctx);
         }
@@ -298,13 +294,12 @@ public class Core extends CoreModules {
     }
 
     /**
-     * End session and notify all {@link Module} instances
+     * Notify all {@link Module} instances session was ended
      *
      * @param session session to end
      * @return supplied session for method chaining
      */
-    SessionImpl sessionEnd(Context ctx, SessionImpl session){
-        session.end();
+    SessionImpl onSessionEnded(Context ctx, SessionImpl session){
         for (Module m : instance.modules) {
             m.onSessionEnded(session, ctx);
         }
