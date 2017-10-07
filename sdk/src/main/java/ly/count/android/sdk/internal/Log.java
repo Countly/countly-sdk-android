@@ -103,6 +103,10 @@ public class Log extends ModuleBase {
         }
     }
 
+    static void deinit() {
+        instance = null;
+    }
+
     public static Module module(String name) {
         return new Module(name);
     }

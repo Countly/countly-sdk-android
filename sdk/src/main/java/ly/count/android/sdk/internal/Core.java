@@ -62,6 +62,7 @@ public class Core extends CoreModules {
     }
 
     void deinit () {
+        Log.deinit();
         instance = null;
     }
 

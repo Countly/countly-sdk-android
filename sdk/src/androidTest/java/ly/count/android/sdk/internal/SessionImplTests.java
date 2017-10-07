@@ -28,6 +28,9 @@ public class SessionImplTests {
 
     @After
     public void cleanupEveryTests(){
+        if (Core.instance != null) {
+            Core.instance.deinit();
+        }
         //validateMockitoUsage();
     }
 
@@ -451,16 +454,18 @@ public class SessionImplTests {
     @Test
     public void session_recoverNoUpdate() throws Exception {
         Core.purgeInternalStorage(ctx, null);
+        InternalConfig config = new InternalConfig(TestingUtilityInternal.setupConfig());
 
-        SessionImpl session = new SessionImpl(ctx);
-        session.begin(System.nanoTime() - Device.nsToSec(20));
+        long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
+        SessionImpl session = new SessionImpl(ctx, beginNs);
+        session.begin(beginNs);
 
         Thread.sleep(300);
 
         session = Storage.read(ctx, session);
         Assert.assertNotNull(session);
 
-        session.recover(new InternalConfig(TestingUtilityInternal.setupConfig()));
+        session.recover(config);
         Thread.sleep(300);
 
         session = Storage.read(ctx, session);
@@ -481,10 +486,12 @@ public class SessionImplTests {
     @Test
     public void session_recoverWithUpdate() throws Exception {
         Core.purgeInternalStorage(ctx, null);
+        InternalConfig config = new InternalConfig(TestingUtilityInternal.setupConfig());
 
-        SessionImpl session = new SessionImpl(ctx);
-        session.begin(System.nanoTime() - Device.secToNs(20));
-        session.update(System.nanoTime() - Device.secToNs(10));
+        long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
+        SessionImpl session = new SessionImpl(ctx, beginNs);
+        session.begin(beginNs);
+        session.update(System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 2));
 
         Thread.sleep(300);
 

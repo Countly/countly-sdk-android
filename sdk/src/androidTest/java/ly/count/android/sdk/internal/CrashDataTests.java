@@ -42,10 +42,6 @@ import ly.count.android.sdk.Countly;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
-/**
- * Created by artem on 04/10/2017.
- */
-
 public class CrashDataTests {
     static class DeviceInfo {
         /**
@@ -634,8 +630,10 @@ public class CrashDataTests {
         Assert.assertEquals(CrashDetails.getOpenGL(context), String.valueOf(Device.getOpenGL(context)));
         Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getRamCurrent(context)), Device.getRAMAvailable(context)));
 //        Assert.assertEquals(CrashDetails.getRamCurrent(context), String.valueOf(Device.getRAMAvailable(context)));
-        Assert.assertEquals(CrashDetails.getDiskTotal(), String.valueOf(Device.getDiskTotal()));
-        Assert.assertEquals(CrashDetails.getDiskCurrent(), String.valueOf(Device.getDiskAvailable()));
+        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskTotal()), Device.getDiskTotal()));
+        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskCurrent()), Device.getDiskAvailable()));
+//        Assert.assertEquals(CrashDetails.getDiskTotal(), String.valueOf(Device.getDiskTotal()));
+//        Assert.assertEquals(CrashDetails.getDiskCurrent(), String.valueOf(Device.getDiskAvailable()));
         Assert.assertEquals(CrashDetails.getBatteryLevel(context), String.valueOf(Device.getBatteryLevel(context)));
         Assert.assertEquals(CrashDetails.getOrientation(context), Device.getOrientation(context));
         Assert.assertEquals(CrashDetails.isRooted(), String.valueOf(Device.isRooted()));
