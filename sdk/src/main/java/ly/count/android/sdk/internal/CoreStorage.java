@@ -25,6 +25,9 @@ public class CoreStorage extends CoreLifecycle {
         } else {
             String prefix = FILE_NAME_PREFIX;
             for (String name : names) {
+                if (name == null) {
+                    break;
+                }
                 prefix += FILE_NAME_SEPARATOR + name;
             }
             return prefix;

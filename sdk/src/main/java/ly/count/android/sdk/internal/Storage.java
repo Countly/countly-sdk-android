@@ -147,6 +147,45 @@ class Storage {
     }
 
     /**
+     * Transform existing {@link Storable}s one-by-one replacing data if needed
+     *
+     * @param ctx context to run in
+     * @param prefix Object to reinitialize
+     * @return storable object passed as param when reading succeeded, null otherwise
+     */
+    static <T extends Storable> boolean transform(final Context ctx, final String prefix, final Transformer transformer) {
+        L.d("readAll " + prefix);
+        try {
+            return tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
+                @Override
+                public Boolean call() throws Exception {
+                    boolean success = true;
+                    List<String> names = Core.listDataInInternalStorage(ctx, prefix, 0);
+                    for (String name : names) {
+                        byte data[] = Core.readDataFromInternalStorage(ctx, prefix, name);
+                        if (data != null) {
+                            byte transformed[] = transformer.doTheJob(Long.parseLong(name), data);
+                            if (transformed != null) {
+                                if (!Core.pushDataToInternalStorage(ctx, prefix, name, transformed)) {
+                                    success = false;
+                                    L.e("Couldn't write transformed data for " + name);
+                                }
+                            }
+                        } else {
+                            success = false;
+                            L.e("Couldn't read data to transform from " + name);
+                        }
+                    }
+                    return success;
+                }
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            L.wtf("Interrupted while reading all " + prefix, e);
+        }
+        return false;
+    }
+
+    /**
      * Reinitializes storable with data stored previously in device internal memory.
      *
      * @param ctx context to run in

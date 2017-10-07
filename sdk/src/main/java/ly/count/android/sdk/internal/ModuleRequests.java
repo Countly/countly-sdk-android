@@ -46,8 +46,13 @@ public class ModuleRequests extends ModuleBase {
         return pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> sessionEnd(Context ctx, SessionImpl session, Long seconds, Tasks.Callback<Boolean> callback) {
+    public static Future<Boolean> sessionEnd(Context ctx, SessionImpl session, Long seconds, String did, Tasks.Callback<Boolean> callback) {
         Request request = addCommon(config, session, Request.build("end_session", 1));
+
+        if (did != null && request.params.has(Params.PARAM_DEVICE_ID)) {
+            request.params.remove(Params.PARAM_DEVICE_ID);
+            request.params.add(Params.PARAM_DEVICE_ID, did);
+        }
 
         if (seconds != null && seconds > 0) {
             request.params.add("session_duration", seconds);
@@ -107,14 +112,27 @@ public class ModuleRequests extends ModuleBase {
             request.params.add(session.params);
         }
 
+        if (config.getDeviceId() != null) {
+            request.params.add(Params.PARAM_DEVICE_ID, config.getDeviceId().id);
+        }
+
         return request;
     }
 
     static Request addRequired(InternalConfig config, Request request) {
         request.params.add("sdk_name", config.getSdkName())
                 .add("sdk_version", config.getSdkVersion())
-                .add("app_key", config.getServerAppKey())
-                .add("device_id", config.getDeviceId().id);
+                .add("app_key", config.getServerAppKey());
+
+        if (!request.params.has(Params.PARAM_DEVICE_ID)) {
+            if (config.getDeviceId() == null) {
+                return null;
+            } else {
+                request.params.add(Params.PARAM_DEVICE_ID, config.getDeviceId().id);
+                return request;
+            }
+        }
+
         return request;
     }
 

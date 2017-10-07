@@ -72,6 +72,10 @@ class Network {
         _config = config;
     }
 
+    boolean isInitialized() {
+        return _config != null;
+    }
+
     Future<NetworkResponse> send(final Request request) throws IllegalArgumentException, MalformedURLException {
         if(request == null){
             Log.e("Provided 'request' was null");
@@ -92,10 +96,6 @@ class Network {
                 // url
                 URL sURL = _config.getServerURL();
 
-                // device id
-                Config.DID did = _config.getDeviceId();
-                String deviceID = did.toString();
-
                 // request salt
                 String salt = null;
 
@@ -103,8 +103,10 @@ class Network {
                 SSLContext sslContext_ = null;//todo finish this
                 List<String> publicKeyPinCertificates = null;
 
+                ModuleRequests.addRequired(_config, request);
+
                 // determining appropriate request method
-                boolean usingGetRequest = request.isGettable(sURL, deviceID, 3);
+                boolean usingGetRequest = request.isGettable(sURL, 3);
 
                 if(_config.isUsePOST()){
                     Log.d("Forcing HTTP POST requests");
@@ -257,7 +259,7 @@ class Network {
 
                 Log.d("Network request resolved, returning result");
 
-                return NetworkResponse.createFailureObject();
+                return nResponse;
             }
         });
 

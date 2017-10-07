@@ -59,7 +59,6 @@ public class CountlyService extends android.app.Service {
         this.crashes = new ArrayList<>();
         this.sessions = new ArrayList<>();
         this.tasks = new Tasks("service");
-        this.network = new Network();
         this.config = Core.initForService(this);
         if (config == null) {
             // TODO: inconsistent state, TBD
@@ -68,7 +67,10 @@ public class CountlyService extends android.app.Service {
         } else {
             this.core = Core.instance;
             this.core.onLimitedContextAcquired(this);
-            this.network.init(config);
+            if (config.getDeviceId() != null) {
+                this.network = new Network();
+                this.network.init(config);
+            }
             this.future = null;
         }
     }
@@ -116,6 +118,11 @@ public class CountlyService extends android.app.Service {
                 if (success) {
                     Context ctx = new ContextImpl(CountlyService.this);
                     Core.onDeviceId(ctx, id, old);
+                    if (config != null && config.getDeviceId() != null && network == null) {
+                        L.i("Starting sending requests");
+                        this.network = new Network();
+                        this.network.init(config);
+                    }
                     check();
                 }
             }
@@ -196,7 +203,7 @@ public class CountlyService extends android.app.Service {
     }
 
     private synchronized void check() {
-        if (!shutdown && (future == null || future.isDone())) {
+        if (!shutdown && (future == null || future.isDone()) && config.getDeviceId() != null && network != null) {
             future = tasks.run(submit());
         }
     }

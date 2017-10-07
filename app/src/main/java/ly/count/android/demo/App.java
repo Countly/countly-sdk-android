@@ -5,6 +5,7 @@ import android.app.Application;
 import java.net.MalformedURLException;
 
 import ly.count.android.sdk.Config;
+import ly.count.android.sdk.CountlyNeo;
 import ly.count.android.sdk.CountlyNeoLifecycle;
 
 /**
@@ -19,10 +20,10 @@ public class App extends Application {
             Config config = new Config("http://artem.count.ly", "b9e35f9f278064412c2d9ebf02c88de1b034f101")
                     .enableTestMode()
                     .setLoggingLevel(Config.LoggingLevel.DEBUG)
-                    .setFeatures(Config.Feature.Attribution, Config.Feature.Push, Config.Feature.Crash)
+                    .setFeatures(Config.Feature.Push, Config.Feature.Crash)
                     .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
 
-            CountlyNeoLifecycle.init(this, config);
+            CountlyNeo.init(this, config);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

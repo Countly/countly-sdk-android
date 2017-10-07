@@ -3,6 +3,7 @@ package ly.count.android.sdk.internal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -130,5 +131,17 @@ public class Tasks {
     void awaitTermination() throws InterruptedException {
         L.i("terminating");
         executor.awaitTermination(3L, TimeUnit.SECONDS);
+    }
+
+    void await() {
+        try {
+            executor.submit(new Runnable() {
+                @Override
+                public void run() {
+                }
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            L.w("Interrupted while waiting for Tasks to finish running tasks", e);
+        }
     }
 }

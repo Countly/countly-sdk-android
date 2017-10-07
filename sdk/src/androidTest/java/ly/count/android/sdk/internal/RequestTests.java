@@ -145,7 +145,7 @@ public class RequestTests {
     @Test
     public void isGettable_ParamsEmptyUnderLimit() throws MalformedURLException, Exception{
         Request request = Whitebox.invokeConstructor(Request.class, "");
-        Assert.assertEquals(true, request.isGettable(url, deviceID_1));
+        Assert.assertEquals(true, request.isGettable(url, 0));
     }
 
     @Test
@@ -160,7 +160,7 @@ public class RequestTests {
 
         Request request = Whitebox.invokeConstructor(Request.class, sbParams.toString());
 
-        Assert.assertEquals(false, request.isGettable(url, deviceID_1));
+        Assert.assertEquals(false, request.isGettable(url, 0));
     }
 
     @Test
@@ -186,7 +186,7 @@ public class RequestTests {
     private void TestingGettableLimit(String params, String givenUrlString, URL givenUrl, int addition, StringBuilder sb) throws Exception{
         Request request = Whitebox.invokeConstructor(Request.class, params);
 
-        int theLength = givenUrlString.length() + 2 + params.length() + Whitebox.<String>getInternalState(Request.class, "P_DEVICE_ID").length() + addition;
+        int theLength = givenUrlString.length() + 2 + params.length() + Whitebox.<String>getInternalState(Params.class, "PARAM_DEVICE_ID").length() + addition;
         int neededLength = GET_LIMIT - theLength;
 
         for(int a = 0 ; a < neededLength ; a++) {
@@ -194,11 +194,11 @@ public class RequestTests {
         }
 
         //should be right at the limit
-        Assert.assertEquals(true, request.isGettable(givenUrl, sb.toString(), addition));
+        Assert.assertEquals(true, request.isGettable(givenUrl, addition));
 
         //should be just over limit
         sb.append("d");
-        Assert.assertEquals(false, request.isGettable(givenUrl, sb.toString(), addition));
+        Assert.assertEquals(false, request.isGettable(givenUrl, addition));
     }
 
 //    @Test

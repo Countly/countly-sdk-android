@@ -12,8 +12,6 @@ public class Request implements Storable {
     public static final String MODULE = "module";
     private final Long id;
 
-    private static final String P_DEVICE_ID = "device_id";
-
     /**
      * This string is written to request file to ensure it can be fully read from other end of queue.
      */
@@ -54,12 +52,12 @@ public class Request implements Storable {
         this.id = id;
     }
 
-    boolean isGettable(URL serverUrl, String deviceId) {
-        return isGettable(serverUrl, deviceId, 0);
+    boolean isGettable(URL serverUrl) {
+        return isGettable(serverUrl, 0);
     }
 
-    boolean isGettable(URL serverUrl, String deviceId, int addition) {
-        return (serverUrl.toString().length() + 1 + params.length() + P_DEVICE_ID.length() + 1 + deviceId.length() + addition) < 1024;
+    boolean isGettable(URL serverUrl, int addition) {
+        return (serverUrl.toString().length() + 1 + params.length() + addition) < 1024;
     }
 
     static Request build(Object... params){ return new Request(params); }

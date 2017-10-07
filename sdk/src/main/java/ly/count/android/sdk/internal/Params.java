@@ -13,6 +13,9 @@ import java.util.List;
  */
 
 class Params {
+    static final String PARAM_DEVICE_ID = "device_id";
+    static final String PARAM_OLD_DEVICE_ID = "old_device_id";
+
     private static final Log.Module L = Log.module("Params");
 
     private StringBuilder params;
@@ -155,7 +158,7 @@ class Params {
     }
 
     String get(String key) {
-        if (params.indexOf(key + "=") == -1) {
+        if (!has(key)) {
             return null;
         }
         String[] pairs = params.toString().split("&");
@@ -166,6 +169,10 @@ class Params {
             }
         }
         return null;
+    }
+
+    boolean has(String key) {
+        return params.indexOf("&" + key + "=") != -1 || params.indexOf(key + "=") == 0;
     }
 
     //todo can this receive only an even amount of objects? maybe return an error if an odd amount is returned?

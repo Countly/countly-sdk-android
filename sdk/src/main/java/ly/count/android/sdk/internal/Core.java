@@ -243,7 +243,7 @@ public class Core extends CoreModules {
                 if (next.began == null) {
                     next.begin(session.ended + Math.round(Device.NS_IN_SECOND));
                 } else if (next.began < session.ended) {
-                    Log.w("Sessions are overlapping. Next session starts before previous one ended.");
+                    L.w("Sessions are overlapping. Next session starts before previous one ended.");
                 }
                 return next;
             }
@@ -336,7 +336,13 @@ public class Core extends CoreModules {
             L.wtf("SDK not initialized when setting device id");
             return;
         }
-        if (!instance.config.isLimited()) {
+        if (instance.config.isLimited()) {
+            if (id != null && (!id.equals(old) || !id.equals(instance.config.getDeviceId(id.realm)))) {
+                instance.config.setDeviceId(id);
+            } else if (id == null && old != null) {
+                instance.config.removeDeviceId(old);
+            }
+        } else {
             if (id != null && (!id.equals(old) || !id.equals(instance.config.getDeviceId(id.realm)))) {
                 instance.config.setDeviceId(id);
                 Storage.push(ctx, instance.config);
@@ -352,20 +358,13 @@ public class Core extends CoreModules {
         }
 
         if (instance.config.isLimited()) {
-            instance.user = instance.loadUser(ctx);
-        } else {
-            Map<String, Object> params = null;
-            if (id != null || old != null) {
-                params = new HashMap<>();
-                if (id != null) {
-                    params.put(CountlyService.PARAM_ID, id.store());
-                }
-                if (old != null) {
-                    params.put(CountlyService.PARAM_OLD_ID, old.store());
-                }
+            instance.config = instance.loadConfig(ctx);
+            if (instance.config == null) {
+                L.wtf("Config reload gave null instance");
+            } else {
+                instance.config.setLimited(true);
             }
-
-            sendToService(ctx, CountlyService.CMD_DEVICE_ID, params);
+            instance.user = instance.loadUser(ctx);
         }
 
         if (!instance.config.isLimited() && id != null && id.realm == Config.DeviceIdRealm.DEVICE_ID) {
@@ -413,6 +412,24 @@ public class Core extends CoreModules {
      */
     Future<Config.DID> acquireId(Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
         return ((ModuleDeviceId)module(ModuleDeviceId.class)).acquireId(ctx, holder, fallbackAllowed, callback);
+    }
+
+    public void login(android.content.Context context, String id) {
+        if (instance == null) {
+            Log.wtf("Countly is not initialized");
+        } else {
+            Context ctx = new ContextImpl(context);
+            instance.module(ModuleDeviceId.class).login(ctx, id);
+        }
+    }
+
+    public void logout(android.content.Context context) {
+        if (instance == null) {
+            Log.wtf("Countly is not initialized");
+        } else {
+            Context ctx = new ContextImpl(context);
+            instance.module(ModuleDeviceId.class).logout(ctx);
+        }
     }
 
     /**

@@ -1,5 +1,7 @@
 package ly.count.android.sdk.internal;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
@@ -88,6 +90,106 @@ public class ModuleDeviceId extends ModuleBase {
         }
     }
 
+    @Override
+    public void onDeviceId(final Context ctx, final Config.DID deviceId, final Config.DID oldDeviceId) {
+        if (config.isLimited()) {
+            return;
+        }
+
+        SessionImpl leading = Core.instance.sessionLeading();
+
+        if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID && !deviceId.equals(oldDeviceId)) {
+            // device id changed
+            if (leading != null && leading.isActive()) {
+                // end previous session
+                leading.end(null, null, oldDeviceId.id);
+            }
+
+            // add device id change request
+            Request request = ModuleRequests.nonSessionRequest(config);
+            request.params.add(Params.PARAM_DEVICE_ID, deviceId.id).add(Params.PARAM_OLD_DEVICE_ID, oldDeviceId.id);
+            ModuleRequests.pushAsync(ctx, request);
+
+            sendDeviceIdToService(ctx, deviceId, oldDeviceId);
+
+        } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
+            // device id is unset
+            if (leading != null) {
+                leading.end(null, null, oldDeviceId.id);
+            }
+
+            sendDeviceIdToService(ctx, null, oldDeviceId);
+
+        } else if (deviceId != null && oldDeviceId == null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
+            // device id just acquired
+            if (this.tasks == null) {
+                this.tasks = new Tasks("deviceId");
+            }
+            tasks.run(new Tasks.Task<Object>(0L) {
+                @Override
+                public Object call() throws Exception {
+                    // put device_id parameter into existing requests
+                    L.i("Adding device_id to previous requests");
+                    boolean success = transformRequests(ctx, deviceId.id);
+                    if (success) {
+                        L.i("First transform: success");
+                    } else {
+                        L.w("First transform: failure");
+                    }
+
+                    // do it second time in case new requests were added during first attempt
+                    success = transformRequests(ctx, deviceId.id);
+                    if (!success) {
+                        L.e("Failed to put device_id into existing requests, following behaviour for unhandled requests is undefined.");
+                    } else {
+                        L.i("Second transform: success");
+                    }
+                    sendDeviceIdToService(ctx, deviceId, null);
+                    return null;
+                }
+            });
+        }
+    }
+
+    /**
+     * Puts {@code "device_id"} parameter into all requests which don't have it yet
+     *
+     * @param ctx Context to run in
+     * @param deviceId deviceId string
+     * @return {@code true} if {@link Request}s changed successfully, {@code false} otherwise
+     */
+    private boolean transformRequests(final Context ctx, final String deviceId) {
+        return Storage.transform(ctx, Request.getStoragePrefix(), new Transformer() {
+            @Override
+            public byte[] doTheJob(Long id, byte[] data) {
+                Request request = new Request(id);
+                if (request.restore(data) && !request.params.has(Params.PARAM_DEVICE_ID)) {
+                    request.params.add(Params.PARAM_DEVICE_ID, deviceId);
+                    return request.store();
+                }
+                return null;
+            }
+        });
+    }
+
+    /**
+     * Just a wrapper around {@link Core#sendToService(Context, int, Map)} for {@link CountlyService#CMD_DEVICE_ID} case
+     *
+     * @param ctx Context to run in
+     * @param id new {@link ly.count.android.sdk.Config.DID} if any
+     * @param old old {@link ly.count.android.sdk.Config.DID} if any
+     */
+    private void sendDeviceIdToService(Context ctx, Config.DID id, Config.DID old) {
+        Map<String, Object> params = new HashMap<>();
+        if (id != null) {
+            params.put(CountlyService.PARAM_ID, id.store());
+        }
+        if (old != null) {
+            params.put(CountlyService.PARAM_OLD_ID, old.store());
+        }
+        Core.sendToService(ctx, CountlyService.CMD_DEVICE_ID, params);
+    }
+
     /**
      * Logging into app-specific account:
      * - reset device id and notify modules;
@@ -104,11 +206,6 @@ public class ModuleDeviceId extends ModuleBase {
             config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, id));
             Storage.push(ctx, config);
 
-            if (old != null) {
-                // have acquired an id already
-//                ModuleRequests.sessionBegin()
-            }
-
             // old session end & new session begin requests are supposed to happen here
             Core.onDeviceId(ctx, config.getDeviceId(), old);
         }
@@ -121,11 +218,24 @@ public class ModuleDeviceId extends ModuleBase {
      *
      * @param ctx context to run in
      */
-    public void logout(Context ctx) {
+    public void logout(final Context ctx) {
         final Config.DID old = config.getDeviceId();
         config.setDeviceId(null);
         Storage.push(ctx, config);
-        Core.onDeviceId(ctx, config.getDeviceId(), old);
+
+        Core.onDeviceId(ctx, null, old);
+
+        acquireId(ctx, new Config.DID(Config.DeviceIdRealm.DEVICE_ID, config.getDeviceIdStrategy(), null), config.isDeviceIdFallbackAllowed(), new Tasks.Callback<Config.DID>() {
+            @Override
+            public void call(Config.DID id) throws Exception {
+                if (id != null) {
+                    L.d("Got device id: " + id);
+                    Core.onDeviceId(ctx, id, null);
+                } else {
+                    L.i("No device id of strategy " + config.getDeviceIdStrategy() + " is available yet");
+                }
+            }
+        });
     }
 
     Future<Config.DID> acquireId(final Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
@@ -151,11 +261,19 @@ public class ModuleDeviceId extends ModuleBase {
      * @return {@link ly.count.android.sdk.Config.DID} instance with an id
      */
     public Config.DID acquireIdSync(final Context ctx, final Config.DID holder, final boolean fallbackAllowed) {
+        if (testSleep > 0) {
+            try {
+                Thread.sleep(testSleep);
+            } catch (InterruptedException ignored) {
+                L.wtf("Exception during tests", ignored);
+            }
+        }
+
+        L.i("Generating " + holder.strategy + " / " + holder.realm);
 
         switch (holder.strategy) {
             case OPEN_UDID:
                 // Courtesy OpenUDID https://github.com/vieux/OpenUDID
-                L.i("Generating OPEN_UDID");
 
                 String id = Core.generateOpenUDID(ctx);
 
@@ -163,7 +281,6 @@ public class ModuleDeviceId extends ModuleBase {
 
             case ADVERTISING_ID:
                 if (Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME)) {
-                    L.i("Generating ADVERTISING_ID");
                     try {
                         Object info = Utils.reflectiveCallStrict(ADVERTISING_ID_CLIENT_CLASS_NAME, null, "getAdvertisingIdInfo", android.content.Context.class, ctx.getContext());
                         L.i("Got ADVERTISING_ID info");
@@ -204,7 +321,6 @@ public class ModuleDeviceId extends ModuleBase {
 
             case INSTANCE_ID:
                 if (Utils.reflectiveClassExists(INSTANCE_ID_CLASS_NAME)) {
-                    L.i("Generating INSTANCE_ID");
                     try {
                         Object instance = Utils.reflectiveCall(INSTANCE_ID_CLASS_NAME, null, "getInstance");
                         if (instance == null || instance == Boolean.FALSE) {
@@ -249,6 +365,8 @@ public class ModuleDeviceId extends ModuleBase {
 
         return null;
     }
+
+    private static long testSleep = 0L;
 
     public static class AdvIdInfo {
         public static String deviceId;

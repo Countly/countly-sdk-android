@@ -137,7 +137,7 @@ public class SessionImplTests {
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
         session.begin(timeBegin);
-        session.end(timeEnd, null);
+        session.end(timeEnd, null, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
@@ -156,7 +156,7 @@ public class SessionImplTests {
         Assert.assertEquals(null, session.getEnded());
 
         session.begin(timeBegin);
-        session.end(timeEnd, null);
+        session.end(timeEnd, null, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
@@ -192,12 +192,12 @@ public class SessionImplTests {
         Assert.assertEquals(timeBegin, (long) session.getBegan());
         Assert.assertEquals(null, session.getEnded());
 
-        session.end(timeEnd, null);
+        session.end(timeEnd, null, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
 
-        session.end(timeEndSecond, null);
+        session.end(timeEndSecond, null, null);
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());
         Assert.assertEquals(timeEnd, (long)session.getEnded());
@@ -285,7 +285,7 @@ public class SessionImplTests {
         Assert.assertEquals(timeBegin, (long) session.getBegan());
         Assert.assertEquals(null, session.getEnded());
 
-        session.end(timeEnd, null);
+        session.end(timeEnd, null, null);
         session.update();
 
         Assert.assertEquals(timeBegin, (long)session.getBegan());

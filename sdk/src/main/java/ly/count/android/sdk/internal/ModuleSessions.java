@@ -60,26 +60,20 @@ public class ModuleSessions extends ModuleBase {
         }
     }
 
-    @Override
-    public void onDeviceId(Context ctx, Config.DID deviceId, Config.DID oldDeviceId) {
-        SessionImpl leading = Core.instance.sessionLeading();
-
-        // device id changed
-        if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
-
-        } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
-            // device id is unset
-            if (leading != null) {
-                leading.end();
-            }
+    /**
+     * Handles one single case of device id change with auto sessions handling, see first {@code if} here:
+     * @see ModuleDeviceId#onDeviceId(Context, Config.DID, Config.DID)
+     */
+    public void onDeviceId(final Context ctx, final Config.DID deviceId, final Config.DID oldDeviceId) {
+        if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID && !deviceId.equals(oldDeviceId) && Core.instance.sessionLeading() == null) {
+            Core.instance.sessionAdd(ctx).begin();
         }
     }
 
     @Override
     public synchronized void onActivityStarted(Context ctx) {
-        super.onActivityStarted(ctx);
         if (activityCount == 0) {
-            Log.i("starting new session");
+            L.i("starting new session");
             Core.instance.sessionAdd(ctx).begin();
             if (updateInterval > 0 && executor == null) {
                 executor = Executors.newScheduledThreadPool(1);
@@ -87,7 +81,7 @@ public class ModuleSessions extends ModuleBase {
                     @Override
                     public void run() {
                         if (isActive() && Core.instance.sessionLeading() != null) {
-                            Log.i("updating session");
+                            L.i("updating session");
                             Core.instance.sessionLeading().update();
                         }
                     }
@@ -99,10 +93,9 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     public synchronized void onActivityStopped(Context ctx) {
-        super.onActivityStopped(ctx);
         activityCount--;
         if (activityCount == 0 && Core.instance.sessionLeading() != null) {
-            Log.i("stopping session");
+            L.i("stopping session");
             if (executor != null) {
                 try {
                     executor.shutdown();

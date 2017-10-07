@@ -27,7 +27,6 @@ public interface Session {
      */
     Long getEnded();
 
-
     /**
      * Only one session can send requests at a time and this session is called leading.
      * Once leading session is ended, next one (if any) becomes leading automatically

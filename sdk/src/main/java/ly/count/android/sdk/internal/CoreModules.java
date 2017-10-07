@@ -109,10 +109,11 @@ public class CoreModules extends CoreStorage {
      * @param cls class to get a {@link Module} instance for
      * @return {@link Module} instance or null if no such module is instantiated
      */
-    protected Module module(Class<? extends Module> cls) {
+    @SuppressWarnings("unchecked")
+    protected <T extends Module> T module(Class<T> cls) {
         for (Module module: modules) {
             if (module.getClass().isAssignableFrom(cls)) {
-                return module;
+                return (T) module;
             }
         }
         return null;

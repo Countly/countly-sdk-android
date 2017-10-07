@@ -71,11 +71,6 @@ class SessionImpl implements Session, Storable {
         this.id = id;
     }
 
-    /**
-     * Start this session, add corresponding request.
-     *
-     * @return {@code this} instance for method chaining.
-     */
     @Override
     public Session begin() {
         begin(null);
@@ -83,7 +78,10 @@ class SessionImpl implements Session, Storable {
     }
 
     Future<Boolean> begin(Long now) {
-        if (began != null) {
+        if (Core.instance == null) {
+            L.wtf("Countly is not initialized");
+            return null;
+        } else if (began != null) {
             L.wtf("Session already began");
             return null;
         } else if (ended != null) {
@@ -104,11 +102,6 @@ class SessionImpl implements Session, Storable {
         return ret;
     }
 
-    /**
-     * Update session, send unsent duration along with any additional data to the server.
-     *
-     * @return {@code this} instance for method chaining.
-     */
     @Override
     public Session update() {
         update(null);
@@ -116,7 +109,10 @@ class SessionImpl implements Session, Storable {
     }
 
     Future<Boolean> update(Long now) {
-        if (began == null) {
+        if (Core.instance == null) {
+            L.wtf("Countly is not initialized");
+            return null;
+        } else if (began == null) {
             L.wtf("Session is not began to update it");
             return null;
         } else if (ended != null) {
@@ -133,19 +129,17 @@ class SessionImpl implements Session, Storable {
         return ModuleRequests.sessionUpdate(ctx, this, duration);
     }
 
-    /**
-     * End this session, add corresponding request.
-     *
-     * @return next {@link Session} instance in stack if any, {@code null} otherwise.
-     */
     @Override
     public Session end() {
-        end(null, null);
+        end(null, null, null);
         return Core.instance.sessionLeading();
     }
 
-    Future<Boolean> end(Long now, final Tasks.Callback<Boolean> callback) {
-        if (began == null) {
+    Future<Boolean> end(Long now, final Tasks.Callback<Boolean> callback, String did) {
+        if (Core.instance == null) {
+            L.wtf("Countly is not initialized");
+            return null;
+        } else if (began == null) {
             L.wtf("Session is not began to end it");
             return null;
         } else if (ended != null) {
@@ -158,7 +152,7 @@ class SessionImpl implements Session, Storable {
 
         Long duration = updateDuration(null);
 
-        Future<Boolean> ret = ModuleRequests.sessionEnd(ctx, this, duration, new Tasks.Callback<Boolean>() {
+        Future<Boolean> ret = ModuleRequests.sessionEnd(ctx, this, duration, did, new Tasks.Callback<Boolean>() {
             @Override
             public void call(Boolean removed) throws Exception {
                 if (!removed) {
@@ -182,9 +176,9 @@ class SessionImpl implements Session, Storable {
             if (began == null) {
                 return Storage.remove(ctx, this);
             } else if (ended == null && updated == null) {
-                future = end(began + Device.secToNs(config.getSessionCooldownPeriod()), null);
+                future = end(began + Device.secToNs(config.getSessionCooldownPeriod()), null, null);
             } else if (ended == null) {
-                future = end(updated + Device.secToNs(config.getSessionCooldownPeriod()), null);
+                future = end(updated + Device.secToNs(config.getSessionCooldownPeriod()), null, null);
             } else {
                 // began != null && ended != null
                 return Storage.remove(ctx, this);
@@ -201,7 +195,7 @@ class SessionImpl implements Session, Storable {
 
     @Override
     public boolean isActive() {
-        return began != null && ended != null;
+        return began != null && ended == null;
     }
 
     /**
@@ -223,21 +217,10 @@ class SessionImpl implements Session, Storable {
         return Device.nsToSec(duration);
     }
 
-    /**
-     * Create new event object, don't record it yet
-     *
-     * @return Event instance.
-     * @see Eve#record()
-     */
     public Eve event(String key) {
         return new EventImpl(this, key);
     }
 
-    /**
-     * Record event, push it to storage.
-     * @param event Event to record
-     * @return this instance for method chaining
-     */
     synchronized Session recordEvent(Eve event) {
         events.add(event);
         if (pushOnChange) {
@@ -248,7 +231,12 @@ class SessionImpl implements Session, Storable {
 
     @Override
     public User user() {
-        return Core.instance.user();
+        if (Core.instance == null) {
+            L.wtf("Countly is not initialized");
+            return null;
+        } else {
+            return Core.instance.user();
+        }
     }
 
     @Override
@@ -269,13 +257,6 @@ class SessionImpl implements Session, Storable {
 
     // TODO: to be continued...
 
-    /**
-     * Add additional parameter to {@link #params}
-     *
-     * @param key name of parameter
-     * @param value value of parameter, optional, will be url-encoded if provided
-     * @return {@code this} instance for method chaining.
-     */
     public Session addParam(String key, Object value) {
         params.add(key, value);
         if (pushOnChange) {
@@ -301,8 +282,10 @@ class SessionImpl implements Session, Storable {
 
     @Override
     public Boolean isLeading() {
-        if (Core.instance.sessionLeading() == null) {
-            L.wtf("Leading session is null");
+        if (Core.instance == null) {
+            L.wtf("Countly is not initialized");
+            return false;
+        } else if (Core.instance.sessionLeading() == null) {
             return false;
         }
         return Core.instance.sessionLeading().getId().equals(getId());
