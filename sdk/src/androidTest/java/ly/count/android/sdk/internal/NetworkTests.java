@@ -1,40 +1,26 @@
 package ly.count.android.sdk.internal;
 
-import android.os.Debug;
 import android.support.test.runner.AndroidJUnit4;
-import android.util.*;
-
-import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
-import javax.net.ssl.HttpsURLConnection;
 
 import ly.count.android.sdk.Config;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 @RunWith(AndroidJUnit4.class)
 public class NetworkTests {
@@ -163,6 +149,40 @@ public class NetworkTests {
         //fut.cancel(true);
         //android.util.Log.d("CountlyTests", "BB2 , " + fut.isDone() + " " + fut.isCancelled());
         Network.NetworkResponse nr = fut.get();
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, " + nr.GetInternalState());
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, " + nr.toString());
+    }
+
+    @Test
+    public void sampleRequestStartSession() throws IOException, ExecutionException, InterruptedException, Exception {
+        server.enqueue(new MockResponse().setBody("hello, world!"));
+
+        Network network = new Network();
+        network.init(internalConfig);
+
+        String[] params = new String[] {"app_key", "0698b21707df83ee5accd5ff44584e2a35efa861", "timestamp", "1507252971803", "hour", "4", "dow", "5", "tz", "180", "sdk_version", "17.09.1", "sdk_name", "java-native-android", "begin_session", "1", "metrics", "%7B%22_device%22%3A%22Nexus+5X%22%2C%22_os%22%3A%22Android%22%2C%22_os_version%22%3A%227.1.2%22%2C%22_carrier%22%3A%22LMT%22%2C%22_resolution%22%3A%221080x1794%22%2C%22_density%22%3A%22XXHDPI%22%2C%22_locale%22%3A%22en_US%22%2C%22_app_version%22%3A%221.0%22%7D"};
+        Request request = new Request(params);
+
+        String targetURL = "http://kadikis.count.ly/i?app_key=0698b21707df83ee5accd5ff44584e2a35efa861&timestamp=1507252971803&hour=4&dow=5&tz=180&sdk_version=17.09.1&sdk_name=java-native-android&begin_session=1&metrics=%7B%22_device%22%3A%22Nexus+5X%22%2C%22_os%22%3A%22Android%22%2C%22_os_version%22%3A%227.1.2%22%2C%22_carrier%22%3A%22LMT%22%2C%22_resolution%22%3A%221080x1794%22%2C%22_density%22%3A%22XXHDPI%22%2C%22_locale%22%3A%22en_US%22%2C%22_app_version%22%3A%221.0%22%7D&device_id=New Device ID&sdk_version=16.12.2&sdk_name=java-native-android&checksum=46f9aeebc12e4dbf9dd49a2c3b30bf8043482ec0";
+        String targetRequest = "/i?app_key=0698b21707df83ee5accd5ff44584e2a35efa861&timestamp=1507252971803&hour=4&dow=5&tz=180&sdk_version=17.09.1&sdk_name=java-native-android&begin_session=1&metrics=%7B%22_device%22%3A%22Nexus+5X%22%2C%22_os%22%3A%22Android%22%2C%22_os_version%22%3A%227.1.2%22%2C%22_carrier%22%3A%22LMT%22%2C%22_resolution%22%3A%221080x1794%22%2C%22_density%22%3A%22XXHDPI%22%2C%22_locale%22%3A%22en_US%22%2C%22_app_version%22%3A%221.0%22%7D&device_id=New Device ID&sdk_version=16.12.2&sdk_name=java-native-android&checksum=46f9aeebc12e4dbf9dd49a2c3b30bf8043482ec0";
+
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "AA");
+        Future<Network.NetworkResponse> fut = network.send(request);
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "BB, " + fut.isDone() + " " + fut.isCancelled());
+        //fut.cancel(true);
+        //android.util.Log.d("CountlyTests", "BB2 , " + fut.isDone() + " " + fut.isCancelled());
+        Network.NetworkResponse nr = fut.get();
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, " + nr.toString());
+
+
+        RecordedRequest rr = server.takeRequest();
+
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, path " + rr.getPath());
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, mehod" + rr.getMethod());
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, req line" + rr.getRequestLine());
+        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, req url" + rr.getRequestUrl());
+
+
+
+        //Assert.assertEquals(targetRequest, rr.getPath());
     }
 }

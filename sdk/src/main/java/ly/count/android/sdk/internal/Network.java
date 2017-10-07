@@ -1,8 +1,5 @@
 package ly.count.android.sdk.internal;
 
-import android.os.Build;
-import android.util.*;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,21 +16,15 @@ import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 
 import ly.count.android.sdk.*;
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.internal.Log;
 
 /**
  * Class managing all networking operations.
@@ -122,10 +113,12 @@ class Network {
 
                 // print received response and code
 
-                NetworkResponse nResponse = NetworkResponse.CreateFailureObject();
+                NetworkResponse nResponse = NetworkResponse.createFailureObject();
+
+                // Prepare data that has to be sent
+                String eventData = request.params.toString();
 
                 // doing the network request
-                String eventData = "";
 
                 HttpURLConnection conn = null;
                 try {
@@ -227,7 +220,7 @@ class Network {
                     if (conn instanceof HttpURLConnection) {
                         final HttpURLConnection httpConn = (HttpURLConnection) conn;
                         nResponse.responseCode = httpConn.getResponseCode();
-                        nResponse.httpResponse = GetResponseOutOfHttpURLConnection(httpConn);
+                        nResponse.httpResponse = getResponseOutOfHttpURLConnection(httpConn);
                     } else {
                         nResponse.responseCode = 0;
                     }
@@ -264,7 +257,7 @@ class Network {
 
                 Log.d("Network request resolved, returning result");
 
-                return NetworkResponse.CreateFailureObject();
+                return NetworkResponse.createFailureObject();
             }
         });
 
@@ -293,7 +286,7 @@ class Network {
          * Created in case of failures or exceptions where the response could not be created naturally as a failed request.
          * @return
          */
-        public static NetworkResponse CreateFailureObject(){
+        public static NetworkResponse createFailureObject(){
             NetworkResponse fo = new NetworkResponse();
             fo.requestSucceeded = false;
 
@@ -304,7 +297,8 @@ class Network {
          * Return internal state for debug purposes
          * @return
          */
-        protected String GetInternalState(){
+        @Override
+        public String toString() {
             StringBuilder sb = new StringBuilder();
 
             sb.append("Request succeeded: [").append(requestSucceeded).append("], ");
@@ -315,7 +309,7 @@ class Network {
         }
     }
 
-    String GetResponseOutOfHttpURLConnection(HttpURLConnection httpConn) throws IOException {
+    String getResponseOutOfHttpURLConnection(HttpURLConnection httpConn) throws IOException {
         BufferedReader br;
         if (200 <= httpConn.getResponseCode() && httpConn.getResponseCode() <= 299) {
             br = new BufferedReader(new InputStreamReader((httpConn.getInputStream())));
