@@ -42,9 +42,9 @@ public class CountlyServiceTests {
         Assert.assertNotNull(Whitebox.getInternalState(service, "ctx"));
         Assert.assertNotNull(Whitebox.getInternalState(service, "crashes"));
         Assert.assertNotNull(Whitebox.getInternalState(service, "sessions"));
-        Assert.assertNotNull(Whitebox.getInternalState(service, "network"));
         Assert.assertNotNull(Whitebox.getInternalState(service, "config"));
         Assert.assertNotNull(Whitebox.getInternalState(service, "core"));
+        Assert.assertNull(Whitebox.getInternalState(service, "network"));
     }
 
     @Test
@@ -56,7 +56,8 @@ public class CountlyServiceTests {
 
     @Test
     public void recovery_sessionOld() throws Exception {
-        SessionImpl session = new SessionImpl(ctx, System.nanoTime() - Device.secToNs(2020));
+        TestingUtilityInternal.setupBasicCore(getContext());
+        SessionImpl session = new SessionImpl(ctx, Device.uniqueTimestamp() - Device.secToMs(2020));
         session.begin(System.nanoTime() - Device.secToNs(2020));
         session.update(System.nanoTime() - Device.secToNs(2000));
 
@@ -68,6 +69,7 @@ public class CountlyServiceTests {
         Assert.assertEquals(2, Storage.list(ctx, SessionImpl.getStoragePrefix()).size());
         Assert.assertEquals(3, Storage.list(ctx, Request.getStoragePrefix()).size());
 
+        Core.instance.deinit();
         service.onCreate();
 
         doReturn(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
@@ -84,17 +86,18 @@ public class CountlyServiceTests {
         service.onStartCommand(intent, 0, 0);
 
         Tasks tasks = Utils.reflectiveGetField(service, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Assert.assertEquals(1, Storage.list(ctx, SessionImpl.getStoragePrefix()).size());
     }
 
     @Test
     public void recovery_sessionBad() throws Exception {
-        SessionImpl notBegan = new SessionImpl(ctx, System.nanoTime() - Device.secToNs(2020));
+        TestingUtilityInternal.setupBasicCore(getContext());
+        SessionImpl notBegan = new SessionImpl(ctx, Device.uniqueTimestamp() - Device.secToMs(2020));
         Storage.push(ctx, notBegan);
 
-        SessionImpl ended = new SessionImpl(ctx, System.nanoTime() - Device.secToNs(2010));
+        SessionImpl ended = new SessionImpl(ctx, Device.uniqueTimestamp() - Device.secToMs(2010));
         ended.begin(System.nanoTime() - Device.secToNs(2010));
         ended.end();
         Storage.await();
@@ -104,6 +107,7 @@ public class CountlyServiceTests {
         Assert.assertEquals(notBegan.id, sessions.get(0));
         Assert.assertEquals(2, Storage.list(ctx, Request.getStoragePrefix()).size());
 
+        Core.instance.deinit();
         service.onCreate();
 
         doReturn(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
@@ -120,7 +124,7 @@ public class CountlyServiceTests {
         service.onStartCommand(intent, 0, 0);
 
         Tasks tasks = Utils.reflectiveGetField(service, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Assert.assertEquals(0, Storage.list(ctx, SessionImpl.getStoragePrefix()).size());
         Assert.assertEquals(2, Storage.list(ctx, Request.getStoragePrefix()).size());
@@ -128,6 +132,7 @@ public class CountlyServiceTests {
 
     @Test
     public void receiving_crash() throws Exception {
+        TestingUtilityInternal.setupBasicCore(getContext());
         SessionImpl session = new SessionImpl(ctx);
         session.begin();
 
@@ -137,6 +142,7 @@ public class CountlyServiceTests {
         Assert.assertEquals(1, sessions.size());
         Assert.assertEquals(1, Storage.list(ctx, Request.getStoragePrefix()).size());
 
+        Core.instance.deinit();
         service.onCreate();
 
         doReturn(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
@@ -165,7 +171,7 @@ public class CountlyServiceTests {
         service.onStartCommand(intent, 0, 0);
 
         Tasks tasks = Utils.reflectiveGetField(service, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
         Assert.assertEquals(1, Storage.list(ctx, SessionImpl.getStoragePrefix()).size());

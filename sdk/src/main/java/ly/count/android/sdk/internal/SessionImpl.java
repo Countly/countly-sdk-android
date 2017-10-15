@@ -59,7 +59,7 @@ class SessionImpl implements Session, Storable {
      * Create session with current time as id.
      */
     protected SessionImpl(Context ctx) {
-        this.id = System.nanoTime();
+        this.id = Device.uniqueTimestamp();
         this.ctx = ctx;
     }
 
@@ -169,7 +169,7 @@ class SessionImpl implements Session, Storable {
     }
 
     Boolean recover(Config config) {
-        if (Device.nsToSec(System.nanoTime() - id) < config.getSessionCooldownPeriod() * 2) {
+        if ((System.currentTimeMillis() - id) < Device.secToMs(config.getSessionCooldownPeriod() * 2)) {
             return null;
         } else {
             Future<Boolean> future = null;

@@ -22,8 +22,9 @@ public class SessionImplTests {
     private Context ctx = null;
 
     @Before
-    public void setupEveryTest(){
+    public void setupEveryTest() throws MalformedURLException {
         ctx = new ContextImpl(getContext());
+        TestingUtilityInternal.setupCoreForApplication(getContext());
     }
 
     @After
@@ -489,7 +490,7 @@ public class SessionImplTests {
         InternalConfig config = new InternalConfig(TestingUtilityInternal.setupConfig());
 
         long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
-        SessionImpl session = new SessionImpl(ctx, beginNs);
+        SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - Device.secToMs(config.getSessionCooldownPeriod() * 3));
         session.begin(beginNs);
         session.update(System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 2));
 

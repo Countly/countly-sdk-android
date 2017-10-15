@@ -47,6 +47,7 @@ class Device {
      */
     static final Double NS_IN_SECOND = 1000000000.0d;
     static final Double NS_IN_MS = 1000000.0d;
+    static final Double MS_IN_SECOND = 1000d;
     static final Long BYTES_IN_MB = 1024L * 1024;
 
     static class TimeUniquenessEnsurer {
@@ -370,6 +371,16 @@ class Device {
      */
     static long secToNs(long sec) {
         return Math.round(sec * NS_IN_SECOND);
+    }
+
+    /**
+     * Convert time in seconds to milliseconds
+     *
+     * @param sec time in seconds
+     * @return sec in nanoseconds
+     */
+    static long secToMs(long sec) {
+        return Math.round(sec * MS_IN_SECOND);
     }
 
     /**

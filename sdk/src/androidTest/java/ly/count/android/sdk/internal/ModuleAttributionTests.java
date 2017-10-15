@@ -68,7 +68,7 @@ public class ModuleAttributionTests {
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Config.DID did = internalConfig.getDeviceId();
         Config.DID aid = internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
@@ -99,7 +99,7 @@ public class ModuleAttributionTests {
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Config.DID did = internalConfig.getDeviceId();
         Config.DID aid = internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
@@ -129,7 +129,7 @@ public class ModuleAttributionTests {
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Assert.assertFalse(module.onRequest(new Request().own(ModuleAttribution.class)));
     }
@@ -154,7 +154,7 @@ public class ModuleAttributionTests {
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Assert.assertTrue(module.onRequest(request));
         Assert.assertTrue(request.params.toString().contains(ModuleAttribution.CLY_AID + "=" + ModuleDeviceId.AdvIdInfo.deviceId));

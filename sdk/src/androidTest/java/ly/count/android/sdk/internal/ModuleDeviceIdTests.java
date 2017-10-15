@@ -172,7 +172,7 @@ public class ModuleDeviceIdTests {
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
@@ -233,7 +233,7 @@ public class ModuleDeviceIdTests {
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
 
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
@@ -263,7 +263,7 @@ public class ModuleDeviceIdTests {
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
@@ -324,7 +324,7 @@ public class ModuleDeviceIdTests {
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
 
         Tasks tasks = Utils.reflectiveGetField(module, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Config.DID did = internalConfig.getDeviceId();
         Assert.assertNotNull(did);
@@ -401,7 +401,7 @@ public class ModuleDeviceIdTests {
         Assert.assertTrue(request.params.toString().contains("device_id=" + idString));
 
         // ----------------- now changing device id --------------------
-        Core.instance.login(ctx, "did");
+        Core.instance.login(ctx.getContext(), "did");
 
         // let's wait for tasks to finish pushing requests and such
         Tasks deviceIdTasks = Utils.reflectiveGetField(module, "tasks");

@@ -2,6 +2,7 @@ package ly.count.android.sdk.internal;
 
 import android.app.Application;
 import android.content.*;
+import android.content.Context;
 
 import junit.framework.Assert;
 
@@ -104,5 +105,15 @@ public class TestingUtilityInternal {
         when(app.getContentResolver()).thenReturn(context.getContentResolver());
         when(app.getMainLooper()).thenReturn(context.getMainLooper());
         return app;
+    }
+
+    public static void setupCoreForApplication(Context context) throws MalformedURLException {
+        setupCoreForApplication(context, null);
+    }
+
+    public static void setupCoreForApplication(Context context, Config config) throws MalformedURLException {
+        config = TestingUtilityInternal.setupLogs(config);
+        Core core = Core.initForApplication(config, context);
+        core.onContextAcquired(mockApplication(context));
     }
 }

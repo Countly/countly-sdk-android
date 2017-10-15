@@ -15,6 +15,7 @@ public class ModuleCrash extends ModuleBase {
 
     private long started = 0;
     private boolean limited = false;
+    private boolean crashed = false;
 
     private int anrTimeout = 0;
     private volatile int tick = 0;
@@ -33,8 +34,12 @@ public class ModuleCrash extends ModuleBase {
     private Runnable checker = new Runnable() {
         @Override
         public void run() {
+            if (crashed) {
+                return;
+            }
             L.d("checker " + tick + " / " + tickToCheck);
             if (tick <= tickToCheck) {
+                crashed = true;
                 // TODO: report all stacktraces here
                 onCrash(context, new IllegalStateException("ANR"), true, null, null);
                 L.e("ANR detected. Waiting 3 x crashReportingANRTimeout and resuming watching for ANR.");
@@ -84,6 +89,8 @@ public class ModuleCrash extends ModuleBase {
                 @Override
                 public void uncaughtException(Thread thread, Throwable throwable) {
                     // needed since following UncaughtExceptionHandler can keep reference to this one
+                    crashed = true;
+
                     if (isActive()) {
                         onCrash(ctx, throwable, true, null, null);
                     }

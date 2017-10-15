@@ -72,7 +72,7 @@ public class ModulePushTests {
 
         core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
-        tasks.awaitTermination();
+        tasks.await();
 
         Config.DID did = internalConfig.getDeviceId();
         Config.DID fid = internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN);
