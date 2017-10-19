@@ -131,11 +131,12 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     private static final String PROPERTY_DEVICE_ID_MODE = "ly.count.android.api.messaging.device.id.mode";
     private static final String PROPERTY_DISABLE_UI = "ly.count.android.api.messaging.disable.ui";
     private static final String PROPERTY_ACTIVITY_CLASS = "ly.count.android.api.messaging.activity.class";
+    private static final String PROPERTY_ICON_OVERRIDE_ID = "ly.count.android.api.messaging.icon.override.id";
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static GoogleCloudMessaging gcm;
 
 
-    public static void init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames, Boolean disableUI) {
+    public static void init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames, Boolean disableUI, Integer customIconResId) {
         setActivity(activity, activityClass);
 
         if (gcm != null) {
@@ -148,6 +149,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
         CountlyMessaging.disableUI = disableUI;
         getGCMPreferences(context).edit().putBoolean(PROPERTY_DISABLE_UI, disableUI).commit();
+        getGCMPreferences(context).edit().putInt(PROPERTY_ICON_OVERRIDE_ID, customIconResId).commit();
 
         if (checkPlayServices(activity) ) {
             gcm = GoogleCloudMessaging.getInstance(activity);
@@ -334,5 +336,9 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
     public static boolean isUIDisabled (Context context) {
         return getGCMPreferences(context).getBoolean(PROPERTY_DISABLE_UI, false);
+    }
+
+    public static int getIconOverride (Context context) {
+        return getGCMPreferences(context).getInt(PROPERTY_ICON_OVERRIDE_ID, -1);
     }
 }

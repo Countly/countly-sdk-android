@@ -104,8 +104,13 @@ public class CountlyMessagingService extends IntentService {
 
             // Get icon from application or use default one
             int icon;
+            int iconOverride = CountlyMessaging.getIconOverride(CountlyMessagingService.this);
             try {
-                icon = getPackageManager().getApplicationInfo(getPackageName(), 0).icon;
+                if(iconOverride != -1){
+                    icon = iconOverride;
+                } else {
+                    icon = getPackageManager().getApplicationInfo(getPackageName(), 0).icon;
+                }
             } catch (PackageManager.NameNotFoundException e) {
                 icon = android.R.drawable.ic_dialog_email;
             }
