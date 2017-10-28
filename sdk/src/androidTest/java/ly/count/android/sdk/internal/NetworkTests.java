@@ -2,8 +2,12 @@ package ly.count.android.sdk.internal;
 
 import android.support.test.runner.AndroidJUnit4;
 
+import junit.framework.Assert;
+
+import org.bouncycastle.ocsp.Req;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -14,175 +18,272 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
+import ly.count.android.sdk.User;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
+import static android.support.test.InstrumentationRegistry.getContext;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 @RunWith(AndroidJUnit4.class)
 public class NetworkTests {
-    //todo test forced post
-    final int paramsAddedByAddCommon = 6;
-
-    //final private String url = "https://www.google.com";
-    //final private String apiKey = "1234";
-
-    //final private String url = "http://kadikis.count.ly";
-    final private String apiKey = "0e3175bd1db444602076c11000b2f70a415386dc";
-
-    private Config config;
     private InternalConfig internalConfig;
+    private Network network;
 
-    MockWebServer server;
-    String currentURL;
+    public MockWebServer server;
 
     @Before
     public void setupEveryTest() throws IOException {
         server = new MockWebServer();
-        server.start();
-        currentURL = server.url("/").toString();
+        server.start(30301);
 
-        config = new Config(currentURL, apiKey);
-        internalConfig = new InternalConfig(config);
+        internalConfig = TestingUtilityInternal.setupCoreForService(getContext(), new Config("http://localhost:" + server.getPort(), "some key"));
+        network = new Network();
+        network.init(internalConfig);
     }
 
     @After
-    public void cleanupEveryTests(){
-        currentURL = null;
-    }
-/*
-    @Test
-    public void createSimple() throws IOException {
-        server.enqueue(new MockResponse().setBody("hello, world!").setResponseCode(431));
-
-        java.net.URL url = new java.net.URL(currentURL);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        String eventData = "dssd";
-
-        try {
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            OutputStream os = conn.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-            writer.write(eventData);
-            writer.flush();
-            writer.close();
-            os.close();
-
-            conn.connect();
-            String resp = conn.getResponseMessage();
-
-            android.util.Log.e(TestingUtilityInternal.LOG_TAG, resp);
-            android.util.Log.e(TestingUtilityInternal.LOG_TAG, "" + conn.getResponseCode());
-        } finally {
-            conn.disconnect();
-        }
-
-        Network network = new Network();
-        network.init(internalConfig);
-    }*/
-
-    //@Test
-    public void createSimple2() throws IOException {
-        server.enqueue(new MockResponse().setBody("hello, world!"));
-
-        //java.net.URL url = new java.net.URL(currentURL);
-        java.net.URL url = new java.net.URL("http://www.google.com");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        String eventData = "dssd";
-
-        try {
-            conn.setDoOutput(false);
-            conn.setRequestMethod("POST");
-            OutputStream os = conn.getOutputStream();
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-            writer.write(eventData);
-            writer.flush();
-            writer.close();
-            os.close();
-
-            conn.connect();
-            String resp = conn.getResponseMessage();
-
-            android.util.Log.e(TestingUtilityInternal.LOG_TAG, resp);
-            android.util.Log.e(TestingUtilityInternal.LOG_TAG, "" + conn.getResponseCode());
-
-            BufferedReader br;
-            if (200 <= conn.getResponseCode() && conn.getResponseCode() <= 299) {
-                br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
-            } else {
-                br = new BufferedReader(new InputStreamReader((conn.getErrorStream())));
-            }
-
-            StringBuilder total = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                total.append(line).append('\n');
-            }
-
-            android.util.Log.e(TestingUtilityInternal.LOG_TAG, "Android http response: " + total.toString());
-
-        } finally {
-            conn.disconnect();
-        }
-
-        Network network = new Network();
-        network.init(internalConfig);
-    }
-
-
-    //@Test
-    public void createSimple3() throws IOException, ExecutionException, InterruptedException, Exception {
-        server.enqueue(new MockResponse().setBody("hello, world!"));
-
-        Network network = new Network();
-        network.init(internalConfig);
-
-        Request rr = new Request(123);
-
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "AA");
-        Future<Network.NetworkResponse> fut = network.send(rr);
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "BB, " + fut.isDone() + " " + fut.isCancelled());
-        //fut.cancel(true);
-        //android.util.Log.d("CountlyTests", "BB2 , " + fut.isDone() + " " + fut.isCancelled());
-        Network.NetworkResponse nr = fut.get();
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, " + nr.toString());
+    public void cleanupEveryTests() throws IOException {
+        server.shutdown();
     }
 
     @Test
-    public void sampleRequestStartSession() throws IOException, ExecutionException, InterruptedException, Exception {
-        server.enqueue(new MockResponse().setBody("hello, world!"));
+    public void testOpenConnectionGET() throws Exception {
+        String url = "http://try.count.ly/i?",
+                params = "a=1&b=2";
+        HttpURLConnection connection = new Network().openConnection(url, params, true);
+        Assert.assertEquals("GET", connection.getRequestMethod());
+        Assert.assertEquals(new URL(url + params), connection.getURL());
+        Assert.assertEquals(false, connection.getDoOutput());
+    }
 
-        Network network = new Network();
-        network.init(internalConfig);
+    @Test
+    public void testOpenConnectionPOST() throws Exception {
+        String url = "http://try.count.ly/i?",
+                params = "a=1&b=2";
+        HttpURLConnection connection = new Network().openConnection(url, params, false);
+        Assert.assertEquals("POST", connection.getRequestMethod());
+        Assert.assertEquals(new URL(url), connection.getURL());
+        Assert.assertEquals(true, connection.getDoOutput());
+    }
 
-        String[] params = new String[] {"app_key", "0698b21707df83ee5accd5ff44584e2a35efa861", "timestamp", "1507252971803", "hour", "4", "dow", "5", "tz", "180", "sdk_version", "17.09.1", "sdk_name", "java-native-android", "begin_session", "1", "metrics", "%7B%22_device%22%3A%22Nexus+5X%22%2C%22_os%22%3A%22Android%22%2C%22_os_version%22%3A%227.1.2%22%2C%22_carrier%22%3A%22LMT%22%2C%22_resolution%22%3A%221080x1794%22%2C%22_density%22%3A%22XXHDPI%22%2C%22_locale%22%3A%22en_US%22%2C%22_app_version%22%3A%221.0%22%7D"};
-        Request request = new Request(params);
+    @Test
+    public void test4XX() throws Exception {
+        server.enqueue(new MockResponse().setBody("Baaad").setResponseCode(404));
 
-        String targetURL = "http://kadikis.count.ly/i?app_key=0698b21707df83ee5accd5ff44584e2a35efa861&timestamp=1507252971803&hour=4&dow=5&tz=180&sdk_version=17.09.1&sdk_name=java-native-android&begin_session=1&metrics=%7B%22_device%22%3A%22Nexus+5X%22%2C%22_os%22%3A%22Android%22%2C%22_os_version%22%3A%227.1.2%22%2C%22_carrier%22%3A%22LMT%22%2C%22_resolution%22%3A%221080x1794%22%2C%22_density%22%3A%22XXHDPI%22%2C%22_locale%22%3A%22en_US%22%2C%22_app_version%22%3A%221.0%22%7D&device_id=New Device ID&sdk_version=16.12.2&sdk_name=java-native-android&checksum=46f9aeebc12e4dbf9dd49a2c3b30bf8043482ec0";
-        String targetRequest = "/i?app_key=0698b21707df83ee5accd5ff44584e2a35efa861&timestamp=1507252971803&hour=4&dow=5&tz=180&sdk_version=17.09.1&sdk_name=java-native-android&begin_session=1&metrics=%7B%22_device%22%3A%22Nexus+5X%22%2C%22_os%22%3A%22Android%22%2C%22_os_version%22%3A%227.1.2%22%2C%22_carrier%22%3A%22LMT%22%2C%22_resolution%22%3A%221080x1794%22%2C%22_density%22%3A%22XXHDPI%22%2C%22_locale%22%3A%22en_US%22%2C%22_app_version%22%3A%221.0%22%7D&device_id=New Device ID&sdk_version=16.12.2&sdk_name=java-native-android&checksum=46f9aeebc12e4dbf9dd49a2c3b30bf8043482ec0";
+        Request request = new Request("a", 1, "b", "something", "c", false);
 
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "AA");
-        Future<Network.NetworkResponse> fut = network.send(request);
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "BB, " + fut.isDone() + " " + fut.isCancelled());
-        //fut.cancel(true);
-        //android.util.Log.d("CountlyTests", "BB2 , " + fut.isDone() + " " + fut.isCancelled());
-        Network.NetworkResponse nr = fut.get();
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, " + nr.toString());
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.RETRY, result);
+    }
 
+    @Test
+    public void test400() throws Exception {
+        server.enqueue(new MockResponse().setBody("Baaad").setResponseCode(400));
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+    }
+
+    @Test
+    public void test3XX() throws Exception {
+        server.enqueue(new MockResponse().setBody("Baaad").setResponseCode(301));
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.RETRY, result);
+    }
+
+    @Test
+    public void test5XX() throws Exception {
+        server.enqueue(new MockResponse().setBody("Baaad").setResponseCode(500));
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.RETRY, result);
+    }
+
+    @Test
+    public void test200Success() throws Exception {
+        server.enqueue(new MockResponse().setBody("Success").setResponseCode(200));
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.OK, result);
+    }
+
+    @Test
+    public void test200NullResponse() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200));
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.OK, result);
+    }
+
+//    @Test
+//    public void testChecksum() throws Exception {
+//        server.enqueue(new MockResponse().setBody("Success").setResponseCode(200));
+//
+//        Request request = new Request("a", 1, "b", "something", "c", false);
+//
+//        Utils.reflectiveSetField(network, "sleeps", false);
+//        Network.RequestResult result = network.send(request).call();
+//        Assert.assertEquals(Network.RequestResult.OK, result);
+//
+//        RecordedRequest rr = server.takeRequest();
+//        String query = rr.getRequestUrl().encodedQuery();
+//        String[] parts = query.split("&");
+//
+//        Assert.assertTrue(parts[parts.length - 1].startsWith("checksum256"));
+//    }
+
+    @Test
+    public void testCheckGetHeaders() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200));
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.OK, result);
 
         RecordedRequest rr = server.takeRequest();
+        Assert.assertEquals("GET", rr.getMethod());
+        Assert.assertEquals(null, rr.getHeader("content-type"));
+        Assert.assertEquals(0, rr.getBody().size());
+    }
 
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, path " + rr.getPath());
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, mehod" + rr.getMethod());
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, req line" + rr.getRequestLine());
-        android.util.Log.d(TestingUtilityInternal.LOG_TAG, "CC, req url" + rr.getRequestUrl());
+    @Test
+    public void testUsePost() throws Exception {
+        internalConfig.setUsePOST(true);
+        server.enqueue(new MockResponse().setResponseCode(200));
 
+        Request request = new Request("a", 1, "b", "something", "c", false);
 
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.OK, result);
 
-        //Assert.assertEquals(targetRequest, rr.getPath());
+        RecordedRequest rr = server.takeRequest();
+        Assert.assertEquals("POST", rr.getMethod());
+        Assert.assertEquals("application/x-www-form-urlencoded", rr.getHeader("content-type"));
+        Assert.assertEquals(request.params.toString(), rr.getBody().readString(Charset.forName(Utils.UTF8)));
+    }
+
+    @Test
+    public void testAutoPost() throws Exception {
+        server.enqueue(new MockResponse().setResponseCode(200));
+
+        Request request = new Request("a", String.format("%1000.1000s", "x"));
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.OK, result);
+
+        RecordedRequest rr = server.takeRequest();
+        Assert.assertEquals("POST", rr.getMethod());
+        Assert.assertEquals("application/x-www-form-urlencoded", rr.getHeader("content-type"));
+        Assert.assertEquals(request.params.toString(), rr.getBody().readString(Charset.forName(Utils.UTF8)));
+    }
+
+    @Test
+    public void testMultiPart() throws Exception {
+        Core.instance.user().edit().setPicture("picturebytes".getBytes()).commit();
+        server.enqueue(new MockResponse().setResponseCode(200));
+
+        Request request = new Request("k1", "value 1", "k2", 2, "k3", false, UserEditorImpl.PICTURE_PATH, UserEditorImpl.PICTURE_IN_USER_PROFILE);
+
+        Utils.reflectiveSetField(network, "sleeps", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.OK, result);
+
+        RecordedRequest rr = server.takeRequest();
+        Assert.assertEquals("POST", rr.getMethod());
+        Assert.assertTrue(rr.getHeader("content-type").startsWith("multipart/form-data"));
+
+        String body = rr.getBody().readString(Charset.forName(Utils.UTF8));
+        Assert.assertTrue(body.contains("Content-Disposition: form-data; name=\"profilePicture\"; filename=\"image\""));
+        Assert.assertTrue(body.contains("Content-Disposition: form-data; name=\"k1\""));
+        Assert.assertTrue(body.contains("Content-Disposition: form-data; name=\"k2\""));
+        Assert.assertTrue(body.contains("Content-Disposition: form-data; name=\"k3\""));
+        Assert.assertTrue(body.contains("Content-Disposition: form-data; name=\"app_key\""));
+        Assert.assertTrue(body.contains("Content-Disposition: form-data; name=\"sdk_name\""));
+        Assert.assertTrue(body.contains("Content-Disposition: form-data; name=\"sdk_version\""));
+    }
+
+    @Test
+    public void testBackoff() throws Exception {
+        server.enqueue(new MockResponse().setBody("error 1").setResponseCode(500));
+        server.enqueue(new MockResponse().setBody("error 2").setResponseCode(500));
+        server.enqueue(new MockResponse().setBody("error 3").setResponseCode(500));
+        server.enqueue(new MockResponse().setBody("error 4").setResponseCode(500));
+        server.enqueue(new MockResponse().setBody("Success 1").setResponseCode(200));
+        server.enqueue(new MockResponse().setBody("error 5").setResponseCode(500));
+        server.enqueue(new MockResponse().setBody("Success 2").setResponseCode(200));
+
+        Request request1 = new Request("a", 1, "b", "something", "c", false);
+        Request request2 = new Request("a", 2, "b", "something2", "c", true);
+
+        Tasks tasks = new Tasks("tmp");
+        Future<Network.RequestResult> future1 = tasks.run(network.send(request1));
+        Future<Network.RequestResult> future2 = tasks.run(network.send(request2));
+
+        Thread.sleep(1200);
+        Assert.assertEquals(1, Utils.reflectiveGetField(network, "slept"));
+        Assert.assertFalse(future1.isDone());
+        Assert.assertFalse(future2.isDone());
+
+        Thread.sleep(1000);
+        Assert.assertEquals(2, Utils.reflectiveGetField(network, "slept"));
+        Assert.assertFalse(future1.isDone());
+        Assert.assertFalse(future2.isDone());
+
+        Thread.sleep(2000);
+        Assert.assertEquals(3, Utils.reflectiveGetField(network, "slept"));
+        Assert.assertFalse(future1.isDone());
+        Assert.assertFalse(future2.isDone());
+        Thread.sleep(1000);
+        Assert.assertEquals(3, Utils.reflectiveGetField(network, "slept"));
+        Assert.assertFalse(future1.isDone());
+        Assert.assertFalse(future2.isDone());
+        Thread.sleep(1000);
+        Assert.assertEquals(3, Utils.reflectiveGetField(network, "slept"));
+        Assert.assertFalse(future1.isDone());
+        Assert.assertFalse(future2.isDone());
+        Thread.sleep(1000);
+        Assert.assertTrue(future1.isDone());
+        Assert.assertFalse(future2.isDone());
+        Assert.assertEquals(0, Utils.reflectiveGetField(network, "slept"));
+        Assert.assertEquals(Network.RequestResult.OK, future1.get());
+        Thread.sleep(1000);
+        Assert.assertEquals(0, Utils.reflectiveGetField(network, "slept"));
+        Assert.assertTrue(future1.isDone());
+        Assert.assertTrue(future2.isDone());
+        Assert.assertEquals(Network.RequestResult.OK, future1.get());
+        Assert.assertEquals(Network.RequestResult.OK, future2.get());
     }
 }

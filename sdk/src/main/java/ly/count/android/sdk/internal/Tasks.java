@@ -121,6 +121,10 @@ public class Tasks {
         }
     }
 
+    boolean isRunning() {
+        return running != null;
+    }
+
     void shutdown() {
         if (!executor.isShutdown() && !executor.isTerminated()) {
             L.i("shutting down");

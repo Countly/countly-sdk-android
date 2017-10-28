@@ -38,11 +38,10 @@ public class CountlyService extends android.app.Service {
     /**
      * Tasks {@link Thread} is used to wait for {}
      */
-    private Tasks tasks;
+    private Tasks tasks, networkTasks;
     private InternalConfig config;
     private Network network;
-    private Future<Boolean> future = null;
-    private boolean shutdown = false;
+    private boolean shutdown = false, networking = false;
     private Context ctx = null;
     private List<Long> crashes = null;
     private List<Long> sessions = null;
@@ -59,6 +58,7 @@ public class CountlyService extends android.app.Service {
         this.crashes = new ArrayList<>();
         this.sessions = new ArrayList<>();
         this.tasks = new Tasks("service");
+        this.networkTasks = new Tasks("net");
         this.config = Core.initForService(this);
         if (config == null) {
             // TODO: inconsistent state, TBD
@@ -71,7 +71,6 @@ public class CountlyService extends android.app.Service {
                 this.network = new Network();
                 this.network.init(config);
             }
-            this.future = null;
         }
     }
 
@@ -146,7 +145,7 @@ public class CountlyService extends android.app.Service {
     }
 
     void start() {
-        future = tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
+        tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
             @Override
             public Boolean call() throws Exception {
                 crashes = new ArrayList<Long>();
@@ -196,15 +195,15 @@ public class CountlyService extends android.app.Service {
 
     private synchronized void stop() {
         shutdown = true;
-        if (future == null || future.isDone()) {
+        if (tasks.isRunning()) {
             L.d("Nothing is going on, stopping");
             stopSelf();
         }
     }
 
     private synchronized void check() {
-        if (!shutdown && (future == null || future.isDone()) && config.getDeviceId() != null && network != null) {
-            future = tasks.run(submit());
+        if (!shutdown && !tasks.isRunning() && !networkTasks.isRunning() && config.getDeviceId() != null && network != null) {
+            tasks.run(submit());
         }
     }
 
@@ -212,53 +211,39 @@ public class CountlyService extends android.app.Service {
         return new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
             @Override
             public Boolean call() throws Exception {
-                Request request = Storage.readOne(ctx, new Request(0L), true);
+                if (networkTasks.isRunning()) {
+                    return false;
+                }
+
+                final Request request = Storage.readOne(ctx, new Request(0L), true);
                 if (request == null) {
                     return false;
                 } else {
                     L.d("Preparing request: " + request);
-                    try {
-                        boolean result;
-                        Boolean check = CountlyService.this.core.isRequestReady(request);
-                        if (check == null) {
-                            L.d("Request is not ready yet: " + request);
-                            result = false;
-                        } else if (check.equals(Boolean.FALSE)){
-                            L.d("Request won't be ready, removing: " + request);
-                            Storage.remove(ctx, request);
-                            result = true;
-                        } else {
-                            L.d("Sending request: " + request.toString());
-                            Network.NetworkResponse nr = network.send(request).get();
-                            result = nr.requestSucceeded;
-                            L.d("Request " + request.storageId() + " sent?: " + result);
-                            if (result) {
-                                Storage.remove(ctx, request);
+                    final Boolean check = CountlyService.this.core.isRequestReady(request);
+                    if (check == null) {
+                        L.d("Request is not ready yet: " + request);
+                        return false;
+                    } else if (check.equals(Boolean.FALSE)){
+                        L.d("Request won't be ready, removing: " + request);
+                        Storage.remove(ctx, request);
+                        return true;
+                    } else {
+                        networkTasks.run(network.send(request), new Tasks.Callback<Network.RequestResult>() {
+                            @Override
+                            public void call(Network.RequestResult requestResult) throws Exception {
+                                L.d("Request " + request.storageId() + " sent?: " + requestResult);
+                                if (requestResult == null || requestResult == Network.RequestResult.REMOVE || requestResult == Network.RequestResult.OK) {
+                                    Storage.remove(ctx, request);
+                                }
+                                if (shutdown) {
+                                    stop();
+                                } else {
+                                    check();
+                                }
                             }
-                        }
-                        return result;
-                    } catch (InterruptedException e) {
-                        L.i("Interrupted while sending request " + request.storageId(), e);
-                        return false;
-                    } catch (ExecutionException e) {
-                        L.i("Interrupted while sending request " + request.storageId(), e);
-                        return false;
-                    } catch (CancellationException e) {
-                        L.i("Cancelled while sending request " + request.storageId(), e);
-                        return false;
-                    } catch (Throwable t) {
-                        L.i("Exception in network task " + request.storageId(), t);
-                        shutdown = true;
-                        return false;
-                    } finally {
-                        synchronized (CountlyService.this) {
-                            if (shutdown) {
-                                future = null;
-                                stop();
-                            } else {
-                                future = tasks.run(submit());
-                            }
-                        }
+                        });
+                        return true;
                     }
                 }
             }

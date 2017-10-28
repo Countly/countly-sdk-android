@@ -162,6 +162,7 @@ public class UserImpl extends User implements Storable {
             }
 
             cohorts = (Set<String>) stream.readObject();
+            cohorts = cohorts == null ? new HashSet<String>() : cohorts;
 
             custom = (Map<String, Object>) stream.readObject();
             if (custom == null) {

@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import ly.count.android.sdk.internal.Byteable;
@@ -266,6 +267,53 @@ public class Config {
     protected boolean usePOST = false;
 
     /**
+     * Salt string for parameter tampering protection
+     */
+    protected String salt = null;
+
+    /**
+     * Connection timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
+     */
+    protected int networkConnectionTimeout = 30;
+
+    /**
+     * Read timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
+     */
+    protected int networkReadTimeout = 30;
+
+    /**
+     * Enable SSL public key pinning. Improves HTTPS security by not allowing MiM attacks
+     * based on SSL certificate replacing somewhere between Android device and Countly server.
+     * Here you can set one or more PEM-encoded public keys which Countly SDK verifies against
+     * public keys provided by Countly's web server for each HTTPS connection. At least one match
+     * results in connection being established, no matches result in request not being sent stored for next try.
+     *
+     * NOTE: Public key pinning is preferred over certificate pinning due to the fact
+     * that public keys are usually not changed when certificate expires and you generate new one.
+     * This ensures pinning continues to work after certificate prolongation.
+     * Certificates ({@link #certificatePins}) on the other hand have specific expiry date.
+     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
+     * have both certificates (old & new) until expiry date.
+     */
+    protected Set<String> publicKeyPins = null;
+
+    /**
+     * Enable SSL certificate pinning. Improves HTTPS security by not allowing MiM attacks
+     * based on SSL certificate replacing somewhere between Android device and Countly server.
+     * Here you can set one or more PEM-encoded certificates which Countly SDK verifies against
+     * certificates provided by Countly's web server for each HTTPS connection. At least one match
+     * results in connection being established, no matches result in request not being sent stored for next try.
+     *
+     * NOTE: Public key pinning ({@link #publicKeyPins}) is preferred over certificate pinning due to the fact
+     * that public keys are usually not changed when certificate expires and you generate new one.
+     * This ensures pinning continues to work after certificate prolongation.
+     * Certificates on the other hand have specific expiry date.
+     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
+     * have both certificates (old & new) until expiry date.
+     */
+    protected Set<String> certificatePins = null;
+
+    /**
      * Maximum amount of time in seconds between two update requests to the server
      * reporting session duration and other parameters if any added between update requests.
      *
@@ -450,6 +498,17 @@ public class Config {
     }
 
     /**
+     * Enable parameter tampering protection
+     *
+     * @param salt String to add to each request bebfore calculating checksum
+     * @return {@code this} instance for method chaining
+     */
+    public Config enableParameterTamperingProtection(String salt) {
+        this.salt = salt;
+        return this;
+    }
+
+    /**
      * Tag used for logging
      *
      * @param loggingTag tag string to use
@@ -593,6 +652,92 @@ public class Config {
     }
 
     /**
+     * Set connection timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
+     *
+     * @param seconds network timeout in seconds
+     * @return {@code this} instance for method chaining
+     */
+    public Config setNetworkConnectTimeout(int seconds) {
+        if (seconds <= 0 || seconds > 300) {
+            Log.wtf("Connection timeout must be between 0 and 300");
+        } else {
+            networkConnectionTimeout = seconds;
+        }
+        return this;
+    }
+
+    /**
+     * Set read timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
+     *
+     * @param seconds read timeout in seconds
+     * @return {@code this} instance for method chaining
+     */
+    public Config setNetworkReadTimeout(int seconds) {
+        if (seconds <= 0 || seconds > 300) {
+            Log.wtf("Read timeout must be between 0 and 300");
+        } else {
+            networkReadTimeout = seconds;
+        }
+        return this;
+    }
+
+    /**
+     * Enable SSL public key pinning. Improves HTTPS security by not allowing MiM attacks
+     * based on SSL certificate replacing somewhere between Android device and Countly server.
+     * Here you can set one or more PEM-encoded public keys which Countly SDK verifies against
+     * public keys provided by Countly's web server for each HTTPS connection. At least one match
+     * results in connection being established, no matches result in request not being sent stored for next try.
+     *
+     * NOTE: Public key pinning is preferred over certificate pinning due to the fact
+     * that public keys are usually not changed when certificate expires and you generate new one.
+     * This ensures pinning continues to work after certificate prolongation.
+     * Certificates ({@link #certificatePins}) on the other hand have specific expiry date.
+     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
+     * have both certificates (old & new) until expiry date.
+     *
+     * NOTE: when {@link #serverURL} doesn't have {@code "https://"} public key pinning doesn't work
+     *
+     * @param pemEncodedPublicKey PEM-encoded SSL public key string to add
+     * @return {@code this} instance for method chaining
+     */
+    public Config addPublicKeyPin(String pemEncodedPublicKey) {
+        if (publicKeyPins == null) {
+            publicKeyPins = new HashSet<>();
+        }
+
+        publicKeyPins.add(pemEncodedPublicKey);
+        return this;
+    }
+
+    /**
+     * Enable SSL certificate pinning. Improves HTTPS security by not allowing MiM attacks
+     * based on SSL certificate replacing somewhere between Android device and Countly server.
+     * Here you can set one or more PEM-encoded certificates which Countly SDK verifies against
+     * certificates provided by Countly's web server for each HTTPS connection. At least one match
+     * results in connection being established, no matches result in request not being sent stored for next try.
+     *
+     * NOTE: Public key pinning ({@link #publicKeyPins}) is preferred over certificate pinning due to the fact
+     * that public keys are usually not changed when certificate expires and you generate new one.
+     * This ensures pinning continues to work after certificate prolongation.
+     * Certificates on the other hand have specific expiry date.
+     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
+     * have both certificates (old & new) until expiry date.
+     *
+     * NOTE: when {@link #serverURL} doesn't have {@code "https://"} certificate pinning doesn't work
+     *
+     * @param pemEncodedCertificate PEM-encoded SSL certificate string to add
+     * @return {@code this} instance for method chaining
+     */
+    public Config addCertificatePin(String pemEncodedCertificate) {
+        if (certificatePins == null) {
+            certificatePins = new HashSet<>();
+        }
+
+        certificatePins.add(pemEncodedCertificate);
+        return this;
+    }
+
+    /**
      * Change timeout when ANR is detected. ANR reporting is enabled by default once you enable {@link Feature#Crash}.
      * Default timeout is 5 seconds.
      * To disable ANR reporting, use {@link #disableANRCrashReporting()}.
@@ -688,6 +833,14 @@ public class Config {
     }
 
     /**
+     * Getter for {@link #salt}
+     * @return {@link #salt} value
+     */
+    public String getParameterTamperingProtectionSalt() {
+        return salt;
+    }
+
+    /**
      * Getter for {@link #sdkName}
      * @return {@link #sdkName} value
      */
@@ -758,6 +911,34 @@ public class Config {
     public int getSendUpdateEachEvents() {
         return sendUpdateEachEvents;
     }
+
+    /**
+     * Getter for {@link #networkConnectionTimeout}
+     * @return {@link #networkConnectionTimeout} value
+     */
+    public int getNetworkConnectionTimeout() {
+        return networkConnectionTimeout;
+    }
+
+    /**
+     * Getter for {@link #networkReadTimeout}
+     * @return {@link #networkReadTimeout} value
+     */
+    public int getNetworkReadTimeout() {
+        return networkReadTimeout;
+    }
+
+    /**
+     * Getter for {@link #publicKeyPins}
+     * @return {@link #publicKeyPins} value
+     */
+    public Set<String> getPublicKeyPins() { return publicKeyPins; }
+
+    /**
+     * Getter for {@link #certificatePins}
+     * @return {@link #certificatePins} value
+     */
+    public Set<String> getCertificatePins() { return certificatePins; }
 
     /**
      * Getter for {@link #crashReportingANRTimeout}

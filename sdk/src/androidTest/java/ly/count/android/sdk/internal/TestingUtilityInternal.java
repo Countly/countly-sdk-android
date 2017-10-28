@@ -1,6 +1,7 @@
 package ly.count.android.sdk.internal;
 
 import android.app.Application;
+import android.app.Service;
 import android.content.*;
 import android.content.Context;
 
@@ -115,5 +116,15 @@ public class TestingUtilityInternal {
         config = TestingUtilityInternal.setupLogs(config);
         Core core = Core.initForApplication(config, context);
         core.onContextAcquired(mockApplication(context));
+    }
+
+    public static InternalConfig setupCoreForService(Context context, Config config) throws MalformedURLException {
+        Service service = mock(Service.class);
+        when(service.getApplicationContext()).thenReturn(context);
+        InternalConfig internalConfig = TestingUtilityInternal.setupLogs(config);
+        Storage.push(new ContextImpl(context), internalConfig);
+        internalConfig = Core.initForService(service);
+        Core.instance.onLimitedContextAcquired(context);
+        return internalConfig;
     }
 }

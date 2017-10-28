@@ -6,7 +6,9 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Object for application/x-www-form-urlencoded string building and manipulation
@@ -151,10 +153,22 @@ class Params {
             if (comps.length == 2 && comps[0].equals(key)) {
                 pairs.remove(pair);
                 this.params = new StringBuilder(Utils.join(pairs, "&"));
-                return comps[1];
+                return Utils.urldecode(comps[1]);
             }
         }
         return null;
+    }
+
+    Map<String, String> map() {
+        Map<String, String> map = new HashMap<>();
+        List<String> pairs = new ArrayList<>(Arrays.asList(params.toString().split("&")));
+        for (String pair : pairs) {
+            String comps[] = pair.split("=");
+            if (comps.length == 2) {
+                map.put(comps[0], Utils.urldecode(comps[1]));
+            }
+        }
+        return map;
     }
 
     String get(String key) {
@@ -165,7 +179,7 @@ class Params {
         for (String pair : pairs) {
             String comps[] = pair.split("=");
             if (comps.length == 2 && comps[0].equals(key)) {
-                return comps[1];
+                return Utils.urldecode(comps[1]);
             }
         }
         return null;

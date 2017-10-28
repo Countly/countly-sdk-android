@@ -57,7 +57,7 @@ public class Request implements Storable {
     }
 
     boolean isGettable(URL serverUrl, int addition) {
-        return (serverUrl.toString().length() + 1 + params.length() + addition) < 1024;
+        return (serverUrl.toString().length() + 3 + params.length() + addition) < 1024;
     }
 
     static Request build(Object... params){ return new Request(params); }

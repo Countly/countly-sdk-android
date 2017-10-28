@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -23,7 +24,9 @@ public class Utils {
 
     private static final Utils utils = new Utils();
 
-    static String UTF8 = "UTF-8";
+    static final String UTF8 = "UTF-8";
+    static final String CRLF = "\r\n";
+    static final char[] BASE_16 = "0123456789ABCDEF".toCharArray();
 
     /**
      * Joins objects with a separator
@@ -383,4 +386,40 @@ public class Utils {
         }
         return a.equals(b);
     }
+
+    /**
+     * Calculate digest (SHA-1, SHA-256, etc.) hash of the string provided
+     *
+     * @param digestName digest name like {@code "SHA-256"}, must be supported by Java, see {@link MessageDigest}
+     * @param string string to hash
+     * @return hash of the string or null in case of error
+     */
+    public static String digestHex(String digestName, String string) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance(digestName);
+            byte[] bytes = string.getBytes(UTF8);
+            digest.update(bytes, 0, bytes.length);
+            return hex(digest.digest());
+        } catch (Throwable e) {
+            Log.e("Cannot calculate sha1", e);
+            return null;
+        }
+    }
+
+    /**
+     * Get hexadecimal string representation of a byte array
+     *
+     * @param bytes array of bytes to convert
+     * @return hex string of the byte array in lower case
+     */
+    public static String hex(byte[] bytes) {
+        char[] hexChars = new char[ bytes.length * 2 ];
+        for( int j = 0; j < bytes.length; j++ ) {
+            int v = bytes[ j ] & 0xFF;
+            hexChars[ j * 2 ] = BASE_16[ v >>> 4 ];
+            hexChars[ j * 2 + 1 ] = BASE_16[ v & 0x0F ];
+        }
+        return new String(hexChars).toLowerCase();
+    }
+
 }

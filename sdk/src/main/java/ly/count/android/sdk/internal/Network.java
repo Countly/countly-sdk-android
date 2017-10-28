@@ -1,7 +1,7 @@
 package ly.count.android.sdk.internal;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,21 +10,15 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
-import java.security.MessageDigest;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
+import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 
 import ly.count.android.sdk.*;
-import ly.count.android.sdk.Config;
+
+import static ly.count.android.sdk.internal.Utils.CRLF;
+import static ly.count.android.sdk.internal.Utils.UTF8;
 
 /**
  * Class managing all networking operations.
@@ -40,10 +34,20 @@ import ly.count.android.sdk.Config;
 //class Network extends ModuleBase { - may be
 
 class Network {
-    private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
-    private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
-    private final ThreadPoolExecutor threadPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
-    private InternalConfig _config;
+    private static final Log.Module L = Log.module("network");
+    private static final String PARAMETER_TAMPERING_DIGEST = "SHA-256";
+    private static final String CHECKSUM = "checksum256";
+    private static final int[] BACKOFF = new int[] { 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233 };
+
+    private InternalConfig config;
+    private int slept;          // how many consecutive times networking slept
+    private boolean sleeps;     // whether exponential backoff sleeping is enabled
+
+    enum RequestResult {
+        OK,         // success
+        RETRY,      // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
+        REMOVE      // bad request, remove
+    }
 
     Network() {
     }
@@ -60,7 +64,6 @@ class Network {
         }
 
         // ssl config (cert & public key pinning)
-        // GET/POST handling
         // sha1 signing
         // 301/302 handling, probably configurable (like allowFollowingRedirects) and with response
         //      validation because public WiFi APs return 30X to login page which returns 200
@@ -69,293 +72,295 @@ class Network {
         // network status callbacks - may be
         // APM stuff - later
 
-        _config = config;
+        L.i("Server: " + config.getServerURL());
+        this.config = config;
+        this.slept = 0;
+        this.sleeps = true;
     }
 
-    boolean isInitialized() {
-        return _config != null;
-    }
+//    void onContext(android.content.Context context) {
+//        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+//        NetworkInfo activeNetInfo = connectivityManager.getActiveNetworkInfo();
+//        NetworkInfo mobNetInfo = connectivityManager.getNetworkInfo(     ConnectivityManager.TYPE_MOBILE );
+//  https://stackoverflow.com/questions/1783117/network-listener-android
+//    }
 
-    Future<NetworkResponse> send(final Request request) throws IllegalArgumentException, MalformedURLException {
-        if(request == null){
-            Log.e("Provided 'request' was null");
-            throw new IllegalArgumentException("Provided 'request' was null");
-        }
-
-        Log.d("Received new send request for network, adding to pool");
-
-        android.util.Log.d("CountlyTests", "1");
-        Future<NetworkResponse> cc = threadPool.submit(new Callable<NetworkResponse>() {
-            @Override
-            public NetworkResponse call() throws Exception {
-                Log.d("Executing network request");
-                android.util.Log.d("CountlyTests", "4");
-
-                // setup for network request
-
-                // url
-                URL sURL = _config.getServerURL();
-
-                // request salt
-                String salt = null;
-
-                // SSL
-                SSLContext sslContext_ = null;//todo finish this
-                List<String> publicKeyPinCertificates = null;
-
-                ModuleRequests.addRequired(_config, request);
-
-                // determining appropriate request method
-                boolean usingGetRequest = request.isGettable(sURL, 3);
-
-                if(_config.isUsePOST()){
-                    Log.d("Forcing HTTP POST requests");
-                    usingGetRequest = false;
-                }
-
-                // print received response and code
-
-                NetworkResponse nResponse = NetworkResponse.createFailureObject();
-
-                // Prepare data that has to be sent
-                String eventData = request.params.toString();
-
-                // doing the network request
-
-                HttpURLConnection conn = null;
-                try {
-                    // initialize the connection
-                    {
-                        String serverURLStr = sURL.toString() + "/i?";
-
-                        if(eventData.contains("&crash=")){
-                            usingGetRequest = false;
-                        }
-
-                        if(usingGetRequest) {
-                            serverURLStr += eventData;
-                            serverURLStr += "&checksum=" + sha1Hash(eventData + salt);
-                        } else {
-                            serverURLStr += "checksum=" + sha1Hash(eventData + salt);
-                        }
-
-                        final URL url = new URL(serverURLStr);
-
-                        if (publicKeyPinCertificates == null) {
-                            conn = (HttpURLConnection)url.openConnection();
-                        } else {
-                            HttpsURLConnection c = (HttpsURLConnection)url.openConnection();
-                            c.setSSLSocketFactory(sslContext_.getSocketFactory());
-                            conn = c;
-                        }
-                        conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
-                        conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
-                        conn.setUseCaches(false);
-                        conn.setDoInput(true);
-                        if(usingGetRequest){
-                            conn.setRequestMethod("GET");
-                        } else {
-                            conn.setRequestMethod("POST");
-                        }
-
-                        //String picturePath = UserData.getPicturePathFromQuery(url);
-                        String picturePath = "";//todo finish this
-
-                        Log.d("Got picturePath: " + picturePath);
-                        if(!picturePath.equals("")){
-                            //todo does this work with conn.setRequestMethod("POST"); ?
-                            //Uploading files:
-                            //http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
-
-                            File binaryFile = new File(picturePath);
-                            conn.setDoOutput(true);
-                            // Just generate some unique random value.
-                            String boundary = Long.toHexString(System.currentTimeMillis());
-                            // Line separator required by multipart/form-data.
-                            String CRLF = "\r\n";
-                            String charset = "UTF-8";
-                            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-                            OutputStream output = conn.getOutputStream();
-                            PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
-                            // Send binary file.
-                            writer.append("--" + boundary).append(CRLF);
-                            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"" + binaryFile.getName() + "\"").append(CRLF);
-                            writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
-                            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-                            writer.append(CRLF).flush();
-                            FileInputStream fileInputStream = new FileInputStream(binaryFile);
-                            byte[] buffer = new byte[1024];
-                            int len;
-                            try {
-                                while ((len = fileInputStream.read(buffer)) != -1) {
-                                    output.write(buffer, 0, len);
-                                }
-                            }catch(IOException ex){
-                                ex.printStackTrace();
-                            }
-                            output.flush(); // Important before continuing with writer!
-                            writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
-                            fileInputStream.close();
-
-                            // End of multipart/form-data.
-                            writer.append("--" + boundary + "--").append(CRLF).flush();
-                        }
-                        else if(!usingGetRequest){
-                            Log.d("Using HTTP POST");
-                            conn.setDoOutput(true);
-                            OutputStream os = conn.getOutputStream();
-                            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-                            writer.write(eventData);
-                            writer.flush();
-                            writer.close();
-                            os.close();
-                        }
-                        else{
-                            Log.d("Using HTTP GET");
-                            conn.setDoOutput(false);
-                        }
-                    }
-
-                    // open the connection and get the result
-                    conn.connect();
-
-                    if (conn instanceof HttpURLConnection) {
-                        final HttpURLConnection httpConn = (HttpURLConnection) conn;
-                        nResponse.responseCode = httpConn.getResponseCode();
-                        nResponse.httpResponse = getResponseOutOfHttpURLConnection(httpConn);
-                    } else {
-                        nResponse.responseCode = 0;
-                    }
-                }
-                catch (Exception e) {
-                    Log.w("Got exception while trying to submit event data: " + eventData, e);
-                }
-                finally {
-                    // free connection resources
-                    if (conn != null && conn instanceof HttpURLConnection) {
-                        conn.disconnect();
-                    }
-                }
-
-
-                // deciding the result of the request
-                // response code has to be 2xx to be considered a success
-                if(nResponse.responseCode >= 200 && nResponse.responseCode < 300){
-                    Log.d("Network request succeeded");
-                    nResponse.requestSucceeded = true;
-//                    Log.d("ok ->" + eventData);
-//                    if (deviceIdChange) {
-//                        deviceId_.changeToDeveloperId(store_, newId);
-//                    }
-                } else if(nResponse.responseCode >= 400 && nResponse.responseCode < 500){
-                    Log.d("Network request returned error");
-                    nResponse.requestSucceeded = false;
-//                    Log.d("fail " + responseCode + " ->" + eventData);
-                } else {
-                    Log.d("Network request failed");
-                    nResponse.requestSucceeded = false;
-//                    Log.w("HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
-                }
-
-                Log.d("Network request resolved, returning result");
-
-                return nResponse;
-            }
-        });
-
-        android.util.Log.d("CountlyTests", "2");
-
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        android.util.Log.d("CountlyTests", "3");
-        return cc;
-    }
-
-    public static class NetworkResponse{
-        public boolean requestSucceeded = false;
-        public int responseCode = -1;
-        public String httpResponse = "";
-
-        public NetworkResponse(){
-
-        }
-
-        /**
-         * Created in case of failures or exceptions where the response could not be created naturally as a failed request.
-         * @return
-         */
-        public static NetworkResponse createFailureObject(){
-            NetworkResponse fo = new NetworkResponse();
-            fo.requestSucceeded = false;
-
-            return fo;
-        }
-
-        /**
-         * Return internal state for debug purposes
-         * @return
-         */
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("Request succeeded: [").append(requestSucceeded).append("], ");
-            sb.append("Response Code: [").append(responseCode).append("], ");
-            sb.append("HTTP Response: [").append(httpResponse).append("]");
-
-            return sb.toString();
-        }
-    }
-
-    String getResponseOutOfHttpURLConnection(HttpURLConnection httpConn) throws IOException {
-        BufferedReader br;
-        if (200 <= httpConn.getResponseCode() && httpConn.getResponseCode() <= 299) {
-            br = new BufferedReader(new InputStreamReader((httpConn.getInputStream())));
+    /**
+     * For testing purposes
+     */
+    HttpURLConnection openConnection(String url, String params, boolean usingGET) throws IOException {
+        URL u;
+        if (usingGET) {
+            u = new URL(url + params);
         } else {
-            br = new BufferedReader(new InputStreamReader((httpConn.getErrorStream())));
+            u = new URL(url);
         }
 
-        StringBuilder total = new StringBuilder();
-        String line;
-        while ((line = br.readLine()) != null) {
-            total.append(line).append('\n');
-        }
+        HttpURLConnection connection = (HttpURLConnection) u.openConnection();
 
-        return total.toString();
+        connection.setUseCaches(false);
+        connection.setDoInput(true);
+        connection.setDoOutput(!usingGET);
+        connection.setRequestMethod(usingGET ? "GET" : "POST");
+
+        return connection;
     }
 
-    private static String sha1Hash (String toHash) {
-        String hash = null;
-        try {
-            MessageDigest digest = MessageDigest.getInstance( "SHA-1" );
-            byte[] bytes = toHash.getBytes("UTF-8");
-            digest.update(bytes, 0, bytes.length);
-            bytes = digest.digest();
+    /**
+     * Open connection for particular request: choose GET or POST, choose multipart or urlencoded if POST,
+     * set SSL context, calculate and add checksum, load and send user picture if needed.
+     *
+     * @param request request to send
+     * @param user user to check for picture
+     * @return connection, not {@link HttpURLConnection#connected} yet
+     * @throws IOException from {@link HttpURLConnection} in case of error
+     */
+    HttpURLConnection connection(final Request request, final User user) throws IOException {
+        String path = config.getServerURL().toString() + "/i?";
+        String picture = request.params.remove(UserEditorImpl.PICTURE_PATH);
+        boolean usingGET = !config.isUsePOST() && request.isGettable(config.getServerURL()) && Utils.isEmpty(picture);
 
-            // This is ~55x faster than looping and String.formating()
-            hash = bytesToHex( bytes );
+        if (usingGET && config.getParameterTamperingProtectionSalt() != null) {
+            request.params.add(CHECKSUM, Utils.digestHex(PARAMETER_TAMPERING_DIGEST, request.params.toString() + config.getParameterTamperingProtectionSalt()));
         }
-        catch( Throwable e ) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                android.util.Log.e(Countly.TAG, "Cannot tamper-protect params", e);
+
+        HttpURLConnection connection = openConnection(path, request.params.toString(), usingGET);
+        connection.setConnectTimeout(1000 * config.getNetworkConnectionTimeout());
+        connection.setReadTimeout(1000 * config.getNetworkReadTimeout());
+
+//        if ((config.getPublicKeyPins() != null || config.getCertificatePins() != null) && config.getServerURL().getProtocol().equals("https")) {
+//            HttpsURLConnection https = (HttpsURLConnection) connection;
+//            https.setSSLSocketFactory(null);
+//        }
+
+        if (!usingGET) {
+            OutputStream output = null;
+            PrintWriter writer = null;
+            try {
+                L.d("Picture " + picture);
+                byte[] data = picture == null ? null : pictureData(user, picture);
+
+                if (data != null) {
+                    String boundary = Long.toHexString(System.currentTimeMillis());
+
+                    connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+                    output = connection.getOutputStream();
+                    writer = new PrintWriter(new OutputStreamWriter(output, UTF8), true);
+
+                    addMultipart(output, writer, boundary, "", "profilePicture", "image", data);
+
+                    StringBuilder salting = new StringBuilder();
+                    Map<String, String> map = request.params.map();
+                    for (String key : map.keySet()) {
+                        String value = Utils.urldecode(map.get(key));
+                        salting.append(key).append("=").append(value).append("&");
+                        addMultipart(output, writer, boundary, "text/plain", key, value, null);
+                    }
+
+                    if (config.getParameterTamperingProtectionSalt() != null) {
+                        addMultipart(output, writer, boundary, "text/plain", CHECKSUM, Utils.digestHex(PARAMETER_TAMPERING_DIGEST, salting.substring(0, salting.length() - 1) + config.getParameterTamperingProtectionSalt()), null);
+                    }
+
+                    writer.append(CRLF).append("--").append(boundary).append("--").append(CRLF).flush();
+
+                } else {
+                    if (config.getParameterTamperingProtectionSalt() != null) {
+                        request.params.add(CHECKSUM, Utils.digestHex(PARAMETER_TAMPERING_DIGEST, request.params.toString() + config.getParameterTamperingProtectionSalt()));
+                    }
+                    connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+                    output = connection.getOutputStream();
+                    writer = new PrintWriter(new OutputStreamWriter(output, UTF8), true);
+
+                    writer.write(request.params.toString());
+                    writer.flush();
+                }
+            } finally {
+                if (writer != null) {
+                    try {
+                        writer.close();
+                    } catch (Throwable ignored){}
+                }
+                if (output != null) {
+                    try {
+                        output.close();
+                    } catch (Throwable ignored){}
+                }
             }
         }
-        return hash;
+
+        return connection;
     }
 
-    // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
-    final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
-    public static String bytesToHex( byte[] bytes ) {
-        char[] hexChars = new char[ bytes.length * 2 ];
-        for( int j = 0; j < bytes.length; j++ ) {
-            int v = bytes[ j ] & 0xFF;
-            hexChars[ j * 2 ] = hexArray[ v >>> 4 ];
-            hexChars[ j * 2 + 1 ] = hexArray[ v & 0x0F ];
+    void addMultipart(OutputStream output, PrintWriter writer, String boundary, String contentType, String name, String value, Object file) throws IOException {
+        writer.append("--").append(boundary).append(CRLF);
+        if (file != null) {
+            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"; filename=\"").append(value).append("\"").append(CRLF);
+            writer.append("Content-Type: ").append(contentType).append(CRLF);
+            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
+            writer.append(CRLF).flush();
+            output.write((byte[])file);
+            output.flush();
+            writer.append(CRLF).flush();
+        } else {
+            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(CRLF);
+            writer.append("Content-Type: ").append(contentType).append("; charset=").append(UTF8).append(CRLF);
+            writer.append(CRLF).append(value).append(CRLF).flush();
         }
-        return new String( hexChars ).toLowerCase();
+    }
+
+    byte[] pictureData(User user, String picture) throws IOException {
+        byte[] data;
+        if (UserEditorImpl.PICTURE_IN_USER_PROFILE.equals(picture)) {
+            data = user.picture();
+        } else {
+            String protocol = null;
+            try {
+                URI uri = new URI(picture);
+                protocol = uri.isAbsolute() ? uri.getScheme() : new URL(picture).getProtocol();
+            } catch (Throwable t) {
+                try {
+                    File f = new File(picture);
+                    protocol = f.toURI().toURL().getProtocol();
+                } catch (Throwable tt) {
+                    L.w("Couldn't determine picturePath protocol", tt);
+                }
+            }
+            if (protocol != null && protocol.equals("file")) {
+                File file = new File(picture);
+                if (!file.exists()) {
+                    return null;
+                }
+                FileInputStream input = new FileInputStream(file);
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = input.read(buffer)) != -1) {
+                    output.write(buffer, 0, len);
+                }
+
+                input.close();
+                data = output.toByteArray();
+                output.close();
+            } else {
+                return null;
+            }
+        }
+
+        return data;
+    }
+
+    String response(HttpURLConnection connection) {
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder total = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                total.append(line).append('\n');
+            }
+            return total.toString();
+        } catch (IOException e) {
+            L.w("Error while reading server response", e);
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {}
+            }
+        }
+    }
+
+    Tasks.Task<RequestResult> send(final Request request) {
+        return new Tasks.Task<RequestResult>(request.storageId()) {
+            @Override
+            public RequestResult call() {
+                RequestResult result = send();
+
+                if (result == RequestResult.OK || result == RequestResult.REMOVE) {
+                    slept = 0;
+                    return result;
+                } else if (result == RequestResult.RETRY) {
+                    if (sleeps) {
+                        slept = slept % BACKOFF.length;
+                        try {
+                            Log.d("Sleeping for " + BACKOFF[slept] + " seconds");
+                            Thread.sleep(BACKOFF[slept] * 1000);
+                        } catch (InterruptedException e) {
+                            L.e("Interrupted while sleeping", e);
+                        }
+                        slept++;
+                        return call();
+                    } else {
+                        return result;
+                    }
+                } else {
+                    L.wtf("Bad RequestResult");
+                    return RequestResult.REMOVE;
+                }
+            }
+
+            public RequestResult send() {
+                L.i("Sending request: " + request);
+
+                ModuleRequests.addRequired(config, request);
+
+                HttpURLConnection connection = null;
+                try {
+                    connection = connection(request, Core.instance.user());
+                    connection.connect();
+
+                    int code = connection.getResponseCode();
+                    String response = response(connection);
+
+                    return processResponse(code, response);
+
+                } catch (IOException e) {
+                    L.w("Error while sending request " + request, e);
+                    return RequestResult.RETRY;
+                } finally {
+                    if (connection != null) {
+                        connection.disconnect();
+                    }
+                }
+            }
+        };
+    }
+
+    RequestResult processResponse(int code, String response) {
+        L.i("Code " + code + " response " + response);
+
+        if (code >= 200 && code < 300) {
+            if (Utils.isEmpty(response)) {
+                L.w("Success (null response)");
+                // null response but response code is ok, optimistically assuming request was sent
+                return RequestResult.OK;
+            } else if (response.contains("Success")) {
+                // response looks like {"result": "Success"}
+                L.d("Success");
+                return RequestResult.OK;
+            } else {
+                // some unknown response, will resend this request
+                L.w("Unknown response: " + response);
+                return RequestResult.RETRY;
+            }
+        } else if (code >= 300 && code < 400) {
+            // redirects
+            L.w("Server returned redirect");
+            return RequestResult.RETRY;
+        } else if (code == 400) {
+            L.e("Bad request: " + response);
+            return RequestResult.REMOVE;
+        } else if (code > 400) {
+            // server is down, will retry later
+            L.w("Server is down");
+            return RequestResult.RETRY;
+        } else {
+            L.w("Bad response code " + code);
+            return RequestResult.RETRY;
+        }
     }
 }

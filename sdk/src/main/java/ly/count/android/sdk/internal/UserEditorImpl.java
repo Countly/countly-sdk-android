@@ -332,6 +332,7 @@ class UserEditorImpl implements UserEditor {
         return set(PICTURE, picture);
     }
 
+    @Override
     public UserEditor setPicturePath(String picturePath) {
         return set(PICTURE_PATH, picturePath);
     }
@@ -444,6 +445,13 @@ class UserEditorImpl implements UserEditor {
                 @Override
                 public void call(Params params) {
                     params.add("user_details", changes.toString());
+                    if (changes.has(PICTURE_PATH)) {
+                        try {
+                            params.add(PICTURE_PATH, changes.getString(PICTURE_PATH));
+                        } catch (JSONException e) {
+                            Log.w("Won't send picturePath", e);
+                        }
+                    }
                     if (cohortsAdded.size() > 0) {
                         params.add("add_cohorts", new JSONArray(cohortsAdded).toString());
                     }

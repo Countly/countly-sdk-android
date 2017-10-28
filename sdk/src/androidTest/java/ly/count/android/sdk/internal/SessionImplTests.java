@@ -458,7 +458,7 @@ public class SessionImplTests {
         InternalConfig config = new InternalConfig(TestingUtilityInternal.setupConfig());
 
         long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
-        SessionImpl session = new SessionImpl(ctx, beginNs);
+        SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - Device.secToNs(config.getSessionCooldownPeriod() * 3));
         session.begin(beginNs);
 
         Thread.sleep(300);

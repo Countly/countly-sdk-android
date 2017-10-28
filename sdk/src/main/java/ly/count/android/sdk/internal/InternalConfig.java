@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
@@ -131,6 +132,13 @@ final class InternalConfig extends Config implements Storable {
             stream.writeUTF(sdkName);
             stream.writeUTF(sdkVersion);
             stream.writeBoolean(usePOST);
+            stream.writeObject(salt);
+            stream.writeInt(networkConnectionTimeout);
+            stream.writeInt(networkReadTimeout);
+            stream.writeInt(publicKeyPins == null ? 0 : publicKeyPins.size());
+            if (publicKeyPins != null) for (String key: publicKeyPins) { stream.writeUTF(key); }
+            stream.writeInt(certificatePins == null ? 0 : certificatePins.size());
+            if (certificatePins != null) for (String key: certificatePins) { stream.writeUTF(key); }
             stream.writeInt(sendUpdateEachSeconds);
             stream.writeInt(sendUpdateEachEvents);
             stream.writeInt(sessionCooldownPeriod);
@@ -204,6 +212,19 @@ final class InternalConfig extends Config implements Storable {
             sdkName = stream.readUTF();
             sdkVersion = stream.readUTF();
             usePOST = stream.readBoolean();
+            salt = (String) stream.readObject();
+            networkConnectionTimeout = stream.readInt();
+            networkReadTimeout = stream.readInt();
+            l = stream.readInt();
+            publicKeyPins = l == 0 ? null : new HashSet<String>();
+            for (int i = 0; i < l; i++) {
+                publicKeyPins.add(stream.readUTF());
+            }
+            l = stream.readInt();
+            certificatePins = l == 0 ? null : new HashSet<String>();
+            for (int i = 0; i < l; i++) {
+                certificatePins.add(stream.readUTF());
+            }
             sendUpdateEachSeconds = stream.readInt();
             sendUpdateEachEvents = stream.readInt();
             sessionCooldownPeriod = stream.readInt();

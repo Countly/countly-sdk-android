@@ -65,6 +65,11 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getSdkName(), internalConfig.getSdkName());
         Assert.assertEquals(config.getSdkVersion(), internalConfig.getSdkVersion());
         Assert.assertEquals(config.isUsePOST(), internalConfig.isUsePOST());
+        Assert.assertEquals(config.getParameterTamperingProtectionSalt(), internalConfig.getParameterTamperingProtectionSalt());
+        Assert.assertEquals(config.getNetworkConnectionTimeout(), internalConfig.getNetworkConnectionTimeout());
+        Assert.assertEquals(config.getNetworkReadTimeout(), internalConfig.getNetworkReadTimeout());
+        Assert.assertEquals(config.getPublicKeyPins(), internalConfig.getPublicKeyPins());
+        Assert.assertEquals(config.getCertificatePins(), internalConfig.getCertificatePins());
         Assert.assertEquals(config.getSendUpdateEachSeconds(), internalConfig.getSendUpdateEachSeconds());
         Assert.assertEquals(config.getSendUpdateEachEvents(), internalConfig.getSendUpdateEachEvents());
         Assert.assertEquals(config.isProgrammaticSessionsControl(), internalConfig.isProgrammaticSessionsControl());
@@ -81,6 +86,11 @@ public class InternalConfigTests {
         config.setSdkName("name");
         config.setSdkVersion("version");
         config.enableUsePOST();
+        config.enableParameterTamperingProtection("salt");
+        config.setNetworkConnectTimeout(11);
+        config.setNetworkReadTimeout(22);
+        config.addPublicKeyPin("pk-pin").addPublicKeyPin("pk-pin-2");
+        config.addCertificatePin("cert-pin");
         config.setSendUpdateEachSeconds(123);
         config.setSendUpdateEachEvents(222);
         config.setProgrammaticSessionsControl(true);
@@ -109,6 +119,11 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getSdkName(), internalConfig.getSdkName());
         Assert.assertEquals(config.getSdkVersion(), internalConfig.getSdkVersion());
         Assert.assertEquals(config.isUsePOST(), internalConfig.isUsePOST());
+        Assert.assertEquals(config.getParameterTamperingProtectionSalt(), internalConfig.getParameterTamperingProtectionSalt());
+        Assert.assertEquals(config.getNetworkConnectionTimeout(), internalConfig.getNetworkConnectionTimeout());
+        Assert.assertEquals(config.getNetworkReadTimeout(), internalConfig.getNetworkReadTimeout());
+        Assert.assertEquals(config.getPublicKeyPins(), internalConfig.getPublicKeyPins());
+        Assert.assertEquals(config.getCertificatePins(), internalConfig.getCertificatePins());
         Assert.assertEquals(config.getSendUpdateEachSeconds(), internalConfig.getSendUpdateEachSeconds());
         Assert.assertEquals(config.getSendUpdateEachEvents(), internalConfig.getSendUpdateEachEvents());
         Assert.assertEquals(config.isProgrammaticSessionsControl(), internalConfig.isProgrammaticSessionsControl());

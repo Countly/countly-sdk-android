@@ -120,9 +120,11 @@ public class ModuleRequests extends ModuleBase {
     }
 
     static Request addRequired(InternalConfig config, Request request) {
-        request.params.add("sdk_name", config.getSdkName())
-                .add("sdk_version", config.getSdkVersion())
-                .add("app_key", config.getServerAppKey());
+        if (!request.params.has("sdk_name")) {
+            request.params.add("sdk_name", config.getSdkName())
+                    .add("sdk_version", config.getSdkVersion())
+                    .add("app_key", config.getServerAppKey());
+        }
 
         if (!request.params.has(Params.PARAM_DEVICE_ID)) {
             if (config.getDeviceId() == null) {
