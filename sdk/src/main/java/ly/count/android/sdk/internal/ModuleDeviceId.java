@@ -95,6 +95,7 @@ public class ModuleDeviceId extends ModuleBase {
         if (config.isLimited()) {
             return;
         }
+        L.d("onDeviceId " + deviceId);
 
         SessionImpl leading = Core.instance.sessionLeading();
 
@@ -180,6 +181,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param old old {@link ly.count.android.sdk.Config.DID} if any
      */
     private void sendDeviceIdToService(Context ctx, Config.DID id, Config.DID old) {
+        L.d("Sending device id to service: " + id + ", was " + old);
         Map<String, Object> params = new HashMap<>();
         if (id != null) {
             params.put(CountlyService.PARAM_ID, id.store());

@@ -102,8 +102,8 @@ public class Tasks {
                     synchronized (pending) {
                         if (!task.id.equals(0L)) {
                             pending.remove(task.id);
-                            running = null;
                         }
+                        running = null;
                         L.d("pending " + pending.keySet() + ", done running " + task.id);
                     }
                     if (callback != null) {

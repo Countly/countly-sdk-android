@@ -332,6 +332,7 @@ public class Core extends CoreModules {
      * @param old old id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if there were no id with such realm
      */
     public static void onDeviceId(Context ctx, Config.DID id, Config.DID old) {
+        L.d("onDeviceId " + id + ", old " + old);
         if (instance == null || instance.config == null) {
             L.wtf("SDK not initialized when setting device id");
             return;

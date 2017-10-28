@@ -202,6 +202,7 @@ public class CountlyService extends android.app.Service {
     }
 
     private synchronized void check() {
+        Log.d("state: shutdown " + shutdown + " / tasks running " + tasks.isRunning() + " / net running " + networkTasks.isRunning() + " / device id " + config.getDeviceId() + " / network " + (network != null));
         if (!shutdown && !tasks.isRunning() && !networkTasks.isRunning() && config.getDeviceId() != null && network != null) {
             tasks.run(submit());
         }
