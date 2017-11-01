@@ -122,5 +122,14 @@ public interface Session {
      */
     Session addLocation(double latitude, double longitude);
 
+    /**
+     * Record new view
+     *
+     * @param name String representing name of this View
+     * @param exit whether this view will be last one in current session
+     * @return {@link Eve} object set up as View occurrence, but not recorded yet
+     */
+    Eve recordView(String name, boolean exit);
+
     // TODO: to be continued...
 }

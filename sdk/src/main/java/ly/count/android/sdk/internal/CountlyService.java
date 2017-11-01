@@ -45,6 +45,7 @@ public class CountlyService extends android.app.Service {
     private Context ctx = null;
     private List<Long> crashes = null;
     private List<Long> sessions = null;
+    private boolean singleProcess = false;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -59,14 +60,14 @@ public class CountlyService extends android.app.Service {
         this.sessions = new ArrayList<>();
         this.tasks = new Tasks("service");
         this.networkTasks = new Tasks("net");
-        this.config = Core.initForService(this);
-        if (config == null) {
+        this.singleProcess = Device.isSingleProcess(getApplicationContext());
+        this.config = Core.initialized();
+        if (this.config == null) {
             // TODO: inconsistent state, TBD
             this.core = null;
             stop();
         } else {
             this.core = Core.instance;
-            this.core.onLimitedContextAcquired(this);
             if (config.getDeviceId() != null) {
                 this.network = new Network();
                 this.network.init(config);
@@ -100,8 +101,19 @@ public class CountlyService extends android.app.Service {
                 Long id = intent.getLongExtra(PARAM_CRASH_ID, -1L);
                 L.d("Got a crash " + id);
                 processCrash(id);
+                check();
             } else if (intent.hasExtra(CMD) && intent.getIntExtra(CMD, -1) == CMD_DEVICE_ID) {
-                L.d("Device id");
+                if (singleProcess) {
+                    L.d("Ignoring Device id");
+                    if (config.getDeviceId() != null) {
+                        this.network = new Network();
+                        this.network.init(config);
+                        check();
+                    }
+                    return START_STICKY;
+                } else {
+                    L.d("Device id");
+                }
                 // reread config & notify modules
                 Config.DID id = null;
                 Config.DID old = null;
@@ -202,7 +214,7 @@ public class CountlyService extends android.app.Service {
     }
 
     private synchronized void check() {
-        Log.d("state: shutdown " + shutdown + " / tasks running " + tasks.isRunning() + " / net running " + networkTasks.isRunning() + " / device id " + config.getDeviceId() + " / network " + (network != null));
+        L.d("state: shutdown " + shutdown + " / tasks running " + tasks.isRunning() + " / net running " + networkTasks.isRunning() + " / device id " + config.getDeviceId() + " / network " + (network != null));
         if (!shutdown && !tasks.isRunning() && !networkTasks.isRunning() && config.getDeviceId() != null && network != null) {
             tasks.run(submit());
         }

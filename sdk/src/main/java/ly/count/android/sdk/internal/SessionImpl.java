@@ -51,6 +51,16 @@ class SessionImpl implements Session, Storable {
     protected Params params = new Params();
 
     /**
+     * Current view event, that is started, but not ended yet
+     */
+    protected Eve currentView = null;
+
+    /**
+     * Whether {@link #currentView} will be start view.
+     */
+    protected boolean startView = true;
+
+    /**
      * Whether to push changes to storage on every change automatically (false only for testing)
      */
     private boolean pushOnChange = true;
@@ -221,10 +231,14 @@ class SessionImpl implements Session, Storable {
         return new EventImpl(this, key);
     }
 
-    synchronized Session recordEvent(Eve event) {
+    Session recordEvent(Eve event) {
         events.add(event);
         if (pushOnChange) {
             Storage.pushAsync(ctx, this);
+        }
+        Config config = Core.initialized();
+        if (config != null && config.getSendUpdateEachEvents() <= events.size()) {
+            update();
         }
         return this;
     }
@@ -253,6 +267,28 @@ class SessionImpl implements Session, Storable {
     @Override
     public Session addLocation(double latitude, double longitude) {
         return addParam("location", latitude + "," + longitude);
+    }
+
+    public Eve recordView(String name, boolean exit) {
+        if (currentView != null) {
+            currentView.endAndRecord();
+        }
+
+        currentView = event(ModuleViews.EVENT)
+                .addSegment(ModuleViews.NAME, name)
+                .addSegment(ModuleViews.VISIT, ModuleViews.VISIT_VALUE)
+                .addSegment(ModuleViews.SEGMENT, ModuleViews.SEGMENT_VALUE);
+
+        if (startView) {
+            startView = false;
+            currentView.addSegment(ModuleViews.START, ModuleViews.START_VALUE);
+        }
+
+        if (exit) {
+            currentView.addSegment(ModuleViews.EXIT, ModuleViews.EXIT_VALUE);
+        }
+
+        return currentView;
     }
 
     // TODO: to be continued...

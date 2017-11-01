@@ -6,7 +6,9 @@ import android.content.Context;
 import android.os.Bundle;
 
 import ly.count.android.sdk.internal.Core;
+import ly.count.android.sdk.internal.Device;
 import ly.count.android.sdk.internal.Log;
+import ly.count.android.sdk.internal.Utils;
 
 /**
  * Created by artem on 07/10/2017.
@@ -32,7 +34,17 @@ public class CountlyNeoLifecycle {
         if (config == null) {
             L.wtf("Config cannot be null");
         } else {
-            initInternal(application, config);
+            if (instance != null) {
+                L.wtf("Countly shouldn't be initialized twice. Please either use Countly.isInitialized() to check status or call Countly.stop() before second Countly.init().");
+                stop(application, false);
+            }
+
+            Core core = Core.init(config, application);
+            if (core == null) {
+                // TODO: inconsistent state, couldn't init, TBD
+                return;
+            }
+            instance = new CountlyNeo(core);
         }
     }
 
@@ -51,27 +63,6 @@ public class CountlyNeoLifecycle {
         } else {
             Log.wtf("Countly isn't initialized to stop it");
         }
-    }
-
-    /**
-     * Init Countly
-     *
-     * @param application current Application instance
-     * @param config config instance in case of normal startup, null otherwise
-     */
-    private static void initInternal (Application application, Config config) {
-        if (instance != null) {
-            L.wtf("Countly shouldn't be initialized twice. Please either use Countly.isInitialized() to check status or call Countly.stop() before second Countly.init().");
-            stop(application, false);
-        }
-
-        Core core = Core.initForApplication(config, application);
-        if (core == null) {
-            // TODO: inconsistent state, couldn't init, TBD
-            return;
-        }
-        instance = new CountlyNeo(core);
-        instance.core.onContextAcquired(application);
     }
 
     /**

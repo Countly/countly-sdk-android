@@ -58,7 +58,7 @@ public class CoreLifecycle {
      * doesn't need to call those from each activity. In case app supports earlier version,
      * it's developer responsibility. In any case, for API 14+ Countly ignores dev calls.
      */
-    public void onContextAcquired(final Application application) {
+    protected void onContextAcquired(final Application application) {
         L.d("Application created");
 
         Context ctx = new ContextImpl(application);

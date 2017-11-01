@@ -29,7 +29,8 @@ public class Config {
         Push(1 << 2),
         Attribution(1 << 3),
         StarRating(1 << 4),
-        PerformanceMonitoring(1 << 5);
+        AutomaticViewTracking(1 << 5),
+        PerformanceMonitoring(1 << 6);
 
         private final int index;
 

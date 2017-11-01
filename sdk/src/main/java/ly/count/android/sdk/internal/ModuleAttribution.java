@@ -39,13 +39,8 @@ public class ModuleAttribution extends ModuleBase {
 
             config = Core.initialized();
             if (config == null) {
-                config = Core.initForBroadcastReceiver(context);
-                if (config == null) {
-                    // TODO: no config yet, TBD
-                    L.w("[ModuleAttribution] Couldn't init Core");
-                    return;
-                }
-                Core.instance.onLimitedContextAcquired(context);
+                L.wtf("No config in AttributionReferrerReceiver");
+                return;
             }
 
             L.d("[ModuleAttribution] It's " + ACTION + " broadcast");

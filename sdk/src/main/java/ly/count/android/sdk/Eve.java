@@ -10,11 +10,21 @@ import java.util.Map;
 public interface Eve {
     /**
      * Add event to the session, send it to the server in case number of events in the session
-     * is equal or bigger than {@link Config#sendUpdateEachEvents}
+     * is equal or bigger than {@link Config#sendUpdateEachEvents} or wait until next {@link Session#update()}.
      *
      * @return {@link Session} instance event is put into for method chaining
      */
     Session record();
+
+    /**
+     * Set timed {@link Eve} duration as difference between moment {@link Eve} was created
+     * and current time in seconds. Then add the event to its session, send it to the server
+     * in case number of events in the session is equal or bigger than {@link Config#sendUpdateEachEvents}
+     *  or wait until next {@link Session#update()}.
+     *
+     * @return {@link Session} instance event is put into for method chaining
+     */
+    Session endAndRecord();
 
     /**
      * Add one segmentation entry to this event

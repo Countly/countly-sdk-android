@@ -25,6 +25,7 @@ public class CoreModules extends CoreStorage {
         setModuleMapping(Config.Feature.Crash, ModuleCrash.class);
         setModuleMapping(Config.Feature.Attribution, ModuleAttribution.class);
         setModuleMapping(Config.Feature.Push, ModulePush.class);
+        setModuleMapping(Config.Feature.AutomaticViewTracking, ModuleViews.class);
     }
 
     /**

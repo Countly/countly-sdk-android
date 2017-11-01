@@ -387,6 +387,16 @@ public class Utils {
         return a.equals(b);
     }
 
+    public static boolean contains(String string, String part) {
+        if (string == null) {
+            return false;
+        } else if (part == null) {
+            return false;
+        } else {
+            return string.contains(part);
+        }
+    }
+
     /**
      * Calculate digest (SHA-1, SHA-256, etc.) hash of the string provided
      *

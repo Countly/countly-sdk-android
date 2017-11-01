@@ -56,10 +56,17 @@ class EventImpl implements Eve, JSONable {
     @Override
     public Session record() {
         if (session != null && !invalid) {
+            invalid = true;
             return session.recordEvent(this);
         } else {
             return session;
         }
+    }
+
+    @Override
+    public Session endAndRecord() {
+        setDuration(Device.uniqueTimestamp() - timestamp);
+        return record();
     }
 
     @Override
@@ -123,9 +130,9 @@ class EventImpl implements Eve, JSONable {
 
     @Override
     public Eve setCount(int count) {
-        if (count == 0) {
+        if (count <= 0) {
             invalid = true;
-            L.wtf("Event " + key + " count cannot be 0");
+            L.wtf("Event " + key + " count cannot be 0 or less");
             return this;
         }
         this.count = count;
@@ -145,9 +152,9 @@ class EventImpl implements Eve, JSONable {
 
     @Override
     public Eve setDuration(double duration) {
-        if (Double.isInfinite(duration) || Double.isNaN(duration)) {
+        if (Double.isInfinite(duration) || Double.isNaN(duration) || duration < 0) {
             invalid = true;
-            L.wtf("NaN or infinite value cannot be event '" + key + "' duration");
+            L.wtf("NaN, infinite or negative value cannot be event '" + key + "' duration");
         } else {
             this.duration = duration;
         }

@@ -10,9 +10,9 @@
         </receiver>
 
         <uses-library android:name="android.test.runner"/>
-    </application>
 
-    <service android:name="ly.count.android.sdk.internal.CountlyService">
-    </service>
+        <service android:name="ly.count.android.sdk.internal.CountlyService" android:process=":countly">
+        </service>
+    </application>
 
 </manifest>

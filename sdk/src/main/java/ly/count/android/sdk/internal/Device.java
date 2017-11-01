@@ -39,7 +39,7 @@ import ly.count.android.sdk.Countly;
  * Class encapsulating most of device-specific logic: metrics, info, etc.
  */
 
-class Device {
+public class Device {
     private static final Log.Module L = Log.module("Device");
 
     /**
@@ -647,4 +647,47 @@ class Device {
     public static boolean isDebuggerConnected() {
         return Debug.isDebuggerConnected();
     }
+
+    /**
+     * Return current process name
+     *
+     * @param context Context to run in
+     * @return process name String or {@code null} if cannot determine
+     */
+    public static String getProcessName(android.content.Context context) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> infos = manager.getRunningAppProcesses();
+        int pid = android.os.Process.myPid();
+
+        for (ActivityManager.RunningAppProcessInfo info : infos) {
+            if (info.pid == pid) {
+                return info.processName;
+            }
+        }
+
+        return null;
+    }
+
+    public static boolean isInLimitedProcess(android.content.Context context) {
+        return Utils.contains(getProcessName(context), ":countly");
+    }
+
+    public static boolean isSingleProcess(android.content.Context context) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> infos = manager.getRunningAppProcesses();
+        int pid = android.os.Process.myPid();
+
+        for (ActivityManager.RunningAppProcessInfo info : infos) {
+            if (info.pid == pid) {
+                for (ActivityManager.RunningAppProcessInfo i : infos) {
+                    if (i != info && (Utils.contains(i.processName, info.processName) || Utils.contains(info.processName, i.processName))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return true;
+    }
+
 }

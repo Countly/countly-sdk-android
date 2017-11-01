@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="ly.count.android.demo">
+    package="ly.count.android.demo"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -68,14 +69,8 @@
             android:label="@string/activity_name_view_tracking" >
         </activity>
 
-        <service android:name="org.openudid.OpenUDID_service" android:exported="false">
-            <intent-filter>
-                <action android:name="org.OpenUDID.GETUDID" />
-            </intent-filter>
-        </service>
-
-        <service android:name="ly.count.android.sdk.internal.CountlyService">
-        </service>
+        <!--<service android:name="ly.count.android.sdk.internal.CountlyService" tools:remove="android:process">-->
+        <!--</service>-->
 
         <service android:name=".DemoFirebaseMessagingService">
             <intent-filter>

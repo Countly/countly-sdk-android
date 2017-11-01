@@ -2,7 +2,6 @@ package ly.count.android.sdk.internal;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
-import android.content.*;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
@@ -16,7 +15,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -70,93 +68,67 @@ public class Core extends CoreModules {
      * Init Core instance according to config supplied. In case config is null, Core reads it
      * from storage.
      *
-     * @see #initForApplication(Config, android.content.Context)
-     * @see #initForService(Service)
-     * @see #initForBroadcastReceiver(android.content.Context)
-     *
      * @param config Countly configuration
-     * @param context Initialization context, can be replaced later
+     * @param application Initialization context, can be replaced later
      * @return true if initialized, false if no config found and value in parameter was null
      * @throws IllegalArgumentException in case {@code config} is inconsistent
+     * @throws IllegalStateException in case {@code config} is inconsistent
      */
-    private boolean init(Config config, android.content.Context context) throws IllegalArgumentException {
-        try {
-            Context ctx = new ContextImpl(context);
-            if (handler == null) {
-                handler = new Handler(context.getMainLooper());
-            }
-            this.config = loadConfig(ctx);
-            if (this.config == null) {
-                if (config != null) {
-                    this.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
-                } else {
-                    return false;
+    public static Core init(Config config, android.app.Application application) throws IllegalArgumentException {
+        if (instance == null) {
+            try {
+                instance = new Core();
+                Context ctx = new ContextImpl(application);
+                if (handler == null) {
+                    handler = new Handler(application.getMainLooper());
                 }
-            } else if (config != null) {
-                this.config.setFrom(config);
-            }
-            this.buildModules();
-
-            List<Module> failed = new ArrayList<>();
-            for (Module module : modules) {
-                try {
-                    module.init(this.config);
-                    Utils.reflectiveSetField(module, "active", true);
-                } catch (IllegalArgumentException | IllegalStateException e) {
-                    if (this.config.isTestModeEnabled()) {
-                        throw e;
+                instance.config = instance.loadConfig(ctx);
+                if (instance.config == null) {
+                    if (config != null) {
+                        instance.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
                     } else {
-                        failed.add(module);
+                        instance = null;
+                        return null;
+                    }
+                } else if (config != null) {
+                    instance.config.setFrom(config);
+                }
+                instance.config.setLimited(Utils.contains(Device.getProcessName(application), ":countly"));
+                instance.buildModules();
+
+                List<Module> failed = new ArrayList<>();
+                for (Module module : instance.modules) {
+                    try {
+                        module.init(instance.config);
+                        Utils.reflectiveSetField(module, "active", true);
+                    } catch (IllegalArgumentException | IllegalStateException e) {
+                        if (instance.config.isTestModeEnabled()) {
+                            throw e;
+                        } else {
+                            failed.add(module);
+                        }
                     }
                 }
+                instance.modules.removeAll(failed);
+
+                instance.user = instance.loadUser(ctx);
+                if (instance.user == null) {
+                    instance.user = new UserImpl(ctx);
+                }
+
+
+                if (Utils.contains(Device.getProcessName(application), ":countly")) {
+                    instance.onLimitedContextAcquired(application);
+                } else {
+                    instance.onContextAcquired(application);
+                }
+
+                return instance;
+            } catch (MalformedURLException e) {
+                throw new IllegalStateException(e);
             }
-            modules.removeAll(failed);
-
-            user = loadUser(ctx);
-            if (user == null) {
-                user = new UserImpl(ctx);
-            }
-
-            return true;
-        } catch (MalformedURLException e) {
-            throw new IllegalStateException(e);
         }
-    }
-
-    /**
-     * Most common init sequence, that is initialization on application start.
-     *
-     * @param config startup config
-     * @param application current application instance
-     * @return Core instance initialized with config & application
-     */
-    public static Core initForApplication(Config config, android.content.Context application) {
-        if (new Core().init(config, application)) {
-            return instance;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Initialization for {@link CountlyService} and push service: just init {@link Core} to make {@link Storage} work.
-     *
-     * @param service current service instance
-     * @return config if initialization succeeded, {@code null} otherwise
-     */
-    static InternalConfig initForService(Service service) {
-        return (instance != null || new Core().init(null, service.getApplicationContext())) ? instance.config : null;
-    }
-
-    /**
-     * Initialization for {@link BroadcastReceiver} (for {@link ly.count.android.sdk.Config.Feature#Push} &
-     * {@link ly.count.android.sdk.Config.Feature#Attribution}): just init {@link Core} to make {@link Storage} work.
-     *
-     * @param context current {@link Context}
-     * @return config if initialization succeeded, {@code null} otherwise
-     */
-    static InternalConfig initForBroadcastReceiver(android.content.Context context) {
-        return (instance != null || new Core().init(null, context)) ? instance.config : null;
+        return instance;
     }
 
     /**
@@ -310,7 +282,7 @@ public class Core extends CoreModules {
      * Initialization for cases when Countly needs to start up implicitly
      * @param context Context to run in
      */
-    public void onLimitedContextAcquired(android.content.Context context) {
+    private void onLimitedContextAcquired(android.content.Context context) {
         ContextImpl ctx = new ContextImpl(context);
 
         if (!(context instanceof CountlyService)) {
@@ -332,7 +304,7 @@ public class Core extends CoreModules {
      * @param old old id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if there were no id with such realm
      */
     public static void onDeviceId(Context ctx, Config.DID id, Config.DID old) {
-        L.d("onDeviceId " + id + ", old " + old);
+        L.d((instance == null || instance.config == null ? "null" : instance.config.isLimited() ? "limited" : "non-limited") + " onDeviceId " + id + ", old " + old);
         if (instance == null || instance.config == null) {
             L.wtf("SDK not initialized when setting device id");
             return;
@@ -340,16 +312,21 @@ public class Core extends CoreModules {
         if (instance.config.isLimited()) {
             if (id != null && (!id.equals(old) || !id.equals(instance.config.getDeviceId(id.realm)))) {
                 instance.config.setDeviceId(id);
+                L.d("0");
             } else if (id == null && old != null) {
                 instance.config.removeDeviceId(old);
+                L.d("1");
             }
         } else {
             if (id != null && (!id.equals(old) || !id.equals(instance.config.getDeviceId(id.realm)))) {
                 instance.config.setDeviceId(id);
                 Storage.push(ctx, instance.config);
+                L.d("2");
             } else if (id == null && old != null) {
+                L.d("3");
                 if (instance.config.removeDeviceId(old)) {
                     Storage.push(ctx, instance.config);
+                    L.d("4");
                 }
             }
         }
@@ -370,6 +347,7 @@ public class Core extends CoreModules {
 
         if (!instance.config.isLimited() && id != null && id.realm == Config.DeviceIdRealm.DEVICE_ID) {
             instance.user.id = id.id;
+            L.d("5");
         }
     }
 
@@ -500,13 +478,17 @@ public class Core extends CoreModules {
      * @param token token string
      */
     public static void onPushTokenRefresh(Service service, String token) {
+        L.d("onPushTokenRefresh " + token);
+        if (instance == null) {
+            L.wtf("Not initialized prior to onPushTokenRefresh");
+            return;
+        }
         Context ctx = new ContextImpl(service);
-        InternalConfig config = Core.initForService(service);
-        if (config != null && !config.isLimited()) {
+        if (instance.config != null && !instance.config.isLimited()) {
             if (Utils.isNotEmpty(token)) {
-                Core.onDeviceId(ctx, new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, token), config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
+                Core.onDeviceId(ctx, new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, token), instance.config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
             } else {
-                Core.onDeviceId(ctx, null, config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
+                Core.onDeviceId(ctx, null, instance.config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
             }
         }
     }
@@ -595,4 +577,5 @@ public class Core extends CoreModules {
             }
         });
     }
+
 }
