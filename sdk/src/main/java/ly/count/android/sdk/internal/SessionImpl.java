@@ -14,6 +14,7 @@ import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Eve;
 import ly.count.android.sdk.Session;
 import ly.count.android.sdk.User;
+import ly.count.android.sdk.View;
 
 /**
  * This class represents session concept, that is one indivisible usage occasion of your application.
@@ -53,7 +54,7 @@ class SessionImpl implements Session, Storable {
     /**
      * Current view event, that is started, but not ended yet
      */
-    protected Eve currentView = null;
+    protected View currentView = null;
 
     /**
      * Whether {@link #currentView} will be start view.
@@ -157,6 +158,10 @@ class SessionImpl implements Session, Storable {
             return null;
         }
         ended = now == null ? System.nanoTime() : now;
+
+        if (currentView != null) {
+            currentView.end(true);
+        }
 
         Storage.pushAsync(ctx, this);
 
@@ -269,26 +274,18 @@ class SessionImpl implements Session, Storable {
         return addParam("location", latitude + "," + longitude);
     }
 
-    public Eve recordView(String name, boolean exit) {
+    public View view(String name, boolean start) {
         if (currentView != null) {
-            currentView.endAndRecord();
+            currentView.end(false);
         }
-
-        currentView = event(ModuleViews.EVENT)
-                .addSegment(ModuleViews.NAME, name)
-                .addSegment(ModuleViews.VISIT, ModuleViews.VISIT_VALUE)
-                .addSegment(ModuleViews.SEGMENT, ModuleViews.SEGMENT_VALUE);
-
-        if (startView) {
-            startView = false;
-            currentView.addSegment(ModuleViews.START, ModuleViews.START_VALUE);
-        }
-
-        if (exit) {
-            currentView.addSegment(ModuleViews.EXIT, ModuleViews.EXIT_VALUE);
-        }
-
+        currentView = new ViewImpl(this, name);
+        currentView.start(start);
+        startView = false;
         return currentView;
+    }
+
+    public View view(String name) {
+        return view(name, startView);
     }
 
     // TODO: to be continued...

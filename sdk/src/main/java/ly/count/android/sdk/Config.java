@@ -472,9 +472,11 @@ public class Config {
      * Whether to allow fallback from unavailable device id strategy to Countly OpenUDID derivative.
      *
      * @param deviceIdFallbackAllowed true if fallback is allowed
+     * @return {@code this} instance for method chaining
      */
-    public void setDeviceIdFallbackAllowed(boolean deviceIdFallbackAllowed) {
+    public Config setDeviceIdFallbackAllowed(boolean deviceIdFallbackAllowed) {
         this.deviceIdFallbackAllowed = deviceIdFallbackAllowed;
+        return this;
     }
 
     /**
@@ -550,6 +552,17 @@ public class Config {
     public Config enableTestMode() {
         this.testMode = true;
         this.loggingLevel = this.loggingLevel == LoggingLevel.OFF ? LoggingLevel.INFO : this.loggingLevel;
+        return this;
+    }
+
+    /**
+     * Disable test mode, so SDK will silently avoid raising exceptions whenever possible.
+     * Test mode is disabled by default.
+     *
+     * @return {@code this} instance for method chaining
+     */
+    public Config disableTestMode() {
+        this.testMode = false;
         return this;
     }
 

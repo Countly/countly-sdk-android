@@ -17,7 +17,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
         try {
-            Config config = new Config("http://artem.count.ly", "b9e35f9f278064412c2d9ebf02c88de1b034f101")
+            Config config = new Config("http://192.168.3.77:3001", "33a5dd24fd38c4471573da5ee06b355a3a9b1283")
                     .enableTestMode()
                     .setLoggingLevel(Config.LoggingLevel.DEBUG)
                     .setFeatures(Config.Feature.Push, Config.Feature.Crash)

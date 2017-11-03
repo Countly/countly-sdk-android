@@ -59,9 +59,13 @@ public class Core extends CoreModules {
         instance = this;
     }
 
-    void deinit () {
+    static void deinit () {
         Log.deinit();
         instance = null;
+    }
+
+    public static Core init(Config config, android.app.Application application) throws IllegalArgumentException {
+        return init(config, application, Utils.contains(Device.getProcessName(application), ":countly"));
     }
 
     /**
@@ -70,11 +74,12 @@ public class Core extends CoreModules {
      *
      * @param config Countly configuration
      * @param application Initialization context, can be replaced later
+     * @param limited whether to init in passive mode (we're in 2-nd {@link CountlyService} process)
      * @return true if initialized, false if no config found and value in parameter was null
      * @throws IllegalArgumentException in case {@code config} is inconsistent
      * @throws IllegalStateException in case {@code config} is inconsistent
      */
-    public static Core init(Config config, android.app.Application application) throws IllegalArgumentException {
+    public static Core init(Config config, android.app.Application application, boolean limited) throws IllegalArgumentException {
         if (instance == null) {
             try {
                 instance = new Core();
@@ -93,7 +98,7 @@ public class Core extends CoreModules {
                 } else if (config != null) {
                     instance.config.setFrom(config);
                 }
-                instance.config.setLimited(Utils.contains(Device.getProcessName(application), ":countly"));
+                instance.config.setLimited(limited);
                 instance.buildModules();
 
                 List<Module> failed = new ArrayList<>();
@@ -116,8 +121,7 @@ public class Core extends CoreModules {
                     instance.user = new UserImpl(ctx);
                 }
 
-
-                if (Utils.contains(Device.getProcessName(application), ":countly")) {
+                if (instance.config.isLimited()) {
                     instance.onLimitedContextAcquired(application);
                 } else {
                     instance.onContextAcquired(application);

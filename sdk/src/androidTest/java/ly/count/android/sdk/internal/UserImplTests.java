@@ -15,11 +15,10 @@ import ly.count.android.sdk.User;
 import static android.support.test.InstrumentationRegistry.getContext;
 
 @RunWith(AndroidJUnit4.class)
-public class UserImplTests {
+public class UserImplTests extends BaseTests {
 
     @Test
     public void testStorageAllSet() throws Exception {
-        Context ctx = new ContextImpl(getContext());
         UserImpl user = new UserImpl(ctx);
         user.name = "name";
         user.username = "username";
@@ -31,7 +30,7 @@ public class UserImplTests {
         user.gender = User.Gender.FEMALE;
         user.birthyear = 1900;
 
-        Core.initForBroadcastReceiver(getContext());
+        setUpApplication(null);
         Assert.assertTrue(Storage.push(ctx, user));
 
         User stored = Storage.read(ctx, new UserImpl(ctx));
@@ -51,11 +50,9 @@ public class UserImplTests {
 
     @Test
     public void testStorageNothingSet() throws Exception {
-        Context ctx = new ContextImpl(getContext());
         UserImpl user = new UserImpl(ctx);
 
-        Core.initForBroadcastReceiver(getContext());
-        new Log().init(new InternalConfig(TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG)));
+        setUpApplication(null);
         Assert.assertTrue(Storage.push(ctx, user));
 
         User stored = Storage.read(ctx, new UserImpl(ctx));
@@ -75,14 +72,12 @@ public class UserImplTests {
 
     @Test
     public void testStorageSomeSet() throws Exception {
-        Context ctx = new ContextImpl(getContext());
         UserImpl user = new UserImpl(ctx);
         user.username = "username";
         user.gender = User.Gender.MALE;
         user.phone = "phone";
 
-        Core.initForBroadcastReceiver(getContext());
-        new Log().init(new InternalConfig(TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG)));
+        setUpApplication(null);
         Assert.assertTrue(Storage.push(ctx, user));
 
         User stored = Storage.read(ctx, new UserImpl(ctx));

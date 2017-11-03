@@ -5,7 +5,6 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,23 +13,19 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Set;
 
-import ly.count.android.sdk.internal.TestingUtilityInternal;
+import ly.count.android.sdk.internal.BaseTests;
+import ly.count.android.sdk.internal.Log;
 
 
 @RunWith(AndroidJUnit4.class)
-public class ConfigTests {
+public class ConfigTests extends BaseTests {
     private Config config;
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";
 
     @Before
-    public void setupEveryTest() throws MalformedURLException {
-        config = TestingUtilityInternal.setupLogs(new Config(serverUrl, serverAppKey).enableTestMode());
-    }
-
-    @After
-    public void cleanupEveryTests(){
-        config = null;
+    public void setUp() throws MalformedURLException {
+        config = defaultConfigWithLogsForConfigTests();
     }
 
     @Test (expected = MalformedURLException.class)
@@ -319,7 +314,8 @@ public class ConfigTests {
         Assert.assertEquals(Config.Feature.Push, features[1]);
         Assert.assertEquals(Config.Feature.Attribution, features[2]);
         Assert.assertEquals(Config.Feature.StarRating, features[3]);
-        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[4]);
+        Assert.assertEquals(Config.Feature.AutomaticViewTracking, features[4]);
+        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[5]);
     }
 
     @Test

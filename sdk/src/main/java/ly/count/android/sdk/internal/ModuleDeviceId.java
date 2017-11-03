@@ -245,8 +245,6 @@ public class ModuleDeviceId extends ModuleBase {
             this.tasks = new Tasks("deviceId");
         }
 
-        L.d("stack", new IllegalStateException());
-
         return this.tasks.run(new Tasks.Task<Config.DID>(Tasks.ID_STRICT) {
             @Override
             public Config.DID call() throws Exception {

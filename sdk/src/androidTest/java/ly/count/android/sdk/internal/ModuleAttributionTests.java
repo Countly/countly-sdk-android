@@ -30,48 +30,38 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ModuleAttributionTests {
+public class ModuleAttributionTests extends BaseTests {
     private static final String TEST_CID = "cb14e5f33b528334715f1809e4572842c74686df";
     private static final String TEST_UID = "ecf125107e4e27e6bcaacb3ae10ddba66459e6ae";
     private static final String TEST_REFERRER = "countly_cid%3D" + TEST_CID + "%26countly_cuid%3D" + TEST_UID;
     private static final String INVALID_REFERRER = "some=param";
-    private Config config = null;
-    private InternalConfig internalConfig = null;
-    private Core core = null;
-    private ModuleAttribution module = null;
+    private ModuleAttribution moduleAttribution = null;
     private ModuleDeviceId moduleDeviceId = null;
-    private Module dummy = null;
-    private Utils utils = null;
-    private Context ctx = null;
 
     @Before
-    public void beforeEachTest() throws Exception {
-        ctx = new ContextImpl(getContext());
-        Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
-        Core.instance.purgeInternalStorage(ctx, null);
-        Core.instance.deinit();
+    public void setUp() throws Exception {
+        super.setUp();
+    }
+
+    @Override
+    protected Config defaultConfig() throws MalformedURLException {
+        return super.defaultConfig().addFeature(Config.Feature.Attribution);
     }
 
     @Test
     public void checkOpenUDID() throws Exception {
-        android.content.Context context = getContext();
         ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(false);
-
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
-        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
+        setUpApplication(defaultConfig());
+        moduleDeviceId = module(ModuleDeviceId.class, false);
+
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = internalConfig.getDeviceId();
-        Config.DID aid = internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
+        Config.DID did = config.getDeviceId();
+        Config.DID aid = config.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
         Assert.assertNotNull(did);
         Assert.assertNotNull(did.id);
         Assert.assertNotNull(aid);
@@ -85,24 +75,18 @@ public class ModuleAttributionTests {
 
     @Test
     public void checkAdvertisingId() throws Exception {
-        android.content.Context context = getContext();
         ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(false);
-
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
-        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID));
+        moduleDeviceId = module(ModuleDeviceId.class, false);
+
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = internalConfig.getDeviceId();
-        Config.DID aid = internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
+        Config.DID did = config.getDeviceId();
+        Config.DID aid = config.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
         Assert.assertNotNull(did);
         Assert.assertNotNull(did.id);
         Assert.assertNotNull(aid);
@@ -116,60 +100,44 @@ public class ModuleAttributionTests {
 
     @Test
     public void requestNoAdId() throws Exception {
-        android.content.Context context = getContext();
         ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(false);
-
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
-        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID));
+        moduleDeviceId = module(ModuleDeviceId.class, false);
+        moduleAttribution = module(ModuleAttribution.class, false);
+
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Assert.assertFalse(module.onRequest(new Request().own(ModuleAttribution.class)));
+        Assert.assertFalse(moduleAttribution.onRequest(new Request().own(ModuleAttribution.class)));
     }
 
     @Test
     public void requestAdId() throws Exception {
-        android.content.Context context = getContext();
         ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(false);
-
-        Request request = new Request().own(ModuleAttribution.class);
-        Assert.assertNull(module.onRequest(request));
-        Assert.assertFalse(request.params.toString().contains(ModuleAttribution.CLY_AID));
-
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
-        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID));
+        moduleDeviceId = module(ModuleDeviceId.class, false);
+        moduleAttribution = module(ModuleAttribution.class, false);
+
+        Request request = new Request().own(ModuleAttribution.class);
+        Assert.assertNull(moduleAttribution.onRequest(request));
+        Assert.assertFalse(request.params.toString().contains(ModuleAttribution.CLY_AID));
+
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Assert.assertTrue(module.onRequest(request));
+        Assert.assertTrue(moduleAttribution.onRequest(request));
         Assert.assertTrue(request.params.toString().contains(ModuleAttribution.CLY_AID + "=" + ModuleDeviceId.AdvIdInfo.deviceId));
     }
 
     @Test
     public void receiver_action_bad() throws Exception {
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-
-        Core.initForApplication(config, getContext());
-        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
-        Core.instance.deinit();
+        setUpApplication(null);
+        Core.deinit();
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent("bad action");
@@ -179,14 +147,8 @@ public class ModuleAttributionTests {
 
     @Test
     public void receiver_action_ok_nourl() throws Exception {
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-
-        Core.initForApplication(config, getContext());
-        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
-        Core.instance.deinit();
+        setUpApplication(null);
+        Core.deinit();
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
@@ -196,14 +158,7 @@ public class ModuleAttributionTests {
 
     @Test
     public void receiver_action_ok_url_ok_nocly() throws Exception {
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-
-        Core.initForApplication(config, getContext());
-        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
-        Core.instance.deinit();
+        setUpApplication(null);
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
@@ -215,14 +170,7 @@ public class ModuleAttributionTests {
 
     @Test
     public void receiver_action_ok_url_cly_ok() throws Exception {
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-
-        Core.initForApplication(config, getContext());
-        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
-        Core.instance.deinit();
+        setUpApplication(null);
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
@@ -231,17 +179,9 @@ public class ModuleAttributionTests {
         verify(receiver, times(1)).extractReferrer(isA(android.content.Context.class), any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(TEST_REFERRER)));
     }
 
-
     @Test
     public void receiver_action_ok_url_cly_ok_request() throws Exception {
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Attribution);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-
-        Core.initForApplication(config, getContext());
-        Storage.push(ctx, (Storable) Utils.reflectiveGetField(Core.instance, "config"));
-        Core.instance.deinit();
+        setUpApplication(null);
 
         ModuleAttribution.AttributionReferrerReceiver receiver = spy(new ModuleAttribution.AttributionReferrerReceiver());
         Intent intent = new Intent(ModuleAttribution.ACTION);
@@ -250,46 +190,4 @@ public class ModuleAttributionTests {
         verify(receiver, times(1)).extractReferrer(isA(android.content.Context.class), any(BroadcastReceiver.PendingResult[].class), eq(Utils.urldecode(TEST_REFERRER)));
         verify(receiver, times(1)).recordRequest(eq(TEST_CID), eq(TEST_UID));
     }
-
-    private void init(boolean mockModule) throws MalformedURLException {
-        if (config == null) {
-            config = TestingUtilityInternal.setupConfig();
-            config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        }
-        config.enableTestMode();
-        if (core == null) {
-            core = Core.initForApplication(config, getContext());
-        }
-        dummy = Mockito.mock(Module.class);
-        List<Module> list = Whitebox.getInternalState(core, "modules");
-        if (module == null) {
-            for (Module m : list) {
-                if (m instanceof ModuleAttribution) {
-                    module = (ModuleAttribution) m;
-                }
-                if (m instanceof ModuleDeviceId) {
-                    moduleDeviceId = (ModuleDeviceId) m;
-                }
-            }
-            if (mockModule) {
-                list.remove(module);
-                module = Mockito.spy(module);
-                list.add(1, module);
-            }
-        }
-        list.add(dummy);
-        internalConfig = Utils.reflectiveGetField(core, "config");
-        new Log().init(internalConfig);
-        utils = Mockito.spy(new Utils());
-        Utils.reflectiveSetField(Utils.class, "utils", utils);
-
-        Assert.assertNotNull(config);
-        Assert.assertNotNull(internalConfig);
-        Assert.assertNotNull(core);
-        Assert.assertNotNull(module);
-        Assert.assertNotNull(moduleDeviceId);
-        Assert.assertNotNull(dummy);
-        Assert.assertNotNull(utils);
-    }
-
 }

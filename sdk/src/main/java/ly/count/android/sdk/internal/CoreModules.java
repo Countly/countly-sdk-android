@@ -1,9 +1,7 @@
 package ly.count.android.sdk.internal;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
@@ -14,14 +12,15 @@ import ly.count.android.sdk.Config;
 
 public class CoreModules extends CoreStorage {
     private static final Log.Module L = Log.module("CoreModules");
+    private static Module testDummyModule = null;
 
     /**
      * Mappings of {@link Config.Feature} to {@link Module} class.
      * Changed by using {@link #setModuleMapping(Config.Feature, Class)}.
      */
-    protected final Map<Config.Feature, Class<? extends Module>> moduleMappings = new HashMap<>();
+    protected static final Map<Config.Feature, Class<? extends Module>> moduleMappings = new HashMap<>();
 
-    {
+    static {
         setModuleMapping(Config.Feature.Crash, ModuleCrash.class);
         setModuleMapping(Config.Feature.Attribution, ModuleAttribution.class);
         setModuleMapping(Config.Feature.Push, ModulePush.class);
@@ -34,7 +33,7 @@ public class CoreModules extends CoreStorage {
      * @param feature feature to map
      * @param cls {@link Module} class to use for this feature
      */
-    public void setModuleMapping(Config.Feature feature, Class<? extends Module> cls) {
+    public static void setModuleMapping(Config.Feature feature, Class<? extends Module> cls) {
         moduleMappings.put(feature, cls);
     }
 
@@ -62,6 +61,10 @@ public class CoreModules extends CoreStorage {
             modules.add(new ModuleSessions());
         }
 
+        if (testDummyModule != null) {
+            modules.add(testDummyModule);
+        }
+
         for (Config.Feature f : config.getFeatures()) {
             Class<? extends Module> cls = moduleMappings.get(f);
             if (cls == null) {
@@ -81,7 +84,7 @@ public class CoreModules extends CoreStorage {
      * @param cls class of {@link Module}
      * @return {@link Module} instance or null in case of error
      */
-    private Module instantiateModule(Class<? extends Module> cls) {
+    private static Module instantiateModule(Class<? extends Module> cls) {
         try {
             return (Module)cls.getConstructors()[0].newInstance();
         } catch (InstantiationException e) {
@@ -90,6 +93,16 @@ public class CoreModules extends CoreStorage {
             L.wtf("Module constructor cannot be accessed", e);
         } catch (InvocationTargetException e) {
             L.wtf("Module constructor cannot be invoked", e);
+        } catch (IllegalArgumentException e) {
+            try {
+                return (Module)cls.getConstructors()[0].newInstance((Object)null);
+            } catch (InstantiationException e1) {
+                L.wtf("Module cannot be instantiated", e);
+            } catch (IllegalAccessException e1) {
+                L.wtf("Module constructor cannot be accessed", e);
+            } catch (InvocationTargetException e1) {
+                L.wtf("Module constructor cannot be invoked", e);
+            }
         }
         return null;
     }

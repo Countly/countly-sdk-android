@@ -280,6 +280,10 @@ class EventImpl implements Eve, JSONable {
         return null;
     }
 
+    long getTimestamp() {
+        return timestamp;
+    }
+
     @Override
     public String toString() {
         return toJSON();

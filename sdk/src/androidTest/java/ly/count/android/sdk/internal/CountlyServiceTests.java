@@ -16,27 +16,13 @@ import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-public class CountlyServiceTests {
-    private Context ctx = null;
-    private CountlyService service = null;
+public class CountlyServiceTests extends BaseTests {
 //    @Rule
 //    public ServiceTestRule rule = ServiceTestRule.withTimeout(3, TimeUnit.SECONDS);
 
-    @Before
-    public void setupEveryTest() throws Exception {
-        ctx = new ContextImpl(getContext());
-        service = spy(new CountlyService());
-        doReturn(getContext()).when(service).getApplicationContext();
-
-        Core.purgeInternalStorage(ctx, null);
-        Storage.push(ctx, new InternalConfig(TestingUtilityInternal.setupLogs(TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG).addFeature(Config.Feature.Crash))));
-        if (Core.instance != null) {
-            Core.instance.deinit();
-        }
-    }
-
     @Test
-    public void constructor_basic(){
+    public void constructor_basic() throws Exception {
+        setUpService(defaultConfig());
         service.onCreate();
         Assert.assertNotNull(Whitebox.getInternalState(service, "tasks"));
         Assert.assertNotNull(Whitebox.getInternalState(service, "ctx"));
@@ -48,15 +34,15 @@ public class CountlyServiceTests {
     }
 
     @Test
-    public void constructor_noConfig(){
-        Core.purgeInternalStorage(ctx, InternalConfig.getStoragePrefix());
+    public void constructor_noConfig() throws Exception {
+        setUpService(null);
         service.onCreate();
         Assert.assertNull(Whitebox.getInternalState(service, "core"));
     }
 
     @Test
     public void recovery_sessionOld() throws Exception {
-        TestingUtilityInternal.setupBasicCore(getContext());
+        setUpApplication(null);
         SessionImpl session = new SessionImpl(ctx, Device.uniqueTimestamp() - Device.secToMs(2020));
         session.begin(System.nanoTime() - Device.secToNs(2020));
         session.update(System.nanoTime() - Device.secToNs(2000));
@@ -69,7 +55,8 @@ public class CountlyServiceTests {
         Assert.assertEquals(2, Storage.list(ctx, SessionImpl.getStoragePrefix()).size());
         Assert.assertEquals(3, Storage.list(ctx, Request.getStoragePrefix()).size());
 
-        Core.instance.deinit();
+        Core.deinit();
+        setUpService(null);
         service.onCreate();
 
         doReturn(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
@@ -93,7 +80,7 @@ public class CountlyServiceTests {
 
     @Test
     public void recovery_sessionBad() throws Exception {
-        TestingUtilityInternal.setupBasicCore(getContext());
+        setUpApplication(null);
         SessionImpl notBegan = new SessionImpl(ctx, Device.uniqueTimestamp() - Device.secToMs(2020));
         Storage.push(ctx, notBegan);
 
@@ -107,7 +94,8 @@ public class CountlyServiceTests {
         Assert.assertEquals(notBegan.id, sessions.get(0));
         Assert.assertEquals(2, Storage.list(ctx, Request.getStoragePrefix()).size());
 
-        Core.instance.deinit();
+        Core.deinit();
+        setUpService(null);
         service.onCreate();
 
         doReturn(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
@@ -132,7 +120,7 @@ public class CountlyServiceTests {
 
     @Test
     public void receiving_crash() throws Exception {
-        TestingUtilityInternal.setupBasicCore(getContext());
+        setUpApplication(defaultConfig().addFeature(Config.Feature.Crash));
         SessionImpl session = new SessionImpl(ctx);
         session.begin();
 
@@ -142,7 +130,8 @@ public class CountlyServiceTests {
         Assert.assertEquals(1, sessions.size());
         Assert.assertEquals(1, Storage.list(ctx, Request.getStoragePrefix()).size());
 
-        Core.instance.deinit();
+        Core.deinit();
+        setUpService(null);
         service.onCreate();
 
         doReturn(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {

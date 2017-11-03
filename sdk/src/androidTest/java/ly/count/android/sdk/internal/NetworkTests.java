@@ -10,6 +10,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -18,6 +19,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutionException;
@@ -37,20 +39,30 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
-public class NetworkTests {
-    private InternalConfig internalConfig;
+public class NetworkTests extends BaseTests {
+    private static final int PORT = 30301;
+
     private Network network;
 
     public MockWebServer server;
 
-    @Before
-    public void setupEveryTest() throws IOException {
-        server = new MockWebServer();
-        server.start(30301);
+    @Override
+    protected Config defaultConfig() throws MalformedURLException {
+        InternalConfig config = new InternalConfig(new Config("http://localhost:" + PORT, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG));
+        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
+        return config;
+    }
 
-        internalConfig = TestingUtilityInternal.setupCoreForService(getContext(), new Config("http://localhost:" + server.getPort(), "some key"));
-        network = new Network();
-        network.init(internalConfig);
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        server = new MockWebServer();
+        server.start(PORT);
+
+        setUpService(defaultConfig());
+        service.onCreate();
+        network = Whitebox.getInternalState(service, "network");
+        Utils.reflectiveSetField(network, "sleeps", false);
     }
 
     @After
@@ -84,7 +96,6 @@ public class NetworkTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.RETRY, result);
     }
@@ -95,7 +106,6 @@ public class NetworkTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.REMOVE, result);
     }
@@ -106,7 +116,6 @@ public class NetworkTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.RETRY, result);
     }
@@ -117,7 +126,6 @@ public class NetworkTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.RETRY, result);
     }
@@ -128,7 +136,6 @@ public class NetworkTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.OK, result);
     }
@@ -139,7 +146,6 @@ public class NetworkTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.OK, result);
     }
@@ -150,7 +156,6 @@ public class NetworkTests {
 //
 //        Request request = new Request("a", 1, "b", "something", "c", false);
 //
-//        Utils.reflectiveSetField(network, "sleeps", false);
 //        Network.RequestResult result = network.send(request).call();
 //        Assert.assertEquals(Network.RequestResult.OK, result);
 //
@@ -167,7 +172,6 @@ public class NetworkTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.OK, result);
 
@@ -179,12 +183,11 @@ public class NetworkTests {
 
     @Test
     public void testUsePost() throws Exception {
-        internalConfig.setUsePOST(true);
+        config.setUsePOST(true);
         server.enqueue(new MockResponse().setResponseCode(200));
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.OK, result);
 
@@ -200,7 +203,6 @@ public class NetworkTests {
 
         Request request = new Request("a", String.format("%1000.1000s", "x"));
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.OK, result);
 
@@ -217,7 +219,6 @@ public class NetworkTests {
 
         Request request = new Request("k1", "value 1", "k2", 2, "k3", false, UserEditorImpl.PICTURE_PATH, UserEditorImpl.PICTURE_IN_USER_PROFILE);
 
-        Utils.reflectiveSetField(network, "sleeps", false);
         Network.RequestResult result = network.send(request).call();
         Assert.assertEquals(Network.RequestResult.OK, result);
 
@@ -237,6 +238,8 @@ public class NetworkTests {
 
     @Test
     public void testBackoff() throws Exception {
+        Utils.reflectiveSetField(network, "sleeps", true);
+
         server.enqueue(new MockResponse().setBody("error 1").setResponseCode(500));
         server.enqueue(new MockResponse().setBody("error 2").setResponseCode(500));
         server.enqueue(new MockResponse().setBody("error 3").setResponseCode(500));

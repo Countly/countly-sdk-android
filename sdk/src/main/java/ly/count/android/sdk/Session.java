@@ -123,13 +123,24 @@ public interface Session {
     Session addLocation(double latitude, double longitude);
 
     /**
-     * Record new view
+     * Start new view.
+     * In case previous view in this session is not ended yet, it will be ended automatically.
+     * In case session ends and last view haven't been ended yet, it will be ended automatically
      *
      * @param name String representing name of this View
-     * @param exit whether this view will be last one in current session
-     * @return {@link Eve} object set up as View occurrence, but not recorded yet
+     * @param start whether this view is first in current application launch
+     * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#end(boolean)}
      */
-    Eve recordView(String name, boolean exit);
+    View view(String name, boolean start);
+
+    /**
+     * Identical to {@link #view(String, boolean)}, but without {@code start} parameter which
+     * is determined automatically based on whether this view is first in this session.
+     *
+     * @param name String representing name of this View
+     * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#end(boolean)}
+     */
+    View view(String name);
 
     // TODO: to be continued...
 }

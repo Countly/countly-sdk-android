@@ -8,7 +8,6 @@ public class DeviceTests {
 
     @Test
     public void testAsIs() throws Exception {
-        TestingUtilityInternal.setupLogs(null);
         Device.TimeUniquenessEnsurer simulator = new Device.TimeUniquenessEnsurer();
 
         long last = simulator.uniqueTimestamp();
@@ -21,7 +20,6 @@ public class DeviceTests {
 
     @Test
     public void testMidTimeChange() throws Exception {
-        TestingUtilityInternal.setupLogs(null);
         Device.TimeUniquenessEnsurer simulator = new Device.TimeUniquenessEnsurer();
 
         long last = simulator.uniqueTimestamp();
@@ -55,7 +53,6 @@ public class DeviceTests {
 
     @Test
     public void testMidTimeRandomChange() throws Exception {
-        TestingUtilityInternal.setupLogs(null);
         Device.TimeUniquenessEnsurer simulator = new Device.TimeUniquenessEnsurer();
 
         long last = simulator.uniqueTimestamp();

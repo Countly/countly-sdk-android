@@ -4,7 +4,6 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,24 +14,17 @@ import java.util.List;
 
 import ly.count.android.sdk.Config;
 
-import static android.support.test.InstrumentationRegistry.getContext;
-
 @RunWith(AndroidJUnit4.class)
-public class SessionImplTests {
-    private Context ctx = null;
-
+public class SessionImplTests extends BaseTests {
     @Before
-    public void setupEveryTest() throws MalformedURLException {
-        ctx = new ContextImpl(getContext());
-        TestingUtilityInternal.setupCoreForApplication(getContext());
+    public void setUp() throws Exception {
+        super.setUp();
+        setUpApplication(defaultConfig());
     }
 
-    @After
-    public void cleanupEveryTests(){
-        if (Core.instance != null) {
-            Core.instance.deinit();
-        }
-        //validateMockitoUsage();
+    @Override
+    protected Config defaultConfig() throws MalformedURLException {
+        return super.defaultConfig().disableTestMode().addFeature(Config.Feature.Crash);
     }
 
     @Test
@@ -76,8 +68,6 @@ public class SessionImplTests {
 
     @Test
     public void beginEndSession_doubleBegin() throws MalformedURLException{
-        TestingUtilityInternal.setupLogs(null);
-
         long sessionID = 12345;
         SessionImpl session = new SessionImpl(ctx, sessionID);
 
@@ -146,8 +136,6 @@ public class SessionImplTests {
 
     @Test
     public void beginAfterEnd() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs(null);
-
         long timeBegin = 123L;
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
@@ -165,8 +153,6 @@ public class SessionImplTests {
 
     @Test
     public void beginAfterEndSet() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs(null);
-
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
 
@@ -179,7 +165,6 @@ public class SessionImplTests {
 
     @Test
     public void endedTwice() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs(null);
         long timeBegin = 123L;
         long timeEnd = 345L;
         long timeEndSecond = 678L;
@@ -270,7 +255,6 @@ public class SessionImplTests {
 
     @Test
     public void update_simple() throws MalformedURLException {
-        TestingUtilityInternal.setupLogs(null);
         long timeBegin = 123L;
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
@@ -294,22 +278,19 @@ public class SessionImplTests {
     }
 
     @Test
-    public void isLeading_null() throws MalformedURLException{
-        Core core = TestingUtilityInternal.setupBasicCore(getContext());
+    public void isLeading_null() throws Exception {
         SessionImpl session = new SessionImpl(ctx);
         Assert.assertEquals(false, (boolean)session.isLeading());
     }
     @Test
-    public void isLeading_succeed() throws MalformedURLException{
-        Core core = TestingUtilityInternal.setupBasicCore(getContext());
+    public void isLeading_succeed() throws Exception {
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
         SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessions.add(sessionTarget);
         Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
     }
     @Test
-    public void isLeading_fail() throws MalformedURLException{
-        Core core = TestingUtilityInternal.setupBasicCore(getContext());
+    public void isLeading_fail() throws Exception {
         List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
 
         SessionImpl sessionOther = new SessionImpl(ctx, 456L);
@@ -366,10 +347,7 @@ public class SessionImplTests {
     }
 
     @Test
-    public void autostore() throws InterruptedException, MalformedURLException {
-        Core core = Core.initForApplication(new InternalConfig(new Config("http://count.ly/tests", "123")).setLoggerClass(Log.SystemLogger.class), getContext());
-        core.onLimitedContextAcquired(getContext());
-
+    public void autostore() throws Exception {
         SessionImpl session = new SessionImpl(ctx);
         session.begin().event("key1")
                 .setCount(2)
@@ -454,9 +432,6 @@ public class SessionImplTests {
 
     @Test
     public void session_recoverNoUpdate() throws Exception {
-        Core.purgeInternalStorage(ctx, null);
-        InternalConfig config = new InternalConfig(TestingUtilityInternal.setupConfig());
-
         long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
         SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - Device.secToNs(config.getSessionCooldownPeriod() * 3));
         session.begin(beginNs);
@@ -486,9 +461,6 @@ public class SessionImplTests {
 
     @Test
     public void session_recoverWithUpdate() throws Exception {
-        Core.purgeInternalStorage(ctx, null);
-        InternalConfig config = new InternalConfig(TestingUtilityInternal.setupConfig());
-
         long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
         SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - Device.secToMs(config.getSessionCooldownPeriod() * 3));
         session.begin(beginNs);
@@ -499,7 +471,7 @@ public class SessionImplTests {
         session = Storage.read(ctx, session);
         Assert.assertNotNull(session);
 
-        session.recover(new InternalConfig(TestingUtilityInternal.setupConfig()));
+        session.recover(config);
         Thread.sleep(300);
 
         session = Storage.read(ctx, session);
@@ -522,8 +494,6 @@ public class SessionImplTests {
 
     @Test
     public void session_recoversNothingWithEnd() throws Exception {
-        Core.purgeInternalStorage(ctx, null);
-
         SessionImpl session = new SessionImpl(ctx);
         session.begin(System.nanoTime() - Device.secToNs(20));
         session.update(System.nanoTime() - Device.secToNs(10));
@@ -533,13 +503,17 @@ public class SessionImplTests {
 
         Assert.assertNull(Storage.read(ctx, session));
 
-        session.recover(new InternalConfig(TestingUtilityInternal.setupConfig()));
+        session.recover(config);
         Storage.await();
-
-        session = Storage.read(ctx, session);
-        Assert.assertNull(session);
+        Assert.assertNull(Storage.read(ctx, session));
 
         List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        if (requests.size() > 3) {
+            Log.d("" + Storage.read(ctx, new Request(requests.get(0))));
+            Log.d("" + Storage.read(ctx, new Request(requests.get(1))));
+            Log.d("" + Storage.read(ctx, new Request(requests.get(2))));
+            Log.d("" + Storage.read(ctx, new Request(requests.get(3))));
+        }
         Assert.assertEquals(3, requests.size());
 
         Request begin = Storage.read(ctx, new Request(requests.get(0)));
@@ -556,12 +530,6 @@ public class SessionImplTests {
 
     @Test
     public void session_crashRecorded() throws Exception {
-        Core.purgeInternalStorage(ctx, null);
-
-        Config config = TestingUtilityInternal.setupConfig().enableTestMode()
-                .setLoggingLevel(Config.LoggingLevel.DEBUG).addFeature(Config.Feature.Crash);
-        Core.initForApplication(config, TestingUtilityInternal.mockApplication(getContext()));
-
         SessionImpl session = new SessionImpl(ctx);
         session.begin(System.nanoTime() - Device.secToNs(20));
         session.addCrashReport(new IllegalStateException("Illegal state out here"), false, "crashname", "crashdetails");

@@ -4,26 +4,20 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
-import org.junit.After;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-
 import ly.count.android.sdk.Config;
 
-@RunWith(AndroidJUnit4.class)
-public class RequestsTests {
-    final int paramsAddedByAddCommon = 6;
+import static org.mockito.Mockito.doReturn;
 
-    final private String url = "https://www.google.com";
-    final private String apiKey = "1234";
+@RunWith(AndroidJUnit4.class)
+public class RequestsTests extends BaseTests {
+    final int paramsAddedByAddCommon = 6;
 
     //these vals correspond to this time and date: 01/12/2017 @ 1:21pm (UTC), Thursday
     final private long unixTime = 1484227306L;// unix time in milliseconds
@@ -31,175 +25,136 @@ public class RequestsTests {
     final private long unixTimestampDow = 3;//the corresponding day of the unix timestamp
     final private long unixTimestampHour = 13;//the corresponding hour of the unix timestamp
 
-    private Config config;
-    private InternalConfig internalConfig;
+    private ModuleRequests requests;
+    private Request request;
 
     @Before
-    public void setupEveryTest() throws MalformedURLException{
-        config = new Config(url, apiKey);
-        internalConfig = new InternalConfig(config);
-    }
-
-    @After
-    public void cleanupEveryTests(){
-    }
-
-    @Test (expected = NullPointerException.class)
-    public void addCommon_null() throws Exception{
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", new Class<?>[]{InternalConfig.class, long.class, Request.class}, new Object[]{null, 0, null});
-    }
-
-    private static Request addCommon(InternalConfig config, long ms, Request request) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(ms);
-
-        request.params.add("app_key", config.getServerAppKey())
-                .add("timestamp", (int)(ms / 1000L))
-                .add("hour", calendar.get(Calendar.HOUR_OF_DAY))
-                //.add("dow", dow(calendar))
-                .add("sdk_name", config.getSdkName())
-                .add("sdk_version", config.getSdkVersion());
-        return request;
+    public void setUp() throws Exception {
+        super.setUp();
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
+        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID).setDeviceIdFallbackAllowed(false));
+        requests = module(ModuleRequests.class, true);
     }
 
     @Test
-    public void addCommon_returnsSameObject() throws Exception{
-        String initialParams = "aasdfg=123";
-        Request request = Whitebox.invokeConstructor(Request.class, initialParams);
-        Request returnedRequest = Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        Assert.assertSame(request, returnedRequest);
+    public void init() {
+        Assert.assertEquals(config, Whitebox.getInternalState(ModuleRequests.class, "config"));
     }
 
     @Test
-    public void addCommon_addsCorrectFields() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "");
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        String[] paramsParts = request.params.toString().split("&");
-        List<String> paramsKeys = new ArrayList<>();
+    public void metrics() throws Exception {
+        Params params = Whitebox.getInternalState(ModuleRequests.class, "metrics");
+        Assert.assertNotNull(params);
+        Assert.assertTrue(params.has("metrics"));
 
-        for (String part: paramsParts) {
-            String[] parts = part.split("=");
-            paramsKeys.add(parts[0]);
-        }
-
-        Assert.assertEquals(true, paramsKeys.contains("app_key"));
-        Assert.assertEquals(true, paramsKeys.contains("timestamp"));
-        Assert.assertEquals(true, paramsKeys.contains("hour"));
-        Assert.assertEquals(true, paramsKeys.contains("dow"));
-        Assert.assertEquals(true, paramsKeys.contains("sdk_name"));
-        Assert.assertEquals(true, paramsKeys.contains("sdk_version"));
+        JSONObject object = new JSONObject(params.get("metrics"));
+        Assert.assertEquals(object.get("_device"), Device.getDevice());
+        Assert.assertEquals(object.get("_os"), Device.getOS());
+        Assert.assertEquals(object.get("_os_version"), Device.getOSVersion());
+        Assert.assertEquals(object.get("_carrier"), Device.getCarrier(ctx.getContext()));
+        Assert.assertEquals(object.get("_resolution"), Device.getResolution(ctx.getContext()));
+        Assert.assertEquals(object.get("_density"), Device.getDensity(ctx.getContext()));
+        Assert.assertEquals(object.get("_locale"), Device.getLocale());
+        Assert.assertEquals(object.isNull("_app_version"), Device.getAppVersion(ctx.getContext()) == null);
+        Assert.assertEquals(object.get("_store"), Device.getStore(ctx.getContext()));
     }
 
     @Test
-    public void addCommon_simple() throws Exception{
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(unixTime);
+    public void session() throws Exception {
+        SessionImpl session = new SessionImpl(ctx);
 
-        String initialParams = "aasdfg=123";
-        Request request = Whitebox.invokeConstructor(Request.class, initialParams);
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
+        session.params.add("test", "value");
+        ModuleRequests.sessionBegin(ctx, session);
 
-        String[] paramsParts = request.params.toString().split("&");
-        Assert.assertEquals(true, paramsParts[0].equals(initialParams));
+        Request request = Storage.readOne(ctx, new Request(0L), true);
+        Assert.assertNotNull(request);
+        Assert.assertEquals(request.params.get("session_id"), "" + session.storageId());
+        Assert.assertEquals(request.params.get("begin_session"), "1");
+        Assert.assertTrue(request.params.toString().contains("&metrics="));
+        Assert.assertTrue(request.params.toString().contains("&test=value"));
+        Storage.remove(ctx, request);
 
-        for(int a = 1 ; a < paramsParts.length ; a++) {
-            String[] parts = paramsParts[a].split("=");
-            String key = parts[0];
-            String value = parts[1];
+        session.params.add("testUpdate", "valueUpdate");
+        session.event("eve").addSegment("k", "v").setDuration(3).record();
+        ModuleRequests.sessionUpdate(ctx, session, 123L);
 
-            switch (key){
-                case "app_key":
-                    Assert.assertEquals(apiKey, value);
-                    break;
-                case "timestamp":
-                    long val = Long.parseLong(value);
-                    Assert.assertEquals(unixTimeSeconds, val);
-                    break;
-                case "hour":
-                    String hourString = "" + calendar.get(Calendar.HOUR_OF_DAY);
-                    Assert.assertEquals(hourString, value);
-                    break;
-                case "dow":
-                    String dowString = "" + Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar);
-                    Assert.assertEquals(dowString, value);
-                    break;
-                case "sdk_name":
-                    Assert.assertEquals(internalConfig.getSdkName(), value);
-                    break;
-                case "sdk_version":
-                    Assert.assertEquals(internalConfig.getSdkVersion(), value);
-                    break;
-                default:
-                    Assert.fail("unexpected param encountered");
-                    break;
-            }
-        }
+        request = Storage.readOne(ctx, new Request(0L), true);
+        Assert.assertNotNull(request);
+        Assert.assertEquals(request.params.get("session_id"), "" + session.storageId());
+        Assert.assertEquals(request.params.get("session_duration"), "123");
+        Assert.assertFalse(request.params.toString().contains("metrics="));
+        Assert.assertTrue(request.params.toString().contains("&testUpdate=valueUpdate"));
+        JSONArray events = new JSONArray(request.params.get("events"));
+        Assert.assertNotNull(events);
+        Assert.assertEquals(events.length(), 1);
+        JSONObject event = events.getJSONObject(0);
+        Assert.assertNotNull(event);
+        Assert.assertEquals(event.getString("key"), "eve");
+        Assert.assertEquals(event.getInt("count"), 1);
+        Assert.assertEquals(event.getInt("dur"), 3);
+        Assert.assertEquals(event.getInt("dow"), Device.currentDayOfWeek());
+        Assert.assertEquals(event.getJSONObject("segmentation").get("k"), "v");
+        Assert.assertTrue(event.has("timestamp"));
+        Assert.assertTrue(event.has("hour"));
+        Storage.remove(ctx, request);
+
+        session.params.add("testEnd", "valueEnd");
+        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
+        ModuleRequests.sessionEnd(ctx, session, 19L, "devid", null);
+
+        request = Storage.readOne(ctx, new Request(0L), true);
+        Assert.assertNotNull(request);
+        Assert.assertEquals(request.params.get("session_id"), "" + session.storageId());
+        Assert.assertEquals(request.params.get("end_session"), "1");
+        Assert.assertEquals(request.params.get("session_duration"), "19");
+        Assert.assertFalse(request.params.toString().contains("metrics="));
+        Assert.assertTrue(request.params.toString().contains("&testEnd=valueEnd"));
+        Assert.assertTrue(request.params.toString().contains("&device_id=devid"));
+        Storage.remove(ctx, request);
     }
 
     @Test
-    public void addCommon_countNoInitialParams() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "");
-
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        Assert.assertEquals(paramsAddedByAddCommon, TestingUtilityInternal.countParams(request.params));
+    public void location() throws Exception {
+        double lat = 12.223, lon = 33.992;
+        ModuleRequests.location(ctx, lat, lon);
+        Request request = Storage.readOne(ctx, new Request(0L), true);
+        Assert.assertNotNull(request);
+        Assert.assertEquals(request.params.get("location"), lat + "," + lon);
     }
 
     @Test
-    public void addCommon_countWithInitialParamsSingle() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "aasdfg=123");
-        Assert.assertEquals(1, TestingUtilityInternal.countParams(request.params));
+    public void nonSessionRequest() throws Exception {
+        Request request = ModuleRequests.nonSessionRequest(config);
+        Assert.assertNotNull(request);
+        Assert.assertTrue(request.params.has("timestamp"));
+        Assert.assertTrue(request.params.has("dow"));
+        Assert.assertTrue(request.params.has("hour"));
+        Assert.assertTrue(request.params.has("tz"));
+        Assert.assertFalse(request.params.has("device_id"));
 
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        Assert.assertEquals(1 + paramsAddedByAddCommon, TestingUtilityInternal.countParams(request.params));
+        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
+        request = ModuleRequests.nonSessionRequest(config);
+        Assert.assertNotNull(request);
+        Assert.assertTrue(request.params.has("timestamp"));
+        Assert.assertTrue(request.params.has("dow"));
+        Assert.assertTrue(request.params.has("hour"));
+        Assert.assertTrue(request.params.has("tz"));
+        Assert.assertEquals(request.params.get("device_id"), "devid");
     }
 
     @Test
-    public void addCommon_countWithInitialParamsMultiple() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "aasdfg=123&rr=12&ff=45");
-        Assert.assertEquals(3, TestingUtilityInternal.countParams(request.params));
+    public void addRequired() throws Exception {
+        Request request = ModuleRequests.nonSessionRequest(config);
+        Assert.assertNotNull(request);
+        Assert.assertNull(ModuleRequests.addRequired(config, request));
 
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        Assert.assertEquals(3 + paramsAddedByAddCommon, TestingUtilityInternal.countParams(request.params));
-    }
+        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
+        request = ModuleRequests.addRequired(config, request);
 
-    @Test
-    public void addCommon_noDuplicateNoInitialParams() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "");
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        Assert.assertEquals(true, TestingUtilityInternal.noDuplicateKeysInParams(request.params));
-    }
-
-    @Test
-    public void addCommon_noDuplicateWithInitialParamsSingle() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "aa=43");
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        Assert.assertEquals(true, TestingUtilityInternal.noDuplicateKeysInParams(request.params));
-    }
-
-    @Test
-    public void addCommon_noDuplicateWithInitialParamsMultiple() throws Exception{
-        Request request = Whitebox.invokeConstructor(Request.class, "a=3&b=4");
-        Whitebox.<Request> invokeMethod(ModuleRequests.class, "addCommon", internalConfig, unixTime, request);
-        Assert.assertEquals(true, TestingUtilityInternal.noDuplicateKeysInParams(request.params));
-    }
-
-    @Test
-    public void dow_days() throws Exception{
-        Calendar calendar = new GregorianCalendar();
-
-        calendar.set(2017, 0, 16);//monday
-        Assert.assertEquals(1, (int)Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar));
-        calendar.set(2017, 0, 17);
-        Assert.assertEquals(2, (int)Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar));
-        calendar.set(2017, 0, 18);
-        Assert.assertEquals(3, (int)Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar));
-        calendar.set(2017, 0, 19);
-        Assert.assertEquals(4, (int)Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar));
-        calendar.set(2017, 0, 20);
-        Assert.assertEquals(5, (int)Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar));
-        calendar.set(2017, 0, 21);
-        Assert.assertEquals(6, (int)Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar));
-        calendar.set(2017, 0, 22);
-        Assert.assertEquals(0, (int)Whitebox.<Integer>invokeMethod(ModuleRequests.class, "dow", calendar));
+        Assert.assertNotNull(request);
+        Assert.assertEquals(request.params.get("device_id"), "devid");
+        Assert.assertEquals(request.params.get("sdk_name"), config.getSdkName());
+        Assert.assertEquals(request.params.get("sdk_version"), config.getSdkVersion());
+        Assert.assertEquals(request.params.get("app_key"), config.getServerAppKey());
     }
 }

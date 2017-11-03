@@ -1,38 +1,44 @@
 package ly.count.android.sdk.internal;
 
-import ly.count.android.sdk.Eve;
+import java.util.HashMap;
+import java.util.Map;
+
 import ly.count.android.sdk.Session;
+import ly.count.android.sdk.View;
 
 /**
  * Views support
  */
 
 public class ModuleViews extends ModuleBase {
-    public static final String EVENT = "[CLY]_view";
-    public static final String NAME = "name";
-    public static final String VISIT = "visit";
-    public static final String VISIT_VALUE = "1";
-    public static final String SEGMENT = "segment";
-    public static final String SEGMENT_VALUE = "Android";
-    public static final String START = "start";
-    public static final String START_VALUE = "1";
-    public static final String EXIT = "exit";
-    public static final String EXIT_VALUE = "1";
-    private Eve event = null;
+    private Map<Integer, View> views = null;
 
+    @Override
+    public void init(InternalConfig config) {
+        super.init(config);
+        views = new HashMap<>();
+    }
+
+    /**
+     * When new {@link android.app.Activity} started, starts new {@link View} with name
+     * set as {@link android.app.Activity} class name.
+     */
     @Override
     public void onActivityStarted(Context ctx) {
         Session session = Core.instance.sessionLeading();
         if (session != null) {
-            event = session.recordView(ctx.getActivity().getClass().getName(), false);
+            views.put(ctx.getActivity().hashCode(), session.view(ctx.getActivity().getClass().getName()));
         }
     }
 
+    /**
+     * When {@link android.app.Activity} stopped, stops previously started {@link View}.
+     */
     @Override
     public void onActivityStopped(Context ctx) {
-        if (event != null) {
-            event.endAndRecord();
-            event = null;
+        int cls = ctx.getActivity().hashCode();
+        if (views.containsKey(cls)) {
+            views.remove(cls).end(false);
         }
     }
 }

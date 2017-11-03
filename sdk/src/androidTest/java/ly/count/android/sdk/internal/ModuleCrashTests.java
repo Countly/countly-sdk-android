@@ -8,11 +8,18 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
+import java.net.MalformedURLException;
+
 import ly.count.android.sdk.Config;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
-public class ModuleCrashTests {
+public class ModuleCrashTests extends BaseTests {
+    @Override
+    protected Config defaultConfig() throws MalformedURLException {
+        return super.defaultConfig().addFeature(Config.Feature.Crash);
+    }
+
     @Test(expected = StackOverflowError.class)
     public void raise_stackOverflow() {
         ModuleCrash.crashTest(ModuleCrash.CrashType.STACK_OVERFLOW);
@@ -40,15 +47,13 @@ public class ModuleCrashTests {
 
     @Test
     public void checkTicks() throws Exception {
-        Config config = TestingUtilityInternal.setupConfig().enableTestMode().addFeature(Config.Feature.Crash);
-        Core.initForApplication(config, getContext());
+        setUpApplication(null);
 
-        ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.Crash);
+        ModuleCrash module = module(ModuleCrash.class, false);
 
-        Assert.assertEquals(0, Whitebox.getInternalState(module, "tick"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
         Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
 
-        Core.instance.onContextAcquired(TestingUtilityInternal.mockApplication(getContext()));
         Thread.sleep(500);
 
         Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));

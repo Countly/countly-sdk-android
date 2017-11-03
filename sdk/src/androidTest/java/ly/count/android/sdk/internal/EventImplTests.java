@@ -18,10 +18,6 @@ import ly.count.android.sdk.Eve;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
-/**
- * Created by artem on 06/02/2017.
- */
-
 @RunWith(AndroidJUnit4.class)
 public class EventImplTests {
     private Context ctx;
@@ -172,6 +168,11 @@ public class EventImplTests {
     @Test (expected = IllegalStateException.class)
     public void dur_Inf() {
         new EventImpl(new SessionImpl(ctx), "key").setDuration(Double.NEGATIVE_INFINITY);
+    }
+
+    @Test (expected = IllegalStateException.class)
+    public void dur_Neg() {
+        new EventImpl(new SessionImpl(ctx), "key").setDuration(-2);
     }
 
     @Test

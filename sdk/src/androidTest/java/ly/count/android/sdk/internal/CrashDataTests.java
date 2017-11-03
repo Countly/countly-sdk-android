@@ -40,9 +40,7 @@ import java.util.regex.Pattern;
 
 import ly.count.android.sdk.Countly;
 
-import static android.support.test.InstrumentationRegistry.getContext;
-
-public class CrashDataTests {
+public class CrashDataTests extends BaseTests {
     static class DeviceInfo {
         /**
          * Returns the display name of the current operating system.
@@ -613,32 +611,31 @@ public class CrashDataTests {
 
     @Test
     public void testAll() {
-        Context context = getContext();
         Assert.assertEquals(DeviceInfo.getOS(), Device.getOS());
         Assert.assertEquals(DeviceInfo.getOSVersion(), Device.getOSVersion());
         Assert.assertEquals(DeviceInfo.getDevice(), Device.getDevice());
-        Assert.assertEquals(DeviceInfo.getResolution(context), Device.getResolution(context));
-        Assert.assertEquals(DeviceInfo.getDensity(context), Device.getDensity(context));
-        Assert.assertEquals(DeviceInfo.getCarrier(context), Device.getCarrier(context));
+        Assert.assertEquals(DeviceInfo.getResolution(ctx.getContext()), Device.getResolution(ctx.getContext()));
+        Assert.assertEquals(DeviceInfo.getDensity(ctx.getContext()), Device.getDensity(ctx.getContext()));
+        Assert.assertEquals(DeviceInfo.getCarrier(ctx.getContext()), Device.getCarrier(ctx.getContext()));
         Assert.assertEquals(DeviceInfo.getTimezoneOffset(), Device.getTimezoneOffset());
         Assert.assertEquals(DeviceInfo.getLocale(), Device.getLocale());
-        Assert.assertEquals(DeviceInfo.getAppVersion(context), Device.getAppVersion(context));
-        Assert.assertEquals(DeviceInfo.getStore(context), Device.getStore(context));
+        Assert.assertEquals(DeviceInfo.getAppVersion(ctx.getContext()), Device.getAppVersion(ctx.getContext()));
+        Assert.assertEquals(DeviceInfo.getStore(ctx.getContext()), Device.getStore(ctx.getContext()));
         Assert.assertEquals((Long)CrashDetails.getTotalRAM(), Device.getRAMTotal());
         Assert.assertEquals(CrashDetails.getManufacturer(), Device.getManufacturer());
         Assert.assertEquals(CrashDetails.getCpu(), Device.getCpu());
-        Assert.assertEquals(CrashDetails.getOpenGL(context), String.valueOf(Device.getOpenGL(context)));
-        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getRamCurrent(context)), Device.getRAMAvailable(context)));
-//        Assert.assertEquals(CrashDetails.getRamCurrent(context), String.valueOf(Device.getRAMAvailable(context)));
+        Assert.assertEquals(CrashDetails.getOpenGL(ctx.getContext()), String.valueOf(Device.getOpenGL(ctx.getContext())));
+        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getRamCurrent(ctx.getContext())), Device.getRAMAvailable(ctx.getContext())));
+//        Assert.assertEquals(CrashDetails.getRamCurrent(ctx.getContext()), String.valueOf(Device.getRAMAvailable(ctx.getContext())));
         Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskTotal()), Device.getDiskTotal()));
         Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskCurrent()), Device.getDiskAvailable()));
 //        Assert.assertEquals(CrashDetails.getDiskTotal(), String.valueOf(Device.getDiskTotal()));
 //        Assert.assertEquals(CrashDetails.getDiskCurrent(), String.valueOf(Device.getDiskAvailable()));
-        Assert.assertEquals(CrashDetails.getBatteryLevel(context), String.valueOf(Device.getBatteryLevel(context)));
-        Assert.assertEquals(CrashDetails.getOrientation(context), Device.getOrientation(context));
+        Assert.assertEquals(CrashDetails.getBatteryLevel(ctx.getContext()), String.valueOf(Device.getBatteryLevel(ctx.getContext())));
+        Assert.assertEquals(CrashDetails.getOrientation(ctx.getContext()), Device.getOrientation(ctx.getContext()));
         Assert.assertEquals(CrashDetails.isRooted(), String.valueOf(Device.isRooted()));
-        Assert.assertEquals(String.valueOf(CrashDetails.isOnline(context)), String.valueOf(Device.isOnline(context)));
-        Assert.assertEquals(String.valueOf(CrashDetails.isMuted(context)), String.valueOf(Device.isMuted(context)));
+        Assert.assertEquals(String.valueOf(CrashDetails.isOnline(ctx.getContext())), String.valueOf(Device.isOnline(ctx.getContext())));
+        Assert.assertEquals(String.valueOf(CrashDetails.isMuted(ctx.getContext())), String.valueOf(Device.isMuted(ctx.getContext())));
     }
 
     private boolean ensureSimilar(Long a, Long b) {

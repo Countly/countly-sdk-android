@@ -17,21 +17,12 @@ import ly.count.android.sdk.Config;
 import static android.support.test.InstrumentationRegistry.getContext;
 
 @RunWith(AndroidJUnit4.class)
-public class StorageTests {
-    private Context ctx = null;
-
-    @Before
-    public void setupEveryTest() throws MalformedURLException {
-        ctx = new ContextImpl(getContext());
-        InternalConfig config = new InternalConfig(new Config("http://count.ly/tests", "123"));
-        config.setLoggerClass(Log.SystemLogger.class)
-                .setProgrammaticSessionsControl(true)
-                .setLoggingLevel(Config.LoggingLevel.DEBUG);
-        Core core = Core.initForApplication(config, getContext());
-        core.onLimitedContextAcquired(getContext());
-        new Log().init(config);
-        Core.purgeInternalStorage(ctx, null);
-    }
+public class StorageTests extends BaseTests {
+//    @Before
+//    public void setUp() throws Exception {
+//        super.setUp();
+//        setUpApplication(defaultConfig().setProgrammaticSessionsControl(true));
+//    }
 
     @Test
     public void core_pushOne() {

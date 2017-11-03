@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 
 import junit.framework.Assert;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -25,57 +26,34 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
-public class ModulePushTests {
-    private Config config = null;
-    private InternalConfig internalConfig = null;
-    private Core core = null;
-    private ModulePush module = null;
+public class ModulePushTests extends BaseTests {
     private ModuleDeviceId moduleDeviceId = null;
-    private Module dummy = null;
-    private Utils utils = null;
-    private Context ctx = null;
 
-    @Before
-    public void beforeEachTest() throws Exception {
-        ctx = new ContextImpl(getContext());
-        Core.initForApplication(TestingUtilityInternal.setupConfig(), getContext());
-        Core.instance.purgeInternalStorage(ctx, null);
-        Core.instance.deinit();
-        utils = Mockito.spy(new Utils());
-        Utils.reflectiveSetField(Utils.class, "utils", utils);
+    @Override
+    protected Config defaultConfig() throws MalformedURLException {
+        return super.defaultConfig().addFeature(Config.Feature.Push);
     }
 
     @Test(expected = IllegalStateException.class)
     public void checkNoMessagingException() throws Exception {
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Push);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(false);
+        setUpApplication(defaultConfig());
     }
 
     @Test
     public void checkTokenGeneration() throws Exception {
+        ModuleDeviceId.InstIdInstance.deviceId = "123inst";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModulePush.FIREBASE_MESSAGING_CLASS);
         doReturn(new ModuleDeviceId.InstIdInstance()).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
 
-        android.content.Context context = getContext();
-        ModuleDeviceId.InstIdInstance.deviceId = "123inst";
-        config = TestingUtilityInternal.setupConfig();
-        config.addFeature(Config.Feature.Push);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
-        config.enableTestMode();
-        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        init(false);
+        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID));
+        moduleDeviceId = module(ModuleDeviceId.class, false);
 
-        core.onContextAcquired(TestingUtilityInternal.mockApplication(context));
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = internalConfig.getDeviceId();
-        Config.DID fid = internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN);
+        Config.DID did = config.getDeviceId();
+        Config.DID fid = config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN);
         Assert.assertNotNull(did);
         Assert.assertNotNull(did.id);
         Assert.assertNotNull(fid);
@@ -137,44 +115,4 @@ public class ModulePushTests {
         data.put(ModulePush.KEY_BUTTONS, "[{\"t\": \"b1 title\", \"l\": \"http://b1.com\"}, {\"t\": \"b2 title\", \"l\": \"http://b2.com\"}]");
         return data;
     }
-
-    private void init(boolean mockModule) throws MalformedURLException {
-        if (config == null) {
-            config = TestingUtilityInternal.setupConfig();
-            config.setLoggingLevel(Config.LoggingLevel.DEBUG);
-        }
-        config.enableTestMode();
-        if (core == null) {
-            core = Core.initForApplication(config, getContext());
-        }
-        dummy = Mockito.mock(Module.class);
-        List<Module> list = Whitebox.getInternalState(core, "modules");
-        if (module == null) {
-            for (Module m : list) {
-                if (m instanceof ModulePush) {
-                    module = (ModulePush) m;
-                }
-                if (m instanceof ModuleDeviceId) {
-                    moduleDeviceId = (ModuleDeviceId) m;
-                }
-            }
-            if (mockModule) {
-                list.remove(module);
-                module = Mockito.spy(module);
-                list.add(1, module);
-            }
-        }
-        list.add(dummy);
-        internalConfig = Utils.reflectiveGetField(core, "config");
-        new Log().init(internalConfig);
-
-        Assert.assertNotNull(config);
-        Assert.assertNotNull(internalConfig);
-        Assert.assertNotNull(core);
-        Assert.assertNotNull(module);
-        Assert.assertNotNull(moduleDeviceId);
-        Assert.assertNotNull(dummy);
-        Assert.assertNotNull(utils);
-    }
-
 }

@@ -92,6 +92,10 @@ class Params {
         params = new StringBuilder();
         if (objects != null && objects.length == 1 && (objects[0] instanceof Object[])) {
             addObjects((Object[]) objects[0]);
+        } else if (objects != null && objects.length == 1 && (objects[0] instanceof Params)) {
+            params.append(objects[0].toString());
+        } else if (objects != null && objects.length == 1 && (objects[0] instanceof String)) {
+            params.append(objects[0].toString());
         } else {
             addObjects(objects);
         }
