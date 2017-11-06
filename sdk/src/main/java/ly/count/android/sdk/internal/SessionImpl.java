@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -45,6 +47,11 @@ class SessionImpl implements Session, Storable {
      * List of events still not added to request
      */
     protected final List<Eve> events = new ArrayList<>();
+
+    /**
+     * List of events still not added to request
+     */
+    protected final Map<String, Eve> timedEvents = new HashMap<>();
 
     /**
      * Additional parameters to send with next request
@@ -158,6 +165,11 @@ class SessionImpl implements Session, Storable {
         }
         ended = now == null ? System.nanoTime() : now;
 
+//        // TODO: check if needed
+//        for (Eve event: timedEvents.values()) {
+//            event.endAndRecord();
+//        }
+
         if (currentView != null) {
             currentView.end(true);
         } else {
@@ -234,7 +246,17 @@ class SessionImpl implements Session, Storable {
         return new EventImpl(this, key);
     }
 
+    public Eve timedEvent(String key) {
+        if (!timedEvents.containsKey(key)) {
+            timedEvents.put(key, new EventImpl(this, key));
+        }
+        return timedEvents.get(key);
+    }
+
     Session recordEvent(Eve event) {
+        if (timedEvents.containsKey(((EventImpl)event).getKey())) {
+            timedEvents.remove(((EventImpl)event).getKey());
+        }
         events.add(event);
         if (pushOnChange) {
             Storage.pushAsync(ctx, this);

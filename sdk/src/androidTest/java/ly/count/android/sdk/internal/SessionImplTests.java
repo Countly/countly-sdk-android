@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
+import ly.count.android.sdk.Eve;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplTests extends BaseTests {
@@ -348,6 +349,55 @@ public class SessionImplTests extends BaseTests {
         restored = Storage.pop(ctx, new SessionImpl(ctx, session.getId()));
         Assert.assertNotNull(restored);
         Assert.assertFalse(restored.equals(session));
+    }
+
+    @Test
+    public void timedEvent() throws Exception {
+        SessionImpl session = new SessionImpl(ctx);
+        Eve event1 = session.begin().timedEvent("key1");
+        Assert.assertEquals(1, session.timedEvents.size());
+
+        Thread.sleep(1000);
+
+        session.timedEvent("key1").endAndRecord();
+        Assert.assertEquals(1d, ((EventImpl) event1).getDuration());
+    }
+
+    @Test
+    public void timedEventContinues() throws Exception {
+        SessionImpl session = new SessionImpl(ctx);
+        Eve event1 = session.begin().timedEvent("key1")
+                .addSegment("k1", "v1");
+
+        Assert.assertEquals(1, session.timedEvents.size());
+
+        session.timedEvent("key1")
+                .addSegment("k2", "v2");
+
+        Assert.assertEquals(1, session.timedEvents.size());
+
+        session.timedEvent("key1")
+                .setSum(9.99);
+
+        Assert.assertEquals(1, session.timedEvents.size());
+
+        Eve event2 = session.timedEvent("key2");
+
+        Assert.assertEquals(2, session.timedEvents.size());
+
+        session.timedEvent("key1").endAndRecord();
+
+        Assert.assertEquals(1, session.timedEvents.size());
+        Assert.assertSame(event1, session.events.get(0));
+
+        event2.addSegment("k2", "v2").addSegment("k1", "v1").setSum(9.99).record();
+
+        Assert.assertEquals(0, session.timedEvents.size());
+        Assert.assertSame(event1, session.events.get(0));
+        Assert.assertSame(event2, session.events.get(1));
+        Assert.assertNotNull(((EventImpl) event1).getDuration());
+        Assert.assertEquals(0d, ((EventImpl) event1).getDuration());
+        Assert.assertNull(((EventImpl) event2).getDuration());
     }
 
     @Test

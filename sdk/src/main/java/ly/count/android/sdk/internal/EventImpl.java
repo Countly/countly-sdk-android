@@ -65,7 +65,7 @@ class EventImpl implements Eve, JSONable {
 
     @Override
     public Session endAndRecord() {
-        setDuration(Device.uniqueTimestamp() - timestamp);
+        setDuration((Device.uniqueTimestamp() - timestamp) / 1000);
         return record();
     }
 
@@ -282,6 +282,30 @@ class EventImpl implements Eve, JSONable {
 
     long getTimestamp() {
         return timestamp;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public Double getSum() {
+        return sum;
+    }
+
+    public Double getDuration() {
+        return duration;
+    }
+
+    public String getSegment(String key) {
+        return segmentation.get(key);
+    }
+
+    public boolean isInvalid() {
+        return invalid;
     }
 
     @Override

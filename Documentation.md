@@ -240,13 +240,13 @@ Strategy is set in `Config` class prior to `Countly.init()` with `setDeviceIdStr
 With no special steps performed, SDK will count any new app install (see note above regarding device ID 
 persistency) as new user. In some cases, like when you have some kind of authentication system 
 in your app, that's not what you want. When you want actual person to be counted as one user in Countly
-and your application supports some kind of authentication system, you should 
+and you can provide user id to Countly SDK, you should 
 call `Countly.login()` with your specific user ID `String`. After this method call reaches 
 Countly server, it will:
- * take old user profile (all the events happened prior to login), 
+ * take old user profile (and all the events happened prior to login), 
 let's say with `OPEN_UDID`-based id;
- * take user profile with your new ID if any (user could 
-authenticate in your app previously);
+ * take user profile with your new ID if any (user could already have a profile associated with 
+ this new ID);
  * and will merge these profiles together. 
 
 When user logs out from your application, you can:
@@ -318,9 +318,11 @@ There are only 2 `Session`-related API methods:
 * `session.begin()` must be called when you want to send begin session request to the server. Called with 
 first `Activity.onStart()` in auto session mode.
 * `session.update()` can be called to send a session duration update to the server along with any events,
-user properties and any other data types supported by Countly SDK.
+user properties and any other data types supported by Countly SDK. Called each `Config.sendUpdateEachSeconds`
+seconds in auto session mode.
 * `session.end()` must be called to mark end of session. All the data recorded since last `session.update()`
-or since `session.begin()` in case no updates have been sent yet, is sent in this request as well.
+or since `session.begin()` in case no updates have been sent yet, is sent in this request as well. 
+Called with last `Activity.onStop()` in auto session mode.
 
 We also made some additions which would increase consistency of `Session` management. A 
 developer can accidentally start multiple sessions, stop the same session multiple times. In such 
@@ -330,3 +332,56 @@ one `Session` instance active at any time. By SDK API it is impossible to have m
 instances at any given point in time. Finally, only one `session.begin()` and one `session.end()` 
 method call per session instance can be made, all others are ignored.
 
+##Events
+Events in Countly represent some meaningful event user performed in your 
+application within a `Session`. Please avoid recording everything like all taps or clicks user performed.
+In case you do, it will be very hard to extract valuable information from generated analytics.
+
+An `Event` object contains following data types:
+* `name`, or event key. *Required.* Unique string which identifies the event.
+* `count` - number of times. *Required, 1 by default.* Like number of goods added to shopping basket.
+* `sum` - sum of something, amount. *Optional.* Like total sum of the basket.
+* `dur` - duration of the event. *Optional.* For example how much time user spent to checking out.
+* `segmentation` - some data associated with the event. *Optional.* It's a Map<String, String> which can be filled
+  with arbitary data like `{"category": "Pants", "size": "M"}`.
+
+The only non-deprecated way of recording events is through your `Session` instance:
+
+```
+Countly.session().event('purchase')
+                    .setCount(2)
+                    .setSum(19.98)
+                    .setDuration(35)
+                    .addSegments("category", "pants", "size", "M")
+                .record();
+```
+
+Please note last method in that call chain, `.record()` call is required for event to be recorded. 
+
+Example above results in new event being recorded in current session. Event won't be sent to the server
+right away. Instead, Countly SDK will wait until one of following happens:
+* `Config.sendUpdateEachSeconds` seconds passed since begin or last update request in case of automatic session control.
+* `Config.sendUpdateEachEvents` events have been already recorded and not sent yet.
+* `Session.update()` have been called by developer.
+* `Session.end()` have been called by developer or by Countly SDK in case of automatic session control.
+
+###Timed events
+There is also special type of `Event` supported by Countly - timed events. Timed events help you to
+track long continuous interactions when keeping an `Event` instance is not very convenient.
+
+Basic use case for timed events is following:
+* User starts playing a level "37" of your game, you call `Countly.session().timedEvent("LevelTime").addSegment("level", "37")`
+to start tracking how much time user spends on this level.
+* Then something happens when user is in that level, for example he buys some coins. Along with
+regular "Purchase" event, you decide you want to segment "LevelTime" event with purchase information: 
+`Countly.session().timedEvent("LevelTime").setSum(9.99)`.
+* Once user stopped playing, you need to stop recording this event: 
+`Countly.session().timedEvent("LevelTime").endAndRecord()`.
+
+Once this event is sent to the server, you'll see:
+* how much time users spend on each level (duration per `level` segmentation);
+* which levels are generating most revenue (sum per `level` segmentation);
+* which levels are not generating revenue at all since you don't show ad there (0 sum in `level` segmentation). 
+
+With timed events, there is one thing to keep in mind: you have to end timed event for it to be
+recorded. Without `endAndRecord()` call, nothing will happen.

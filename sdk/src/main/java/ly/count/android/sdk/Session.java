@@ -57,7 +57,7 @@ public interface Session {
     boolean isActive();
 
     /**
-     * Create event object, don't add it to this session yet.
+     * Create event object, don't record it yet.
      *
      * @param key key for this event, cannot be null or empty
      * @return Event instance.
@@ -65,6 +65,16 @@ public interface Session {
      * @see Eve#record()
      */
     Eve event(String key);
+
+    /**
+     * Get existing or create new timed event object, don't record it.
+     *
+     * @param key key for this event, cannot be null or empty
+     * @return timed Event instance.
+     *
+     * @see Eve#endAndRecord() to end timed event
+     */
+    Eve timedEvent(String key);
 
     /**
      * Get current User Profile.
