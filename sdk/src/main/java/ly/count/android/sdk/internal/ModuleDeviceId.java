@@ -97,13 +97,13 @@ public class ModuleDeviceId extends ModuleBase {
         }
         L.d("onDeviceId " + deviceId);
 
-        SessionImpl leading = Core.instance.sessionLeading();
+        SessionImpl session = Core.instance.getSession();
 
         if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID && !deviceId.equals(oldDeviceId)) {
             // device id changed
-            if (leading != null && leading.isActive()) {
+            if (session != null && session.isActive()) {
                 // end previous session
-                leading.end(null, null, oldDeviceId.id);
+                session.end(null, null, oldDeviceId.id);
             }
 
             // add device id change request
@@ -115,8 +115,8 @@ public class ModuleDeviceId extends ModuleBase {
 
         } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
             // device id is unset
-            if (leading != null) {
-                leading.end(null, null, oldDeviceId.id);
+            if (session != null) {
+                session.end(null, null, oldDeviceId.id);
             }
 
             sendDeviceIdToService(ctx, null, oldDeviceId);

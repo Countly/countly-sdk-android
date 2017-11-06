@@ -65,24 +65,27 @@ public class ModuleSessions extends ModuleBase {
      * @see ModuleDeviceId#onDeviceId(Context, Config.DID, Config.DID)
      */
     public void onDeviceId(final Context ctx, final Config.DID deviceId, final Config.DID oldDeviceId) {
-        if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID && !deviceId.equals(oldDeviceId) && Core.instance.sessionLeading() == null) {
-            Core.instance.sessionAdd(ctx).begin();
+        L.d("onDeviceId " + deviceId + ", old " + oldDeviceId);
+        if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID && !deviceId.equals(oldDeviceId) && Core.instance.getSession() == null) {
+            Core.instance.session(ctx, null).begin();
         }
     }
 
     @Override
     public synchronized void onActivityStarted(Context ctx) {
         if (activityCount == 0) {
-            L.i("starting new session");
-            Core.instance.sessionAdd(ctx).begin();
+            if (Core.instance.getSession() == null) {
+                L.i("starting new session");
+                Core.instance.session(ctx, null).begin();
+            }
             if (updateInterval > 0 && executor == null) {
                 executor = Executors.newScheduledThreadPool(1);
                 executor.scheduleWithFixedDelay(new Runnable() {
                     @Override
                     public void run() {
-                        if (isActive() && Core.instance.sessionLeading() != null) {
+                        if (isActive() && Core.instance.getSession() != null) {
                             L.i("updating session");
-                            Core.instance.sessionLeading().update();
+                            Core.instance.getSession().update();
                         }
                     }
                 }, updateInterval, updateInterval, TimeUnit.SECONDS);
@@ -94,7 +97,7 @@ public class ModuleSessions extends ModuleBase {
     @Override
     public synchronized void onActivityStopped(Context ctx) {
         activityCount--;
-        if (activityCount == 0 && Core.instance.sessionLeading() != null) {
+        if (activityCount == 0) {
             L.i("stopping session");
             if (executor != null) {
                 try {
@@ -108,7 +111,9 @@ public class ModuleSessions extends ModuleBase {
                 }
                 executor = null;
             }
-            Core.instance.sessionLeading().end();
+            if (Core.instance.getSession() != null && Core.instance.getSession().isActive()) {
+                Core.instance.getSession().end();
+            }
         }
     }
 }

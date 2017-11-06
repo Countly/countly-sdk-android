@@ -277,29 +277,6 @@ public class SessionImplTests extends BaseTests {
         Assert.assertEquals(timeEnd, (long)session.getEnded());
     }
 
-    @Test
-    public void isLeading_null() throws Exception {
-        SessionImpl session = new SessionImpl(ctx);
-        Assert.assertEquals(false, (boolean)session.isLeading());
-    }
-    @Test
-    public void isLeading_succeed() throws Exception {
-        List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
-        SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
-        sessions.add(sessionTarget);
-        Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
-    }
-    @Test
-    public void isLeading_fail() throws Exception {
-        List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
-
-        SessionImpl sessionOther = new SessionImpl(ctx, 456L);
-        SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
-        sessions.add(sessionOther);
-        Assert.assertEquals(false, (boolean)sessionTarget.isLeading());
-    }
-
-
     public void storeRestore_simple() throws InterruptedException {
         SessionImpl session = new SessionImpl(ctx);
         byte[] data = session.store();

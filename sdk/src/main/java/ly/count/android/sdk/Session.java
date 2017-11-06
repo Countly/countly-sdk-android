@@ -28,13 +28,6 @@ public interface Session {
     Long getEnded();
 
     /**
-     * Only one session can send requests at a time and this session is called leading.
-     * Once leading session is ended, next one (if any) becomes leading automatically
-     * and starts sending requests.
-     */
-    Boolean isLeading();
-
-    /**
      * Start this session, add corresponding request to queue.
      *
      * @return this instance for method chaining.
@@ -51,9 +44,8 @@ public interface Session {
     /**
      * End this session, add corresponding request to queue.
      *
-     * @return this instance for method chaining.
      */
-    Session end();
+    void end();
 
     /**
      * Whether this session was started and haven't been ended yet.

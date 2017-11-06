@@ -256,14 +256,16 @@ When user logs out from your application, you can:
 
 ##Sessions
 Session in Countly is a single app launch or several app launches if time between them is less 
-than 30 seconds (by default).
+than 30 seconds (by default). Of course you can override this behaviour, but lets describe how 
+standard way works at first.
 
 In Android SDK default way of detecting an app launch is monitoring number of active `Activity` 
 instances. To make this happen our SDK registers `Application.ActivityLifecycleCallbacks` and 
 just increments an integer whenever `onActivityStarted` is called and decrements it 
 whenever `onActivityStopped` is called. The only catch here is that `Application.ActivityLifecycleCallbacks` 
 is available only in API levels 14+, meaning in case your app supports API levels lower than 14,
-you'll need to make your own `Activity` superclass and subclass all your activities from it:
+you'll need to make your own `Activity` superclass and subclass all your activities from it. 
+Also add `onActivityCreated` for the sake of other parts of SDK:
 ```
 public class BaseActivity extends Activity {
     @Override
@@ -300,5 +302,31 @@ applications have very different `Session` definitions:
 * Etc.
 
 For these apps Countly supports what we call programmatic session control. First, to enable it,
-you need to call `Config.enableProgrammaticSessionsControl()`. From now on Countly won't 
-start or end any sessions, this is your responsibility now. To start new `Session` call 
+you need to call `Config.enableProgrammaticSessionsControl()` at initialization phase. With
+this setting on Countly won't start, update or end any sessions, this is your responsibility now. But
+there are two exceptions: 
+* when device id changes (`Countly.login()`, `Countly.logout()`, etc.), current session will be ended;
+* when application crashes or when it exits abruptly, unfinished `Session` will be
+ended automatically on next app launch or within several seconds from a crash (in 2-process mode).
+
+There are only 2 `Session`-related API methods:
+* `Countly.session()` always returns a `Session` instance: new one if no session was created before,
+ or already existing one if there is an active session.
+* `Countly.getSession()` returns active `Session` instance or `null` if no active session exists.
+
+`Session` lifecycle methods include:
+* `session.begin()` must be called when you want to send begin session request to the server. Called with 
+first `Activity.onStart()` in auto session mode.
+* `session.update()` can be called to send a session duration update to the server along with any events,
+user properties and any other data types supported by Countly SDK.
+* `session.end()` must be called to mark end of session. All the data recorded since last `session.update()`
+or since `session.begin()` in case no updates have been sent yet, is sent in this request as well.
+
+We also made some additions which would increase consistency of `Session` management. A 
+developer can accidentally start multiple sessions, stop the same session multiple times. In such 
+cases data received by Countly server won't be reliable. That's why developer cannot instantiate
+a `Session` instance himself, he needs to use SDK methods for that. That's also why we have only
+one `Session` instance active at any time. By SDK API it is impossible to have multiple `Session`
+instances at any given point in time. Finally, only one `session.begin()` and one `session.end()` 
+method call per session instance can be made, all others are ignored.
+

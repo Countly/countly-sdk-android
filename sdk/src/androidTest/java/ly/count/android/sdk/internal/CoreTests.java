@@ -33,7 +33,7 @@ public class CoreTests extends BaseTests {
 
         Assert.assertTrue(config == Whitebox.<InternalConfig>getInternalState(core, "config"));
         Assert.assertEquals(4, Whitebox.<List<Module>>getInternalState(core, "modules").size());
-        Assert.assertEquals(0, Whitebox.<List<SessionImpl>>getInternalState(core, "sessions").size());
+        Assert.assertNull(Whitebox.getInternalState(core, "session"));
     }
 
     @Test
@@ -46,6 +46,6 @@ public class CoreTests extends BaseTests {
 
         Assert.assertTrue(config == Whitebox.<InternalConfig>getInternalState(core, "config"));
         Assert.assertEquals(4, Whitebox.<List<Module>>getInternalState(core, "modules").size());
-        Assert.assertEquals(0, Whitebox.<List<SessionImpl>>getInternalState(core, "sessions").size());
+        Assert.assertNull(Whitebox.getInternalState(core, "session"));
     }
 }

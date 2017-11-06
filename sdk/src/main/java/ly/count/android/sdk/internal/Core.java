@@ -46,9 +46,9 @@ public class Core extends CoreModules {
     private UserImpl user;
 
     /**
-     * Core instance list of sessions created
+     * Current Session instance
      */
-    private final List<SessionImpl> sessions = new ArrayList<>();
+    private SessionImpl session = null;
 
     /**
      * The only Core constructor
@@ -145,7 +145,7 @@ public class Core extends CoreModules {
 
     /**
      * Stop SDK and possibly clear all SDK data.
-     * Once stopped, Countly must be reinitialized using {@link #init(Config, android.content.Context)} again in order
+     * Once stopped, Countly must be reinitialized using {@link #init(Config, android.app.Application)} again in order
      * to be used.
      *
      * @param context Context to run in
@@ -166,12 +166,9 @@ public class Core extends CoreModules {
         }
         modules.clear();
 
-        if (sessions.size() > 0 && !clear) {
-            for (SessionImpl session : sessions) {
-                session.end();
-            }
+        if (session != null) {
+            session.end();
         }
-        sessions.clear();
 
         Storage.await();
 
@@ -197,63 +194,31 @@ public class Core extends CoreModules {
     }
 
     /**
-     * Add session to the list.
-     * @return {@link SessionImpl} just created
-     */
-    SessionImpl sessionAdd(Context ctx){
-        sessions.add(new SessionImpl(ctx));
-        return sessions.get(sessions.size() - 1);
-    }
-
-    /**
-     * Remove session from the list.
+     * Get current {@link SessionImpl} or create new one if current is {@code null}.
      *
-     * @param session {@link SessionImpl} to remove
-     * @return {@link SessionImpl} instance in case next session already created
+     * @param ctx Context to create new {@link SessionImpl} in
+     * @param id ID of new {@link SessionImpl} if needed
+     * @return current {@link SessionImpl} instance
      */
-    SessionImpl sessionRemove(SessionImpl session){
-        if (sessions.contains(session)) {
-            sessions.remove(session);
-            if (sessions.size() > 0) {
-                SessionImpl next = sessions.get(0);
-                if (next.began == null) {
-                    next.begin(session.ended + Math.round(Device.NS_IN_SECOND));
-                } else if (next.began < session.ended) {
-                    L.w("Sessions are overlapping. Next session starts before previous one ended.");
-                }
-                return next;
-            }
+    public SessionImpl session(Context ctx, Long id) {
+        if (session == null) {
+            session = new SessionImpl(ctx, id);
         }
-        return null;
+        return session;
     }
 
     /**
-     * Current leading {@link ly.count.android.sdk.Session}
-     *
-     * @return leading session
+     * @return Get current {@link SessionImpl} instance or {@code null} if there is no one.
      */
-    public SessionImpl sessionLeading(){
-        return sessions.size() > 0 ? sessions.get(0) : null;
+    public SessionImpl getSession() {
+        return session;
     }
 
     /**
-     * Current leading {@link ly.count.android.sdk.Session} or new {@link ly.count.android.sdk.Session}
-     * if no leading one exists.
-     *
-     * @return leading or new session object
+     * Internal method for use from {@link SessionImpl#end()} and such
      */
-    public SessionImpl sessionLeadingOrNew(Context ctx){
-        return sessions.size() > 0 ? sessions.get(0) : sessionAdd(ctx);
-    }
-
-    /**
-     * Current leading {@link ly.count.android.sdk.Session} or new {@link ly.count.android.sdk.Session}
-     * if no leading one exists. Android context version.
-     *
-     * @return leading or new session object
-     */
-    public SessionImpl sessionLeadingOrNew(android.content.Context context){
-        return sessions.size() > 0 ? sessions.get(0) : sessionAdd(new ContextImpl(context.getApplicationContext()));
+    void sessionDone() {
+        session = null;
     }
 
     /**

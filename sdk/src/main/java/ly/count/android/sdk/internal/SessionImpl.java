@@ -79,7 +79,7 @@ class SessionImpl implements Session, Storable {
      */
     protected SessionImpl(Context ctx, Long id) {
         this.ctx = ctx;
-        this.id = id;
+        this.id = id == null ? Device.uniqueTimestamp() : id;
     }
 
     @Override
@@ -141,9 +141,8 @@ class SessionImpl implements Session, Storable {
     }
 
     @Override
-    public Session end() {
+    public void end() {
         end(null, null, null);
-        return Core.instance.sessionLeading();
     }
 
     Future<Boolean> end(Long now, final Tasks.Callback<Boolean> callback, String did) {
@@ -161,9 +160,9 @@ class SessionImpl implements Session, Storable {
 
         if (currentView != null) {
             currentView.end(true);
+        } else {
+            Storage.pushAsync(ctx, this);
         }
-
-        Storage.pushAsync(ctx, this);
 
         Long duration = updateDuration(null);
 
@@ -176,9 +175,8 @@ class SessionImpl implements Session, Storable {
                 Storage.removeAsync(ctx, SessionImpl.this, callback);
             }
         });
-
         Core.instance.onSessionEnded(ctx, this);
-        Core.instance.sessionRemove(this);
+        Core.instance.sessionDone();
 
         return ret;
     }
@@ -311,17 +309,6 @@ class SessionImpl implements Session, Storable {
     @Override
     public Long getEnded() {
         return ended;
-    }
-
-    @Override
-    public Boolean isLeading() {
-        if (Core.instance == null) {
-            L.wtf("Countly is not initialized");
-            return false;
-        } else if (Core.instance.sessionLeading() == null) {
-            return false;
-        }
-        return Core.instance.sessionLeading().getId().equals(getId());
     }
 
     public Long storageId() {

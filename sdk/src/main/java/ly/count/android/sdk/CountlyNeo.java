@@ -5,6 +5,7 @@ import android.app.Service;
 import android.content.Context;
 import android.os.Bundle;
 
+import ly.count.android.sdk.internal.ContextImpl;
 import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.Utils;
 
@@ -19,40 +20,22 @@ public class CountlyNeo extends CountlyNeoLifecycle {
     }
 
     /**
-     * Returns current {@link Session} if any.
+     * Returns current {@link Session} if any or creates new {@link Session} instance.
      *
      * NOTE: {@link Session} instances can expire, for example when {@link ly.count.android.sdk.Config.DID} changes.
      * It also holds application context.
-     * So either do not store {@link Session} instances in any static variables and use {@code #currentSession()} every time you need it,
-     * or check {@link Session#isActive()} / {@link Session#isLeading()} before use it.
+     * So either do not store {@link Session} instances in any static variables and use {@code #session()} every time you need it,
+     * or check {@link Session#isActive()} before using it.
      *
-     * @return session instance if there is one, {@code null} if there is no current session or if Countly is not initialized yet
+     * @param context current Android Context
+     * @return session current {@link Session} instance if there is one, creates new one if current is not set
      */
-    public static Session currentSession(){
+    public static Session session(Context context){
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
             return null;
         }
-        return instance.core.sessionLeading();
-    }
-
-    /**
-     * Returns current {@link Session} if there is one already started or new {@link Session} object
-     * if no active session is out there.
-     *
-     * NOTE: {@link Session} instances can expire, for example when {@link ly.count.android.sdk.Config.DID} changes.
-     * It also holds application context.
-     * So either do not store {@link Session} instances in any static variables and use {@code #currentSession()} every time you need it,
-     * or check {@link Session#isActive()} / {@link Session#isLeading()} before use it.
-     *
-     * @return current session instance if there is one, new session instance if there is no current session or {@code null} if Countly is not initialized yet
-     */
-    public static Session currentOrNewSession(Context context) {
-        if (!isInitialized()) {
-            L.wtf("Countly SDK is not initialized yet.");
-            return null;
-        }
-        return instance.core.sessionLeadingOrNew(context);
+        return instance.core.session(new ContextImpl(context), null);
     }
 
     /**
@@ -87,8 +70,7 @@ public class CountlyNeo extends CountlyNeoLifecycle {
 
     /**
      * Login function to set device (user) id on Countly server to the string specified here.
-     * In case {@link Config#programmaticSessionsControl} is on it only closes current session, so {@link #currentSession()} will return {@code null} soon.
-     * In case {@link Config#programmaticSessionsControl} is off it closes current session, then starts new one.
+     * Closes current session, then starts new one automatically.
      *
      * @param context Context to run in
      * @param id new user / device id string, cannot be empty

@@ -91,22 +91,17 @@ public class ModuleSessionsTests extends BaseTests {
         setUpApplication(defaultConfig());
         moduleSessions = module(ModuleSessions.class, false);
 
-        List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
         SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessionTarget.begin().end();
-        sessions.add(sessionTarget);
+        Whitebox.<SessionImpl>setInternalState(core, "session", sessionTarget);
 
         moduleSessions.onActivityStarted(ctx);
         moduleSessions.onActivityStarted(ctx);
-        Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
-        Assert.assertEquals(2, sessions.size());
+        Assert.assertEquals(sessionTarget, Whitebox.getInternalState(core, "session"));
         Assert.assertEquals(2, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
 
         moduleSessions.onActivityStopped(ctx);
-        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
-
-        Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
-        Assert.assertEquals(2, sessions.size());
+        Assert.assertEquals(sessionTarget, Whitebox.getInternalState(core, "session"));
     }
 
     @Test
@@ -114,25 +109,20 @@ public class ModuleSessionsTests extends BaseTests {
         setUpApplication(defaultConfig());
         moduleSessions = module(ModuleSessions.class, false);
 
-        List<SessionImpl> sessions = Whitebox.<List<SessionImpl>>getInternalState(core, "sessions");
-        SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
-        sessionTarget.begin(234L);
-//        sessionTarget.end(456L, null, null);
-
-        Assert.assertEquals(0, sessions.size());
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Assert.assertNull(Whitebox.getInternalState(core, "session"));
 
         moduleSessions.onActivityStarted(ctx);
-        sessions.clear();
-        sessions.add(sessionTarget);
-        Assert.assertEquals(true, (boolean)sessionTarget.isLeading());
-        Assert.assertEquals(1, sessions.size());
         Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Assert.assertNotNull(Whitebox.getInternalState(core, "session"));
+
+        SessionImpl session = Whitebox.<SessionImpl>getInternalState(core, "session");
+        Assert.assertTrue(session.isActive());
 
         moduleSessions.onActivityStopped(ctx);
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
-
-        Assert.assertEquals(false, (boolean)sessionTarget.isLeading());
-        Assert.assertEquals(0, sessions.size());
+        Assert.assertNull(Whitebox.getInternalState(core, "session"));
+        Assert.assertFalse(session.isActive());
+        Assert.assertNotNull(session.ended);
     }
 }

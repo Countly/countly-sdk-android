@@ -272,12 +272,11 @@ public class ModuleDeviceIdTests extends BaseTests {
         setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
-        List<SessionImpl> sessions = Utils.reflectiveGetField(core, "sessions");
+        Assert.assertNull(Utils.reflectiveGetField(core, "session"));
 
         //  make ModuleSessions begin a session
-        Assert.assertEquals(0, sessions.size());
         core.module(ModuleSessions.class).onActivityStarted(ctx);
-        Assert.assertEquals(1, sessions.size());
+        Assert.assertNotNull(Utils.reflectiveGetField(core, "session"));
 
         // ensure session is written
         List<Long> ids = Storage.list(ctx, SessionImpl.getStoragePrefix());
@@ -327,6 +326,10 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         // there must be: begin, update, end from first session + id change request + begin from second session
         ids = Storage.list(ctx, Request.getStoragePrefix());
+        Log.w(Storage.read(ctx, new Request(ids.get(0))).params.toString());
+        Log.w(Storage.read(ctx, new Request(ids.get(1))).params.toString());
+        Log.w(Storage.read(ctx, new Request(ids.get(2))).params.toString());
+        Log.w(Storage.read(ctx, new Request(ids.get(3))).params.toString());
         Log.w("going to read requests: " + Utils.join(ids, ", "));
         Assert.assertEquals(5, ids.size());
 

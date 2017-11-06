@@ -81,10 +81,11 @@ public class CountlyServiceTests extends BaseTests {
     @Test
     public void recovery_sessionBad() throws Exception {
         setUpApplication(null);
-        SessionImpl notBegan = new SessionImpl(ctx, Device.uniqueTimestamp() - Device.secToMs(2020));
+        SessionImpl notBegan = Core.instance.session(ctx, Device.uniqueTimestamp() - Device.secToMs(2020));
         Storage.push(ctx, notBegan);
+        Utils.reflectiveSetField(core, "session", null);
 
-        SessionImpl ended = new SessionImpl(ctx, Device.uniqueTimestamp() - Device.secToMs(2010));
+        SessionImpl ended = Core.instance.session(ctx, Device.uniqueTimestamp() - Device.secToMs(2010));
         ended.begin(System.nanoTime() - Device.secToNs(2010));
         ended.end();
         Storage.await();

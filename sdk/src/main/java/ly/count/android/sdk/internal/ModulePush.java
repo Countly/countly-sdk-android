@@ -205,7 +205,7 @@ public class ModulePush extends ModuleBase {
 
         @Override
         public void recordAction(android.content.Context context, int buttonIndex) {
-            Core.instance.sessionLeadingOrNew(context)
+            Core.instance.session(new ContextImpl(context), null)
                     .event(PUSH_EVENT_ACTION)
                     .addSegment(PUSH_EVENT_ACTION_INDEX_KEY, String.valueOf(buttonIndex))
                     .record();

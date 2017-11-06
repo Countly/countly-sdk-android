@@ -25,7 +25,7 @@ public class ModuleViews extends ModuleBase {
      */
     @Override
     public void onActivityStarted(Context ctx) {
-        Session session = Core.instance.sessionLeading();
+        Session session = Core.instance.getSession();
         if (session != null) {
             views.put(ctx.getActivity().hashCode(), session.view(ctx.getActivity().getClass().getName()));
         }

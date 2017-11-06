@@ -87,12 +87,12 @@ public class ModuleRequests extends ModuleBase {
 
     // TODO: synchronization
     static void injectParams(Context ctx, ParamsInjector injector) {
-        if (Core.instance.sessionLeading() == null) {
+        if (Core.instance.getSession() == null) {
             Request request = nonSessionRequest(config);
             injector.call(request.params);
             pushAsync(ctx, request);
         } else {
-            injector.call(Core.instance.sessionLeading().params);
+            injector.call(Core.instance.getSession().params);
         }
     }
 
