@@ -1,57 +1,69 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity">
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity">
 
-    <Button
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Runtime Exception"
-        android:id="@+id/runtime"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="59dp" />
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nullpointer Exception"
-        android:id="@+id/nullpointer"
-        android:layout_below="@+id/runtime"
-        android:layout_centerHorizontal="true" />
+        <Button
+            android:text="Custom Events"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button9"
+            android:onClick="onClickButtonCustomEvents"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Division by 0"
-        android:id="@+id/division0"
-        android:layout_below="@+id/nullpointer"
-        android:layout_centerHorizontal="true" />
+        <Button
+            android:text="Crash Reporting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button8"
+            android:onClick="onClickButtonCrashReporting"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="StackOverflow"
-        android:id="@+id/stackoverflow"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@+id/division0" />
+        <Button
+            android:text="User Details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button7"
+            android:onClick="onClickButtonUserDetails"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Handled Exception"
-        android:id="@+id/handled"
-        android:layout_below="@+id/stackoverflow"
-        android:layout_centerHorizontal="true"/>
+        <Button
+            android:text="APM"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button6"
+            android:enabled="false"
+            android:onClick="onClickButtonAPM"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Star rating default"
-        android:id="@+id/app_rating_default"
-        android:layout_below="@+id/handled"
-        android:layout_centerHorizontal="true"/>
+        <Button
+            android:text="View Tracking "
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button5"
+            android:onClick="onClickButtonViewTracking"/>
 
+        <Button
+            android:text="Multi Threading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button3"
+            android:enabled="false"
+            android:onClick="onClickButtonMultiThreading"/>
 
+        <Button
+            android:text="Others"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button2"
+            android:onClick="onClickButtonOthers"/>
+
+    </LinearLayout>
 </RelativeLayout>

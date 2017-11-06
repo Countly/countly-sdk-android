@@ -1,186 +1,78 @@
 package ly.count.android.demo;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.app.Application;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.os.Debug;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.util.HashMap;
 
-import ly.count.android.sdk.CountlyPush;
-import ly.count.android.sdk.internal.ModuleCrash;
+import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyStarRating;
+import ly.count.android.sdk.DeviceId;
 
 
 public class MainActivity extends Activity {
+    private Activity activity;
 
-    /** Called when the activity is first created. */
+    /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
+    final String COUNTLY_SERVER_URL = "YOUR_SERVER";
+    final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final CountlyPush.Message msg = getIntent().getParcelableExtra("countly_message");
+        Context appC = getApplicationContext();
 
-        if (msg != null && msg.has("typ") && msg.data("typ").equals("promo")) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(msg.title())
-                    .setMessage(msg.message());
-            builder.setCancelable(true);
-            builder.setPositiveButton(msg.buttons().get(0).title(), new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    msg.recordAction(getApplicationContext(), 1);
-                }
-            });
-            builder.setOnCancelListener(new DialogInterface.OnCancelListener() {
-                @Override
-                public void onCancel(DialogInterface dialog) {
-                    msg.recordAction(getApplicationContext(), 2);
-                }
-            });
-        }
-//        Countly.sharedInstance().setLoggingEnabled(true);
-//
-//        Countly.onCreate(this);
-//
-//        /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
-//        Countly.sharedInstance()
-//                .init(this, "YOUR_SERVER", "YOUR_APP_KEY");
-////                .setLocation(LATITUDE, LONGITUDE);
-//                .setLoggingEnabled(true);
-//        setUserData(); // If UserData plugin is enabled on your server
-//        enableCrashTracking();
+        //Countly.sharedInstance().setLoggingEnabled(true);
+        //enableCrashTracking();
 
+        Countly.onCreate(this);
+        Countly.sharedInstance()
+        .init(appC, COUNTLY_SERVER_URL, COUNTLY_APP_KEY);
 
-//        Countly.sharedInstance().recordEvent("test", 1);
-//
-//        new Handler().postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                Countly.sharedInstance().recordEvent("test2", 1, 2);
-//            }
-//        }, 5000);
-//
-//        new Handler().postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                Countly.sharedInstance().recordEvent("test3");
-//            }
-//        }, 10000);
-//
-//        new Handler().postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                Countly.sharedInstance().setLocation(44.5888300, 33.5224000);
-//            }
-//        }, 11000);
-//
-        Button button1 = (Button) findViewById(R.id.runtime);
-        button1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ModuleCrash.crashTest(ModuleCrash.CrashType.RUNTIME_EXCEPTION);
-            }
-        });
-
-        Button button2 = (Button) findViewById(R.id.nullpointer);
-        button2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ModuleCrash.crashTest(ModuleCrash.CrashType.NULLPOINTER_EXCEPTION);
-            }
-        });
-
-        Button button3 = (Button) findViewById(R.id.division0);
-        button3.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ModuleCrash.crashTest(ModuleCrash.CrashType.DIVISION_BY_ZERO);
-            }
-        });
-
-        Button button5 = (Button) findViewById(R.id.stackoverflow);
-        button5.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ModuleCrash.crashTest(ModuleCrash.CrashType.STACK_OVERFLOW);
-            }
-        });
-
-//        Button button6 = (Button) findViewById(R.id.handled);
-//        button6.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Countly.sharedInstance().addCrashLog("Button 5 pressed");
-//                try {
-//                    Countly.sharedInstance().crashTest(5);
-//                }
-//                catch(Exception e){
-//                    Countly.sharedInstance().logException(e);
-//                }
-//            }
-//        });
-
-//        Button button7 = (Button) findViewById(R.id.app_rating_default);
-//        button7.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//
-//                Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
-//                    @Override
-//                    public void onRate(int rating) {
-//
-//                    }
-//
-//                    @Override
-//                    public void onDismiss() {
-//
-//                    }
-//                });
-//            }
-//        });
+        //Countly.sharedInstance().setHttpPostForced(true);
+        //Countly.sharedInstance().setOptionalParametersForInitialization("tt", null, null);
     }
 
-    public void setUserData(){
-        HashMap<String, String> data = new HashMap<String, String>();
-        data.put("name", "Firstname Lastname");
-        data.put("username", "nickname");
-        data.put("email", "test@test.com");
-        data.put("organization", "Tester");
-        data.put("phone", "+123456789");
-        data.put("gender", "M");
-        //provide url to picture
-        //data.put("picture", "http://example.com/pictures/profile_pic.png");
-        //or locally from device
-        //data.put("picturePath", "/mnt/sdcard/portrait.jpg");
-        data.put("byear", "1987");
-
-        //providing any custom key values to store with user
-        HashMap<String, String> custom = new HashMap<String, String>();
-        custom.put("country", "Turkey");
-        custom.put("city", "Istanbul");
-        custom.put("address", "My house 11");
-
-        //set multiple custom properties
-        Countly.userData.setUserData(data, custom);
-
-        //set custom properties by one
-        Countly.userData.setProperty("test", "test");
-
-        //increment used value by 1
-        Countly.userData.incrementBy("used", 1);
-
-        //insert value to array of unique values
-        Countly.userData.pushUniqueValue("type", "morning");
-
-        //insert multiple values to same property
-        Countly.userData.pushUniqueValue("skill", "fire");
-        Countly.userData.pushUniqueValue("skill", "earth");
-
-        Countly.userData.save();
+    public void onClickButtonCustomEvents(View v) {
+        startActivity(new Intent(this, ActivityExampleCustomEvents.class));
     }
+
+    public void onClickButtonCrashReporting(View v) {
+        startActivity(new Intent(this, ActivityExampleCrashReporting.class));
+    }
+
+    public void onClickButtonUserDetails(View v) {
+        startActivity(new Intent(this, ActivityExampleUserDetails.class));
+    }
+
+    public void onClickButtonAPM(View v) {
+        //
+    }
+
+    public void onClickButtonViewTracking(View v) {
+        startActivity(new Intent(this, ActivityExampleViewTracking.class));
+    }
+
+    public void onClickButtonMultiThreading(View v) {
+        //
+    }
+
+    public void onClickButtonOthers(View v) {
+        startActivity(new Intent(this, ActivityExampleOthers.class));
+    }
+
 
     public void enableCrashTracking(){
         //add some custom segments, like dependency library versions
@@ -195,13 +87,13 @@ public class MainActivity extends Activity {
     public void onStart()
     {
         super.onStart();
-//        Countly.sharedInstance().onStart(this);
+        Countly.sharedInstance().onStart(this);
     }
 
     @Override
     public void onStop()
     {
-//        Countly.sharedInstance().onStop();
+        Countly.sharedInstance().onStop();
         super.onStop();
     }
 

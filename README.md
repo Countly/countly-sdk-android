@@ -17,12 +17,18 @@ This repository includes the Countly Android SDK.
 
 Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly), or ask us on our [Countly Analytics Community Slack channel](http://slack.count.ly:3000/).
 
+##Sample Android application
+
+We have a beautiful Android application ([push notification sample app](https://github.com/Countly/countly-sdk-android/tree/master/app-messaging) and [analytics sample app](https://github.com/Countly/countly-sdk-android/tree/master/app)) which includes this SDK. Feel free to use this for testing purposes as you develop your application.
+
+![Android-sample-app](http://count.ly/wp-content/uploads/2017/01/android-sample-app.png)
+
 ### Other Github resources ###
 
 This SDK needs one of the following Countly Editions to work: 
 
 * Countly Community Edition, [downloadable from Github](https://github.com/Countly/countly-server)
-* [Countly Enterprise Edition](http://count.ly/enterprise-edition)
+* [Countly Enterprise Edition](http://count.ly/product)
 
 For more information about Countly Enterprise Edition, see [comparison of different Countly editions](https://count.ly/compare/)
 

@@ -1,7 +1,104 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+              android:gravity="center_vertical"
+              android:paddingLeft="@dimen/activity_horizontal_margin"
+              android:paddingRight="@dimen/activity_horizontal_margin"
+              android:paddingTop="@dimen/activity_vertical_margin"
+              android:paddingBottom="@dimen/activity_vertical_margin"
+              tools:context=".ActivityExampleCustomEvents">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical">
+
+            <Button
+                android:text="Record Event"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button4"
+                android:onClick="onClickRecordEvent01"/>
+
+            <Button
+                android:text="record event with count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button10"
+                android:onClick="onClickRecordEvent02"/>
+
+            <Button
+                android:text="record event with sum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button11"
+                android:onClick="onClickRecordEvent03"/>
+
+            <Button
+                android:text="record event with duration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button12"
+                android:onClick="onClickRecordEvent04"/>
+
+            <Button
+                android:text="record event with segm."
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button13"
+                android:onClick="onClickRecordEvent05"/>
+
+            <Button
+                android:text="record event with segm., count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button14"
+                android:onClick="onClickRecordEvent06"/>
+
+            <Button
+                android:text="record event with segm., count, sum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button15"
+                android:onClick="onClickRecordEvent07"/>
+
+            <Button
+                android:text="record event with segm., count, sum, dur."
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button16"
+                android:onClick="onClickRecordEvent08"/>
+
+            <Button
+                android:text="start event"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button17"
+                android:onClick="onClickRecordEvent09"/>
+
+            <Button
+                android:text="end event"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button18"
+                android:onClick="onClickRecordEvent10"/>
+
+            <Button
+                android:text="end event with segm., count, sum"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button19"
+                android:onClick="onClickRecordEvent11"/>
+        </LinearLayout>
+    </ScrollView>
 
 </LinearLayout>
