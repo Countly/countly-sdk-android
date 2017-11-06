@@ -4,15 +4,12 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 
 import java.util.HashMap;
 
-import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyPush;
-import ly.count.android.sdk.CountlyStarRating;
 import ly.count.android.sdk.internal.ModuleCrash;
 
 

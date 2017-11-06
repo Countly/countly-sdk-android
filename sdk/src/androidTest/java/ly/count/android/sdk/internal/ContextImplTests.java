@@ -2,9 +2,7 @@ package ly.count.android.sdk.internal;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.*;
 import android.content.Context;
-import android.os.Bundle;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.runner.AndroidJUnit4;
 
@@ -18,10 +16,8 @@ import org.junit.runner.RunWith;
 import java.net.MalformedURLException;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Countly;
 
 import static android.support.test.InstrumentationRegistry.getContext;
-import static org.mockito.Mockito.RETURNS_SMART_NULLS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.validateMockitoUsage;

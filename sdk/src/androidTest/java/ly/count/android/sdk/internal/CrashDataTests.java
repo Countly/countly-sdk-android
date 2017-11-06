@@ -38,7 +38,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyNeo;
 
 public class CrashDataTests extends BaseTests {
     static class DeviceInfo {
@@ -84,9 +84,7 @@ public class CrashDataTests extends BaseTests {
                 resolution = metrics.widthPixels + "x" + metrics.heightPixels;
             }
             catch (Throwable t) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    android.util.Log.i(Countly.TAG, "Device resolution cannot be determined");
-                }
+                android.util.Log.i("Countly", "Device resolution cannot be determined");
             }
             return resolution;
         }
@@ -171,9 +169,7 @@ public class CrashDataTests extends BaseTests {
             }
             if (carrier == null || carrier.length() == 0) {
                 carrier = "";
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    android.util.Log.i(Countly.TAG, "No carrier found");
-                }
+                android.util.Log.i("Countly", "No carrier found");
             }
             return carrier;
         }
@@ -196,14 +192,12 @@ public class CrashDataTests extends BaseTests {
          * is not present.
          */
         static String getAppVersion(final android.content.Context context) {
-            String result = Countly.DEFAULT_APP_VERSION;
+            String result = "1.0";
             try {
                 result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
             }
             catch (PackageManager.NameNotFoundException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    android.util.Log.i(Countly.TAG, "No app version found");
-                }
+                android.util.Log.i("Countly", "No app version found");
             }
             return result;
         }
@@ -217,15 +211,11 @@ public class CrashDataTests extends BaseTests {
                 try {
                     result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
                 } catch (Exception e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        android.util.Log.i(Countly.TAG, "Can't get Installer package");
-                    }
+                    android.util.Log.i("Countly", "Can't get Installer package");
                 }
                 if (result == null || result.length() == 0) {
                     result = "";
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        android.util.Log.i(Countly.TAG, "No store found");
-                    }
+                    android.util.Log.i("Countly", "No store found");
                 }
             }
             return result;
@@ -507,9 +497,7 @@ public class CrashDataTests extends BaseTests {
                 }
             }
             catch(Exception e){
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    android.util.Log.i(Countly.TAG, "Can't get batter level");
-                }
+                android.util.Log.i("Countly", "Can't get batter level");
             }
 
             return null;
@@ -562,9 +550,7 @@ public class CrashDataTests extends BaseTests {
                 return "false";
             }
             catch(Exception e){
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Got exception determining connectivity", e);
-                }
+                Log.w("Countly", "Got exception determining connectivity", e);
             }
             return null;
         }

@@ -3,8 +3,6 @@ package ly.count.android.demo;
 import android.app.Activity;
 import android.os.Bundle;
 
-import ly.count.android.sdk.Countly;
-
 /**
  * Created by Arturs on 21.12.2016..
  */

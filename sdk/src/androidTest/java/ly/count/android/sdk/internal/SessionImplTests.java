@@ -357,7 +357,7 @@ public class SessionImplTests extends BaseTests {
         Eve event1 = session.begin().timedEvent("key1");
         Assert.assertEquals(1, session.timedEvents.size());
 
-        Thread.sleep(1000);
+        Thread.sleep(1100);
 
         session.timedEvent("key1").endAndRecord();
         Assert.assertEquals(1d, ((EventImpl) event1).getDuration());

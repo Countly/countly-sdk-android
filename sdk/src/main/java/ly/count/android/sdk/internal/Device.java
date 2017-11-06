@@ -1,7 +1,6 @@
 package ly.count.android.sdk.internal;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -32,8 +31,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import ly.count.android.sdk.Countly;
 
 /**
  * Class encapsulating most of device-specific logic: metrics, info, etc.
