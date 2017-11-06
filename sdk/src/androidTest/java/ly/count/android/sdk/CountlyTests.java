@@ -24,7 +24,7 @@ import static org.mockito.Mockito.validateMockitoUsage;
 import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
-public class CountlyNeoTests {
+public class CountlyTests {
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";
     private Config config;
@@ -44,7 +44,7 @@ public class CountlyNeoTests {
 //        Application application = mock(Application.class);
 //        final Core core = mock(Core.class);
 //
-//        CountlyNeo.init(application, config, new CountlyNeo.CreationOverride() {
+//        Countly.init(application, config, new Countly.CreationOverride() {
 //            @Override
 //            public Core createCore(Config config) {
 //                return core;
@@ -56,7 +56,7 @@ public class CountlyNeoTests {
 //
 //    @Test
 //    public void constructor_core(){
-//        CountlyNeo cn = new CountlyNeo(config);
+//        Countly cn = new Countly(config);
 //
 //        CoreTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "core"));
 //    }
@@ -64,7 +64,7 @@ public class CountlyNeoTests {
 //    @Test
 //    public void constructor_config(){
 //        Core core = new Core(config);
-//        CountlyNeo cn = new CountlyNeo(core);
+//        Countly cn = new Countly(core);
 //        CoreTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "core"));
 //    }
 

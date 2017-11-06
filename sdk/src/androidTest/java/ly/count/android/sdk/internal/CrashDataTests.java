@@ -38,8 +38,6 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import ly.count.android.sdk.CountlyNeo;
-
 public class CrashDataTests extends BaseTests {
     static class DeviceInfo {
         /**

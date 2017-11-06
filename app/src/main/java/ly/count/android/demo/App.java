@@ -5,8 +5,7 @@ import android.app.Application;
 import java.net.MalformedURLException;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.CountlyNeo;
-import ly.count.android.sdk.CountlyNeoLifecycle;
+import ly.count.android.sdk.Countly;
 
 /**
  * Demo Application subclass with an example of how to initialize Countly SDK
@@ -23,7 +22,7 @@ public class App extends Application {
                     .setFeatures(Config.Feature.Push, Config.Feature.Crash)
                     .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
 
-            CountlyNeo.init(this, config);
+            Countly.init(this, config);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }

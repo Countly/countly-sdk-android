@@ -6,20 +6,18 @@ import android.content.Context;
 import android.os.Bundle;
 
 import ly.count.android.sdk.internal.Core;
-import ly.count.android.sdk.internal.Device;
 import ly.count.android.sdk.internal.Log;
-import ly.count.android.sdk.internal.Utils;
 
 /**
  * Created by artem on 07/10/2017.
  */
 
-public class CountlyNeoLifecycle {
+public class CountlyLifecycle {
     protected static final Log.Module L = Log.module("Countly");
-    protected static CountlyNeo instance;
+    protected static Countly instance;
     protected final Core core;
 
-    public CountlyNeoLifecycle(Core core) {
+    public CountlyLifecycle(Core core) {
         this.core = core;
     }
 
@@ -44,7 +42,7 @@ public class CountlyNeoLifecycle {
                 // TODO: inconsistent state, couldn't init, TBD
                 return;
             }
-            instance = new CountlyNeo(core);
+            instance = new Countly(core);
         }
     }
 

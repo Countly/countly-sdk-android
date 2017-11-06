@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.app.Application;
 import android.app.Service;
 import android.content.Context;
 import android.os.Bundle;
@@ -10,12 +11,19 @@ import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.Utils;
 
 /**
- * Created by artem on 28/12/2016.
+ * Main Countly SDK API class.
+ * <ul>
+ *     <li>Initialize Countly SDK using {@link #init(Application, Config)}.</li>
+ *     <li>Stop Countly SDK with {@link #stop(Context, boolean)} if needed.</li>
+ *     <li>Call {@link #onActivityCreated(Activity, Bundle)}, {@link #onActivityStarted(Activity)} {@link #onActivityStopped(Activity)} if targeting API levels < 14.</li>
+ *     <li>Use {@link #session(Context)} to get a {@link Session} instance.</li>
+ *     <li>Use {@link #login(Context, String)} & {@link #logout(Context)} when user logs in & logs out.</li>
+ * </ul>
  */
 
-public class CountlyNeo extends CountlyNeoLifecycle {
+public class Countly extends CountlyLifecycle {
 
-    protected CountlyNeo(Core core) {
+    protected Countly(Core core) {
         super(core);
     }
 

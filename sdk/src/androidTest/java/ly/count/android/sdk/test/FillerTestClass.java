@@ -2,9 +2,6 @@ package ly.count.android.sdk.test;
 
 import android.content.Context;
 
-import ly.count.android.sdk.Config;
-import ly.count.android.sdk.CountlyNeo;
-
 public class FillerTestClass {
     protected void setUp()throws Exception{
 
