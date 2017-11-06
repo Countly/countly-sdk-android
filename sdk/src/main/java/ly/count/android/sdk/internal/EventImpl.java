@@ -7,14 +7,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import ly.count.android.sdk.Eve;
+import ly.count.android.sdk.Event;
 import ly.count.android.sdk.Session;
 
 /**
  * Event base class implementation
  */
 
-class EventImpl implements Eve, JSONable {
+class EventImpl implements Event, JSONable {
     private static final Log.Module L = Log.module("EventImpl");
 
     private final SessionImpl session;
@@ -70,7 +70,7 @@ class EventImpl implements Eve, JSONable {
     }
 
     @Override
-    public Eve addSegment(String key, String value) {
+    public Event addSegment(String key, String value) {
         if (key == null || "".equals(key)) {
             invalid = true;
             L.wtf("Segmentation key " + key + " for event " + this.key + " is empty");
@@ -93,7 +93,7 @@ class EventImpl implements Eve, JSONable {
     }
 
     @Override
-    public Eve addSegments(String... segmentation) {
+    public Event addSegments(String... segmentation) {
         if (segmentation == null || segmentation.length == 0) {
             invalid = true;
             L.wtf("Segmentation varargs array is empty");
@@ -113,7 +113,7 @@ class EventImpl implements Eve, JSONable {
     }
 
     @Override
-    public Eve setSegmentation(Map<String, String> segmentation) {
+    public Event setSegmentation(Map<String, String> segmentation) {
         if (segmentation == null) {
             invalid = true;
             L.wtf("Segmentation map is null");
@@ -129,7 +129,7 @@ class EventImpl implements Eve, JSONable {
     }
 
     @Override
-    public Eve setCount(int count) {
+    public Event setCount(int count) {
         if (count <= 0) {
             invalid = true;
             L.wtf("Event " + key + " count cannot be 0 or less");
@@ -140,7 +140,7 @@ class EventImpl implements Eve, JSONable {
     }
 
     @Override
-    public Eve setSum(double sum) {
+    public Event setSum(double sum) {
         if (Double.isInfinite(sum) || Double.isNaN(sum)) {
             invalid = true;
             L.wtf("NaN infinite value cannot be event '" + key + "' sum");
@@ -151,7 +151,7 @@ class EventImpl implements Eve, JSONable {
     }
 
     @Override
-    public Eve setDuration(double duration) {
+    public Event setDuration(double duration) {
         if (Double.isInfinite(duration) || Double.isNaN(duration) || duration < 0) {
             invalid = true;
             L.wtf("NaN, infinite or negative value cannot be event '" + key + "' duration");

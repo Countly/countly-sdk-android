@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Eve;
+import ly.count.android.sdk.Event;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
@@ -179,7 +179,7 @@ public class EventImplTests {
     public void dur_Inf_invalid() {
         SessionImpl session = new SessionImpl(ctx);
 
-        Eve event = new EventImpl(session, "key");
+        Event event = new EventImpl(session, "key");
         try {
             event.setDuration(Double.NEGATIVE_INFINITY);
         } catch (IllegalStateException ignored) {}

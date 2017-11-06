@@ -13,7 +13,7 @@ import java.net.MalformedURLException;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Eve;
+import ly.count.android.sdk.Event;
 import ly.count.android.sdk.View;
 
 import static org.mockito.Mockito.mock;
@@ -37,7 +37,7 @@ public class ModuleViewsTests extends BaseTests {
 
         Assert.assertEquals(1, session.events.size());
 
-        Eve start = session.events.get(0);
+        Event start = session.events.get(0);
         validateView(first, start, firstViewName, true, true, false);
 
         first.start(false);
@@ -47,7 +47,7 @@ public class ModuleViewsTests extends BaseTests {
         View second = session.view(secondViewName);
         Assert.assertEquals(3, session.events.size());
 
-        Eve end = session.events.get(1);
+        Event end = session.events.get(1);
         start = session.events.get(2);
         validateView(first, end, firstViewName, false, true, false);
         validateView(second, start, secondViewName, true, false, false);
@@ -79,7 +79,7 @@ public class ModuleViewsTests extends BaseTests {
         Assert.assertNotNull(session);
         Assert.assertEquals(1, session.events.size());
 
-        Eve start = session.events.get(0);
+        Event start = session.events.get(0);
         View first = Whitebox.<View>getInternalState(session, "currentView");
         Assert.assertNotNull(first);
         validateView(first, start, firstViewName, true, true, false);
@@ -93,7 +93,7 @@ public class ModuleViewsTests extends BaseTests {
         View second = Whitebox.<View>getInternalState(session, "currentView");
         Assert.assertNotNull(second);
 
-        Eve end = session.events.get(1);
+        Event end = session.events.get(1);
         start = session.events.get(2);
         validateView(first, end, firstViewName, false, true, false);
         validateView(second, start, secondViewName, true, false, false);
@@ -112,7 +112,7 @@ public class ModuleViewsTests extends BaseTests {
         validateView(second, end, secondViewName, false, false, true);
     }
 
-    private void validateView(View view, Eve event, String name, boolean start, boolean firstView, boolean lastView) {
+    private void validateView(View view, Event event, String name, boolean start, boolean firstView, boolean lastView) {
         if (start) {
             Assert.assertNull(Whitebox.<Double>getInternalState(event, "duration"));
         } else {

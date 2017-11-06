@@ -13,7 +13,7 @@ import java.net.MalformedURLException;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Eve;
+import ly.count.android.sdk.Event;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplTests extends BaseTests {
@@ -354,7 +354,7 @@ public class SessionImplTests extends BaseTests {
     @Test
     public void timedEvent() throws Exception {
         SessionImpl session = new SessionImpl(ctx);
-        Eve event1 = session.begin().timedEvent("key1");
+        Event event1 = session.begin().timedEvent("key1");
         Assert.assertEquals(1, session.timedEvents.size());
 
         Thread.sleep(1100);
@@ -366,7 +366,7 @@ public class SessionImplTests extends BaseTests {
     @Test
     public void timedEventContinues() throws Exception {
         SessionImpl session = new SessionImpl(ctx);
-        Eve event1 = session.begin().timedEvent("key1")
+        Event event1 = session.begin().timedEvent("key1")
                 .addSegment("k1", "v1");
 
         Assert.assertEquals(1, session.timedEvents.size());
@@ -381,7 +381,7 @@ public class SessionImplTests extends BaseTests {
 
         Assert.assertEquals(1, session.timedEvents.size());
 
-        Eve event2 = session.timedEvent("key2");
+        Event event2 = session.timedEvent("key2");
 
         Assert.assertEquals(2, session.timedEvents.size());
 

@@ -62,9 +62,9 @@ public interface Session {
      * @param key key for this event, cannot be null or empty
      * @return Event instance.
      *
-     * @see Eve#record()
+     * @see Event#record()
      */
-    Eve event(String key);
+    Event event(String key);
 
     /**
      * Get existing or create new timed event object, don't record it.
@@ -72,9 +72,9 @@ public interface Session {
      * @param key key for this event, cannot be null or empty
      * @return timed Event instance.
      *
-     * @see Eve#endAndRecord() to end timed event
+     * @see Event#endAndRecord() to end timed event
      */
-    Eve timedEvent(String key);
+    Event timedEvent(String key);
 
     /**
      * Get current User Profile.

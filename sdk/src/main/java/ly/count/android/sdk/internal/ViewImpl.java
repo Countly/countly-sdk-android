@@ -1,6 +1,6 @@
 package ly.count.android.sdk.internal;
 
-import ly.count.android.sdk.Eve;
+import ly.count.android.sdk.Event;
 import ly.count.android.sdk.Session;
 import ly.count.android.sdk.View;
 
@@ -24,7 +24,7 @@ class ViewImpl implements View {
 
     private String name;
     private Session session;
-    private Eve start;
+    private Event start;
     private boolean firstView;
     private boolean started, ended;
 

@@ -3,11 +3,11 @@ package ly.count.android.sdk;
 import java.util.Map;
 
 /**
- * Event interface. By default event is created with count=1 and all other fields empty.
+ * Event interface. By default event is created with count=1 and all other fields empty or 0.
  */
 
 // TODO: rename
-public interface Eve {
+public interface Event {
     /**
      * Add event to the session, send it to the server in case number of events in the session
      * is equal or bigger than {@link Config#sendUpdateEachEvents} or wait until next {@link Session#update()}.
@@ -17,7 +17,7 @@ public interface Eve {
     Session record();
 
     /**
-     * Set timed {@link Eve} duration as difference between moment {@link Eve} was created
+     * Set timed {@link Event} duration as difference between moment {@link Event} was created
      * and current time in seconds. Then add the event to its session, send it to the server
      * in case number of events in the session is equal or bigger than {@link Config#sendUpdateEachEvents}
      *  or wait until next {@link Session#update()}.
@@ -33,7 +33,7 @@ public interface Eve {
      * @param value value of segment, must not be null or empty
      * @return this instance for method chaining
      */
-    Eve addSegment(String key, String value);
+    Event addSegment(String key, String value);
 
     /**
      * Set event segmentation from
@@ -43,7 +43,7 @@ public interface Eve {
      *                     even length
      * @return this instance for method chaining
      */
-    Eve addSegments(String ...segmentation);
+    Event addSegments(String ...segmentation);
 
     /**
      * Set event segmentation from a map
@@ -51,7 +51,7 @@ public interface Eve {
      * @param segmentation map of segment pairs ({key1: value1, key2: value2}
      * @return this instance for method chaining
      */
-    Eve setSegmentation(Map<String, String> segmentation);
+    Event setSegmentation(Map<String, String> segmentation);
 
     /**
      * Overwrite default count=1 for this event
@@ -59,7 +59,7 @@ public interface Eve {
      * @param count event count, cannot be 0
      * @return this instance for method chaining
      */
-    Eve setCount(int count);
+    Event setCount(int count);
 
     /**
      * Set event sum
@@ -67,7 +67,7 @@ public interface Eve {
      * @param sum event sum
      * @return this instance for method chaining
      */
-    Eve setSum(double sum);
+    Event setSum(double sum);
 
     /**
      * Set event duration
@@ -75,5 +75,5 @@ public interface Eve {
      * @param duration event duration
      * @return this instance for method chaining
      */
-    Eve setDuration(double duration);
+    Event setDuration(double duration);
 }

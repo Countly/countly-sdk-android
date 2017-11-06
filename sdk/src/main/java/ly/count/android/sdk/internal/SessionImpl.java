@@ -13,7 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Eve;
+import ly.count.android.sdk.Event;
 import ly.count.android.sdk.Session;
 import ly.count.android.sdk.User;
 import ly.count.android.sdk.View;
@@ -46,12 +46,12 @@ class SessionImpl implements Session, Storable {
     /**
      * List of events still not added to request
      */
-    protected final List<Eve> events = new ArrayList<>();
+    protected final List<Event> events = new ArrayList<>();
 
     /**
      * List of events still not added to request
      */
-    protected final Map<String, Eve> timedEvents = new HashMap<>();
+    protected final Map<String, Event> timedEvents = new HashMap<>();
 
     /**
      * Additional parameters to send with next request
@@ -166,7 +166,7 @@ class SessionImpl implements Session, Storable {
         ended = now == null ? System.nanoTime() : now;
 
 //        // TODO: check if needed
-//        for (Eve event: timedEvents.values()) {
+//        for (Event event: timedEvents.values()) {
 //            event.endAndRecord();
 //        }
 
@@ -242,18 +242,18 @@ class SessionImpl implements Session, Storable {
         return Device.nsToSec(duration);
     }
 
-    public Eve event(String key) {
+    public Event event(String key) {
         return new EventImpl(this, key);
     }
 
-    public Eve timedEvent(String key) {
+    public Event timedEvent(String key) {
         if (!timedEvents.containsKey(key)) {
             timedEvents.put(key, new EventImpl(this, key));
         }
         return timedEvents.get(key);
     }
 
-    Session recordEvent(Eve event) {
+    Session recordEvent(Event event) {
         if (timedEvents.containsKey(((EventImpl)event).getKey())) {
             timedEvents.remove(((EventImpl)event).getKey());
         }
@@ -356,7 +356,7 @@ class SessionImpl implements Session, Storable {
             stream.writeLong(updated == null ? 0 : updated);
             stream.writeLong(ended == null ? 0 : ended);
             stream.writeInt(events.size());
-            for (Eve event : events) {
+            for (Event event : events) {
                 stream.writeUTF(event.toString());
             }
             stream.writeUTF(params.toString());
@@ -403,7 +403,7 @@ class SessionImpl implements Session, Storable {
 
             int count = stream.readInt();
             for (int i = 0; i < count; i++) {
-                Eve event = EventImpl.fromJSON(this, stream.readUTF());
+                Event event = EventImpl.fromJSON(this, stream.readUTF());
                 if (event != null) {
                     events.add(event);
                 }
