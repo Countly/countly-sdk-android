@@ -224,6 +224,13 @@ as main entry point into configuration and features, following SESSIONLINKHERE
 regarding `Session` lifecycle and control. USERLINKHERE explains user data, EVENTLINKHERE is 
 about recording events. 
 
+##Test mode
+To ensure correct SDK behaviour, please use `Config.enableTestMode()` when you app is in development
+and testing. In test mode Countly SDK raises `RuntimeException`s whenever is in inconsistent state. 
+Once you remove `Config.enableTestMode()` call from your initialization sequence, SDK stops 
+raising any `Exception`s and switches to logging errors instead. Without `Config.enableTestMode()`
+during development you may encounter some important issues with data consistency. 
+
 ##Device ID
 Android SDK supports following strategies of device ID generation:
 * `OPEN_UDID`. Default. Basically `ANDROID_ID` if it is available or a pseudo-random `String` if it's not.
