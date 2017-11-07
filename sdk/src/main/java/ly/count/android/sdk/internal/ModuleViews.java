@@ -38,7 +38,7 @@ public class ModuleViews extends ModuleBase {
     public void onActivityStopped(Context ctx) {
         int cls = ctx.getActivity().hashCode();
         if (views.containsKey(cls)) {
-            views.remove(cls).end(false);
+            views.remove(cls).stop(false);
         }
     }
 }

@@ -2,14 +2,12 @@
 <resources>
 
     <string name="app_name">Countly Demo App</string>
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="deep_link">Deep Link Test</string>
 
     <string name="activity_name_apm">APM examples</string>
     <string name="activity_name_crash_reporting">Crash reporting examples</string>
     <string name="activity_name_custom_events">Custom events examples</string>
-    <string name="activity_name_multithreading">Multithreading examples</string>
     <string name="activity_name_others">Other examples</string>
     <string name="activity_name_user_detail">User detail examples</string>
     <string name="activity_name_view_tracking">View tracking examples</string>

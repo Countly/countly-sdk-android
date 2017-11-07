@@ -35,28 +35,20 @@
             android:id="@+id/button7"
             android:onClick="onClickButtonUserDetails"/>
 
-        <Button
-            android:text="APM"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/button6"
-            android:enabled="false"
-            android:onClick="onClickButtonAPM"/>
+        <!--<Button-->
+            <!--android:text="APM"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:id="@+id/button6"-->
+            <!--android:enabled="false"-->
+            <!--android:onClick="onClickButtonAPM"/>-->
 
         <Button
-            android:text="View Tracking "
+            android:text="View Tracking"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button5"
             android:onClick="onClickButtonViewTracking"/>
-
-        <Button
-            android:text="Multi Threading"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/button3"
-            android:enabled="false"
-            android:onClick="onClickButtonMultiThreading"/>
 
         <Button
             android:text="Others"

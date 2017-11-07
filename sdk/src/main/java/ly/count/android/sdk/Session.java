@@ -131,7 +131,7 @@ public interface Session {
      *
      * @param name String representing name of this View
      * @param start whether this view is first in current application launch
-     * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#end(boolean)}
+     * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#stop(boolean)}
      */
     View view(String name, boolean start);
 
@@ -140,7 +140,7 @@ public interface Session {
      * is determined automatically based on whether this view is first in this session.
      *
      * @param name String representing name of this View
-     * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#end(boolean)}
+     * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#stop(boolean)}
      */
     View view(String name);
 

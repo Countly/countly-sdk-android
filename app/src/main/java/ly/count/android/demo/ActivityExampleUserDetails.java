@@ -6,102 +6,79 @@ import android.view.View;
 
 import java.util.HashMap;
 
+import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.User;
+import ly.count.android.sdk.UserEditor;
+
 /**
- * Created by Arturs on 21.12.2016..
+ * Demo Activity for User Profile handling:
+ * <ul>
+ *     <li>Setting standard and custom properties.</li>
+ *     <li>Using modifier commands.</li>
+ *     <li>Setting profile picture from file path, URL or binary data.</li>
+ *     <li>User login & logout.</li>
+ * </ul>
  */
 
 public class ActivityExampleUserDetails extends Activity {
-    Activity activity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_user_details);
-        Countly.onCreate(this);
-
     }
 
-    public void onClickUserData01(View v) {
-        setUserData();
+    public void onClickRecordUserData(View v) {
+        UserEditor editor = Countly.user().edit()
+                .setName("Firstname Lastname")
+                .setUsername("nickname")
+                .setEmail("test@test.com")
+                .setOrg("Tester")
+                .setPhone("+123456789")
+                .setGender(User.Gender.MALE)
+                .setBirthyear(1987)
+                .setPicturePath("http://i.pravatar.cc/300");
+        // provide url to picture
+        //.set("picturePath", "http://example.com/pictures/profile_pic.png");
+        // or local path
+        //.set("picturePath", "/mnt/sdcard/portrait.jpg");
+        // or upload profile picture to Countly server
+        //.set("picturePath", new byte[]{...});
+
+        // providing any custom key values to store with user
+        editor.set("country", "Jamaica")
+                .set("city", "Kingston")
+                .set("address", "6, 56 Hope Rd, Kingston, Jamaica");
+
+        editor.commit();
     }
 
-    public void onClickUserData02(View v) {
+    public void onClickSetCustom1(View v) {
         //providing any custom key values to store with user
-        HashMap<String, String> custom = new HashMap<String, String>();
-        custom.put("favoriteAnimal", "dog");
+        UserEditor editor = Countly.user().edit();
 
-        //set multiple custom properties
-        Countly.userData.setCustomUserData(custom);
+        editor.set("mostFavoritePet", "dog");
+        editor.inc("phoneCalls", 1);
+        editor.pushUnique("tags", "fan")
+                .pushUnique("skill", "singer");
+
+        editor.commit();
     }
 
-    public void onClickUserData03(View v) {
+    public void onClickSetCustom2(View v) {
         //providing any custom key values to store with user
-        HashMap<String, String> custom = new HashMap<String, String>();
-        custom.put("leastFavoritePet", "cat");
-
-        //set multiple custom properties
-        Countly.userData.setCustomUserData(custom);
+        Countly.user().edit().set("leastFavoritePet", "cat")
+                .inc("phoneCalls", -1)
+                .max("phoneCalls", 5)
+                .commit();
     }
 
-    public void onClickUserData04(View v) {
-
+    public void onClickLogin(View v) {
+        Countly.login(this, "XXX");
     }
 
-    public void onClickUserData05(View v) {
-
-    }
-
-    public void setUserData(){
-        HashMap<String, String> data = new HashMap<String, String>();
-        data.put("name", "Firstname Lastname");
-        data.put("username", "nickname");
-        data.put("email", "test@test.com");
-        data.put("organization", "Tester");
-        data.put("phone", "+123456789");
-        data.put("gender", "M");
-        //provide url to picture
-        //data.put("picture", "http://example.com/pictures/profile_pic.png");
-        //or locally from device
-        //data.put("picturePath", "/mnt/sdcard/portrait.jpg");
-        data.put("byear", "1987");
-
-        //providing any custom key values to store with user
-        HashMap<String, String> custom = new HashMap<String, String>();
-        custom.put("country", "Turkey");
-        custom.put("city", "Istanbul");
-        custom.put("address", "My house 11");
-
-        //set multiple custom properties
-        Countly.userData.setUserData(data, custom);
-
-        //set custom properties by one
-        Countly.userData.setProperty("test", "test");
-
-        //increment used value by 1
-        Countly.userData.incrementBy("used", 1);
-
-        //insert value to array of unique values
-        Countly.userData.pushUniqueValue("type", "morning");
-
-        //insert multiple values to same property
-        Countly.userData.pushUniqueValue("skill", "fire");
-        Countly.userData.pushUniqueValue("skill", "earth");
-
-        Countly.userData.save();
-    }
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
+    public void onClickLogout(View v) {
+        Countly.logout(this);
     }
 }
 

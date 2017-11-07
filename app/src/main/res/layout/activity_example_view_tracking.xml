@@ -1,57 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:gravity="center_vertical"
-              android:paddingLeft="@dimen/activity_horizontal_margin"
-              android:paddingRight="@dimen/activity_horizontal_margin"
-              android:paddingTop="@dimen/activity_vertical_margin"
-              android:paddingBottom="@dimen/activity_vertical_margin" >
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context=".ActivityExampleViewTracking">
+
+    <TextView
+        android:layout_gravity="center_vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="New view ExampleActivityViewTracking started when you opened this activity.
+You can stop it by returning back or start a custom view by clicking button below"/>
 
     <Button
-        android:text="turn off auto"
+        android:text="Start 'Awesome view'"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button34"/>
+        android:id="@+id/btnCustomViewStart"
+        android:onClick="onClickCustomViewStart"/>
 
     <Button
-        android:text="turn on auto"
+        android:text="End 'Awesome view'"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button35"/>
+        android:enabled="false"
+        android:id="@+id/btnCustomViewStop"
+        android:onClick="onClickCustomViewStop"/>
 
-    <Button
-        android:text="present modal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button36"
-        android:enabled="false"/>
-
-    <Button
-        android:text="navigation controller push / pop"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button37"
-        android:enabled="false"/>
-
-    <Button
-        android:text="add exception"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button38"
-        android:enabled="false"/>
-
-    <Button
-        android:text="remove exception"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button39"
-        android:enabled="false"/>
-
-    <Button
-        android:text="manual report"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button40"/>
 </LinearLayout>

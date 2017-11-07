@@ -200,7 +200,7 @@ public class Core extends CoreModules {
      * @param id ID of new {@link SessionImpl} if needed
      * @return current {@link SessionImpl} instance
      */
-    public SessionImpl session(Context ctx, Long id) {
+    public synchronized SessionImpl session(Context ctx, Long id) {
         if (session == null) {
             session = new SessionImpl(ctx, id);
         }

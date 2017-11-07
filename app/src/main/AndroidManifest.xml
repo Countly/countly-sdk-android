@@ -35,11 +35,6 @@
         </activity>
 
         <activity
-            android:name=".ActivityExampleAPM"
-            android:label="@string/activity_name_apm" >
-        </activity>
-
-        <activity
             android:name=".ActivityExampleCrashReporting"
             android:label="@string/activity_name_crash_reporting" >
         </activity>
@@ -47,11 +42,6 @@
         <activity
             android:name=".ActivityExampleCustomEvents"
             android:label="@string/activity_name_custom_events" >
-        </activity>
-
-        <activity
-            android:name=".ActivityExampleMultiThreading"
-            android:label="@string/activity_name_multithreading" >
         </activity>
 
         <activity
@@ -69,6 +59,7 @@
             android:label="@string/activity_name_view_tracking" >
         </activity>
 
+        <!-- uncomment this to switch from 2-process model to 1-process model -->
         <!--<service android:name="ly.count.android.sdk.internal.CountlyService" tools:remove="android:process">-->
         <!--</service>-->
 

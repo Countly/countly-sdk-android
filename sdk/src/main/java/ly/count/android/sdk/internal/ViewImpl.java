@@ -53,7 +53,7 @@ class ViewImpl implements View {
     }
 
     @Override
-    public void end(boolean lastView) {
+    public void stop(boolean lastView) {
         if (ended) {
             return;
         }

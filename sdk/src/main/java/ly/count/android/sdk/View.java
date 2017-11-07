@@ -6,5 +6,5 @@ package ly.count.android.sdk;
 
 public interface View {
     void start(boolean firstView);
-    void end(boolean lastView);
+    void stop(boolean lastView);
 }

@@ -56,7 +56,7 @@ class SessionImpl implements Session, Storable {
     /**
      * Additional parameters to send with next request
      */
-    protected Params params = new Params();
+    protected final Params params = new Params();
 
     /**
      * Current view event, that is started, but not ended yet
@@ -171,7 +171,7 @@ class SessionImpl implements Session, Storable {
 //        }
 
         if (currentView != null) {
-            currentView.end(true);
+            currentView.stop(true);
         } else {
             Storage.pushAsync(ctx, this);
         }
@@ -257,13 +257,15 @@ class SessionImpl implements Session, Storable {
         if (timedEvents.containsKey(((EventImpl)event).getKey())) {
             timedEvents.remove(((EventImpl)event).getKey());
         }
-        events.add(event);
-        if (pushOnChange) {
-            Storage.pushAsync(ctx, this);
-        }
-        Config config = Core.initialized();
-        if (config != null && config.getSendUpdateEachEvents() <= events.size()) {
-            update();
+        synchronized (storageId()) {
+            events.add(event);
+            if (pushOnChange) {
+                Storage.pushAsync(ctx, this);
+            }
+            Config config = Core.initialized();
+            if (config != null && config.getSendUpdateEachEvents() <= events.size()) {
+                update();
+            }
         }
         return this;
     }
@@ -296,7 +298,7 @@ class SessionImpl implements Session, Storable {
 
     public View view(String name, boolean start) {
         if (currentView != null) {
-            currentView.end(false);
+            currentView.stop(false);
         }
         currentView = new ViewImpl(this, name);
         currentView.start(start);
@@ -409,7 +411,7 @@ class SessionImpl implements Session, Storable {
                 }
             }
 
-            params = new Params(stream.readUTF());
+            params.add(stream.readUTF());
 
             return true;
         } catch (IOException e) {

@@ -150,7 +150,7 @@ public class ModuleCrash extends ModuleBase {
         stackOverflow();
     }
 
-    public static enum CrashType {
+    public enum CrashType {
         STACK_OVERFLOW, DIVISION_BY_ZERO, OOM, RUNTIME_EXCEPTION, NULLPOINTER_EXCEPTION
     }
 

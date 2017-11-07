@@ -52,7 +52,7 @@ public class ModuleViewsTests extends BaseTests {
         validateView(first, end, firstViewName, false, true, false);
         validateView(second, start, secondViewName, true, false, false);
 
-        second.end(true);
+        second.stop(true);
         Assert.assertEquals(4, session.events.size());
         end = session.events.get(3);
         validateView(second, end, secondViewName, false, false, true);
@@ -107,9 +107,7 @@ public class ModuleViewsTests extends BaseTests {
         Whitebox.invokeMethod(Core.instance, "onActivityStoppedInternal", activity2);
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
         Assert.assertNull(Core.instance.getSession());
-        Assert.assertEquals(4, session.events.size());
-        end = session.events.get(3);
-        validateView(second, end, secondViewName, false, false, true);
+        Assert.assertEquals(0, session.events.size());
     }
 
     private void validateView(View view, Event event, String name, boolean start, boolean firstView, boolean lastView) {

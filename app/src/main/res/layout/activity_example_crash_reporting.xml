@@ -12,68 +12,53 @@
               android:gravity="center_vertical">
 
     <Button
-        android:text="unrecognized selector"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button20"
-        android:enabled="false"
-        android:onClick="onClickCrashReporting01"/>
-
-    <Button
-        android:text="out of bounds"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button21"
-        android:onClick="onClickCrashReporting02"/>
-
-    <Button
         android:text="NULL pointer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button22"
-        android:onClick="onClickCrashReporting03"/>
+        android:onClick="onClickNullPointer"/>
 
     <Button
-        android:text="invalid geometry"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:id="@+id/button23"
-        android:enabled="false"
-        android:onClick="onClickCrashReporting04"/>
-
-    <Button
-        android:text="assert fail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:onClick="onClickStackOverflow"
+        android:text="Stack overflow"
+        android:visibility="visible" />
+
+    <Button
         android:id="@+id/button24"
-        android:onClick="onClickCrashReporting05"/>
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickOutOfMemory"
+        android:text="Out Of Memory" />
+
+    <Button
+        android:text="Division by zero"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button25"
+        android:onClick="onClickDivisionByZero"/>
 
     <Button
         android:text="kill"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button25"
-        android:onClick="onClickCrashReporting06"
-        android:enabled="false"/>
-
-    <Button
-        android:text="custom crash log"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:id="@+id/button26"
-        android:onClick="onClickCrashReporting07"/>
+        android:onClick="onClickKill"/>
 
     <Button
-        android:text="record handled exception"
+        android:text="record fatal exception"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button27"
-        android:onClick="onClickCrashReporting08"/>
+        android:onClick="onClickCustomFatal"/>
 
     <Button
-        android:text="Unhandled exception"
+        android:text="record non-fatal exception"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button28"
-        android:onClick="onClickCrashReporting09"/>
+        android:onClick="onClickCustomNonFatal"/>
+
 </LinearLayout>

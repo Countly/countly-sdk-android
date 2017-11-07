@@ -41,9 +41,22 @@ public class Countly extends CountlyLifecycle {
     public static Session session(Context context){
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
-            return null;
         }
         return instance.core.session(new ContextImpl(context), null);
+    }
+
+    /**
+     * Get current User Profile object.
+     *
+     * @see User#edit() to get {@link UserEditor} object
+     * @see UserEditor#commit() to submit changes to the server
+     * @return current User Profile instance
+     */
+    public static User user() {
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+        }
+        return instance.core.user();
     }
 
     /**

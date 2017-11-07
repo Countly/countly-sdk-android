@@ -6,78 +6,51 @@ import android.view.View;
 
 import junit.framework.Assert;
 
+import java.io.IOException;
+
+import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.internal.ModuleCrash;
+
 /**
- * Created by Arturs on 21.12.2016..
+ * Demo Activity explaining {@link ly.count.android.sdk.Config.Feature#Crash}. Each {@code onClick}
+ * method crashes application in a specific way. Countly is set up to report any crashes
+ * occurring to the server, so after several seconds these crashes should appear on your
+ * Countly dashboard.
  */
 
 public class ActivityExampleCrashReporting extends Activity {
-    Activity activity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_crash_reporting);
-        Countly.onCreate(this);
-
     }
 
-    public void onClickCrashReporting01(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 1");
+    public void onClickNullPointer(View v) {
+        ModuleCrash.crashTest(ModuleCrash.CrashType.NULLPOINTER_EXCEPTION);
     }
 
-    public void onClickCrashReporting02(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 2");
-        int[] data = new int[]{};
-        data[0] = 9;
+    public void onClickStackOverflow(View v) {
+        ModuleCrash.crashTest(ModuleCrash.CrashType.STACK_OVERFLOW);
     }
 
-    public void onClickCrashReporting03(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 3");
-        Countly.sharedInstance().crashTest(3);
+    public void onClickOutOfMemory(View v) {
+        ModuleCrash.crashTest(ModuleCrash.CrashType.OOM);
     }
 
-    public void onClickCrashReporting04(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 4");
+    public void onClickDivisionByZero(View v) {
+        ModuleCrash.crashTest(ModuleCrash.CrashType.DIVISION_BY_ZERO);
     }
 
-    public void onClickCrashReporting05(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 5");
-        Assert.assertEquals(1, 0);
-    }
-
-    public void onClickCrashReporting06(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 6");
+    public void onClickKill(View v) {
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
-    public void onClickCrashReporting07(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 7");
-        Countly.sharedInstance().addCrashLog("Adding some custom crash log");
-        Countly.sharedInstance().crashTest(1);
+    public void onClickCustomFatal(View v) {
+        Countly.session(this).addCrashReport(new RuntimeException("Fatal Exception"), true);
     }
 
-    public void onClickCrashReporting08(View v) {
-        Countly.sharedInstance().addCrashLog("Crash log 8");
-        Countly.sharedInstance().logException(new Exception("A logged exception"));
-    }
-
-    public void onClickCrashReporting09(View v) throws Exception {
-        Countly.sharedInstance().addCrashLog("Crash log 9");
-        throw new Exception("A unhandled uxception");
-    }
-
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
+    public void onClickCustomNonFatal(View v) {
+        Countly.session(this).addCrashReport(new IOException("Non-Fatal Exception"), false);
     }
 }

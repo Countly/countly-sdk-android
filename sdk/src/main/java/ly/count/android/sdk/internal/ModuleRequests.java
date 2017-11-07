@@ -105,11 +105,14 @@ public class ModuleRequests extends ModuleBase {
         if (session != null) {
             request.params.add("session_id", session.getId());
 
-            if (!session.events.isEmpty()) {
-                request.params.arr("events").put(session.events).add();
+            synchronized (session.storageId()) {
+                if (!session.events.isEmpty()) {
+                    request.params.arr("events").put(session.events).add();
+                    session.events.clear();
+                }
+                request.params.add(session.params);
+                session.params.clear();
             }
-
-            request.params.add(session.params);
         }
 
         if (config.getDeviceId() != null) {
