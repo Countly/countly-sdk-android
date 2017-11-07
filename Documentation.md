@@ -1,9 +1,9 @@
-#Introduction
+# Introduction
 Countly SDK 18.X is a completely redesigned version of our Android SDK. Please use it with caution 
 since it hasn't yet tested by thousands of developers in thousands of applications as 
 our previous SDK versions.
 
-##Highlights
+## Highlights
 Here's a list of notable changes and new features of Countly Android SDK 18.X:
 * **Initialization** now must be done from `Application` subclass' `onCreate` method.
 * **API** is substantially simplified (no `sharedInstance()` needed for example), thus changed.
@@ -42,12 +42,12 @@ earlier. Standard notification handling logic is exposed in public class and can
 * **Tests** and **Javadoc**. SDK is now fully documented and mostly covered with tests.
 
 
-#Easy start
+# Easy start
 Process of setting up Countly SDK includes 2 simple steps: adding SDK as dependency to your Android Studio project
 and initializing SDK. Once those are done, you'll have basic analytics on your server like users, sessions,
 devices, etc.
 
-##Adding dependency
+## Adding dependency
 At first you need to add Countly SDK Gradle dependency and sync your project:
 ```
 dependencies {
@@ -75,7 +75,7 @@ buildscript {
     }
 }
 ```
-##Initializing SDK
+## Initializing SDK
 To start Countly SDK ou need to create an `Application` subclass and put following code in its `onCreate`
  method:
 
@@ -132,7 +132,7 @@ In case minimum API level supported by your application is more or equal to 14, 
 Once you launch your application, it will start sending requests. In case you need to support API levels below 14,
 you'll also need to call `onCreate`, `onStart` and `onStop` methods from all your activities.
 
-##Record first event
+## Record first event
 Now lets record our first custom event:
 
 ```
@@ -154,9 +154,9 @@ Whenever Purchase button is pressed, Countly will record an event with a key `pu
  Now launch your app, open your Countly dashboard and make sure data is there. In case it's not, make sure
  you used correct server url and app key. If they are, check logs in `logcat`. 
 
-#Architecture
+# Architecture
 Now let's have an overview of Countly SDK internals. 
-##Components
+## Components
 Starting version 18.X Countly SDK supports 2 ways of operation:
 
 * **Separate process (default) model.** SDK is split in 2 parts. Backend part lives in
@@ -194,11 +194,11 @@ and override our service definition:
 </manifest>
 ```
 
-##Storage
+## Storage
 Countly SDK stores serialized versions of following classes: `InternalConfig`, `SessionImpl`, `RequestImpl`, `CrashImpl` and `UserImpl`.
  All those are stored in device memory, in a separate files with filenames prefixed with `[CLY]_`.
  
-##Modules
+## Modules
 There is a set of classes implementing `Module` interface. They encapsulate logic of specific 
    parts of SDK:
 * `ModuleAttribution` sets up a `BroadcastReceiver` which listens for Google Play `INSTALL_REFERRER` broadcasts.
@@ -215,7 +215,7 @@ Cloud Messaging.
 * `ModuleSessions` has logic responsible for automatic session control: start a session
 when first `Activity` is started, end it when last `Activity` is stopped.
 
-#API
+# API
 This page is not supposed to list all possible features and implementation
 details of Countly SDK. Instead, we focus on how to perform some common tasks so you could save time for 
 more important things. Full documentation is available as javadoc here: PASTETHELINKHERE. 
@@ -224,14 +224,14 @@ as main entry point into configuration and features, following SESSIONLINKHERE
 regarding `Session` lifecycle and control. USERLINKHERE explains user data, EVENTLINKHERE is 
 about recording events. 
 
-##Test mode
+## Test mode
 To ensure correct SDK behaviour, please use `Config.enableTestMode()` when you app is in development
 and testing. In test mode Countly SDK raises `RuntimeException`s whenever is in inconsistent state. 
 Once you remove `Config.enableTestMode()` call from your initialization sequence, SDK stops 
 raising any `Exception`s and switches to logging errors instead. Without `Config.enableTestMode()`
 during development you may encounter some important issues with data consistency. 
 
-##Device ID
+## Device ID
 Android SDK supports following strategies of device ID generation:
 * `OPEN_UDID`. Default. Basically `ANDROID_ID` if it is available or a pseudo-random `String` if it's not.
 * `ADVERTISING_ID`. ID is taken from `AdvertisingId` class.
@@ -243,7 +243,7 @@ multiple app installs. Some of them, in some cases, maintain ID between differen
 
 Strategy is set in `Config` class prior to `Countly.init()` with `setDeviceIdStrategy()` method.
 
-###Authentication
+### Authentication
 With no special steps performed, SDK will count any new app install (see note above regarding device ID 
 persistency) as new user. In some cases, like when you have some kind of authentication system 
 in your app, that's not what you want. When you want actual person to be counted as one user in Countly
@@ -261,7 +261,7 @@ When user logs out from your application, you can:
 * or call `Countly.logout()` so SDK could reset its ID to the strategy you use in `Config`, let's say
 `OPEN_UDID`, and start a new `Session` for this user.
 
-##Sessions
+## Sessions
 Session in Countly is a single app launch or several app launches if time between them is less 
 than 30 seconds (by default). Of course you can override this behaviour, but lets describe how 
 standard way works at first.
@@ -339,7 +339,7 @@ one `Session` instance active at any time. By SDK API it is impossible to have m
 instances at any given point in time. Finally, only one `session.begin()` and one `session.end()` 
 method call per session instance can be made, all others are ignored.
 
-##Events
+## Events
 Events in Countly represent some meaningful event user performed in your 
 application within a `Session`. Please avoid recording everything like all taps or clicks user performed.
 In case you do, it will be very hard to extract valuable information from generated analytics.
@@ -372,7 +372,7 @@ right away. Instead, Countly SDK will wait until one of following happens:
 * `Session.update()` have been called by developer.
 * `Session.end()` have been called by developer or by Countly SDK in case of automatic session control.
 
-###Timed events
+### Timed events
 There is also special type of `Event` supported by Countly - timed events. Timed events help you to
 track long continuous interactions when keeping an `Event` instance is not very convenient.
 
