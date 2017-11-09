@@ -2,7 +2,7 @@
 
 We're hiring: Countly is looking for Android SDK developers, full stack devs, devops and growth hackers (remote work). [Click this link for job description](https://angel.co/countly/jobs/)
 
-* **Slack user?** [Join our Slack community](http://slack.count.ly:3000/)
+* **Slack user?** [Join our Slack community](http://slack.count.ly)
 * **Questions?** [Ask in our Community forum](http://community.count.ly)
 
 ## What's Countly?
@@ -12,7 +12,7 @@ We're hiring: Countly is looking for Android SDK developers, full stack devs, de
 
 This repository includes the Countly Android SDK. It can also be used to get user insights from Android TV or Wear devices.
 
-Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly), or ask us on our [Countly Analytics Community Slack channel](http://slack.count.ly:3000/).
+Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/countly-sdk-for-android) documentation at [Countly Resources](http://resources.count.ly), or ask us on our [Countly Analytics Community Slack channel](http://slack.count.ly).
 
 ## Sample Android application
 
