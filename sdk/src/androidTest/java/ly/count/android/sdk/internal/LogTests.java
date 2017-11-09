@@ -10,8 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
-
 import ly.count.android.sdk.Config;
 import static ly.count.android.sdk.Config.LoggingLevel.*;
 import static org.mockito.Mockito.*;
@@ -23,7 +21,7 @@ public class LogTests {
     private InternalConfig config;
 
     @Before
-    public void setupEveryTest() throws MalformedURLException{
+    public void setupEveryTest() throws Exception{
         String serverUrl = "http://www.serverurl.com";
         String serverAppKey = "1234";
         config = new InternalConfig(new Config(serverUrl, serverAppKey));
@@ -41,7 +39,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_enableTestMode() throws MalformedURLException {
+    public void logInit_enableTestMode() throws Exception {
         config.enableTestMode();
 
         Log log = new Log();
@@ -65,7 +63,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelDebug() throws MalformedURLException {
+    public void logInit_setLevelDebug() throws Exception {
         config.setLoggingLevel(DEBUG)
                 .enableTestMode();
 
@@ -90,7 +88,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelInfo() throws MalformedURLException {
+    public void logInit_setLevelInfo() throws Exception {
         config.setLoggingLevel(INFO)
                 .enableTestMode();
 
@@ -115,7 +113,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelWarn() throws MalformedURLException {
+    public void logInit_setLevelWarn() throws Exception {
         config.setLoggingLevel(WARN)
                 .enableTestMode();
 
@@ -140,7 +138,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelError() throws MalformedURLException {
+    public void logInit_setLevelError() throws Exception {
         config.setLoggingLevel(ERROR);
 
         Log log = new Log();
@@ -164,7 +162,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelOff() throws MalformedURLException {
+    public void logInit_setLevelOff() throws Exception {
         config.setLoggingLevel(OFF);
 
         Log log = new Log();
@@ -188,7 +186,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_noLevel() throws MalformedURLException {
+    public void logInit_noLevel() throws Exception {
         Log log = new Log();
         log.init(config);
 
@@ -210,7 +208,7 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_wtf_noLevel() throws MalformedURLException {
+    public void logInit_wtf_noLevel() throws Exception {
         Log log = new Log();
         log.init(config);
 
@@ -230,11 +228,11 @@ public class LogTests {
         verify(logger, never()).i(message, exception);
         verify(logger, never()).w(message, exception);
         verify(logger, never()).e(message, exception);
-        verify(logger, times(1)).wtf(message, exception);
+        verify(logger, never()).wtf(message, exception);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void logInit_wtf_testMode() throws MalformedURLException {
+    public void logInit_wtf_testMode() throws Exception {
         config.enableTestMode();
 
         Log log = new Log();

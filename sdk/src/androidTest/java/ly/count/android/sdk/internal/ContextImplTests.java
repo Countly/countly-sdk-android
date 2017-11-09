@@ -13,21 +13,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.net.MalformedURLException;
-
 import ly.count.android.sdk.Config;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.validateMockitoUsage;
-import static org.mockito.Mockito.verify;
 
 
 @RunWith(AndroidJUnit4.class)
 public class ContextImplTests {
     @Before
-    public void setupEveryTest() throws MalformedURLException{
+    public void setupEveryTest() throws Exception {
         Config config = new Config("http://www.serverurl.com", "1234");
         InternalConfig internalConfig = new InternalConfig(config);
 

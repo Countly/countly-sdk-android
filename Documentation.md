@@ -15,19 +15,20 @@ Also in most places method chaining is available.
  to be called if your application targets API levels 14+. Otherwise, you still need to 
  call them.
 * **Data storage** is now based on flat files, not on `SharedPreferences`. This increased
- performance 1000x in some rare cases. More importantly, Countly SDK doesn't block 
- main thread anymore.
-* **More efficient networking.** Countly will send less requests with more data in each 
+ performance 1000x in some cases. More importantly, Countly SDK doesn't block 
+ main thread for reading / storing data anymore.
+* **More efficient networking.** Countly sends less requests with more data in each 
 of them, thus increasing overall efficiency.  
 * **Programmatic session control.** Developer can now define what is a `Session`, when it
  starts and when it ends.
 * **Test mode** is an SDK-wide option which ensures you don't call SDK API methods with
 invalid data. In test mode Countly SDK will raise a `RuntimeException` whenever it's in
-inconsistent state. If test mode is off, Countly will ignore any inconsistencies and log
-an error instead of throwing an `Exception`.
-* **Logging** is also improved, so you can now manage log level from `DEBUG` to `ERROR`.
+inconsistent state. If test mode is off, Countly ignores any inconsistencies: it ignores
+ events with `NaN` as sum, ignores multiple calls to `Session` lifecycle methods, etc. Instead of
+ raising `RuntimeException`, it just logs an error.
+* **Logging** is also improved, so you can now manage log level from `DEBUG` to `OFF`.
 * **Modules.** Apart from standard logic, SDK is split into 7 modules responsible for 
- some part of it: `ModuleSessions` manages automatic session tracking, `ModuleCrash` 
+ each functional part of it: `ModuleSessions` manages automatic session tracking, `ModuleCrash` 
  detects and processes crashes, `ModuleAttribution` contains logic of attributing 
  application installation to a specific advertising campaign, etc. Each `Module` can 
  be replaced with your own implementation.
@@ -308,10 +309,10 @@ applications have very different `Session` definitions:
 * Utility apps.
 * Etc.
 
-For these apps Countly supports what we call programmatic session control. First, to enable it,
-you need to call `Config.enableProgrammaticSessionsControl()` at initialization phase. With
-this setting on Countly won't start, update or end any sessions, this is your responsibility now. But
-there are two exceptions: 
+For these apps Countly supports what we call programmatic session control. First, to disable automatic
+session tracking, you need to call `Config.disableFeatures(Config.Feature.AutoSessionTracking)` 
+at initialization phase. With this set up Countly won't start, update or end any sessions, 
+it's your responsibility now. But there are two exceptions: 
 * when device id changes (`Countly.login()`, `Countly.logout()`, etc.), current session will be ended;
 * when application crashes or when it exits abruptly, unfinished `Session` will be
 ended automatically on next app launch or within several seconds from a crash (in 2-process mode).

@@ -230,17 +230,19 @@ public class Log extends ModuleBase {
      * @param t exception to log along with {@code string}
      */
     public static void wtf(String string, Throwable t) {
-        if (logger != null) {
-            if (t == null) {
-                logger.wtf(string);
+        if (instance == null || instance.level == null || instance.level != Config.LoggingLevel.OFF) {
+            if (logger != null) {
+                if (t == null) {
+                    logger.wtf(string);
+                } else {
+                    logger.wtf(string, t);
+                }
             } else {
-                logger.wtf(string, t);
-            }
-        } else {
-            if (t == null) {
-                android.util.Log.wtf("Countly", string);
-            } else {
-                android.util.Log.wtf("Countly", string, t);
+                if (t == null) {
+                    android.util.Log.wtf("Countly", string);
+                } else {
+                    android.util.Log.wtf("Countly", string, t);
+                }
             }
         }
         if (instance != null && instance.testMode) {

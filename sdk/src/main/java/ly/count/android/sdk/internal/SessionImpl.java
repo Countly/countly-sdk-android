@@ -77,7 +77,7 @@ class SessionImpl implements Session, Storable {
      * Create session with current time as id.
      */
     protected SessionImpl(Context ctx) {
-        this.id = Device.uniqueTimestamp();
+        this.id = Device.uniformTimestamp();
         this.ctx = ctx;
     }
 
@@ -86,7 +86,7 @@ class SessionImpl implements Session, Storable {
      */
     protected SessionImpl(Context ctx, Long id) {
         this.ctx = ctx;
-        this.id = id == null ? Device.uniqueTimestamp() : id;
+        this.id = id == null ? Device.uniformTimestamp() : id;
     }
 
     @Override

@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,56 +80,52 @@ public class Core extends CoreModules {
      */
     public static Core init(Config config, android.app.Application application, boolean limited) throws IllegalArgumentException {
         if (instance == null) {
-            try {
-                instance = new Core();
-                Context ctx = new ContextImpl(application);
-                if (handler == null) {
-                    handler = new Handler(application.getMainLooper());
-                }
-                instance.config = instance.loadConfig(ctx);
-                if (instance.config == null) {
-                    if (config != null) {
-                        instance.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
-                    } else {
-                        instance = null;
-                        return null;
-                    }
-                } else if (config != null) {
-                    instance.config.setFrom(config);
-                }
-                instance.config.setLimited(limited);
-                instance.buildModules();
-
-                List<Module> failed = new ArrayList<>();
-                for (Module module : instance.modules) {
-                    try {
-                        module.init(instance.config);
-                        Utils.reflectiveSetField(module, "active", true);
-                    } catch (IllegalArgumentException | IllegalStateException e) {
-                        if (instance.config.isTestModeEnabled()) {
-                            throw e;
-                        } else {
-                            failed.add(module);
-                        }
-                    }
-                }
-                instance.modules.removeAll(failed);
-
-                instance.user = instance.loadUser(ctx);
-                if (instance.user == null) {
-                    instance.user = new UserImpl(ctx);
-                }
-
-                if (instance.config.isLimited()) {
-                    instance.onLimitedContextAcquired(application);
-                } else {
-                    instance.onContextAcquired(application);
-                }
-
-                return instance;
-            } catch (MalformedURLException e) {
-                throw new IllegalStateException(e);
+            instance = new Core();
+            Context ctx = new ContextImpl(application);
+            if (handler == null) {
+                handler = new Handler(application.getMainLooper());
             }
+            instance.config = instance.loadConfig(ctx);
+            if (instance.config == null) {
+                if (config != null) {
+                    instance.config = config instanceof InternalConfig ? (InternalConfig)config : new InternalConfig(config);
+                } else {
+                    instance = null;
+                    return null;
+                }
+            } else if (config != null) {
+                instance.config.setFrom(config);
+            }
+            instance.config.setLimited(limited);
+            instance.buildModules();
+
+            List<Module> failed = new ArrayList<>();
+            for (Module module : instance.modules) {
+                try {
+                    module.init(instance.config);
+                    Utils.reflectiveSetField(module, "active", true);
+                } catch (IllegalArgumentException | IllegalStateException e) {
+                    if (instance.config.isTestModeEnabled()) {
+                        throw e;
+                    } else {
+                        failed.add(module);
+                    }
+                }
+            }
+            instance.modules.removeAll(failed);
+
+            instance.user = instance.loadUser(ctx);
+            if (instance.user == null) {
+                instance.user = new UserImpl(ctx);
+            }
+
+            if (instance.config.isLimited()) {
+                instance.onLimitedContextAcquired(application);
+            } else {
+                instance.onContextAcquired(application);
+            }
+
+            return instance;
         }
         return instance;
     }
@@ -336,7 +331,7 @@ public class Core extends CoreModules {
     private InternalConfig loadConfig(Context ctx) {
         try {
             return Storage.read(ctx, new InternalConfig());
-        } catch (MalformedURLException e) {
+        } catch (IllegalArgumentException e) {
             L.wtf("Cannot happen");
             return null;
         }
@@ -359,7 +354,7 @@ public class Core extends CoreModules {
      * @return Future which resolves to {@link ly.count.android.sdk.Config.DID} instance if succeeded or to null if not
      */
     Future<Config.DID> acquireId(Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
-        return ((ModuleDeviceId)module(ModuleDeviceId.class)).acquireId(ctx, holder, fallbackAllowed, callback);
+        return ((ModuleDeviceId)module(Config.InternalFeature.DeviceId)).acquireId(ctx, holder, fallbackAllowed, callback);
     }
 
     public void login(android.content.Context context, String id) {
@@ -367,7 +362,7 @@ public class Core extends CoreModules {
             Log.wtf("Countly is not initialized");
         } else {
             Context ctx = new ContextImpl(context);
-            instance.module(ModuleDeviceId.class).login(ctx, id);
+            Utils.reflectiveCallStrict(null, instance.module(Config.InternalFeature.DeviceId), "login", Context.class, ctx, String.class, id);
         }
     }
 
@@ -376,7 +371,7 @@ public class Core extends CoreModules {
             Log.wtf("Countly is not initialized");
         } else {
             Context ctx = new ContextImpl(context);
-            instance.module(ModuleDeviceId.class).logout(ctx);
+            Utils.reflectiveCallStrict(null, instance.module(Config.InternalFeature.DeviceId), "logout", Context.class, ctx);
         }
     }
 

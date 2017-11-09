@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
@@ -60,11 +59,11 @@ public class BaseTests {
         this.config = Core.initialized();
     }
 
-    protected Config defaultConfig() throws MalformedURLException {
+    protected Config defaultConfig() throws Exception {
         return new Config(SERVER, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG);
     }
 
-    protected Config defaultConfigWithLogsForConfigTests() throws MalformedURLException {
+    protected Config defaultConfigWithLogsForConfigTests() throws Exception {
         InternalConfig config = new InternalConfig(defaultConfig());
         new Log().init(config);
         return config;

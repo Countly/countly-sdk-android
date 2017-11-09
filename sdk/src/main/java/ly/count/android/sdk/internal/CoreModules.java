@@ -1,8 +1,12 @@
 package ly.count.android.sdk.internal;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ly.count.android.sdk.Config;
 
@@ -15,32 +19,26 @@ public class CoreModules extends CoreStorage {
     private static Module testDummyModule = null;
 
     /**
-     * Mappings of {@link Config.Feature} to {@link Module} class.
-     * Changed by using {@link #setModuleMapping(Config.Feature, Class)}.
+     * Default mappings of {@link Config.Feature} to {@link Module} class.
      */
-    protected static final Map<Config.Feature, Class<? extends Module>> moduleMappings = new HashMap<>();
-
+    private static final Map<Config.Feat, Class<? extends Module>> DEFAULT_MAPPINGS = new HashMap<>();
     static {
-        setModuleMapping(Config.Feature.Crash, ModuleCrash.class);
-        setModuleMapping(Config.Feature.Attribution, ModuleAttribution.class);
-        setModuleMapping(Config.Feature.Push, ModulePush.class);
-        setModuleMapping(Config.Feature.AutomaticViewTracking, ModuleViews.class);
+        DEFAULT_MAPPINGS.put(Config.InternalFeature.DeviceId, ModuleDeviceId.class);
+        DEFAULT_MAPPINGS.put(Config.InternalFeature.Requests, ModuleRequests.class);
+        DEFAULT_MAPPINGS.put(Config.InternalFeature.Logs, Log.class);
+        DEFAULT_MAPPINGS.put(Config.Feature.AutoSessionTracking, ModuleSessions.class);
+        DEFAULT_MAPPINGS.put(Config.Feature.Crash, ModuleCrash.class);
+        DEFAULT_MAPPINGS.put(Config.Feature.Attribution, ModuleAttribution.class);
+        DEFAULT_MAPPINGS.put(Config.Feature.Push, ModulePush.class);
+        DEFAULT_MAPPINGS.put(Config.Feature.AutoViewTracking, ModuleViews.class);
     }
 
-    /**
-     * Change default mapping of {@link Config.Feature} to {@link Module} class.
-     *
-     * @param feature feature to map
-     * @param cls {@link Module} class to use for this feature
-     */
-    public static void setModuleMapping(Config.Feature feature, Class<? extends Module> cls) {
-        moduleMappings.put(feature, cls);
-    }
+    private final Map<Config.Feat, Class<? extends Module>> moduleMappings = new HashMap<>();
 
     /**
      * Create instances of {@link Module}s required by {@link #config}.
-     * Uses {@link #moduleMappings} for Feature - Class&lt;Module&gt; mapping to enable
-     * overriding by app developer.
+     * Uses {@link #moduleMappings} for {@link ly.count.android.sdk.Config.Feature} / {@link ly.count.android.sdk.Config.InternalFeature}
+     * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
      * @throws IllegalArgumentException in case some {@link Module} finds {@link #config} inconsistent.
      * @throws IllegalStateException when this module is run second time on the same {@code Core} instance.
@@ -50,32 +48,53 @@ public class CoreModules extends CoreStorage {
             throw new IllegalStateException("Modules can be built only once per InternalConfig instance");
         }
 
-        modules.add(new ModuleRequests());
-        modules.add(new ModuleDeviceId());
+        moduleMappings.clear();
+        moduleMappings.putAll(DEFAULT_MAPPINGS);
+
+        for (Config.Feature feature : Config.Feature.values()) {
+            Class<? extends Module> override = config.getModuleOverride(feature);
+            if (override != null) {
+                moduleMappings.put(feature, override);
+            }
+        }
+
+        // local map for easy ordering
+        Map<Config.Feat, Class<? extends Module>> mappings = new HashMap<>(moduleMappings);
+
+        // local set for easy order manipulation
+        Set<Config.Feature> features = new HashSet<>(config.getFeatures());
+
+        // standard required internal features
+        modules.add(instantiateModule(mappings.remove(Config.InternalFeature.Requests)));
+        modules.add(instantiateModule(mappings.remove(Config.InternalFeature.DeviceId)));
 
         if (config.getLoggingLevel() != Config.LoggingLevel.OFF) {
-            modules.add(new Log());
+            modules.add(instantiateModule(mappings.remove(Config.InternalFeature.Logs)));
         }
 
-        if (!config.isProgrammaticSessionsControl()) {
-            modules.add(new ModuleSessions());
+        // make sure ModuleSessions goes first
+        if (features.contains(Config.Feature.AutoSessionTracking)) {
+            features.remove(Config.Feature.AutoSessionTracking);
+            modules.add(instantiateModule(mappings.remove(Config.Feature.AutoSessionTracking)));
         }
 
+        // dummy module for tests if any
         if (testDummyModule != null) {
             modules.add(testDummyModule);
         }
 
-        for (Config.Feature f : config.getFeatures()) {
-            Class<? extends Module> cls = moduleMappings.get(f);
+        // now adding all other features irrespective of order
+        for (Config.Feature f : features) {
+            Class<? extends Module> cls = mappings.get(f);
             if (cls == null) {
                 L.wtf("No module class for feature " + f);
             } else {
-                Module module = instantiateModule(moduleMappings.get(f));
-                if (module != null) {
-                    modules.add(module);
-                }
+                modules.add(instantiateModule(mappings.get(f)));
             }
         }
+
+        // in case we couldn't instantiate some module, there will be null
+        modules.remove(null);
     }
 
     /**
@@ -113,7 +132,7 @@ public class CoreModules extends CoreStorage {
      * @param feature to get a {@link Module} instance for
      * @return {@link Module} instance or null if no such module is instantiated
      */
-    protected Module module(Config.Feature feature) {
+    protected Module module(Config.Feat feature) {
         return module(moduleMappings.get(feature));
     }
 

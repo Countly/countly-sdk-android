@@ -8,12 +8,14 @@ import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import ly.count.android.sdk.internal.Byteable;
 import ly.count.android.sdk.internal.Log;
+import ly.count.android.sdk.internal.Module;
 import ly.count.android.sdk.internal.Utils;
 
 /**
@@ -22,19 +24,39 @@ import ly.count.android.sdk.internal.Utils;
 public class Config {
 
     /**
+     * Feature interface to replace enum inheritance of {@link Feature} & {@link InternalFeature}.
+     */
+    public interface Feat {
+        int getIndex();
+    }
+
+    /**
      * Enumeration of possible features of Countly SDK
      */
-    public enum Feature {
+    public enum Feature implements Feat {
+        AutoSessionTracking(1),
         Crash(1 << 1),
         Push(1 << 2),
         Attribution(1 << 3),
         StarRating(1 << 4),
-        AutomaticViewTracking(1 << 5),
+        AutoViewTracking(1 << 5),
         PerformanceMonitoring(1 << 6);
 
         private final int index;
 
         Feature(int index){ this.index = index; }
+
+        public int getIndex(){ return index; }
+    }
+
+    public enum InternalFeature implements Feat {
+        DeviceId(1 << 10),
+        Requests(1 << 11),
+        Logs(1 << 12);
+
+        private final int index;
+
+        InternalFeature(int index){ this.index = index; }
 
         public int getIndex(){ return index; }
     }
@@ -340,13 +362,6 @@ public class Config {
     protected int sessionCooldownPeriod = 30;
 
     /**
-     * Take control of the way Countly detects sessions and turn off default
-     * {@link android.app.Activity}-based mechanism (first activity start starts session,
-     * last activity stop stops it).
-     */
-    protected boolean programmaticSessionsControl = false;
-
-    /**
      * Enable test mode:
      * <ul>
      *     <li>Raise exceptions when SDK is in inconsistent state as opposed to silently
@@ -371,36 +386,64 @@ public class Config {
     protected String pushActivityClass = null;
 
     /**
+     * Feature-Class map which sets Module overrides.
+     */
+    protected Map<Feature, Class<? extends Module>> moduleOverrides = null;
+
+    /**
      * The only Config constructor.
      *
      * @param serverURL valid {@link URL} of Countly server
      * @param serverAppKey App Key from Management -> Applications section of your Countly Dashboard
-     * @throws MalformedURLException in case {@code serverURL} is not a valid URL
      */
-    public Config(String serverURL, String serverAppKey) throws MalformedURLException {
+    public Config(String serverURL, String serverAppKey) {
         //the last '/' should be deleted
         if(serverURL != null && serverURL.length() > 0 && serverURL.charAt(serverURL.length() - 1) == '/') {
             serverURL = serverURL.substring(0, serverURL.length() - 1);
         }
 
-        this.serverURL = new URL(serverURL);
+        try {
+            this.serverURL = new URL(serverURL);
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
         this.serverAppKey = serverAppKey;
         this.features = new HashSet<>();
+        this.features.add(Feature.AutoSessionTracking);
     }
 
     /**
-     * Enable one feature of Countly SDK instead of {@link #setFeatures(Feature...)}.
+     * Enable one or many features of Countly SDK instead of {@link #setFeatures(Feature...)}.
      *
-     * @param feature feature to enable
+     * @param features features to enable
      * @return {@code this} instance for method chaining
      */
-    public Config addFeature(Feature feature) {
-        this.features.add(feature);
+    public Config enableFeatures(Feature... features) {
+        if (features == null) {
+            Log.wtf("Features array cannot be null");
+        } else {
+            this.features.addAll(Arrays.asList(features));
+        }
         return this;
     }
 
     /**
-     * Set enabled features all at once instead of {@link #addFeature(Feature)}.
+     * Disable one or many features of Countly SDK instead of {@link #setFeatures(Feature...)}.
+     *
+     * @param features features to disable
+     * @return {@code this} instance for method chaining
+     */
+    public Config disableFeatures(Feature... features) {
+        if (features == null) {
+            Log.wtf("Features array cannot be null");
+        } else {
+            this.features.removeAll(Arrays.asList(features));
+        }
+        return this;
+    }
+
+    /**
+     * Set enabled features all at once instead of {@link #enableFeatures(Feature...)}.
      *
      * @param features variable args of features to enable
      * @return {@code this} instance for method chaining
@@ -619,31 +662,6 @@ public class Config {
     }
 
     /**
-     * Take control of the way Countly detects sessions and turn off default
-     * {@link android.app.Activity}-based mechanism (first activity start starts session,
-     * last activity stop stops it).
-     *
-     * @return {@code this} instance for method chaining
-     */
-    public Config enableProgrammaticSessionsControl() {
-        this.programmaticSessionsControl = true;
-        return this;
-    }
-
-    /**
-     * Take control of the way Countly detects sessions and turn off default
-     * {@link android.app.Activity}-based mechanism (first activity start starts session,
-     * last activity stop stops it).
-     *
-     * @param programmaticSessionsControl whether to turn off Countly way of session handling or not
-     * @return {@code this} instance for method chaining
-     */
-    public Config setProgrammaticSessionsControl(boolean programmaticSessionsControl) {
-        this.programmaticSessionsControl = programmaticSessionsControl;
-        return this;
-    }
-
-    /**
      * Change name of SDK used in HTTP requests
      *
      * @param sdkName new name of SDK
@@ -790,6 +808,25 @@ public class Config {
     }
 
     /**
+     * Override some {@link Module} functionality with your own class.
+     *
+     * @param feature {@link Feature} to override
+     * @param cls {@link Class} to use instead of Countly SDK standard class
+     * @return {@code this} instance for method chaining
+     */
+    public Config overrideModule(Feature feature, Class<? extends Module> cls) {
+        if (feature == null || cls == null) {
+            Log.wtf("Feature & class cannot be null");
+        } else {
+            if (moduleOverrides == null) {
+                moduleOverrides = new HashMap<>();
+            }
+            moduleOverrides.put(feature, cls);
+        }
+        return this;
+    }
+
+    /**
      * Getter for {@link #serverURL}
      * @return {@link #serverURL} value
      */
@@ -810,7 +847,15 @@ public class Config {
      * @return {@link #features} value
      */
     public Set<Feature> getFeatures() {
-        return features;
+        return new HashSet<>(features);
+    }
+
+    /**
+     * Whether a feature is enabled in this config, that is exists in {@link #features}
+     * @return {@code true} if {@link #features} contains supplied argument, {@code false} otherwise
+     */
+    public boolean isFeatureEnabled(Feature feature) {
+        return features.contains(feature);
     }
 
     /**
@@ -887,14 +932,6 @@ public class Config {
     }
 
     /**
-     * Getter for {@link #programmaticSessionsControl}
-     * @return {@link #programmaticSessionsControl} value
-     */
-    public boolean isProgrammaticSessionsControl() {
-        return programmaticSessionsControl;
-    }
-
-    /**
      * Getter for {@link #testMode}
      * @return {@link #testMode} value
      */
@@ -968,6 +1005,14 @@ public class Config {
      */
     public String getPushActivityClass() {
         return pushActivityClass;
+    }
+
+    /**
+     * Getter for {@link #moduleOverrides}
+     * @return {@link #moduleOverrides} value for {@link Feature} specified
+     */
+    public Class<? extends Module> getModuleOverride(Feature feature) {
+        return moduleOverrides == null ? null : moduleOverrides.get(feature);
     }
 }
 

@@ -108,7 +108,7 @@ public class Countly extends CountlyLifecycle {
      * Logout function to make current user anonymous (that is with random id according to
      * {@link Config#deviceIdStrategy} and such). Obviously makes sense only after a call to {@link #login(Context, String)}.
      *
-     * Closes current session, opens new one if {@link Config#programmaticSessionsControl} is off, acquires device id.
+     * Closes current session, opens new one if {@link ly.count.android.sdk.Config.Feature#AutoSessionTracking} is off, acquires device id.
      *
      * @param context Context to run in
      */

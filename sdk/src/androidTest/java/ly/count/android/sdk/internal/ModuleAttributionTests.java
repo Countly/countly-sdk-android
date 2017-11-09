@@ -10,10 +10,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.powermock.reflect.Whitebox;
-
-import java.net.MalformedURLException;
-import java.util.List;
 
 import ly.count.android.sdk.Config;
 
@@ -44,8 +40,8 @@ public class ModuleAttributionTests extends BaseTests {
     }
 
     @Override
-    protected Config defaultConfig() throws MalformedURLException {
-        return super.defaultConfig().addFeature(Config.Feature.Attribution);
+    protected Config defaultConfig() throws Exception {
+        return super.defaultConfig().enableFeatures(Config.Feature.Attribution);
     }
 
     @Test

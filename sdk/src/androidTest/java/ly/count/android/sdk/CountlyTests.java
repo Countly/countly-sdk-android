@@ -1,27 +1,12 @@
 package ly.count.android.sdk;
 
-import android.app.Application;
-import android.content.Context;
 import android.support.test.runner.AndroidJUnit4;
-
-import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
-import java.util.List;
-
-import ly.count.android.sdk.internal.Core;
-import ly.count.android.sdk.internal.CoreTests;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.validateMockitoUsage;
-import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class CountlyTests {
@@ -30,7 +15,7 @@ public class CountlyTests {
     private Config config;
 
     @Before
-    public void setupEveryTest() throws MalformedURLException{
+    public void setupEveryTest() throws Exception{
         config = new Config(serverUrl, serverAppKey);
     }
 

@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
+
 import java.util.List;
 
 import ly.count.android.sdk.Config;
@@ -24,14 +24,14 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Override
-    protected Config defaultConfig() throws MalformedURLException {
-        return super.defaultConfig().disableTestMode().addFeature(Config.Feature.Crash);
+    protected Config defaultConfig() throws Exception {
+        return super.defaultConfig().disableTestMode().enableFeatures(Config.Feature.Crash);
     }
 
     @Test
     public void constructor_empty(){
-        final long allowance = 1000000000;
-        long time = System.nanoTime();
+        final long allowance = 3;
+        long time = Device.uniqueTimestamp();
         SessionImpl session = new SessionImpl(ctx);
 
         long diff = session.getId() - time;
@@ -68,7 +68,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void beginEndSession_doubleBegin() throws MalformedURLException{
+    public void beginEndSession_doubleBegin() throws Exception{
         long sessionID = 12345;
         SessionImpl session = new SessionImpl(ctx, sessionID);
 
@@ -136,7 +136,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void beginAfterEnd() throws MalformedURLException {
+    public void beginAfterEnd() throws Exception {
         long timeBegin = 123L;
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
@@ -153,7 +153,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void beginAfterEndSet() throws MalformedURLException {
+    public void beginAfterEndSet() throws Exception {
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
 
@@ -165,7 +165,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void endedTwice() throws MalformedURLException {
+    public void endedTwice() throws Exception {
         long timeBegin = 123L;
         long timeEnd = 345L;
         long timeEndSecond = 678L;
@@ -255,7 +255,7 @@ public class SessionImplTests extends BaseTests {
 
 
     @Test
-    public void update_simple() throws MalformedURLException {
+    public void update_simple() throws Exception {
         long timeBegin = 123L;
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);

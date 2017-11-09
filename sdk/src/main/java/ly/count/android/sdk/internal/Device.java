@@ -47,7 +47,38 @@ public class Device {
     static final Double MS_IN_SECOND = 1000d;
     static final Long BYTES_IN_MB = 1024L * 1024;
 
-    static class TimeUniquenessEnsurer {
+    /**
+     * General interface for time generators.
+     */
+    public interface TimeGenerator {
+        long timestamp();
+    }
+
+    /**
+     * Always increasing timer.
+     */
+    static class UniformTimeGenerator implements TimeGenerator{
+        private Long last;
+
+        @Override
+        public synchronized long timestamp() {
+            long ms = System.currentTimeMillis();
+            if (last == null) {
+                last = ms;
+            } else if (last >= ms) {
+                last = last + 1;
+                return last;
+            } else {
+                last = ms;
+            }
+            return ms;
+        }
+    }
+
+    /**
+     * Unique timer, keeps last 10 returned values in memory.
+     */
+    static class UniqueTimeGenerator implements TimeGenerator {
         List<Long> lastTsMs = new ArrayList<>(10);
         long addition = 0;
 
@@ -55,7 +86,7 @@ public class Device {
             return System.currentTimeMillis() + addition;
         }
 
-        synchronized long uniqueTimestamp() {
+        public synchronized long timestamp() {
             long ms = currentTimeMillis();
 
             // change time back case
@@ -78,7 +109,9 @@ public class Device {
             return ms;
         }
     }
-    private static TimeUniquenessEnsurer timeGenerator = new TimeUniquenessEnsurer();
+
+    private static TimeGenerator uniqueTimer = new UniqueTimeGenerator();
+    private static TimeGenerator uniformTimer = new UniformTimeGenerator();
 
     /**
      * Get operation system name
@@ -301,7 +334,16 @@ public class Device {
      * @return unique time in ms
      */
     static synchronized long uniqueTimestamp() {
-        return timeGenerator.uniqueTimestamp();
+        return uniqueTimer.timestamp();
+    }
+
+    /**
+     * Wraps {@link System#currentTimeMillis()} to return always rising values.
+     *
+     * @return uniform time in ms
+     */
+    static synchronized long uniformTimestamp() {
+        return uniqueTimer.timestamp();
     }
 
     /**

@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
@@ -42,16 +42,16 @@ final class InternalConfig extends Config implements Storable {
     /**
      * Shouldn't be used!
      */
-    InternalConfig(String url, String appKey) throws MalformedURLException {
+    InternalConfig(String url, String appKey) throws IllegalArgumentException {
         super(url, appKey);
         throw new IllegalStateException("InternalConfig(url, appKey) should not be used");
     }
 
-    InternalConfig() throws MalformedURLException {
+    InternalConfig() throws IllegalArgumentException {
         super("http://count.ly", "not a key");
     }
 
-    InternalConfig(Config config) throws MalformedURLException {
+    InternalConfig(Config config) throws IllegalArgumentException {
         //todo double check, should it protect against nulls?
         super(config.getServerURL().toString(), config.getServerAppKey());
         setFrom(config);
@@ -142,10 +142,16 @@ final class InternalConfig extends Config implements Storable {
             stream.writeInt(sendUpdateEachSeconds);
             stream.writeInt(sendUpdateEachEvents);
             stream.writeInt(sessionCooldownPeriod);
-            stream.writeBoolean(programmaticSessionsControl);
             stream.writeBoolean(testMode);
             stream.writeInt(crashReportingANRTimeout);
             stream.writeObject(pushActivityClass);
+            stream.writeInt(moduleOverrides == null ? 0 : moduleOverrides.size());
+            if (moduleOverrides != null && moduleOverrides.size() > 0) {
+                for (Feature feature : moduleOverrides.keySet()) {
+                    stream.writeInt(feature.getIndex());
+                    stream.writeUTF(moduleOverrides.get(feature).getName());
+                }
+            }
             stream.writeInt(dids.size());
             for (DID did : dids) {
                 byte[] b = did.store();
@@ -178,6 +184,7 @@ final class InternalConfig extends Config implements Storable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean restore(byte[] data) {
         ByteArrayInputStream bytes = null;
         ObjectInputStream stream = null;
@@ -228,10 +235,34 @@ final class InternalConfig extends Config implements Storable {
             sendUpdateEachSeconds = stream.readInt();
             sendUpdateEachEvents = stream.readInt();
             sessionCooldownPeriod = stream.readInt();
-            programmaticSessionsControl = stream.readBoolean();
             testMode = stream.readBoolean();
             crashReportingANRTimeout = stream.readInt();
             pushActivityClass = (String) stream.readObject();
+
+            l = stream.readInt();
+            if (l > 0) {
+                moduleOverrides = new HashMap<>();
+                while (l-- > 0) {
+                    Feature feature = null;
+                    int f = stream.readInt();
+                    String cls = stream.readUTF();
+                    for (Feature v : Feature.values()) {
+                        if ((v.getIndex() & f) == f) {
+                            feature = v;
+                            break;
+                        }
+                    }
+                    if (feature == null) {
+                        Log.wtf("Cannot get feature for feature override");
+                    } else {
+                        try {
+                            moduleOverrides.put(feature, (Class<? extends Module>) Class.forName(cls));
+                        } catch (Throwable t) {
+                            Log.wtf("Cannot get class " + cls + " for feature override " + feature);
+                        }
+                    }
+                }
+            }
 
             dids.clear();
             l = stream.readInt();

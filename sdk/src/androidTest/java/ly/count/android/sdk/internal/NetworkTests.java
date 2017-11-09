@@ -4,39 +4,23 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
-import org.bouncycastle.ocsp.Req;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.User;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-
-import static android.support.test.InstrumentationRegistry.getContext;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
 public class NetworkTests extends BaseTests {
@@ -47,7 +31,7 @@ public class NetworkTests extends BaseTests {
     public MockWebServer server;
 
     @Override
-    protected Config defaultConfig() throws MalformedURLException {
+    protected Config defaultConfig() throws Exception {
         InternalConfig config = new InternalConfig(new Config("http://localhost:" + PORT, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG));
         config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
         return config;

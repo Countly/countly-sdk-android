@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,7 +22,7 @@ public class EventImplTests {
     private Context ctx;
 
     @Before
-    public void setupEveryTest() throws MalformedURLException {
+    public void setupEveryTest() throws Exception {
         String serverUrl = "http://www.serverurl.com";
         String serverAppKey = "1234";
         new Log().init(new InternalConfig(new Config(serverUrl, serverAppKey).enableTestMode()));

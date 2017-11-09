@@ -22,7 +22,7 @@ public class CrashImpl implements Crash, Storable {
     private final JSONObject data;
 
     CrashImpl() {
-        this(System.nanoTime());
+        this(Device.uniformTimestamp());
     }
 
     CrashImpl(Long id) {

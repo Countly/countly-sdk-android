@@ -9,7 +9,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 
 @RunWith(AndroidJUnit4.class)
@@ -18,7 +17,7 @@ public class RequestTests {
     private URL url;
 
     @Before
-    public void setupEveryTest() throws MalformedURLException{
+    public void setupEveryTest() throws Exception{
         url = new URL(urlString);
     }
 
@@ -97,13 +96,13 @@ public class RequestTests {
 
 
     @Test
-    public void isGettable_ParamsEmptyUnderLimit() throws MalformedURLException, Exception{
+    public void isGettable_ParamsEmptyUnderLimit() throws Exception, Exception{
         Request request = Whitebox.invokeConstructor(Request.class, "");
         Assert.assertEquals(true, request.isGettable(url, 0));
     }
 
     @Test
-    public void isGettable_ParamsFilledAboveLimitLarge() throws MalformedURLException, Exception{
+    public void isGettable_ParamsFilledAboveLimitLarge() throws Exception, Exception{
         StringBuilder sbParams = new StringBuilder();
 
         for(int a = 0 ; a < 1000 ; a++) {

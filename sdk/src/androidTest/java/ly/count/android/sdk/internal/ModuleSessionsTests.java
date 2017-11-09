@@ -11,6 +11,8 @@ import org.powermock.reflect.Whitebox;
 
 import java.util.List;
 
+import ly.count.android.sdk.Config;
+
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -32,9 +34,9 @@ public class ModuleSessionsTests extends BaseTests {
     public void init_withSessionControl() throws Exception {
         ModuleSessions moduleSessions = new ModuleSessions();
         config = new InternalConfig(defaultConfig());
-        config.enableProgrammaticSessionsControl();
+        config.disableFeatures(Config.Feature.AutoSessionTracking);
 
-        Assert.assertEquals(true, config.isProgrammaticSessionsControl());
+        Assert.assertEquals(false, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
         moduleSessions.init(config);
     }
 
@@ -42,7 +44,7 @@ public class ModuleSessionsTests extends BaseTests {
     public void init_withoutSessionControl() throws Exception {
         ModuleSessions moduleSessions = new ModuleSessions();
         config = new InternalConfig(defaultConfig());
-        Assert.assertEquals(false, config.isProgrammaticSessionsControl());
+        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
         moduleSessions.init(config);
     }
 

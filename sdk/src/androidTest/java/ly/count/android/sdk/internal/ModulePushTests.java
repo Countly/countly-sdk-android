@@ -5,21 +5,16 @@ import android.support.annotation.NonNull;
 
 import junit.framework.Assert;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
 
-import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -30,8 +25,8 @@ public class ModulePushTests extends BaseTests {
     private ModuleDeviceId moduleDeviceId = null;
 
     @Override
-    protected Config defaultConfig() throws MalformedURLException {
-        return super.defaultConfig().addFeature(Config.Feature.Push);
+    protected Config defaultConfig() throws Exception {
+        return super.defaultConfig().enableFeatures(Config.Feature.Push);
     }
 
     @Test(expected = IllegalStateException.class)

@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.net.MalformedURLException;
+
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
@@ -24,8 +24,8 @@ public class ModuleViewsTests extends BaseTests {
     private static final String secondViewName = "secondViewName";
 
     @Override
-    protected Config defaultConfig() throws MalformedURLException {
-        return super.defaultConfig().addFeature(Config.Feature.AutomaticViewTracking);
+    protected Config defaultConfig() throws Exception {
+        return super.defaultConfig().enableFeatures(Config.Feature.AutoViewTracking);
     }
 
     @Test

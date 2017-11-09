@@ -270,12 +270,12 @@ public class ModuleDeviceIdTests extends BaseTests {
         Utils.reflectiveSetField(ModuleDeviceId.class, "testSleep", 2000L);
 
         setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
-        moduleDeviceId = module(ModuleDeviceId.class, false);
+        moduleDeviceId = (ModuleDeviceId) core.module(Config.InternalFeature.DeviceId);
 
         Assert.assertNull(Utils.reflectiveGetField(core, "session"));
 
         //  make ModuleSessions begin a session
-        core.module(ModuleSessions.class).onActivityStarted(ctx);
+        core.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
         Assert.assertNotNull(Utils.reflectiveGetField(core, "session"));
 
         // ensure session is written

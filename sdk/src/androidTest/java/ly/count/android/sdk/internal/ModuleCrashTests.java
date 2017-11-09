@@ -1,14 +1,9 @@
 package ly.count.android.sdk.internal;
 
-import android.os.Handler;
-import android.os.Looper;
-
 import junit.framework.Assert;
 
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
-
-import java.net.MalformedURLException;
 
 import ly.count.android.sdk.Config;
 
@@ -16,8 +11,8 @@ import static android.support.test.InstrumentationRegistry.getContext;
 
 public class ModuleCrashTests extends BaseTests {
     @Override
-    protected Config defaultConfig() throws MalformedURLException {
-        return super.defaultConfig().addFeature(Config.Feature.Crash);
+    protected Config defaultConfig() throws Exception {
+        return super.defaultConfig().enableFeatures(Config.Feature.Crash);
     }
 
     @Test(expected = StackOverflowError.class)
@@ -84,7 +79,7 @@ public class ModuleCrashTests extends BaseTests {
 //        Context ctx = new ContextImpl(getContext());
 //        Core.purgeInternalStorage(ctx, null);
 //
-//        final Config config = TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG).addFeature(Config.Feature.Crash);
+//        final Config config = TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG).enableFeatures(Config.Feature.Crash);
 //        Core.initForApplication(config, getContext());
 //        Core.instance.onContextAcquired(TestingUtilityInternal.mockApplication(getContext()));
 //

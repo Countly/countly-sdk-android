@@ -16,7 +16,7 @@ import ly.count.android.sdk.Session;
  *     <li>Module cannot acquire instance or call another Module.</li>
  * </ul>
  */
-interface Module {
+public interface Module {
     /**
      * All initialization must be done in this method, not constructor.
      * This method is guaranteed to be run right after constructor with no module-related actions in between.

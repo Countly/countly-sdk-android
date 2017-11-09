@@ -2,8 +2,6 @@ package ly.count.android.demo;
 
 import android.app.Application;
 
-import java.net.MalformedURLException;
-
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Countly;
 
@@ -21,16 +19,12 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        try {
-            Config config = new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
-                    .enableTestMode()
-                    .setLoggingLevel(Config.LoggingLevel.DEBUG)
-                    .setFeatures(Config.Feature.Push, Config.Feature.Crash, Config.Feature.AutomaticViewTracking)
-                    .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
+        Config config = new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
+                .enableTestMode()
+                .setLoggingLevel(Config.LoggingLevel.DEBUG)
+                .setFeatures(Config.Feature.Push, Config.Feature.Crash, Config.Feature.AutoViewTracking)
+                .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
 
-            Countly.init(this, config);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        Countly.init(this, config);
     }
 }

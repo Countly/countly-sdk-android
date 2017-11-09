@@ -4,12 +4,9 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import ly.count.android.sdk.Config;
@@ -21,27 +18,18 @@ public class InternalConfigTests {
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";
 
-    @Before
-    public void setupEveryTest() throws MalformedURLException {
-
-    }
-
-    @After
-    public void cleanupEveryTests() {
-    }
-
     @Test(expected = IllegalStateException.class)
-    public void constructor_simple() throws MalformedURLException{
+    public void constructor_simple() throws Exception{
         InternalConfig internalConfig = new InternalConfig(serverUrl, serverAppKey);
     }
 
     @Test (expected = NullPointerException.class)
-    public void constructor_null() throws MalformedURLException{
+    public void constructor_null() throws Exception{
         InternalConfig internalConfig = new InternalConfig(null);
     }
 
     @Test
-    public void constructor_fromConfig() throws MalformedURLException{
+    public void constructor_fromConfig() throws Exception{
         Config config = new Config(serverUrl, serverAppKey);
         config.setFeatures(Config.Feature.Push, Config.Feature.Crash);
         config.setLoggingTag("tag");
@@ -51,7 +39,6 @@ public class InternalConfigTests {
         config.enableUsePOST();
         config.setSendUpdateEachSeconds(123);
         config.setSendUpdateEachEvents(222);
-        config.setProgrammaticSessionsControl(true);
         config.enableTestMode();
         config.setCrashReportingANRTimeout(1);
 
@@ -72,13 +59,12 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getCertificatePins(), internalConfig.getCertificatePins());
         Assert.assertEquals(config.getSendUpdateEachSeconds(), internalConfig.getSendUpdateEachSeconds());
         Assert.assertEquals(config.getSendUpdateEachEvents(), internalConfig.getSendUpdateEachEvents());
-        Assert.assertEquals(config.isProgrammaticSessionsControl(), internalConfig.isProgrammaticSessionsControl());
         Assert.assertEquals(config.isTestModeEnabled(), internalConfig.isTestModeEnabled());
         Assert.assertEquals(config.getCrashReportingANRTimeout(), internalConfig.getCrashReportingANRTimeout());
     }
 
     @Test
-    public void serialization() throws MalformedURLException{
+    public void serialization() throws Exception{
         Config config = new Config(serverUrl, serverAppKey);
         config.setFeatures(Config.Feature.Push, Config.Feature.Crash);
         config.setLoggingTag("tag");
@@ -93,7 +79,6 @@ public class InternalConfigTests {
         config.addCertificatePin("cert-pin");
         config.setSendUpdateEachSeconds(123);
         config.setSendUpdateEachEvents(222);
-        config.setProgrammaticSessionsControl(true);
         config.setCrashReportingANRTimeout(2);
         config.enableTestMode();
 
@@ -126,7 +111,6 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getCertificatePins(), internalConfig.getCertificatePins());
         Assert.assertEquals(config.getSendUpdateEachSeconds(), internalConfig.getSendUpdateEachSeconds());
         Assert.assertEquals(config.getSendUpdateEachEvents(), internalConfig.getSendUpdateEachEvents());
-        Assert.assertEquals(config.isProgrammaticSessionsControl(), internalConfig.isProgrammaticSessionsControl());
         Assert.assertEquals(config.isTestModeEnabled(), internalConfig.isTestModeEnabled());
         Assert.assertEquals(config.getCrashReportingANRTimeout(), internalConfig.getCrashReportingANRTimeout());
 

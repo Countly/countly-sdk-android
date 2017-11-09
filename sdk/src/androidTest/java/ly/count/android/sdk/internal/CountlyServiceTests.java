@@ -4,7 +4,6 @@ import android.content.Intent;
 
 import junit.framework.Assert;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
@@ -12,7 +11,6 @@ import java.util.List;
 
 import ly.count.android.sdk.Config;
 
-import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
@@ -121,7 +119,7 @@ public class CountlyServiceTests extends BaseTests {
 
     @Test
     public void receiving_crash() throws Exception {
-        setUpApplication(defaultConfig().addFeature(Config.Feature.Crash));
+        setUpApplication(defaultConfig().enableFeatures(Config.Feature.Crash));
         SessionImpl session = new SessionImpl(ctx);
         session.begin();
 

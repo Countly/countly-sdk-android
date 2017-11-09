@@ -20,15 +20,15 @@ public class ModuleSessions extends ModuleBase {
     private ScheduledExecutorService executor = null;
 
     /**
-     * @throws IllegalArgumentException when programmaticSessionsControl is on since this module is
-     * for a case when it's off
+     * @throws IllegalArgumentException when {@link ly.count.android.sdk.Config.Feature#AutoSessionTracking}
+     * is off since this module is for a case when it's on
      */
     @Override
     public void init(InternalConfig config) throws IllegalStateException {
         super.init(config);
-        if (config.isProgrammaticSessionsControl()) {
+        if (!config.isFeatureEnabled(Config.Feature.AutoSessionTracking)) {
             // should never happen actually
-            throw new IllegalStateException("ModuleSessions must not be initialized when programmaticSessionsControl is on");
+            throw new IllegalStateException("ModuleSessions must not be initialized when AutoSessionTracking is off");
         }
         updateInterval = config.getSendUpdateEachSeconds();
     }

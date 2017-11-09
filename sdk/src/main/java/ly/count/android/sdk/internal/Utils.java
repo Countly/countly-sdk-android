@@ -134,6 +134,8 @@ public class Utils {
 
     public Object _reflectiveCall(String className, Object instance, String methodName, Object ...args) {
         try {
+            L.d("cls " + className + ", inst " + instance);
+            className = className == null && instance != null ? instance.getClass().getName() : className;
             Class<?> cls = instance == null ? Class.forName(className) : instance.getClass();
             Class<?> types[] = null;
 
