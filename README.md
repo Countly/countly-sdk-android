@@ -18,7 +18,7 @@ Need help? See [Countly SDK for Android](http://resources.count.ly/v1.0/docs/cou
 
 We have a beautiful Android application ([push notification sample app](https://github.com/Countly/countly-sdk-android/tree/master/app-messaging) and [analytics sample app](https://github.com/Countly/countly-sdk-android/tree/master/app)) which includes this SDK. Feel free to use this for testing purposes as you develop your application.
 
-![Android-sample-app](http://count.ly/wp-content/uploads/2017/01/android-sample-app.png)
+![Android-sample-app](https://count.ly/github/countly-android-sample-app.png)
 
 ### Other Github resources ###
 
