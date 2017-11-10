@@ -1,3 +1,6 @@
+17.09.2
+  * Adding option to override the icon for push notifications
+
 17.09.1
   * Adding additional calls for manipulating the star rating dialog
 
