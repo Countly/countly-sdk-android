@@ -20,11 +20,11 @@ public class MessagingAdapter {
         return messagingAvailable;
     }
 
-    public static boolean init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames, Boolean disableUI, Integer customIconResId) {
+    public static boolean init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames, Boolean disableUI, Integer customIconResId, Boolean addMetadataToPushIntents) {
         try {
             final Class<?> cls = Class.forName(MESSAGING_CLASS_NAME);
-            final Method method = cls.getMethod("init", Activity.class, Class.class, String.class, String[].class, Boolean.class, Integer.class);
-            method.invoke(null, activity, activityClass, sender, buttonNames, disableUI, customIconResId);
+            final Method method = cls.getMethod("init", Activity.class, Class.class, String.class, String[].class, Boolean.class, Integer.class, Boolean.class);
+            method.invoke(null, activity, activityClass, sender, buttonNames, disableUI, customIconResId, addMetadataToPushIntents);
             return true;
         }
         catch (Throwable logged) {

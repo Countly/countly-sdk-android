@@ -134,6 +134,9 @@ public class Countly {
     //star rating
     private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
 
+    //push related
+    private boolean addMetadataToPushIntents = false;// a flag that indicates if metadata should be added to push notification intents
+
     //internal flags
     private boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
 
@@ -405,7 +408,7 @@ public class Countly {
             throw new IllegalStateException("you need to include countly-messaging-sdk-android library instead of countly-sdk-android if you want to use Countly Messaging");
         } else {
             messagingMode_ = mode;
-            if (!MessagingAdapter.init(activity, activityClass, projectID, buttonNames, disableUI, customIconResId)) {
+            if (!MessagingAdapter.init(activity, activityClass, projectID, buttonNames, disableUI, customIconResId, addMetadataToPushIntents)) {
                 throw new IllegalStateException("couldn't initialize Countly Messaging");
             }
         }
@@ -1414,7 +1417,6 @@ public class Countly {
         return shouldIgnoreCrawlers;
     }
 
-
     /**
      * Returns the device id used by countly for this device
      * @return device ID
@@ -1436,6 +1438,11 @@ public class Countly {
         }
 
         return connectionQueue_.getDeviceId().getType();
+    }
+
+    public synchronized Countly setPushIntentAddMetadata(boolean shouldAddMetadata) {
+        addMetadataToPushIntents = shouldAddMetadata;
+        return this;
     }
 
     // for unit testing
