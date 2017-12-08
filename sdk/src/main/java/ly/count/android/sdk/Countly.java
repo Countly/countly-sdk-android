@@ -1226,56 +1226,64 @@ public class Countly {
      * @param starRatingTextMessage dialog's message text
      * @param starRatingTextDismiss dialog's dismiss buttons text
      */
-    public void setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
+    public synchronized Countly setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
         if(context_ == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return;
+                return this;
             }
         }
         CountlyStarRating.setStarRatingInitConfig(context_, -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+
+        return this;
     }
 
     /**
      * Set if the star rating should be shown automatically
      * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
      */
-    public void setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
+    public synchronized Countly setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
         if(context_ == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return;
+                return this;
             }
         }
         CountlyStarRating.setShowDialogAutomatically(context_, IsShownAutomatically);
+
+        return this;
     }
 
     /**
      * Set if the star rating is shown only once per app lifetime
      * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
      */
-    public void setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
+    public synchronized Countly setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
         if(context_ == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return;
+                return this;
             }
         }
         CountlyStarRating.setStarRatingDisableAskingForEachAppVersion(context_, disableAsking);
+
+        return this;
     }
 
     /**
      * Set after how many sessions the automatic star rating will be shown for each app version
      * @param limit app session amount for the limit
      */
-    public void setAutomaticStarRatingSessionLimit(int limit) {
+    public synchronized Countly setAutomaticStarRatingSessionLimit(int limit) {
         if(context_ == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return;
+                return this;
             }
         }
         CountlyStarRating.setStarRatingInitConfig(context_, limit, null, null, null);
+
+        return this;
     }
 
     /**
@@ -1322,22 +1330,25 @@ public class Countly {
      * Set if the star rating dialog is cancellable
      * @param isCancellable
      */
-    public void setIfStarRatingDialogIsCancellable(boolean isCancellable){
+    public synchronized Countly setIfStarRatingDialogIsCancellable(boolean isCancellable){
         if(context_ == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return;
+                return this;
             }
         }
         CountlyStarRating.setIfRatingDialogIsCancellable(context_, isCancellable);
+
+        return this;
     }
 
     /**
      * Set the override for forcing to use HTTP POST for all connections to the server
      * @param isItForced the flag for the new status, set "true" if you want it to be forced
      */
-    public void setHttpPostForced(boolean isItForced) {
+    public synchronized Countly setHttpPostForced(boolean isItForced) {
         isHttpPostForced = isItForced;
+        return this;
     }
 
     /**
@@ -1354,10 +1365,11 @@ public class Countly {
      * @param city Name of the user's city
      * @param location comma separate lat and lng values. For example, "56.42345,123.45325"
      */
-    public void setOptionalParametersForInitialization(String country_code, String city, String location){
+    public synchronized Countly setOptionalParametersForInitialization(String country_code, String city, String location){
         optionalParameterCountryCode = country_code;
         optionalParameterCity = city;
         optionalParameterLocation = location;
+        return this;
     }
 
     public String getOptionalParameterCountryCode() {
@@ -1387,8 +1399,9 @@ public class Countly {
      * Set if Countly SDK should ignore app crawlers
      * @param shouldIgnore if crawlers should be ignored
      */
-    public void setShouldIgnoreCrawlers(boolean shouldIgnore){
+    public synchronized Countly setShouldIgnoreCrawlers(boolean shouldIgnore){
         shouldIgnoreCrawlers = shouldIgnore;
+        return this;
     }
 
     /**
