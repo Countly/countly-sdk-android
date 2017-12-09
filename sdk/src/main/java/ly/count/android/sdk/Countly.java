@@ -140,6 +140,9 @@ public class Countly {
     //internal flags
     private boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
 
+    //activity tracking
+    boolean automaticTrackingShouldUseShortName = false;//flag for using short names
+
     /**
      * Returns the Countly singleton.
      */
@@ -472,7 +475,14 @@ public class Countly {
         CrashDetails.inForeground();
 
         if(autoViewTracker){
-            recordView(activity.getClass().getName());
+            String usedActivityName = ".";
+
+            if(automaticTrackingShouldUseShortName){
+                usedActivityName = activity.getClass().getSimpleName();
+            } else {
+                usedActivityName = activity.getClass().getName();
+            }
+            recordView(usedActivityName);
         }
 
         calledAtLeastOnceOnStart = true;
@@ -1455,6 +1465,16 @@ public class Countly {
 
     public synchronized Countly setPushIntentAddMetadata(boolean shouldAddMetadata) {
         addMetadataToPushIntents = shouldAddMetadata;
+        return this;
+    }
+
+    /**
+     * Set if automatical activity tracking should use short names
+     * @param shouldUseShortName set true if you want short names
+     * @return
+     */
+    public synchronized Countly setAutoTrackingUseShortName(boolean shouldUseShortName) {
+        automaticTrackingShouldUseShortName = shouldUseShortName;
         return this;
     }
 
