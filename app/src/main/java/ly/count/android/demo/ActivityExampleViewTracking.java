@@ -7,11 +7,10 @@ import android.view.View;
 import ly.count.android.sdk.Countly;
 
 @SuppressWarnings({"UnusedParameters", "unused"})
-public class ActivityExampleViewTracking extends Activity
+public class ActivityExampleViewTracking extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_view_tracking);
         Countly.onCreate(this);
