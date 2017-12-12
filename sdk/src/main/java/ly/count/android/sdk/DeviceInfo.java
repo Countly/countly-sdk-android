@@ -48,6 +48,7 @@ class DeviceInfo {
     /**
      * Returns the display name of the current operating system.
      */
+    @SuppressWarnings("SameReturnValue")
     static String getOS() {
         return "Android";
     }
@@ -55,6 +56,7 @@ class DeviceInfo {
     /**
      * Returns the current operating system version as a displayable string.
      */
+    @SuppressWarnings("SameReturnValue")
     static String getOSVersion() {
         return android.os.Build.VERSION.RELEASE;
     }
@@ -62,6 +64,7 @@ class DeviceInfo {
     /**
      * Returns the current device model.
      */
+    @SuppressWarnings("SameReturnValue")
     static String getDevice() {
         return android.os.Build.MODEL;
     }
@@ -101,7 +104,7 @@ class DeviceInfo {
      *         empty string if the density is unknown
      */
     static String getDensity(final Context context) {
-        String densityStr = "";
+        String densityStr;
         final int density = context.getResources().getDisplayMetrics().densityDpi;
         switch (density) {
             case DisplayMetrics.DENSITY_LOW:
@@ -116,24 +119,21 @@ class DeviceInfo {
             case DisplayMetrics.DENSITY_HIGH:
                 densityStr = "HDPI";
                 break;
-            //todo uncomment in android sdk 25
-            //case DisplayMetrics.DENSITY_260:
-            //    densityStr = "XHDPI";
-            //    break;
+            case DisplayMetrics.DENSITY_260:
+                densityStr = "XHDPI";
+                break;
             case DisplayMetrics.DENSITY_280:
                 densityStr = "XHDPI";
                 break;
-            //todo uncomment in android sdk 25
-            //case DisplayMetrics.DENSITY_300:
-            //    densityStr = "XHDPI";
-            //    break;
+            case DisplayMetrics.DENSITY_300:
+                densityStr = "XHDPI";
+                break;
             case DisplayMetrics.DENSITY_XHIGH:
                 densityStr = "XHDPI";
                 break;
-            //todo uncomment in android sdk 25
-            //case DisplayMetrics.DENSITY_340:
-            //    densityStr = "XXHDPI";
-            //    break;
+            case DisplayMetrics.DENSITY_340:
+                densityStr = "XXHDPI";
+                break;
             case DisplayMetrics.DENSITY_360:
                 densityStr = "XXHDPI";
                 break;
@@ -216,19 +216,17 @@ class DeviceInfo {
      */
     static String getStore(final Context context) {
         String result = "";
-        if(android.os.Build.VERSION.SDK_INT >= 3 ) {
-            try {
-                result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
-            } catch (Exception e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "Can't get Installer package");
-                }
+        try {
+            result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
+        } catch (Exception e) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "Can't get Installer package");
             }
-            if (result == null || result.length() == 0) {
-                result = "";
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "No store found");
-                }
+        }
+        if (result == null || result.length() == 0) {
+            result = "";
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "No store found");
             }
         }
         return result;

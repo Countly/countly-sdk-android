@@ -6,11 +6,9 @@ import android.os.Bundle;
 import ly.count.android.sdk.Countly;
 
 public class ActivityExampleAPM extends Activity {
-    Activity activity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
         Countly.onCreate(this);

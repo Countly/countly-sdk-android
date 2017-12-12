@@ -21,12 +21,9 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.os.Build;
 import android.util.Log;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -64,11 +61,6 @@ public class ConnectionProcessor implements Runnable {
         store_ = store;
         deviceId_ = deviceId;
         sslContext_ = sslContext;
-
-        // HTTP connection reuse which was buggy pre-froyo
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO) {
-            System.setProperty("http.keepAlive", "false");
-        }
     }
 
     URLConnection urlConnectionForEventData(final String eventData) throws IOException {
@@ -115,9 +107,9 @@ public class ConnectionProcessor implements Runnable {
             OutputStream output = conn.getOutputStream();
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
             // Send binary file.
-            writer.append("--" + boundary).append(CRLF);
-            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"" + binaryFile.getName() + "\"").append(CRLF);
-            writer.append("Content-Type: " + URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
+            writer.append("--").append(boundary).append(CRLF);
+            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
+            writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
             writer.append("Content-Transfer-Encoding: binary").append(CRLF);
             writer.append(CRLF).flush();
             FileInputStream fileInputStream = new FileInputStream(binaryFile);
@@ -135,7 +127,7 @@ public class ConnectionProcessor implements Runnable {
             fileInputStream.close();
 
             // End of multipart/form-data.
-            writer.append("--" + boundary + "--").append(CRLF).flush();
+            writer.append("--").append(boundary).append("--").append(CRLF).flush();
         }
         else {
             if(eventData.contains("&crash=") || eventData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){

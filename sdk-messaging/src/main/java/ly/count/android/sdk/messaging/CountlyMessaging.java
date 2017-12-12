@@ -19,7 +19,6 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,7 +59,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
      * Once message is arrived, Countly Messaging will send a broadcast notification with action "APP_PACKAGE_NAME.countly.messaging"
      * to which you can subscribe via BroadcastReceiver.
      */
-    public static String BROADCAST_RECEIVER_ACTION_MESSAGE = "ly.count.android.api.messaging.broadcast.message";
+    public static final String BROADCAST_RECEIVER_ACTION_MESSAGE = "ly.count.android.api.messaging.broadcast.message";
     public static String getBroadcastAction (Context context) {
         try {
             ComponentName name = new ComponentName(context, CountlyMessagingService.class);
@@ -322,7 +321,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         if (!Countly.sharedInstance().isInitialized()) {
             CountlyMessaging.initCountly(getContext());
         }
-        Map<String, String> segmentation = new HashMap<String, String>();
+        Map<String, String> segmentation = new HashMap<>();
         segmentation.put("i", messageId);
         Countly.sharedInstance().recordEvent(EVENT_ACTION, segmentation, 1);
     }
@@ -331,7 +330,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         if (!Countly.sharedInstance().isInitialized()) {
             CountlyMessaging.initCountly(getContext());
         }
-        Map<String, String> segmentation = new HashMap<String, String>();
+        Map<String, String> segmentation = new HashMap<>();
         segmentation.put("i", messageId);
         segmentation.put("b", "" + btnIndex);
         Countly.sharedInstance().recordEvent(EVENT_ACTION, segmentation, 1);

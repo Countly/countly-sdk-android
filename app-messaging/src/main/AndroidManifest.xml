@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="ly.count.android.demo.messaging">
+          xmlns:tools="http://schemas.android.com/tools"
+          package="ly.count.android.demo.messaging">
 
     <permission android:name="ly.count.android.demo.messaging.permission.C2D_MESSAGE"
         android:protectionLevel="signature" />
@@ -10,7 +11,8 @@
         android:allowBackup="true"
         android:icon="@mipmap/icon"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+        tools:ignore="GoogleAppIndexingWarning">
 
         <activity
             android:name=".MainActivity"

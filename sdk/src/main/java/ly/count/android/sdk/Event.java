@@ -123,7 +123,7 @@ class Event {
 
             if (!json.isNull(SEGMENTATION_KEY)) {
                 final JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
-                final HashMap<String, String> segmentation = new HashMap<String, String>(segm.length());
+                final HashMap<String, String> segmentation = new HashMap<>(segm.length());
                 final Iterator nameItr = segm.keys();
                 while (nameItr.hasNext()) {
                     final String key = (String) nameItr.next();

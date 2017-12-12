@@ -8,25 +8,27 @@ import junit.framework.Assert;
 
 import ly.count.android.sdk.Countly;
 
+@SuppressWarnings("UnusedParameters")
 public class ActivityExampleCrashReporting extends Activity {
-    Activity activity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_crash_reporting);
         Countly.onCreate(this);
 
     }
 
+    @SuppressWarnings("unused")
     void EmptyFunction_1(){
         //keep this here, it's for proguard testing
     }
 
+    @SuppressWarnings("unused")
     void EmptyFunction_2(){
         //keep this here, it's for proguard testing
     }
+    @SuppressWarnings("unused")
     void EmptyFunction_3(){
         //keep this here, it's for proguard testing
     }
@@ -38,6 +40,7 @@ public class ActivityExampleCrashReporting extends Activity {
 
     public void onClickCrashReporting02(View v) {
         Countly.sharedInstance().addCrashLog("Out of bounds crash");
+        //noinspection MismatchedReadAndWriteOfArray
         int[] data = new int[]{};
         data[0] = 9;
     }
@@ -75,7 +78,7 @@ public class ActivityExampleCrashReporting extends Activity {
 
     public void onClickCrashReporting09(View v) throws Exception {
         Countly.sharedInstance().addCrashLog("Unhandled exception info");
-        throw new Exception("A unhandled uxception");
+        throw new Exception("A unhandled exception");
     }
 
     public void onClickCrashReporting10(View v) throws Exception {

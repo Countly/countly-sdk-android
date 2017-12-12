@@ -12,7 +12,7 @@
               android:gravity="center_vertical">
 
     <Button
-        android:text="unrecognized selector"
+        android:text="@string/unrecognized_selector"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button20"
@@ -20,21 +20,21 @@
         android:onClick="onClickCrashReporting01"/>
 
     <Button
-        android:text="out of bounds"
+        android:text="@string/out_of_bounds"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button21"
         android:onClick="onClickCrashReporting02"/>
 
     <Button
-        android:text="NULL pointer"
+        android:text="@string/null_pointer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button22"
         android:onClick="onClickCrashReporting03"/>
 
     <Button
-        android:text="invalid geometry"
+        android:text="@string/invalid_geometry"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button23"
@@ -42,14 +42,14 @@
         android:onClick="onClickCrashReporting04"/>
 
     <Button
-        android:text="assert fail"
+        android:text="@string/assert_fail"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button24"
         android:onClick="onClickCrashReporting05"/>
 
     <Button
-        android:text="kill"
+        android:text="@string/kill"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button25"
@@ -57,21 +57,21 @@
         android:enabled="false"/>
 
     <Button
-        android:text="custom crash log"
+        android:text="@string/custom_crash_log"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button26"
         android:onClick="onClickCrashReporting07"/>
 
     <Button
-        android:text="record handled exception"
+        android:text="@string/record_handled_exception"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button27"
         android:onClick="onClickCrashReporting08"/>
 
     <Button
-        android:text="Unhandled exception"
+        android:text="@string/unhandled_exception"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/button28"
@@ -82,12 +82,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickCrashReporting10"
-        android:text="Deep Unhandled exception"/>
+        android:text="@string/deep_unhandled_exception"/>
 
     <Button
         android:id="@+id/button48"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickCrashReporting11"
-        android:text="Deep Handled exception"/>
+        android:text="@string/deep_handled_exception"/>
 </LinearLayout>

@@ -12,31 +12,32 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true">
+        android:layout_centerHorizontal="true"
+        tools:ignore="UselessParent">
 
         <Button
-            android:text="Custom Events"
+            android:text="@string/custom_events"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button9"
             android:onClick="onClickButtonCustomEvents"/>
 
         <Button
-            android:text="Crash Reporting"
+            android:text="@string/crash_reporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button8"
             android:onClick="onClickButtonCrashReporting"/>
 
         <Button
-            android:text="User Details"
+            android:text="@string/user_details"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button7"
             android:onClick="onClickButtonUserDetails"/>
 
         <Button
-            android:text="APM"
+            android:text="@string/apm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button6"
@@ -44,14 +45,14 @@
             android:onClick="onClickButtonAPM"/>
 
         <Button
-            android:text="View Tracking "
+            android:text="@string/view_tracking"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button5"
             android:onClick="onClickButtonViewTracking"/>
 
         <Button
-            android:text="Multi Threading"
+            android:text="@string/multi_threading"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button3"
@@ -59,7 +60,7 @@
             android:onClick="onClickButtonMultiThreading"/>
 
         <Button
-            android:text="Others"
+            android:text="@string/others"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/button2"

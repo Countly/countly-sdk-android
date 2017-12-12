@@ -7,11 +7,12 @@ import android.util.Log;
  * Created by artem on 07/11/14.
  */
 
+@SuppressWarnings("DefaultFileTemplate")
 public class DeviceId {
     /**
      * Enum used throughout Countly which controls what kind of ID Countly should use.
      */
-    public static enum Type {
+    public enum Type {
         DEVELOPER_SUPPLIED,
         OPEN_UDID,
         ADVERTISING_ID,

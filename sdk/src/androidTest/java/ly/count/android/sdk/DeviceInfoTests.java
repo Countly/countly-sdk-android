@@ -38,9 +38,6 @@ import java.net.URLEncoder;
 import java.util.Locale;
 
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
 
 public class DeviceInfoTests extends AndroidTestCase {
 

@@ -9,12 +9,11 @@ import java.util.Map;
 
 import ly.count.android.sdk.Countly;
 
+@SuppressWarnings("UnusedParameters")
 public class ActivityExampleCustomEvents extends Activity {
-    Activity activity;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
         Countly.onCreate(this);

@@ -3,7 +3,6 @@ package ly.count.android.sdk.messaging;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -12,7 +11,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
@@ -35,8 +33,8 @@ public class Message implements Parcelable {
         String link;
     }
 
-    private Bundle data;
-    private int type;
+    private final Bundle data;
+    private final int type;
     private List<Button> buttons;
 
     public Message(Bundle data) {
@@ -45,7 +43,7 @@ public class Message implements Parcelable {
         this.type = setType();
     }
 
-    private static Map<String, Object> dataStore = new HashMap<>();
+    private static final Map<String, Object> dataStore = new HashMap<>();
 
     private void readButtons() {
         this.buttons = new ArrayList<>();
@@ -124,6 +122,7 @@ public class Message implements Parcelable {
     public boolean hasTitle() { return (type & CountlyMessaging.NOTIFICATION_TYPE_TITLE) > 0; }
     public boolean hasMedia() { return (type & CountlyMessaging.NOTIFICATION_TYPE_MEDIA) > 0; }
     public boolean hasButtons() { return (type & CountlyMessaging.NOTIFICATION_TYPE_BUTTONS) > 0; }
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean isSilent() { return (type & CountlyMessaging.NOTIFICATION_TYPE_SILENT) > 0; }
     public boolean hasSoundUri() { return (type & CountlyMessaging.NOTIFICATION_TYPE_SOUND_URI) > 0; }
     public boolean hasSoundDefault() { return (type & CountlyMessaging.NOTIFICATION_TYPE_SOUND_DEFAULT) > 0; }

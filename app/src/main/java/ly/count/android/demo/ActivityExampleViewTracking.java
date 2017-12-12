@@ -6,8 +6,8 @@ import android.view.View;
 
 import ly.count.android.sdk.Countly;
 
-public class ActivityExampleViewTracking extends Activity {
-    Activity activity;
+@SuppressWarnings({"UnusedParameters", "unused"})
+public class ActivityExampleViewTracking extends Activity
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

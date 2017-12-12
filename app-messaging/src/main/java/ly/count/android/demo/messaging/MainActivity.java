@@ -13,7 +13,6 @@ import android.widget.Toast;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.messaging.CountlyMessaging;
 import ly.count.android.sdk.messaging.Message;
-import me.leolin.shortcutbadger.ShortcutBadgeException;
 import me.leolin.shortcutbadger.ShortcutBadger;
 
 public class MainActivity extends Activity {
@@ -51,7 +50,6 @@ public class MainActivity extends Activity {
                 Countly.sharedInstance().recordEvent("test3");
             }
         }, 10000);
-
     }
 
     @Override
@@ -72,7 +70,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        /** Register for broadcast action if you need to be notified when Countly message received */
+        // Register for broadcast action if you need to be notified when Countly message received
         messageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -86,8 +84,8 @@ public class MainActivity extends Activity {
                     if(badgeString != null) {
                         int badgeCount = Integer.parseInt(badgeString);
 
-                        boolean succeded = ShortcutBadger.applyCount(getApplicationContext(), badgeCount);
-                        if (!succeded) {
+                        boolean succeeded = ShortcutBadger.applyCount(getApplicationContext(), badgeCount);
+                        if (!succeeded) {
                             Toast.makeText(getApplicationContext(), "Unable to put badge", Toast.LENGTH_SHORT).show();
                         }
                     }

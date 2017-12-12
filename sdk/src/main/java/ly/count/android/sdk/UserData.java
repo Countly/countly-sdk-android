@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -40,7 +39,7 @@ public class UserData {
     public static int byear = 0;
     public static boolean isSynced = true;
 
-    ConnectionQueue connectionQueue_;
+    final ConnectionQueue connectionQueue_;
 
     //Public methods
     /**
@@ -305,7 +304,7 @@ public class UserData {
      */
     static void setCustomData(Map<String, String> data){
         if(custom == null)
-            custom = new HashMap<String, String>();
+            custom = new HashMap<>();
         custom.putAll(data);
         isSynced = false;
     }
@@ -317,7 +316,7 @@ public class UserData {
      */
     static void setCustomProperty(String key, String value){
         if(custom == null)
-            custom = new HashMap<String, String>();
+            custom = new HashMap<>();
         custom.put(key, value);
     }
 
@@ -330,14 +329,13 @@ public class UserData {
     static void modifyCustomData(String key, double value, String mod){
         try {
             if(customMods == null)
-                customMods = new HashMap<String, JSONObject>();
+                customMods = new HashMap<>();
             JSONObject ob;
             if(!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
                 ob.put(mod, value);
             }
             else{
-                JSONArray arr;
                 if(customMods.containsKey(key)){
                     ob = customMods.get(key);
                 }
@@ -362,14 +360,13 @@ public class UserData {
     static void modifyCustomData(String key, String value, String mod){
         try {
             if(customMods == null)
-                customMods = new HashMap<String, JSONObject>();
+                customMods = new HashMap<>();
             JSONObject ob;
             if(!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
                 ob.put(mod, value);
             }
             else{
-                JSONArray arr;
                 if(customMods.containsKey(key)){
                     ob = customMods.get(key);
                 }
@@ -510,10 +507,10 @@ public class UserData {
                 JSONObject customJson;
                 try {
                     customJson = json.getJSONObject(CUSTOM_KEY);
-                    HashMap<String, String> custom = new HashMap<String, String>(customJson.length());
+                    custom = new HashMap<>(customJson.length());
                     Iterator<String> nameItr = customJson.keys();
                     while (nameItr.hasNext()) {
-                        final String key = (String) nameItr.next();
+                        final String key = nameItr.next();
                         if (!customJson.isNull(key)) {
                             custom.put(key, customJson.getString(key));
                         }

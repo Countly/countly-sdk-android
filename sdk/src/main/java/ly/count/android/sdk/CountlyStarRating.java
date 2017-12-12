@@ -93,7 +93,7 @@ public class CountlyStarRating {
             @Override
             public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
                 int rating = (int)v;
-                Map<String,String> segm = new HashMap<String, String>();
+                Map<String,String> segm = new HashMap<>();
                 segm.put("platform", "android");
                 segm.put("app_version", DeviceInfo.getAppVersion(context));
                 segm.put("rating", "" + rating);
@@ -124,17 +124,17 @@ public class CountlyStarRating {
         String dialogTextMessage = "Please rate this app";
         String dialogTextDismiss = "Cancel";
 
-        private static String KEY_APP_VERSION = "sr_app_version";
-        private static String KEY_SESSION_LIMIT = "sr_session_limit";
-        private static String KEY_SESSION_AMOUNT = "sr_session_amount";
-        private static String KEY_IS_SHOWN_FOR_CURRENT = "sr_is_shown";
-        private static String KEY_AUTOMATIC_RATING_IS_SHOWN = "sr_is_automatic_shown";
-        private static String KEY_DISABLE_AUTOMATIC_NEW_VERSIONS = "sr_is_disable_automatic_new";
-        private static String KEY_AUTOMATIC_HAS_BEEN_SHOWN = "sr_automatic_has_been_shown";
-        private static String KEY_DIALOG_IS_CANCELLABLE = "sr_automatic_dialog_is_cancellable";
-        private static String KEY_DIALOG_TEXT_TITLE = "sr_text_title";
-        private static String KEY_DIALOG_TEXT_MESSAGE = "sr_text_message";
-        private static String KEY_DIALOG_TEXT_DISMISS = "sr_text_dismiss";
+        private static final String KEY_APP_VERSION = "sr_app_version";
+        private static final String KEY_SESSION_LIMIT = "sr_session_limit";
+        private static final String KEY_SESSION_AMOUNT = "sr_session_amount";
+        private static final String KEY_IS_SHOWN_FOR_CURRENT = "sr_is_shown";
+        private static final String KEY_AUTOMATIC_RATING_IS_SHOWN = "sr_is_automatic_shown";
+        private static final String KEY_DISABLE_AUTOMATIC_NEW_VERSIONS = "sr_is_disable_automatic_new";
+        private static final String KEY_AUTOMATIC_HAS_BEEN_SHOWN = "sr_automatic_has_been_shown";
+        private static final String KEY_DIALOG_IS_CANCELLABLE = "sr_automatic_dialog_is_cancellable";
+        private static final String KEY_DIALOG_TEXT_TITLE = "sr_text_title";
+        private static final String KEY_DIALOG_TEXT_MESSAGE = "sr_text_message";
+        private static final String KEY_DIALOG_TEXT_DISMISS = "sr_text_dismiss";
 
         /**
          * Create a JSONObject from the current state
@@ -250,7 +250,7 @@ public class CountlyStarRating {
         StarRatingPreferences srp;
 
         if(!srpString.equals("")) {
-            JSONObject srJSON = null;
+            JSONObject srJSON;
             try {
                 srJSON = new JSONObject(srpString);
                 srp = StarRatingPreferences.fromJSON(srJSON);

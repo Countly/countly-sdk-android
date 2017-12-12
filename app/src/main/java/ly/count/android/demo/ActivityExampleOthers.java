@@ -9,6 +9,7 @@ import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStarRating;
 import ly.count.android.sdk.DeviceId;
 
+@SuppressWarnings("UnusedParameters")
 public class ActivityExampleOthers extends Activity {
     Activity activity;
 
@@ -20,6 +21,7 @@ public class ActivityExampleOthers extends Activity {
         Countly.onCreate(this);
     }
 
+    @SuppressWarnings("unused")
     public void onClickViewOther01(View v) {
 
     }

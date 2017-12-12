@@ -56,8 +56,8 @@ import java.util.regex.Pattern;
  *
  */
 class CrashDetails {
-    private static ArrayList<String> logs = new ArrayList<String>();
-    private static int startTime = Countly.currentTimestamp();
+    private static final ArrayList<String> logs = new ArrayList<>();
+    private static final int startTime = Countly.currentTimestamp();
     private static Map<String,String> customSegments = null;
     private static boolean inBackground = true;
     private static long totalMemory = 0;
@@ -65,7 +65,7 @@ class CrashDetails {
     private static long getTotalRAM() {
         if(totalMemory == 0) {
             RandomAccessFile reader = null;
-            String load = null;
+            String load;
             try {
                 reader = new RandomAccessFile("/proc/meminfo", "r");
                 load = reader.readLine();
@@ -141,7 +141,7 @@ class CrashDetails {
 
         for (String s : logs)
         {
-            allLogs.append(s + "\n");
+            allLogs.append(s).append("\n");
         }
         logs.clear();
         return allLogs.toString();
@@ -152,7 +152,7 @@ class CrashDetails {
      * like versions of dependency libraries.
      */
     static void setCustomSegments(Map<String,String> segments) {
-        customSegments = new HashMap<String, String>();
+        customSegments = new HashMap<>();
         customSegments.putAll(segments);
     }
 
@@ -170,6 +170,7 @@ class CrashDetails {
     /**
      * Returns the current device manufacturer.
      */
+    @SuppressWarnings("SameReturnValue")
     static String getManufacturer() {
         return android.os.Build.MANUFACTURER;
     }
@@ -219,7 +220,7 @@ class CrashDetails {
     /**
      * Returns the total device RAM amount.
      */
-    static String getRamTotal(Context context) {
+    static String getRamTotal() {
         return Long.toString(getTotalRAM());
     }
 
@@ -381,7 +382,7 @@ class CrashDetails {
                 "_cpu", getCpu(),
                 "_opengl", getOpenGL(context),
                 "_ram_current", getRamCurrent(context),
-                "_ram_total", getRamTotal(context),
+                "_ram_total", getRamTotal(),
                 "_disk_current", getDiskCurrent(),
                 "_disk_total", getDiskTotal(),
                 "_bat", getBatteryLevel(context),

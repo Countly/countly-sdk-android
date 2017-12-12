@@ -27,11 +27,13 @@ import static ly.count.android.sdk.messaging.CountlyMessaging.getGCMPreferences;
 */
 public class ProxyActivity extends Activity {
 
+    @SuppressWarnings("EmptyMethod")
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
     }
 
+    @SuppressWarnings("EmptyMethod")
     @Override
     protected void onNewIntent (Intent intent) {
         super.onNewIntent(intent);
@@ -233,6 +235,7 @@ public class ProxyActivity extends Activity {
         }
     }
 
+    @SuppressWarnings("EmptyMethod")
     @Override
     protected void onStop () {
         super.onStop();

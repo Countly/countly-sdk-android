@@ -29,13 +29,6 @@ import java.util.HashMap;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
 
 public class CountlyTests extends AndroidTestCase {
     Countly mUninitedCountly;
@@ -749,7 +742,7 @@ public class CountlyTests extends AndroidTestCase {
     }
 
     public void testCurrentTimestamp() {
-        final int testTimestamp = (int) (System.currentTimeMillis() / 1000l);
+        final int testTimestamp = (int) (System.currentTimeMillis() / 1000L);
         final int actualTimestamp = Countly.currentTimestamp();
         assertTrue(((testTimestamp - 1) <= actualTimestamp) && ((testTimestamp + 1) >= actualTimestamp));
     }

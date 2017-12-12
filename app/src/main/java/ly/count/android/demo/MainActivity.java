@@ -1,27 +1,19 @@
 package ly.count.android.demo;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Debug;
-import android.os.Handler;
-import android.util.Log;
 import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
 
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.CountlyStarRating;
-import ly.count.android.sdk.DeviceId;
 
 
+@SuppressWarnings("UnusedParameters")
 public class MainActivity extends Activity {
     private String demoTag = "CountlyDemo";
-    private Activity activity;
 
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
     final String COUNTLY_SERVER_URL = "YOUR_SERVER";
@@ -29,7 +21,6 @@ public class MainActivity extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -76,7 +67,7 @@ public class MainActivity extends Activity {
 
     public void enableCrashTracking(){
         //add some custom segments, like dependency library versions
-        HashMap<String, String> data = new HashMap<String, String>();
+        HashMap<String, String> data = new HashMap<>();
         data.put("Facebook", "3.5");
         data.put("Admob", "6.5");
         Countly.sharedInstance().setCustomCrashSegments(data);

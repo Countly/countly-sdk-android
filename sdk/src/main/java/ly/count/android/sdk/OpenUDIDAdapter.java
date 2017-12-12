@@ -18,6 +18,7 @@ public class OpenUDIDAdapter {
         return openUDIDAvailable;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public static boolean isInitialized() {
         boolean initialized = false;
         try {

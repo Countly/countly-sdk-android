@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -80,7 +81,7 @@ public class Countly {
     protected static List<String> publicKeyPinCertificates;
     protected static List<String> certificatePinCertificates;
 
-    protected static final Map<String, Event> timedEvents = new HashMap<String, Event>();
+    protected static final Map<String, Event> timedEvents = new HashMap<>();
 
     /**
      * Enum used in Countly.initMessaging() method which controls what kind of
@@ -88,7 +89,7 @@ public class Countly {
      * you'll be able to choose whether you want to send a message to test devices,
      * or to production ones.
      */
-    public static enum CountlyMessagingMode {
+    public enum CountlyMessagingMode {
         TEST,
         PRODUCTION,
     }
@@ -100,7 +101,7 @@ public class Countly {
 
     private ConnectionQueue connectionQueue_;
     @SuppressWarnings("FieldCanBeLocal")
-    private ScheduledExecutorService timerService_;
+    private final ScheduledExecutorService timerService_;
     private EventQueue eventQueue_;
     private long prevSessionDurationStartTime_;
     private int activityCount_;
@@ -129,9 +130,11 @@ public class Countly {
     //app crawlers
     private boolean shouldIgnoreCrawlers = true;//ignore app crawlers by default
     private boolean deviceIsAppCrawler = false;//by default assume that device is not a app crawler
-    private List<String> appCrawlerNames = new ArrayList<>(Arrays.asList("Calypso AppCrawler"));//List against which device name is checked to determine if device is app crawler
+    @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
+    private final List<String> appCrawlerNames = new ArrayList<>(Arrays.asList("Calypso AppCrawler"));//List against which device name is checked to determine if device is app crawler
 
     //star rating
+    @SuppressWarnings("FieldCanBeLocal")
     private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
 
     //push related
@@ -321,6 +324,7 @@ public class Countly {
      * Checks whether Countly.init has been already called.
      * @return true if Countly is ready to use
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public synchronized boolean isInitialized() {
         return eventQueue_ != null;
     }
@@ -376,7 +380,7 @@ public class Countly {
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
     public synchronized Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, String[] buttonNames, Countly.CountlyMessagingMode mode) {
-        return initMessaging(activity, activityClass, projectID, null, mode, false, -1);
+        return initMessaging(activity, activityClass, projectID, buttonNames, mode, false, -1);
     }
 
     /**
@@ -475,7 +479,7 @@ public class Countly {
         CrashDetails.inForeground();
 
         if(autoViewTracker){
-            String usedActivityName = ".";
+            String usedActivityName;
 
             if(automaticTrackingShouldUseShortName){
                 usedActivityName = activity.getClass().getSimpleName();
@@ -705,7 +709,7 @@ public class Countly {
     }
 
     /**
-     *  Record a view manualy, without automatic tracking
+     *  Record a view manually, without automatic tracking
      * or track view that is not automatically tracked
      * like fragment, Message box or transparent Activity
      * @param viewName String - name of the view
@@ -714,7 +718,7 @@ public class Countly {
         reportViewDuration();
         lastView = viewName;
         lastViewStart = Countly.currentTimestamp();
-        HashMap<String, String> segments = new HashMap<String, String>();
+        HashMap<String, String> segments = new HashMap<>();
         segments.put("name", viewName);
         segments.put("visit", "1");
         segments.put("segment", "Android");
@@ -1062,7 +1066,7 @@ public class Countly {
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if(lastView != null && lastViewStart > 0){
-            HashMap<String, String> segments = new HashMap<String, String>();
+            HashMap<String, String> segments = new HashMap<>();
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(Countly.currentTimestamp()-lastViewStart));
             segments.put("segment", "Android");
@@ -1111,12 +1115,12 @@ public class Countly {
      * Utility method to return a current timestamp that can be used in the Count.ly API.
      */
     static int currentTimestamp() {
-        return ((int)(System.currentTimeMillis() / 1000l));
+        return ((int)(System.currentTimeMillis() / 1000L));
     }
 
     static class TimeUniquesEnsurer {
-        List<Long> lastTsMs = new ArrayList<>(10);
-        long addition = 0;
+        final List<Long> lastTsMs = new ArrayList<>(10);
+        final long addition = 0;
 
         long currentTimeMillis() {
             return System.currentTimeMillis() + addition;
@@ -1145,7 +1149,7 @@ public class Countly {
             return ms;
         }
     }
-    private static TimeUniquesEnsurer timeGenerator = new TimeUniquesEnsurer();
+    private static final TimeUniquesEnsurer timeGenerator = new TimeUniquesEnsurer();
 
     static synchronized long currentTimestampMs() {
         return timeGenerator.uniqueTimestamp();
@@ -1159,6 +1163,7 @@ public class Countly {
     /**
      * Utility method to return a current day of the week that can be used in the Count.ly API.
      */
+    @SuppressLint("SwitchIntDef")
     static int currentDayOfWeek(){
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
         switch (day) {
@@ -1311,7 +1316,6 @@ public class Countly {
 
     /**
      * Returns how many sessions has star rating counted internally for the current apps version
-     * @return
      */
     public int getStarRatingsCurrentVersionsSessionCount(){
         if(context_ == null) {
@@ -1338,7 +1342,7 @@ public class Countly {
 
     /**
      * Set if the star rating dialog is cancellable
-     * @param isCancellable
+     * @param isCancellable set this true if it should be cancellable
      */
     public synchronized Countly setIfStarRatingDialogIsCancellable(boolean isCancellable){
         if(context_ == null) {
@@ -1434,7 +1438,6 @@ public class Countly {
 
     /**
      * Return if the countly sdk should ignore app crawlers
-     * @return
      */
     public boolean ifShouldIgnoreCrawlers(){
         return shouldIgnoreCrawlers;
@@ -1452,7 +1455,7 @@ public class Countly {
     }
 
     /**
-     * Returns the type of the device ID used by countly for this decice.
+     * Returns the type of the device ID used by countly for this device.
      * @return device ID type
      */
     public DeviceId.Type getDeviceIDType(){
@@ -1469,9 +1472,8 @@ public class Countly {
     }
 
     /**
-     * Set if automatical activity tracking should use short names
+     * Set if automatic activity tracking should use short names
      * @param shouldUseShortName set true if you want short names
-     * @return
      */
     public synchronized Countly setAutoTrackingUseShortName(boolean shouldUseShortName) {
         automaticTrackingShouldUseShortName = shouldUseShortName;
@@ -1489,10 +1491,12 @@ public class Countly {
     int getActivityCount() { return activityCount_; }
     synchronized boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
 
+    @SuppressWarnings("InfiniteRecursion")
     public void stackOverflow() {
         this.stackOverflow();
     }
 
+    @SuppressWarnings("ConstantConditions")
     public synchronized Countly crashTest(int crashNumber) {
 
         if (crashNumber == 1){
@@ -1508,7 +1512,8 @@ public class Countly {
                 Log.d(Countly.TAG, "Running crashTest 2");
             }
 
-            int test = 10/0;
+            //noinspection UnusedAssignment
+            @SuppressWarnings("NumericOverflow") int test = 10/0;
 
         }else if (crashNumber == 3){
 
@@ -1517,6 +1522,7 @@ public class Countly {
             }
 
             Object[] o = null;
+            //noinspection InfiniteLoopStatement
             while (true) { o = new Object[] { o }; }
 
 
@@ -1534,6 +1540,7 @@ public class Countly {
             }
 
             String test = null;
+            //noinspection ResultOfMethodCallIgnored
             test.charAt(1);
         }
         return Countly.sharedInstance();

@@ -29,6 +29,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("ConstantConditions")
 public class EventTests extends AndroidTestCase {
     public void testConstructor() {
         final Event event = new Event();
@@ -42,6 +43,7 @@ public class EventTests extends AndroidTestCase {
     public void testEqualsAndHashCode() {
         final Event event1 = new Event();
         final Event event2 = new Event();
+        //noinspection ObjectEqualsNull
         assertFalse(event1.equals(null));
         assertFalse(event1.equals(new Object()));
         assertTrue(event1.equals(event2));

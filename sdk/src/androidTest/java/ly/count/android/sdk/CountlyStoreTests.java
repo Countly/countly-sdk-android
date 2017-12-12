@@ -34,8 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class CountlyStoreTests extends AndroidTestCase {
     CountlyStore store;
@@ -110,8 +108,8 @@ public class CountlyStoreTests extends AndroidTestCase {
     public void testEvents_prefHasSingleValue() throws JSONException {
         final String eventKey = "eventKey";
         store.addEvent(eventKey, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
-        final String[] eventJSONStrs = store.events();
-        final JSONObject eventJSONObj = new JSONObject(eventJSONStrs[0]);
+        final String[] eventJSONStrings = store.events();
+        final JSONObject eventJSONObj = new JSONObject(eventJSONStrings[0]);
         assertEquals(eventKey, eventJSONObj.getString("key"));
         // this is good enough, we verify the entire JSON content is written in later unit tests
     }

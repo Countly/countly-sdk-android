@@ -10,26 +10,30 @@
               android:paddingBottom="@dimen/activity_vertical_margin" >
 
     <Button
-        android:text="set custom header field value"
+        android:id="@+id/button41"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button41"/>
+        android:enabled="false"
+        android:text="@string/set_custom_header_field_value"/>
 
     <Button
-        android:text="ask for star-rating"
+        android:id="@+id/button42"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button42"/>
+        android:onClick="onClickViewOther02"
+        android:text="@string/ask_for_star_rating"/>
 
     <Button
-        android:text="set new device id"
+        android:id="@+id/button43"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button43"/>
+        android:onClick="onClickViewOther03"
+        android:text="@string/set_new_device_id"/>
 
     <Button
-        android:text="set new device id with server merge"
+        android:id="@+id/button44"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button44"/>
+        android:onClick="onClickViewOther04"
+        android:text="@string/set_new_device_id_with_server_merge"/>
 </LinearLayout>

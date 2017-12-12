@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.util.Base64;
-import android.util.Log;
 
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
