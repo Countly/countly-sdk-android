@@ -29,6 +29,8 @@ public class MainActivity extends Activity {
         Countly.onCreate(this);
         Countly.sharedInstance().setLoggingEnabled(true);
         Countly.sharedInstance().enableCrashReporting();
+        Countly.sharedInstance().setViewTracking(true);
+        Countly.sharedInstance().setAutoTrackingUseShortName(true);
         //Countly.sharedInstance().setHttpPostForced(true);
         //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
         Countly.sharedInstance().init(appC, COUNTLY_SERVER_URL, COUNTLY_APP_KEY);

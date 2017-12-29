@@ -31,6 +31,7 @@ public class MainActivity extends Activity {
 
         Countly.sharedInstance()
                 .init(this, COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
+                .setPushIntentAddMetadata(true)
                 .initMessaging(this, MainActivity.class, COUNTLY_MESSAGING_PROJECT_ID, Countly.CountlyMessagingMode.TEST)
 //                .setLocation(LATITUDE, LONGITUDE);
                 .setLoggingEnabled(true);
