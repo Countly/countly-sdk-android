@@ -146,6 +146,9 @@ public class Countly {
     //activity tracking
     boolean automaticTrackingShouldUseShortName = false;//flag for using short names
 
+    //attribution
+    protected boolean isAttributionEnabled = true;
+
     /**
      * Returns the Countly singleton.
      */
@@ -280,6 +283,7 @@ public class Countly {
             MessagingAdapter.storeConfiguration(context, serverURL, appKey, deviceID, idMode);
         }
 
+
         //set the star rating values
         starRatingCallback_ = starRatingCallback;
         CountlyStarRating.setStarRatingInitConfig(context, starRatingLimit, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
@@ -298,6 +302,8 @@ public class Countly {
             } else {
                 deviceIdInstance = new DeviceId(countlyStore, idMode);
             }
+
+            AdvertisingIdAdapter.cacheAdvertisingID(context, countlyStore);
 
             deviceIdInstance.init(context, countlyStore, true);
 
@@ -1618,6 +1624,18 @@ public class Countly {
             Log.d(Countly.TAG, "Setting if automatic view tracking should use short names: [" + shouldUseShortName + "]");
         }
         automaticTrackingShouldUseShortName = shouldUseShortName;
+        return this;
+    }
+
+    /**
+     * Set if attribution should be enabled
+     * @param shouldEnableAttribution set true if you want to enable it, set false if you want to disable it
+     */
+    public synchronized Countly setEnableAttribution(boolean shouldEnableAttribution) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Setting if attribution should be enabled");
+        }
+        isAttributionEnabled = shouldEnableAttribution;
         return this;
     }
 

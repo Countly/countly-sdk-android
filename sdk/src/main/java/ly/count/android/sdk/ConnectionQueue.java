@@ -156,6 +156,14 @@ public class ConnectionQueue {
             data += "&location=" + optionalLocation;
         }
 
+        if(Countly.sharedInstance().isAttributionEnabled){
+            String cachedAdId = store_.getCachedAdvertisingId();
+
+            if(!cachedAdId.isEmpty()){
+                data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+            }
+        }
+
         store_.addConnection(data);
 
         tick();
