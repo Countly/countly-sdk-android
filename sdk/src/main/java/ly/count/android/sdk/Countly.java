@@ -342,7 +342,7 @@ public class Countly {
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
     public Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, Countly.CountlyMessagingMode mode) {
-        return initMessaging(activity, activityClass, projectID, null, mode, false, -1);
+        return initMessaging(activity, activityClass, projectID, null, mode, false, -1, -1, -1);
     }
 
     /**
@@ -356,7 +356,7 @@ public class Countly {
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
     public Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, Countly.CountlyMessagingMode mode, int customIconResId) {
-        return initMessaging(activity, activityClass, projectID, null, mode, false, customIconResId);
+        return initMessaging(activity, activityClass, projectID, null, mode, false, customIconResId, -1, -1);
     }
 
     /**
@@ -370,7 +370,7 @@ public class Countly {
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
     public Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, Countly.CountlyMessagingMode mode, boolean disableUI) {
-        return initMessaging(activity, activityClass, projectID, null, mode, disableUI, -1);
+        return initMessaging(activity, activityClass, projectID, null, mode, disableUI, -1, -1, -1);
     }
     /**
      * Initializes the Countly MessagingSDK. Call from your main Activity's onCreate() method.
@@ -383,7 +383,7 @@ public class Countly {
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
     public synchronized Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, String[] buttonNames, Countly.CountlyMessagingMode mode) {
-        return initMessaging(activity, activityClass, projectID, buttonNames, mode, false, -1);
+        return initMessaging(activity, activityClass, projectID, buttonNames, mode, false, -1, -1, -1);
     }
 
     /**
@@ -398,7 +398,7 @@ public class Countly {
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
     public synchronized Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, String[] buttonNames, Countly.CountlyMessagingMode mode, boolean disableUI) {
-        return initMessaging(activity, activityClass, projectID, buttonNames, mode, disableUI, -1);
+        return initMessaging(activity, activityClass, projectID, buttonNames, mode, disableUI, -1, -1, -1);
     }
 
     /**
@@ -409,16 +409,16 @@ public class Countly {
      * @param buttonNames Strings to use when displaying Dialogs (uses new String[]{"Open", "Review"} by default)
      * @param mode whether this app installation is a test release or production
      * @param disableUI don't display dialogs & notifications when receiving push notification
-     * @param customIconResId res id for custom icon override
+     * @param customSmallIconResId res id for custom icon override
      * @return Countly instance for easy method chaining
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
-    public synchronized Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, String[] buttonNames, Countly.CountlyMessagingMode mode, boolean disableUI, int customIconResId) {
+    public synchronized Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, String[] buttonNames, Countly.CountlyMessagingMode mode, boolean disableUI, int customSmallIconResId, int customLargeIconRes, int customAccentColor) {
         if (mode != null && !MessagingAdapter.isMessagingAvailable()) {
             throw new IllegalStateException("you need to include countly-messaging-sdk-android library instead of countly-sdk-android if you want to use Countly Messaging");
         } else {
             messagingMode_ = mode;
-            if (!MessagingAdapter.init(activity, activityClass, projectID, buttonNames, disableUI, customIconResId, addMetadataToPushIntents)) {
+            if (!MessagingAdapter.init(activity, activityClass, projectID, buttonNames, disableUI, customSmallIconResId, addMetadataToPushIntents, customLargeIconRes, customAccentColor)) {
                 throw new IllegalStateException("couldn't initialize Countly Messaging");
             }
         }

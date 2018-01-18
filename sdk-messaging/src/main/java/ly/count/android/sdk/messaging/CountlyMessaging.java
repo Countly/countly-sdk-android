@@ -130,14 +130,16 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     private static final String PROPERTY_DEVICE_ID_MODE = "ly.count.android.api.messaging.device.id.mode";
     private static final String PROPERTY_DISABLE_UI = "ly.count.android.api.messaging.disable.ui";
     private static final String PROPERTY_ACTIVITY_CLASS = "ly.count.android.api.messaging.activity.class";
-    private static final String PROPERTY_ICON_OVERRIDE_ID = "ly.count.android.api.messaging.icon.override.id";
+    private static final String PROPERTY_SMALL_ICON_OVERRIDE_ID = "ly.count.android.api.messaging.icon.override.id";
+    private static final String PROPERTY_LARGE_ICON_ID = "ly.count.android.api.messaging.icon.large.id";
+    private static final String PROPERTY_ACCENT_COLOR_ID = "ly.count.android.api.messaging.accent.color.id";
     protected static final String PROPERTY_ADD_METADATA_TO_PUSH_INTENTS = "ly.count.android.api.messaging.add.intent.metadata";
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static GoogleCloudMessaging gcm;
 
 
-    public static void init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames, Boolean disableUI, Integer customIconResId, Boolean addMetadataToPushIntents) {
+    public static void init(Activity activity, Class<? extends Activity> activityClass, String sender, String[] buttonNames, Boolean disableUI, Integer customIconResId, Boolean addMetadataToPushIntents, Integer customLargeIconRes, Integer customAccentColor) {
         setActivity(activity, activityClass);
 
         if (gcm != null) {
@@ -150,7 +152,9 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
         CountlyMessaging.disableUI = disableUI;
         getGCMPreferences(context).edit().putBoolean(PROPERTY_DISABLE_UI, disableUI).commit();
-        getGCMPreferences(context).edit().putInt(PROPERTY_ICON_OVERRIDE_ID, customIconResId).commit();
+        getGCMPreferences(context).edit().putInt(PROPERTY_SMALL_ICON_OVERRIDE_ID, customIconResId).commit();
+        getGCMPreferences(context).edit().putInt(PROPERTY_LARGE_ICON_ID, customLargeIconRes).commit();
+        getGCMPreferences(context).edit().putInt(PROPERTY_ACCENT_COLOR_ID, customAccentColor).commit();
         getGCMPreferences(context).edit().putBoolean(PROPERTY_ADD_METADATA_TO_PUSH_INTENTS, addMetadataToPushIntents).commit();
 
         if (checkPlayServices(activity) ) {
@@ -341,6 +345,14 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     }
 
     public static int getIconOverride (Context context) {
-        return getGCMPreferences(context).getInt(PROPERTY_ICON_OVERRIDE_ID, -1);
+        return getGCMPreferences(context).getInt(PROPERTY_SMALL_ICON_OVERRIDE_ID, -1);
+    }
+
+    public static int getLargeIconId (Context context) {
+        return getGCMPreferences(context).getInt(PROPERTY_LARGE_ICON_ID, -1);
+    }
+
+    public static int getAccentColor (Context context) {
+        return getGCMPreferences(context).getInt(PROPERTY_ACCENT_COLOR_ID, -1);
     }
 }

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -99,26 +100,40 @@ public class CountlyMessagingService extends IntentService {
             PendingIntent contentIntent = PendingIntent.getActivity(getApplicationContext(), 0, proxy, PendingIntent.FLAG_UPDATE_CURRENT);
 
             // Get icon from application or use default one
-            int icon;
+            int smallIcon;
             int iconOverride = CountlyMessaging.getIconOverride(CountlyMessagingService.this);
             try {
-                if(iconOverride != -1){
-                    icon = iconOverride;
+                if(iconOverride > 0){
+                    smallIcon = iconOverride;
                 } else {
-                    icon = getPackageManager().getApplicationInfo(getPackageName(), 0).icon;
+                    smallIcon = getPackageManager().getApplicationInfo(getPackageName(), 0).icon;
                 }
             } catch (PackageManager.NameNotFoundException e) {
-                icon = android.R.drawable.ic_dialog_email;
+                smallIcon = android.R.drawable.ic_dialog_email;
             }
+
+            int largeIcon = CountlyMessaging.getLargeIconId(CountlyMessagingService.this);
+            int notificationColor = CountlyMessaging.getAccentColor(CountlyMessagingService.this);
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext())
                     .setAutoCancel(true)
-                    .setSmallIcon(icon)
+                    .setSmallIcon(smallIcon)
                     .setTicker(msg.getNotificationMessage())
                     .setContentTitle(msg.getNotificationTitle(getApplicationContext()))
                     .setContentText(msg.getNotificationMessage())
                     .setContentIntent(contentIntent)
                     .setStyle(new NotificationCompat.BigTextStyle().bigText(msg.getNotificationMessage()).setBigContentTitle(msg.getNotificationTitle(getApplicationContext())));
+
+            if(largeIcon > 0){
+                Bitmap iconBitmap = BitmapFactory.decodeResource(getResources(), largeIcon);
+                if(iconBitmap != null){
+                    builder.setLargeIcon(iconBitmap);
+                }
+            }
+
+            if(notificationColor > 0){
+                builder.setColor(notificationColor);
+            }
 
             if (msg.hasMedia() && Message.getFromStore(msg.getMedia()) != null) {
                 builder.setStyle(new NotificationCompat.BigPictureStyle()
