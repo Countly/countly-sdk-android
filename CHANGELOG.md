@@ -1,3 +1,9 @@
+18.01
+  * Changes made how location data is passed and handled
+  * Adding option to disable sending of location data (it can be reenabled later)
+  * Adding option to add a large icon and accent color to push notifications
+  * Adding option to add meta information to push notification intents
+
 17.09.2
   * Adding option to override the icon for push notifications
 
