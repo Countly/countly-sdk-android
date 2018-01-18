@@ -141,19 +141,33 @@ public class ConnectionQueue {
                           + "&begin_session=1"
                           + "&metrics=" + DeviceInfo.getMetrics(context_);
 
-        String optionalCountryCode = Countly.sharedInstance().getOptionalParameterCountryCode();
-        if(optionalCountryCode != null) {
-            data += "&country_code=" + optionalCountryCode;
-        }
+        CountlyStore cs = getCountlyStore();
+        if(cs.getLocationDisabled()){
+            //if location is disabled, send empty info
+            data += "&location=";
+        } else {
+            //location should be send, add it
+            String location = cs.getLocation();
+            String city = cs.getLocationCity();
+            String country_code = cs.getLocationCountryCode();
+            String ip = cs.getLocationIpAddress();
 
-        String optionalCity = Countly.sharedInstance().getOptionalParameterCity();
-        if(optionalCity != null) {
-            data += "&city=" + optionalCity;
-        }
 
-        String optionalLocation = Countly.sharedInstance().getOptionalParameterLocation();
-        if(optionalLocation != null) {
-            data += "&location=" + optionalLocation;
+            if(location != null && !location.isEmpty()){
+                data += "&location=" + location;
+            }
+
+            if(city != null && !city.isEmpty()){
+                data += "&city=" + city;
+            }
+
+            if(country_code != null && !country_code.isEmpty()){
+                data += "&country_code=" + country_code;
+            }
+
+            if(ip != null && !ip.isEmpty()){
+                data += "&ip=" + ip;
+            }
         }
 
         if(Countly.sharedInstance().isAttributionEnabled){
@@ -165,6 +179,7 @@ public class ConnectionQueue {
         }
 
         store_.addConnection(data);
+        Countly.sharedInstance().isBeginSessionSent = true;
 
         tick();
     }
@@ -183,7 +198,6 @@ public class ConnectionQueue {
                           + "&hour=" + Countly.currentHour()
                           + "&dow=" + Countly.currentDayOfWeek()
                           + "&session_duration=" + duration
-                          + "&location=" + getCountlyStore().getAndRemoveLocation()
                           + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                           + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
 
@@ -207,7 +221,6 @@ public class ConnectionQueue {
                 + "&hour=" + Countly.currentHour()
                 + "&dow=" + Countly.currentDayOfWeek()
                 + "&session_duration=" + duration
-                + "&location=" + getCountlyStore().getAndRemoveLocation()
                 + "&device_id=" + deviceId
                 + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                 + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
@@ -266,6 +279,48 @@ public class ConnectionQueue {
 
         if (deviceIdOverride != null) {
             data += "&override_id=" + deviceIdOverride;
+        }
+
+        store_.addConnection(data);
+
+        tick();
+    }
+
+    /**
+     * Send user location
+     */
+    void sendLocation() {
+        checkInternalState();
+        String data = "app_key=" + appKey_
+            + "&timestamp=" + Countly.currentTimestampMs()
+            + "&hour=" + Countly.currentHour()
+            + "&dow=" + Countly.currentDayOfWeek()
+            + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+            + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+
+        CountlyStore cs = getCountlyStore();
+        if(cs.getLocationDisabled()){
+            //if location is disabled, send empty info
+            data += "&location=";
+        } else {
+            //location should be send, add it
+            String location = cs.getLocation();
+            String city = cs.getLocationCity();
+            String country_code = cs.getLocationCountryCode();
+            String ip = cs.getLocationIpAddress();
+
+
+            if(location != null && !location.isEmpty()){
+                data += "&location=" + location;
+            }
+
+            if(city != null && !city.isEmpty()){
+                data += "&city=" + city;
+            }
+
+            if(country_code != null && !country_code.isEmpty()){
+                data += "&country_code=" + country_code;
+            }
         }
 
         store_.addConnection(data);
@@ -342,26 +397,6 @@ public class ConnectionQueue {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     void recordEvents(final String events) {
-        checkInternalState();
-        final String data = "app_key=" + appKey_
-                          + "&timestamp=" + Countly.currentTimestampMs()
-                          + "&hour=" + Countly.currentHour()
-                          + "&dow=" + Countly.currentDayOfWeek()
-                          + "&events=" + events
-                          + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
-
-        store_.addConnection(data);
-
-        tick();
-    }
-
-    /**
-     * Records the specified events and sends them to the server.
-     * @param events URL-encoded JSON string of event data
-     * @throws IllegalStateException if context, app key, store, or server URL have not been set
-     */
-    void recordLocation(final String events) {
         checkInternalState();
         final String data = "app_key=" + appKey_
                           + "&timestamp=" + Countly.currentTimestampMs()

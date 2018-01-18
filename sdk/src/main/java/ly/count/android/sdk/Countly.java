@@ -122,11 +122,6 @@ public class Countly {
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
 
-    //optional parameters for begin_session call
-    private String optionalParameterCountryCode = null;
-    private String optionalParameterCity = null;
-    private String optionalParameterLocation = null;
-
     //app crawlers
     private boolean shouldIgnoreCrawlers = true;//ignore app crawlers by default
     private boolean deviceIsAppCrawler = false;//by default assume that device is not a app crawler
@@ -148,6 +143,8 @@ public class Countly {
 
     //attribution
     protected boolean isAttributionEnabled = true;
+
+    protected boolean isBeginSessionSent = false;
 
     /**
      * Returns the Countly singleton.
@@ -870,23 +867,63 @@ public class Countly {
     }
 
     /**
-     * Set user location.
-     *
-     * Countly detects user location based on IP address. But for geolocation-enabled apps,
-     * it's better to supply exact location of user.
-     * Allows sending messages to a custom segment of users located in a particular area.
-     *
-     * @param lat Latitude
-     * @param lon Longitude
+     * Disable sending of location data
      */
-    public synchronized Countly setLocation(double lat, double lon) {
+    public synchronized Countly disableLocation() {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting location");
+            Log.d(Countly.TAG, "Disabling location");
         }
-        connectionQueue_.getCountlyStore().setLocation(lat, lon);
+        connectionQueue_.getCountlyStore().setLocationDisabled(true);
+        connectionQueue_.sendLocation();
 
-        if (disableUpdateSessionRequests_) {
-            connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+        return this;
+    }
+
+    /**
+     * Set location parameters. If they are set before begin_session, they will be sent as part of it.
+     * If they are set after, then they will be sent as a separate request.
+     * If this is called after disabling location, it will enable it.
+     * @param country_code ISO Country code for the user's country
+     * @param city Name of the user's city
+     * @param location comma separate lat and lng values. For example, "56.42345,123.45325"
+     */
+    public synchronized Countly setLocation(String country_code, String city, String location, String ipAddress){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Setting location parameters");
+        }
+
+        if(country_code != null){
+            connectionQueue_.getCountlyStore().setLocationCountryCode(country_code);
+        }
+
+        if(city != null){
+            connectionQueue_.getCountlyStore().setLocationCity(city);
+        }
+
+        if(location != null){
+            connectionQueue_.getCountlyStore().setLocation(location);
+        }
+
+        if(ipAddress != null){
+            connectionQueue_.getCountlyStore().setLocationIpAddress(ipAddress);
+        }
+
+        if((country_code == null && city != null) || (city == null && country_code != null)) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.w(Countly.TAG, "In \"setLocation\" both city and country code need to be set at the same time to be sent");
+            }
+        }
+
+        if(country_code != null || city != null || location != null || ipAddress != null){
+            connectionQueue_.getCountlyStore().setLocationDisabled(false);
+        }
+
+
+        if(isBeginSessionSent){
+            //send as a seperate request
+            connectionQueue_.sendLocation();
+        } else {
+            //will be sent a part of begin session
         }
 
         return this;
@@ -1503,34 +1540,6 @@ public class Countly {
      */
     public boolean isHttpPostForced() {
         return isHttpPostForced;
-    }
-
-    /**
-     * Set optional parameters that are added to all begin_session requests
-     * @param country_code ISO Country code for the user's country
-     * @param city Name of the user's city
-     * @param location comma separate lat and lng values. For example, "56.42345,123.45325"
-     */
-    public synchronized Countly setOptionalParametersForInitialization(String country_code, String city, String location){
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting optional initialization parameters");
-        }
-        optionalParameterCountryCode = country_code;
-        optionalParameterCity = city;
-        optionalParameterLocation = location;
-        return this;
-    }
-
-    public String getOptionalParameterCountryCode() {
-        return optionalParameterCountryCode;
-    }
-
-    public String getOptionalParameterCity() {
-        return optionalParameterCity;
-    }
-
-    public String getOptionalParameterLocation() {
-        return optionalParameterLocation;
     }
 
     private void checkIfDeviceIsAppCrawler(){

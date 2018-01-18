@@ -48,6 +48,16 @@ public class ActivityExampleOthers extends Activity {
         Countly.sharedInstance().changeDeviceId("New Device ID");
     }
 
+    public void onClickViewOther05(View v) {
+        //set location
+        Countly.sharedInstance().setLocation("us", "Houston", "29.634933,-95.220255", null);
+    }
+
+    public void onClickViewOther06(View v) {
+        //disable location
+        Countly.sharedInstance().disableLocation();
+    }
+
     @Override
     public void onStart()
     {

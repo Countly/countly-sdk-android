@@ -36,4 +36,18 @@
         android:layout_height="wrap_content"
         android:onClick="onClickViewOther04"
         android:text="@string/set_new_device_id_with_server_merge"/>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewOther05"
+        android:text="Set location"/>
+
+    <Button
+        android:id="@+id/button45"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewOther06"
+        android:text="Disable location"/>
 </LinearLayout>

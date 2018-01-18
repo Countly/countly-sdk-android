@@ -53,7 +53,11 @@ public class CountlyStore {
     private static final String DELIMITER = ":::";
     private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
+    private static final String LOCATION_CITY_PREFERENCE = "LOCATION_CITY";
+    private static final String LOCATION_COUNTRY_CODE_PREFERENCE = "LOCATION_COUNTRY_CODE";
+    private static final String LOCATION_IP_ADDRESS_PREFERENCE = "LOCATION_IP_ADDRESS";
     private static final String LOCATION_PREFERENCE = "LOCATION";
+    private static final String LOCATION_DISABLED_PREFERENCE = "LOCATION_DISABLED";
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
     private static final int MAX_EVENTS = 100;
@@ -166,19 +170,48 @@ public class CountlyStore {
     /**
      * Sets location of user and sends it with next request
      */
-    void setLocation(final double lat, final double lon) {
-        preferences_.edit().putString(LOCATION_PREFERENCE, lat + "," + lon).commit();
+    void setLocation(final String latLonCoordinates) {
+        preferences_.edit().putString(LOCATION_PREFERENCE, latLonCoordinates).commit();
+    }
+
+    void setLocationCity(final String city) {
+        preferences_.edit().putString(LOCATION_CITY_PREFERENCE, city).commit();
+    }
+
+    void setLocationCountryCode(final String countryCode) {
+        preferences_.edit().putString(LOCATION_COUNTRY_CODE_PREFERENCE, countryCode).commit();
+    }
+
+    void setLocationIpAddress(final String ipAddress) {
+        preferences_.edit().putString(LOCATION_IP_ADDRESS_PREFERENCE, ipAddress).commit();
+    }
+
+    void setLocationDisabled(final boolean locationDisabled) {
+        preferences_.edit().putBoolean(LOCATION_DISABLED_PREFERENCE, locationDisabled).commit();
     }
 
     /**
      * Get location or empty string in case if no location is specified
      */
-    String getAndRemoveLocation() {
+    String getLocation() {
         String location = preferences_.getString(LOCATION_PREFERENCE, "");
-        if (!location.equals("")) {
-            preferences_.edit().remove(LOCATION_PREFERENCE).commit();
-        }
         return location;
+    }
+
+    String getLocationCity() {
+        return preferences_.getString(LOCATION_CITY_PREFERENCE, "");
+    }
+
+    String getLocationCountryCode() {
+        return preferences_.getString(LOCATION_COUNTRY_CODE_PREFERENCE, "");
+    }
+
+    String getLocationIpAddress() {
+        return preferences_.getString(LOCATION_IP_ADDRESS_PREFERENCE, "");
+    }
+
+    boolean getLocationDisabled() {
+        return preferences_.getBoolean(LOCATION_DISABLED_PREFERENCE, false);
     }
 
     /**
