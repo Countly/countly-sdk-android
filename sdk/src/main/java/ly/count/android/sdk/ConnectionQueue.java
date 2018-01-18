@@ -178,15 +178,22 @@ public class ConnectionQueue {
     void updateSession(final int duration) {
         checkInternalState();
         if (duration > 0) {
-            final String data = "app_key=" + appKey_
-                              + "&timestamp=" + Countly.currentTimestampMs()
-                              + "&hour=" + Countly.currentHour()
-                              + "&dow=" + Countly.currentDayOfWeek()
-                              + "&session_duration=" + duration
-                              + "&location=" + getCountlyStore().getAndRemoveLocation()
-                              + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                              + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+            String data = "app_key=" + appKey_
+                          + "&timestamp=" + Countly.currentTimestampMs()
+                          + "&hour=" + Countly.currentHour()
+                          + "&dow=" + Countly.currentDayOfWeek()
+                          + "&session_duration=" + duration
+                          + "&location=" + getCountlyStore().getAndRemoveLocation()
+                          + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
 
+            if(Countly.sharedInstance().isAttributionEnabled){
+                String cachedAdId = store_.getCachedAdvertisingId();
+
+                if(!cachedAdId.isEmpty()){
+                    data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+                }
+            }
             store_.addConnection(data);
 
             tick();
