@@ -274,6 +274,10 @@ public class Countly {
             throw new IllegalStateException("Countly cannot be reinitialized with different values");
         }
 
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
+        }
+
         // In some cases CountlyMessaging does some background processing, so it needs a way
         // to start Countly on itself
         if (MessagingAdapter.isMessagingAvailable()) {
@@ -300,6 +304,10 @@ public class Countly {
                 deviceIdInstance = new DeviceId(countlyStore, idMode);
             }
 
+
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Currently cached advertising ID " + countlyStore.getCachedAdvertisingId());
+            }
             AdvertisingIdAdapter.cacheAdvertisingID(context, countlyStore);
 
             deviceIdInstance.init(context, countlyStore, true);
@@ -873,7 +881,6 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Disabling location");
         }
-
         connectionQueue_.getCountlyStore().setLocationCountryCode("");
         connectionQueue_.getCountlyStore().setLocationCity("");
         connectionQueue_.getCountlyStore().setLocation("");
