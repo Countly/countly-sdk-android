@@ -29,11 +29,14 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        String latitude = "57.708358";
+        String longitude = "11.974950";
+
         Countly.sharedInstance()
                 .init(this, COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
                 .setPushIntentAddMetadata(true)
                 .initMessaging(this, MainActivity.class, COUNTLY_MESSAGING_PROJECT_ID, null, Countly.CountlyMessagingMode.TEST, false, -1, R.drawable.large_icon, 564797574)
-                //.setLocation(null, null, LATITUDE + "," + LONGITUDE, null);
+                .setLocation(null, null, latitude + "," + longitude, null)
                 .setLoggingEnabled(true);
 
         Countly.sharedInstance().recordEvent("test", 1);

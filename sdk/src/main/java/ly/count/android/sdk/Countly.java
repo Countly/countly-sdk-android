@@ -873,6 +873,11 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Disabling location");
         }
+
+        connectionQueue_.getCountlyStore().setLocationCountryCode("");
+        connectionQueue_.getCountlyStore().setLocationCity("");
+        connectionQueue_.getCountlyStore().setLocation("");
+        connectionQueue_.getCountlyStore().setLocationIpAddress("");
         connectionQueue_.getCountlyStore().setLocationDisabled(true);
         connectionQueue_.sendLocation();
 

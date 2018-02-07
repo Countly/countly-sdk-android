@@ -49,8 +49,14 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickViewOther05(View v) {
-        //set location
-        Countly.sharedInstance().setLocation("us", "Houston", "29.634933,-95.220255", null);
+        //set user location
+        String countryCode = "us";
+        String city = "Houston";
+        String latitude = "29.634933";
+        String longitude = "-95.220255";
+        String ipAddress = null;
+
+        Countly.sharedInstance().setLocation(countryCode, city, latitude + "," + longitude, ipAddress);
     }
 
     public void onClickViewOther06(View v) {
