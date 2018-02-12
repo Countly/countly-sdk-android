@@ -131,9 +131,7 @@ public class CountlyMessagingService extends IntentService {
                 }
             }
 
-            if(notificationColor > 0){
-                builder.setColor(notificationColor);
-            }
+            builder.setColor(notificationColor);
 
             if (msg.hasMedia() && Message.getFromStore(msg.getMedia()) != null) {
                 builder.setStyle(new NotificationCompat.BigPictureStyle()

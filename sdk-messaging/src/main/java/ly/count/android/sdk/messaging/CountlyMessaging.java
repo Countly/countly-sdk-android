@@ -353,6 +353,6 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     }
 
     public static int getAccentColor (Context context) {
-        return getGCMPreferences(context).getInt(PROPERTY_ACCENT_COLOR_ID, -1);
+        return getGCMPreferences(context).getInt(PROPERTY_ACCENT_COLOR_ID, 0xffffffff);
     }
 }
