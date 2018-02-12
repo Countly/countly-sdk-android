@@ -18,7 +18,7 @@ android {
         minSdkVersion 9
         targetSdkVersion 25
         versionCode 1
-        versionName "18.01"
+        versionName "18.01.1"
     }
     buildTypes {
         release {
@@ -36,14 +36,14 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.google.android.gms:play-services-gcm:10.0.1'
     compile project(':sdk')
-//    compile 'ly.count:sdk-android:18.01'
+//    compile 'ly.count:sdk-android:18.01.1'
 }
 
 publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk-messaging'
-    version = '18.01'
+    version = '18.01.1'
     description = 'Countly Android SDK with GCM Support'
     website = 'https://github.com/Countly/countly-sdk-android'
 }

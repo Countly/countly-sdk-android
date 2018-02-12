@@ -1,3 +1,8 @@
+18.01.1
+  * Fixing small push notification accent color bug
+  * Properly deleting cached location data 
+  * Improving debug and log messages
+
 18.01
   * Changes made how location data is passed and handled
   * Adding option to disable sending of location data (it can be reenabled later)
