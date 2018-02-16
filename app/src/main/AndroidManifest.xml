@@ -55,6 +55,11 @@
         </activity>
 
         <activity
+            android:name=".ActivityExampleCohorts"
+            android:label="@string/activity_name_cohorts" >
+        </activity>
+
+        <activity
             android:name=".ActivityExampleViewTracking"
             android:label="@string/activity_name_view_tracking" >
         </activity>

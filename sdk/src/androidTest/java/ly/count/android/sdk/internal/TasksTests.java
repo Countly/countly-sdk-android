@@ -14,16 +14,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 @RunWith(AndroidJUnit4.class)
-public class TasksTests {
+public class TasksTests extends BaseTests{
     private Tasks tasks;
 
     @Before
-    public void setupEveryTest(){
+    public void setUp() throws Exception {
+        super.setUp();
         tasks = new Tasks("test");
+        defaultConfigWithLogsForConfigTests();
     }
 
     @After
-    public void cleanupEveryTests(){
+    public void tearDown() throws Exception {
+        super.tearDown();
         tasks.shutdown();
     }
 
@@ -39,16 +42,18 @@ public class TasksTests {
         other.run(new Tasks.Task<Object>(0L) {
             @Override
             public Object call() throws Exception {
-                Thread.sleep(50);
+                Log.d("...");
+                Thread.sleep(100);
                 return true;
             }
         });
+        long now = System.nanoTime();
         other.shutdown();
-        Assert.assertTrue(Whitebox.<ExecutorService>getInternalState(other, "executor").isShutdown());
-        Assert.assertFalse(Whitebox.<ExecutorService>getInternalState(other, "executor").isTerminated());
-        Thread.sleep(200);
+        long timeToShutdown = Device.nsToMs(System.nanoTime() - now);
+        Log.i("time to shutdown " + timeToShutdown);
         Assert.assertTrue(Whitebox.<ExecutorService>getInternalState(other, "executor").isShutdown());
         Assert.assertTrue(Whitebox.<ExecutorService>getInternalState(other, "executor").isTerminated());
+        Assert.assertTrue(timeToShutdown > 100);
     }
 
     @Test

@@ -10,6 +10,10 @@
     <string name="activity_name_custom_events">Custom events examples</string>
     <string name="activity_name_others">Other examples</string>
     <string name="activity_name_user_detail">User detail examples</string>
+    <string name="activity_name_cohorts">Cohorts examples</string>
     <string name="activity_name_view_tracking">View tracking examples</string>
+
+    <string name="btn_halt">Stop &amp; clear</string>
+    <string name="btn_init">Start</string>
 
 </resources>

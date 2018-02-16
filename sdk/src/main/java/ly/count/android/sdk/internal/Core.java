@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.provider.Settings;
 
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +18,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
@@ -80,6 +83,7 @@ public class Core extends CoreModules {
      */
     public static Core init(Config config, android.app.Application application, boolean limited) throws IllegalArgumentException {
         if (instance == null) {
+            Log.i("Initializing Countly in " + (limited ? "limited" : "full") + " mode");
             instance = new Core();
             Context ctx = new ContextImpl(application);
             if (handler == null) {
@@ -114,14 +118,14 @@ public class Core extends CoreModules {
             }
             instance.modules.removeAll(failed);
 
-            instance.user = instance.loadUser(ctx);
-            if (instance.user == null) {
-                instance.user = new UserImpl(ctx);
-            }
-
             if (instance.config.isLimited()) {
                 instance.onLimitedContextAcquired(application);
             } else {
+                instance.user = instance.loadUser(ctx);
+                if (instance.user == null) {
+                    instance.user = new UserImpl(ctx);
+                }
+
                 instance.onContextAcquired(application);
             }
 
@@ -161,7 +165,7 @@ public class Core extends CoreModules {
         }
         modules.clear();
 
-        if (session != null) {
+        if (session != null && session.ended == null) {
             session.end();
         }
 
@@ -174,6 +178,7 @@ public class Core extends CoreModules {
         ctx.expire();
 
         handler = null;
+        Log.d("<<< 4");
         user = null;
 
         deinit();
@@ -307,6 +312,9 @@ public class Core extends CoreModules {
                 instance.config.setLimited(true);
             }
             instance.user = instance.loadUser(ctx);
+            if (instance.user == null) {
+                instance.user = new UserImpl(ctx);
+            }
         }
 
         if (!instance.config.isLimited() && id != null && id.realm == Config.DeviceIdRealm.DEVICE_ID) {
@@ -426,12 +434,13 @@ public class Core extends CoreModules {
      * @param ctx Context to run in
      * @param throwable Throwable to record
      * @param fatal {@code true} if Exception was bad (crashing app or some fatal malfunction), {@code false} otherwise
-     * @param details optional details string
+     * @param segments (optional, can be {@code null}) additional crash segments map
+     * @param logs optional logs string (\n-separated lines of logs) or comment about this crash
      */
-    public static void onCrash(Context ctx, Throwable throwable, boolean fatal, String name, String details) {
+    public static void onCrash(Context ctx, Throwable throwable, boolean fatal, String name, Map<String, String> segments, String... logs) {
         ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.Crash);
         if (module != null) {
-            module.onCrash(ctx, throwable, fatal, name, details);
+            module.onCrash(ctx, throwable, fatal, name, segments, logs);
         }
     }
 
@@ -533,7 +542,7 @@ public class Core extends CoreModules {
                                 callback.call(BitmapFactory.decodeByteArray(param, 0, param.length));
                             }
                             tasks.shutdown();
-                        } catch (Exception e) {
+                        } catch (Throwable e) {
                             L.e("Exception in message media download callback", e);
                         }
                     }
@@ -542,4 +551,9 @@ public class Core extends CoreModules {
         });
     }
 
+    static void onUserChanged(Context ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved) {
+        for (Module module : instance.modules) {
+            module.onUserChanged(ctx, changes, cohortsAdded, cohortsRemoved);
+        }
+    }
 }

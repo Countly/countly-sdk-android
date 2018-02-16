@@ -18,21 +18,21 @@
             android:text="Custom Events"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/button9"
+            android:id="@+id/btnEvents"
             android:onClick="onClickButtonCustomEvents"/>
 
         <Button
             android:text="Crash Reporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/button8"
+            android:id="@+id/btnReporting"
             android:onClick="onClickButtonCrashReporting"/>
 
         <Button
             android:text="User Details"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/button7"
+            android:id="@+id/btnUserDetails"
             android:onClick="onClickButtonUserDetails"/>
 
         <!--<Button-->
@@ -47,15 +47,33 @@
             android:text="View Tracking"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/button5"
+            android:id="@+id/btnViews"
             android:onClick="onClickButtonViewTracking"/>
+
+        <Button
+            android:id="@+id/btnCohorts"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClickButtonCohorts"
+            android:text="Cohorts" />
 
         <Button
             android:text="Others"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/button2"
+            android:id="@+id/btnOthers"
             android:onClick="onClickButtonOthers"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="40dip" />
+
+        <Button
+            android:id="@+id/btnHalt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClickButtonHalt"
+            android:text="@string/btn_halt" />
 
     </LinearLayout>
 </RelativeLayout>

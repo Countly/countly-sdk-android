@@ -52,7 +52,6 @@ final class InternalConfig extends Config implements Storable {
     }
 
     InternalConfig(Config config) throws IllegalArgumentException {
-        //todo double check, should it protect against nulls?
         super(config.getServerURL().toString(), config.getServerAppKey());
         setFrom(config);
     }
@@ -144,6 +143,7 @@ final class InternalConfig extends Config implements Storable {
             stream.writeInt(sessionCooldownPeriod);
             stream.writeBoolean(testMode);
             stream.writeInt(crashReportingANRTimeout);
+            stream.writeObject(crashProcessorClass);
             stream.writeObject(pushActivityClass);
             stream.writeInt(moduleOverrides == null ? 0 : moduleOverrides.size());
             if (moduleOverrides != null && moduleOverrides.size() > 0) {
@@ -237,6 +237,7 @@ final class InternalConfig extends Config implements Storable {
             sessionCooldownPeriod = stream.readInt();
             testMode = stream.readBoolean();
             crashReportingANRTimeout = stream.readInt();
+            crashProcessorClass = (String) stream.readObject();
             pushActivityClass = (String) stream.readObject();
 
             l = stream.readInt();
@@ -311,6 +312,9 @@ final class InternalConfig extends Config implements Storable {
     }
 
     public DID setDeviceId(DID id) {
+        if (id == null) {
+            L.wtf("DID cannot be null");
+        }
         DID old = null;
         for (DID did : dids) {
             if (did.realm == id.realm) {

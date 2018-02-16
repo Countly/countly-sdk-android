@@ -3,6 +3,8 @@ package ly.count.android.sdk;
 import java.util.Map;
 import java.util.Set;
 
+import ly.count.android.sdk.internal.Device;
+
 /**
  * User Profile object: stores profile and exposes stored data. Doesn't download profile from the
  * server, so data is available only after setting it by using {@link #edit()} and {@link UserEditor#commit()}.
@@ -102,6 +104,50 @@ public abstract class User {
      * @return year of birth if it was set previously, null otherwise
      */
     public abstract Integer birthyear();
+
+    /**
+     * Current user locale in "lang_COUNTRY", like en_US or de_DE if default device locale is overridden.
+     * If not set, Countly will use {@link Device#getLocale()}.
+     *
+     * @return current user locale
+     */
+    public abstract String locale();
+
+    /**
+     * Current user country:
+     * <ul>
+     *     <li>"ISO_CODE" of the country if set</li>
+     *     <li>"" if set to do not record, that is user opt out from location services</li>
+     *     <li>{code null} if not specified, geoip is used on the server</li>
+     * </ul>
+     *
+     * @return current user country
+     */
+    public abstract String country();
+
+    /**
+     * Current user city:
+     * <ul>
+     *     <li>"SOME CITY NAME" if set</li>
+     *     <li>"" if set to do not record, that is user opt out from location services</li>
+     *     <li>{code null} if not specified, geoip is used on the server</li>
+     * </ul>
+     *
+     * @return current user city
+     */
+    public abstract String city();
+
+    /**
+     * Current user location (string of "LAT,LON" format):
+     * <ul>
+     *     <li>"LAT,LON" if set</li>
+     *     <li>"" if set to do not record, that is user opt out from location services</li>
+     *     <li>{code null} if not specified, geoip is used on the server</li>
+     * </ul>
+     *
+     * @return current user location
+     */
+    public abstract String location();
 
     /**
      * Current user cohorts set

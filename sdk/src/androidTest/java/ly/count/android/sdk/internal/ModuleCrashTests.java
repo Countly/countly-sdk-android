@@ -59,7 +59,7 @@ public class ModuleCrashTests extends BaseTests {
         Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
         Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
 
-        Core.instance.stop(getContext(), false);
+        Core.instance.stop(getContext(), true);
 
         Thread.sleep(config.getCrashReportingANRTimeout() * 1000);
 

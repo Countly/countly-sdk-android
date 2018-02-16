@@ -4,11 +4,6 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:gravity="center_vertical"
-              android:paddingLeft="@dimen/activity_horizontal_margin"
-              android:paddingRight="@dimen/activity_horizontal_margin"
-              android:paddingTop="@dimen/activity_vertical_margin"
-              android:paddingBottom="@dimen/activity_vertical_margin"
               tools:context=".ActivityExampleCustomEvents">
 
     <ScrollView
@@ -18,86 +13,99 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_vertical"
-            android:layout_gravity="center_vertical">
+            android:paddingLeft="@dimen/activity_horizontal_margin"
+            android:paddingRight="@dimen/activity_horizontal_margin"
+            android:paddingTop="@dimen/activity_vertical_margin"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:orientation="vertical">
 
             <Button
-                android:text="Record Event"
+                android:text="ProfileView"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button4"
-                android:onClick="onClickRecordEvent01"/>
+                android:onClick="onClickRecordEventProfileView"/>
 
             <Button
-                android:text="record event with count"
+                android:text="FriendRequest (count=3)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button10"
-                android:onClick="onClickRecordEvent02"/>
+                android:onClick="onClickRecordEventFriendRequest"/>
 
             <Button
-                android:text="record event with sum"
+                android:text="AddToCart \n(count=3, sum=134)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button11"
-                android:onClick="onClickRecordEvent03"/>
+                android:onClick="onClickRecordEventAddToCartWithCountSum"/>
 
             <Button
-                android:text="record event with duration"
+                android:text="InCheckout \n(count=1, dur=55)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button12"
-                android:onClick="onClickRecordEvent04"/>
+                android:onClick="onClickRecordEventInCheckout"/>
 
             <Button
-                android:text="record event with segm."
+                android:text="ProductView \n(category=pants)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button13"
-                android:onClick="onClickRecordEvent05"/>
+                android:onClick="onClickRecordEventProductView"/>
 
             <Button
-                android:text="record event with segm., count"
+                android:text="ProductView \n(count=15, category=jackets)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button14"
-                android:onClick="onClickRecordEvent06"/>
+                android:onClick="onClickRecordEventProductViewWithCount"/>
 
             <Button
-                android:text="record event with segm., count, sum"
+                android:text="AddToCart \n(count=25, sum=10, category=jackets)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button15"
-                android:onClick="onClickRecordEvent07"/>
+                android:onClick="onClickRecordEventAddToCartWithCategoryCountSum"/>
 
             <Button
-                android:text="record event with segm., count, sum, dur."
+                android:text="AddToCart \n(count=25, sum=10, dur=55, category=jackets)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button16"
-                android:onClick="onClickRecordEvent08"/>
+                android:onClick="onClickRecordEventAddToCartWithCategoryCountSumDur"/>
 
             <Button
-                android:text="start event"
+                android:text="Start TimedEvent"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button17"
-                android:onClick="onClickRecordEvent09"/>
+                android:onClick="onClickStartTimedEvent"/>
 
             <Button
-                android:text="end event"
+                android:text="Stop TimedEvent"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button18"
-                android:onClick="onClickRecordEvent10"/>
+                android:onClick="onClickEndTimedEvent"/>
 
             <Button
-                android:text="end event with segm., count, sum"
+                android:text="Stop TimedEvent \n(count=4, sum=34)"
+                android:textAllCaps="false"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button19"
-                android:onClick="onClickRecordEvent11"/>
+                android:onClick="onClickEndTimedEventWithData"/>
         </LinearLayout>
     </ScrollView>
 

@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 
 import static org.mockito.Mockito.validateMockitoUsage;
 
-@RunWith(AndroidJUnit4.class)
+//@RunWith(AndroidJUnit4.class)
 public class CountlyTests {
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";

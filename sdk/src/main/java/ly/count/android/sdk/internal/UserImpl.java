@@ -20,7 +20,7 @@ import ly.count.android.sdk.UserEditor;
 public class UserImpl extends User implements Storable {
     private static final Log.Module L = Log.module("UserImpl");
 
-    String id, name, username, email, org, phone, picturePath;
+    String id, name, username, email, org, phone, picturePath, locale, country, city, location;
     byte[] picture;
     Gender gender;
     Integer birthyear;
@@ -70,8 +70,24 @@ public class UserImpl extends User implements Storable {
         return gender;
     }
 
+    public String locale() {
+        return locale;
+    }
+
     public Integer birthyear() {
         return birthyear;
+    }
+
+    public String country() {
+        return country;
+    }
+
+    public String city() {
+        return city;
+    }
+
+    public String location() {
+        return location;
     }
 
     public Set<String> cohorts() {
@@ -105,6 +121,10 @@ public class UserImpl extends User implements Storable {
             stream.writeObject(picturePath);
             stream.writeObject(gender == null ? null : gender.toString());
             stream.writeInt(birthyear == null ? -1 : birthyear);
+            stream.writeObject(locale);
+            stream.writeObject(country);
+            stream.writeObject(city);
+            stream.writeObject(location);
             stream.writeObject(cohorts == null || cohorts.size() == 0 ? null : cohorts);
             stream.writeObject(custom);
             stream.close();
@@ -160,6 +180,10 @@ public class UserImpl extends User implements Storable {
             if (y != -1) {
                 birthyear = y;
             }
+            locale = (String) stream.readObject();
+            country = (String) stream.readObject();
+            city = (String) stream.readObject();
+            location = (String) stream.readObject();
 
             cohorts = (Set<String>) stream.readObject();
             cohorts = cohorts == null ? new HashSet<String>() : cohorts;

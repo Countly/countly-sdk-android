@@ -33,15 +33,8 @@ class Params {
             this.json = new JSONObject();
         }
 
-        // TODO: previous implementation omitted null & empty string values, check for correctness
         public Obj put(String key, Object value) {
             try {
-                if (value instanceof Double) {
-                    Double v = (Double) value;
-                    if (v.isInfinite() || v.isNaN()) {
-                        value = null;
-                    }
-                }
                 json.put(key, value);
             } catch (JSONException e) {
                 L.wtf("Cannot put property into Params.Obj", e);
@@ -193,10 +186,13 @@ class Params {
         return params.indexOf("&" + key + "=") != -1 || params.indexOf(key + "=") == 0;
     }
 
-    //todo can this receive only an even amount of objects? maybe return an error if an odd amount is returned?
     private Params addObjects(Object[] objects) {
-        for (int i = 0; i < objects.length; i += 2) {
-            add(objects[i] == null ? ("unknown" + i) : objects[i].toString(), objects.length > i + 1 ? objects[i + 1] : null);
+        if (objects.length % 2 != 0) {
+            L.wtf("Bad number of parameters");
+        } else {
+            for (int i = 0; i < objects.length; i += 2) {
+                add(objects[i] == null ? ("unknown" + i) : objects[i].toString(), objects.length > i + 1 ? objects[i + 1] : null);
+            }
         }
         return this;
     }

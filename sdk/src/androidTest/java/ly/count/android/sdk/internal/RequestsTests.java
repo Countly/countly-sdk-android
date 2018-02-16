@@ -33,7 +33,7 @@ public class RequestsTests extends BaseTests {
         super.setUp();
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID).setDeviceIdFallbackAllowed(false));
-        requests = module(ModuleRequests.class, true);
+        requests = module(ModuleRequests.class, false);
     }
 
     @Test
@@ -64,9 +64,11 @@ public class RequestsTests extends BaseTests {
         SessionImpl session = new SessionImpl(ctx);
 
         session.params.add("test", "value");
-        ModuleRequests.sessionBegin(ctx, session);
+        Long now = System.nanoTime();
+        session.begin(now - Device.secToNs(123));
 
         Request request = Storage.readOne(ctx, new Request(0L), true);
+        Log.d("read 1st: " + request);
         Assert.assertNotNull(request);
         Assert.assertEquals(request.params.get("session_id"), "" + session.storageId());
         Assert.assertEquals(request.params.get("begin_session"), "1");
@@ -76,9 +78,10 @@ public class RequestsTests extends BaseTests {
 
         session.params.add("testUpdate", "valueUpdate");
         session.event("eve").addSegment("k", "v").setDuration(3).record();
-        ModuleRequests.sessionUpdate(ctx, session, 123L);
+        session.update(now);
 
         request = Storage.readOne(ctx, new Request(0L), true);
+        Log.d("read second: " + request);
         Assert.assertNotNull(request);
         Assert.assertEquals(request.params.get("session_id"), "" + session.storageId());
         Assert.assertEquals(request.params.get("session_duration"), "123");
@@ -100,7 +103,7 @@ public class RequestsTests extends BaseTests {
 
         session.params.add("testEnd", "valueEnd");
         config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
-        ModuleRequests.sessionEnd(ctx, session, 19L, "devid", null);
+        session.end(now + Device.secToNs(19), null, null);
 
         request = Storage.readOne(ctx, new Request(0L), true);
         Assert.assertNotNull(request);

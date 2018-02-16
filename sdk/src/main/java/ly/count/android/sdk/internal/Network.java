@@ -1,6 +1,9 @@
 package ly.count.android.sdk.internal;
 
+import android.util.Base64;
+
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,8 +15,28 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 import ly.count.android.sdk.*;
 
@@ -33,7 +56,7 @@ import static ly.count.android.sdk.internal.Utils.UTF8;
 
 //class Network extends ModuleBase { - may be
 
-class Network {
+class Network implements X509TrustManager {
     private static final Log.Module L = Log.module("network");
     private static final String PARAMETER_TAMPERING_DIGEST = "SHA-256";
     private static final String CHECKSUM = "checksum256";
@@ -42,6 +65,11 @@ class Network {
     private InternalConfig config;
     private int slept;          // how many consecutive times networking slept
     private boolean sleeps;     // whether exponential backoff sleeping is enabled
+
+    private SSLContext sslContext;          // ssl context to use if pinning is enabled
+    private List<byte[]> keyPins = null;    // list of parsed key pins
+    private List<byte[]> certPins = null;   // list of parsed cert pins
+    private X509TrustManager defaultTrustManager = null;    // default TrustManager to call along with Network one
 
     enum RequestResult {
         OK,         // success
@@ -59,10 +87,6 @@ class Network {
      * @throws IllegalArgumentException
      */
     void init (InternalConfig config) throws IllegalArgumentException {
-        if(config == null){
-            throw new IllegalArgumentException("Provided 'config' was null");
-        }
-
         // ssl config (cert & public key pinning)
         // sha1 signing
         // 301/302 handling, probably configurable (like allowFollowingRedirects) and with response
@@ -76,6 +100,12 @@ class Network {
         this.config = config;
         this.slept = 0;
         this.sleeps = true;
+
+        try {
+            setPins(config.getPublicKeyPins(), config.getCertificatePins());
+        } catch (CertificateException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
 //    void onContext(android.content.Context context) {
@@ -128,10 +158,10 @@ class Network {
         connection.setConnectTimeout(1000 * config.getNetworkConnectionTimeout());
         connection.setReadTimeout(1000 * config.getNetworkReadTimeout());
 
-//        if ((config.getPublicKeyPins() != null || config.getCertificatePins() != null) && config.getServerURL().getProtocol().equals("https")) {
-//            HttpsURLConnection https = (HttpsURLConnection) connection;
-//            https.setSSLSocketFactory(null);
-//        }
+        if (connection instanceof HttpsURLConnection && sslContext != null) {
+            HttpsURLConnection https = (HttpsURLConnection) connection;
+            https.setSSLSocketFactory(sslContext.getSocketFactory());
+        }
 
         if (!usingGET) {
             OutputStream output = null;
@@ -306,10 +336,10 @@ class Network {
             public RequestResult send() {
                 L.i("Sending request: " + request);
 
-                ModuleRequests.addRequired(config, request);
-
                 HttpURLConnection connection = null;
                 try {
+                    ModuleRequests.addRequired(config, request);
+
                     connection = connection(request, Core.instance.user());
                     connection.connect();
 
@@ -351,7 +381,7 @@ class Network {
             // redirects
             L.w("Server returned redirect");
             return RequestResult.RETRY;
-        } else if (code == 400) {
+        } else if (code == 400 || code == 404) {
             L.e("Bad request: " + response);
             return RequestResult.REMOVE;
         } else if (code > 400) {
@@ -362,5 +392,136 @@ class Network {
             L.w("Bad response code " + code);
             return RequestResult.RETRY;
         }
+    }
+
+    private static String trimPem(String pem) {
+        pem = pem.trim();
+        if (pem.startsWith("-----BEGIN")) {
+            pem = pem.substring(pem.indexOf("-----BEGIN PUBLIC KEY-----") + "-----BEGIN PUBLIC KEY-----".length());
+        }
+        if (pem.contains("-----END ")) {
+            pem = pem.substring(0, pem.indexOf("-----END"));
+        }
+        return pem.replaceAll("\n", "");
+    }
+
+    private void setPins(Set<String> keys, Set<String> certs) throws CertificateException {
+        keyPins = new ArrayList<>();
+        certPins = new ArrayList<>();
+
+        if (keys != null) for (String key : keys) {
+            try {
+                byte[] data = Utils.readStream(Network.class.getClassLoader().getResourceAsStream(key));
+                if (data != null) {
+                    String string = new String(data);
+                    if (string.contains("--BEGIN")) {
+                        data = Base64.decode(trimPem(string), Base64.DEFAULT);
+                    }
+                } else {
+                    data = Base64.decode(trimPem(key), Base64.DEFAULT);
+                }
+
+                try {
+                    X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
+                    KeyFactory kf = KeyFactory.getInstance("RSA");
+                    PublicKey k = kf.generatePublic(spec);
+                    keyPins.add(k.getEncoded());
+                } catch (InvalidKeySpecException e) {
+                    L.d("Certificate in instead of public key it seems", e);
+                    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                    Certificate cert = cf.generateCertificate(new ByteArrayInputStream(data));
+                    keyPins.add(cert.getPublicKey().getEncoded());
+                }
+            } catch (NoSuchAlgorithmException e) {
+                L.d("Shouldn't happen " + key);
+            }
+        }
+
+        if (certs != null) for (String cert : certs) {
+            byte[] data = Utils.readStream(Network.class.getClassLoader().getResourceAsStream(cert));
+            if (data != null) {
+                String string = new String(data);
+                if (string.contains("--BEGIN")) {
+                    data = Base64.decode(trimPem(string), Base64.DEFAULT);
+                }
+            } else {
+                data = Base64.decode(trimPem(cert), Base64.DEFAULT);
+            }
+
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(data));
+            certPins.add(certificate.getEncoded());
+        }
+
+        try {
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("X509");
+            trustManagerFactory.init((KeyStore) null);
+
+            for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
+                if (trustManager instanceof X509TrustManager) {
+                    defaultTrustManager = (X509TrustManager) trustManager;
+                }
+            }
+
+            if (!keyPins.isEmpty() || !certPins.isEmpty()) {
+                sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, new TrustManager[]{this}, null);
+            }
+        } catch (Throwable t) {
+            throw new CertificateException(t);
+        }
+    }
+
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        if (defaultTrustManager != null) {
+            defaultTrustManager.checkClientTrusted(chain, authType);
+        }
+    }
+
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        if (keyPins.size() == 0 && certPins.size() == 0) {
+            return;
+        }
+
+        if (chain == null) {
+            throw new IllegalArgumentException("PublicKeyManager: X509Certificate array is null");
+        }
+
+        if (!(chain.length > 0)) {
+            throw new IllegalArgumentException("PublicKeyManager: X509Certificate is empty");
+        }
+
+        if (!(null != authType && authType.contains("RSA"))) {
+            throw new CertificateException("PublicKeyManager: AuthType is not RSA");
+        }
+
+        // Perform standard SSL/TLS checks
+        if (defaultTrustManager != null) {
+            defaultTrustManager.checkServerTrusted(chain, authType);
+        }
+
+        byte serverPublicKey[] = chain[0].getPublicKey().getEncoded();
+        byte serverCertificate[] = chain[0].getEncoded();
+
+        for (byte[] key : keyPins) {
+            if (Arrays.equals(key, serverPublicKey)) {
+                return;
+            }
+        }
+
+        for (byte[] key : certPins) {
+            if (Arrays.equals(key, serverCertificate)) {
+                return;
+            }
+        }
+
+        throw new CertificateException("Neither certificate nor public key passed pinning validation");
+    }
+
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+        return new X509Certificate[0];
     }
 }

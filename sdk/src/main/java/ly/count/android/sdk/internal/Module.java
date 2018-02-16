@@ -3,6 +3,10 @@ package ly.count.android.sdk.internal;
 
 import android.app.Application;
 
+import org.json.JSONObject;
+
+import java.util.Set;
+
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Session;
 
@@ -137,6 +141,16 @@ public interface Module {
      * @param session session which ended
      */
     void onSessionEnded (Session session, Context ctx);
+
+    /**
+     * User object has been changed.
+     *
+     * @param ctx
+     * @param changes object with all the changes going to be sent to the server
+     * @param cohortsAdded set of cohorts this user has just been added to
+     * @param cohortsRemoved set of cohorts this user has just been removed from
+     */
+    void onUserChanged(Context ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved);
 
     /**
      * This method is called only on owning module only if module marks request as owned ({@link Request#own(Class)}.

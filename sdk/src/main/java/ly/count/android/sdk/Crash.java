@@ -1,5 +1,8 @@
 package ly.count.android.sdk;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Crash-encapsulating class
  */
@@ -41,10 +44,43 @@ public interface Crash {
     Crash setName(String name);
 
     /**
-     * Add some string describing what happened.
+     * Add some segmentation to this crash.
      *
-     * @param logs log string
+     * @param segments crash segments
      * @return this instance for method chaining
      */
-    Crash setDetails(String logs);
+    Crash setSegments(Map<String, String> segments);
+
+    /**
+     * Add logs to this crash.
+     *
+     * @param logs crash logs
+     * @return this instance for method chaining
+     */
+    Crash setLogs(String[] logs);
+
+    /**
+     * @return {@link Throwable} of this crash
+     */
+    Throwable getThrowable();
+
+    /**
+     * @return whether this crash was recorded as fatal or not
+     */
+    boolean isFatal();
+
+    /**
+     * @return crash name if any, {@code null otherwise}
+     */
+    String getName();
+
+    /**
+     * @return custom crash segments if any, {@code null} otherwise
+     */
+    Map<String, String> getSegments();
+
+    /**
+     * @return custom crash logs if any, {@code null} otherwise
+     */
+    List<String> getLogs();
 }

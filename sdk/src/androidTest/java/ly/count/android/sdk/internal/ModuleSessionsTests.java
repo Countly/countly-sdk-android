@@ -19,11 +19,6 @@ import static org.mockito.Mockito.mock;
 public class ModuleSessionsTests extends BaseTests {
     ModuleSessions moduleSessions;
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-    }
-
     @Test (expected = NullPointerException.class)
     public void init_null(){
         ModuleSessions moduleSessions = new ModuleSessions();
@@ -68,6 +63,7 @@ public class ModuleSessionsTests extends BaseTests {
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
         moduleSessions.onActivityStopped(ctx);
         Assert.assertEquals(-1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Core.deinit();
     }
 
     @Test

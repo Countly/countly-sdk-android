@@ -21,10 +21,12 @@ import static android.support.test.InstrumentationRegistry.getContext;
 @RunWith(AndroidJUnit4.class)
 public class UserEditorImplTests {
     private UserImpl user;
+    private Context ctx;
 
     @Before
     public void setUp() throws Exception {
-        user = new UserImpl(new ContextImpl(getContext()));
+        ctx = new ContextImpl(getContext());
+        user = new UserImpl(ctx);
         user.name = "name";
         user.username = "username";
         user.email = "email";
@@ -33,11 +35,16 @@ public class UserEditorImplTests {
         user.picture = new byte[]{3, 2, 1};
         user.gender = User.Gender.FEMALE;
         user.birthyear = 1900;
+        user.locale = "en_US";
+        user.country = "US";
+        user.city = "NY";
+        user.location = "9,9";
+        new Log().init(new InternalConfig(BaseTests.config()));
     }
 
     @Test
     public void testBasics() throws Exception {
-        UserEditorImpl editor = (UserEditorImpl) user.edit().setName("N").setUsername("U").setEmail("E").setOrg("O").setPhone("P").setPicture(new byte[]{3, 3, 3}).setGender("M").setBirthyear("1900").addToCohort("c");
+        UserEditorImpl editor = (UserEditorImpl) user.edit().setName("N").setUsername("U").setEmail("E").setOrg("O").setPhone("P").setPicture(new byte[]{3, 3, 3}).setGender("M").setBirthyear("1900").setLocale("ru_RU").setCountry("RU").setCity("Moscow").setLocation(1,2).addToCohort("c");
         JSONObject object = new JSONObject();
         Set<String> cohortsAdded = new HashSet<>();
         editor.perform(object, cohortsAdded, new HashSet<String>());
@@ -62,6 +69,20 @@ public class UserEditorImplTests {
         Assert.assertEquals("P", user.phone());
         Assert.assertEquals("P", object.getString("phone"));
 
+
+        Assert.assertEquals("ru_RU", user.locale());
+        Assert.assertEquals("ru_RU", object.getString("locale"));
+
+        Assert.assertEquals("RU", user.country());
+        Assert.assertEquals("RU", object.getString("country"));
+
+        Assert.assertEquals("Moscow", user.city());
+        Assert.assertEquals("Moscow", object.getString("city"));
+
+        Assert.assertEquals("1.0,2.0", user.location());
+        Assert.assertEquals("1.0,2.0", object.getString("location"));
+
+
         Assert.assertEquals(Sets.newSet("c"), user.cohorts());
         Assert.assertEquals(Sets.newSet("c"), cohortsAdded);
 
@@ -78,7 +99,7 @@ public class UserEditorImplTests {
 
     @Test
     public void testUnsetting() throws Exception {
-        UserEditorImpl editor = (UserEditorImpl) user.edit().setName(null).setUsername(null).setEmail(null).setOrg(null).setPhone(null).setPicture(null).setGender(null).setBirthyear(null).removeFromCohort("c");
+        UserEditorImpl editor = (UserEditorImpl) user.edit().setName(null).setUsername(null).setEmail(null).setOrg(null).setPhone(null).setPicture(null).setGender(null).setBirthyear(null).setLocale(null).setCountry(null).setCity(null).setLocation(null).removeFromCohort("c");
         JSONObject object = new JSONObject();
         Set<String> cohortsRemoved = new HashSet<>();
         editor.perform(object, new HashSet<String>(), cohortsRemoved);
@@ -102,6 +123,20 @@ public class UserEditorImplTests {
 
         Assert.assertNull(user.phone());
         Assert.assertEquals(JSONObject.NULL, object.get("phone"));
+
+
+        Assert.assertNull(user.locale());
+        Assert.assertEquals(JSONObject.NULL, object.get("locale"));
+
+        Assert.assertNull(user.country());
+        Assert.assertEquals(JSONObject.NULL, object.get("country"));
+
+        Assert.assertNull(user.city());
+        Assert.assertEquals(JSONObject.NULL, object.get("city"));
+
+        Assert.assertNull(user.location());
+        Assert.assertEquals(JSONObject.NULL, object.get("location"));
+
 
         Assert.assertEquals(new HashSet<String>(), user.cohorts());
         Assert.assertEquals(Sets.newSet("c"), cohortsRemoved);
@@ -183,5 +218,20 @@ public class UserEditorImplTests {
         Assert.assertEquals(1, object.getJSONObject("pull").getJSONArray("$pull").getInt(1));
         Assert.assertEquals(false, object.getJSONObject("pushUnique").getJSONArray("$addToSet").getBoolean(0));
         Assert.assertEquals(true, object.getJSONObject("pushUnique").getJSONArray("$addToSet").getBoolean(1));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testLocationFormat1() throws Exception {
+        user.edit().setLocation("a,b");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testLocationFormat2() throws Exception {
+        user.edit().setLocation("12");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testLocationFormat3() throws Exception {
+        user.edit().setLocation("3,4,5");
     }
 }

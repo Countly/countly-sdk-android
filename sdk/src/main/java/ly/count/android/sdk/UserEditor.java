@@ -1,7 +1,7 @@
 package ly.count.android.sdk;
 
 /**
- * Created by artem on 01/08/2017.
+ * Editor object for {@link User} modifications. Changes applied only after {@link #commit()} call.
  */
 
 public interface UserEditor {
@@ -29,6 +29,12 @@ public interface UserEditor {
     UserEditor setGender(Object gender);
     UserEditor setBirthyear(int birthyear);
     UserEditor setBirthyear(String birthyear);
+    UserEditor setLocale(String locale);
+    UserEditor setCountry(String country);
+    UserEditor setCity(String country);
+    UserEditor setLocation(String location);
+    UserEditor setLocation(double latitude, double longitude);
+    UserEditor optOutFromLocationServices();
 
     UserEditor inc(String key, int by);
     UserEditor mul(String key, double by);

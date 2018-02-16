@@ -1,6 +1,7 @@
 package ly.count.android.sdk.internal;
 
 import android.app.Application;
+import android.content.Intent;
 
 import org.junit.After;
 import org.junit.Before;
@@ -10,6 +11,7 @@ import org.powermock.reflect.Whitebox;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
+import ly.count.android.sdk.Countly;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.Context.MODE_PRIVATE;
@@ -34,6 +36,10 @@ public class BaseTests {
     protected Core core = null;
     protected CountlyService service = null;
 
+    public static Config config() {
+        return new Config(SERVER, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG);
+    }
+
     @Before
     public void setUp() throws Exception {
         ctx = new ContextImpl(getContext());
@@ -53,14 +59,14 @@ public class BaseTests {
 
     private void setUpCore(Config config, boolean limited) throws Exception {
         new Log().init(this.config == null ? new InternalConfig(defaultConfig()) : this.config);
-        this.dummy = mock(Module.class);
+        this.dummy = mock(ModuleBase.class);
         Utils.reflectiveSetField(Core.class, "testDummyModule", dummy);
         this.core = Core.init(config, application(), limited);
         this.config = Core.initialized();
     }
 
     protected Config defaultConfig() throws Exception {
-        return new Config(SERVER, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG);
+        return config();
     }
 
     protected Config defaultConfigWithLogsForConfigTests() throws Exception {
@@ -71,7 +77,6 @@ public class BaseTests {
 
     @SuppressWarnings("unchecked")
     protected <T extends Module> T module(Class<T> cls, boolean mock) {
-        List<Module> list = Whitebox.getInternalState(core, "modules");
         T module = core.module(cls);
 
         if (module == null) {
@@ -79,6 +84,7 @@ public class BaseTests {
         }
 
         if (mock) {
+            List<Module> list = Whitebox.getInternalState(core, "modules");
             list.remove(module);
             module = Mockito.spy(module);
             list.add(1, module);
@@ -104,10 +110,12 @@ public class BaseTests {
 
     @After
     public void tearDown() throws Exception  {
-        Storage.await();
-        Core.deinit();
-        if (ctx != null) {
-            Core.purgeInternalStorage(ctx, null);
+        if (Core.instance != null && ctx != null) {
+            Core.instance.stop(ctx.getContext(), true);
+        } else {
+            Storage.await();
+            Core.deinit();
+            Core.purgeInternalStorage(ctx == null ? new ContextImpl(getContext()) : ctx, null);
         }
         Utils.reflectiveSetField(Core.class, "testDummyModule", null);
     }

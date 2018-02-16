@@ -80,7 +80,7 @@ public class ConfigTests extends BaseTests {
         Assert.assertEquals(tagName, config.getLoggingTag());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void setLoggingLevel_null(){
         config.setLoggingLevel(null);
         Assert.assertEquals(null, config.getLoggingLevel());
@@ -120,16 +120,15 @@ public class ConfigTests extends BaseTests {
         Assert.assertEquals("java-native-android", config.getSdkName());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void sdkName_null(){
         config.setSdkName(null);
         Assert.assertEquals(null, config.getSdkName());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void sdkName_empty(){
         config.setSdkName("");
-        Assert.assertEquals("", config.getSdkName());
     }
 
     @Test
@@ -148,16 +147,14 @@ public class ConfigTests extends BaseTests {
         Assert.assertEquals("17.04", config.getSdkVersion());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void sdkVersion_null(){
         config.setSdkVersion(null);
-        Assert.assertEquals(null, config.getSdkVersion());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void sdkVersion_empty(){
         config.setSdkVersion("");
-        Assert.assertEquals("", config.getSdkVersion());
     }
 
     @Test

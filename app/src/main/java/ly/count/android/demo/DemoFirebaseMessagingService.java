@@ -43,9 +43,9 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
                 // We know that it should contain 2 buttons, so we start Activity
                 // which would handle UI and report Actioned metric back to the server.
 
-                Intent intent = new Intent(this, MainActivity.class);
-                intent.putExtra("countly_message", message);
-                startActivity(intent);
+//                Intent intent = new Intent(this, PromoActivity.class);
+//                intent.putExtra("countly_message", message);
+//                startActivity(intent);
 
                 // ... and then in PromoActivity:
 

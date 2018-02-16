@@ -5,6 +5,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.MalformedURLException;
@@ -314,9 +315,46 @@ public class ModulePush extends ModuleBase {
     }
 
     @Override
+    public void onUserChanged(Context ctx, final JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved) {
+        if (cohortsAdded.size() > 0 || cohortsRemoved.size() > 0) {
+            Object instance = Utils.reflectiveCall(FIREBASE_MESSAGING_CLASS, null, "getInstance");
+            if (instance != null && instance != Boolean.FALSE) {
+                for (String cohort : cohortsAdded) {
+                    Object result = Utils.reflectiveCall(null, instance, "subscribeToTopic", cohort);
+                    if (result == Boolean.FALSE) {
+                        L.w("Couldn't subscribe to Firebase topic on firebase, but still adding user to this cohort");
+                    }
+                }
+                for (String cohort : cohortsRemoved) {
+                    Object result = Utils.reflectiveCall(null, instance, "unsubscribeFromTopic", cohort);
+                    if (result == Boolean.FALSE) {
+                        L.w("Couldn't unsubscribe from Firebase topic on firebase, but still removing this cohort from the user");
+                    }
+                }
+            } else {
+                L.w("Couldn't won't process subscriptions - no FirebaseMessaging class");
+            }
+        }
+
+        if (changes.has("locale")) {
+            try {
+                final String locale = changes.getString("locale");
+                ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
+                    @Override
+                    public void call(Params params) {
+                        params.add("token_session", 1, "locale", locale);
+                    }
+                });
+            } catch (JSONException t) {
+                L.e("Locale wasn't sent in this session, will be sent later", t);
+            }
+        }
+    }
+
+    @Override
     public void onConfigurationChanged(Context ctx) {
         // send updated locale in case it has been changed
-        if (Utils.isNotEqual(localeSent, Device.getLocale())) {
+        if (Utils.isNotEqual(localeSent, Device.getLocale()) && Core.instance.user().locale() == null) {
             ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
                 @Override
                 public void call(Params params) {
@@ -329,42 +367,5 @@ public class ModulePush extends ModuleBase {
     static CountlyPush.Message decodeMessage(Map<String, String> data) {
         MessageImpl message = new MessageImpl(data);
         return message.id == null ? null : message;
-    }
-
-    static void subscribe(String topic) {
-        if (Utils.isEmpty(topic)) {
-            L.wtf("Topic cannot be null or empty");
-        } else {
-//            eFgsAAZPfIU
-            Core.instance.user().edit().addToCohort(topic).commit();
-
-            Object instance = Utils.reflectiveCall(FIREBASE_MESSAGING_CLASS, null, "getInstance");
-            if (instance != null && instance != Boolean.FALSE) {
-                Object result = Utils.reflectiveCall(null, instance, "subscribeToTopic", topic);
-                if (result == Boolean.FALSE) {
-                    L.w("Couldn't subscribe to Firebase topic on firebase, but still adding user to this cohort");
-                }
-            } else {
-                L.w("Couldn't subscribe to Firebase topic on firebase (getInstance returned " + instance + "), but still adding user to this cohort");
-            }
-        }
-    }
-
-    static void unsubscribe(String topic) {
-        if (Utils.isEmpty(topic)) {
-            L.wtf("Topic cannot be null or empty");
-        } else {
-            Core.instance.user().edit().removeFromCohort(topic).commit();
-
-            Object instance = Utils.reflectiveCall(FIREBASE_MESSAGING_CLASS, null, "getInstance");
-            if (instance != null && instance != Boolean.FALSE) {
-                Object result = Utils.reflectiveCall(null, instance, "unsubscribeFromTopic", topic);
-                if (result == Boolean.FALSE) {
-                    L.w("Couldn't unsubscribe from Firebase topic on firebase, but still removing this cohort from the user");
-                }
-            } else {
-                L.w("Couldn't unsubscribe from Firebase topic on firebase (getInstance returned " + instance + "), but still removing this cohort from the user");
-            }
-        }
     }
 }

@@ -124,6 +124,10 @@ class UserEditorImpl implements UserEditor {
     static final String PICTURE_IN_USER_PROFILE = "[CLY]_USER_PROFILE_PICTURE";
     static final String GENDER = "gender";
     static final String BIRTHYEAR = "byear";
+    static final String LOCALE = "locale";
+    static final String COUNTRY = "country";
+    static final String CITY = "city";
+    static final String LOCATION = "location";
     static final String CUSTOM = "custom";
 
     private final UserImpl user;
@@ -247,6 +251,30 @@ class UserEditorImpl implements UserEditor {
                         L.wtf("Won't set user birthyear (must be of type Integer or String which can be parsed to Integer)");
                     }
                     break;
+                case LOCALE:
+                    if (value == null || value instanceof String) {
+                        user.locale = (String) value;
+                        changes.put(LOCALE, value == null ? JSONObject.NULL : user.locale);
+                    }
+                    break;
+                case COUNTRY:
+                    if (value == null || value instanceof String) {
+                        user.country = (String) value;
+                        changes.put(COUNTRY, value == null ? JSONObject.NULL : user.country);
+                    }
+                    break;
+                case CITY:
+                    if (value == null || value instanceof String) {
+                        user.city = (String) value;
+                        changes.put(CITY, value == null ? JSONObject.NULL : user.city);
+                    }
+                    break;
+                case LOCATION:
+                    if (value == null || value instanceof String) {
+                        user.location = (String) value;
+                        changes.put(LOCATION, value == null ? JSONObject.NULL : user.location);
+                    }
+                    break;
                 default:
                     if (value == null || value instanceof String || value instanceof Integer || value instanceof Float || value instanceof Double || value instanceof Boolean
                             || value instanceof String[] || value instanceof Integer[] || value instanceof Float[] || value instanceof Double[] || value instanceof Boolean[] || value instanceof Object[]) {
@@ -350,6 +378,51 @@ class UserEditorImpl implements UserEditor {
     @Override
     public UserEditor setBirthyear(String birthyear) {
         return set(BIRTHYEAR, birthyear);
+    }
+
+    @Override
+    public UserEditor setLocale(String locale) {
+        return set(LOCALE, locale);
+    }
+
+    @Override
+    public UserEditor setCountry(String country) {
+        return set(COUNTRY, country);
+    }
+
+    @Override
+    public UserEditor setCity(String city) {
+        return set(CITY, city);
+    }
+
+    @Override
+    public UserEditor setLocation(String location) {
+        if (location != null) {
+            String[] comps = location.split(",");
+            if (comps.length == 2) {
+                try {
+                    return set(LOCATION, Double.valueOf(comps[0]) + "," + Double.valueOf(comps[1]));
+                } catch (Throwable t){
+                    L.wtf("Invalid location format: " + location, t);
+                    return this;
+                }
+            } else {
+                L.wtf("Invalid location format: " + location);
+                return this;
+            }
+        } else {
+            return set(LOCATION, null);
+        }
+    }
+
+    @Override
+    public UserEditor setLocation(double latitude, double longitude) {
+        return set(LOCATION, latitude + "," + longitude);
+    }
+
+    @Override
+    public UserEditor optOutFromLocationServices() {
+        return set(COUNTRY, "").set(CITY, "").set(LOCATION, "");
     }
 
     @Override
@@ -458,8 +531,22 @@ class UserEditorImpl implements UserEditor {
                     if (cohortsRemoved.size() > 0) {
                         params.add("remove_cohorts", new JSONArray(cohortsRemoved).toString());
                     }
+                    if (changes.has(LOCALE) && user.locale != null) {
+                        params.add("locale", user.locale);
+                    }
+                    if (changes.has(COUNTRY) && user.country != null) {
+                        params.add("country_code", user.country);
+                    }
+                    if (changes.has(CITY) && user.city != null) {
+                        params.add("city", user.city);
+                    }
+                    if (changes.has(LOCATION) && user.location != null) {
+                        params.add("location", user.location);
+                    }
                 }
             });
+
+            Core.onUserChanged(user.ctx, changes, cohortsAdded, cohortsRemoved);
         } catch (JSONException e) {
             L.wtf("Exception while committing changes to User profile", e);
         }

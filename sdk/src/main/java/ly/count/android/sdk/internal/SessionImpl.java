@@ -176,7 +176,7 @@ class SessionImpl implements Session, Storable {
             Storage.pushAsync(ctx, this);
         }
 
-        Long duration = updateDuration(null);
+        Long duration = updateDuration(now);
 
         Future<Boolean> ret = ModuleRequests.sessionEnd(ctx, this, duration, did, new Tasks.Callback<Boolean>() {
             @Override
@@ -254,6 +254,9 @@ class SessionImpl implements Session, Storable {
     }
 
     Session recordEvent(Event event) {
+        if (began == null) {
+            begin();
+        }
         if (timedEvents.containsKey(((EventImpl)event).getKey())) {
             timedEvents.remove(((EventImpl)event).getKey());
         }
@@ -282,12 +285,12 @@ class SessionImpl implements Session, Storable {
 
     @Override
     public Session addCrashReport(Throwable t, boolean fatal) {
-        return addCrashReport(t, fatal, null, null);
+        return addCrashReport(t, fatal, null, null, null);
     }
 
     @Override
-    public Session addCrashReport(Throwable t, boolean fatal, String name, String details) {
-        Core.onCrash(ctx, t, fatal, name, details);
+    public Session addCrashReport(Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+        Core.onCrash(ctx, t, fatal, name, segments, logs);
         return this;
     }
 
@@ -309,8 +312,6 @@ class SessionImpl implements Session, Storable {
     public View view(String name) {
         return view(name, startView);
     }
-
-    // TODO: to be continued...
 
     public Session addParam(String key, Object value) {
         params.add(key, value);

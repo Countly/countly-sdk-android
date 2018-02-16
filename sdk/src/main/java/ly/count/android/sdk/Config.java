@@ -380,6 +380,13 @@ public class Config {
     protected int crashReportingANRTimeout = 5;
 
     /**
+     * {@link CrashProcessor}-implementing class which is instantiated when application
+     * crashes or crash is reported programmatically using {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)}.
+     * Crash processor helps you to add custom data in event of a crash: custom crash segments & crash logs.
+     */
+    protected String crashProcessorClass = null;
+
+    /**
      * Activity class to be launched on {@link android.app.Notification} tap, defaults
      * to main app activity.
      */
@@ -389,6 +396,11 @@ public class Config {
      * Feature-Class map which sets Module overrides.
      */
     protected Map<Feature, Class<? extends Module>> moduleOverrides = null;
+
+    /**
+     * String-String map with custom parameters sent in each request, persistent.
+     */
+    protected Map<String, String> persistentParams = null;
 
     /**
      * The only Config constructor.
@@ -452,7 +464,13 @@ public class Config {
         this.features.clear();
 
         if (features != null && features.length > 0) {
-            this.features.addAll(Arrays.asList(features));
+            for (int i = 0; i < features.length; i++) {
+                if (features[i] == null) {
+                    Log.wtf(i + "-th feature is null in setFeatures");
+                } else {
+                    this.features.add(features[i]);
+                }
+            }
         }
         return this;
     }
@@ -478,11 +496,12 @@ public class Config {
     public Config setDeviceIdStrategy(DeviceIdStrategy strategy, String customDeviceId) {
         if (strategy == null) {
             Log.wtf("DeviceIdStrategy cannot be null");
+        } else {
+            if (strategy == DeviceIdStrategy.CUSTOM_ID) {
+                return setCustomDeviceId(customDeviceId);
+            }
+            this.deviceIdStrategy = strategy;
         }
-        if (strategy == DeviceIdStrategy.CUSTOM_ID) {
-            return setCustomDeviceId(customDeviceId);
-        }
-        this.deviceIdStrategy = strategy;
         return this;
     }
 
@@ -505,9 +524,10 @@ public class Config {
     public Config setCustomDeviceId(String customDeviceId) {
         if (Utils.isEmpty(customDeviceId)) {
             Log.wtf("DeviceIdStrategy.CUSTOM_ID strategy cannot be used without device id specified");
+        } else {
+            this.customDeviceId = customDeviceId;
+            this.deviceIdStrategy = DeviceIdStrategy.CUSTOM_ID;
         }
-        this.customDeviceId = customDeviceId;
-        this.deviceIdStrategy = DeviceIdStrategy.CUSTOM_ID;
         return this;
     }
 
@@ -550,7 +570,11 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config enableParameterTamperingProtection(String salt) {
-        this.salt = salt;
+        if (Utils.isEmpty(salt)) {
+            Log.wtf("Salt cannot be empty in enableParameterTamperingProtection");
+        } else {
+            this.salt = salt;
+        }
         return this;
     }
 
@@ -563,8 +587,9 @@ public class Config {
     public Config setLoggingTag(String loggingTag) {
         if (loggingTag == null || loggingTag.equals("")) {
             Log.wtf("Logging tag cannot be empty");
+        } else {
+            this.loggingTag = loggingTag;
         }
-        this.loggingTag = loggingTag;
         return this;
     }
 
@@ -575,8 +600,11 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setLoggingLevel(LoggingLevel loggingLevel) {
-        //todo double check, logging level can be set null, is that ok?
-        this.loggingLevel = loggingLevel;
+        if (loggingLevel == null) {
+            Log.wtf("Logging level cannot be null");
+        } else {
+            this.loggingLevel = loggingLevel;
+        }
         return this;
     }
 
@@ -619,7 +647,11 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setSendUpdateEachSeconds(int sendUpdateEachSeconds) {
-        this.sendUpdateEachSeconds = sendUpdateEachSeconds;
+        if (sendUpdateEachSeconds < 0) {
+            Log.wtf("sendUpdateEachSeconds cannot be negative");
+        } else {
+            this.sendUpdateEachSeconds = sendUpdateEachSeconds;
+        }
         return this;
     }
 
@@ -632,7 +664,11 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setSendUpdateEachEvents(int sendUpdateEachEvents) {
-        this.sendUpdateEachEvents = sendUpdateEachEvents;
+        if (sendUpdateEachEvents < 0) {
+            Log.wtf("sendUpdateEachEvents cannot be negative");
+        } else {
+            this.sendUpdateEachEvents = sendUpdateEachEvents;
+        }
         return this;
     }
 
@@ -657,7 +693,11 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setSessionCooldownPeriod(int sessionCooldownPeriod) {
-        this.sessionCooldownPeriod = sessionCooldownPeriod;
+        if (sessionCooldownPeriod < 0) {
+            Log.wtf("sessionCooldownPeriod cannot be negative");
+        } else {
+            this.sessionCooldownPeriod = sessionCooldownPeriod;
+        }
         return this;
     }
 
@@ -668,7 +708,11 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setSdkName(String sdkName) {
-        this.sdkName = sdkName;
+        if (Utils.isEmpty(sdkName)) {
+            Log.wtf("sdkName cannot be empty");
+        } else {
+            this.sdkName = sdkName;
+        }
         return this;
     }
 
@@ -679,7 +723,11 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config setSdkVersion(String sdkVersion) {
-        this.sdkVersion = sdkVersion;
+        if (Utils.isEmpty(sdkVersion)) {
+            Log.wtf("sdkVersion cannot be empty");
+        } else {
+            this.sdkVersion = sdkVersion;
+        }
         return this;
     }
 
@@ -733,11 +781,15 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config addPublicKeyPin(String pemEncodedPublicKey) {
-        if (publicKeyPins == null) {
-            publicKeyPins = new HashSet<>();
-        }
+        if (Utils.isEmpty(pemEncodedPublicKey)) {
+            Log.wtf("pemEncodedPublicKey cannot be empty");
+        } else {
+            if (publicKeyPins == null) {
+                publicKeyPins = new HashSet<>();
+            }
 
-        publicKeyPins.add(pemEncodedPublicKey);
+            publicKeyPins.add(pemEncodedPublicKey);
+        }
         return this;
     }
 
@@ -761,11 +813,15 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config addCertificatePin(String pemEncodedCertificate) {
-        if (certificatePins == null) {
-            certificatePins = new HashSet<>();
-        }
+        if (Utils.isEmpty(pemEncodedCertificate)) {
+            Log.wtf("pemEncodedCertificate cannot be empty");
+        } else {
+            if (certificatePins == null) {
+                certificatePins = new HashSet<>();
+            }
 
-        certificatePins.add(pemEncodedCertificate);
+            certificatePins.add(pemEncodedCertificate);
+        }
         return this;
     }
 
@@ -780,8 +836,9 @@ public class Config {
     public Config setCrashReportingANRTimeout(int timeoutInSeconds) {
         if (timeoutInSeconds < 0) {
             Log.wtf("ANR timeout less than zero doesn't make sense");
+        } else {
+            this.crashReportingANRTimeout = timeoutInSeconds;
         }
-        this.crashReportingANRTimeout = timeoutInSeconds;
         return this;
     }
 
@@ -799,11 +856,31 @@ public class Config {
      * Set push activity class which is to be launched when user taps on a {@link android.app.Notification}.
      * Defaults automatically to main activity class.
      *
-     * @param pushActivityClass activity class
+     * @param crashProcessorClass {@link CrashProcessor}-implementing class
+     * @return {@code this} instance for method chaining
+     */
+    public Config setCrashProcessorClass(Class<? extends CrashProcessor> crashProcessorClass) {
+        if (crashProcessorClass == null) {
+            Log.wtf("crashProcessorClass cannot be null");
+        } else {
+            this.crashProcessorClass = crashProcessorClass.getName();
+        }
+        return this;
+    }
+
+    /**
+     * Set push {@link android.app.Activity} class which is to be launched when user taps on a {@link android.app.Notification}.
+     * Defaults automatically to main activity class.
+     *
+     * @param pushActivityClass {@link android.app.Activity} subclass
      * @return {@code this} instance for method chaining
      */
     public Config setPushActivityClass(Class pushActivityClass) {
-        this.pushActivityClass = pushActivityClass.getName();
+        if (pushActivityClass == null) {
+            Log.wtf("pushActivityClass cannot be null");
+        } else {
+            this.pushActivityClass = pushActivityClass.getName();
+        }
         return this;
     }
 
@@ -997,6 +1074,14 @@ public class Config {
      */
     public int getCrashReportingANRTimeout() {
         return crashReportingANRTimeout;
+    }
+
+    /**
+     * Getter for {@link #crashProcessorClass}
+     * @return {@link #crashProcessorClass} value
+     */
+    public String getCrashProcessorClass() {
+        return crashProcessorClass;
     }
 
     /**

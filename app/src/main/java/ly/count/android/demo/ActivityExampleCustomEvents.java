@@ -21,47 +21,47 @@ public class ActivityExampleCustomEvents extends Activity {
         setContentView(R.layout.activity_example_custom_events);
     }
 
-    public void onClickRecordEvent01(View v) {
-        Countly.session(this).event("Custom event 1").record();
+    public void onClickRecordEventProfileView(View v) {
+        Countly.session(this).event("ProfileView").record();
     }
 
-    public void onClickRecordEvent02(View v) {
-        Countly.session(this).event("Custom event 2").setCount(3).record();
+    public void onClickRecordEventFriendRequest(View v) {
+        Countly.session(this).event("FriendRequest").setCount(3).record();
     }
 
-    public void onClickRecordEvent03(View v) {
-        Countly.session(this).event("Custom event 3").setCount(3).setSum(134).record();
+    public void onClickRecordEventAddToCartWithCountSum(View v) {
+        Countly.session(this).event("AddToCart").setCount(3).setSum(134).record();
     }
 
-    public void onClickRecordEvent04(View v) {
-        Countly.session(this).event("Custom event 4").setCount(1).setDuration(55).record();
+    public void onClickRecordEventInCheckout(View v) {
+        Countly.session(this).event("InCheckout").setCount(1).setDuration(55).record();
     }
 
-    public void onClickRecordEvent05(View v) {
-        Countly.session(this).event("Custom event 5").addSegment("wall", "green").record();
+    public void onClickRecordEventProductView(View v) {
+        Countly.session(this).event("ProductView").addSegment("category", "pants").record();
     }
 
-    public void onClickRecordEvent06(View v) {
-        Countly.session(this).event("Custom event 5").addSegment("wall", "red").setCount(15).record();
+    public void onClickRecordEventProductViewWithCount(View v) {
+        Countly.session(this).event("ProductView").addSegment("category", "jackets").setCount(15).record();
     }
 
-    public void onClickRecordEvent07(View v) {
-        Countly.session(this).event("Custom event 5").addSegment("wall", "blue").setCount(25).setSum(10).record();
+    public void onClickRecordEventAddToCartWithCategoryCountSum(View v) {
+        Countly.session(this).event("AddToCart").addSegment("category", "jackets").setCount(25).setSum(10).record();
     }
 
-    public void onClickRecordEvent08(View v) {
-        Countly.session(this).event("Custom event 5").addSegment("wall", "yellow").setCount(25).setSum(10).setDuration(50).record();
+    public void onClickRecordEventAddToCartWithCategoryCountSumDur(View v) {
+        Countly.session(this).event("AddToCart").addSegment("category", "jackets").setCount(25).setSum(10).setDuration(50).record();
     }
 
-    public void onClickRecordEvent09(View v) {
-        Countly.session(this).timedEvent("Custom event 9");
+    public void onClickStartTimedEvent(View v) {
+        Countly.session(this).timedEvent("TimedEvent");
     }
 
-    public void onClickRecordEvent10(View v) {
-        Countly.session(this).timedEvent("Custom event 9").endAndRecord();
+    public void onClickEndTimedEvent(View v) {
+        Countly.session(this).timedEvent("TimedEvent").endAndRecord();
     }
 
-    public void onClickRecordEvent11(View v) {
-        Countly.session(this).timedEvent("Custom event 9").addSegment("wall", "orange").setCount(4).setSum(34).endAndRecord();
+    public void onClickEndTimedEventWithData(View v) {
+        Countly.session(this).timedEvent("TimedEvent").addSegment("wall", "orange").setCount(4).setSum(34).endAndRecord();
     }
 }

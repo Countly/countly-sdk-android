@@ -65,12 +65,23 @@ public class CountlyService extends android.app.Service {
         if (this.config == null) {
             // TODO: inconsistent state, TBD
             this.core = null;
+            L.e("CORE NOT INITIALIZED");
             stop();
         } else {
+            L.i("Core initialized, user " + (Core.instance.user() == null ? "null" : "not null"));
             this.core = Core.instance;
             if (config.getDeviceId() != null) {
+                Context ctx = new ContextImpl(CountlyService.this);
+                Core.onDeviceId(ctx, config.getDeviceId(), config.getDeviceId());
                 this.network = new Network();
-                this.network.init(config);
+                try {
+                    this.network.init(config);
+                } catch (Throwable t) {
+                    Log.e("Error while initializing network", t);
+                    this.core.stop(getApplicationContext(), false);
+                    this.core = null;
+                    this.network = null;
+                }
             }
         }
     }
@@ -132,7 +143,16 @@ public class CountlyService extends android.app.Service {
                     if (config != null && config.getDeviceId() != null && network == null) {
                         L.i("Starting sending requests");
                         this.network = new Network();
-                        this.network.init(config);
+                        try {
+                            this.network.init(config);
+                        } catch (Throwable t) {
+                            Log.e("Error while initializing network", t);
+                            this.core.stop(getApplicationContext(), false);
+                            this.core = null;
+                            this.network = null;
+                            stopSelf();
+                            return START_NOT_STICKY;
+                        }
                     }
                     check();
                 }

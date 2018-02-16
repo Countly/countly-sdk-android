@@ -1,5 +1,9 @@
 package ly.count.android.sdk.internal;
 
+import org.json.JSONObject;
+
+import java.util.Set;
+
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Session;
 
@@ -7,7 +11,7 @@ import ly.count.android.sdk.Session;
  * Created by artem on 05/01/2017.
  */
 
-abstract class ModuleBase implements Module {
+public abstract class ModuleBase implements Module {
     private boolean active = false;
 
     @Override
@@ -69,6 +73,10 @@ abstract class ModuleBase implements Module {
 
     @Override
     public void onSessionEnded(Session session, Context ctx) {
+    }
+
+    @Override
+    public void onUserChanged(Context ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved){
     }
 
     @Override

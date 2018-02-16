@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import java.util.Map;
+
 /**
  * This interface represents session concept, that is one indivisible usage occasion of your application.
  *
@@ -57,7 +59,8 @@ public interface Session {
     boolean isActive();
 
     /**
-     * Create event object, don't record it yet.
+     * Create event object, don't record it yet. Creates begin request if this session
+     * hasn't yet been began.
      *
      * @param key key for this event, cannot be null or empty
      * @return Event instance.
@@ -67,7 +70,8 @@ public interface Session {
     Event event(String key);
 
     /**
-     * Get existing or create new timed event object, don't record it.
+     * Get existing or create new timed event object, don't record it. Creates begin request if this session
+     * hasn't yet been began.
      *
      * @param key key for this event, cannot be null or empty
      * @return timed Event instance.
@@ -110,10 +114,11 @@ public interface Session {
      * @param t {@link Throwable} to log
      * @param fatal whether this crash report should be displayed as fatal in dashboard or not
      * @param name (optional, can be {@code null}) name of the report, falls back to first line of stack trace by default
-     * @param details (optional, can be {@code null}) additional comment about this crash report
+     * @param segments (optional, can be {@code null}) additional crash segments map
+     * @param logs (optional, can be {@code null}) additional log lines (separated by \n) or comment about this crash report
      * @return this instance for method chaining.
      */
-    Session addCrashReport(Throwable t, boolean fatal, String name, String details);
+    Session addCrashReport(Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs);
 
     /**
      * Send location information to the server.
@@ -127,7 +132,8 @@ public interface Session {
     /**
      * Start new view.
      * In case previous view in this session is not ended yet, it will be ended automatically.
-     * In case session ends and last view haven't been ended yet, it will be ended automatically
+     * In case session ends and last view haven't been ended yet, it will be ended automatically.
+     * Creates begin request if this session hasn't yet been began.
      *
      * @param name String representing name of this View
      * @param start whether this view is first in current application launch
@@ -138,11 +144,10 @@ public interface Session {
     /**
      * Identical to {@link #view(String, boolean)}, but without {@code start} parameter which
      * is determined automatically based on whether this view is first in this session.
+     * Creates begin request if this session hasn't yet been began.
      *
      * @param name String representing name of this View
      * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#stop(boolean)}
      */
     View view(String name);
-
-    // TODO: to be continued...
 }

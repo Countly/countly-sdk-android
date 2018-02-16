@@ -129,12 +129,19 @@ public class Tasks {
         if (!executor.isShutdown() && !executor.isTerminated()) {
             L.i("shutting down");
             executor.shutdown();
+            try {
+                // Wait a while for existing tasks to terminate
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executor.shutdownNow(); // Cancel currently executing tasks
+                    // Wait a while for tasks to respond to being cancelled
+                    if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                        L.e("didn't shutdown gracefully");
+                    }
+                }
+            } catch (Throwable t) {
+                L.e("Error while shutting down tasks", t);
+            }
         }
-    }
-    //TODO: modify shutdown & awaitTermination to correct ones
-    void awaitTermination() throws InterruptedException {
-        L.i("terminating");
-        executor.awaitTermination(3L, TimeUnit.SECONDS);
     }
 
     void await() {

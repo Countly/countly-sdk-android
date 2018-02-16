@@ -6,7 +6,6 @@ import java.util.Map;
  * Event interface. By default event is created with count=1 and all other fields empty or 0.
  */
 
-// TODO: rename
 public interface Event {
     /**
      * Add event to the session, send it to the server in case number of events in the session
@@ -76,4 +75,15 @@ public interface Event {
      * @return this instance for method chaining
      */
     Event setDuration(double duration);
+
+    /**
+     * Whether event has been marked as invalid, meaning it won't be recorded
+     *
+     * @return {@code true} if event has been invalidated due to:
+     * <ul>
+     *     <li>Invalid data supplied (count < 0, NaN as sum, duration < 0, etc.) while in production mode</li>
+     *     <li>Event has been already recorded in session, thus should be discarded</li>
+     * </ul>
+     */
+    boolean isInvalid();
 }

@@ -15,7 +15,6 @@ buildscript {
         classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
     }
 }
-
 android {
     compileSdkVersion 26
     buildToolsVersion '26.0.2'
@@ -58,6 +57,12 @@ android {
                 outputs.upToDateWhen {false}
                 showStandardStreams = true
             }
+        }
+    }
+
+    sourceSets {
+        androidTest {
+            resources.srcDirs += ['src/androidTest/resources']
         }
     }
 

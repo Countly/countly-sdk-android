@@ -2,10 +2,19 @@ package ly.count.android.sdk.internal;
 
 import android.os.Build;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
@@ -432,6 +441,36 @@ public class Utils {
             hexChars[ j * 2 + 1 ] = BASE_16[ v & 0x0F ];
         }
         return new String(hexChars).toLowerCase();
+    }
+
+    /**
+     * Read stream into a byte array
+     *
+     * @param stream input to read
+     * @return stream contents or {@code null} in case of error
+     */
+    public static byte[] readStream(InputStream stream) {
+        if (stream == null) {
+            return null;
+        }
+
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try {
+            byte[] buffer = new byte[1024];
+            int len = 0;
+            while ((len = stream.read(buffer)) != -1) {
+                bytes.write(buffer, 0, len);
+            }
+            return bytes.toByteArray();
+        } catch (IOException e) {
+            L.e("Couldn't read stream", e);
+            return null;
+        } finally {
+            try {
+                bytes.close();
+                stream.close();
+            } catch (Throwable ignored){}
+        }
     }
 
 }

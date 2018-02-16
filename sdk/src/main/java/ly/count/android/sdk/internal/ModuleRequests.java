@@ -2,6 +2,9 @@ package ly.count.android.sdk.internal;
 
 import java.util.concurrent.Future;
 
+import ly.count.android.sdk.Session;
+import ly.count.android.sdk.User;
+
 /**
  * Centralized place for all requests construction & handling.
  */
@@ -49,7 +52,7 @@ public class ModuleRequests extends ModuleBase {
     public static Future<Boolean> sessionEnd(Context ctx, SessionImpl session, Long seconds, String did, Tasks.Callback<Boolean> callback) {
         Request request = addCommon(config, session, Request.build("end_session", 1));
 
-        if (did != null && request.params.has(Params.PARAM_DEVICE_ID)) {
+        if (did != null && Utils.isNotEqual(did, request.params.get(Params.PARAM_DEVICE_ID))) {
             request.params.remove(Params.PARAM_DEVICE_ID);
             request.params.add(Params.PARAM_DEVICE_ID, did);
         }
@@ -85,14 +88,14 @@ public class ModuleRequests extends ModuleBase {
         return addCommon(config == null ? ModuleRequests.config : config, null, new Request());
     }
 
-    // TODO: synchronization
     static void injectParams(Context ctx, ParamsInjector injector) {
-        if (Core.instance.getSession() == null) {
+        SessionImpl session = Core.instance.getSession();
+        if (session == null) {
             Request request = nonSessionRequest(config);
             injector.call(request.params);
             pushAsync(ctx, request);
         } else {
-            injector.call(Core.instance.getSession().params);
+            injector.call(session.params);
         }
     }
 
@@ -135,6 +138,19 @@ public class ModuleRequests extends ModuleBase {
             } else {
                 request.params.add(Params.PARAM_DEVICE_ID, config.getDeviceId().id);
                 return request;
+            }
+        }
+
+        if (request.params.has("begin_session")) {
+            User user = Core.instance.user();
+            if (user.country() != null) {
+                request.params.add("country_code", user.country());
+            }
+            if (user.city() != null) {
+                request.params.add("city", user.city());
+            }
+            if (user.location() != null) {
+                request.params.add("location", user.location());
             }
         }
 

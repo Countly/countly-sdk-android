@@ -266,7 +266,7 @@ public class ModuleDeviceIdTests extends BaseTests {
     }
 
     @Test
-    public void checkRequestsTransform() throws Exception {
+    public void checkLogin() throws Exception {
         Utils.reflectiveSetField(ModuleDeviceId.class, "testSleep", 2000L);
 
         setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
@@ -290,7 +290,7 @@ public class ModuleDeviceIdTests extends BaseTests {
         Request request = Storage.read(ctx, new Request(ids.get(0)));
         Assert.assertNotNull(request);
         Assert.assertTrue(request.params.toString().contains("begin_session=1"));
-        // .. and it shouldn't have an id yet - it generation takes 2 seconds
+        // .. and it shouldn't have an id yet - its generation takes 2 seconds
         Assert.assertFalse(request.params.toString().contains(Params.PARAM_DEVICE_ID));
 
         // now sleep update time for ModuleSessions to create update request
@@ -326,10 +326,6 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         // there must be: begin, update, end from first session + id change request + begin from second session
         ids = Storage.list(ctx, Request.getStoragePrefix());
-        Log.w(Storage.read(ctx, new Request(ids.get(0))).params.toString());
-        Log.w(Storage.read(ctx, new Request(ids.get(1))).params.toString());
-        Log.w(Storage.read(ctx, new Request(ids.get(2))).params.toString());
-        Log.w(Storage.read(ctx, new Request(ids.get(3))).params.toString());
         Log.w("going to read requests: " + Utils.join(ids, ", "));
         Assert.assertEquals(5, ids.size());
 
@@ -367,6 +363,71 @@ public class ModuleDeviceIdTests extends BaseTests {
         Assert.assertNotNull(request);
         Log.w("read request " + request.params);
         Assert.assertTrue(request.params.toString().contains("device_id=did"));
+        Assert.assertTrue(request.params.toString().contains("begin_session=1"));
+    }
+
+    @Test
+    public void checkLogout() throws Exception {
+        // ----------------- fast-forward to end phase of checkLogin() --------------------
+        Utils.reflectiveSetField(ModuleDeviceId.class, "testSleep", 2000L);
+
+        setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
+        moduleDeviceId = (ModuleDeviceId) core.module(Config.InternalFeature.DeviceId);
+
+        core.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        Thread.sleep(1000 * config.getSendUpdateEachSeconds());
+
+        String idString = config.getDeviceId().id;
+
+        Core.instance.login(ctx.getContext(), "did");
+
+        Tasks deviceIdTasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
+        deviceIdTasks.await();
+
+        // there must be: begin, update, end from first session + id change request + begin from second session
+        List<Long> ids = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(5, ids.size());
+
+        // ----------------- now logging out --------------------
+        Core.instance.logout(ctx.getContext());
+        deviceIdTasks.await();
+
+        ids = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(6, ids.size());
+
+        // second begin
+        Request request = Storage.read(ctx, new Request(ids.get(4)));
+        Assert.assertNotNull(request);
+        Log.w("read request " + request.params);
+        Assert.assertTrue(request.params.toString().contains("device_id=did"));
+        Assert.assertTrue(request.params.toString().contains("begin_session=1"));
+
+        // second end
+        request = Storage.read(ctx, new Request(ids.get(5)));
+        Assert.assertNotNull(request);
+        Log.w("read request " + request.params);
+        Assert.assertTrue(request.params.toString().contains("device_id=did"));
+        Assert.assertTrue(request.params.toString().contains("end_session=1"));
+
+        // Activity stop doesn't do anything
+        Assert.assertNull(Utils.reflectiveGetField(core, "session"));
+        core.module(Config.Feature.AutoSessionTracking).onActivityStopped(ctx);
+        Thread.sleep(1000);
+        Assert.assertNull(Utils.reflectiveGetField(core, "session"));
+        ids = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(6, ids.size());
+
+        // Starting another activity begins session
+        core.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        Assert.assertNotNull(Utils.reflectiveGetField(core, "session"));
+
+        // new session begin with old id
+        ids = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(7, ids.size());
+        request = Storage.read(ctx, new Request(ids.get(6)));
+        Assert.assertNotNull(request);
+        Log.w("read request " + request.params);
+        Assert.assertTrue(request.params.toString().contains("device_id=" + idString));
         Assert.assertTrue(request.params.toString().contains("begin_session=1"));
     }
 }

@@ -103,6 +103,7 @@ public class ModuleDeviceId extends ModuleBase {
             // device id changed
             if (session != null && session.isActive()) {
                 // end previous session
+                L.d("Ending session because device id was changed from " + oldDeviceId.id);
                 session.end(null, null, oldDeviceId.id);
             }
 
@@ -116,6 +117,7 @@ public class ModuleDeviceId extends ModuleBase {
         } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == Config.DeviceIdRealm.DEVICE_ID) {
             // device id is unset
             if (session != null) {
+                L.d("Ending session because device id was unset from " + oldDeviceId.id);
                 session.end(null, null, oldDeviceId.id);
             }
 
@@ -222,7 +224,7 @@ public class ModuleDeviceId extends ModuleBase {
      */
     public void logout(final Context ctx) {
         final Config.DID old = config.getDeviceId();
-        config.setDeviceId(null);
+        config.removeDeviceId(old);
         Storage.push(ctx, config);
 
         Core.onDeviceId(ctx, null, old);
@@ -240,7 +242,30 @@ public class ModuleDeviceId extends ModuleBase {
         });
     }
 
+    /**
+     * Resetting id without merging profiles on server:
+     * <ul>
+     *     <li>End current session if any</li>
+     *     <li>Begin new session with new id if previously ended a session</li>
+     * </ul>
+     * @param ctx context to run in
+     * @param id new user id
+     */
+    public void resetId(Context ctx, String id) {
+        if (Utils.isEmpty(id)) {
+            L.wtf("Empty id passed to resetId method");
+        } else {
+            final Config.DID old = config.getDeviceId();
+            config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, id));
+            Storage.push(ctx, config);
+
+            Core.onDeviceId(ctx, null, old);
+            Core.onDeviceId(ctx, config.getDeviceId(), null);
+        }
+    }
+
     Future<Config.DID> acquireId(final Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
+        L.d("d4");
         if (this.tasks == null) {
             this.tasks = new Tasks("deviceId");
         }
@@ -368,6 +393,14 @@ public class ModuleDeviceId extends ModuleBase {
         }
 
         return null;
+    }
+
+    @Override
+    public void stop(Context ctx, boolean clear) {
+        if (tasks != null) {
+            tasks.shutdown();
+            tasks = null;
+        }
     }
 
     private static long testSleep = 0L;

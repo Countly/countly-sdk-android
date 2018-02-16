@@ -4,23 +4,38 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
+import org.json.JSONObject;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import ly.count.android.sdk.Config;
+import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.Crash;
+import ly.count.android.sdk.CrashProcessor;
 import ly.count.android.sdk.Event;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplTests extends BaseTests {
+    @Rule
+    public TestName testName = new TestName();
+
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        setUpApplication(defaultConfig());
+        if (testName.getMethodName().equals("session_crashRecordedWithCustomProcessor")) {
+            Countly.init(application(), defaultConfig().setCrashProcessorClass(CrashProcessorImpl.class));
+        } else {
+            setUpApplication(defaultConfig());
+        }
     }
 
     @Override
@@ -557,9 +572,14 @@ public class SessionImplTests extends BaseTests {
 
     @Test
     public void session_crashRecorded() throws Exception {
+        String name = "crashname";
+        String[] logs = new String[]{"log1", "log2", "log3"};
+        Map<String, String> segments = new HashMap<>();
+        segments.put("a", "b");
+        segments.put("c", "d");
         SessionImpl session = new SessionImpl(ctx);
         session.begin(System.nanoTime() - Device.secToNs(20));
-        session.addCrashReport(new IllegalStateException("Illegal state out here"), false, "crashname", "crashdetails");
+        session.addCrashReport(new IllegalStateException("Illegal state out here"), false, name, segments, logs);
         session.end();
 
         Storage.await();
@@ -576,9 +596,102 @@ public class SessionImplTests extends BaseTests {
         Assert.assertNotNull(crash);
 
         String json = crash.getJSON();
+        Log.d(json);
         Assert.assertTrue(json.contains("\"_nonfatal\":true"));
-        Assert.assertTrue(json.contains("\"_name\":\"crashname\""));
-        Assert.assertTrue(json.contains("\"_logs\":\"crashdetails\""));
+        Assert.assertTrue(json.contains("\"_name\":\"" + name + "\""));
+        Assert.assertTrue(json.contains("\"_logs\":\"" + logs[0] + "\\n" + logs[1] + "\\n" + logs[2] + "\""));
+        Assert.assertTrue(json.contains("\"_custom\":" + new JSONObject(segments).toString() + ""));
+        Assert.assertTrue(json.contains("IllegalStateException"));
+        Assert.assertTrue(json.contains("Illegal state out here"));
+        Assert.assertTrue(json.contains("session_crashRecorded"));
+    }
+
+    @Test
+    public void session_crashRecordedWithLegacyData() throws Exception {
+        Countly.init(application(), defaultConfig());
+
+        String[] logs = new String[]{"log1", "log2", "log3"};
+        Map<String, String> segments = new HashMap<>();
+        segments.put("a", "b");
+        segments.put("c", "d");
+        Countly.sharedInstance().setCustomCrashSegments(segments);
+        Countly.sharedInstance().addCrashLog(logs[0]);
+        Countly.sharedInstance().addCrashLog(logs[1]);
+        Countly.sharedInstance().addCrashLog(logs[2]);
+
+        SessionImpl session = new SessionImpl(ctx);
+        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.addCrashReport(new IllegalStateException("Illegal state out here"), true);
+        session.end();
+
+        Storage.await();
+
+        Assert.assertNull(Storage.read(ctx, session));
+
+        List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(2, requests.size());
+
+        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
+        Assert.assertEquals(1, crashes.size());
+
+        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
+        Assert.assertNotNull(crash);
+
+        String json = crash.getJSON();
+        Log.d(json);
+        Assert.assertTrue(json.contains("\"_nonfatal\":false"));
+        Assert.assertTrue(json.contains("\"_logs\":\"" + logs[0] + "\\n" + logs[1] + "\\n" + logs[2] + "\""));
+        Assert.assertTrue(json.contains("\"_custom\":" + new JSONObject(segments).toString() + ""));
+        Assert.assertTrue(json.contains("IllegalStateException"));
+        Assert.assertTrue(json.contains("Illegal state out here"));
+        Assert.assertTrue(json.contains("session_crashRecorded"));
+    }
+
+    public static class CrashProcessorImpl implements CrashProcessor {
+
+        @Override
+        public void process(Crash crash) {
+            crash.setName("crashname");
+            crash.setLogs(new String[]{"log1", "log2", "log3"});
+
+            Map<String, String> segments = new HashMap<>();
+            segments.put("a", "b");
+            segments.put("c", "d");
+            crash.setSegments(segments);
+        }
+    }
+    @Test
+    public void session_crashRecordedWithCustomProcessor() throws Exception {
+        String name = "crashname";
+        String[] logs = new String[]{"log1", "log2", "log3"};
+        Map<String, String> segments = new HashMap<>();
+        segments.put("a", "b");
+        segments.put("c", "d");
+
+        SessionImpl session = new SessionImpl(ctx);
+        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.addCrashReport(new IllegalStateException("Illegal state out here"), true);
+        session.end();
+
+        Storage.await();
+
+        Assert.assertNull(Storage.read(ctx, session));
+
+        List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
+        Assert.assertEquals(2, requests.size());
+
+        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
+        Assert.assertEquals(1, crashes.size());
+
+        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
+        Assert.assertNotNull(crash);
+
+        String json = crash.getJSON();
+        Log.d(json);
+        Assert.assertTrue(json.contains("\"_name\":\"" + name + "\""));
+        Assert.assertTrue(json.contains("\"_nonfatal\":false"));
+        Assert.assertTrue(json.contains("\"_logs\":\"" + logs[0] + "\\n" + logs[1] + "\\n" + logs[2] + "\""));
+        Assert.assertTrue(json.contains("\"_custom\":" + new JSONObject(segments).toString() + ""));
         Assert.assertTrue(json.contains("IllegalStateException"));
         Assert.assertTrue(json.contains("Illegal state out here"));
         Assert.assertTrue(json.contains("session_crashRecorded"));

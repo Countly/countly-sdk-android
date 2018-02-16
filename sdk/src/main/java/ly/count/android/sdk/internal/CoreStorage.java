@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -44,6 +45,8 @@ public class CoreStorage extends CoreLifecycle {
 
     static int purgeInternalStorage(Context ctx, String prefix) {
         prefix = getName(prefix) + FILE_NAME_SEPARATOR;
+
+        L.i("Purging storage for prefix " + prefix);
 
         int deleted = 0;
 
@@ -178,6 +181,7 @@ public class CoreStorage extends CoreLifecycle {
         String fileStart = start + FILE_NAME_SEPARATOR;
 
         String[] files = ctx.getContext().getApplicationContext().fileList();
+        Arrays.sort(files);
 
         for (int i = 0; i < files.length; i++) {
             int idx = asc ? i : files.length - 1 - i;

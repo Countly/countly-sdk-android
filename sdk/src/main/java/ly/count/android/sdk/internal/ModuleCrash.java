@@ -1,10 +1,15 @@
 package ly.count.android.sdk.internal;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CrashProcessor;
 
 /**
  * Crash reporting functionality
@@ -20,6 +25,7 @@ public class ModuleCrash extends ModuleBase {
     private int anrTimeout = 0;
     private volatile int tick = 0;
     private int tickToCheck = 0;
+    private CrashProcessor crashProcessor = null;
     private Thread.UncaughtExceptionHandler previousHandler = null;
     private Context context = null;
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -41,7 +47,7 @@ public class ModuleCrash extends ModuleBase {
             if (tick <= tickToCheck) {
                 crashed = true;
                 // TODO: report all stacktraces here
-                onCrash(context, new IllegalStateException("ANR"), true, null, null);
+                onCrash(context, new IllegalStateException("ANR"), true, null, null, null);
                 L.e("ANR detected. Waiting 3 x crashReportingANRTimeout and resuming watching for ANR.");
                 executorService.schedule(new Runnable() {
                     @Override
@@ -59,7 +65,14 @@ public class ModuleCrash extends ModuleBase {
     public void init(InternalConfig config) {
         limited = config.isLimited();
         anrTimeout = config.getCrashReportingANRTimeout();
-        // TODO: shutdown
+        if (config.getCrashProcessorClass() != null) {
+            try {
+                Class cls = Class.forName(config.getCrashProcessorClass());
+                crashProcessor = (CrashProcessor) cls.getConstructors()[0].newInstance();
+            } catch (Throwable t) {
+                Log.wtf("Cannot instantiate CrashProcessor", t);
+            }
+        }
     }
 
     @Override
@@ -92,7 +105,7 @@ public class ModuleCrash extends ModuleBase {
                     crashed = true;
 
                     if (isActive()) {
-                        onCrash(ctx, throwable, true, null, null);
+                        onCrash(ctx, throwable, true, null, null, null);
                     }
 
                     if (handler != null) {
@@ -119,13 +132,23 @@ public class ModuleCrash extends ModuleBase {
         executorService.schedule(checker, anrTimeout, TimeUnit.SECONDS);
     }
 
-    public void onCrash(Context ctx, Throwable t, boolean fatal, String name, String details) {
-        onCrash(ctx, new CrashImpl().setThrowable(t).setFatal(fatal).setName(name).setDetails(details));
+    public void onCrash(Context ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+        onCrash(ctx, new CrashImpl().setThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs));
     }
 
     public void onCrash(Context ctx, final CrashImpl crash) {
         long running = started == 0 ? 0 : Device.nsToMs(System.nanoTime() - started);
         crash.putMetrics(ctx, running);
+        if (crashProcessor != null) {
+            try {
+                crashProcessor.process(crash);
+            } catch (Throwable t) {
+                Log.e("Error when calling CrashProcessor#process(Crash)", t);
+            }
+        }
+        if (Countly.legacyMethodCrashProcessor != null) {
+            Countly.legacyMethodCrashProcessor.process(crash);
+        }
         if (!Storage.push(ctx, crash)) {
             L.e("Couldn't persist a crash, so dumping it here: " + crash.getJSON());
         } else {

@@ -1,12 +1,15 @@
 package ly.count.android.sdk.internal;
 
+import android.content.Intent;
 import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
@@ -15,6 +18,7 @@ import java.net.HttpURLConnection;
 
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
@@ -24,6 +28,9 @@ import okhttp3.mockwebserver.RecordedRequest;
 
 @RunWith(AndroidJUnit4.class)
 public class NetworkTests extends BaseTests {
+    @Rule
+    public TestName testName = new TestName();
+
     private static final int PORT = 30301;
 
     private Network network;
@@ -40,18 +47,31 @@ public class NetworkTests extends BaseTests {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        server = new MockWebServer();
-        server.start(PORT);
+        if (!testName.getMethodName().startsWith("testPin")) {
+            server = new MockWebServer();
+            server.start(PORT);
 
-        setUpService(defaultConfig());
-        service.onCreate();
-        network = Whitebox.getInternalState(service, "network");
-        Utils.reflectiveSetField(network, "sleeps", false);
+            Storage.push(ctx, new InternalConfig(config == null ? defaultConfig() : config));
+
+            setUpService(defaultConfig());
+
+            service.onCreate();
+
+            Utils.reflectiveSetField(service, "singleProcess", false);
+//            Intent intent = new Intent();
+//            intent.putExtra(CountlyService.CMD, CountlyService.CMD_DEVICE_ID);
+//            service.onStartCommand(intent, 0, 0);
+
+            network = Whitebox.getInternalState(service, "network");
+            Utils.reflectiveSetField(network, "sleeps", false);
+        }
     }
 
     @After
     public void cleanupEveryTests() throws IOException {
-        server.shutdown();
+        if (!testName.getMethodName().startsWith("testPin")) {
+            server.shutdown();
+        }
     }
 
     @Test
@@ -81,7 +101,7 @@ public class NetworkTests extends BaseTests {
         Request request = new Request("a", 1, "b", "something", "c", false);
 
         Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.RETRY, result);
+        Assert.assertEquals(Network.RequestResult.REMOVE, result);
     }
 
     @Test
@@ -198,6 +218,7 @@ public class NetworkTests extends BaseTests {
 
     @Test
     public void testMultiPart() throws Exception {
+        Utils.reflectiveSetField(Core.instance, "user", new UserImpl(ctx));
         Core.instance.user().edit().setPicture("picturebytes".getBytes()).commit();
         server.enqueue(new MockResponse().setResponseCode(200));
 
@@ -272,5 +293,267 @@ public class NetworkTests extends BaseTests {
         Assert.assertTrue(future2.isDone());
         Assert.assertEquals(Network.RequestResult.OK, future1.get());
         Assert.assertEquals(Network.RequestResult.OK, future2.get());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPinBadKeyFormat() throws Exception {
+        Config config = defaultConfigWithLogsForConfigTests().addPublicKeyPin("aaa");
+        new Network().init(new InternalConfig(config));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPinBadCertFormat() throws Exception {
+        Config config = defaultConfigWithLogsForConfigTests().addCertificatePin("aaa");
+        new Network().init(new InternalConfig(config));
+    }
+
+    private String validPubKeyPem = "-----BEGIN PUBLIC KEY-----\n" +
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtqD2fFglxAbZsU6EUN5M\n" +
+            "9NEXFm+d4AQU+a0k7lem700l+kvtmzes+bAWhN2C54uJ7BBgIb3j6imtJd0jYIJa\n" +
+            "cNLAJWPmKkJ2rVr9VbeXVXV2/5o3NwQ4Kny70mlU2JhRwIRFD6BYuFjS1o/K7I6d\n" +
+            "qEWvMd9Enm57SfsKVi54bNZ1gAMXwT3Ecy0aN4JPnrQ6C5PZTkxDxVRziEsbe9Ob\n" +
+            "91Kv1MPY3YhNzlNfFHlR8f8qoMNIlbOww2YRfa/Vb3V5rtkAT/TrLHh4ZvUHmzwM\n" +
+            "kKAQLvLWCAh6IbYBXNWZnRPdmv77z5TPS8fG4SnwoBDyvH3kRos7woIpKMewH3bx\n" +
+            "jQIDAQAB\n" +
+            "-----END PUBLIC KEY-----\n";
+
+    private String validCertPem = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFRTCCBC2gAwIBAgIQMsrEzoWq+R8Ml4pXRnu/xjANBgkqhkiG9w0BAQsFADCB\n" +
+            "kDELMAkGA1UEBhMCR0IxGzAZBgNVBAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4G\n" +
+            "A1UEBxMHU2FsZm9yZDEaMBgGA1UEChMRQ09NT0RPIENBIExpbWl0ZWQxNjA0BgNV\n" +
+            "BAMTLUNPTU9ETyBSU0EgRG9tYWluIFZhbGlkYXRpb24gU2VjdXJlIFNlcnZlciBD\n" +
+            "QTAeFw0xNzA2MjgwMDAwMDBaFw0yMDA3MDUyMzU5NTlaMFcxITAfBgNVBAsTGERv\n" +
+            "bWFpbiBDb250cm9sIFZhbGlkYXRlZDEdMBsGA1UECxMUUG9zaXRpdmVTU0wgV2ls\n" +
+            "ZGNhcmQxEzARBgNVBAMMCiouY291bnQubHkwggEiMA0GCSqGSIb3DQEBAQUAA4IB\n" +
+            "DwAwggEKAoIBAQC2oPZ8WCXEBtmxToRQ3kz00RcWb53gBBT5rSTuV6bvTSX6S+2b\n" +
+            "N6z5sBaE3YLni4nsEGAhvePqKa0l3SNgglpw0sAlY+YqQnatWv1Vt5dVdXb/mjc3\n" +
+            "BDgqfLvSaVTYmFHAhEUPoFi4WNLWj8rsjp2oRa8x30SebntJ+wpWLnhs1nWAAxfB\n" +
+            "PcRzLRo3gk+etDoLk9lOTEPFVHOISxt705v3Uq/Uw9jdiE3OU18UeVHx/yqgw0iV\n" +
+            "s7DDZhF9r9VvdXmu2QBP9OsseHhm9QebPAyQoBAu8tYICHohtgFc1ZmdE92a/vvP\n" +
+            "lM9Lx8bhKfCgEPK8feRGizvCgikox7AfdvGNAgMBAAGjggHRMIIBzTAfBgNVHSME\n" +
+            "GDAWgBSQr2o6lFoL2JDqElZz30O0Oija5zAdBgNVHQ4EFgQUq1hZiEczrfVhD7H6\n" +
+            "Z08oLnfI6fowDgYDVR0PAQH/BAQDAgWgMAwGA1UdEwEB/wQCMAAwHQYDVR0lBBYw\n" +
+            "FAYIKwYBBQUHAwEGCCsGAQUFBwMCME8GA1UdIARIMEYwOgYLKwYBBAGyMQECAgcw\n" +
+            "KzApBggrBgEFBQcCARYdaHR0cHM6Ly9zZWN1cmUuY29tb2RvLmNvbS9DUFMwCAYG\n" +
+            "Z4EMAQIBMFQGA1UdHwRNMEswSaBHoEWGQ2h0dHA6Ly9jcmwuY29tb2RvY2EuY29t\n" +
+            "L0NPTU9ET1JTQURvbWFpblZhbGlkYXRpb25TZWN1cmVTZXJ2ZXJDQS5jcmwwgYUG\n" +
+            "CCsGAQUFBwEBBHkwdzBPBggrBgEFBQcwAoZDaHR0cDovL2NydC5jb21vZG9jYS5j\n" +
+            "b20vQ09NT0RPUlNBRG9tYWluVmFsaWRhdGlvblNlY3VyZVNlcnZlckNBLmNydDAk\n" +
+            "BggrBgEFBQcwAYYYaHR0cDovL29jc3AuY29tb2RvY2EuY29tMB8GA1UdEQQYMBaC\n" +
+            "CiouY291bnQubHmCCGNvdW50Lmx5MA0GCSqGSIb3DQEBCwUAA4IBAQAVQSO9igSK\n" +
+            "xEwLOnha6TfcFiByVldNnMNs6nLiXs01hb6dvOZ+0VR1oO/RfVEoso/yqBgOV/yO\n" +
+            "D5bJmHc49RiKRPTFxJuCxRoffbNMyUDBXCXdmnSSocmBNhS9FDBAEVMfLljanoyp\n" +
+            "KKRNPboEplYVIzA4LCjzL10ZK4DNPBbXRq+hS27RIZTnK8KyQAm0d9mB7YWKgVqM\n" +
+            "164zCcAQ5h0ALD4oYr+b4h9Jx3XWVd76cYRK2n/1je3M0UD+d+omqKMwtijuEqRv\n" +
+            "vs8EkylLcGMtqjr9es0JQjrDqz0g64XE/ntdiDdVVr5wAuoTvotbfHlvN2UnVUAB\n" +
+            "mVibCgJcyzGs\n" +
+            "-----END CERTIFICATE-----\n";
+
+    private String selfSignedCert = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFXTCCA0WgAwIBAgIJAPWIE8uVwgBOMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n" +
+            "BAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBX\n" +
+            "aWRnaXRzIFB0eSBMdGQwHhcNMTcxMTIyMDgwOTA5WhcNMTgxMTIyMDgwOTA5WjBF\n" +
+            "MQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50\n" +
+            "ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIIC\n" +
+            "CgKCAgEA20erkJT4kwFy9gHJ4j08jIMjxQjAzStpdKQfM9lagJwzaL3AOkrGiiG8\n" +
+            "Xt5QXvvmAbA43b5sAGWGk3YCKVgaD5PS5ylboyNy7bnjWBcLwcBQxFD7y8Jobm+f\n" +
+            "DxdbAgYhVfTgl1QQmLaGCNlDrcjjRxFX1li/UM7uAJvcU9HPDKZ4ZAuQ0z/IIE6t\n" +
+            "Nsg+41zQnaEHLyDDF4HaiOuuN+K1jKJdBQfFgc7oW2OUPLMbc8O/e/DyBLnBSBbq\n" +
+            "vOqr8nLV++hX1UFrmp1ee63CCt55xjiYEoGN6+Hgd6tmWhEwR0PJw2ND4ZZUGpjY\n" +
+            "WqPOST2UphadRIc7NRYHsYmWbOGN80TPqvuCTIHkoEun78DHw4JrPTeYa7FS0/1/\n" +
+            "RZ+yoa0MnNr5H74UW2cWZn88Af/lJQ4rjCdjK7CAapO3LieV4Hu+cGxMCtc7T/98\n" +
+            "ZCML5758JGHadxl3llVVHtxq8ZBponYsr2bycOu9C2ksC/G69jCRzwvD4IIFc1aT\n" +
+            "h4TyprnDD4xKoN3QFCsmYWR8soA07ewazFmn+ORX2BV3WsrmOTjHDki02iinceP/\n" +
+            "BXB3sQgKnvoFYMoHzDN0r0QsEy+QJDS7XVOA4P9oVxU5LrgDYuGPXlS1nFfOr8V+\n" +
+            "msarqzspcWcH0pVomru3h8AhDCTj1xkMoWH77te6J9NmabyEQv8CAwEAAaNQME4w\n" +
+            "HQYDVR0OBBYEFOm/v5nMdI1kgwSDvifMu7jtGHnQMB8GA1UdIwQYMBaAFOm/v5nM\n" +
+            "dI1kgwSDvifMu7jtGHnQMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggIB\n" +
+            "AAhDGyc28JYLDDJ6ERaTWk9mdl700OdYOllTRZS51qKe9nZOrtFKKMY5GT4BodER\n" +
+            "h/oPrxVg9VQoO1DegLv9fJ5T5fFaVd34XFugCQaHRxdjB23AAPqTxa8cUgvq8b5s\n" +
+            "JM7g5dzR5tTVzOI3qFY1sz9jLXeL39EJeLMO3yDQY7sJfot8vwPFW7caL9U2mJ3z\n" +
+            "jHQlmD6bGUjM1ePY4itmHo2dn8mpOuNWS57D+Lgu70wHhMVDY1zAsxE/QgEZVBx0\n" +
+            "scYHbxXOZTv6qU1DnyW6Sa29XM/UgBBSQJy7ByW/84TbK2IHDHfwToHM3/vWgswg\n" +
+            "c0C5rZRycbiI7HZNO3lKPe4w9DfJ+5YO6nMQPIMSoK9dJtUYmmRdLXkYVDxazYxl\n" +
+            "L6qjjvqhdVHclSq4qC9c1iRzFCLLnihyWX02YijC71SMdAj7JP2wIBut4mHFd21A\n" +
+            "DBSLKyFcwNtaorzbngXwBsORB8dJkI/DeOBhIO1S4NU6Q2g3QP98C4tVlSbQrxx7\n" +
+            "nONxgTEZ/NMGawQO/NKsrfIRUJQFhBV/q43JNi0vCaFGs4Hae6d3S4tF56wQwb/s\n" +
+            "ayaHG6B3w43H2OWRZrCld2W4QyP9cA1Tcu+Vubt2mkNAYxy0Ctfmkg+D5Vjr1rEX\n" +
+            "AIOamakpmH1mPSKexvXt+v65nqSLgntkMs5UXOLpGhX4\n" +
+            "-----END CERTIFICATE-----\n";
+
+    private String selfSignedKey = "-----BEGIN PUBLIC KEY-----\n" +
+            "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA8SekjOfo8JRBh/qEiCwN\n" +
+            "D5nkMi+/nHBRMS5ZDgHWDh9CN7YitO4qeqewOjZv1jcNE1YQa8hm4tAxbZAGYsnX\n" +
+            "PMJEuSdMOVMqrml4gpnDYoRqZpbb5h9ovveJfR/zwnN/aKP1tvAWshMAhJDVT8mq\n" +
+            "8kyMkwkM+yjYsAboGTsn7BTKBw601vtVu1zQg2t/ajAPpb2DPZG/JlScgSvua6jY\n" +
+            "SKJ/wbRVuV0pFJTNg8pepqxtbgR3Yw6+BlZat9OBJYXmGQW1sIhDi0Ifzis4lnRZ\n" +
+            "qzKbpkNwtlRWz3nHsWOvbQBJoVo9M1Fs3o4SRLCosZ7DGrPvMiZ27l0pTlrXhBj6\n" +
+            "XwIDAQAB\n" +
+            "-----END PUBLIC KEY-----";
+
+    private void testParsing(boolean isKey, String value) throws Exception {
+        Config config = defaultConfigWithLogsForConfigTests();
+        if (isKey) config.addPublicKeyPin(value);
+        else config.addCertificatePin(value);
+        Network network = new Network();
+        network.init(new InternalConfig(config));
+        Assert.assertEquals(1, ((List)Utils.reflectiveGetField(network, isKey ? "keyPins" : "certPins")).size());
+
+        config = defaultConfigWithLogsForConfigTests();
+        if (isKey) config.addPublicKeyPin(value.replaceAll("\n", ""));
+        else config.addCertificatePin(value.replaceAll("\n", ""));
+
+        network = new Network();
+        network.init(new InternalConfig(config));
+        Assert.assertEquals(1, ((List)Utils.reflectiveGetField(network, isKey ? "keyPins" : "certPins")).size());
+    }
+
+    @Test
+    public void testPinKeyPem() throws Exception {
+        testParsing(true, validPubKeyPem);
+    }
+
+    @Test
+    public void testPinKeyFromCertPem() throws Exception {
+        testParsing(true, validCertPem);
+    }
+
+    @Test
+    public void testPinCertPem() throws Exception {
+        testParsing(false, validCertPem);
+    }
+
+    @Test
+    public void testPinSSKeyPem() throws Exception {
+        testParsing(true, selfSignedKey);
+    }
+
+    @Test
+    public void testPinSSKeyFromCertPem() throws Exception {
+        testParsing(true, selfSignedCert);
+    }
+
+    @Test
+    public void testPinSSCertPem() throws Exception {
+        testParsing(false, selfSignedCert);
+    }
+
+    @Test
+    public void testPinSSKeyFilePem() throws Exception {
+        testParsing(true, "public_key.pem");
+    }
+
+    @Test
+    public void testPinSSKeyFromCertFilePem() throws Exception {
+        testParsing(true, "cert.pem");
+    }
+
+    @Test
+    public void testPinSSCertFilePem() throws Exception {
+        testParsing(false, "cert.pem");
+    }
+
+    @Test
+    public void testPinSSKeyFileDer() throws Exception {
+        testParsing(true, "public_key.der");
+    }
+
+    @Test
+    public void testPinSSKeyFromCertFileDer() throws Exception {
+        testParsing(true, "cert.der");
+    }
+
+    @Test
+    public void testPinSSCertFileDer() throws Exception {
+        testParsing(false, "cert.der");
+    }
+
+    private void setUpPinning(String[] keys, String[] certs) throws Exception {
+        Config cfg = new Config("https://count.ly", "111")
+                .setLoggingLevel(Config.LoggingLevel.DEBUG)
+                .enableTestMode()
+                .setCustomDeviceId("did");
+
+        if (keys != null) {
+            for (String key : keys) {
+                cfg.addPublicKeyPin(key);
+            }
+        }
+
+        if (certs != null) {
+            for (String cert : certs) {
+                cfg.addCertificatePin(cert);
+            }
+        }
+
+        config = new InternalConfig(cfg);
+        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "did"));
+        Storage.push(ctx, config);
+
+        setUpService(config);
+
+        service.onCreate();
+
+        Utils.reflectiveSetField(service, "singleProcess", false);
+        Intent intent = new Intent();
+        intent.putExtra(CountlyService.CMD, CountlyService.CMD_DEVICE_ID);
+        service.onStartCommand(intent, 0, 0);
+
+        network = Whitebox.getInternalState(service, "network");
+        Utils.reflectiveSetField(network, "sleeps", false);
+    }
+
+    @Test
+    public void testPinConnectKeyPem() throws Exception {
+        setUpPinning(new String[]{validPubKeyPem}, null);
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+    }
+
+    @Test
+    public void testPinConnectKeyInvalidPem() throws Exception {
+        setUpPinning(new String[]{selfSignedKey}, null);
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.RETRY, result);
+    }
+
+    @Test
+    public void testPinConnectCertPem() throws Exception {
+        setUpPinning(null, new String[]{validCertPem});
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+    }
+
+    @Test
+    public void testPinConnectCertInvalidPem() throws Exception {
+        setUpPinning(null, new String[]{selfSignedCert});
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.RETRY, result);
+    }
+
+    @Test
+    public void testPinConnectKeyValidInvalidPem() throws Exception {
+        setUpPinning(new String[]{selfSignedKey, validPubKeyPem}, null);
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+    }
+
+    @Test
+    public void testPinConnectCertValidInvalidPem() throws Exception {
+        setUpPinning(null, new String[]{selfSignedCert, validCertPem});
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+        Network.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Network.RequestResult.REMOVE, result);
     }
 }

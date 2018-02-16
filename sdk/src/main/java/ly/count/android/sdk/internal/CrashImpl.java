@@ -6,7 +6,11 @@ import org.json.JSONObject;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import ly.count.android.sdk.CountlyPush;
 import ly.count.android.sdk.Crash;
@@ -20,6 +24,7 @@ public class CrashImpl implements Crash, Storable {
 
     private final Long id;
     private final JSONObject data;
+    private Throwable throwable;
 
     CrashImpl() {
         this(Device.uniformTimestamp());
@@ -37,6 +42,7 @@ public class CrashImpl implements Crash, Storable {
             L.wtf("Throwable cannot be null");
             return this;
         } else {
+            this.throwable = throwable;
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             throwable.printStackTrace(pw);
@@ -60,11 +66,71 @@ public class CrashImpl implements Crash, Storable {
     }
 
     @Override
-    public CrashImpl setDetails(String details) {
-        if (Utils.isNotEmpty(details)) {
-            return add("_logs", details);
+    public CrashImpl setSegments(Map<String, String> segments) {
+        if (segments != null && segments.size() > 0) {
+            return add("_custom", new JSONObject(segments));
         }
         return this;
+    }
+
+    @Override
+    public CrashImpl setLogs(String[] logs) {
+        if (logs != null && logs.length > 0) {
+            return add("_logs", Utils.join(Arrays.asList(logs), "\n"));
+        }
+        return this;
+    }
+
+    @Override
+    public Throwable getThrowable() {
+        return throwable;
+    }
+
+    @Override
+    public boolean isFatal() {
+        try {
+            return !this.data.has("_nonfatal") || !this.data.getBoolean("_nonfatal");
+        } catch (JSONException e) {
+            return true;
+        }
+    }
+
+    @Override
+    public String getName() {
+        try {
+            return this.data.has("_name") ? this.data.getString("_name") : null;
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public Map<String, String> getSegments() {
+        try {
+            if (!this.data.has("_custom")) {
+                return null;
+            }
+            JSONObject object = this.data.getJSONObject("_custom");
+            Map<String, String> map = new HashMap<>();
+            Iterator<String> iterator = object.keys();
+            while (iterator.hasNext()) {
+                String key = iterator.next();
+                map.put(key, object.getString(key));
+            }
+            return map;
+        } catch (JSONException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public List<String> getLogs() {
+        try {
+            String logs = this.data.getString("_logs");
+            return Utils.isEmpty(logs) ? null : Arrays.asList(logs.split("\n"));
+        } catch (JSONException e) {
+            return null;
+        }
     }
 
     CrashImpl add(String key, Object value) {

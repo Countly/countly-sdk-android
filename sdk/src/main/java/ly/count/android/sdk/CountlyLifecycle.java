@@ -9,10 +9,16 @@ import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.Log;
 
 /**
- * Created by artem on 07/10/2017.
+ * Lifecycle-related methods.
  */
 
 public class CountlyLifecycle {
+    /**
+     * Context stored for legacy methods.
+     */
+    @Deprecated
+    protected Context legacyContext = null;
+
     protected static final Log.Module L = Log.module("Countly");
     protected static Countly instance;
     protected final Core core;
@@ -43,6 +49,7 @@ public class CountlyLifecycle {
                 return;
             }
             instance = new Countly(core);
+            instance.legacyContext = application;
         }
     }
 

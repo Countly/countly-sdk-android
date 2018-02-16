@@ -5,12 +5,15 @@ import android.support.annotation.NonNull;
 
 import junit.framework.Assert;
 
+import org.json.JSONObject;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
@@ -39,7 +42,10 @@ public class ModulePushTests extends BaseTests {
         ModuleDeviceId.InstIdInstance.deviceId = "123inst";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModulePush.FIREBASE_MESSAGING_CLASS);
-        doReturn(new ModuleDeviceId.InstIdInstance()).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
+
+        ModuleDeviceId.InstIdInstance instance = new ModuleDeviceId.InstIdInstance();
+        doReturn(instance).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
+        doReturn(instance).when(utils)._reflectiveCall(eq(ModulePush.FIREBASE_MESSAGING_CLASS), ArgumentMatchers.isNull(), eq("getInstance"));
 
         setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
@@ -60,6 +66,13 @@ public class ModulePushTests extends BaseTests {
         Assert.assertEquals(fid.realm, Config.DeviceIdRealm.FCM_TOKEN);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(fid), isNull(Config.DID.class));
+
+        UserImpl user = Utils.reflectiveGetField(core, "user");
+        user.edit().addToCohort("COHORT_NEW").removeFromCohort("COHORT_OLD").commit();
+
+        Mockito.verify(dummy, times(1)).onUserChanged(isA(ctx.getClass()), isA(JSONObject.class), eq(new HashSet<String>(Collections.singletonList("COHORT_NEW"))), eq(new HashSet<String>(Collections.singletonList("COHORT_OLD"))));
+        Mockito.verify(utils, times(1))._reflectiveCall(eq((String)null), eq(instance), eq("subscribeToTopic"), eq("COHORT_NEW"));
+        Mockito.verify(utils, times(1))._reflectiveCall(eq((String)null), eq(instance), eq("unsubscribeFromTopic"), eq("COHORT_OLD"));
     }
 
     @Test

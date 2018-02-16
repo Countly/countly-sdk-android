@@ -1,6 +1,8 @@
 package ly.count.android.sdk.internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -356,6 +358,12 @@ class Storage {
                         L.wtf("Exception while parsing storable id", t);
                     }
                 }
+                Collections.sort(list, new Comparator<Long>() {
+                    @Override
+                    public int compare(Long o1, Long o2) {
+                        return slice >= 0 ? o1.compareTo(o2) : o2.compareTo(o1);
+                    }
+                });
                 return list;
             }
         });
