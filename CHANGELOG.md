@@ -1,3 +1,6 @@
+18.01.2
+  * Fixing a crash in messaging because of null context 
+  
 18.01.1
   * Fixing small push notification accent color bug
   * Properly deleting cached location data 
