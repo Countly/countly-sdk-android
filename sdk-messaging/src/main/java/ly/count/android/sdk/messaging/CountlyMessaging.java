@@ -317,8 +317,17 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     }
 
     public static void recordMessageAction(Context context, String messageId) {
-        CountlyMessaging.context = context;
+        if (CountlyMessaging.context == null) {
+            CountlyMessaging.context = context;
+        }
         recordMessageAction(messageId);
+    }
+
+    public static void recordMessageAction(Context context, String messageId, int btnIndex) {
+        if (CountlyMessaging.context == null) {
+            CountlyMessaging.context = context;
+        }
+        recordMessageAction(messageId, btnIndex);
     }
 
     public static void recordMessageAction(String messageId) {

@@ -104,7 +104,7 @@ public class ProxyActivity extends Activity {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     //record server side that the message was received
-                                    CountlyMessaging.recordMessageAction(msg.getId(), 0);
+                                    CountlyMessaging.recordMessageAction(ProxyActivity.this, msg.getId(), 0);
                                     finish();
                                     Intent activityIntent = msg.getIntent(ProxyActivity.this, CountlyMessaging.getActivityClass(ProxyActivity.this));
                                     addExtrasToIntent(activityIntent, addMetadata, 1, msg.getLink(), msg.getTitle(), msg.getMessage());
@@ -124,7 +124,7 @@ public class ProxyActivity extends Activity {
                             addButtons(builder, msg, addMetadata);
                         } else {
                             //record server side that the message was received
-                            CountlyMessaging.recordMessageAction(msg.getId());
+                            CountlyMessaging.recordMessageAction(ProxyActivity.this, msg.getId());
                         }
                         builder.setMessage(msg.getNotificationMessage());
                         builder.setCancelable(true);
@@ -154,7 +154,7 @@ public class ProxyActivity extends Activity {
 
                     //first one did not work, try another
                     if (extras.containsKey(CountlyMessaging.EXTRA_ACTION_INDEX)) {
-                        CountlyMessaging.recordMessageAction(msg.getId(), extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX));
+                        CountlyMessaging.recordMessageAction(ProxyActivity.this, msg.getId(), extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX));
                         for (Message.Button button : msg.getButtons()) {
                             if (button.index == extras.getInt(CountlyMessaging.EXTRA_ACTION_INDEX)) {
                                 Intent targetIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(button.link));
@@ -166,7 +166,7 @@ public class ProxyActivity extends Activity {
                             }
                         }
                     } else {
-                        CountlyMessaging.recordMessageAction(msg.getId(), 0);
+                        CountlyMessaging.recordMessageAction(ProxyActivity.this, msg.getId(), 0);
                         if (msg.hasLink()) {
                             Intent targetIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(msg.getLink()));
                             addExtrasToIntent(targetIntent, addMetadata, 0, msg.getLink(), msg.getTitle(), msg.getMessage());
@@ -188,7 +188,7 @@ public class ProxyActivity extends Activity {
             DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    CountlyMessaging.recordMessageAction(msg.getId(), which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
+                    CountlyMessaging.recordMessageAction(ProxyActivity.this, msg.getId(), which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
                     //todo add extra's here
                     //
                     String buttonLink = msg.getButtons().get(which == DialogInterface.BUTTON_POSITIVE ? 0 : 1).link;
