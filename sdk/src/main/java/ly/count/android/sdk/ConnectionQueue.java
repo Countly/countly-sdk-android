@@ -131,50 +131,54 @@ public class ConnectionQueue {
      */
     void beginSession() {
         checkInternalState();
-        String data = "app_key=" + appKey_
-                          + "&timestamp=" + Countly.currentTimestampMs()
-                          + "&hour=" + Countly.currentHour()
-                          + "&dow=" + Countly.currentDayOfWeek()
-                          + "&tz=" + DeviceInfo.getTimezoneOffset()
-                          + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
-                          + "&begin_session=1"
-                          + "&metrics=" + DeviceInfo.getMetrics(context_);
+
+        String data = prepareCommonRequestData();
+
+        if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+            //add session data if consent given
+            data += "&begin_session=1"
+                    + "&metrics=" + DeviceInfo.getMetrics(context_);//can be only sent with begin session
+        }
 
         CountlyStore cs = getCountlyStore();
         if(cs.getLocationDisabled()){
             //if location is disabled, send empty info
             data += "&location=";
         } else {
-            //location should be send, add it
-            String location = cs.getLocation();
-            String city = cs.getLocationCity();
-            String country_code = cs.getLocationCountryCode();
-            String ip = cs.getLocationIpAddress();
+            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)) {
+                //location should be send, add it
+                String location = cs.getLocation();
+                String city = cs.getLocationCity();
+                String country_code = cs.getLocationCountryCode();
+                String ip = cs.getLocationIpAddress();
 
 
-            if(location != null && !location.isEmpty()){
-                data += "&location=" + location;
-            }
+                if (location != null && !location.isEmpty()) {
+                    data += "&location=" + location;
+                }
 
-            if(city != null && !city.isEmpty()){
-                data += "&city=" + city;
-            }
+                if (city != null && !city.isEmpty()) {
+                    data += "&city=" + city;
+                }
 
-            if(country_code != null && !country_code.isEmpty()){
-                data += "&country_code=" + country_code;
-            }
+                if (country_code != null && !country_code.isEmpty()) {
+                    data += "&country_code=" + country_code;
+                }
 
-            if(ip != null && !ip.isEmpty()){
-                data += "&ip=" + ip;
+                if (ip != null && !ip.isEmpty()) {
+                    data += "&ip=" + ip;
+                }
             }
         }
 
-        if(Countly.sharedInstance().isAttributionEnabled){
-            String cachedAdId = store_.getCachedAdvertisingId();
+        if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+            //add attribution data if consent given
+            if (Countly.sharedInstance().isAttributionEnabled) {
+                String cachedAdId = store_.getCachedAdvertisingId();
 
-            if(!cachedAdId.isEmpty()){
-                data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+                if (!cachedAdId.isEmpty()) {
+                    data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+                }
             }
         }
 
@@ -193,37 +197,41 @@ public class ConnectionQueue {
     void updateSession(final int duration) {
         checkInternalState();
         if (duration > 0) {
-            String data = "app_key=" + appKey_
-                          + "&timestamp=" + Countly.currentTimestampMs()
-                          + "&hour=" + Countly.currentHour()
-                          + "&dow=" + Countly.currentDayOfWeek()
-                          + "&session_duration=" + duration
-                          + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+            boolean dataAvailable = false;//will only send data if there is something valuable to send
+            String data = prepareCommonRequestData();
 
-            if(Countly.sharedInstance().isAttributionEnabled){
-                String cachedAdId = store_.getCachedAdvertisingId();
+            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+                data += "&session_duration=" + duration;
+                dataAvailable = true;
+            }
 
-                if(!cachedAdId.isEmpty()){
-                    data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+                if (Countly.sharedInstance().isAttributionEnabled) {
+                    String cachedAdId = store_.getCachedAdvertisingId();
+
+                    if (!cachedAdId.isEmpty()) {
+                        data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+                        dataAvailable = true;
+                    }
                 }
             }
-            store_.addConnection(data);
 
-            tick();
+            if(dataAvailable) {
+                store_.addConnection(data);
+                tick();
+            }
         }
     }
 
     public void changeDeviceId (String deviceId, final int duration) {
         checkInternalState();
-        final String data = "app_key=" + appKey_
-                + "&timestamp=" + Countly.currentTimestampMs()
-                + "&hour=" + Countly.currentHour()
-                + "&dow=" + Countly.currentDayOfWeek()
-                + "&session_duration=" + duration
-                + "&device_id=" + deviceId
-                + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+        String data = prepareCommonRequestData()
+                + "&device_id=" + deviceId;
+
+        if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+            data += "&session_duration=" + duration;
+        }
+
 
         store_.addConnection(data);
         tick();
@@ -232,16 +240,15 @@ public class ConnectionQueue {
     public void tokenSession(String token, Countly.CountlyMessagingMode mode) {
         checkInternalState();
 
-        final String data = "app_key=" + appKey_
-                + "&timestamp=" + Countly.currentTimestampMs()
-                + "&hour=" + Countly.currentHour()
-                + "&dow=" + Countly.currentDayOfWeek()
+        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)){
+            return;
+        }
+
+        final String data = prepareCommonRequestData()
                 + "&token_session=1"
                 + "&android_token=" + token
                 + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
-                + "&locale=" + DeviceInfo.getLocale()
-                + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+                + "&locale=" + DeviceInfo.getLocale();
 
         // To ensure begin_session will be fully processed by the server before token_session
         final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
@@ -266,24 +273,27 @@ public class ConnectionQueue {
 
     void endSession(final int duration, String deviceIdOverride) {
         checkInternalState();
-        String data = "app_key=" + appKey_
-                    + "&timestamp=" + Countly.currentTimestampMs()
-                    + "&hour=" + Countly.currentHour()
-                    + "&dow=" + Countly.currentDayOfWeek()
-                    + "&end_session=1"
-                    + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                    + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
-        if (duration > 0) {
-            data += "&session_duration=" + duration;
+
+        boolean dataAvailable = false;//will only send data if there is something valuable to send
+        String data = prepareCommonRequestData();
+
+        if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+            data += "&end_session=1";
+            if (duration > 0) {
+                data += "&session_duration=" + duration;
+            }
+            dataAvailable = true;
         }
 
         if (deviceIdOverride != null) {
             data += "&override_id=" + deviceIdOverride;
+            dataAvailable = true;
         }
 
-        store_.addConnection(data);
-
-        tick();
+        if(dataAvailable) {
+            store_.addConnection(data);
+            tick();
+        }
     }
 
     /**
@@ -291,12 +301,12 @@ public class ConnectionQueue {
      */
     void sendLocation() {
         checkInternalState();
-        String data = "app_key=" + appKey_
-            + "&timestamp=" + Countly.currentTimestampMs()
-            + "&hour=" + Countly.currentHour()
-            + "&dow=" + Countly.currentDayOfWeek()
-            + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-            + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+
+        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)) {
+            return;
+        }
+
+        String data = prepareCommonRequestData();
 
         CountlyStore cs = getCountlyStore();
         if(cs.getLocationDisabled()){
@@ -334,15 +344,15 @@ public class ConnectionQueue {
      */
     void sendUserData() {
         checkInternalState();
+
+        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)){
+            return;
+        }
+
         String userdata = UserData.getDataForRequest();
 
         if(!userdata.equals("")){
-            String data = "app_key=" + appKey_
-                    + "&timestamp=" + Countly.currentTimestampMs()
-                    + "&hour=" + Countly.currentHour()
-                    + "&dow=" + Countly.currentDayOfWeek()
-                    + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                    + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
+            String data = prepareCommonRequestData()
                     + userdata;
             store_.addConnection(data);
 
@@ -358,13 +368,12 @@ public class ConnectionQueue {
     void sendReferrerData(String referrer) {
         checkInternalState();
 
+        if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+            return;
+        }
+
         if(referrer != null){
-            String data = "app_key=" + appKey_
-                    + "&timestamp=" + Countly.currentTimestampMs()
-                    + "&hour=" + Countly.currentHour()
-                    + "&dow=" + Countly.currentDayOfWeek()
-                    + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                    + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
+            String data = prepareCommonRequestData()
                     + referrer;
             store_.addConnection(data);
 
@@ -378,13 +387,13 @@ public class ConnectionQueue {
      */
     void sendCrashReport(String error, boolean nonfatal) {
         checkInternalState();
-        final String data = "app_key=" + appKey_
-                + "&timestamp=" + Countly.currentTimestampMs()
-                + "&hour=" + Countly.currentHour()
-                + "&dow=" + Countly.currentDayOfWeek()
-                + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                + "&sdk_name=" + Countly.COUNTLY_SDK_NAME
-                + "&crash=" + CrashDetails.getCrashData(context_, error, nonfatal);
+
+        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.crashes)){
+            return;
+        }
+
+        final String data = prepareCommonRequestData()
+                          + "&crash=" + CrashDetails.getCrashData(context_, error, nonfatal);
 
         store_.addConnection(data);
 
@@ -398,17 +407,37 @@ public class ConnectionQueue {
      */
     void recordEvents(final String events) {
         checkInternalState();
-        final String data = "app_key=" + appKey_
-                          + "&timestamp=" + Countly.currentTimestampMs()
-                          + "&hour=" + Countly.currentHour()
-                          + "&dow=" + Countly.currentDayOfWeek()
-                          + "&events=" + events
-                          + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-                          + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+
+        ////////////////////////////////////////////////////
+        ///CONSENT FOR EVENTS IS CHECKED ON EVENT CREATION//
+        ////////////////////////////////////////////////////
+
+        final String data = prepareCommonRequestData()
+                          + "&events=" + events;
+
+        store_.addConnection(data);
+        tick();
+    }
+
+    void sendConsentChanges(String formattedConsentChanges) {
+        checkInternalState();
+
+        final String data = prepareCommonRequestData()
+                + "&consent=" + formattedConsentChanges;
 
         store_.addConnection(data);
 
         tick();
+    }
+
+    private String prepareCommonRequestData(){
+        return "app_key=" + appKey_
+                + "&timestamp=" + Countly.currentTimestampMs()
+                + "&hour=" + Countly.currentHour()
+                + "&dow=" + Countly.currentDayOfWeek()
+                + "&tz=" + DeviceInfo.getTimezoneOffset()
+                + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
+                + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
     }
 
     /**

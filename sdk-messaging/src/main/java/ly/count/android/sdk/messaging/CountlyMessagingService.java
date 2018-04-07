@@ -34,6 +34,10 @@ public class CountlyMessagingService extends IntentService {
 
     @Override
     protected void onHandleIntent (final Intent intent) {
+        if(!CountlyMessaging.isConsentGiven()){
+            return;
+        }
+
         Log.i(TAG, "Handling intent");
         Bundle extras = intent.getExtras();
 
@@ -87,6 +91,10 @@ public class CountlyMessagingService extends IntentService {
     }
 
     protected void notify(Intent proxy) {
+        if(!CountlyMessaging.isConsentGiven()){
+            return;
+        }
+
         Message msg = proxy.getParcelableExtra(CountlyMessaging.EXTRA_MESSAGE);
 
         if (isAppInForeground(this)) {

@@ -134,6 +134,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     private static final String PROPERTY_LARGE_ICON_ID = "ly.count.android.api.messaging.icon.large.id";
     private static final String PROPERTY_ACCENT_COLOR_ID = "ly.count.android.api.messaging.accent.color.id";
     protected static final String PROPERTY_ADD_METADATA_TO_PUSH_INTENTS = "ly.count.android.api.messaging.add.intent.metadata";
+    private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
     private static GoogleCloudMessaging gcm;
@@ -157,17 +158,19 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         getGCMPreferences(context).edit().putInt(PROPERTY_ACCENT_COLOR_ID, customAccentColor).commit();
         getGCMPreferences(context).edit().putBoolean(PROPERTY_ADD_METADATA_TO_PUSH_INTENTS, addMetadataToPushIntents).commit();
 
-        if (checkPlayServices(activity) ) {
-            gcm = GoogleCloudMessaging.getInstance(activity);
-            String registrationId = getRegistrationId(activity, sender);
-            if (registrationId.isEmpty()) {
-                registerInBackground(activity, sender);
+        if(CountlyMessaging.isConsentGiven()) {
+            if (checkPlayServices(activity)) {
+                gcm = GoogleCloudMessaging.getInstance(activity);
+                String registrationId = getRegistrationId(activity, sender);
+                if (registrationId.isEmpty()) {
+                    registerInBackground(activity, sender);
+                } else {
+                    Countly.sharedInstance().onRegistrationId(registrationId);
+                }
             } else {
-                Countly.sharedInstance().onRegistrationId(registrationId);
-            }
-        } else {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w(TAG, "No valid Google Play Services APK found.");
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(TAG, "No valid Google Play Services APK found.");
+                }
             }
         }
     }
@@ -314,6 +317,10 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
 
     protected static String getAppTitle(Context context) {
         return getGCMPreferences(context).getString(PROPERTY_APPLICATION_TITLE, "");
+    }
+
+    protected static Boolean isConsentGiven(){
+        return getGCMPreferences(context).getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
     public static void recordMessageAction(Context context, String messageId) {

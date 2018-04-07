@@ -238,7 +238,7 @@ public class ConnectionProcessor implements Runnable {
                     }
                 } catch (Exception e) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Got exception while trying to submit event data: " + eventData, e);
+                        Log.w(Countly.TAG, "Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
                     }
                     // if exception occurred, stop processing, let next tick take care of retrying
                     break;

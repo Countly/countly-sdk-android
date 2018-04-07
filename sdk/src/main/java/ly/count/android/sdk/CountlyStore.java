@@ -50,6 +50,7 @@ import java.util.Map;
  */
 public class CountlyStore {
     private static final String PREFERENCES = "COUNTLY_STORE";
+    private static final String PREFERENCES_GCM = "ly.count.android.api.messaging";
     private static final String DELIMITER = ":::";
     private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
@@ -64,6 +65,9 @@ public class CountlyStore {
     private static final int MAX_REQUESTS = 1000;
 
     private final SharedPreferences preferences_;
+    private final SharedPreferences preferencesGCM_;
+
+    private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
     /**
      * Constructs a CountlyStore object.
@@ -75,6 +79,7 @@ public class CountlyStore {
             throw new IllegalArgumentException("must provide valid context");
         }
         preferences_ = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
+        preferencesGCM_ = context.getSharedPreferences(PREFERENCES_GCM, Context.MODE_PRIVATE);
     }
 
     /**
@@ -234,6 +239,14 @@ public class CountlyStore {
 
     String getCachedAdvertisingId() {
         return preferences_.getString(CACHED_ADVERTISING_ID, "");
+    }
+
+    void setConsentPush(boolean consentValue){
+        preferencesGCM_.edit().putBoolean(CONSENT_GCM_PREFERENCES, consentValue).commit();
+    }
+
+    Boolean getConsentPush(){
+        return preferencesGCM_.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
     /**

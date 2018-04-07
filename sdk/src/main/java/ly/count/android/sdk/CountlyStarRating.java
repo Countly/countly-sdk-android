@@ -17,6 +17,8 @@ import java.util.Map;
 
 public class CountlyStarRating {
 
+    protected static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
+
     /**
      * Callbacks for star rating dialog
      */
@@ -92,13 +94,16 @@ public class CountlyStarRating {
         ratingBar.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
             @Override
             public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
-                int rating = (int)v;
-                Map<String,String> segm = new HashMap<>();
-                segm.put("platform", "android");
-                segm.put("app_version", DeviceInfo.getAppVersion(context));
-                segm.put("rating", "" + rating);
+                int rating = (int) v;
 
-                Countly.sharedInstance().recordEvent("[CLY]_star_rating", segm, 1);
+                if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
+                    Map<String, String> segm = new HashMap<>();
+                    segm.put("platform", "android");
+                    segm.put("app_version", DeviceInfo.getAppVersion(context));
+                    segm.put("rating", "" + rating);
+
+                    Countly.sharedInstance().recordEvent(STAR_RATING_EVENT_KEY, segm, 1);
+                }
 
                 dialog.dismiss();
                 if(callback != null) {

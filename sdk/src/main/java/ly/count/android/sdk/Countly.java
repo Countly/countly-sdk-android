@@ -30,6 +30,8 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -39,10 +41,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import static ly.count.android.sdk.CountlyStarRating.STAR_RATING_EVENT_KEY;
 
 /**
  * This class is the public API for the Countly Android SDK.
@@ -146,6 +151,39 @@ public class Countly {
 
     protected boolean isBeginSessionSent = false;
 
+    //GDPR
+    protected boolean requiresConsent = false;
+
+    private Map<String, Boolean> featureConsentValues = new HashMap<>();
+    private Map<String, String[]> groupedFeatures = new HashMap<>();
+    private List<String> collectedConsentChanges = new ArrayList<>();
+
+    public static class CountlyFeatureNames {
+        public static final String sessions = "sessions";
+        public static final String events = "events";
+        public static final String views = "views";
+        //public static final String scrolls = "scrolls";
+        //public static final String clicks = "clicks";
+        //public static final String forms = "forms";
+        public static final String crashes = "crashes";
+        public static final String attribution = "attribution";
+        public static final String users = "users";
+        public static final String push = "push";
+        public static final String starRating = "star-rating";
+        //public static final String accessoryDevices = "accessory-devices";
+    }
+
+    //a list of valid feature names that are used for checking
+    private String[] validFeatureNames = new String[]{
+            CountlyFeatureNames.sessions,
+            CountlyFeatureNames.events,
+            CountlyFeatureNames.views,
+            CountlyFeatureNames.crashes,
+            CountlyFeatureNames.attribution,
+            CountlyFeatureNames.users,
+            CountlyFeatureNames.push,
+            CountlyFeatureNames.starRating};
+
     /**
      * Returns the Countly singleton.
      */
@@ -167,6 +205,8 @@ public class Countly {
                 onTimer();
             }
         }, TIMER_DELAY_IN_SECONDS, TIMER_DELAY_IN_SECONDS, TimeUnit.SECONDS);
+
+        initConsent();
     }
 
 
@@ -278,6 +318,10 @@ public class Countly {
             Log.d(Countly.TAG, "Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
         }
 
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Is consent required? [" + requiresConsent + "]");
+        }
+
         // In some cases CountlyMessaging does some background processing, so it needs a way
         // to start Countly on itself
         if (MessagingAdapter.isMessagingAvailable()) {
@@ -306,7 +350,7 @@ public class Countly {
 
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Currently cached advertising ID " + countlyStore.getCachedAdvertisingId());
+                Log.d(Countly.TAG, "Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
             }
             AdvertisingIdAdapter.cacheAdvertisingID(context, countlyStore);
 
@@ -327,6 +371,21 @@ public class Countly {
 
         // context is allowed to be changed on the second init call
         connectionQueue_.setContext(context);
+
+        if(requiresConsent) {
+            //send collected consent changes that were made before initialization
+            if (collectedConsentChanges.size() != 0) {
+                for (String changeItem : collectedConsentChanges) {
+                    connectionQueue_.sendConsentChanges(changeItem);
+                }
+                collectedConsentChanges.clear();
+            }
+
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Countly is initialized with the current consent state:");
+                checkAllConsent();
+            }
+        }
 
         return this;
     }
@@ -720,8 +779,17 @@ public class Countly {
             }
         }
 
-        eventQueue_.recordEvent(key, segmentation, count, sum, dur);
-        sendEventsIfNeeded();
+        if(key.equals(STAR_RATING_EVENT_KEY)){
+            if(Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)){
+                eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                sendEventsForced();
+            }
+        } else {
+            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.events)){
+                eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                sendEventsIfNeeded();
+            }
+        }
     }
 
     /**
@@ -931,8 +999,9 @@ public class Countly {
         }
 
 
-        if(isBeginSessionSent){
-            //send as a seperate request
+        if(isBeginSessionSent || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)){
+            //send as a seperate request if either begin session was already send and we missed our first opportunity
+            //or if consent for sessions is not given and our only option to send this is as a separate request
             connectionQueue_.sendLocation();
         } else {
             //will be sent a part of begin session
@@ -1088,7 +1157,10 @@ public class Countly {
             event.dur = (currentTimestamp - event.timestamp) / 1000.0;
             event.count = count;
             event.sum = sum;
-            eventQueue_.recordEvent(event);
+
+            if(getConsent(CountlyFeatureNames.events)) {
+                eventQueue_.recordEvent(event);
+            }
             sendEventsIfNeeded();
             return true;
         } else {
@@ -1207,6 +1279,13 @@ public class Countly {
         if (eventQueue_.size() >= EVENT_QUEUE_SIZE_THRESHOLD) {
             connectionQueue_.recordEvents(eventQueue_.events());
         }
+    }
+
+    /**
+     * Immediately sends all stored events
+     */
+    void sendEventsForced() {
+        connectionQueue_.recordEvents(eventQueue_.events());
     }
 
     /**
@@ -1659,6 +1738,241 @@ public class Countly {
         isAttributionEnabled = shouldEnableAttribution;
         return this;
     }
+
+    public synchronized Countly setRequiresConsent(boolean shouldRequireConsent){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Setting if consent should be required, [" + shouldRequireConsent + "]");
+        }
+        requiresConsent = shouldRequireConsent;
+        return this;
+    }
+
+    /**
+     * Initiate all things related to consent
+     */
+    private void initConsent(){
+        //groupedFeatures.put("activity", new String[]{CountlyFeatureNames.sessions, CountlyFeatureNames.events, CountlyFeatureNames.views});
+        //groupedFeatures.put("interaction", new String[]{CountlyFeatureNames.sessions, CountlyFeatureNames.events, CountlyFeatureNames.views});
+    }
+
+    /**
+     * Check if the given name is a valid feature name
+     * @param name
+     * @return
+     */
+    private boolean isValidFeatureName(String name){
+        for(String fName:validFeatureNames){
+            if(fName.equals(name)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Prepare features into json format
+     * @param features
+     * @param consentValue
+     * @return
+     */
+    private String formatConsentChanges(String [] features, boolean consentValue){
+        StringBuilder preparedConsent = new StringBuilder();
+        preparedConsent.append("{");
+
+        for(int a = 0 ; a < features.length ; a++){
+            if(a != 0){
+                preparedConsent.append(",");
+            }
+            preparedConsent.append('"');
+            preparedConsent.append(features[a]);
+            preparedConsent.append('"');
+            preparedConsent.append(':');
+            preparedConsent.append(consentValue);
+        }
+
+        preparedConsent.append("}");
+
+        String valueToSend = preparedConsent.toString();
+
+        try {
+            valueToSend = java.net.URLEncoder.encode(valueToSend, "UTF-8");
+        } catch (UnsupportedEncodingException ignored) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        return valueToSend;
+    }
+
+    /**
+     * Group multiple features into a feature group
+     * @param groupName
+     * @param features
+     * @return
+     */
+    public synchronized Countly CreateFeatureGroup(String groupName, String[] features){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Creating a feature group with the name: [" + groupName + "]");
+        }
+
+        groupedFeatures.put(groupName, features);
+        return this;
+    }
+
+     /**
+     * Set the consent of a feature group
+     * @param groupName
+     * @param isConsentGiven
+     * @return
+     */
+    public synchronized Countly SetConsentFeatureGroup(String groupName, boolean isConsentGiven){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Setting consent for feature group named: [" + groupName + "] with value: [" + isConsentGiven + "]");
+        }
+
+        if(!groupedFeatures.containsKey(groupName)){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Trying to set consent for a unknown feature group: [" + groupName + "]");
+            }
+
+            return this;
+        }
+
+        setConsent(groupedFeatures.get(groupName), isConsentGiven);
+
+        return this;
+    }
+
+    /**
+     * Set the consent of a feature
+     * @param featureNames
+     * @param isConsentGiven
+     * @return
+     */
+    public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
+
+        for(String featureName:featureNames) {
+            if (Countly.sharedInstance() != null && Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Setting consent for feature named: [" + featureName + "] with value: [" + isConsentGiven + "]");
+            }
+
+            if (!isValidFeatureName(featureName)) {
+                Log.d(Countly.TAG, "Given feature: [" + featureName + "] is not a valid name, ignoring it");
+                continue;
+            }
+
+            if (featureName.equals(CountlyFeatureNames.push)) {
+                connectionQueue_.getCountlyStore().setConsentPush(isConsentGiven);
+            }
+
+            featureConsentValues.put(featureName, isConsentGiven);
+        }
+
+        String formattedChanges = formatConsentChanges(featureNames, isConsentGiven);
+
+        if(isInitialized()){
+            connectionQueue_.sendConsentChanges(formattedChanges);
+        } else {
+            collectedConsentChanges.add(formattedChanges);
+        }
+
+        return this;
+    }
+
+    /**
+     * Give the consent to a feature
+     * @param featureNames
+     * @return
+     */
+    public synchronized Countly giveConsent(String[] featureNames){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Giving consent for feature named: [" + featureNames + "]");
+        }
+        setConsent(featureNames, true);
+
+        return this;
+    }
+
+    /**
+     * Remove the consent of a feature
+     * @param featureNames
+     * @return
+     */
+    public synchronized Countly removeConsent(String[] featureNames){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Removing consent for feature named: [" + featureNames + "]");
+        }
+
+        setConsent(featureNames, false);
+
+        return this;
+    }
+
+    /**
+     * Get the current consent state of a feature
+     * @param featureName
+     * @return
+     */
+    public synchronized boolean getConsent(String featureName){
+        if(!requiresConsent){
+            //return true silently
+            return true;
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Returning consent for feature named: [" + featureName + "]");
+        }
+
+        Boolean value = featureConsentValues.get(featureName);
+
+        if(value == null) {
+            if(featureName.equals(CountlyFeatureNames.push)){
+                //if the feature is 'push", set it with the value from preferences
+
+                boolean storedConsent = connectionQueue_.getCountlyStore().getConsentPush();
+
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Push consent has not been set this session. Setting the value found stored in preferences:[" + storedConsent + "]");
+                }
+
+                featureConsentValues.put(featureName, storedConsent);
+
+                return storedConsent;
+            } else {
+                return false;
+            }
+        }
+        return value;
+    }
+
+    /**
+     * Print the consent values of all features
+     * @return
+     */
+    public synchronized Countly checkAllConsent(){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Checking and printing consent for All features");
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Is consent required? [" + requiresConsent + "]");
+        }
+
+        //make sure push consent has been added to the feature map
+        getConsent(CountlyFeatureNames.push);
+
+        StringBuilder sb = new StringBuilder();
+
+        for(String key:featureConsentValues.keySet()) {
+            sb.append("Feature named [" + key + "], consent value: [" + featureConsentValues.get(key) + "]\n");
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, sb.toString());
+        }
+
+        return this;
+    }
+
 
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }

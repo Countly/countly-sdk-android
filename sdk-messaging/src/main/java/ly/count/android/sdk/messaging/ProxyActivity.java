@@ -43,6 +43,10 @@ public class ProxyActivity extends Activity {
     protected void onStart () {
         super.onStart();
 
+        if(!CountlyMessaging.isConsentGiven()){
+            return;
+        }
+
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             final Message msg = extras.getParcelable(CountlyMessaging.EXTRA_MESSAGE);
