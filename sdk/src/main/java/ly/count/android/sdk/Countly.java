@@ -31,7 +31,6 @@ import android.util.Log;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,7 +40,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,12 +60,12 @@ public class Countly {
     /**
      * Used as request meta data on every request
      */
-    public static final String COUNTLY_SDK_NAME = "java-native-android";
+    protected static final String COUNTLY_SDK_NAME = "java-native-android";
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
      */
-    public static final String DEFAULT_APP_VERSION = "1.0";
+    protected static final String DEFAULT_APP_VERSION = "1.0";
     /**
      * Tag used in all logging in the Count.ly SDK.
      */
@@ -101,6 +99,7 @@ public class Countly {
 
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
+        @SuppressLint("StaticFieldLeak")
         static final Countly instance = new Countly();
     }
 
@@ -1944,7 +1943,7 @@ public class Countly {
      */
     public synchronized Countly giveConsent(String[] featureNames){
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Giving consent for feature named: [" + featureNames + "]");
+            Log.d(Countly.TAG, "Giving consent for features named: [" + featureNames.toString() + "]");
         }
         setConsent(featureNames, true);
 
@@ -1958,7 +1957,7 @@ public class Countly {
      */
     public synchronized Countly removeConsent(String[] featureNames){
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Removing consent for feature named: [" + featureNames + "]");
+            Log.d(Countly.TAG, "Removing consent for features named: [" + featureNames.toString() + "]");
         }
 
         setConsent(featureNames, false);
@@ -2022,7 +2021,7 @@ public class Countly {
         StringBuilder sb = new StringBuilder();
 
         for(String key:featureConsentValues.keySet()) {
-            sb.append("Feature named [" + key + "], consent value: [" + featureConsentValues.get(key) + "]\n");
+            sb.append("Feature named [").append(key).append("], consent value: [").append(featureConsentValues.get(key)).append("]\n");
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {

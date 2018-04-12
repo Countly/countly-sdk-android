@@ -141,7 +141,7 @@ public class CountlyStore {
             final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
             if (connections.size() < MAX_REQUESTS) {
                 connections.add(str);
-                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
+                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
             }
         }
     }
@@ -155,7 +155,7 @@ public class CountlyStore {
         if (str != null && str.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
             if (connections.remove(str)) {
-                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).commit();
+                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
             }
         }
     }
@@ -168,7 +168,7 @@ public class CountlyStore {
         final List<Event> events = eventsList();
         if (events.size() < MAX_EVENTS) {
             events.add(event);
-            preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
+            preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
         }
     }
 
@@ -176,31 +176,30 @@ public class CountlyStore {
      * Sets location of user and sends it with next request
      */
     void setLocation(final String latLonCoordinates) {
-        preferences_.edit().putString(LOCATION_PREFERENCE, latLonCoordinates).commit();
+        preferences_.edit().putString(LOCATION_PREFERENCE, latLonCoordinates).apply();
     }
 
     void setLocationCity(final String city) {
-        preferences_.edit().putString(LOCATION_CITY_PREFERENCE, city).commit();
+        preferences_.edit().putString(LOCATION_CITY_PREFERENCE, city).apply();
     }
 
     void setLocationCountryCode(final String countryCode) {
-        preferences_.edit().putString(LOCATION_COUNTRY_CODE_PREFERENCE, countryCode).commit();
+        preferences_.edit().putString(LOCATION_COUNTRY_CODE_PREFERENCE, countryCode).apply();
     }
 
     void setLocationIpAddress(final String ipAddress) {
-        preferences_.edit().putString(LOCATION_IP_ADDRESS_PREFERENCE, ipAddress).commit();
+        preferences_.edit().putString(LOCATION_IP_ADDRESS_PREFERENCE, ipAddress).apply();
     }
 
     void setLocationDisabled(final boolean locationDisabled) {
-        preferences_.edit().putBoolean(LOCATION_DISABLED_PREFERENCE, locationDisabled).commit();
+        preferences_.edit().putBoolean(LOCATION_DISABLED_PREFERENCE, locationDisabled).apply();
     }
 
     /**
      * Get location or empty string in case if no location is specified
      */
     String getLocation() {
-        String location = preferences_.getString(LOCATION_PREFERENCE, "");
-        return location;
+        return preferences_.getString(LOCATION_PREFERENCE, "");
     }
 
     String getLocationCity() {
@@ -223,7 +222,7 @@ public class CountlyStore {
      * Set the preferences that are used for the star rating
      */
     void setStarRatingPreferences(String prefs) {
-        preferences_.edit().putString(STAR_RATING_PREFERENCE, prefs).commit();
+        preferences_.edit().putString(STAR_RATING_PREFERENCE, prefs).apply();
     }
 
     /**
@@ -234,7 +233,7 @@ public class CountlyStore {
     }
 
     void setCachedAdvertisingId(String advertisingId) {
-        preferences_.edit().putString(CACHED_ADVERTISING_ID, advertisingId).commit();
+        preferences_.edit().putString(CACHED_ADVERTISING_ID, advertisingId).apply();
     }
 
     String getCachedAdvertisingId() {
@@ -242,7 +241,7 @@ public class CountlyStore {
     }
 
     void setConsentPush(boolean consentValue){
-        preferencesGCM_.edit().putBoolean(CONSENT_GCM_PREFERENCES, consentValue).commit();
+        preferencesGCM_.edit().putBoolean(CONSENT_GCM_PREFERENCES, consentValue).apply();
     }
 
     Boolean getConsentPush(){
@@ -283,7 +282,7 @@ public class CountlyStore {
         if (eventsToRemove != null && eventsToRemove.size() > 0) {
             final List<Event> events = eventsList();
             if (events.removeAll(eventsToRemove)) {
-                preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).commit();
+                preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
             }
         }
     }
@@ -334,9 +333,9 @@ public class CountlyStore {
      */
     public synchronized void setPreference(final String key, final String value) {
         if (value == null) {
-            preferences_.edit().remove(key).commit();
+            preferences_.edit().remove(key).apply();
         } else {
-            preferences_.edit().putString(key, value).commit();
+            preferences_.edit().putString(key, value).apply();
         }
     }
 
@@ -346,6 +345,6 @@ public class CountlyStore {
         prefsEditor.remove(EVENTS_PREFERENCE);
         prefsEditor.remove(CONNECTIONS_PREFERENCE);
         prefsEditor.clear();
-        prefsEditor.commit();
+        prefsEditor.apply();
     }
 }

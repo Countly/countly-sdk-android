@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -149,31 +150,9 @@ public class ConnectionQueue {
             dataAvailable = true;
         } else {
             if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location)) {
-                //location should be send, add it
-                String location = cs.getLocation();
-                String city = cs.getLocationCity();
-                String country_code = cs.getLocationCountryCode();
-                String ip = cs.getLocationIpAddress();
-
-                final int dataLen = data.length();
-
-                if (location != null && !location.isEmpty()) {
-                    data += "&location=" + location;
-                }
-
-                if (city != null && !city.isEmpty()) {
-                    data += "&city=" + city;
-                }
-
-                if (country_code != null && !country_code.isEmpty()) {
-                    data += "&country_code=" + country_code;
-                }
-
-                if (ip != null && !ip.isEmpty()) {
-                    data += "&ip=" + ip;
-                }
-
-                if(data.length() != dataLen){
+                String addition = prepareLocationData(cs);
+                if(!addition.isEmpty()){
+                    data += addition;
                     dataAvailable = true;
                 }
             }
@@ -326,23 +305,8 @@ public class ConnectionQueue {
             data += "&location=";
         } else {
             //location should be send, add it
-            String location = cs.getLocation();
-            String city = cs.getLocationCity();
-            String country_code = cs.getLocationCountryCode();
-            String ip = cs.getLocationIpAddress();
-
-
-            if(location != null && !location.isEmpty()){
-                data += "&location=" + location;
-            }
-
-            if(city != null && !city.isEmpty()){
-                data += "&city=" + city;
-            }
-
-            if(country_code != null && !country_code.isEmpty()){
-                data += "&country_code=" + country_code;
-            }
+            String addition = prepareLocationData(cs);
+            data += addition;//if it's empty, nothing bad happens
         }
 
         store_.addConnection(data);
@@ -450,6 +414,38 @@ public class ConnectionQueue {
                 + "&tz=" + DeviceInfo.getTimezoneOffset()
                 + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                 + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+    }
+
+    private String prepareLocationData(CountlyStore cs){
+        String addition = "";
+
+        String location = cs.getLocation();
+        String city = cs.getLocationCity();
+        String country_code = cs.getLocationCountryCode();
+        String ip = cs.getLocationIpAddress();
+
+        if(location != null && !location.isEmpty()){
+            try {
+                location = java.net.URLEncoder.encode(location, "UTF-8");
+            } catch (UnsupportedEncodingException ignored) {
+                // should never happen because Android guarantees UTF-8 support
+            }
+            addition += "&location=" + location;
+        }
+
+        if(city != null && !city.isEmpty()){
+            addition += "&city=" + city;
+        }
+
+        if(country_code != null && !country_code.isEmpty()){
+            addition += "&country_code=" + country_code;
+        }
+
+        if(ip != null && !ip.isEmpty()){
+            addition += "&ip=" + ip;
+        }
+
+        return addition;
     }
 
     /**

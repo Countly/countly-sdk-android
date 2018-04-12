@@ -26,7 +26,7 @@ public class ReferrerReceiver extends BroadcastReceiver
     public static void deleteReferrer(Context context)
     {
         // delete stored referrer.
-        context.getSharedPreferences(key, Context.MODE_PRIVATE).edit().remove(key).commit();
+        context.getSharedPreferences(key, Context.MODE_PRIVATE).edit().remove(key).apply();
     }
 
     //--------------------------------------------------------------------------
@@ -71,7 +71,7 @@ public class ReferrerReceiver extends BroadcastReceiver
                     Log.d(Countly.TAG, "Processed: " + res);
                     // Persist the referrer string.
                     if(!res.equals(""))
-                        context.getSharedPreferences(key, Context.MODE_PRIVATE).edit().putString(key, res).commit();
+                        context.getSharedPreferences(key, Context.MODE_PRIVATE).edit().putString(key, res).apply();
                 }
             }
         }
