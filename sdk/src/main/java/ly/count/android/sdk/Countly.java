@@ -123,6 +123,7 @@ public class Countly {
     private int lastViewStart = 0;
     private boolean firstView = true;
     private boolean autoViewTracker = false;
+    private final static String VIEW_EVENT_KEY = "[CLY]_view";
 
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
@@ -165,6 +166,7 @@ public class Countly {
         //public static final String scrolls = "scrolls";
         //public static final String clicks = "clicks";
         //public static final String forms = "forms";
+        public static final String location = "location";
         public static final String crashes = "crashes";
         public static final String attribution = "attribution";
         public static final String users = "users";
@@ -178,6 +180,7 @@ public class Countly {
             CountlyFeatureNames.sessions,
             CountlyFeatureNames.events,
             CountlyFeatureNames.views,
+            CountlyFeatureNames.location,
             CountlyFeatureNames.crashes,
             CountlyFeatureNames.attribution,
             CountlyFeatureNames.users,
@@ -364,7 +367,10 @@ public class Countly {
             eventQueue_ = new EventQueue(countlyStore);
 
             //do star rating related things
-            CountlyStarRating.registerAppSession(context, starRatingCallback_);
+
+            if(getConsent(CountlyFeatureNames.starRating)) {
+                CountlyStarRating.registerAppSession(context, starRatingCallback_);
+            }
         }
 
         context_ = context.getApplicationContext();
@@ -626,14 +632,18 @@ public class Countly {
      * Called when GCM Registration ID is received. Sends a token session event to the server.
      */
     public void onRegistrationId(String registrationId) {
-        connectionQueue_.tokenSession(registrationId, messagingMode_);
+        if(getConsent(CountlyFeatureNames.push)) {
+            connectionQueue_.tokenSession(registrationId, messagingMode_);
+        }
     }
 
     /**
      * DON'T USE THIS!!!!
      */
     public void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
-        connectionQueue_.tokenSession(registrationId, mode);
+        if(getConsent(CountlyFeatureNames.push)) {
+            connectionQueue_.tokenSession(registrationId, mode);
+        }
     }
 
     /**
@@ -779,16 +789,25 @@ public class Countly {
             }
         }
 
-        if(key.equals(STAR_RATING_EVENT_KEY)){
-            if(Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)){
-                eventQueue_.recordEvent(key, segmentation, count, sum, dur);
-                sendEventsForced();
-            }
-        } else {
-            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.events)){
-                eventQueue_.recordEvent(key, segmentation, count, sum, dur);
-                sendEventsIfNeeded();
-            }
+        switch (key) {
+            case STAR_RATING_EVENT_KEY:
+                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)) {
+                    eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                    sendEventsForced();
+                }
+                break;
+            case VIEW_EVENT_KEY:
+                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.views)) {
+                    eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                    sendEventsForced();
+                }
+                break;
+            default:
+                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
+                    eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                    sendEventsIfNeeded();
+                }
+                break;
         }
     }
 
@@ -834,7 +853,7 @@ public class Countly {
             firstView = false;
             segments.put("start", "1");
         }
-        recordEvent("[CLY]_view", segments, 1);
+        recordEvent(VIEW_EVENT_KEY, segments, 1);
         return this;
     }
 
@@ -949,6 +968,11 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Disabling location");
         }
+
+        if(!getConsent(CountlyFeatureNames.location)){
+            return this;
+        }
+
         connectionQueue_.getCountlyStore().setLocationCountryCode("");
         connectionQueue_.getCountlyStore().setLocationCity("");
         connectionQueue_.getCountlyStore().setLocation("");
@@ -970,6 +994,10 @@ public class Countly {
     public synchronized Countly setLocation(String country_code, String city, String location, String ipAddress){
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting location parameters");
+        }
+
+        if(!getConsent(CountlyFeatureNames.location)){
+            return this;
         }
 
         if(country_code != null){
@@ -1019,8 +1047,14 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting custom crash segments");
         }
-        if(segments != null)
+
+        if(!getConsent(CountlyFeatureNames.crashes)){
+            return this;
+        }
+
+        if(segments != null) {
             CrashDetails.setCustomSegments(segments);
+        }
         return this;
     }
 
@@ -1032,6 +1066,11 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Adding crash bread crumb");
         }
+
+        if(!getConsent(CountlyFeatureNames.crashes)){
+            return this;
+        }
+
         CrashDetails.addLog(record);
         return this;
     }
@@ -1044,6 +1083,11 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Logging exception");
         }
+
+        if(!getConsent(CountlyFeatureNames.crashes)){
+            return this;
+        }
+
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
@@ -1065,10 +1109,13 @@ public class Countly {
 
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                e.printStackTrace(pw);
-                Countly.sharedInstance().connectionQueue_.sendCrashReport(sw.toString(), false);
+                if(getConsent(CountlyFeatureNames.crashes)){
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    e.printStackTrace(pw);
+
+                    Countly.sharedInstance().connectionQueue_.sendCrashReport(sw.toString(), false);
+                }
 
                 //if there was another handler before
                 if(oldHandler != null){
@@ -1126,7 +1173,12 @@ public class Countly {
      */
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
         Event event = timedEvents.remove(key);
+
         if (event != null) {
+            if(!getConsent(CountlyFeatureNames.events)) {
+                return true;
+            }
+
             if (!isInitialized()) {
                 throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
             }
@@ -1158,9 +1210,7 @@ public class Countly {
             event.count = count;
             event.sum = sum;
 
-            if(getConsent(CountlyFeatureNames.events)) {
-                eventQueue_.recordEvent(event);
-            }
+            eventQueue_.recordEvent(event);
             sendEventsIfNeeded();
             return true;
         } else {
@@ -1258,6 +1308,10 @@ public class Countly {
             }
         }
 
+        if(!getConsent(CountlyFeatureNames.views)) {
+            return;
+        }
+
         //only record view if the view name is not null and if it has a reasonable duration
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
@@ -1266,7 +1320,7 @@ public class Countly {
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(Countly.currentTimestamp()-lastViewStart));
             segments.put("segment", "Android");
-            recordEvent("[CLY]_view",segments,1);
+            recordEvent(VIEW_EVENT_KEY,segments,1);
             lastView = null;
             lastViewStart = 0;
         }
@@ -1444,6 +1498,11 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Showing star rating");
         }
+
+        if(!getConsent(CountlyFeatureNames.starRating)) {
+            return;
+        }
+
         CountlyStarRating.showStarRating(activity, callback);
     }
 

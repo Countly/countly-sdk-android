@@ -132,26 +132,30 @@ public class ConnectionQueue {
     void beginSession() {
         checkInternalState();
 
+        boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
 
         if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&begin_session=1"
                     + "&metrics=" + DeviceInfo.getMetrics(context_);//can be only sent with begin session
+            dataAvailable = true;
         }
 
         CountlyStore cs = getCountlyStore();
         if(cs.getLocationDisabled()){
             //if location is disabled, send empty info
             data += "&location=";
+            dataAvailable = true;
         } else {
-            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)) {
+            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location)) {
                 //location should be send, add it
                 String location = cs.getLocation();
                 String city = cs.getLocationCity();
                 String country_code = cs.getLocationCountryCode();
                 String ip = cs.getLocationIpAddress();
 
+                final int dataLen = data.length();
 
                 if (location != null && !location.isEmpty()) {
                     data += "&location=" + location;
@@ -168,6 +172,10 @@ public class ConnectionQueue {
                 if (ip != null && !ip.isEmpty()) {
                     data += "&ip=" + ip;
                 }
+
+                if(data.length() != dataLen){
+                    dataAvailable = true;
+                }
             }
         }
 
@@ -178,14 +186,18 @@ public class ConnectionQueue {
 
                 if (!cachedAdId.isEmpty()) {
                     data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+
+                    dataAvailable = true;
                 }
             }
         }
 
-        store_.addConnection(data);
         Countly.sharedInstance().isBeginSessionSent = true;
 
-        tick();
+        if(dataAvailable) {
+            store_.addConnection(data);
+            tick();
+        }
     }
 
     /**
@@ -302,7 +314,7 @@ public class ConnectionQueue {
     void sendLocation() {
         checkInternalState();
 
-        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)) {
+        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location)) {
             return;
         }
 
