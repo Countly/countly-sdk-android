@@ -367,10 +367,10 @@ public class Countly {
             CountlyStarRating.registerAppSession(context, starRatingCallback_);
         }
 
-        context_ = context;
+        context_ = context.getApplicationContext();
 
         // context is allowed to be changed on the second init call
-        connectionQueue_.setContext(context);
+        connectionQueue_.setContext(context_);
 
         if(requiresConsent) {
             //send collected consent changes that were made before initialization
