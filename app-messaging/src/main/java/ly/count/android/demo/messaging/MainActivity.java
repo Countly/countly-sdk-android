@@ -20,9 +20,9 @@ public class MainActivity extends Activity {
     private BroadcastReceiver messageReceiver;
 
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
-    final String COUNTLY_SERVER_URL = "YOUR_SERVER";
+    final String COUNTLY_SERVER_URL = "http://artem.count.ly";
     final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
-    final String COUNTLY_MESSAGING_PROJECT_ID = "YOUR_PROJECT_ID(NUMBERS ONLY)";
+//    final String COUNTLY_MESSAGING_PROJECT_ID = "YOUR_PROJECT_ID(NUMBERS ONLY)";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -33,11 +33,10 @@ public class MainActivity extends Activity {
         String longitude = "11.974950";
 
         Countly.sharedInstance()
-                .init(this, COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
+                .setLoggingEnabled(true)
                 .setPushIntentAddMetadata(true)
-                .initMessaging(this, MainActivity.class, COUNTLY_MESSAGING_PROJECT_ID, null, Countly.CountlyMessagingMode.TEST, false, -1, R.drawable.large_icon, 564797574)
-                .setLocation(null, null, latitude + "," + longitude, null)
-                .setLoggingEnabled(true);
+                .init(this, "http://192.168.3.77:3001", "863f97171d6ae3933aabc9ed8702dab81663a363")
+                .initMessaging(this, getClass(), "640228892478", Countly.CountlyMessagingMode.PRODUCTION);
 
         Countly.sharedInstance().recordEvent("test", 1);
 

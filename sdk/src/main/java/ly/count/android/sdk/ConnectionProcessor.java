@@ -27,6 +27,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -245,6 +246,11 @@ public class ConnectionProcessor implements Runnable {
                 } finally {
                     // free connection resources
                     if (conn != null && conn instanceof HttpURLConnection) {
+                        try {
+                            InputStream stream = conn.getInputStream();
+                            stream.close();
+                        } catch (Throwable ignored){}
+
                         ((HttpURLConnection) conn).disconnect();
                     }
                 }

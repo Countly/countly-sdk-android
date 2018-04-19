@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -70,6 +71,11 @@ public class Countly {
      * Tag used in all logging in the Count.ly SDK.
      */
     public static final String TAG = "Countly";
+
+    /**
+     * Broadcast sent when consent set is changed
+     */
+    public static final String CONSENT_BROADCAST = "ly.count.android.sdk.Countly.CONSENT_BROADCAST";
 
     /**
      * Determines how many custom events can be queued locally before
@@ -486,8 +492,13 @@ public class Countly {
      * @throws IllegalStateException if no CountlyMessaging class is found (you need to use countly-messaging-sdk-android library instead of countly-sdk-android)
      */
     public synchronized Countly initMessaging(Activity activity, Class<? extends Activity> activityClass, String projectID, String[] buttonNames, Countly.CountlyMessagingMode mode, boolean disableUI, int customSmallIconResId, int customLargeIconRes, int customAccentColor) {
+        try {
+            Class.forName("ly.count.android.sdk.messaging.CountlyPush");
+            throw new IllegalStateException("Please remove initMessaging() call, for FCM integration you need to use CountlyPush class");
+        } catch (ClassNotFoundException ignored) { }
+
         if (mode != null && !MessagingAdapter.isMessagingAvailable()) {
-            throw new IllegalStateException("you need to include countly-messaging-sdk-android library instead of countly-sdk-android if you want to use Countly Messaging");
+            throw new IllegalStateException("you need to include sdk-messaging library instead of sdk if you want to use Countly Messaging");
         } else {
             messagingMode_ = mode;
             if (!MessagingAdapter.init(activity, activityClass, projectID, buttonNames, disableUI, customSmallIconResId, addMetadataToPushIntents, customLargeIconRes, customAccentColor)) {
@@ -631,18 +642,22 @@ public class Countly {
      * Called when GCM Registration ID is received. Sends a token session event to the server.
      */
     public void onRegistrationId(String registrationId) {
-        if(getConsent(CountlyFeatureNames.push)) {
-            connectionQueue_.tokenSession(registrationId, messagingMode_);
-        }
+        onRegistrationId(registrationId, messagingMode_);
     }
 
     /**
      * DON'T USE THIS!!!!
      */
     public void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
-        if(getConsent(CountlyFeatureNames.push)) {
-            connectionQueue_.tokenSession(registrationId, mode);
+        if(!getConsent(CountlyFeatureNames.push)) {
+            return;
         }
+        try {
+            Class.forName("ly.count.android.sdk.messaging.CountlyPush");
+            throw new IllegalStateException("Please remove onRegistrationId() call, for FCM integration you need to use CountlyPush class");
+        } catch (ClassNotFoundException ignored) { }
+
+        connectionQueue_.tokenSession(registrationId, mode);
     }
 
     /**
@@ -1907,6 +1922,7 @@ public class Countly {
      * @return
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
+        boolean hadSessions = featureConsentValues.containsKey(CountlyFeatureNames.sessions);
 
         for(String featureName:featureNames) {
             if (Countly.sharedInstance() != null && Countly.sharedInstance().isLoggingEnabled()) {
@@ -1929,9 +1945,14 @@ public class Countly {
 
         if(isInitialized()){
             connectionQueue_.sendConsentChanges(formattedChanges);
+            if (activityCount_ != 0 && !hadSessions && getConsent(CountlyFeatureNames.sessions)) {
+                onStartHelper();
+            }
         } else {
             collectedConsentChanges.add(formattedChanges);
         }
+
+        context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
 
         return this;
     }

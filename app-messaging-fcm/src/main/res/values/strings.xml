@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">app-messaging-fcm</string>
+    <string name="countly_hannel_name">General Notifications</string>
+    <string name="countly_channel_description"><![CDATA[News & announcements from AppMessagingFcm]]></string>
+</resources>

@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "911729422057",
+    "firebase_url": "https://demomessagingfcm.firebaseio.com",
+    "project_id": "demomessagingfcm",
+    "storage_bucket": "demomessagingfcm.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:911729422057:android:92ec9e1c72d7f4f6",
+        "android_client_info": {
+          "package_name": "ly.count.android.demo.messaging_fcm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "911729422057-bf9dqd3me6c5llqoqmtesl38343kpim4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ly.count.android.demo.messaging_fcm",
+            "certificate_hash": "8938234bb1cacbb60b8a92dce5ca64977bccb5cf"
+          }
+        },
+        {
+          "client_id": "911729422057-8l2ghlvg7fsc7bjf7141bkat42sk7o33.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZN41ftM2812TRXNtIaGyA-novKFqfqFw"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "911729422057-8l2ghlvg7fsc7bjf7141bkat42sk7o33.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
