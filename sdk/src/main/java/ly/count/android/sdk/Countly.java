@@ -392,6 +392,8 @@ public class Countly {
                 collectedConsentChanges.clear();
             }
 
+            context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
+
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Countly is initialized with the current consent state:");
                 checkAllConsent();
@@ -589,7 +591,7 @@ public class Countly {
      * Called when the first Activity is started. Sends a begin session event to the server
      * and initializes application session tracking.
      */
-    void onStartHelper() {
+    private void onStartHelper() {
         prevSessionDurationStartTime_ = System.nanoTime();
         connectionQueue_.beginSession();
     }
@@ -629,7 +631,7 @@ public class Countly {
      * Called when final Activity is stopped. Sends an end session event to the server,
      * also sends any unsent custom events.
      */
-    void onStopHelper() {
+    private void onStopHelper() {
         connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate());
         prevSessionDurationStartTime_ = 0;
 
@@ -824,6 +826,7 @@ public class Countly {
     /**
      * Enable or disable automatic view tracking
      * @param enable boolean for the state of automatic view tracking
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setViewTracking(boolean enable){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -846,6 +849,7 @@ public class Countly {
      * or track view that is not automatically tracked
      * like fragment, Message box or transparent Activity
      * @param viewName String - name of the view
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly recordView(String viewName){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -973,6 +977,7 @@ public class Countly {
 
     /**
      * Disable sending of location data
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly disableLocation() {
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1000,6 +1005,7 @@ public class Countly {
      * @param country_code ISO Country code for the user's country
      * @param city Name of the user's city
      * @param location comma separate lat and lng values. For example, "56.42345,123.45325"
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setLocation(String country_code, String city, String location, String ipAddress){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1052,6 +1058,7 @@ public class Countly {
      * Sets custom segments to be reported with crash reports
      * In custom segments you can provide any string key values to segments crashes by
      * @param segments Map&lt;String, String&gt; key segments and their values
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setCustomCrashSegments(Map<String, String> segments) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1071,6 +1078,7 @@ public class Countly {
     /**
      * Add crash breadcrumb like log record to the log that will be send together with crash report
      * @param record String a bread crumb for the crash report
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly addCrashLog(String record) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1088,6 +1096,7 @@ public class Countly {
     /**
      * Log handled exception to report it to server as non fatal crash
      * @param exception Exception to log
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly logException(Exception exception) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1107,6 +1116,7 @@ public class Countly {
 
     /**
      * Enable crash reporting to send unhandled crash reports to server
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly enableCrashReporting() {
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1311,7 +1321,7 @@ public class Countly {
     /**
      * Reports duration of last view
      */
-    void reportViewDuration(){
+    private void reportViewDuration(){
         if(lastView != null && lastViewStart <= 0) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Last view start value is not normal: [" + lastViewStart + "]");
@@ -1339,7 +1349,7 @@ public class Countly {
     /**
      * Submits all of the locally queued events to the server if there are more than 10 of them.
      */
-    void sendEventsIfNeeded() {
+    protected void sendEventsIfNeeded() {
         if (eventQueue_.size() >= EVENT_QUEUE_SIZE_THRESHOLD) {
             connectionQueue_.recordEvents(eventQueue_.events());
         }
@@ -1348,7 +1358,7 @@ public class Countly {
     /**
      * Immediately sends all stored events
      */
-    void sendEventsForced() {
+    protected void sendEventsForced() {
         connectionQueue_.recordEvents(eventQueue_.events());
     }
 
@@ -1584,6 +1594,7 @@ public class Countly {
     /**
      * Set after how many sessions the automatic star rating will be shown for each app version
      * @param limit app session amount for the limit
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setAutomaticStarRatingSessionLimit(int limit) {
         if(context_ == null) {
@@ -1826,8 +1837,8 @@ public class Countly {
 
     /**
      * Check if the given name is a valid feature name
-     * @param name
-     * @return
+     * @param name the name of the feature to be tested if it is valid
+     * @return returns true if value is contained in feature name array
      */
     private boolean isValidFeatureName(String name){
         for(String fName:validFeatureNames){
@@ -1840,9 +1851,9 @@ public class Countly {
 
     /**
      * Prepare features into json format
-     * @param features
-     * @param consentValue
-     * @return
+     * @param features the names of features that are about to be changed
+     * @param consentValue the value for the new consent
+     * @return provided consent changes in json format
      */
     private String formatConsentChanges(String [] features, boolean consentValue){
         StringBuilder preparedConsent = new StringBuilder();
@@ -1874,9 +1885,9 @@ public class Countly {
 
     /**
      * Group multiple features into a feature group
-     * @param groupName
-     * @param features
-     * @return
+     * @param groupName name of the consent group
+     * @param features array of feature to be added to the consent group
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly CreateFeatureGroup(String groupName, String[] features){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1889,9 +1900,9 @@ public class Countly {
 
      /**
      * Set the consent of a feature group
-     * @param groupName
-     * @param isConsentGiven
-     * @return
+     * @param groupName name of the consent group
+     * @param isConsentGiven the value that should be set for this consent group
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly SetConsentFeatureGroup(String groupName, boolean isConsentGiven){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1913,12 +1924,17 @@ public class Countly {
 
     /**
      * Set the consent of a feature
-     * @param featureNames
-     * @param isConsentGiven
-     * @return
+     * @param featureNames feature names for which consent should be changed
+     * @param isConsentGiven the consent value that should be set
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
-        boolean hadSessions = featureConsentValues.containsKey(CountlyFeatureNames.sessions);
+        boolean previousSessionsConsent = false;
+        if(featureConsentValues.containsKey(CountlyFeatureNames.sessions)){
+            previousSessionsConsent = featureConsentValues.get(CountlyFeatureNames.sessions);
+        }
+
+        boolean currentSessionConsent = previousSessionsConsent;
 
         for(String featureName:featureNames) {
             if (Countly.sharedInstance() != null && Countly.sharedInstance().isLoggingEnabled()) {
@@ -1934,29 +1950,43 @@ public class Countly {
                 connectionQueue_.getCountlyStore().setConsentPush(isConsentGiven);
             }
 
+            if (featureName.equals(CountlyFeatureNames.sessions)) {
+                currentSessionConsent = isConsentGiven;
+            }
+
             featureConsentValues.put(featureName, isConsentGiven);
         }
 
         String formattedChanges = formatConsentChanges(featureNames, isConsentGiven);
 
         if(isInitialized()){
+            //if countly is initialized, send consent now
             connectionQueue_.sendConsentChanges(formattedChanges);
-            if (activityCount_ != 0 && !hadSessions && getConsent(CountlyFeatureNames.sessions)) {
-                onStartHelper();
+
+            context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
+
+            //if consent has changed and it was set to true
+            if(previousSessionsConsent != currentSessionConsent && currentSessionConsent){
+                //if consent was given, we need to begin the session
+                if(isBeginSessionSent){
+                    //if the first timing for a beginSession call was missed, send it again
+                    onStartHelper();
+                }
             }
         } else {
+            // if countly is not initialized, collect and send it after it is
             collectedConsentChanges.add(formattedChanges);
         }
 
-        context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
+
 
         return this;
     }
 
     /**
      * Give the consent to a feature
-     * @param featureNames
-     * @return
+     * @param featureNames the names of features for which consent should be given
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly giveConsent(String[] featureNames){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1969,8 +1999,8 @@ public class Countly {
 
     /**
      * Remove the consent of a feature
-     * @param featureNames
-     * @return
+     * @param featureNames the names of features for which consent should be removed
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly removeConsent(String[] featureNames){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1984,8 +2014,8 @@ public class Countly {
 
     /**
      * Get the current consent state of a feature
-     * @param featureName
-     * @return
+     * @param featureName the name of a feature for which consent should be checked
+     * @return the consent value
      */
     public synchronized boolean getConsent(String featureName){
         if(!requiresConsent){
@@ -1993,13 +2023,9 @@ public class Countly {
             return true;
         }
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Returning consent for feature named: [" + featureName + "]");
-        }
+        Boolean returnValue = featureConsentValues.get(featureName);
 
-        Boolean value = featureConsentValues.get(featureName);
-
-        if(value == null) {
+        if(returnValue == null) {
             if(featureName.equals(CountlyFeatureNames.push)){
                 //if the feature is 'push", set it with the value from preferences
 
@@ -2011,17 +2037,22 @@ public class Countly {
 
                 featureConsentValues.put(featureName, storedConsent);
 
-                return storedConsent;
+                returnValue = storedConsent;
             } else {
-                return false;
+                returnValue = false;
             }
         }
-        return value;
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
+        }
+
+        return returnValue;
     }
 
     /**
      * Print the consent values of all features
-     * @return
+     * @return Returns link to Countly for call chaining
      */
     public synchronized Countly checkAllConsent(){
         if (Countly.sharedInstance().isLoggingEnabled()) {
