@@ -59,6 +59,7 @@ public class CountlyPush {
 
     private static Countly.CountlyMessagingMode mode = null;
 
+    @SuppressWarnings("FieldCanBeLocal")
     private static BroadcastReceiver notificationActionReceiver = null, consentReceiver = null;
 
     /**

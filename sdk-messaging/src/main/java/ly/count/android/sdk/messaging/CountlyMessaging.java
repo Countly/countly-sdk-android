@@ -72,6 +72,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
     }
 
 
+    @SuppressLint("StaticFieldLeak")
     private static Context context;
 
     /**
@@ -152,11 +153,11 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         }
 
         CountlyMessaging.disableUI = disableUI;
-        getGCMPreferences(context).edit().putBoolean(PROPERTY_DISABLE_UI, disableUI).commit();
-        getGCMPreferences(context).edit().putInt(PROPERTY_SMALL_ICON_OVERRIDE_ID, customIconResId).commit();
-        getGCMPreferences(context).edit().putInt(PROPERTY_LARGE_ICON_ID, customLargeIconRes).commit();
-        getGCMPreferences(context).edit().putInt(PROPERTY_ACCENT_COLOR_ID, customAccentColor).commit();
-        getGCMPreferences(context).edit().putBoolean(PROPERTY_ADD_METADATA_TO_PUSH_INTENTS, addMetadataToPushIntents).commit();
+        getGCMPreferences(context).edit().putBoolean(PROPERTY_DISABLE_UI, disableUI).apply();
+        getGCMPreferences(context).edit().putInt(PROPERTY_SMALL_ICON_OVERRIDE_ID, customIconResId).apply();
+        getGCMPreferences(context).edit().putInt(PROPERTY_LARGE_ICON_ID, customLargeIconRes).apply();
+        getGCMPreferences(context).edit().putInt(PROPERTY_ACCENT_COLOR_ID, customAccentColor).apply();
+        getGCMPreferences(context).edit().putBoolean(PROPERTY_ADD_METADATA_TO_PUSH_INTENTS, addMetadataToPushIntents).apply();
 
         if(CountlyMessaging.isConsentGiven()) {
             if (checkPlayServices(activity)) {
@@ -201,7 +202,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
             editor.putString(PROPERTY_ACTIVITY_CLASS, activityClass.getName());
         }
 
-        editor.commit();
+        editor.apply();
     }
 
     @SuppressWarnings("unchecked")
@@ -255,7 +256,7 @@ public class CountlyMessaging extends WakefulBroadcastReceiver {
         getGCMPreferences(context).edit()
                 .putString(PROPERTY_REGISTRATION_ID, regId)
                 .putString(PROPERTY_REGISTRATION_SENDER, sender)
-                .putInt(PROPERTY_REGISTRATION_VERSION, appVersion).commit();
+                .putInt(PROPERTY_REGISTRATION_VERSION, appVersion).apply();
     }
 
 

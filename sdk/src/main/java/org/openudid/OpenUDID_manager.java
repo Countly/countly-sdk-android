@@ -77,7 +77,7 @@ public class OpenUDID_manager implements ServiceConnection{
 	private void storeOpenUDID() {
     	final Editor e = mPreferences.edit();
 		e.putString(PREF_KEY, OpenUDID);
-		e.commit();
+		e.apply();
 	}
 	
 	/*

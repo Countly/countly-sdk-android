@@ -392,9 +392,7 @@ public class Utils {
     }
 
     public static boolean contains(String string, String part) {
-        if (string == null) {
-            return false;
-        } else if (part == null) {
+        if (string == null || part == null) {
             return false;
         } else {
             return string.contains(part);
