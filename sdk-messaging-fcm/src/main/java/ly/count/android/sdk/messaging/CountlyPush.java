@@ -345,7 +345,7 @@ public class CountlyPush {
                 .setContentTitle(msg.title())
                 .setContentText(msg.message())
                 .setAutoCancel(true)
-                .setContentIntent(PendingIntent.getBroadcast(context, 0, broadcast, 0))
+                .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, 0))
                 .setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
 
         for (int i = 0; i < msg.buttons().size(); i++) {
@@ -354,7 +354,7 @@ public class CountlyPush {
             broadcast = new Intent(NOTIFICATION_BROADCAST);
             broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
-            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, i + 1, broadcast, 0));
+            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, 0));
         }
 
         if (msg.sound() != null) {

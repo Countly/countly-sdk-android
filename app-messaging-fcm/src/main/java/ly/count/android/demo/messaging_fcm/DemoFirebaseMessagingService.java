@@ -1,5 +1,6 @@
 package ly.count.android.demo.messaging_fcm;
 
+import android.content.Intent;
 import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -73,7 +74,11 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
             }
         }
 
-        Boolean result = CountlyPush.displayMessage(getApplicationContext(), message, R.drawable.ic_message, null);
+        Intent intent = null;
+        if (message.has("another")) {
+            intent = new Intent(getApplicationContext(), AnotherActivity.class);
+        }
+        Boolean result = CountlyPush.displayMessage(getApplicationContext(), message, R.drawable.ic_message, intent);
         if (result == null) {
             Log.i(TAG, "Message wasn't sent from Countly server, so it cannot be handled by Countly SDK");
         } else if (result) {

@@ -2,4 +2,6 @@
     <string name="app_name">app-messaging-fcm</string>
     <string name="countly_hannel_name">General Notifications</string>
     <string name="countly_channel_description"><![CDATA[News & announcements from AppMessagingFcm]]></string>
+    <string name="title_activity_another">AnotherActivity</string>
+    <string name="another_activity_text">Another Activity</string>
 </resources>
