@@ -652,10 +652,6 @@ public class Countly {
         if(!getConsent(CountlyFeatureNames.push)) {
             return;
         }
-        try {
-            Class.forName("ly.count.android.sdk.messaging.CountlyPush");
-            throw new IllegalStateException("Please remove onRegistrationId() call, for FCM integration you need to use CountlyPush class");
-        } catch (ClassNotFoundException ignored) { }
 
         connectionQueue_.tokenSession(registrationId, mode);
     }

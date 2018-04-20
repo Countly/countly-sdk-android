@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -230,7 +231,11 @@ public class CountlyPush {
             message.recordAction(context, index);
 
             if (index == 0) {
-                context.startActivity(intent);
+                if (message.link() != null) {
+                    context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(message.link().toString())));
+                } else {
+                    context.startActivity(intent);
+                }
             } else {
                 context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(message.buttons().get(index - 1).link().toString())));
             }
