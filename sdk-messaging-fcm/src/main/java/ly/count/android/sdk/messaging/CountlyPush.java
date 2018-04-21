@@ -233,12 +233,18 @@ public class CountlyPush {
 
             if (index == 0) {
                 if (message.link() != null) {
-                    context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(message.link().toString())));
+                    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.link().toString()));
+                    i.putExtra(EXTRA_MESSAGE, i);
+                    i.putExtra(EXTRA_ACTION_INDEX, index);
+                    context.startActivity(i);
                 } else {
                     context.startActivity(intent);
                 }
             } else {
-                context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(message.buttons().get(index - 1).link().toString())));
+                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.buttons().get(index - 1).link().toString()));
+                i.putExtra(EXTRA_MESSAGE, i);
+                i.putExtra(EXTRA_ACTION_INDEX, index);
+                context.startActivity(i);
             }
 
 //            final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -258,7 +264,7 @@ public class CountlyPush {
             if (mode != null && Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
                 String token = getToken();
                 if (token != null) {
-                    onTokenRefresh(mode, getToken());
+                    onTokenRefresh(getToken());
                 }
             }
         }
@@ -502,7 +508,10 @@ public class CountlyPush {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
-                    context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 0 : 1).link().toString())));
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 0 : 1).link().toString()));
+                    intent.putExtra(EXTRA_MESSAGE, msg);
+                    intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
+                    context.startActivity(intent);
                     dialog.dismiss();
                 }
             };
@@ -527,10 +536,9 @@ public class CountlyPush {
     /**
      * Token refresh callback to be called from {@code FirebaseInstanceIdService}.
      *
-     * @param mode whether this device should be marked as test device or not
      * @param token String token to be sent to Countly server
      */
-    public static void onTokenRefresh(Countly.CountlyMessagingMode mode, String token) {
+    public static void onTokenRefresh(String token) {
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
             return;
         }
