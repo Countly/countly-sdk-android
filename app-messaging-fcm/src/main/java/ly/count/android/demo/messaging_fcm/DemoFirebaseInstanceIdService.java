@@ -19,6 +19,6 @@ public class DemoFirebaseInstanceIdService extends FirebaseInstanceIdService {
 
         Log.d("DemoInstanceIdService", "got new token: " + FirebaseInstanceId.getInstance().getToken());
 
-        CountlyPush.onTokenRefresh(Countly.CountlyMessagingMode.PRODUCTION, FirebaseInstanceId.getInstance().getToken());
+        CountlyPush.onTokenRefresh(FirebaseInstanceId.getInstance().getToken());
     }
 }
