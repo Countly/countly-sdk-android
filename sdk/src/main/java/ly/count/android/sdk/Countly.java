@@ -678,6 +678,13 @@ public class Countly {
             throw new IllegalStateException("type cannot be null");
         }
 
+        if(!anyConsentGiven()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
+            }
+            return;
+        }
+
         connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), connectionQueue_.getDeviceId().getId());
         connectionQueue_.getDeviceId().changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
         connectionQueue_.beginSession();
@@ -700,6 +707,13 @@ public class Countly {
         }
         if (deviceId == null || "".equals(deviceId)) {
             throw new IllegalStateException("deviceId cannot be null or empty");
+        }
+
+        if(!anyConsentGiven()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
+            }
+            return;
         }
 
         connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());
@@ -2077,6 +2091,24 @@ public class Countly {
         }
 
         return this;
+    }
+
+    /**
+     * Returns true if any consent has been given
+     * @return true - any consent has been given, false - no consent has been given
+     */
+    protected boolean anyConsentGiven(){
+        if (!requiresConsent){
+            //no consent required - all consent given
+            return true;
+        }
+
+        for(String key:featureConsentValues.keySet()) {
+            if(featureConsentValues.get(key)){
+                return true;
+            }
+        }
+        return false;
     }
 
 

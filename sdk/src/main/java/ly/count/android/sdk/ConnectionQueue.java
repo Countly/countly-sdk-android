@@ -216,6 +216,12 @@ public class ConnectionQueue {
 
     public void changeDeviceId (String deviceId, final int duration) {
         checkInternalState();
+
+        if(!Countly.sharedInstance().anyConsentGiven()){
+            //no consent set, aborting
+            return;
+        }
+
         String data = prepareCommonRequestData()
                 + "&device_id=" + deviceId;
 
@@ -276,7 +282,7 @@ public class ConnectionQueue {
             dataAvailable = true;
         }
 
-        if (deviceIdOverride != null) {
+        if (deviceIdOverride != null && Countly.sharedInstance().anyConsentGiven()) {
             data += "&override_id=" + deviceIdOverride;
             dataAvailable = true;
         }
