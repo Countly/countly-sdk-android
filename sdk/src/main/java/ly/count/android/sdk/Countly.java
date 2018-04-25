@@ -999,17 +999,22 @@ public class Countly {
         }
 
         if(!getConsent(CountlyFeatureNames.location)){
+            //can't send disable location request if no consent given
             return this;
         }
 
-        connectionQueue_.getCountlyStore().setLocationCountryCode("");
-        connectionQueue_.getCountlyStore().setLocationCity("");
-        connectionQueue_.getCountlyStore().setLocation("");
-        connectionQueue_.getCountlyStore().setLocationIpAddress("");
+        resetLocationValues();
         connectionQueue_.getCountlyStore().setLocationDisabled(true);
         connectionQueue_.sendLocation();
 
         return this;
+    }
+
+    private synchronized void resetLocationValues(){
+        connectionQueue_.getCountlyStore().setLocationCountryCode("");
+        connectionQueue_.getCountlyStore().setLocationCity("");
+        connectionQueue_.getCountlyStore().setLocation("");
+        connectionQueue_.getCountlyStore().setLocationIpAddress("");
     }
 
     /**
@@ -1948,6 +1953,11 @@ public class Countly {
             previousSessionsConsent = featureConsentValues.get(CountlyFeatureNames.sessions);
         }
 
+        boolean previousLocationConsent = false;
+        if(featureConsentValues.containsKey(CountlyFeatureNames.location)){
+            previousLocationConsent = featureConsentValues.get(CountlyFeatureNames.location);
+        }
+
         boolean currentSessionConsent = previousSessionsConsent;
 
         for(String featureName:featureNames) {
@@ -1960,15 +1970,25 @@ public class Countly {
                 continue;
             }
 
-            if (featureName.equals(CountlyFeatureNames.push)) {
-                connectionQueue_.getCountlyStore().setConsentPush(isConsentGiven);
-            }
-
-            if (featureName.equals(CountlyFeatureNames.sessions)) {
-                currentSessionConsent = isConsentGiven;
-            }
 
             featureConsentValues.put(featureName, isConsentGiven);
+
+            //special actions for each feature
+            switch (featureName){
+                case CountlyFeatureNames.push:
+                    connectionQueue_.getCountlyStore().setConsentPush(isConsentGiven);
+                    break;
+                case CountlyFeatureNames.sessions:
+                    currentSessionConsent = isConsentGiven;
+                    break;
+                case CountlyFeatureNames.location:
+                    if(previousLocationConsent && !isConsentGiven){
+                        //if consent is about to be removed
+                        resetLocationValues();
+                        connectionQueue_.sendLocation();
+                    }
+                    break;
+            }
         }
 
         String formattedChanges = formatConsentChanges(featureNames, isConsentGiven);
@@ -1980,7 +2000,7 @@ public class Countly {
             context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
 
             //if consent has changed and it was set to true
-            if(previousSessionsConsent != currentSessionConsent && currentSessionConsent){
+            if((previousSessionsConsent != currentSessionConsent) && currentSessionConsent){
                 //if consent was given, we need to begin the session
                 if(isBeginSessionSent){
                     //if the first timing for a beginSession call was missed, send it again
@@ -1991,8 +2011,6 @@ public class Countly {
             // if countly is not initialized, collect and send it after it is
             collectedConsentChanges.add(formattedChanges);
         }
-
-
 
         return this;
     }

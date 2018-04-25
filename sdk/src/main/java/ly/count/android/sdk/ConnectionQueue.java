@@ -144,18 +144,11 @@ public class ConnectionQueue {
         }
 
         CountlyStore cs = getCountlyStore();
-        if(cs.getLocationDisabled()){
-            //if location is disabled, send empty info
-            data += "&location=";
+        String locationData = prepareLocationData(cs, false);
+
+        if(!locationData.isEmpty()){
+            data += locationData;
             dataAvailable = true;
-        } else {
-            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location)) {
-                String addition = prepareLocationData(cs);
-                if(!addition.isEmpty()){
-                    data += addition;
-                    dataAvailable = true;
-                }
-            }
         }
 
         if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
@@ -283,6 +276,7 @@ public class ConnectionQueue {
         }
 
         if (deviceIdOverride != null && Countly.sharedInstance().anyConsentGiven()) {
+            //if no consent is given, device ID override is not sent
             data += "&override_id=" + deviceIdOverride;
             dataAvailable = true;
         }
@@ -299,21 +293,10 @@ public class ConnectionQueue {
     void sendLocation() {
         checkInternalState();
 
-        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location)) {
-            return;
-        }
-
         String data = prepareCommonRequestData();
 
         CountlyStore cs = getCountlyStore();
-        if(cs.getLocationDisabled()){
-            //if location is disabled, send empty info
-            data += "&location=";
-        } else {
-            //location should be send, add it
-            String addition = prepareLocationData(cs);
-            data += addition;//if it's empty, nothing bad happens
-        }
+        data += prepareLocationData(cs, true);
 
         store_.addConnection(data);
 
@@ -422,36 +405,50 @@ public class ConnectionQueue {
                 + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
     }
 
-    private String prepareLocationData(CountlyStore cs){
-        String addition = "";
+    private String prepareLocationData(CountlyStore cs, boolean canSendEmptyWithNoConsent){
+        String data = "";
 
-        String location = cs.getLocation();
-        String city = cs.getLocationCity();
-        String country_code = cs.getLocationCountryCode();
-        String ip = cs.getLocationIpAddress();
+        if(!Countly.sharedInstance().anyConsentGiven()){
+            //return data;
+        }
 
-        if(location != null && !location.isEmpty()){
-            try {
-                location = java.net.URLEncoder.encode(location, "UTF-8");
-            } catch (UnsupportedEncodingException ignored) {
-                // should never happen because Android guarantees UTF-8 support
+        if(canSendEmptyWithNoConsent && (cs.getLocationDisabled() || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location))){
+            //if location is disabled or consent no given, send empty location info
+            //this way it is cleared server side and geoip is not used
+            //do this only if allowed
+            data += "&location=";
+        } else {
+            if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location)) {
+                //location should be send, add all the fields we have
+                String location = cs.getLocation();
+                String city = cs.getLocationCity();
+                String country_code = cs.getLocationCountryCode();
+                String ip = cs.getLocationIpAddress();
+
+                if(location != null && !location.isEmpty()){
+                    try {
+                        location = java.net.URLEncoder.encode(location, "UTF-8");
+                    } catch (UnsupportedEncodingException ignored) {
+                        // should never happen because Android guarantees UTF-8 support
+                    }
+                    data += "&location=" + location;
+                }
+
+                if(city != null && !city.isEmpty()){
+                    data += "&city=" + city;
+                }
+
+                if(country_code != null && !country_code.isEmpty()){
+                    data += "&country_code=" + country_code;
+                }
+
+                if(ip != null && !ip.isEmpty()){
+                    data += "&ip=" + ip;
+                }
             }
-            addition += "&location=" + location;
         }
 
-        if(city != null && !city.isEmpty()){
-            addition += "&city=" + city;
-        }
-
-        if(country_code != null && !country_code.isEmpty()){
-            addition += "&country_code=" + country_code;
-        }
-
-        if(ip != null && !ip.isEmpty()){
-            addition += "&ip=" + ip;
-        }
-
-        return addition;
+        return data;
     }
 
     /**
