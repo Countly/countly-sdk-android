@@ -38,7 +38,7 @@ dependencies {
 publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
-    artifactId = 'sdk-messaging'
+    artifactId = 'sdk-messaging-fcm'
     publishVersion = '18.04'
     desc = 'Countly Android SDK with FCM Support'
     website = 'https://github.com/Countly/countly-sdk-android'
