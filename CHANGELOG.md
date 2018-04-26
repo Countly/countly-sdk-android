@@ -1,3 +1,7 @@
+18.04
+  * Added functionality for GDPR (giving and removing consent for features)
+  * Added separate module for FCM push notifications
+
 18.01.2
   * Fixing a crash in messaging because of null context 
   

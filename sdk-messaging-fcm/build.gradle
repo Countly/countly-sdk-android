@@ -1,4 +1,14 @@
 apply plugin: 'com.android.library'
+apply plugin: 'bintray-release'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.8.1'
+    }
+}
 
 android {
     compileSdkVersion 27
@@ -23,4 +33,13 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     api project(':sdk')
+}
+
+publish {
+    userOrg = 'countly'
+    groupId = 'ly.count.android'
+    artifactId = 'sdk-messaging'
+    publishVersion = '18.04'
+    desc = 'Countly Android SDK with FCM Support'
+    website = 'https://github.com/Countly/countly-sdk-android'
 }
