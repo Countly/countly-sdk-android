@@ -287,7 +287,7 @@ public class Countly {
                                      int starRatingLimit, CountlyStarRating.RatingCallback starRatingCallback, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
 
         if (context == null) {
-            throw new IllegalArgumentException("valid context is required");
+            throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");
         }
 
         if (!isValidURL(serverURL)) {
@@ -301,10 +301,10 @@ public class Countly {
         }
 
         if (appKey == null || appKey.length() == 0) {
-            throw new IllegalArgumentException("valid appKey is required");
+            throw new IllegalArgumentException("valid appKey is required, but was provided either 'null' or empty String");
         }
         if (deviceID != null && deviceID.length() == 0) {
-            throw new IllegalArgumentException("valid deviceID is required");
+            throw new IllegalArgumentException("valid deviceID is required, but was provided either 'null' or empty String");
         }
         if (deviceID == null && idMode == null) {
             if (OpenUDIDAdapter.isOpenUDIDAvailable()) idMode = DeviceId.Type.OPEN_UDID;
@@ -324,10 +324,27 @@ public class Countly {
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
-        }
-
-        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Is consent required? [" + requiresConsent + "]");
+
+            // Context class hierarchy
+            //Context
+            //| — ContextWrapper
+            //|— — Application
+            //| — — ContextThemeWrapper
+            //|— — — — Activity
+            //| — — Service
+            //|— — — IntentService
+
+            Class contextClass = context.getClass();
+            Class contextSuperClass = contextClass.getSuperclass();
+
+            String contextText = "Provided Context [" + context.getClass().getSimpleName() + "]";
+            if(contextSuperClass != null){
+                contextText += ", it's superclass: [" + contextSuperClass.getSimpleName() + "]";
+            }
+
+            Log.d(Countly.TAG, contextText);
+
         }
 
         // In some cases CountlyMessaging does some background processing, so it needs a way
