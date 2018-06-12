@@ -183,19 +183,21 @@ public class ConnectionProcessor implements Runnable {
                 // if the override tag is used, it means that the device_id will be changed
                 // to finish the session of the previous device_id, we have cache it into the request
                 // this is indicated by having the "override_id" tag. This just means that we
-                // don't use the id proveded in the deviceId variable as this might have changed already.
+                // don't use the id provided in the deviceId variable as this might have changed already.
 
                 eventData = storedEvents[0].replace("&override_id=", "&device_id=");
                 newId = null;
             } else {
                 if (deviceIdChange) {
-                    // this branch will be used if a new device_id is provided and a server merge
-                    // has to be performed
+                    // this branch will be used if a new device_id is provided
+                    // and a device_id merge on server has to be performed
 
-                    newId = storedEvents[0].substring(storedEvents[0].indexOf("&device_id=") + "&device_id=".length());
+                    final int endOfDeviceIdTag = storedEvents[0].indexOf("&device_id=") + "&device_id=".length();
+                    newId = ConnectionProcessor.urlDecodeString(storedEvents[0].substring(endOfDeviceIdTag));
+
                     if (newId.equals(deviceId_.getId())) {
-                        // If the new device_id is the same as previous, we don't do anything
-                        // to change the ID
+                        // If the new device_id is the same as previous,
+                        // we don't do anything to change it
 
                         eventData = storedEvents[0];
                         deviceIdChange = false;
@@ -204,11 +206,11 @@ public class ConnectionProcessor implements Runnable {
                         eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
                     }
                 } else {
-                    // this branch will be used in almost all requests. This just adds the device_id
-                    // to all of them
+                    // this branch will be used in almost all requests.
+                    // This just adds the device_id to them
 
                     newId = null;
-                    eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
+                    eventData = storedEvents[0] + "&device_id=" + ConnectionProcessor.urlEncodeString(deviceId_.getId());
                 }
             }
 
@@ -296,6 +298,18 @@ public class ConnectionProcessor implements Runnable {
         }
 
         return result;
+    }
+
+    protected static String urlDecodeString(String givenValue){
+        String decodedResult = "";
+
+        try {
+            decodedResult = java.net.URLDecoder.decode(givenValue, "UTF-8");
+        } catch (UnsupportedEncodingException ignored) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        return decodedResult;
     }
 
     private static String sha1Hash (String toHash) {

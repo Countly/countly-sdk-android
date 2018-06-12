@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.Random;
+
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStarRating;
 import ly.count.android.sdk.DeviceId;
@@ -45,7 +47,7 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickViewOther04(View v) {
-        Countly.sharedInstance().changeDeviceId("New Device ID");
+        Countly.sharedInstance().changeDeviceId("New Device ID!" + (new Random().nextInt()));
     }
 
     public void onClickViewOther05(View v) {

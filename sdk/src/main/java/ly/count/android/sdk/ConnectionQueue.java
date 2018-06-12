@@ -221,7 +221,7 @@ public class ConnectionQueue {
         }
 
         // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGING BREAKS !!!!!
-        data += "&device_id=" + deviceId;
+        data += "&device_id=" + ConnectionProcessor.urlEncodeString(deviceId);
 
         store_.addConnection(data);
         tick();
@@ -277,7 +277,7 @@ public class ConnectionQueue {
 
         if (deviceIdOverride != null && Countly.sharedInstance().anyConsentGiven()) {
             //if no consent is given, device ID override is not sent
-            data += "&override_id=" + deviceIdOverride;
+            data += "&override_id=" + ConnectionProcessor.urlEncodeString(deviceIdOverride);
             dataAvailable = true;
         }
 
