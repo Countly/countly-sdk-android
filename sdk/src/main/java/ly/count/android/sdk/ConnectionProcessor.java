@@ -173,24 +173,42 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
-            boolean deviceIdOverride = storedEvents[0].contains("&override_id=");
-            boolean deviceIdChange = storedEvents[0].contains("&device_id=");
+            boolean deviceIdOverride = storedEvents[0].contains("&override_id="); //if the sendable data contains a override tag
+            boolean deviceIdChange = storedEvents[0].contains("&device_id="); //if the sendable data contains a device_id tag
 
+            //add the device_id to the created request
             final String eventData, newId;
             if (deviceIdOverride) {
+                // if the override tag is used, it means that the device_id will be changed
+                // to finish the session of the previous device_id, we have cache it into the request
+                // this is indicated by having the "override_id" tag. This just means that we
+                // don't use the id proveded in the deviceId variable as this might have changed already.
+
                 eventData = storedEvents[0].replace("&override_id=", "&device_id=");
                 newId = null;
-            } else if (deviceIdChange) {
-                newId = storedEvents[0].substring(storedEvents[0].indexOf("&device_id=") + "&device_id=".length());
-                if (newId.equals(deviceId_.getId())) {
-                    eventData = storedEvents[0];
-                    deviceIdChange = false;
-                } else {
-                    eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
-                }
             } else {
-                newId = null;
-                eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
+                if (deviceIdChange) {
+                    // this branch will be used if a new device_id is provided and a server merge
+                    // has to be performed
+
+                    newId = storedEvents[0].substring(storedEvents[0].indexOf("&device_id=") + "&device_id=".length());
+                    if (newId.equals(deviceId_.getId())) {
+                        // If the new device_id is the same as previous, we don't do anything
+                        // to change the ID
+
+                        eventData = storedEvents[0];
+                        deviceIdChange = false;
+                    } else {
+                        //new device_id provided, make sure it will be merged
+                        eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
+                    }
+                } else {
+                    // this branch will be used in almost all requests. This just adds the device_id
+                    // to all of them
+
+                    newId = null;
+                    eventData = storedEvents[0] + "&device_id=" + deviceId_.getId();
+                }
             }
 
             if(!(Countly.sharedInstance().isDeviceAppCrawler() && Countly.sharedInstance().ifShouldIgnoreCrawlers())) {
@@ -208,6 +226,7 @@ public class ConnectionProcessor implements Runnable {
                         final HttpURLConnection httpConn = (HttpURLConnection) conn;
                         responseCode = httpConn.getResponseCode();
                         success = responseCode >= 200 && responseCode < 300;
+
                         if (!success && Countly.sharedInstance().isLoggingEnabled()) {
                             Log.w(Countly.TAG, "HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
                         }
@@ -226,7 +245,7 @@ public class ConnectionProcessor implements Runnable {
                         store_.removeConnection(storedEvents[0]);
 
                         if (deviceIdChange) {
-                            deviceId_.changeToDeveloperId(store_, newId);
+                            deviceId_.changeToDeveloperProvidedId(store_, newId);
                         }
                     } else if (responseCode >= 400 && responseCode < 500) {
                         if (Countly.sharedInstance().isLoggingEnabled()) {

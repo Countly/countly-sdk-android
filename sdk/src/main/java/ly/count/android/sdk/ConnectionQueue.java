@@ -215,13 +215,14 @@ public class ConnectionQueue {
             return;
         }
 
-        String data = prepareCommonRequestData()
-                + "&device_id=" + deviceId;
+        String data = prepareCommonRequestData();
 
         if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
             data += "&session_duration=" + duration;
         }
 
+        // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGINE BREAKS !!!!!
+        data += "&device_id=" + deviceId;
 
         store_.addConnection(data);
         tick();

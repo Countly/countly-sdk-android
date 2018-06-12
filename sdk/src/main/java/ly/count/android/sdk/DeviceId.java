@@ -31,7 +31,7 @@ public class DeviceId {
      * Initialize DeviceId with Type of OPEN_UDID or ADVERTISING_ID
      * @param type type of ID generation strategy
      */
-    public DeviceId(CountlyStore store, Type type) {
+    protected DeviceId(CountlyStore store, Type type) {
         if (type == null) {
             throw new IllegalStateException("Please specify DeviceId.Type, that is which type of device ID generation you want to use");
         } else if (type == Type.DEVELOPER_SUPPLIED) {
@@ -46,7 +46,7 @@ public class DeviceId {
      * Initialize DeviceId with Developer-supplied id string
      * @param developerSuppliedId Device ID string supplied by developer
      */
-    public DeviceId(CountlyStore store, String developerSuppliedId) {
+    protected DeviceId(CountlyStore store, String developerSuppliedId) {
         if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
             throw new IllegalStateException("Please make sure that device ID is not null or empty");
         }
@@ -74,7 +74,7 @@ public class DeviceId {
      * @param store CountlyStore to store configuration in
      * @param raiseExceptions whether to raise exceptions in case of illegal state or not
      */
-    public void init(Context context, CountlyStore store, boolean raiseExceptions) {
+    protected void init(Context context, CountlyStore store, boolean raiseExceptions) {
         Type overriddenType = retrieveOverriddenType(store);
 
         // Some time ago some ID generation strategy was not available and SDK fell back to
@@ -152,7 +152,7 @@ public class DeviceId {
         }
     }
 
-    public String getId() {
+    protected String getId() {
         if (id == null && type == Type.OPEN_UDID) {
             id = OpenUDIDAdapter.getOpenUDID();
         }
@@ -176,7 +176,7 @@ public class DeviceId {
         init(context, store, false);
     }
 
-    protected String changeToDeveloperId(CountlyStore store, String newId) {
+    protected String changeToDeveloperProvidedId(CountlyStore store, String newId) {
         if (id != null && type != null && type != Type.DEVELOPER_SUPPLIED) {
             store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_ID, id);
             store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_TYPE, type.toString());
@@ -193,7 +193,7 @@ public class DeviceId {
         return oldId;
     }
 
-    public void changeToId (Context context, CountlyStore store, Type type, String deviceId) {
+    protected void changeToId (Context context, CountlyStore store, Type type, String deviceId) {
         this.id = deviceId;
         this.type = type;
 
@@ -223,7 +223,7 @@ public class DeviceId {
         return oldId;
     }
 
-    public Type getType() {
+    protected Type getType() {
         return type;
     }
 

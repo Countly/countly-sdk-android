@@ -1804,7 +1804,7 @@ public class Countly {
      * Returns the device id used by countly for this device
      * @return device ID
      */
-    public String getDeviceID() {
+    public synchronized String getDeviceID() {
         if(!isInitialized()) {
             throw new IllegalStateException("init must be called before getDeviceID");
         }
@@ -1815,7 +1815,7 @@ public class Countly {
      * Returns the type of the device ID used by countly for this device.
      * @return device ID type
      */
-    public DeviceId.Type getDeviceIDType(){
+    public synchronized DeviceId.Type getDeviceIDType(){
         if(!isInitialized()) {
             throw new IllegalStateException("init must be called before getDeviceID");
         }
@@ -1925,7 +1925,7 @@ public class Countly {
      * @param features array of feature to be added to the consent group
      * @return Returns link to Countly for call chaining
      */
-    public synchronized Countly CreateFeatureGroup(String groupName, String[] features){
+    public synchronized Countly createFeatureGroup(String groupName, String[] features){
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Creating a feature group with the name: [" + groupName + "]");
         }
@@ -1940,7 +1940,7 @@ public class Countly {
      * @param isConsentGiven the value that should be set for this consent group
      * @return Returns link to Countly for call chaining
      */
-    public synchronized Countly SetConsentFeatureGroup(String groupName, boolean isConsentGiven){
+    public synchronized Countly setConsentFeatureGroup(String groupName, boolean isConsentGiven){
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting consent for feature group named: [" + groupName + "] with value: [" + isConsentGiven + "]");
         }
