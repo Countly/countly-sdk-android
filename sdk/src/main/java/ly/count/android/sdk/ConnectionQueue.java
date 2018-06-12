@@ -23,7 +23,6 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -157,7 +156,7 @@ public class ConnectionQueue {
                 String cachedAdId = store_.getCachedAdvertisingId();
 
                 if (!cachedAdId.isEmpty()) {
-                    data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+                    data += "&aid=" + ConnectionProcessor.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
 
                     dataAvailable = true;
                 }
@@ -194,7 +193,7 @@ public class ConnectionQueue {
                     String cachedAdId = store_.getCachedAdvertisingId();
 
                     if (!cachedAdId.isEmpty()) {
-                        data += "&aid={\"adid\":\"" + cachedAdId + "\"}";
+                        data += "&aid=" + ConnectionProcessor.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
                         dataAvailable = true;
                     }
                 }
@@ -221,7 +220,7 @@ public class ConnectionQueue {
             data += "&session_duration=" + duration;
         }
 
-        // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGINE BREAKS !!!!!
+        // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGING BREAKS !!!!!
         data += "&device_id=" + deviceId;
 
         store_.addConnection(data);
@@ -359,7 +358,7 @@ public class ConnectionQueue {
         }
 
         final String data = prepareCommonRequestData()
-                          + "&crash=" + CrashDetails.getCrashData(context_, error, nonfatal);
+                          + "&crash=" + ConnectionProcessor.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal));
 
         store_.addConnection(data);
 
@@ -389,7 +388,7 @@ public class ConnectionQueue {
         checkInternalState();
 
         final String data = prepareCommonRequestData()
-                + "&consent=" + formattedConsentChanges;
+                + "&consent=" + ConnectionProcessor.urlEncodeString(formattedConsentChanges);
 
         store_.addConnection(data);
 
@@ -427,12 +426,7 @@ public class ConnectionQueue {
                 String ip = cs.getLocationIpAddress();
 
                 if(location != null && !location.isEmpty()){
-                    try {
-                        location = java.net.URLEncoder.encode(location, "UTF-8");
-                    } catch (UnsupportedEncodingException ignored) {
-                        // should never happen because Android guarantees UTF-8 support
-                    }
-                    data += "&location=" + location;
+                    data += "&location=" + ConnectionProcessor.urlEncodeString(location);
                 }
 
                 if(city != null && !city.isEmpty()){
@@ -448,7 +442,6 @@ public class ConnectionQueue {
                 }
             }
         }
-
         return data;
     }
 

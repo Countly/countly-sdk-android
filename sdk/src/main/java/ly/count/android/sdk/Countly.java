@@ -1908,15 +1908,7 @@ public class Countly {
 
         preparedConsent.append("}");
 
-        String valueToSend = preparedConsent.toString();
-
-        try {
-            valueToSend = java.net.URLEncoder.encode(valueToSend, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-            // should never happen because Android guarantees UTF-8 support
-        }
-
-        return valueToSend;
+        return preparedConsent.toString();
     }
 
     /**

@@ -399,15 +399,7 @@ class CrashDetails {
         } catch (JSONException e) {
             //no custom segments
         }
-        String result = json.toString();
-
-        try {
-            result = java.net.URLEncoder.encode(result, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-            // should never happen because Android guarantees UTF-8 support
-        }
-
-        return result;
+        return json.toString();
     }
 
     /**

@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -283,6 +284,18 @@ public class ConnectionProcessor implements Runnable {
                 store_.removeConnection(storedEvents[0]);
             }
         }
+    }
+
+    protected static String urlEncodeString(String givenValue){
+        String result = "";
+
+        try {
+            result = java.net.URLEncoder.encode(givenValue, "UTF-8");
+        } catch (UnsupportedEncodingException ignored) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        return result;
     }
 
     private static String sha1Hash (String toHash) {
