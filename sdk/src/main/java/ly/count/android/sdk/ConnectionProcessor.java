@@ -201,9 +201,36 @@ public class ConnectionProcessor implements Runnable {
 
                         eventData = storedEvents[0];
                         deviceIdChange = false;
+
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "Provided device_id is the same as the previous one used, nothing will be merged");
+                        }
+
                     } else {
                         //new device_id provided, make sure it will be merged
                         eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
+
+                        // since the new_id will be merged with the old one, we wait 10 seconds before sending this request
+                        // to give the server time to finish processing previous requests.
+
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "Waiting 10 seconds before sending device_id merge request");
+                        }
+
+                        try {
+                            Thread.sleep(10000);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+
+                            if (Countly.sharedInstance().isLoggingEnabled()) {
+                                Log.w(Countly.TAG, "While waiting for 10 seconds, sleep was interrupted");
+                            }
+                        }
+
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "Wait (for changing device_id) finished, continuing processing request");
+                        }
                     }
                 } else {
                     // this branch will be used in almost all requests.
