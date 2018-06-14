@@ -1132,11 +1132,40 @@ public class Countly {
     /**
      * Log handled exception to report it to server as non fatal crash
      * @param exception Exception to log
+     * @deprecated Use recordHandledException
      * @return Returns link to Countly for call chaining
      */
     public synchronized Countly logException(Exception exception) {
+        return recordException(exception, true);
+    }
+
+    /**
+     * Log handled exception to report it to server as non fatal crash
+     * @param exception Exception to log
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly recordHandledException(Exception exception) {
+        return recordException(exception, true);
+    }
+
+    /**
+     * Log unhandled exception to report it to server as fatal crash
+     * @param exception Exception to log
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly recordUnhandledException(Exception exception) {
+        return recordException(exception, false);
+    }
+
+    /**
+     * Common call for handling exceptions
+     * @param exception Exception to log
+     * @param itIsHandled If the exception is handled or not (fatal)
+     * @return
+     */
+    private synchronized Countly recordException(Exception exception, boolean itIsHandled) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Logging exception");
+            Log.d(Countly.TAG, "Logging exception, handled:[" + itIsHandled + "]");
         }
 
         if(!getConsent(CountlyFeatureNames.crashes)){
@@ -1146,7 +1175,7 @@ public class Countly {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
-        connectionQueue_.sendCrashReport(sw.toString(), true);
+        connectionQueue_.sendCrashReport(sw.toString(), itIsHandled);
         return this;
     }
 
