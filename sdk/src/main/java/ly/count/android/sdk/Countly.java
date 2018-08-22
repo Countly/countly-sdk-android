@@ -164,6 +164,9 @@ public class Countly {
     private Map<String, String[]> groupedFeatures = new HashMap<>();
     private List<String> collectedConsentChanges = new ArrayList<>();
 
+    Boolean delayedPushConsent = null;//if this is set, consent for push has to be set before finishing init and sending push changes
+    boolean delayedLocationErasure = false;//if location needs to be cleared at the end of init
+
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
         public static final String events = "events";
@@ -401,6 +404,16 @@ public class Countly {
         connectionQueue_.setContext(context_);
 
         if(requiresConsent) {
+            //do delayed push consent action, if needed
+            if(delayedPushConsent != null){
+                doPushConsentSpecialAction(delayedPushConsent);
+            }
+
+            //do delayed location erasure, if needed
+            if(delayedLocationErasure){
+                doLocationConsentSpecialErasure();
+            }
+
             //send collected consent changes that were made before initialization
             if (collectedConsentChanges.size() != 0) {
                 for (String changeItem : collectedConsentChanges) {
@@ -1902,6 +1915,25 @@ public class Countly {
     }
 
     /**
+     * Special things needed to be done during setting push consent
+     * @param consentValue The value of push consent
+     */
+    private void doPushConsentSpecialAction(boolean consentValue){
+        if(isLoggingEnabled()) {
+            Log.d(TAG, "Doing push consent special action: [" + consentValue + "]");
+        }
+        connectionQueue_.getCountlyStore().setConsentPush(consentValue);
+    }
+
+    /**
+     * Actions needed to be done for the consent related location erasure
+     */
+    private void doLocationConsentSpecialErasure(){
+        resetLocationValues();
+        connectionQueue_.sendLocation();
+    }
+
+    /**
      * Check if the given name is a valid feature name
      * @param name the name of the feature to be tested if it is valid
      * @return returns true if value is contained in feature name array
@@ -1987,6 +2019,8 @@ public class Countly {
      * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
+        final boolean isInit = isInitialized();//is the SDK initialized
+
         boolean previousSessionsConsent = false;
         if(featureConsentValues.containsKey(CountlyFeatureNames.sessions)){
             previousSessionsConsent = featureConsentValues.get(CountlyFeatureNames.sessions);
@@ -2015,7 +2049,13 @@ public class Countly {
             //special actions for each feature
             switch (featureName){
                 case CountlyFeatureNames.push:
-                    connectionQueue_.getCountlyStore().setConsentPush(isConsentGiven);
+                    if(isInit) {
+                        //if the SDK is already initialized, do the special action now
+                        doPushConsentSpecialAction(isConsentGiven);
+                    } else {
+                        //do the special action later
+                        delayedPushConsent = isConsentGiven;
+                    }
                     break;
                 case CountlyFeatureNames.sessions:
                     currentSessionConsent = isConsentGiven;
@@ -2023,8 +2063,11 @@ public class Countly {
                 case CountlyFeatureNames.location:
                     if(previousLocationConsent && !isConsentGiven){
                         //if consent is about to be removed
-                        resetLocationValues();
-                        connectionQueue_.sendLocation();
+                        if(isInit){
+                            doLocationConsentSpecialErasure();
+                        } else {
+                            delayedLocationErasure = true;
+                        }
                     }
                     break;
             }
@@ -2032,8 +2075,8 @@ public class Countly {
 
         String formattedChanges = formatConsentChanges(featureNames, isConsentGiven);
 
-        if(isInitialized()){
-            //if countly is initialized, send consent now
+        if(isInit && (collectedConsentChanges.size() == 0)){
+            //if countly is initialized and collected changes are already sent, send consent now
             connectionQueue_.sendConsentChanges(formattedChanges);
 
             context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
@@ -2048,6 +2091,7 @@ public class Countly {
             }
         } else {
             // if countly is not initialized, collect and send it after it is
+
             collectedConsentChanges.add(formattedChanges);
         }
 
