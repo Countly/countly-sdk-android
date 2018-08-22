@@ -1387,6 +1387,7 @@ public class Countly {
      * Reports duration of last view
      */
     private void reportViewDuration(){
+        Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + String.valueOf(Countly.currentTimestamp()-lastViewStart) + "]");
         if(lastView != null && lastViewStart <= 0) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Last view start value is not normal: [" + lastViewStart + "]");

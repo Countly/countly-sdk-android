@@ -43,7 +43,7 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickViewOther03(View v) {
-        Countly.sharedInstance().changeDeviceId(DeviceId.Type.DEVELOPER_SUPPLIED, "New Device ID");
+        Countly.sharedInstance().changeDeviceId(DeviceId.Type.DEVELOPER_SUPPLIED, "New Device ID" + (new Random().nextInt()));
     }
 
     public void onClickViewOther04(View v) {

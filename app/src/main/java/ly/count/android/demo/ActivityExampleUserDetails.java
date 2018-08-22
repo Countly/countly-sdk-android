@@ -30,6 +30,7 @@ public class ActivityExampleUserDetails extends Activity {
 
         //set multiple custom properties
         Countly.userData.setCustomUserData(custom);
+        Countly.userData.save();
     }
 
     public void onClickUserData03(View v) {
@@ -39,6 +40,7 @@ public class ActivityExampleUserDetails extends Activity {
 
         //set multiple custom properties
         Countly.userData.setCustomUserData(custom);
+        Countly.userData.save();
     }
 
     public void onClickUserData04(View v) {

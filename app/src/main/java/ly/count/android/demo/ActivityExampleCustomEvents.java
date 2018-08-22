@@ -45,6 +45,9 @@ public class ActivityExampleCustomEvents extends Activity {
     public void onClickRecordEvent06(View v) {
         Map<String, String> segmentation = new HashMap<>();
         segmentation.put("wall", "red");
+        segmentation.put("flowers", "3");
+        segmentation.put("area", "1.23");
+        segmentation.put("volume", "7,88");
         Countly.sharedInstance().recordEvent("Custom event 6", segmentation, 15, 0, 0);
     }
 
