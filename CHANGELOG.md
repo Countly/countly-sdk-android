@@ -3,6 +3,7 @@
   * Added call for recording unhandled exceptions
   * Added 10 second delay before merging device Id's
   * Added functionality for sending integers and doubles with segmentation, instead of just strings
+  * Added call to record exception with a throwable
   * Improved Countly SDK logging messages
   * Limited the size of crash logs to 10k characters
   * Fixed a deviceId changing related bug

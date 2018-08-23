@@ -1207,6 +1207,15 @@ public class Countly {
     }
 
     /**
+     * Log handled exception to report it to server as non fatal crash
+     * @param exception Throwable to log
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly recordHandledException(Throwable exception) {
+        return recordException(exception, true);
+    }
+
+    /**
      * Log unhandled exception to report it to server as fatal crash
      * @param exception Exception to log
      * @return Returns link to Countly for call chaining
@@ -1216,12 +1225,21 @@ public class Countly {
     }
 
     /**
+     * Log unhandled exception to report it to server as fatal crash
+     * @param exception Throwable to log
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly recordUnhandledException(Throwable exception) {
+        return recordException(exception, false);
+    }
+
+    /**
      * Common call for handling exceptions
      * @param exception Exception to log
      * @param itIsHandled If the exception is handled or not (fatal)
      * @return Returns link to Countly for call chaining
      */
-    private synchronized Countly recordException(Exception exception, boolean itIsHandled) {
+    private synchronized Countly recordException(Throwable exception, boolean itIsHandled) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Logging exception, handled:[" + itIsHandled + "]");
         }
