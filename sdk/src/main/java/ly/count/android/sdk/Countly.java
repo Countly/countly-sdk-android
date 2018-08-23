@@ -1226,6 +1226,25 @@ public class Countly {
         connectionQueue_.sendCrashReport(sw.toString(), itIsHandled);
         return this;
     }
+    
+    /**
+     * Log message to report it to server as crash
+     * @param message Message to log
+     * @param nonfatal
+     */
+    public synchronized Countly logCrash(String message, boolean nonfatal) {
+        connectionQueue_.sendCrashReport(message, nonfatal);
+        return this;
+    }
+    
+    /**
+     * Log message to report it to server as crash
+     * @param message Message to log
+     * @param nonfatal
+     */
+    public synchronized Countly logCrash(String message) {
+        return logCrash(message, true);
+    }
 
     /**
      * Enable crash reporting to send unhandled crash reports to server
