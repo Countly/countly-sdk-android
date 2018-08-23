@@ -1163,8 +1163,18 @@ public class Countly {
      * Add crash breadcrumb like log record to the log that will be send together with crash report
      * @param record String a bread crumb for the crash report
      * @return Returns link to Countly for call chaining
+     * @deprecated use `addCrashBreadcrumb`
      */
     public synchronized Countly addCrashLog(String record) {
+        return addCrashBreadcrumb(record);
+    }
+
+    /**
+     * Add crash breadcrumb like log record to the log that will be send together with crash report
+     * @param record String a bread crumb for the crash report
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly addCrashBreadcrumb(String record) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Adding crash bread crumb");
         }
@@ -1209,7 +1219,7 @@ public class Countly {
      * Common call for handling exceptions
      * @param exception Exception to log
      * @param itIsHandled If the exception is handled or not (fatal)
-     * @return
+     * @return Returns link to Countly for call chaining
      */
     private synchronized Countly recordException(Exception exception, boolean itIsHandled) {
         if (Countly.sharedInstance().isLoggingEnabled()) {

@@ -357,6 +357,9 @@ public class ConnectionQueue {
             return;
         }
 
+        //limit the size of the crash report to 10k characters
+        error = error.substring(0, Math.min(10000, error.length()));
+
         final String data = prepareCommonRequestData()
                           + "&crash=" + ConnectionProcessor.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal));
 
