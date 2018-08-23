@@ -48,6 +48,8 @@ class Event {
 
     public String key;
     public Map<String, String> segmentation;
+    public Map<String, Integer> segmentationInt;
+    public Map<String, Double> segmentationDouble;
     public int count;
     public double sum;
     public double dur;
@@ -78,9 +80,26 @@ class Event {
             json.put(HOUR, hour);
             json.put(DAY_OF_WEEK, dow);
 
+            JSONObject jobj = new JSONObject();
             if (segmentation != null) {
-                json.put(SEGMENTATION_KEY, new JSONObject(segmentation));
+                for (Map.Entry<String, String> pair : segmentation.entrySet()) {
+                    jobj.put(pair.getKey(), pair.getValue());
+                }
             }
+
+            if(segmentationInt != null){
+                for (Map.Entry<String, Integer> pair : segmentationInt.entrySet()) {
+                    jobj.put(pair.getKey(), pair.getValue());
+                }
+            }
+
+            if(segmentationDouble != null){
+                for (Map.Entry<String, Double> pair : segmentationDouble.entrySet()) {
+                    jobj.put(pair.getKey(), pair.getValue());
+                }
+            }
+
+            json.put(SEGMENTATION_KEY, jobj);
 
             // we put in the sum last, the only reason that a JSONException would be thrown
             // would be if sum is NaN or infinite, so in that case, at least we will return
@@ -122,16 +141,35 @@ class Event {
             event.dow = json.optInt(DAY_OF_WEEK);
 
             if (!json.isNull(SEGMENTATION_KEY)) {
-                final JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
-                final HashMap<String, String> segmentation = new HashMap<>(segm.length());
+                JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
+                segm.put("SomeInt", 234);
+                segm.put("SomeDouble", 234.33);
+
+                final HashMap<String, String> segmentation = new HashMap<>();
+                final HashMap<String, Integer> segmentationInt = new HashMap<>();
+                final HashMap<String, Double> segmentationDouble = new HashMap<>();
+
                 final Iterator nameItr = segm.keys();
                 while (nameItr.hasNext()) {
                     final String key = (String) nameItr.next();
                     if (!segm.isNull(key)) {
-                        segmentation.put(key, segm.getString(key));
+                        Object obj = segm.opt(key);
+
+                        if(obj instanceof Double){
+                            //in case it's a double
+                            segmentationDouble.put(key, segm.getDouble(key));
+                        } else if(obj instanceof Integer){
+                            //in case it's a integer
+                            segmentationInt.put(key, segm.getInt(key));
+                        } else {
+                            //assume it's String
+                            segmentation.put(key, segm.getString(key));
+                        }
                     }
                 }
                 event.segmentation = segmentation;
+                event.segmentationDouble = segmentationDouble;
+                event.segmentationInt = segmentationInt;
             }
         }
         catch (JSONException e) {

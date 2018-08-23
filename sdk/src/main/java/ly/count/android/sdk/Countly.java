@@ -819,7 +819,22 @@ public class Countly {
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
      */
-    public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum, final double dur) {
+    public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum, final double dur){
+        recordEvent(key, segmentation, null, null, count, sum, 0);
+    }
+
+    /**
+     * Records a custom event with the specified values.
+     * @param key name of the custom event, required, must not be the empty string
+     * @param segmentation segmentation dictionary to associate with the event, can be null
+     * @param count count to associate with the event, should be more than zero
+     * @param sum sum to associate with the event
+     * @param dur duration of an event
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
+     *                                  segmentation contains null or empty keys or values
+     */
+    public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur) {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
@@ -845,22 +860,44 @@ public class Countly {
             }
         }
 
+        if (segmentationInt != null) {
+            for (String k : segmentationInt.keySet()) {
+                if (k == null || k.length() == 0) {
+                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                }
+                if (segmentationInt.get(k) == null) {
+                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
+                }
+            }
+        }
+
+        if (segmentationDouble != null) {
+            for (String k : segmentationDouble.keySet()) {
+                if (k == null || k.length() == 0) {
+                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                }
+                if (segmentationDouble.get(k) == null) {
+                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
+                }
+            }
+        }
+
         switch (key) {
             case STAR_RATING_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)) {
-                    eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
                     sendEventsForced();
                 }
                 break;
             case VIEW_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.views)) {
-                    eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
                     sendEventsForced();
                 }
                 break;
             default:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
-                    eventQueue_.recordEvent(key, segmentation, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
                     sendEventsIfNeeded();
                 }
                 break;
@@ -1270,6 +1307,20 @@ public class Countly {
      * @return true if event with this key has been previously started, false otherwise
      */
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
+        return endEvent(key, segmentation, null, null, 1, 0);
+    }
+    /**
+     * End timed event with a specified key
+     * @param key name of the custom event, required, must not be the empty string
+     * @param segmentation segmentation dictionary to associate with the event, can be null
+     * @param count count to associate with the event, should be more than zero
+     * @param sum sum to associate with the event
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
+     *                                  segmentation contains null or empty keys or values
+     * @return true if event with this key has been previously started, false otherwise
+     */
+    public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum) {
         Event event = timedEvents.remove(key);
 
         if (event != null) {
@@ -1301,9 +1352,33 @@ public class Countly {
                 }
             }
 
+            if (segmentationInt != null) {
+                for (String k : segmentationInt.keySet()) {
+                    if (k == null || k.length() == 0) {
+                        throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                    }
+                    if (segmentationInt.get(k) == null) {
+                        throw new IllegalArgumentException("Countly event segmentation value cannot be null");
+                    }
+                }
+            }
+
+            if (segmentationDouble != null) {
+                for (String k : segmentationDouble.keySet()) {
+                    if (k == null || k.length() == 0) {
+                        throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                    }
+                    if (segmentationDouble.get(k) == null) {
+                        throw new IllegalArgumentException("Countly event segmentation value cannot be null");
+                    }
+                }
+            }
+
             long currentTimestamp = Countly.currentTimestampMs();
 
             event.segmentation = segmentation;
+            event.segmentationDouble = segmentationDouble;
+            event.segmentationInt = segmentationInt;
             event.dur = (currentTimestamp - event.timestamp) / 1000.0;
             event.count = count;
             event.sum = sum;
