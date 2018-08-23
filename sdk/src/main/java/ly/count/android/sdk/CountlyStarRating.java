@@ -2,18 +2,32 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Configuration;
+import android.os.AsyncTask;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.RatingBar;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+
+import static android.content.Context.UI_MODE_SERVICE;
 
 public class CountlyStarRating {
 
@@ -369,4 +383,231 @@ public class CountlyStarRating {
         srp.isDialogCancellable = isCancellable;
         saveStarRatingPreferences(context, srp);
     }
+
+    /// Countly webDialog user rating
+
+    /**
+     * Used for callback from async task
+     */
+    protected interface InternalFeedbackRatingCallback {
+        void callback(JSONObject checkResponse);
+    }
+
+    /**
+     * Used for callback to developer from calling the Rating widget
+     */
+    public interface FeedbackRatingCallback {
+        /**
+         * Called after trying to show a rating dialog popup
+         * @param error if is null, it means that no errors were encountered
+         */
+        void callback(String error);
+    }
+
+    protected static synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final Countly countly, final ConnectionQueue connectionQueue_, final FeedbackRatingCallback devCallback){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Showing Feedback popup for widget id: [" + widgetId + "]");
+        }
+
+        if(widgetId == null || widgetId.isEmpty()){
+            if(devCallback != null){
+                devCallback.callback("Countly widgetId cannot be null or empty");
+            }
+            throw new IllegalArgumentException("Countly widgetId cannot be null or empty");
+        }
+
+        if(countly.getConsent(Countly.CountlyFeatureNames.starRating)) {
+            //check the device type
+            final boolean deviceIsPhone;
+            final boolean deviceIsTablet;
+            final boolean deviceIsTv;
+
+            deviceIsTv = CountlyStarRating.isDeviceTv(activity);
+
+            if(!deviceIsTv) {
+                deviceIsPhone = !CountlyStarRating.isDeviceTablet(activity);
+                deviceIsTablet = CountlyStarRating.isDeviceTablet(activity);
+            } else {
+                deviceIsTablet = false;
+                deviceIsPhone = false;
+            }
+
+            final String checkUrl = connectionQueue_.getServerURL() + "/o/feedback/widget?app_key=" + connectionQueue_.getAppKey() + "&widget_id=" + widgetId;
+            final String ratingWidgetUrl = connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + connectionQueue_.getDeviceId().getId() + "&app_key=" + connectionQueue_.getAppKey();
+
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Check url: [" + checkUrl+ "], rating widget url :[" + ratingWidgetUrl + "]");
+            }
+
+            (new RatingAvailabilityChecker()).execute(checkUrl, new InternalFeedbackRatingCallback() {
+                @Override
+                public void callback(JSONObject checkResponse) {
+                    if(checkResponse == null){
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
+                        }
+                        if(devCallback != null){
+                            devCallback.callback("Not possible to show Rating popup, probably no internet connection");
+                        }
+                    } else {
+                        try {
+                            JSONObject jDevices = checkResponse.getJSONObject("target_devices");
+
+                            boolean showOnTv = jDevices.optBoolean("desktop", false);
+                            boolean showOnPhone = jDevices.optBoolean("phone", false);
+                            boolean showOnTablet = jDevices.optBoolean("tablet", false);
+
+                            if((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)){
+                                //it's possible to show the rating window on this device
+                                if (Countly.sharedInstance().isLoggingEnabled()) {
+                                    Log.d(Countly.TAG, "Showing Feedback popup for widget id: [" + widgetId + "]");
+                                }
+
+                                RatingDialogWebView webView = new RatingDialogWebView(activity);
+                                webView.getSettings().setJavaScriptEnabled(true);
+                                webView.loadUrl(ratingWidgetUrl);
+
+                                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                                builder.setView(webView);
+                                if(closeButtonText != null && !closeButtonText.isEmpty()) {
+                                    builder.setNeutralButton(closeButtonText, null);
+                                }
+                                builder.show();
+                            } else {
+                                if(devCallback != null){
+                                    devCallback.callback("Rating dialog is not meant for this form factor");
+                                }
+                            }
+
+                        } catch (JSONException e) {
+                            if (Countly.sharedInstance().isLoggingEnabled()) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            if(devCallback != null){
+                devCallback.callback("Consent is not granted");
+            }
+        }
+    }
+
+    private static class RatingDialogWebView extends WebView {
+        public RatingDialogWebView(Context context) {
+            super(context);
+        }
+
+        /**
+         * Without this override, the keyboard is not showing
+         */
+        @Override
+        public boolean onCheckIsTextEditor() {
+            return true;
+        }
+    }
+
+    /**
+     * Ascync task for checking the Rating dialog availability
+     */
+    private static class RatingAvailabilityChecker extends AsyncTask<Object, Void, JSONObject> {
+        InternalFeedbackRatingCallback callback;
+
+        protected JSONObject doInBackground(Object... params) {
+            callback = (InternalFeedbackRatingCallback)params[1];
+
+            HttpURLConnection connection = null;
+            BufferedReader reader = null;
+
+            try {
+                URL url = new URL((String)params[0]);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+
+                InputStream stream = connection.getInputStream();
+
+                reader = new BufferedReader(new InputStreamReader(stream));
+
+                StringBuffer buffer = new StringBuffer();
+                String line = "";
+
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line+"\n");
+                }
+
+                return new JSONObject(buffer.toString());
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+                try {
+                    if (reader != null) {
+                        reader.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject result) {
+            super.onPostExecute(result);
+            //Log.d(TAG, "Post exec: [" + result + "]");
+
+            if(callback != null){
+                callback.callback(result);
+            }
+        }
+    }
+
+    //https://stackoverflow.com/a/40310535
+
+    /**
+     * Used for detecting if current device is a tablet of phone
+     */
+    protected static boolean isDeviceTablet(Activity activity) {
+        Context activityContext = activity;
+        boolean device_large = ((activityContext.getResources().getConfiguration().screenLayout &
+                Configuration.SCREENLAYOUT_SIZE_MASK) ==
+                Configuration.SCREENLAYOUT_SIZE_LARGE);
+
+        if (device_large) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+            if (metrics.densityDpi == DisplayMetrics.DENSITY_DEFAULT
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_HIGH
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_MEDIUM
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_TV
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_XHIGH) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Used for detecting if device is a tv
+     * @return
+     */
+    protected static boolean isDeviceTv(Context context){
+        final String TAG = "DeviceTypeRuntimeCheck";
+
+        UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);
+        if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }

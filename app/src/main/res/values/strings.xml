@@ -42,6 +42,7 @@
     <string name="end_event_with_segm_count_sum">end event with segm., count, sum</string>
     <string name="set_custom_header_field_value">set custom header field value</string>
     <string name="ask_for_star_rating">ask for star-rating</string>
+    <string name="ask_for_rating_widget">ask for rating widget</string>
     <string name="set_new_device_id">set new device id</string>
     <string name="set_new_device_id_with_server_merge">set new device id with server merge</string>
     <string name="record_user_details">record user details</string>

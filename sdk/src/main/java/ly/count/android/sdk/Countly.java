@@ -23,7 +23,6 @@ package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -31,7 +30,6 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -2287,6 +2285,20 @@ public class Countly {
         return false;
     }
 
+    /**
+     * Show the rating dialog to the user
+     * @param widgetId ID that identifies this dialog
+     * @return
+     */
+    public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final CountlyStarRating.FeedbackRatingCallback callback){
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before showFeedbackPopup");
+        }
+
+        CountlyStarRating.showFeedbackPopup(widgetId, closeButtonText, activity, this, connectionQueue_, callback);
+
+        return this;
+    }
 
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }

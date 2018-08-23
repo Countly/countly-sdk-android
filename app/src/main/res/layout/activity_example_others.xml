@@ -24,6 +24,13 @@
         android:text="@string/ask_for_star_rating"/>
 
     <Button
+        android:id="@+id/button46"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewOther07"
+        android:text="@string/ask_for_rating_widget"/>
+
+    <Button
         android:id="@+id/button43"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -29,6 +29,7 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickViewOther02(View v) {
+        //show star rating
         Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
             @Override
             public void onRate(int rating) {
@@ -38,6 +39,18 @@ public class ActivityExampleOthers extends Activity {
             @Override
             public void onDismiss() {
                 Toast.makeText(activity, "onDismiss called", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void onClickViewOther07(View v) {
+        //show rating widget
+        Countly.sharedInstance().showFeedbackPopup("5b7e12af999b0f12c761c42f", "Close", activity, new CountlyStarRating.FeedbackRatingCallback() {
+            @Override
+            public void callback(String error) {
+                if(error != null){
+                    Toast.makeText(activity, "Encountered error while showing feedback dialog: [" + error + "]", Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
