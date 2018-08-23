@@ -1,3 +1,13 @@
+18.08
+  * Added functionality for webView user rating popup dialog
+  * Added call for recording unhandled exceptions
+  * Added 10 second delay before merging device Id's
+  * Added functionality for sending integers and doubles with segmentation, instead of just strings
+  * Improved Countly SDK logging messages
+  * Limited the size of crash logs to 10k characters
+  * Fixed a deviceId changing related bug
+  * Fixed a bug for setting push consent before init
+
 18.04
   * Added functionality for GDPR (giving and removing consent for features)
   * Added separate module for FCM push notifications
