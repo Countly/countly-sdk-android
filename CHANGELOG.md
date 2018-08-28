@@ -5,6 +5,7 @@
   * Added functionality for sending integers and doubles with segmentation, instead of just strings
   * Added call to record exception with a throwable
   * Improved Countly SDK logging messages
+  * SDK now tries to send messages in it's timer event when in the background
   * Limited the size of crash logs to 10k characters
   * Limited the size of breadcrumbs to 1000 characters
   * Limited the amount of breadcrumbs to 1000 entries. If a newer one is added, the oldest one is discarded

@@ -1566,6 +1566,10 @@ public class Countly {
                 connectionQueue_.recordEvents(eventQueue_.events());
             }
         }
+
+        if(isInitialized()){
+            connectionQueue_.tick();
+        }
     }
 
     /**
