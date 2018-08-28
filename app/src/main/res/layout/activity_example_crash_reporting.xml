@@ -90,4 +90,11 @@
         android:layout_height="wrap_content"
         android:onClick="onClickCrashReporting11"
         android:text="@string/deep_handled_exception"/>
+
+    <Button
+        android:id="@+id/button50"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCrashReporting13"
+        android:text="@string/add_a_breadcrumb"/>
 </LinearLayout>

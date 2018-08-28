@@ -328,13 +328,13 @@ public class Countly {
             Log.d(Countly.TAG, "Is consent required? [" + requiresConsent + "]");
 
             // Context class hierarchy
-            //Context
-            //| — ContextWrapper
-            //|— — Application
-            //| — — ContextThemeWrapper
-            //|— — — — Activity
-            //| — — Service
-            //|— — — IntentService
+            // Context
+            //|- ContextWrapper
+            //|- - Application
+            //|- - ContextThemeWrapper
+            //|- - - - Activity
+            //|- - Service
+            //|- - - IntentService
 
             Class contextClass = context.getClass();
             Class contextSuperClass = contextClass.getSuperclass();
@@ -1176,10 +1176,17 @@ public class Countly {
      */
     public synchronized Countly addCrashBreadcrumb(String record) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Adding crash bread crumb");
+            Log.d(Countly.TAG, "Adding crash breadcrumb");
         }
 
         if(!getConsent(CountlyFeatureNames.crashes)){
+            return this;
+        }
+
+        if(record == null || record.isEmpty()) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Can't add a null or empty crash breadcrumb");
+            }
             return this;
         }
 
