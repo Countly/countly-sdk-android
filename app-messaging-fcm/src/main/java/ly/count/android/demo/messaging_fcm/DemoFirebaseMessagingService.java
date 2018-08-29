@@ -3,6 +3,7 @@ package ly.count.android.demo.messaging_fcm;
 import android.content.Intent;
 import android.util.Log;
 
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
@@ -18,6 +19,14 @@ import ly.count.android.sdk.messaging.CountlyPush;
 
 public class DemoFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "DemoMessagingService";
+
+    @Override
+    public void onNewToken(String token) {
+        super.onNewToken(token);
+
+        Log.d("DemoFirebaseService", "got new token: " + token);
+        CountlyPush.onTokenRefresh(token);
+    }
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
