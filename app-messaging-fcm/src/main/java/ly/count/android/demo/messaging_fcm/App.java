@@ -23,6 +23,8 @@ import ly.count.android.sdk.messaging.CountlyPush;
 import static ly.count.android.sdk.Countly.TAG;
 
 public class App extends Application {
+    final String serverUrl = "https://try.count.ly";
+    final String appKey = "someAppKey";
 
     @Override
     public void onCreate() {
@@ -43,9 +45,10 @@ public class App extends Application {
 
         Countly.sharedInstance()
                 .setRequiresConsent(true)
+                .setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, true)
                 .setLoggingEnabled(true)
                 .setPushIntentAddMetadata(true)
-                .init(this, "http://192.168.3.77:3001", "ef2cc6520fb2eadfd96050dfc7d3560b07a718a5");
+                .init(this, serverUrl, appKey);
 
         CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION);
 

@@ -45,7 +45,8 @@ public class ActivityExampleOthers extends Activity {
 
     public void onClickViewOther07(View v) {
         //show rating widget
-        Countly.sharedInstance().showFeedbackPopup("5b7e12af999b0f12c761c42f", "Close", activity, new CountlyStarRating.FeedbackRatingCallback() {
+        String widgetId = "xxxxx";
+        Countly.sharedInstance().showFeedbackPopup(widgetId, "Close", activity, new CountlyStarRating.FeedbackRatingCallback() {
             @Override
             public void callback(String error) {
                 if(error != null){

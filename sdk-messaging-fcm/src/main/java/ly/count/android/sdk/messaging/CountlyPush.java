@@ -221,6 +221,10 @@ public class CountlyPush {
     public static class NotificationBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent broadcast) {
+            if(Countly.sharedInstance().isLoggingEnabled()){
+                Log.d(Countly.TAG, "Push broadcast receiver receiving message");
+            }
+
             broadcast.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
             Intent intent = broadcast.getParcelableExtra(EXTRA_INTENT);
@@ -305,6 +309,10 @@ public class CountlyPush {
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if no Countly message is found in {@code data}
      */
     public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
+        if(Countly.sharedInstance().isLoggingEnabled()){
+            Log.d(Countly.TAG, "Displaying push message");
+        }
+
         if (msg == null) {
             return null;
         } else if (isAppRunningInForeground(context)) {
@@ -334,6 +342,10 @@ public class CountlyPush {
 
         if (msg.title() == null && msg.message() == null) {
             return null;
+        }
+
+        if(Countly.sharedInstance().isLoggingEnabled()){
+            Log.d(Countly.TAG, "Displaying push notification");
         }
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -414,6 +426,10 @@ public class CountlyPush {
     public static Boolean displayDialog(final Activity activity, final Message msg) {
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
             return null;
+        }
+
+        if(Countly.sharedInstance().isLoggingEnabled()){
+            Log.d(Countly.TAG, "Displaying push dialog");
         }
 
         loadImage(activity, msg, new BitmapCallback() {
@@ -542,6 +558,9 @@ public class CountlyPush {
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
             return;
         }
+        if(Countly.sharedInstance().isLoggingEnabled()){
+            Log.d(Countly.TAG, "Refreshing FCM push token");
+        }
         Countly.sharedInstance().onRegistrationId(token, mode);
     }
 
@@ -557,6 +576,10 @@ public class CountlyPush {
     public static void init(Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
         if (!Utils.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
             throw new IllegalStateException("No FirebaseMessaging library in class path. Please either add it to your gradle config or don't use CountlyPush.");
+        }
+
+        if(Countly.sharedInstance().isLoggingEnabled()){
+            Log.d(Countly.TAG, "Initializing Countly FCM push");
         }
 
         CountlyPush.mode = mode;
