@@ -238,14 +238,17 @@ public class CountlyPush {
             if (index == 0) {
                 if (message.link() != null) {
                     Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.link().toString()));
+                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     i.putExtra(EXTRA_MESSAGE, i);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
                     context.startActivity(i);
                 } else {
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(intent);
                 }
             } else {
                 Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.buttons().get(index - 1).link().toString()));
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 i.putExtra(EXTRA_MESSAGE, i);
                 i.putExtra(EXTRA_ACTION_INDEX, index);
                 context.startActivity(i);
