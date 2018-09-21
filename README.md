@@ -20,7 +20,11 @@ We have a beautiful Android application ([push notification sample app](https://
 
 ![Android-sample-app](https://count.ly/github/countly-android-sample-app.png)
 
-### Other Github resources ###
+## Security
+
+Security is very important to us. If you discover any issue regarding security, please disclose the information responsibly by sending an email to security@count.ly and **not by creating a GitHub issue**.
+
+## Other Github resources
 
 This SDK needs one of the following Countly Editions to work: 
 
