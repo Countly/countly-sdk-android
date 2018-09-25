@@ -339,7 +339,7 @@ public class ConnectionProcessor implements Runnable {
         return decodedResult;
     }
 
-    private static String sha1Hash (String toHash) {
+    protected static String sha1Hash (String toHash) {
         String hash = null;
         try {
             MessageDigest digest = MessageDigest.getInstance( "SHA-1" );

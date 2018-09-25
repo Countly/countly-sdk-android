@@ -307,10 +307,12 @@ public class EventTests extends AndroidTestCase {
         expected.timestamp = 1234;
         expected.count = 42;
         expected.sum = 3.2;
-        expected.segmentation = new HashMap<String, String>();
-        expected.segmentation.put("segkey", "1234");
+        expected.segmentation = new HashMap<>();
+        expected.segmentationDouble = new HashMap<>();
+        expected.segmentationInt = new HashMap<>();
+        expected.segmentationInt.put("segkey", 1234);
         final Map<Object, Object> badMap = new HashMap<Object, Object>();
-        badMap.put("segkey", 1234); // JSONObject.getString will end up converting this to the string "1234"
+        badMap.put("segkey", 1234); // this should be put into int segments
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put("key", expected.key);
         jsonObj.put("timestamp", expected.timestamp);
