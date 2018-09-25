@@ -99,7 +99,9 @@ class Event {
                 }
             }
 
-            json.put(SEGMENTATION_KEY, jobj);
+            if(segmentation != null || segmentationInt != null || segmentationDouble != null) {
+                json.put(SEGMENTATION_KEY, jobj);
+            }
 
             // we put in the sum last, the only reason that a JSONException would be thrown
             // would be if sum is NaN or infinite, so in that case, at least we will return
@@ -142,8 +144,6 @@ class Event {
 
             if (!json.isNull(SEGMENTATION_KEY)) {
                 JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
-                segm.put("SomeInt", 234);
-                segm.put("SomeDouble", 234.33);
 
                 final HashMap<String, String> segmentation = new HashMap<>();
                 final HashMap<String, Integer> segmentationInt = new HashMap<>();
