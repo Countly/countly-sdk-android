@@ -231,15 +231,28 @@ public class CountlyPush {
             intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
             int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
-            Message message = intent.getParcelableExtra(EXTRA_MESSAGE);
+            Bundle bundle = intent.getParcelableExtra(EXTRA_MESSAGE);
+            Message message = bundle.getParcelable(EXTRA_MESSAGE);
+
+            if (message == null) {
+                return;
+            }
 
             message.recordAction(context, index);
+
+            final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                manager.cancel(message.hashCode());
+            }
+
+            Intent closeNotificationsPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+            context.sendBroadcast(closeNotificationsPanel);
 
             if (index == 0) {
                 if (message.link() != null) {
                     Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.link().toString()));
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    i.putExtra(EXTRA_MESSAGE, i);
+//                    i.putExtra(EXTRA_MESSAGE, message);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
                     context.startActivity(i);
                 } else {
@@ -249,7 +262,7 @@ public class CountlyPush {
             } else {
                 Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.buttons().get(index - 1).link().toString()));
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra(EXTRA_MESSAGE, i);
+//                i.putExtra(EXTRA_MESSAGE, message);
                 i.putExtra(EXTRA_ACTION_INDEX, index);
                 context.startActivity(i);
             }
@@ -414,7 +427,9 @@ public class CountlyPush {
         } else {
             intent = (Intent) notificationIntent.clone();
         }
-        intent.putExtra(EXTRA_MESSAGE, message);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(EXTRA_MESSAGE, message);
+        intent.putExtra(EXTRA_MESSAGE, bundle);
         intent.putExtra(EXTRA_ACTION_INDEX, index);
         return intent;
     }
@@ -526,17 +541,19 @@ public class CountlyPush {
             DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 0 : 1).link().toString()));
-                    intent.putExtra(EXTRA_MESSAGE, msg);
-                    intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 1 : 2);
+                    msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link().toString()));
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable(EXTRA_MESSAGE, msg);
+                    intent.putExtra(EXTRA_MESSAGE, bundle);
+                    intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
                     context.startActivity(intent);
                     dialog.dismiss();
                 }
             };
-            builder.setPositiveButton(msg.buttons().get(0).title(), listener);
+            builder.setNeutralButton(msg.buttons().get(0).title(), listener);
             if (msg.buttons().size() > 1) {
-                builder.setNeutralButton(msg.buttons().get(1).title(), listener);
+                builder.setPositiveButton(msg.buttons().get(1).title(), listener);
             }
         }
     }
