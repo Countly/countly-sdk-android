@@ -50,5 +50,5 @@ dependencies {
 
     //implementation 'com.google.android.gms:play-services-gcm:10.0.1'
 
-    //implementation 'ly.count.android:sdk:18.08'
+    //implementation 'ly.count.android:sdk:18.08.1'
 }

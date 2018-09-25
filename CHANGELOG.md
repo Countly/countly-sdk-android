@@ -1,3 +1,8 @@
+18.08.1
+  * Fixed bug with events getting unrelated segmentation fields added
+  * Added flags to push action intent
+  * Refactored push URL action handling
+
 18.08
   * Added functionality for webView user rating popup dialog
   * Added call for recording unhandled exceptions

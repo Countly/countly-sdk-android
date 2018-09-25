@@ -31,7 +31,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     implementation project(':sdk-messaging')
-    //implementation 'ly.count.android:sdk-messaging:18.08'
+    //implementation 'ly.count.android:sdk-messaging:18.08.1'
 
     implementation 'me.leolin:ShortcutBadger:1.1.10@aar'
     implementation 'com.android.support:appcompat-v7:25.4.0'
