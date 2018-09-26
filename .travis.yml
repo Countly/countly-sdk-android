@@ -17,16 +17,27 @@ cache:
   - $HOME/.android/build-cache
 
 env:
-  matrix:
-  - EMULATOR_API_LEVEL=23  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23
-  - EMULATOR_API_LEVEL=21  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
-  - EMULATOR_API_LEVEL=19  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
-
   global:
     - ANDROID_API_LEVEL=27
     - ANDROID_BUILD_TOOLS_VERSION=27.0.3
     - ADB_INSTALL_TIMEOUT=20 # wait up to 20 minutes for adb to connect to emulator (2 minutes by default)
     - ANDROID_ABI=armeabi-v7a
+    
+matrix:
+  include:
+  - name: "Android 24"
+    env: EMULATOR_API_LEVEL=24  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24
+  - name: "Android 23"
+    env: EMULATOR_API_LEVEL=23  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23
+  - name: "Android 21"
+    env: EMULATOR_API_LEVEL=21  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
+  - name: "Android 19"
+    env: EMULATOR_API_LEVEL=19  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
+  allow_failures: # these stall often or have some other flaky problems
+  - env: EMULATOR_API_LEVEL=24  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24
+  - env: EMULATOR_API_LEVEL=23  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-23
+  - env: EMULATOR_API_LEVEL=21  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
+    
     
 android:
   components:
