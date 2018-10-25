@@ -2,6 +2,7 @@ package ly.count.android.sdk.internal;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,14 +27,86 @@ public class CoreModules extends CoreStorage {
         DEFAULT_MAPPINGS.put(Config.InternalFeature.DeviceId, ModuleDeviceId.class);
         DEFAULT_MAPPINGS.put(Config.InternalFeature.Requests, ModuleRequests.class);
         DEFAULT_MAPPINGS.put(Config.InternalFeature.Logs, Log.class);
-        DEFAULT_MAPPINGS.put(Config.Feature.AutoSessionTracking, ModuleSessions.class);
-        DEFAULT_MAPPINGS.put(Config.Feature.Crash, ModuleCrash.class);
+        DEFAULT_MAPPINGS.put(Config.Feature.AutoSessionTracking, ModuleAutoSessions.class);
+        DEFAULT_MAPPINGS.put(Config.Feature.CrashReporting, ModuleCrash.class);
         DEFAULT_MAPPINGS.put(Config.Feature.Attribution, ModuleAttribution.class);
         DEFAULT_MAPPINGS.put(Config.Feature.Push, ModulePush.class);
         DEFAULT_MAPPINGS.put(Config.Feature.AutoViewTracking, ModuleViews.class);
     }
 
     private final Map<Config.Feat, Class<? extends Module>> moduleMappings = new HashMap<>();
+
+    private List<Config.Feature> consents = new ArrayList<>();
+
+    /**
+     * Check if consent has been given for a feature
+     *
+     * @param feat feature to test against, pass null to test if any consent given
+     * @return {@code true} if consent has been given
+     */
+    public boolean isTracking(Config.Feature feat) {
+        return feat == null ? !consents.isEmpty() : consents.contains(feat);
+    }
+
+    /**
+     * Callback to add consents to the list
+     *
+     * @param feats array of consents to add
+     */
+    public void onConsent(Context context, Config.Feature... feats) {
+        if (!consents.containsAll(Arrays.asList(feats))) {
+            // put auto sessions first
+            if (Arrays.asList(feats).contains(Config.Feature.AutoSessionTracking)) {
+                List<Config.Feature> list = Arrays.asList(feats);
+                list.remove(Config.Feature.AutoSessionTracking);
+                list.add(0, Config.Feature.AutoSessionTracking);
+                feats = list.toArray(new Config.Feature[0]);
+            }
+
+            for (Config.Feature feature : feats) {
+                if (!consents.contains(feature)) {
+                    Class<? extends Module> cls = moduleMappings.get(feature);
+                    if (cls == null) {
+                        L.wtf("No module class for feature " + feature);
+                    } else {
+                        Module module = instantiateModule(moduleMappings.get(feature));
+
+                        if (module == null) {
+                            continue;
+                        } else if (feature == Config.Feature.AutoSessionTracking) {
+                            modules.add(0, module);
+                        } else {
+                            modules.add(module);
+                        }
+
+                        module.init(config);
+                        module.onContextAcquired(context);
+                    }
+
+                }
+            }
+
+            consents.addAll(Arrays.asList(feats));
+        }
+    }
+
+    /**
+     * Callback to remove consents from the list
+     *
+     * @param feats array of consents to remove
+     */
+    public void onConsentRemoval(Context ctx, Config.Feature... feats) {
+        for (Config.Feature feat : feats) {
+            if (consents.contains(feat)) {
+                Module module = module(feat);
+                if (module != null) {
+                    module.stop(ctx, true);
+                    modules.remove(module);
+                }
+                consents.remove(feat);
+            }
+        }
+    }
 
     /**
      * Create instances of {@link Module}s required by {@link #config}.
@@ -64,6 +137,13 @@ public class CoreModules extends CoreStorage {
         // local set for easy order manipulation
         Set<Config.Feature> features = new HashSet<>(config.getFeatures());
 
+        // leave only features with consent given
+        if (config.requiresConsent()) {
+            List<Config.Feature> nonAllowed = Arrays.asList(Config.Feature.values());
+            nonAllowed.removeAll(consents);
+            features.removeAll(nonAllowed);
+        }
+
         // standard required internal features
         modules.add(instantiateModule(mappings.remove(Config.InternalFeature.Requests)));
         modules.add(instantiateModule(mappings.remove(Config.InternalFeature.DeviceId)));
@@ -72,7 +152,7 @@ public class CoreModules extends CoreStorage {
             modules.add(instantiateModule(mappings.remove(Config.InternalFeature.Logs)));
         }
 
-        // make sure ModuleSessions goes first
+        // make sure ModuleAutoSessions goes first
         if (features.contains(Config.Feature.AutoSessionTracking)) {
             features.remove(Config.Feature.AutoSessionTracking);
             modules.add(instantiateModule(mappings.remove(Config.Feature.AutoSessionTracking)));

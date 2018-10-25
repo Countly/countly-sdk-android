@@ -170,4 +170,9 @@ public class ModuleAttribution extends ModuleBase {
             return null;
         }
     }
+
+    @Override
+    public Config.Feature getFeature() {
+        return Config.Feature.Attribution;
+    }
 }

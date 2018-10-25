@@ -63,17 +63,17 @@ public class ModuleViewsTests extends BaseTests {
         setUpApplication(null);
 
         ModuleViews moduleViews = module(ModuleViews.class, false);
-        ModuleSessions moduleSessions = module(ModuleSessions.class, false);
+        ModuleAutoSessions moduleAutoSessions = module(ModuleAutoSessions.class, false);
         Assert.assertNotNull(moduleViews);
-        Assert.assertNotNull(moduleSessions);
+        Assert.assertNotNull(moduleAutoSessions);
 
         Activity activity1 = mock(Activity.class), activity2 = mock(Activity.class);
         String firstViewName = activity1.getClass().getName(), secondViewName = activity2.getClass().getName();
 
         Assert.assertNull(Core.instance.getSession());
-        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
         Whitebox.invokeMethod(Core.instance, "onActivityStartedInternal", activity1);
-        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
 
         SessionImpl session = Core.instance.getSession();
         Assert.assertNotNull(session);
@@ -85,7 +85,7 @@ public class ModuleViewsTests extends BaseTests {
         validateView(first, start, firstViewName, true, true, false);
 
         Whitebox.invokeMethod(Core.instance, "onActivityStartedInternal", activity2);
-        Assert.assertEquals(2, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Assert.assertEquals(2, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
         session = Core.instance.getSession();
         Assert.assertNotNull(session);
         Assert.assertEquals(3, session.events.size());
@@ -99,13 +99,13 @@ public class ModuleViewsTests extends BaseTests {
         validateView(second, start, secondViewName, true, false, false);
 
         Whitebox.invokeMethod(Core.instance, "onActivityStoppedInternal", activity1);
-        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
         session = Core.instance.getSession();
         Assert.assertNotNull(session);
         Assert.assertEquals(3, session.events.size());
 
         Whitebox.invokeMethod(Core.instance, "onActivityStoppedInternal", activity2);
-        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleSessions, "activityCount"));
+        Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
         Assert.assertNull(Core.instance.getSession());
         Assert.assertEquals(0, session.events.size());
     }

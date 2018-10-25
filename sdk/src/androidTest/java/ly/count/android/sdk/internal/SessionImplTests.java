@@ -40,7 +40,7 @@ public class SessionImplTests extends BaseTests {
 
     @Override
     protected Config defaultConfig() throws Exception {
-        return super.defaultConfig().disableTestMode().enableFeatures(Config.Feature.Crash);
+        return super.defaultConfig().disableTestMode().enableFeatures(Config.Feature.CrashReporting);
     }
 
     @Test

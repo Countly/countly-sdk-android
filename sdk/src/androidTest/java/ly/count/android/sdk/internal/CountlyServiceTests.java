@@ -119,7 +119,7 @@ public class CountlyServiceTests extends BaseTests {
 
     @Test
     public void receiving_crash() throws Exception {
-        setUpApplication(defaultConfig().enableFeatures(Config.Feature.Crash));
+        setUpApplication(defaultConfig().enableFeatures(Config.Feature.CrashReporting));
         SessionImpl session = new SessionImpl(ctx);
         session.begin();
 

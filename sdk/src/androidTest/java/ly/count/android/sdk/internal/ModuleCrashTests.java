@@ -12,7 +12,7 @@ import static android.support.test.InstrumentationRegistry.getContext;
 public class ModuleCrashTests extends BaseTests {
     @Override
     protected Config defaultConfig() throws Exception {
-        return super.defaultConfig().enableFeatures(Config.Feature.Crash);
+        return super.defaultConfig().enableFeatures(Config.Feature.CrashReporting);
     }
 
     @Test(expected = StackOverflowError.class)
@@ -79,11 +79,11 @@ public class ModuleCrashTests extends BaseTests {
 //        Context ctx = new ContextImpl(getContext());
 //        Core.purgeInternalStorage(ctx, null);
 //
-//        final Config config = TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG).enableFeatures(Config.Feature.Crash);
+//        final Config config = TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG).enableFeatures(Config.Feature.CrashReporting);
 //        Core.initForApplication(config, getContext());
 //        Core.instance.onContextAcquired(TestingUtilityInternal.mockApplication(getContext()));
 //
-//        ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.Crash);
+//        ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.CrashReporting);
 //
 //        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
 //        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));

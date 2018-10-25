@@ -237,15 +237,15 @@ public class ConfigTests extends BaseTests {
         Set<Config.Feature> features = config.getFeatures();
         Assert.assertEquals(1, features.size());
 
-        config.enableFeatures(Config.Feature.Crash);
+        config.enableFeatures(Config.Feature.CrashReporting);
         features = config.getFeatures();
         Assert.assertEquals(2, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.Crash));
+        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
 
         config.enableFeatures(Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
         Assert.assertEquals(3, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.Crash));
+        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
         Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertEquals(false, features.contains(Config.Feature.Push));
     }
@@ -269,11 +269,11 @@ public class ConfigTests extends BaseTests {
         Set<Config.Feature> features = config.getFeatures();
         Assert.assertEquals(1, features.size());
 
-        config.setFeatures(Config.Feature.Crash, Config.Feature.PerformanceMonitoring);
+        config.setFeatures(Config.Feature.CrashReporting, Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
         Assert.assertEquals(2, features.size());
         Assert.assertEquals(false, features.contains(Config.Feature.AutoSessionTracking));
-        Assert.assertEquals(true, features.contains(Config.Feature.Crash));
+        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
         Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertEquals(false, features.contains(Config.Feature.Push));
     }
@@ -288,13 +288,13 @@ public class ConfigTests extends BaseTests {
         Assert.assertEquals(2, features.size());
         Assert.assertEquals(true, features.contains(Config.Feature.AutoSessionTracking));
         Assert.assertEquals(true, features.contains(Config.Feature.Push));
-        Assert.assertEquals(false, features.contains(Config.Feature.Crash));
+        Assert.assertEquals(false, features.contains(Config.Feature.CrashReporting));
         Assert.assertEquals(false, features.contains(Config.Feature.PerformanceMonitoring));
 
-        config.setFeatures(Config.Feature.Crash, Config.Feature.PerformanceMonitoring);
+        config.setFeatures(Config.Feature.CrashReporting, Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
         Assert.assertEquals(2, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.Crash));
+        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
         Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertEquals(false, features.contains(Config.Feature.Push));
         Assert.assertEquals(false, features.contains(Config.Feature.AutoSessionTracking));
@@ -310,7 +310,7 @@ public class ConfigTests extends BaseTests {
     public void enumFeature_values() {
         Config.Feature[] features = Config.Feature.values();
         Assert.assertEquals(Config.Feature.AutoSessionTracking, features[0]);
-        Assert.assertEquals(Config.Feature.Crash, features[1]);
+        Assert.assertEquals(Config.Feature.CrashReporting, features[1]);
         Assert.assertEquals(Config.Feature.Push, features[2]);
         Assert.assertEquals(Config.Feature.Attribution, features[3]);
         Assert.assertEquals(Config.Feature.StarRating, features[4]);
@@ -330,7 +330,7 @@ public class ConfigTests extends BaseTests {
 
     @Test
     public void enumFeature_valueOff() {
-        Assert.assertEquals(Config.Feature.Crash, Config.Feature.valueOf("Crash"));
+        Assert.assertEquals(Config.Feature.CrashReporting, Config.Feature.valueOf("CrashReporting"));
         Assert.assertEquals(Config.Feature.Push, Config.Feature.valueOf("Push"));
         Assert.assertEquals(Config.Feature.PerformanceMonitoring, Config.Feature.valueOf("PerformanceMonitoring"));
     }

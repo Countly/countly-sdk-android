@@ -2,6 +2,7 @@ package ly.count.android.sdk.internal;
 
 import java.util.concurrent.Future;
 
+import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Session;
 import ly.count.android.sdk.User;
 
@@ -29,6 +30,11 @@ public class ModuleRequests extends ModuleBase {
     public void onContextAcquired(Context ctx) {
         super.onContextAcquired(ctx);
         ModuleRequests.metrics = Device.buildMetrics(ctx);
+    }
+
+    @Override
+    public Config.Feature getFeature() {
+        return null;
     }
 
     public static Future<Boolean> sessionBegin(Context ctx, SessionImpl session) {

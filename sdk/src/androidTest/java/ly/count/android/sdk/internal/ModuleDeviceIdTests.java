@@ -181,14 +181,14 @@ public class ModuleDeviceIdTests extends BaseTests {
         Config.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
         did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
     }
 
     @Test
@@ -255,14 +255,14 @@ public class ModuleDeviceIdTests extends BaseTests {
         Config.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
         did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
     }
 
     @Test
@@ -274,7 +274,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         Assert.assertNull(Utils.reflectiveGetField(core, "session"));
 
-        //  make ModuleSessions begin a session
+        //  make ModuleAutoSessions begin a session
         core.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
         Assert.assertNotNull(Utils.reflectiveGetField(core, "session"));
 
@@ -293,7 +293,7 @@ public class ModuleDeviceIdTests extends BaseTests {
         // .. and it shouldn't have an id yet - its generation takes 2 seconds
         Assert.assertFalse(request.params.toString().contains(Params.PARAM_DEVICE_ID));
 
-        // now sleep update time for ModuleSessions to create update request
+        // now sleep update time for ModuleAutoSessions to create update request
         Thread.sleep(1000 * config.getSendUpdateEachSeconds());
         // ... and ensure session was updated and request was created
         ids = Storage.list(ctx, SessionImpl.getStoragePrefix());

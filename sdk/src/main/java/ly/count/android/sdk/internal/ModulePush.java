@@ -364,6 +364,11 @@ public class ModulePush extends ModuleBase {
         }
     }
 
+    @Override
+    public Config.Feature getFeature() {
+        return Config.Feature.Push;
+    }
+
     static CountlyPush.Message decodeMessage(Map<String, String> data) {
         MessageImpl message = new MessageImpl(data);
         return message.id == null ? null : message;

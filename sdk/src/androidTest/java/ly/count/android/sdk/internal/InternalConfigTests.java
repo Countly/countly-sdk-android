@@ -31,7 +31,7 @@ public class InternalConfigTests {
     @Test
     public void constructor_fromConfig() throws Exception{
         Config config = new Config(serverUrl, serverAppKey);
-        config.setFeatures(Config.Feature.Push, Config.Feature.Crash);
+        config.setFeatures(Config.Feature.Push, Config.Feature.CrashReporting);
         config.setLoggingTag("tag");
         config.setLoggingLevel(WARN);
         config.setSdkName("name");
@@ -66,7 +66,7 @@ public class InternalConfigTests {
     @Test
     public void serialization() throws Exception{
         Config config = new Config(serverUrl, serverAppKey);
-        config.setFeatures(Config.Feature.Push, Config.Feature.Crash);
+        config.setFeatures(Config.Feature.Push, Config.Feature.CrashReporting);
         config.setLoggingTag("tag");
         config.setLoggingLevel(WARN);
         config.setSdkName("name");
@@ -82,7 +82,7 @@ public class InternalConfigTests {
         config.setCrashReportingANRTimeout(2);
         config.enableTestMode();
 
-        Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, "openudid");
+        Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.ANDROID_ID, "openudid");
         Config.DID adv = new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, "adid");
         Config.DID ptk = new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, "push token");
 

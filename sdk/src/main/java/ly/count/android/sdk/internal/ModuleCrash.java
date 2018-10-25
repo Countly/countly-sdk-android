@@ -8,6 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CrashProcessor;
 
@@ -122,6 +123,11 @@ public class ModuleCrash extends ModuleBase {
         }
     }
 
+    @Override
+    public Config.Feature getFeature() {
+        return Config.Feature.CrashReporting;
+    }
+
     public void nextTick() {
         if (!isActive()) {
             return;
@@ -174,7 +180,7 @@ public class ModuleCrash extends ModuleBase {
     }
 
     public enum CrashType {
-        STACK_OVERFLOW, DIVISION_BY_ZERO, OOM, RUNTIME_EXCEPTION, NULLPOINTER_EXCEPTION
+        STACK_OVERFLOW, DIVISION_BY_ZERO, OOM, RUNTIME_EXCEPTION, NULLPOINTER_EXCEPTION, ANR
     }
 
     public static void crashTest(CrashType type) {
@@ -191,6 +197,11 @@ public class ModuleCrash extends ModuleBase {
             case NULLPOINTER_EXCEPTION:
                 String nullString = null;
                 nullString.charAt(1);
+            case ANR:
+                double n = Math.PI;
+                for (int i = 0; i <= 1000000; i++) {
+                    n = Math.pow(Math.sqrt(n), n);
+                }
         }
     }
 

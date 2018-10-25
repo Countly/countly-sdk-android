@@ -6,8 +6,6 @@ import android.os.Handler;
 
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.Crash;
-import ly.count.android.sdk.CrashProcessor;
 
 /**
  * Demo Application subclass with an example of how to initialize Countly SDK.
@@ -24,29 +22,29 @@ public class App extends Application {
     private static final String COUNTLY_SERVER_URL = "http://artem.count.ly";
 //    private static final String COUNTLY_APP_KEY = "33a5dd24fd38c4471573da5ee06b355a3a9b1283";
 //    private static final String COUNTLY_APP_KEY = "7e21d7e256952b150d3db09808fbcb255bc761e6";
-    private static final String COUNTLY_APP_KEY = "db8cc5552bdb27cc5c9ad89bbb50e8f7ea6e620a";
+    private static final String COUNTLY_APP_KEY = "33a5dd24fd38c4471573da5ee06b355a3a9b1283";
 
     @Override
     public void onCreate() {
         super.onCreate();
 
         Countly.init(this, getCountlyConfig());
-//
-//        new Handler(getMainLooper()).postDelayed(new Runnable() {
-//            @Override
-//            public void run() {
-//                if (Countly.user() != null) {
-//                    Countly.user().edit().addToCohort("manual").commit();
-//                }
-//            }
-//        }, 3000);
+
+        new Handler(getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (Countly.user() != null) {
+                    Countly.user().edit().addToCohort("manual").commit();
+                }
+            }
+        }, 3000);
     }
 
     public static Config getCountlyConfig () {
         return new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
                 .enableTestMode()
                 .setLoggingLevel(Config.LoggingLevel.DEBUG)
-                .setFeatures(Config.Feature.AutoSessionTracking, Config.Feature.Push, Config.Feature.Crash, Config.Feature.AutoViewTracking)
+                .setFeatures(Config.Feature.AutoSessionTracking, Config.Feature.Push, Config.Feature.CrashReporting, Config.Feature.AutoViewTracking)
                 .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
     }
 }

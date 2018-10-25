@@ -78,6 +78,13 @@ public class CountlyLifecycle {
     public static boolean isInitialized() { return instance != null; }
 
     /**
+     * Returns whether Countly SDK has been given consent to record data for a particular {@link ly.count.android.sdk.Config.Feature} or not.
+     *
+     * @return true if consent has been given
+     */
+    public static boolean isTracking(Config.Feature feature) { return isInitialized() && instance.core.isTracking(feature); }
+
+    /**
      * Activity callback to be called for apps which support API levels below 14
      *
      * @param activity Activity instance

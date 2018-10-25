@@ -3,6 +3,7 @@ package ly.count.android.sdk.internal;
 import java.util.HashMap;
 import java.util.Map;
 
+import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Session;
 import ly.count.android.sdk.View;
 
@@ -40,5 +41,10 @@ public class ModuleViews extends ModuleBase {
         if (views.containsKey(cls)) {
             views.remove(cls).stop(false);
         }
+    }
+
+    @Override
+    public Config.Feature getFeature() {
+        return Config.Feature.AutoViewTracking;
     }
 }

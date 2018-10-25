@@ -31,22 +31,51 @@ public class Config {
     }
 
     /**
-     * Enumeration of possible features of Countly SDK
+     * Enumeration of Countly SDK features
      */
     public enum Feature implements Feat {
-        AutoSessionTracking(1),
-        Crash(1 << 1),
-        Push(1 << 2),
-        Attribution(1 << 3),
-        StarRating(1 << 4),
-        AutoViewTracking(1 << 5),
-        PerformanceMonitoring(1 << 6);
+        Events(1),
+        Sessions(1 << 1),
+        CrashReporting(1 << 2),
+        Push(1 << 3),
+        Attribution(1 << 4),
+        StarRating(1 << 5),
+        AutoViewTracking(1 << 6),
+        AutoSessionTracking(1 << 7),
+        UserProfiles(1 << 8),
+        PerformanceMonitoring(1 << 9);
 
         private final int index;
 
         Feature(int index){ this.index = index; }
 
         public int getIndex(){ return index; }
+
+        public static Feature byIndex(int index) {
+            if (index == Events.index) {
+                return Events;
+            } else if (index == Sessions.index) {
+                return Sessions;
+            } else if (index == CrashReporting.index) {
+                return CrashReporting;
+            } else if (index == Push.index) {
+                return Push;
+            } else if (index == Attribution.index) {
+                return Attribution;
+            } else if (index == StarRating.index) {
+                return StarRating;
+            } else if (index == AutoViewTracking.index) {
+                return AutoViewTracking;
+            } else if (index == AutoSessionTracking.index) {
+                return AutoSessionTracking;
+            } else if (index == UserProfiles.index) {
+                return UserProfiles;
+            } else if (index == PerformanceMonitoring.index) {
+                return PerformanceMonitoring;
+            } else {
+                return null;
+            }
+        }
     }
 
     public enum InternalFeature implements Feat {
@@ -188,7 +217,7 @@ public class Config {
      * Strategy for device id generation
      */
     public enum DeviceIdStrategy {
-        OPEN_UDID(0),
+        ANDROID_ID(0),
         ADVERTISING_ID(1),
         INSTANCE_ID(2),
         CUSTOM_ID(10);
@@ -202,7 +231,7 @@ public class Config {
         public int getIndex(){ return index; }
 
         public static DeviceIdStrategy fromIndex(int index){
-            if (index == OPEN_UDID.index) { return OPEN_UDID; }
+            if (index == ANDROID_ID.index) { return ANDROID_ID; }
             if (index == ADVERTISING_ID.index) { return ADVERTISING_ID; }
             if (index == INSTANCE_ID.index) { return INSTANCE_ID; }
             if (index == CUSTOM_ID.index) { return CUSTOM_ID; }
@@ -252,7 +281,7 @@ public class Config {
     /**
      * Device id generation strategy
      */
-    protected DeviceIdStrategy deviceIdStrategy = DeviceIdStrategy.OPEN_UDID;
+    protected DeviceIdStrategy deviceIdStrategy = DeviceIdStrategy.ANDROID_ID;
 
     /**
      * Allow fallback from specified device id strategy to any other available strategy
@@ -372,7 +401,7 @@ public class Config {
     protected boolean testMode = false;
 
     /**
-     * When not {@code null}, more than {@code 0} and {@link Feature#Crash} is enabled,
+     * When not {@code null}, more than {@code 0} and {@link Feature#CrashReporting} is enabled,
      * Countly watches main thread for unresponsiveness.
      * When main thread doesn't respond for time more than this property in seconds,
      * SDK reports ANR crash back to Countly server.
@@ -401,6 +430,12 @@ public class Config {
      * String-String map with custom parameters sent in each request, persistent.
      */
     protected Map<String, String> persistentParams = null;
+
+    /**
+     * Requires GDPR-compliance calls.
+     * If {@code true}, SDK waits for corresponding consent calls before recording any data.
+     */
+    protected boolean requiresConsent = false;
 
     /**
      * The only Config constructor.
@@ -481,7 +516,7 @@ public class Config {
      * - {@link DeviceIdStrategy#INSTANCE_ID} to use InstanceID if available (requires Play Services).
      * Falls back to OpenUDID if no Play Services available, default.
      *
-     * - {@link DeviceIdStrategy#OPEN_UDID} to use OpenUDID derivative - unique, semi-persistent
+     * - {@link DeviceIdStrategy#ANDROID_ID} to use OpenUDID derivative - unique, semi-persistent
      * (stored in {@link android.content.SharedPreferences}).
      *
      * - {@link DeviceIdStrategy#ADVERTISING_ID} to use com.google.android.gms.ads.identifier.AdvertisingIdClient
@@ -826,7 +861,7 @@ public class Config {
     }
 
     /**
-     * Change timeout when ANR is detected. ANR reporting is enabled by default once you enable {@link Feature#Crash}.
+     * Change timeout when ANR is detected. ANR reporting is enabled by default once you enable {@link Feature#CrashReporting}.
      * Default timeout is 5 seconds.
      * To disable ANR reporting, use {@link #disableANRCrashReporting()}.
      *
@@ -900,6 +935,18 @@ public class Config {
             }
             moduleOverrides.put(feature, cls);
         }
+        return this;
+    }
+
+    /**
+     * Enable GDPR compliance by disallowing SDK to record any data until corresponding consent
+     * calls are made.
+     *
+     * @param requiresConsent {@code true} to enable GDPR compliance
+     * @return {@code this} instance for method chaining
+     */
+    public Config setRequiresConsent(boolean requiresConsent) {
+        this.requiresConsent = requiresConsent;
         return this;
     }
 
@@ -1098,6 +1145,14 @@ public class Config {
      */
     public Class<? extends Module> getModuleOverride(Feature feature) {
         return moduleOverrides == null ? null : moduleOverrides.get(feature);
+    }
+
+    /**
+     * Getter for {@link #requiresConsent}
+     * @return {@link #requiresConsent} value
+     */
+    public boolean requiresConsent() {
+        return requiresConsent;
     }
 }
 

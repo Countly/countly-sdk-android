@@ -164,6 +164,37 @@ public class Countly extends CountlyLifecycle {
         }
     }
 
+    /**
+     * Consent function which enables corresponding features of SDK with respect to GDPR.
+     * Activates corresponding SDK features.
+     * Works only when {@link Config#requiresConsent} is {@code true}.
+     *
+     * @param context Context to run in
+     * @param features features to turn on
+     */
+    public static void onConsent(Context context, Config.Feature... features) {
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+        } else {
+            instance.core.onConsent(new ContextImpl(context), features);
+        }
+    }
+
+    /**
+     * Consent function which disables corresponding features of SDK with respect to GDPR.
+     * Gracefully deactivates corresponding SDK features. Closes session if needed.
+     * Works only when {@link Config#requiresConsent} is {@code true}.
+     *
+     * @param context Context to run in
+     * @param features features to turn offf
+     */
+    public static void onConsentRemoval(Context context, Config.Feature... features) {
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+        } else {
+            instance.core.onConsentRemoval(new ContextImpl(context), features);
+        }
+    }
 
     /*
      * ------------------------------------ Legacy methods -----------------------------------------

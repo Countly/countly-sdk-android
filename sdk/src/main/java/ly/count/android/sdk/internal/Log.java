@@ -103,6 +103,11 @@ public class Log extends ModuleBase {
         }
     }
 
+    @Override
+    public Config.Feature getFeature() {
+        return null;
+    }
+
     static void deinit() {
         instance = null;
     }

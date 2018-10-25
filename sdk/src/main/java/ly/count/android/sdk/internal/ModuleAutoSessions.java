@@ -12,8 +12,8 @@ import ly.count.android.sdk.Config;
  * last {@link android.app.Activity} is stopped and updating it each {@link ly.count.android.sdk.Config#sendUpdateEachSeconds}.
  */
 
-public class ModuleSessions extends ModuleBase {
-    private static final Log.Module L = Log.module("ModuleSessions");
+public class ModuleAutoSessions extends ModuleBase {
+    private static final Log.Module L = Log.module("ModuleAutoSessions");
 
     private int activityCount;
     private int updateInterval = 0;
@@ -28,7 +28,7 @@ public class ModuleSessions extends ModuleBase {
         super.init(config);
         if (!config.isFeatureEnabled(Config.Feature.AutoSessionTracking)) {
             // should never happen actually
-            throw new IllegalStateException("ModuleSessions must not be initialized when AutoSessionTracking is off");
+            throw new IllegalStateException("ModuleAutoSessions must not be initialized when AutoSessionTracking is off");
         }
         updateInterval = config.getSendUpdateEachSeconds();
     }
@@ -115,5 +115,10 @@ public class ModuleSessions extends ModuleBase {
                 Core.instance.getSession().end();
             }
         }
+    }
+
+    @Override
+    public Config.Feature getFeature() {
+        return Config.Feature.AutoSessionTracking;
     }
 }

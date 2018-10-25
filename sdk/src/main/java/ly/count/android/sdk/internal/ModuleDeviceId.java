@@ -36,10 +36,10 @@ public class ModuleDeviceId extends ModuleBase {
         super.init(config);
         this.config = config;
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID && !Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME) && !config.isDeviceIdFallbackAllowed()) {
-            throw new IllegalArgumentException("Cannot use ADVERTISING_ID device id strategy since there is no " + ADVERTISING_ID_CLIENT_CLASS_NAME + " in class path while device id fallback is not allowed");
+            Log.wtf("Cannot use ADVERTISING_ID device id strategy since there is no " + ADVERTISING_ID_CLIENT_CLASS_NAME + " in class path while device id fallback is not allowed");
         }
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.INSTANCE_ID && !Utils.reflectiveClassExists(INSTANCE_ID_CLASS_NAME) && !config.isDeviceIdFallbackAllowed()) {
-            throw new IllegalArgumentException("Cannot use INSTANCE_ID device id strategy since there is no " + INSTANCE_ID_CLASS_NAME + " in class path while device id fallback is not allowed");
+            Log.wtf("Cannot use INSTANCE_ID device id strategy since there is no " + INSTANCE_ID_CLASS_NAME + " in class path while device id fallback is not allowed");
         }
     }
 
@@ -152,6 +152,11 @@ public class ModuleDeviceId extends ModuleBase {
                 }
             });
         }
+    }
+
+    @Override
+    public Config.Feature getFeature() {
+        return null;
     }
 
     /**
@@ -301,12 +306,9 @@ public class ModuleDeviceId extends ModuleBase {
         L.i("Generating " + holder.strategy + " / " + holder.realm);
 
         switch (holder.strategy) {
-            case OPEN_UDID:
-                // Courtesy OpenUDID https://github.com/vieux/OpenUDID
-
-                String id = Core.generateOpenUDID(ctx);
-
-                return new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, id);
+            case ANDROID_ID:
+                String id = Core.generateAndroidID(ctx);
+                return new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, id);
 
             case ADVERTISING_ID:
                 if (Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME)) {
@@ -315,13 +317,13 @@ public class ModuleDeviceId extends ModuleBase {
                         L.i("Got ADVERTISING_ID info");
                         if (info == null || info == Boolean.FALSE) {
                             L.d("AdvertisingIdClient.getAdvertisingIdInfo() returned " + info);
-                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                         } else {
                             L.d("calling getId");
                             Object idObj = Utils.reflectiveCall(info.getClass().getCanonicalName(), info, "getId");
                             L.d("AdvertisingIdClient.getAdvertisingIdInfo().getId() returned " + idObj);
                             if (idObj == null || !(idObj instanceof String)) {
-                                return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                                return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                             } else {
                                 return new Config.DID(holder.realm, Config.DeviceIdStrategy.ADVERTISING_ID, (String) idObj);
                             }
@@ -336,16 +338,16 @@ public class ModuleDeviceId extends ModuleBase {
                         } else if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesNotAvailableException")) {
                             // non-recoverable, fallback to OpenUDID
                             L.i("Advertising ID cannot be determined because Play Services are not available");
-                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                         } else {
                             // unexpected
                             L.w("Couldn't get advertising ID", t);
-                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                         }
                     }
                 }  else {
-                    L.i("ADVERTISING_ID is not available " + (fallbackAllowed ? ", checking OPEN_UDID" : "fallback is not allowed"));
-                    return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                    L.i("ADVERTISING_ID is not available " + (fallbackAllowed ? ", checking ANDROID_ID" : "fallback is not allowed"));
+                    return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                 }
 
             case INSTANCE_ID:
@@ -354,7 +356,7 @@ public class ModuleDeviceId extends ModuleBase {
                         Object instance = Utils.reflectiveCall(INSTANCE_ID_CLASS_NAME, null, "getInstance");
                         if (instance == null || instance == Boolean.FALSE) {
                             L.d("InstanceId.getInstance() returned " + instance);
-                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                         } else {
                             Object idObj;
                             if (holder.realm == Config.DeviceIdRealm.DEVICE_ID) {
@@ -364,7 +366,7 @@ public class ModuleDeviceId extends ModuleBase {
                             }
                             if (idObj == null || !(idObj instanceof String)) {
                                 L.d("InstanceId.getInstance().getId() returned " + idObj);
-                                return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                                return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                             } else {
                                 return new Config.DID(holder.realm, Config.DeviceIdStrategy.INSTANCE_ID, (String) idObj);
                             }
@@ -378,16 +380,16 @@ public class ModuleDeviceId extends ModuleBase {
                         } else if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesNotAvailableException")) {
                             // non-recoverable, fallback to OpenUDID
                             L.i("Advertising ID cannot be determined because Play Services are not available");
-                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                         } else {
                             // unexpected
                             L.w("Couldn't get advertising ID", t);
-                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                            return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                         }
                     }
                 }  else {
-                    L.i("INSTANCE_ID is not available " + (fallbackAllowed ? ", checking OPEN_UDID" : "fallback is not allowed"));
-                    return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.OPEN_UDID, null), true) : null;
+                    L.i("INSTANCE_ID is not available " + (fallbackAllowed ? ", checking ANDROID_ID" : "fallback is not allowed"));
+                    return fallbackAllowed ? acquireIdSync(ctx, new Config.DID(holder.realm, Config.DeviceIdStrategy.ANDROID_ID, null), true) : null;
                 }
 
         }

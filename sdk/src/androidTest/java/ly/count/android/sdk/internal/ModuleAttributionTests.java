@@ -63,7 +63,7 @@ public class ModuleAttributionTests extends BaseTests {
         Assert.assertNotNull(aid);
         Assert.assertNotNull(aid.id);
         Assert.assertFalse(aid.id.equals(did.id));
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.OPEN_UDID);
+        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
         Assert.assertEquals(aid.strategy, Config.DeviceIdStrategy.ADVERTISING_ID);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(aid), isNull(Config.DID.class));
@@ -99,7 +99,7 @@ public class ModuleAttributionTests extends BaseTests {
         ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ANDROID_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
         moduleAttribution = module(ModuleAttribution.class, false);
 
@@ -115,7 +115,7 @@ public class ModuleAttributionTests extends BaseTests {
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ANDROID_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
         moduleAttribution = module(ModuleAttribution.class, false);
 

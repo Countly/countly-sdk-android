@@ -18,7 +18,7 @@ buildscript {
 
 android {
     compileSdkVersion 26
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         applicationId "ly.count.android.demo"

@@ -6,9 +6,6 @@ import android.os.IBinder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
 
@@ -130,11 +127,11 @@ public class CountlyService extends android.app.Service {
                 Config.DID old = null;
                 boolean success = true;
                 if (intent.hasExtra(PARAM_ID)) {
-                    id = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, null);
+                    id = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.ANDROID_ID, null);
                     success = id.restore(intent.getByteArrayExtra(PARAM_ID));
                 }
                 if (intent.hasExtra(PARAM_OLD_ID)) {
-                    old = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.OPEN_UDID, null);
+                    old = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.ANDROID_ID, null);
                     success = success && !old.restore(intent.getByteArrayExtra(PARAM_OLD_ID));
                 }
                 if (success) {

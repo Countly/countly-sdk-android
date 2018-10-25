@@ -168,4 +168,10 @@ public interface Module {
      * @param ctx {@link Context} with only context set
      */
     void onConfigurationChanged(Context ctx);
+
+    /**
+     *
+     * @return
+     */
+    Config.Feature getFeature();
 }

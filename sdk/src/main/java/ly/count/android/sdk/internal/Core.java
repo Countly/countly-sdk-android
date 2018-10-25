@@ -323,7 +323,7 @@ public class Core extends CoreModules {
         }
     }
 
-    public static String generateOpenUDID(Context ctx) {
+    public static String generateAndroidID(Context ctx) {
         @SuppressLint("HardwareIds")
         String id = Settings.Secure.getString(ctx.getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
 
@@ -438,7 +438,7 @@ public class Core extends CoreModules {
      * @param logs optional logs string (\n-separated lines of logs) or comment about this crash
      */
     public static void onCrash(Context ctx, Throwable throwable, boolean fatal, String name, Map<String, String> segments, String... logs) {
-        ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.Crash);
+        ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.CrashReporting);
         if (module != null) {
             module.onCrash(ctx, throwable, fatal, name, segments, logs);
         }
