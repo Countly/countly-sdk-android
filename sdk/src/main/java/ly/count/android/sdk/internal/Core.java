@@ -265,12 +265,12 @@ public class Core extends CoreModules {
     }
 
     /**
-     * Notify modules about {@link ly.count.android.sdk.Config.DID} change: adding, change or removal
+     * Notify modules about {@link Config.DID} change: adding, change or removal
      * and store {@link InternalConfig} changes if needed
      *
      * @param ctx Context to run in
-     * @param id new id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if removing it
-     * @param old old id of specified {@link ly.count.android.sdk.Config.DID#realm} or null if there were no id with such realm
+     * @param id new id of specified {@link Config.DID#realm} or null if removing it
+     * @param old old id of specified {@link Config.DID#realm} or null if there were no id with such realm
      */
     public static void onDeviceId(Context ctx, Config.DID id, Config.DID old) {
         L.d((instance == null || instance.config == null ? "null" : instance.config.isLimited() ? "limited" : "non-limited") + " onDeviceId " + id + ", old " + old);
@@ -352,14 +352,14 @@ public class Core extends CoreModules {
     // ------------------------ Specific module-related methods ------------------------------------
 
     /**
-     * Acquire a specific {@link ly.count.android.sdk.Config.DID} for parameters
-     * specified in {@code holder} ({@link ly.count.android.sdk.Config.DID#strategy},
-     * {@link ly.count.android.sdk.Config.DID#realm}).
+     * Acquire a specific {@link Config.DID} for parameters
+     * specified in {@code holder} ({@link Config.DID#strategy},
+     * {@link Config.DID#realm}).
      *
-     * @param holder {@link ly.count.android.sdk.Config.DID} instance with parameters
-     * @param fallbackAllowed whether fallback to other {@link ly.count.android.sdk.Config.DID#strategy} is allowed or not
+     * @param holder {@link Config.DID} instance with parameters
+     * @param fallbackAllowed whether fallback to other {@link Config.DID#strategy} is allowed or not
      * @param callback callback to run (in {@link ModuleDeviceId} thread) when done, can be null
-     * @return Future which resolves to {@link ly.count.android.sdk.Config.DID} instance if succeeded or to null if not
+     * @return Future which resolves to {@link Config.DID} instance if succeeded or to null if not
      */
     Future<Config.DID> acquireId(Context ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
         return ((ModuleDeviceId)module(Config.InternalFeature.DeviceId)).acquireId(ctx, holder, fallbackAllowed, callback);

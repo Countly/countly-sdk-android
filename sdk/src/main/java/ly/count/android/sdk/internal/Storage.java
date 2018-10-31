@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import ly.count.sdk.internal.Storable;
+import ly.count.sdk.internal.Transformer;
+
 /**
  * Storing and retrieving data from internal storage of SDK.
  * Thread safety is based on single thread of execution - only one thread works with storage at a time

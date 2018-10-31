@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ly.count.sdk.internal.JSONable;
+
 /**
  * Object for application/x-www-form-urlencoded string building and manipulation
  */

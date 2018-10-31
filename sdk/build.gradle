@@ -79,7 +79,9 @@ def powermockVersion = "1.7.1"
 
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
+    api project(':core')
 
+    androidTestImplementation project(':core')
     androidTestImplementation 'com.android.support.test:runner:0.5'
     androidTestImplementation 'com.android.support.test:rules:0.5'
     androidTestImplementation "com.android.support:support-annotations:25.1.0"

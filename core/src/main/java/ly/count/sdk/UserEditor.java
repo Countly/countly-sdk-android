@@ -1,4 +1,4 @@
-package ly.count.android.sdk;
+package ly.count.sdk;
 
 /**
  * Editor object for {@link User} modifications. Changes applied only after {@link #commit()} call.

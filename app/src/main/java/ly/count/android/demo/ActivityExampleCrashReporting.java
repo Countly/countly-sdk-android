@@ -8,9 +8,10 @@ import java.io.IOException;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.internal.ModuleCrash;
+import ly.count.android.sdk.Config;
 
 /**
- * Demo Activity explaining {@link ly.count.android.sdk.Config.Feature#CrashReporting}. Each {@code onClick}
+ * Demo Activity explaining {@link Config.Feature#CrashReporting}. Each {@code onClick}
  * method crashes application in a specific way. Countly is set up to report any crashes
  * occurring to the server, so after several seconds these crashes should appear on your
  * Countly dashboard.

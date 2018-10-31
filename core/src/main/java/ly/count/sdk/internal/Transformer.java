@@ -1,10 +1,10 @@
-package ly.count.android.sdk.internal;
+package ly.count.sdk.internal;
 
 /**
  * Interface for transforming date in {@link Storage}
  */
 
-interface Transformer {
+public interface Transformer {
     /**
      * Transform {@code data} and return new {@code byte[]} if necessary. In case no transformation
      * needed, return {@code null}.

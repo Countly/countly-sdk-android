@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import java.util.Set;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Session;
+import ly.count.sdk.Session;
 
 /**
  * Created by artem on 05/01/2017.

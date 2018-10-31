@@ -1,8 +1,8 @@
 package ly.count.android.sdk.internal;
 
-import ly.count.android.sdk.Event;
-import ly.count.android.sdk.Session;
-import ly.count.android.sdk.View;
+import ly.count.sdk.Event;
+import ly.count.sdk.Session;
+import ly.count.sdk.View;
 
 /**
  * View implementation for Countly Views plugin

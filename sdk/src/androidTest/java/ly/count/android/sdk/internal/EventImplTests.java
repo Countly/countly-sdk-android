@@ -13,7 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Event;
+import ly.count.sdk.Event;
+import ly.count.android.sdk.internal.EventImpl;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 

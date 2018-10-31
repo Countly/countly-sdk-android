@@ -1,10 +1,7 @@
 package ly.count.android.sdk;
 
-import android.support.test.runner.AndroidJUnit4;
-
 import org.junit.After;
 import org.junit.Before;
-import org.junit.runner.RunWith;
 
 import static org.mockito.Mockito.validateMockitoUsage;
 

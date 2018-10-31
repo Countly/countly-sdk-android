@@ -13,10 +13,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Event;
-import ly.count.android.sdk.Session;
-import ly.count.android.sdk.User;
-import ly.count.android.sdk.View;
+import ly.count.sdk.Event;
+import ly.count.sdk.Session;
+import ly.count.sdk.User;
+import ly.count.sdk.View;
+import ly.count.sdk.internal.Storable;
 
 /**
  * This class represents session concept, that is one indivisible usage occasion of your application.

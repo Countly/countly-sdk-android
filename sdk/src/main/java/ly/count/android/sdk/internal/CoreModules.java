@@ -110,7 +110,7 @@ public class CoreModules extends CoreStorage {
 
     /**
      * Create instances of {@link Module}s required by {@link #config}.
-     * Uses {@link #moduleMappings} for {@link ly.count.android.sdk.Config.Feature} / {@link ly.count.android.sdk.Config.InternalFeature}
+     * Uses {@link #moduleMappings} for {@link Config.Feature} / {@link Config.InternalFeature}
      * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
      * @throws IllegalArgumentException in case some {@link Module} finds {@link #config} inconsistent.

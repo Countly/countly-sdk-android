@@ -9,7 +9,7 @@ import ly.count.android.sdk.Config;
 /**
  * Sessions module responsible for default sessions handling: starting a session when
  * first {@link android.app.Activity} is started, stopping it when
- * last {@link android.app.Activity} is stopped and updating it each {@link ly.count.android.sdk.Config#sendUpdateEachSeconds}.
+ * last {@link android.app.Activity} is stopped and updating it each {@link Config#sendUpdateEachSeconds}.
  */
 
 public class ModuleAutoSessions extends ModuleBase {
@@ -20,7 +20,7 @@ public class ModuleAutoSessions extends ModuleBase {
     private ScheduledExecutorService executor = null;
 
     /**
-     * @throws IllegalArgumentException when {@link ly.count.android.sdk.Config.Feature#AutoSessionTracking}
+     * @throws IllegalArgumentException when {@link Config.Feature#AutoSessionTracking}
      * is off since this module is for a case when it's on
      */
     @Override

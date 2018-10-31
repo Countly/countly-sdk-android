@@ -4,6 +4,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.charset.Charset;
 
+import ly.count.sdk.internal.Storable;
+
 /**
  * Class which encapsulates request logic and manipulation: building, status of sending, etc.
  */

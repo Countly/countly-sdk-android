@@ -4,11 +4,10 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import java.util.HashMap;
-
+import ly.count.sdk.User;
+import ly.count.sdk.UserEditor;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.User;
-import ly.count.android.sdk.UserEditor;
+
 
 /**
  * Demo Activity for User Profile handling:

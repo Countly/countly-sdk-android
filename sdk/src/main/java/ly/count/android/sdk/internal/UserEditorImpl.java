@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import ly.count.android.sdk.User;
-import ly.count.android.sdk.UserEditor;
+import ly.count.sdk.User;
+import ly.count.sdk.UserEditor;
 
 class UserEditorImpl implements UserEditor {
     private static final Log.Module L = Log.module("UserEditorImpl");

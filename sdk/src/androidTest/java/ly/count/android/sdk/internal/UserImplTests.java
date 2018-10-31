@@ -10,11 +10,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 
-import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.User;
-
-import static android.support.test.InstrumentationRegistry.getContext;
+import ly.count.sdk.User;
 
 @RunWith(AndroidJUnit4.class)
 public class UserImplTests extends BaseTests {

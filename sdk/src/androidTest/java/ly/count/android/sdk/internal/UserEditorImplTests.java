@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import ly.count.android.sdk.User;
+import ly.count.sdk.User;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 

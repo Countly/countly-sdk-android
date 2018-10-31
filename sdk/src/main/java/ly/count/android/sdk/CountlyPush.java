@@ -29,6 +29,7 @@ import java.util.Set;
 import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.Tasks;
 import ly.count.android.sdk.internal.Utils;
+import ly.count.sdk.Session;
 
 /**
  * Just a public holder class for Messaging-related display logic, listeners, managers, etc.

@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
 import ly.count.android.sdk.Config;
+
 import static ly.count.android.sdk.Config.LoggingLevel.*;
 import static org.mockito.Mockito.*;
 

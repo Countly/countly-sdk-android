@@ -1,4 +1,4 @@
-package ly.count.android.sdk.internal;
+package ly.count.sdk.internal;
 
 /**
  * Serialization interface.

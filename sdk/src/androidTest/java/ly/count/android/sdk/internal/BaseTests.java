@@ -1,7 +1,6 @@
 package ly.count.android.sdk.internal;
 
 import android.app.Application;
-import android.content.Intent;
 
 import org.junit.After;
 import org.junit.Before;
@@ -11,7 +10,6 @@ import org.powermock.reflect.Whitebox;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Countly;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 import static android.content.Context.MODE_PRIVATE;

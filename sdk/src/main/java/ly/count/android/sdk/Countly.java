@@ -14,6 +14,12 @@ import java.util.Map;
 import ly.count.android.sdk.internal.ContextImpl;
 import ly.count.android.sdk.internal.Core;
 import ly.count.android.sdk.internal.Utils;
+import ly.count.sdk.Crash;
+import ly.count.sdk.CrashProcessor;
+import ly.count.sdk.Event;
+import ly.count.sdk.Session;
+import ly.count.sdk.User;
+import ly.count.sdk.UserEditor;
 
 /**
  * Main Countly SDK API class.
@@ -35,7 +41,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Returns active {@link Session} if any or creates new {@link Session} instance.
      *
-     * NOTE: {@link Session} instances can expire, for example when {@link ly.count.android.sdk.Config.DID} changes.
+     * NOTE: {@link Session} instances can expire, for example when {@link Config.DID} changes.
      * {@link Session} also holds application context.
      * So either do not store {@link Session} instances in any static variables and use this method or {@link #getSession()} every time you need it,
      * or check {@link Session#isActive()} before using it.
@@ -53,7 +59,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Returns active {@link Session} if any or {@code null} otherwise.
      *
-     * NOTE: {@link Session} instances can expire, for example when {@link ly.count.android.sdk.Config.DID} changes.
+     * NOTE: {@link Session} instances can expire, for example when {@link Config.DID} changes.
      * {@link Session} also holds application context.
      * So either do not store {@link Session} instances in any static variables and use this method or {@link #session(Context)} every time you need it,
      * or check {@link Session#isActive()} before using it.
@@ -116,7 +122,7 @@ public class Countly extends CountlyLifecycle {
 
     /**
      * Login function to set device (user) id on Countly server to the string specified here.
-     * Closes current session, then starts new one automatically if {@link ly.count.android.sdk.Config.Feature#AutoSessionTracking} is on, acquires device id.
+     * Closes current session, then starts new one automatically if {@link Config.Feature#AutoSessionTracking} is on, acquires device id.
      *
      * @param context Context to run in
      * @param id new user / device id string, cannot be empty

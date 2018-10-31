@@ -13,8 +13,9 @@ import org.powermock.reflect.Whitebox;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Event;
-import ly.count.android.sdk.View;
+import ly.count.sdk.Event;
+import ly.count.sdk.View;
+import ly.count.android.sdk.internal.ViewImpl;
 
 import static org.mockito.Mockito.mock;
 

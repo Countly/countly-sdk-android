@@ -3,8 +3,7 @@ package ly.count.android.sdk.internal;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Session;
-import ly.count.android.sdk.User;
+import ly.count.sdk.User;
 
 /**
  * Centralized place for all requests construction & handling.

@@ -1,4 +1,4 @@
-package ly.count.android.sdk;
+package ly.count.sdk;
 
 import java.util.List;
 import java.util.Map;

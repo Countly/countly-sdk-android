@@ -10,8 +10,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import ly.count.android.sdk.User;
-import ly.count.android.sdk.UserEditor;
+import ly.count.sdk.User;
+import ly.count.sdk.UserEditor;
+import ly.count.sdk.internal.Storable;
 
 /**
  * Class for user profile data access & manipulation

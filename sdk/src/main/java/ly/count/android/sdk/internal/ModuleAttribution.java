@@ -103,7 +103,7 @@ public class ModuleAttribution extends ModuleBase {
     }
 
     /**
-     * Getting {@link ly.count.android.sdk.Config.DeviceIdRealm#ADVERTISING_ID} procedure.
+     * Getting {@link Config.DeviceIdRealm#ADVERTISING_ID} procedure.
      * Works in line with {@link Module#onDeviceId(Context, Config.DID, Config.DID)} in some cases.
      */
     @Override
@@ -141,7 +141,7 @@ public class ModuleAttribution extends ModuleBase {
     }
 
     /**
-     * Getting {@link ly.count.android.sdk.Config.DeviceIdRealm#ADVERTISING_ID} procedure.
+     * Getting {@link Config.DeviceIdRealm#ADVERTISING_ID} procedure.
      * Works in line with {@link #onContextAcquired(Context)}} in some cases.
      */
     @Override

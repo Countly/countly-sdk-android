@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Session;
-import ly.count.android.sdk.View;
+import ly.count.sdk.Session;
+import ly.count.sdk.View;
 
 /**
  * Views support

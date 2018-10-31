@@ -14,8 +14,6 @@ import java.util.List;
 
 import ly.count.android.sdk.Config;
 
-import static android.support.test.InstrumentationRegistry.getContext;
-
 @RunWith(AndroidJUnit4.class)
 public class CoreTests extends BaseTests {
     @Before

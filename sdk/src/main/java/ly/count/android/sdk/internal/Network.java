@@ -38,7 +38,7 @@ import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-import ly.count.android.sdk.*;
+import ly.count.sdk.User;
 
 import static ly.count.android.sdk.internal.Utils.CRLF;
 import static ly.count.android.sdk.internal.Utils.UTF8;

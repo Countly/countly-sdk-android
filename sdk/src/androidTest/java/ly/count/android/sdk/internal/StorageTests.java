@@ -4,16 +4,13 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.concurrent.Future;
 
-import ly.count.android.sdk.Config;
-
-import static android.support.test.InstrumentationRegistry.getContext;
+import ly.count.sdk.internal.Storable;
 
 @RunWith(AndroidJUnit4.class)
 public class StorageTests extends BaseTests {

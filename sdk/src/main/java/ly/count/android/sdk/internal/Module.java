@@ -8,7 +8,8 @@ import org.json.JSONObject;
 import java.util.Set;
 
 import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Session;
+import ly.count.sdk.Session;
+import ly.count.sdk.internal.Storable;
 
 /**
  * Module of Countly SDK.

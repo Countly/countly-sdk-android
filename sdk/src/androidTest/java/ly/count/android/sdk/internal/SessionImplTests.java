@@ -19,9 +19,10 @@ import java.util.Map;
 
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.Crash;
-import ly.count.android.sdk.CrashProcessor;
-import ly.count.android.sdk.Event;
+import ly.count.sdk.Crash;
+import ly.count.sdk.CrashProcessor;
+import ly.count.sdk.Event;
+import ly.count.android.sdk.internal.EventImpl;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplTests extends BaseTests {

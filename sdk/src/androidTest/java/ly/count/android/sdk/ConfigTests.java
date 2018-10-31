@@ -309,13 +309,16 @@ public class ConfigTests extends BaseTests {
     @Test
     public void enumFeature_values() {
         Config.Feature[] features = Config.Feature.values();
-        Assert.assertEquals(Config.Feature.AutoSessionTracking, features[0]);
-        Assert.assertEquals(Config.Feature.CrashReporting, features[1]);
-        Assert.assertEquals(Config.Feature.Push, features[2]);
-        Assert.assertEquals(Config.Feature.Attribution, features[3]);
-        Assert.assertEquals(Config.Feature.StarRating, features[4]);
-        Assert.assertEquals(Config.Feature.AutoViewTracking, features[5]);
-        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[6]);
+        Assert.assertEquals(Config.Feature.Events, features[0]);
+        Assert.assertEquals(Config.Feature.Sessions, features[1]);
+        Assert.assertEquals(Config.Feature.CrashReporting, features[2]);
+        Assert.assertEquals(Config.Feature.Push, features[3]);
+        Assert.assertEquals(Config.Feature.Attribution, features[4]);
+        Assert.assertEquals(Config.Feature.StarRating, features[5]);
+        Assert.assertEquals(Config.Feature.AutoViewTracking, features[6]);
+        Assert.assertEquals(Config.Feature.AutoSessionTracking, features[7]);
+        Assert.assertEquals(Config.Feature.UserProfiles, features[8]);
+        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[9]);
     }
 
     @Test

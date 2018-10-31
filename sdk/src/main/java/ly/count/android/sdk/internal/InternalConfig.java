@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import ly.count.android.sdk.Config;
+import ly.count.sdk.internal.Storable;
 
 import static ly.count.android.sdk.Config.DeviceIdStrategy.INSTANCE_ID;
 
@@ -26,7 +27,7 @@ final class InternalConfig extends Config implements Storable {
     /**
      * Logger class
      */
-    private Class<? extends Log.Logger> loggerClass = Log.AndroidLogger.class;
+    private Class<? extends Log.Logger> loggerClass = AndroidLogger.class;
 
     /**
      * Running in limited mode, started by itself rather than by developer
@@ -34,7 +35,7 @@ final class InternalConfig extends Config implements Storable {
     private boolean limited = false;
 
     /**
-     * {@link ly.count.android.sdk.Config.DID} instances generated from Countly SDK (currently maximum 2: Countly device id + FCM).
+     * {@link Config.DID} instances generated from Countly SDK (currently maximum 2: Countly device id + FCM).
      * Stored to be able to refresh them.
      */
     private List<DID> dids = new ArrayList<>();

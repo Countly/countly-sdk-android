@@ -4,9 +4,6 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import ly.count.android.sdk.Countly;
 
 /**

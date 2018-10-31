@@ -1,4 +1,4 @@
-package ly.count.android.sdk.internal;
+package ly.count.sdk.internal;
 
 /**
  * Basic interface for {@link ly.count.android.sdk.internal.Params.Arr}

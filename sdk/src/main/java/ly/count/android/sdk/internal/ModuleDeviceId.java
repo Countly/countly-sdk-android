@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 import ly.count.android.sdk.Config;
+import ly.count.sdk.internal.Transformer;
 
 /**
  * Main device id manipulation class.
@@ -184,8 +185,8 @@ public class ModuleDeviceId extends ModuleBase {
      * Just a wrapper around {@link Core#sendToService(Context, int, Map)} for {@link CountlyService#CMD_DEVICE_ID} case
      *
      * @param ctx Context to run in
-     * @param id new {@link ly.count.android.sdk.Config.DID} if any
-     * @param old old {@link ly.count.android.sdk.Config.DID} if any
+     * @param id new {@link Config.DID} if any
+     * @param old old {@link Config.DID} if any
      */
     private void sendDeviceIdToService(Context ctx, Config.DID id, Config.DID old) {
         L.d("Sending device id to service: " + id + ", was " + old);
@@ -290,7 +291,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param ctx Context to run in
      * @param holder DID object which holds strategy and possibly other info for id generation
      * @param fallbackAllowed whether to automatically fallback to any available alternative or not
-     * @return {@link ly.count.android.sdk.Config.DID} instance with an id
+     * @return {@link Config.DID} instance with an id
      */
     public Config.DID acquireIdSync(final Context ctx, final Config.DID holder, final boolean fallbackAllowed) {
         if (testSleep > 0) {

@@ -12,8 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import ly.count.android.sdk.CountlyPush;
-import ly.count.android.sdk.Crash;
+import ly.count.sdk.Crash;
+import ly.count.sdk.internal.Storable;
 
 /**
  * Crash-encapsulating class

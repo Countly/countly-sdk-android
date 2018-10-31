@@ -1,7 +1,5 @@
 package ly.count.android.sdk.internal;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -10,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import ly.count.android.sdk.Config;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.CrashProcessor;
+import ly.count.sdk.CrashProcessor;
 
 /**
  * Crash reporting functionality

@@ -21,24 +21,7 @@ public class Log extends ModuleBase {
         void wtf(String message, Throwable throwable);
     }
 
-    static class AndroidLogger implements Logger {
-        private String tag;
 
-        public AndroidLogger(String tag) {
-            this.tag = tag;
-        }
-
-        @Override public void d(String message) { android.util.Log.d(tag, message); }
-        @Override public void d(String message, Throwable throwable) { android.util.Log.d(tag, message, throwable); }
-        @Override public void i(String message) { android.util.Log.i(tag, message); }
-        @Override public void i(String message, Throwable throwable) { android.util.Log.i(tag, message, throwable); }
-        @Override public void w(String message) { android.util.Log.w(tag, message); }
-        @Override public void w(String message, Throwable throwable) { android.util.Log.w(tag, message, throwable); }
-        @Override public void e(String message) { android.util.Log.e(tag, message); }
-        @Override public void e(String message, Throwable throwable) { android.util.Log.e(tag, message, throwable); }
-        @Override public void wtf(String message) { android.util.Log.wtf(tag, message); }
-        @Override public void wtf(String message, Throwable throwable) { android.util.Log.wtf(tag, message, throwable); }
-    }
 
     static class SystemLogger implements Logger {
         private String tag;
@@ -117,7 +100,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#DEBUG} level logging
+     * {@link Config.LoggingLevel#DEBUG} level logging
      *
      * @param string string to log
      */
@@ -126,7 +109,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#DEBUG} level logging
+     * {@link Config.LoggingLevel#DEBUG} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -142,7 +125,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#INFO} level logging
+     * {@link Config.LoggingLevel#INFO} level logging
      *
      * @param string string to log
      */
@@ -151,7 +134,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#INFO} level logging
+     * {@link Config.LoggingLevel#INFO} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -167,7 +150,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#WARN} level logging
+     * {@link Config.LoggingLevel#WARN} level logging
      *
      * @param string string to log
      */
@@ -176,7 +159,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#WARN} level logging
+     * {@link Config.LoggingLevel#WARN} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -192,7 +175,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#ERROR} level logging
+     * {@link Config.LoggingLevel#ERROR} level logging
      *
      * @param string string to log
      */
@@ -201,7 +184,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#ERROR} level logging
+     * {@link Config.LoggingLevel#ERROR} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -217,7 +200,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#ERROR} (Android wtf) level logging which throws an
+     * {@link Config.LoggingLevel#ERROR} (Android wtf) level logging which throws an
      * exception when {@link Config#testMode} is enabled.
      *
      * @param string string to log
@@ -228,7 +211,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ly.count.android.sdk.Config.LoggingLevel#ERROR} (Android wtf) level logging which throws an
+     * {@link Config.LoggingLevel#ERROR} (Android wtf) level logging which throws an
      * exception when {@link Config#testMode} is enabled.
      *
      * @param string string to log

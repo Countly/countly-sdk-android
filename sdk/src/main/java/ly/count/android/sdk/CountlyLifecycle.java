@@ -78,7 +78,7 @@ public class CountlyLifecycle {
     public static boolean isInitialized() { return instance != null; }
 
     /**
-     * Returns whether Countly SDK has been given consent to record data for a particular {@link ly.count.android.sdk.Config.Feature} or not.
+     * Returns whether Countly SDK has been given consent to record data for a particular {@link Config.Feature} or not.
      *
      * @return true if consent has been given
      */

@@ -7,8 +7,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import ly.count.android.sdk.Event;
-import ly.count.android.sdk.Session;
+import ly.count.sdk.Event;
+import ly.count.sdk.Session;
+import ly.count.sdk.internal.JSONable;
 
 /**
  * Event base class implementation
