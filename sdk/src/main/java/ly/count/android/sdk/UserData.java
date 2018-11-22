@@ -322,6 +322,7 @@ public class UserData {
         if(custom == null)
             custom = new HashMap<>();
         custom.put(key, value);
+        isSynced = false;
     }
 
     /**
