@@ -4,8 +4,8 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 
-import ly.count.android.sdk.Config;
-import ly.count.android.sdk.Countly;
+import ly.count.sdk.Config;
+import ly.count.sdk.android.Countly;
 
 /**
  * Demo Application subclass with an example of how to initialize Countly SDK.

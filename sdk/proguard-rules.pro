@@ -16,4 +16,4 @@
 #   public *;
 #}
 
--keep class ly.count.android.sdk.** { *; }
+-keep class ly.count.sdk.android.sdk.** { *; }

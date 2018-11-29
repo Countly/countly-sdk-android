@@ -5,7 +5,7 @@ import android.util.Log;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
 
-import ly.count.android.sdk.CountlyPush;
+import ly.count.sdk.android.CountlyPush;
 
 /**
  * How-to module for listening for InstanceId changes

@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import ly.count.android.sdk.Countly;
+import ly.count.sdk.android.Countly;
 
 public class ActivityExampleCohorts extends Activity {
     private static final String COHORT_NAME = "ManualCohort";

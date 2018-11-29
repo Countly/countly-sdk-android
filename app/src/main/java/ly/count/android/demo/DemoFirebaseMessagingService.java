@@ -6,7 +6,7 @@ import android.util.Log;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import ly.count.android.sdk.CountlyPush;
+import ly.count.sdk.android.CountlyPush;
 
 /**
  * Demo service explaining Firebase Messaging notifications handling:

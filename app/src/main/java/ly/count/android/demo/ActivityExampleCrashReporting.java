@@ -6,9 +6,9 @@ import android.view.View;
 
 import java.io.IOException;
 
-import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.internal.ModuleCrash;
-import ly.count.android.sdk.Config;
+import ly.count.sdk.android.Countly;
+import ly.count.sdk.internal.ModuleCrash;
+import ly.count.sdk.Config;
 
 /**
  * Demo Activity explaining {@link Config.Feature#CrashReporting}. Each {@code onClick}

@@ -190,7 +190,7 @@ and override our service definition and remove `android:process` attribute from 
     
     <application ...>
         ...
-        <service android:name="ly.count.android.sdk.internal.CountlyService" tools:remove="android:process">
+        <service android:name="ly.count.sdk.android.internal.CountlyService" tools:remove="android:process">
         </service>
     </application>
 </manifest>
@@ -380,11 +380,11 @@ It does the same job as `Countly.session(Context).event(String)`.
 Example above results in new event being recorded in current session. Event won't be sent to the server
 right away. Instead, Countly SDK will wait until one of following happens:
 * `Config.sendUpdateEachSeconds` seconds passed since begin or last update request in case of automatic session control.
-* `Config.sendUpdateEachEvents` events have been already recorded and not sent yet.
+* `Config.eventsBufferSize` events have been already recorded and not sent yet.
 * `Session.update()` have been called by developer.
 * `Session.end()` have been called by developer or by Countly SDK in case of automatic session control.
 
-To send events right away you can set `Config.sendUpdateEachEvents` to `1` or call 
+To send events right away you can set `Config.eventsBufferSize` to `1` or call 
 `Countly.session(getApplicationContext()).update()` to manually send a request containing all 
 recent data: events, parameters, crashes, etc.
 
@@ -471,7 +471,7 @@ import android.util.Log;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.FirebaseInstanceIdService;
 
-import ly.count.android.sdk.CountlyPush;
+import ly.count.sdk.android.CountlyPush;
 
 /**
  * How-to module for listening for InstanceId changes
@@ -487,7 +487,7 @@ public class DemoFirebaseInstanceIdService extends FirebaseInstanceIdService {
 }
 ```
 
-Second service listens for incoming messages and calls `CountlyPush.displayMessage(context, Map)`
+Second service listens for incoming messages and calls `CountlyPush.displayMessage(ctx, Map)`
 in order to perform standard Countly logic for handling messages, that is show `Notification` if 
 app is in background or `Dialog` if app is in foreground. 
 
@@ -500,7 +500,7 @@ import android.util.Log;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import ly.count.android.sdk.CountlyPush;
+import ly.count.sdk.android.CountlyPush;
 
 public class DemoFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "DemoMessagingService";

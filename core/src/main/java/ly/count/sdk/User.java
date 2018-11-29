@@ -3,7 +3,7 @@ package ly.count.sdk;
 import java.util.Map;
 import java.util.Set;
 
-//import ly.count.android.sdk.internal.Device;
+//import ly.count.sdk.android.internal.Device;
 
 /**
  * User Profile object: stores profile and exposes stored data. Doesn't download profile from the

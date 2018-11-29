@@ -4,10 +4,10 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import ly.count.android.sdk.Countly;
+import ly.count.sdk.android.Countly;
 
 /**
- * Demo Activity explaining how to record {@link ly.count.android.sdk.Event}s.
+ * Demo Activity explaining how to record {@link ly.count.sdk.android.sdk.Event}s.
  */
 
 public class ActivityExampleCustomEvents extends Activity {

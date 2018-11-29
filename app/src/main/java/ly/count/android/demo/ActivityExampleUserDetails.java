@@ -6,7 +6,7 @@ import android.view.View;
 
 import ly.count.sdk.User;
 import ly.count.sdk.UserEditor;
-import ly.count.android.sdk.Countly;
+import ly.count.sdk.android.Countly;
 
 
 /**

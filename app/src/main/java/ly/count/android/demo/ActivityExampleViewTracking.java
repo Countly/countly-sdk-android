@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import ly.count.android.sdk.Countly;
+import ly.count.sdk.android.Countly;
 
 /**
  * Created by Arturs on 21.12.2016..

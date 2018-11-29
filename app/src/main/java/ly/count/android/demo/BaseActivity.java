@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.annotation.Nullable;
 
-import ly.count.android.sdk.Countly;
+import ly.count.sdk.android.Countly;
 
 /**
  * Example of how to easily make Countly SDK aware of {@link Activity}ies in your app.

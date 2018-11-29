@@ -65,7 +65,7 @@
         </activity>
 
         <!-- uncomment this to switch from 2-process model to 1-process model -->
-        <!--<service android:name="ly.count.android.sdk.internal.CountlyService" tools:remove="android:process">-->
+        <!--<service android:name="ly.count.sdk.android.internal.CountlyService" tools:remove="android:process">-->
         <!--</service>-->
 
         <service android:name=".DemoFirebaseMessagingService">

@@ -28,5 +28,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="core" exported="" />
+    <orderEntry type="library" exported="" scope="RUNTIME" name="Gradle: json-20180813" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="Gradle: json-20180813" level="project" />
   </component>
 </module>

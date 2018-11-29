@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import ly.count.android.sdk.Countly;
+import ly.count.sdk.android.Countly;
 
 public class MainActivity extends Activity {
     private boolean started = true;

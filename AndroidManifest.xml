@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="ly.count.android.sdk.messaging"
+    package="ly.count.sdk.android.sdk.messaging"
     android:versionCode="1"
     android:versionName="15.02" >
 
@@ -22,13 +22,13 @@
             android:value="@integer/google_play_services_version" />
 
         <activity
-            android:name="ly.count.android.sdk.messaging.ProxyActivity"
+            android:name="ly.count.sdk.android.sdk.messaging.ProxyActivity"
             android:label="@string/app_name"
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent" />
 
         <receiver
-            android:name="ly.count.android.sdk.messaging.CountlyMessaging"
+            android:name="ly.count.sdk.android.sdk.messaging.CountlyMessaging"
             android:permission="com.google.android.c2dm.permission.SEND" >
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
@@ -37,7 +37,7 @@
             </intent-filter>
         </receiver>
 
-        <service android:name="ly.count.android.sdk.messaging.CountlyMessagingService" >
+        <service android:name="ly.count.sdk.android.sdk.messaging.CountlyMessagingService" >
             <meta-data
                 android:name="broadcast_action"
                 android:value="ly.count.android.api.broadcast" />
