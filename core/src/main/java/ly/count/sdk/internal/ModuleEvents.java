@@ -6,6 +6,7 @@ import java.util.List;
 import ly.count.sdk.Event;
 import ly.count.sdk.Session;
 
+// TODO: register
 public class ModuleEvents extends ModuleBase {
     private List<Event> events = null;
     private Session session = null;
@@ -64,7 +65,7 @@ public class ModuleEvents extends ModuleBase {
 
     private void dumpEvents(Ctx ctx) {
         if (events != null && events.size() > SDKCore.instance.config().getEventsBufferSize()) {
-            Request request = ModuleRequests.nonSessionRequest(SDKCore.instance.config());
+            Request request = ModuleRequests.nonSessionRequest(ctx);
             request.params.arr("events").put(events);
             ModuleRequests.pushAsync(ctx, request);
         }

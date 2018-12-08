@@ -1,10 +1,10 @@
 # Introduction
-Countly SDK 18.X is a completely redesigned version of our Android SDK. Please use it with caution 
+Countly SDK 19.X is a completely redesigned version of our Android SDK. Please use it with caution 
 since it hasn't yet tested by thousands of developers in thousands of applications as 
 our previous SDK versions.
 
 ## Highlights
-Here's a list of notable changes and new features of Countly Android SDK 18.X:
+Here's a list of notable changes and new features of Countly Android SDK 19.X:
 * **Initialization** now must be done from `Application` subclass' `onCreate` method.
 * **API** is substantially simplified (no `sharedInstance()` needed for example), thus changed.
 We have lots of legacy methods marked with `@Deprecated` for easy migration. 
@@ -53,7 +53,7 @@ devices, etc.
 At first you need to add Countly SDK Gradle dependency and sync your project:
 ```
 dependencies {
-		compile 'ly.count.android:sdk:18.X'
+		compile 'ly.count.android:sdk:19.X'
 }
 ```
 
@@ -159,7 +159,7 @@ Whenever Purchase button is pressed, Countly will record an event with a key `pu
 # Architecture
 Now let's have an overview of Countly SDK internals. 
 ## Components
-Starting version 18.X Countly SDK supports 2 ways of operation:
+Starting version 19.X Countly SDK supports 2 ways of operation:
 
 * **Separate process (default) model.** SDK runs split in 2 parts. Backend part lives in a
 separate process, performs network requests to Countly server and detects crashes
@@ -414,7 +414,7 @@ In order to enable crash reporting, add `Config.enableFeatures(Config.Feature.Cr
 to your feature list. Once started, SDK will set `Thread.UncaughtExceptionHandler` on main thread
 and will report about any uncaught exceptions automatically.
 
-With SDK 18.X we've also added ANR detection. It works by continuously scheduling a `Runnable` on 
+With SDK 19.X we've also added ANR detection. It works by continuously scheduling a `Runnable` on 
 main thread of your app and on some background thread. Whenever `Runnable` on main thread 
 wasn't executed in `Config.crashReportingANRTimeout` seconds, background thread records all stack
 traces of the threads running and submits them to Countly server as a ANR crash. ANR detection
@@ -449,7 +449,7 @@ public void onCreate() {
 ```
 
 ## Push notifications
-Countly SDK 18.X supports only Firebase Cloud Messaging (FCM). Support for Google Cloud Messaging (GCM)
+Countly SDK 19.X supports only Firebase Cloud Messaging (FCM). Support for Google Cloud Messaging (GCM)
 has been dropped and exists only in previous versions of SDK (17.09 and below). 
 
 To enable FCM in your app, first follow standard [Firebase setting up guide](https://firebase.google.com/docs/android/setup]).
@@ -549,14 +549,14 @@ While functionality & APIs of these 2 systems (FCM & GCM) are very similar, ther
 Countly server automatically distinguishes GCM server key from FCM server key and picks correct server URL.
 
 Common migration guide consists of following steps:
-1. Update Countly SDK to 18.X and enable Firebase in your app.
+1. Update Countly SDK to 19.X and enable Firebase in your app.
 2. Change server key in Countly dashboard from GCM (or legacy) server key to FCM server key you got from Firebase Console.
 
 Once done:
 * Old GCM device tokens will start going through new FCM server URL with new FCM server key. Google allows that 
   for easy migration.
 * New FCM device tokens will eventually replace old GCM device tokens in Countly server as your users
-launch your updated app with Countly SDK 18.X+ and FCM dependencies in it.
+launch your updated app with Countly SDK 19.X+ and FCM dependencies in it.
 * Device tokens of users who don't launch your app will eventually expire and stop receiving 
  notifications until new app launch with updated SDK & Firebase libraries.
 

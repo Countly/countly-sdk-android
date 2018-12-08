@@ -64,16 +64,18 @@ public class Config extends ly.count.sdk.Config {
     /**
      * Enumeration of Countly SDK features
      */
-    public enum Feature implements Feat {
+    public enum Feature {
         Events(CoreFeature.Events.getIndex()),
         Sessions(CoreFeature.Sessions.getIndex()),
+        Views(CoreFeature.Views.getIndex()),
         CrashReporting(CoreFeature.CrashReporting.getIndex()),
-        Push(1 << 4),
-        Attribution(1 << 5),
-        StarRating(1 << 6),
-        Views(1 << 7),
-        UserProfiles(1 << 8),
-        PerformanceMonitoring(1 << 9);
+        Location(CoreFeature.Location.getIndex()),
+        UserProfiles(CoreFeature.UserProfiles.getIndex()),
+        Push(1 << 10),
+        Attribution(1 << 11),
+        StarRating(1 << 12),
+        RemoteConfig(1 << 13),
+        PerformanceMonitoring(1 << 14);
 
         private final int index;
 
@@ -86,18 +88,22 @@ public class Config extends ly.count.sdk.Config {
                 return Events;
             } else if (index == Sessions.index) {
                 return Sessions;
+            } else if (index == Views.index) {
+                return Views;
             } else if (index == CrashReporting.index) {
                 return CrashReporting;
+            } else if (index == Location.index) {
+                return Location;
+            } else if (index == UserProfiles.index) {
+                return UserProfiles;
             } else if (index == Push.index) {
                 return Push;
             } else if (index == Attribution.index) {
                 return Attribution;
             } else if (index == StarRating.index) {
                 return StarRating;
-            } else if (index == Views.index) {
-                return Views;
-            } else if (index == UserProfiles.index) {
-                return UserProfiles;
+            } else if (index == RemoteConfig.index) {
+                return RemoteConfig;
             } else if (index == PerformanceMonitoring.index) {
                 return PerformanceMonitoring;
             } else {
@@ -190,7 +196,7 @@ public class Config extends ly.count.sdk.Config {
         if (features == null) {
             Log.wtf("Features array cannot be null");
         } else {
-            for (Feat f : features) {
+            for (Feature f : features) {
                 this.features = this.features | f.getIndex();
             }
         }
@@ -207,7 +213,7 @@ public class Config extends ly.count.sdk.Config {
         if (features == null) {
             Log.wtf("Features array cannot be null");
         } else {
-            for (Feat f : features) {
+            for (Feature f : features) {
                 this.features = this.features & ~f.getIndex();
             }
         }

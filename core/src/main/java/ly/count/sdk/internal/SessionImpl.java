@@ -77,7 +77,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
      * Create session with current time as id.
      */
     protected SessionImpl(Ctx ctx) {
-        this.id = Device.uniformTimestamp();
+        this.id = Device.dev.uniformTimestamp();
         this.ctx = ctx;
     }
 
@@ -86,7 +86,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
      */
     protected SessionImpl(Ctx ctx, Long id) {
         this.ctx = ctx;
-        this.id = id == null ? Device.uniformTimestamp() : id;
+        this.id = id == null ? Device.dev.uniformTimestamp() : id;
     }
 
     @Override
@@ -194,16 +194,16 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     }
 
     Boolean recover(Config config) {
-        if ((System.currentTimeMillis() - id) < Device.secToMs(config.getSessionCooldownPeriod() * 2)) {
+        if ((System.currentTimeMillis() - id) < Device.dev.secToMs(config.getSessionCooldownPeriod() * 2)) {
             return null;
         } else {
             Future<Boolean> future = null;
             if (began == null) {
                 return Storage.remove(ctx, this);
             } else if (ended == null && updated == null) {
-                future = end(began + Device.secToNs(config.getSessionCooldownPeriod()), null, null);
+                future = end(began + Device.dev.secToNs(config.getSessionCooldownPeriod()), null, null);
             } else if (ended == null) {
-                future = end(updated + Device.secToNs(config.getSessionCooldownPeriod()), null, null);
+                future = end(updated + Device.dev.secToNs(config.getSessionCooldownPeriod()), null, null);
             } else {
                 // began != null && ended != null
                 return Storage.remove(ctx, this);
@@ -239,7 +239,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
             duration = now - updated;
         }
         updated = now;
-        return Device.nsToSec(duration);
+        return Device.dev.nsToSec(duration);
     }
 
     public Event event(String key) {
@@ -247,14 +247,12 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     }
 
     public Event timedEvent(String key) {
-        if (!timedEvents.containsKey(key)) {
-            timedEvents.put(key, new EventImpl(this, key));
-        }
-        return timedEvents.get(key);
+        return SDKCore.instance.timedEvents().event(ctx, key);
     }
 
     @Override
     public void recordEvent(Event event) {
+        // TODO: consents
         if (began == null) {
             begin();
         }
@@ -274,6 +272,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
     @Override
     public User user() {
+        // TODO: consents
         if (SDKCore.instance == null) {
             L.wtf("Countly is not initialized");
             return null;
@@ -289,16 +288,19 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
     @Override
     public Session addCrashReport(Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+        // TODO: consents
         SDKCore.instance.onCrash(ctx, t, fatal, name, segments, logs);
         return this;
     }
 
     @Override
     public Session addLocation(double latitude, double longitude) {
+        // TODO: consents
         return addParam("location", latitude + "," + longitude);
     }
 
     public View view(String name, boolean start) {
+        // TODO: consents
         if (currentView != null) {
             currentView.stop(false);
         }
@@ -405,7 +407,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
             int count = stream.readInt();
             for (int i = 0; i < count; i++) {
-                Event event = EventImpl.fromJSON(stream.readUTF());
+                Event event = EventImpl.fromJSON(stream.readUTF(), null);
                 if (event != null) {
                     events.add(event);
                 }

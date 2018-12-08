@@ -18,14 +18,24 @@ import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.Storable;
+import ly.count.sdk.internal.Storage;
 
 abstract class SDKStorage extends SDKLifecycle {
     private static final Log.Module L = Log.module("SDK");
     private static final String FILE_NAME_PREFIX = "[CLY]";
     private static final String FILE_NAME_SEPARATOR = "_";
 
-    public SDKStorage(InternalConfig config) {
-        super(config);
+    public SDKStorage() {
+        super();
+    }
+
+    @Override
+    public void stop(ly.count.sdk.internal.Ctx ctx, boolean clear) {
+        super.stop(ctx, clear);
+        if (clear) {
+            Storage.await();
+            storablePurge(ctx, null);
+        }
     }
 
     private static String getName(Storable storable) {

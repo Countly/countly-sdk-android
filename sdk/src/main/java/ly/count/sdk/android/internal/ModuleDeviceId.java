@@ -4,14 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.provider.Settings;
 
-import java.util.concurrent.Future;
 
 import ly.count.sdk.android.Config;
-import ly.count.sdk.internal.CoreFeature;
-import ly.count.sdk.internal.Ctx;
 import ly.count.sdk.internal.DeviceIdGenerator;
 import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.Tasks;
 import ly.count.sdk.internal.Utils;
 
 public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
@@ -28,7 +24,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
             }
 
             @Override
-            public String generate(Ctx context, int realm) {
+            public String generate(ly.count.sdk.internal.Ctx context, int realm) {
                 if (realm != ly.count.sdk.Config.DID.REALM_DID) {
                     return null;
                 }
@@ -53,7 +49,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
             }
 
             @Override
-            public String generate(Ctx context, int realm) {
+            public String generate(ly.count.sdk.internal.Ctx context, int realm) {
                 if (realm != ly.count.sdk.Config.DID.REALM_DID && realm != Config.DeviceIdRealm.ADVERTISING_ID.getIndex()) {
                     return null;
                 }
@@ -104,7 +100,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
             }
 
             @Override
-            public String generate(Ctx context, int realm) {
+            public String generate(ly.count.sdk.internal.Ctx context, int realm) {
                 if (realm != ly.count.sdk.Config.DID.REALM_DID && realm != Config.DeviceIdRealm.FCM_TOKEN.getIndex()) {
                     return null;
                 }
@@ -154,11 +150,11 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
      * @param ctx Ctx
      */
     @Override
-    public void onContextAcquired(final Ctx ctx) {
+    public void onContextAcquired(final ly.count.sdk.internal.Ctx ctx) {
         if (ctx.getConfig().getDeviceId() == null) {
             // either fresh install, or migration from legacy SDK
 
-            String legacyDeviceId = Legacy.getOnce(ctx, Legacy.KEY_ID_ID);
+            String legacyDeviceId = Legacy.getOnce((Ctx) ctx, Legacy.KEY_ID_ID);
 
             if (Utils.isNotEmpty(legacyDeviceId)) {
                 L.d("Migrating device id " + legacyDeviceId);

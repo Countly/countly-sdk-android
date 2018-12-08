@@ -3,6 +3,7 @@ package ly.count.sdk.internal;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Map;
 
 /**
  * Class which encapsulates request logic and manipulation: building, status of sending, etc.
@@ -26,7 +27,7 @@ public class Request implements Storable {
      * Create request from params with current time as id.
      */
     protected Request(Object... params) {
-        this.id = Device.uniformTimestamp();
+        this.id = Device.dev.uniformTimestamp();
         this.params = new Params(params);
     }
 
@@ -50,6 +51,11 @@ public class Request implements Storable {
      */
     protected Request(Long id) {
         this.id = id;
+    }
+
+    boolean isEmpty() {
+        Map<String, String> map = this.params.map();
+        return map.isEmpty() || (map.size() == 1 && !map.containsKey(Params.PARAM_DEVICE_ID));
     }
 
     boolean isGettable(URL serverUrl) {

@@ -1,5 +1,7 @@
 package ly.count.sdk.internal;
 
+import com.sun.org.apache.xpath.internal.operations.Mod;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,9 +10,11 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import ly.count.sdk.Config;
 
@@ -310,4 +314,8 @@ public final class InternalConfig extends Config implements Storable {
     public boolean removeDeviceId(DID did) {
         return this.dids.remove(did);
     }
+
+    public int getFeatures() { return features; }
+
+    public Set<Integer> getModuleOverrides() { return moduleOverrides == null ? new HashSet<Integer>() : moduleOverrides.keySet(); }
 }

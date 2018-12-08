@@ -23,6 +23,7 @@ import java.util.concurrent.Future;
 
 import ly.count.sdk.Config;
 import ly.count.sdk.internal.InternalConfig;
+import ly.count.sdk.internal.Network;
 import ly.count.sdk.internal.Request;
 import ly.count.sdk.internal.Storage;
 import ly.count.sdk.internal.Tasks;

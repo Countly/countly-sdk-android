@@ -41,7 +41,13 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':sdk')
-    implementation 'com.google.firebase:firebase-messaging:11.2.0'
+
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.0'
+    implementation 'com.google.firebase:firebase-core:16.0.1'
+    implementation 'com.google.firebase:firebase-messaging:17.3.0'
+    implementation 'com.android.support:design:26.1.0'
+
 //    implementation 'ly.count.android:sdk:16.06.04'
 //    implementation 'ly.count.android:sdk:16.06.04@aar'
 }

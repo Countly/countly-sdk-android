@@ -28,7 +28,7 @@ public class ActivityExampleUserDetails extends Activity {
     }
 
     public void onClickRecordUserData(View v) {
-        UserEditor editor = Countly.user().edit()
+        UserEditor editor = Countly.user(getApplicationContext()).edit()
                 .setName("Firstname Lastname")
                 .setUsername("nickname")
                 .setEmail("test@test.com")
@@ -54,7 +54,7 @@ public class ActivityExampleUserDetails extends Activity {
 
     public void onClickSetCustom1(View v) {
         //providing any custom key values to store with user
-        UserEditor editor = Countly.user().edit();
+        UserEditor editor = Countly.user(getApplicationContext()).edit();
 
         editor.set("mostFavoritePet", "dog");
         editor.inc("phoneCalls", 1);
@@ -66,7 +66,7 @@ public class ActivityExampleUserDetails extends Activity {
 
     public void onClickSetCustom2(View v) {
         //providing any custom key values to store with user
-        Countly.user().edit().set("leastFavoritePet", "cat")
+        Countly.user(getApplicationContext()).edit().set("leastFavoritePet", "cat")
                 .inc("phoneCalls", -1)
                 .max("phoneCalls", 5)
                 .commit();

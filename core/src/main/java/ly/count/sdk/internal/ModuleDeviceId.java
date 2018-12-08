@@ -38,7 +38,7 @@ public class ModuleDeviceId extends ModuleBase {
 
     private static final Map<Integer, DeviceIdGenerator> generators = new HashMap<>();
     static {
-        registerGenerator(Config.DID.STRATEGY_CUSTOM, new UUIDGenerator());
+        registerGenerator(Config.DID.STRATEGY_UUID, new UUIDGenerator());
     }
 
     public static void registerGenerator(int index, DeviceIdGenerator generator) {
@@ -132,7 +132,7 @@ public class ModuleDeviceId extends ModuleBase {
             }
 
             // add device id change request
-            Request request = ModuleRequests.nonSessionRequest(ctx.getConfig());
+            Request request = ModuleRequests.nonSessionRequest(ctx);
             request.params.add(Params.PARAM_DEVICE_ID, deviceId.id).add(Params.PARAM_OLD_DEVICE_ID, oldDeviceId.id);
             ModuleRequests.pushAsync(ctx, request);
 

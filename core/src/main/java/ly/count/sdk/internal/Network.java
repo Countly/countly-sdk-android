@@ -1,6 +1,4 @@
-package ly.count.sdk.android.internal;
-
-import android.util.Base64;
+package ly.count.sdk.internal;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -39,22 +37,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import ly.count.sdk.User;
-import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.Module;
-import ly.count.sdk.internal.ModuleRequests;
-import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.Tasks;
-import ly.count.sdk.internal.UserEditorImpl;
-
-import static ly.count.sdk.android.internal.Utils.CRLF;
-import static ly.count.sdk.android.internal.Utils.UTF8;
 
 /**
  * Class managing all networking operations.
  * Contract:
  * <ul>
- *     <li>Instantiated in a {@link android.app.Service} once.</li>
+ *     <li>Instantiated once.</li>
  *     <li>Doesn't have any queues, sends one request at a time (guaranteed to have maximum one {@link #send(Request)} unresolved call at a time).</li>
  *     <li>Returns a {@link Future} which resolves to either success or a failure.</li>
  *     <li>Doesn't do any storage or configuration-related operations, doesn't call modules, etc.</li>
@@ -183,7 +171,7 @@ class Network implements X509TrustManager {
                     connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
                     output = connection.getOutputStream();
-                    writer = new PrintWriter(new OutputStreamWriter(output, UTF8), true);
+                    writer = new PrintWriter(new OutputStreamWriter(output, Utils.UTF8), true);
 
                     addMultipart(output, writer, boundary, "", "profilePicture", "image", data);
 
@@ -199,7 +187,7 @@ class Network implements X509TrustManager {
                         addMultipart(output, writer, boundary, "text/plain", CHECKSUM, Utils.digestHex(PARAMETER_TAMPERING_DIGEST, salting.substring(0, salting.length() - 1) + config.getParameterTamperingProtectionSalt()), null);
                     }
 
-                    writer.append(CRLF).append("--").append(boundary).append("--").append(CRLF).flush();
+                    writer.append(Utils.CRLF).append("--").append(boundary).append("--").append(Utils.CRLF).flush();
 
                 } else {
                     if (config.getParameterTamperingProtectionSalt() != null) {
@@ -208,7 +196,7 @@ class Network implements X509TrustManager {
                     connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                     output = connection.getOutputStream();
-                    writer = new PrintWriter(new OutputStreamWriter(output, UTF8), true);
+                    writer = new PrintWriter(new OutputStreamWriter(output, Utils.UTF8), true);
 
                     writer.write(request.params.toString());
                     writer.flush();
@@ -231,19 +219,19 @@ class Network implements X509TrustManager {
     }
 
     void addMultipart(OutputStream output, PrintWriter writer, String boundary, String contentType, String name, String value, Object file) throws IOException {
-        writer.append("--").append(boundary).append(CRLF);
+        writer.append("--").append(boundary).append(Utils.CRLF);
         if (file != null) {
-            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"; filename=\"").append(value).append("\"").append(CRLF);
-            writer.append("Content-Type: ").append(contentType).append(CRLF);
-            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-            writer.append(CRLF).flush();
+            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"; filename=\"").append(value).append("\"").append(Utils.CRLF);
+            writer.append("Content-Type: ").append(contentType).append(Utils.CRLF);
+            writer.append("Content-Transfer-Encoding: binary").append(Utils.CRLF);
+            writer.append(Utils.CRLF).flush();
             output.write((byte[])file);
             output.flush();
-            writer.append(CRLF).flush();
+            writer.append(Utils.CRLF).flush();
         } else {
-            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(CRLF);
-            writer.append("Content-Type: ").append(contentType).append("; charset=").append(UTF8).append(CRLF);
-            writer.append(CRLF).append(value).append(CRLF).flush();
+            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(Utils.CRLF);
+            writer.append("Content-Type: ").append(contentType).append("; charset=").append(Utils.UTF8).append(Utils.CRLF);
+            writer.append(Utils.CRLF).append(value).append(Utils.CRLF).flush();
         }
     }
 
@@ -347,7 +335,7 @@ class Network implements X509TrustManager {
                 try {
                     ModuleRequests.addRequired(config, request);
 
-                    connection = connection(request, Core.instance.user());
+                    connection = connection(request, SDKCore.instance.user());
                     connection.connect();
 
                     int code = connection.getResponseCode();
@@ -422,10 +410,10 @@ class Network implements X509TrustManager {
                 if (data != null) {
                     String string = new String(data);
                     if (string.contains("--BEGIN")) {
-                        data = Base64.decode(trimPem(string), Base64.DEFAULT);
+                        data = Utils.Base64.decode(trimPem(string));
                     }
                 } else {
-                    data = Base64.decode(trimPem(key), Base64.DEFAULT);
+                    data = Utils.Base64.decode(trimPem(key));
                 }
 
                 try {
@@ -449,10 +437,10 @@ class Network implements X509TrustManager {
             if (data != null) {
                 String string = new String(data);
                 if (string.contains("--BEGIN")) {
-                    data = Base64.decode(trimPem(string), Base64.DEFAULT);
+                    data = Utils.Base64.decode(trimPem(string));
                 }
             } else {
-                data = Base64.decode(trimPem(cert), Base64.DEFAULT);
+                data = Utils.Base64.decode(trimPem(cert));
             }
 
             CertificateFactory cf = CertificateFactory.getInstance("X.509");

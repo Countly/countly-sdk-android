@@ -28,6 +28,11 @@ public abstract class SDKModules implements SDK {
         registerDefaultModuleMapping(CoreFeature.Requests.getIndex(), ModuleRequests.class);
         registerDefaultModuleMapping(CoreFeature.Logs.getIndex(), Log.class);
         registerDefaultModuleMapping(CoreFeature.Views.getIndex(), ModuleViews.class);
+        registerDefaultModuleMapping(CoreFeature.Sessions.getIndex(), ModuleSessions.class);
+    }
+
+    public interface Modulator {
+        void run(int feature, Module module);
     }
 
     /**
@@ -36,7 +41,9 @@ public abstract class SDKModules implements SDK {
     private static final Map<Integer, Class<? extends Module>> moduleMappings = new HashMap<>();
 
     protected static void registerModuleMapping(int feature, Class<? extends Module> cls) {
-        moduleMappings.put(feature, cls);
+        if (cls != null) {
+            moduleMappings.put(feature, cls);
+        }
     }
 
     // TreeMap to keep modules sorted by their feature indexes
@@ -52,15 +59,43 @@ public abstract class SDKModules implements SDK {
         return modules != null && modules.containsKey(feat);
     }
 
+    @Override
+    public void init(Ctx ctx) {
+        prepareMappings(ctx);
+    }
+
+    @Override
+    public void stop(final Ctx ctx, final boolean clear) {
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                try {
+                    module.stop(ctx, clear);
+                    Utils.reflectiveSetField(module, "active", false);
+                } catch (Throwable e) {
+                    L.wtf("Exception while stopping " + module.getClass(), e);
+                }
+            }
+        });
+        modules.clear();
+        moduleMappings.clear();
+    }
+
     /**
      * Callback to add consents to the list
      *
      * @param consent consents to add
      */
-    protected void onConsent(Ctx ctx, int consent) {
+    public void onConsent(Ctx ctx, int consent) {
         for (Integer feature : moduleMappings.keySet()) {
             if (ctx.getConfig().isFeatureEnabled(feature) && (feature & consent) > 0 && !modules.containsKey(feature)) {
-                Module module = instantiateModule(moduleMappings.get(feature));
+                Class<? extends Module> cls = moduleMappings.get(feature);
+                if (cls == null) {
+                    Log.i("No module mapping for feature " + feature);
+                    continue;
+                }
+
+                Module module = instantiateModule(cls);
                 if (module == null) {
                     Log.wtf("Cannot instantiate module " + feature);
                 } else {
@@ -94,17 +129,21 @@ public abstract class SDKModules implements SDK {
      * Uses {@link #moduleMappings} for {@code Config.Feature} / {@link CoreFeature}
      * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
-     * @param config {@link InternalConfig} object to build modules for
+     * @param ctx {@link Ctx} object containing config with mapping overrides
      * @throws IllegalArgumentException in case some {@link Module} finds {@link #config} inconsistent.
      * @throws IllegalStateException when this module is run second time on the same {@code Core} instance.
      */
-    protected void prepareMappings(Config config) throws IllegalStateException {
+    protected void prepareMappings(Ctx ctx) throws IllegalStateException {
         if (modules.size() > 0) {
-            throw new IllegalStateException("Modules can be built only once per InternalConfig instance");
+            throw new IllegalStateException("Modules can only be built once");
         }
 
         moduleMappings.clear();
         moduleMappings.putAll(DEFAULT_MAPPINGS);
+
+        for (int feature : ctx.getConfig().getModuleOverrides()) {
+            registerModuleMapping(feature, ctx.getConfig().getModuleOverride(feature));
+        }
     }
 
 
@@ -113,16 +152,19 @@ public abstract class SDKModules implements SDK {
      * Uses {@link #moduleMappings} for {@code Config.Feature} / {@link CoreFeature}
      * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
-     * @param config {@link InternalConfig} object to build modules for
-     * @param consents consents bitmask to check against
+     * @param ctx {@link Ctx} object
+     * @param features consents bitmask to check against
      * @throws IllegalArgumentException in case some {@link Module} finds {@link #config} inconsistent.
      * @throws IllegalStateException when this module is run second time on the same {@code Core} instance.
      */
-    protected void buildModules(Config config, int consents) throws IllegalArgumentException, IllegalStateException {
+    protected void buildModules(Ctx ctx, int features) throws IllegalArgumentException, IllegalStateException {
         // override module mappings in native/Android parts, overriding by Config ones if necessary
-        prepareMappings(config);
 
-        if (config.getLoggingLevel() != Config.LoggingLevel.OFF) {
+        if (modules.size() > 0) {
+            throw new IllegalStateException("Modules can only be built once");
+        }
+
+        if (ctx.getConfig().getLoggingLevel() != Config.LoggingLevel.OFF) {
             modules.put(CoreFeature.Logs.getIndex(), instantiateModule(moduleMappings.get(CoreFeature.Logs.getIndex())));
         }
 
@@ -132,7 +174,7 @@ public abstract class SDKModules implements SDK {
 
         for (int feature : moduleMappings.keySet()) {
             Class<? extends Module> cls = moduleMappings.get(feature);
-            if (cls != null && (consents & feature) > 0) {
+            if (cls != null && (features & feature) > 0) {
                 Module m = instantiateModule(cls);
                 if (m != null) {
                     modules.put(feature, m);
@@ -194,6 +236,12 @@ public abstract class SDKModules implements SDK {
             }
         }
         return null;
+    }
+
+    protected void eachModule(Modulator modulator) {
+        for (Integer feature: modules.keySet()) {
+            modulator.run(feature, modules.get(feature));
+        }
     }
 
     @Override

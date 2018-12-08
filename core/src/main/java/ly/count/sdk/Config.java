@@ -23,13 +23,6 @@ import ly.count.sdk.internal.Utils;
 public class Config {
 
     /**
-     * Feature interface to replace enum inheritance of {@code Feature} & {@link InternalFeature}.
-     */
-    public interface Feat {
-        int getIndex();
-    }
-
-    /**
      * Logging level for {@link Log} module
      */
     public enum LoggingLevel {

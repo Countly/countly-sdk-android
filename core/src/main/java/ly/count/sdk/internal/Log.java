@@ -85,8 +85,8 @@ public class Log extends ModuleBase {
     }
 
     @Override
-    public Config.Feature getFeature() {
-        return null;
+    public Integer getFeature() {
+        return CoreFeature.Logs.getIndex();
     }
 
     public static void deinit() {

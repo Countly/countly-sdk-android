@@ -7,7 +7,7 @@ import android.view.View;
 import ly.count.sdk.android.Countly;
 
 /**
- * Demo Activity explaining how to record {@link ly.count.sdk.android.sdk.Event}s.
+ * Demo Activity explaining how to record {@link ly.count.sdk.Event}s.
  */
 
 public class ActivityExampleCustomEvents extends Activity {

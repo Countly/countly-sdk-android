@@ -76,7 +76,7 @@ public class Legacy {
                 String timestamp = params.get("timestamp");
                 if (Utils.isNotEmpty(timestamp)) {
                     try {
-                        Request request = ModuleRequests.nonSessionRequest(ctx.getConfig(), Long.parseLong(timestamp));
+                        Request request = ModuleRequests.nonSessionRequest(ctx, Long.parseLong(timestamp));
                         request.params.add(params);
                         L.d("Migrating request: " + str + ", time " + request.storageId());
                         Storage.pushAsync(ctx, request, removeClb(ctx, KEY_CONNECTIONS));
@@ -84,7 +84,7 @@ public class Legacy {
                         L.wtf("Couldn't import request " + str, e);
                     }
                 } else {
-                    Request request = ModuleRequests.nonSessionRequest(ctx.getConfig(), Device.uniqueTimestamp());
+                    Request request = ModuleRequests.nonSessionRequest(ctx, Device.dev.uniqueTimestamp());
                     L.d("Migrating request: " + str + ", current time " + request.storageId());
                     request.params.add(params);
                     Storage.pushAsync(ctx, request, removeClb(ctx, KEY_CONNECTIONS));
@@ -104,7 +104,7 @@ public class Legacy {
                 }
             }
             if (array.length() > 0) {
-                Request request = ModuleRequests.nonSessionRequest(ctx.getConfig(), Device.uniqueTimestamp());
+                Request request = ModuleRequests.nonSessionRequest(ctx, Device.dev.uniqueTimestamp());
                 request.params.add("events", array.toString());
                 Storage.pushAsync(ctx, request, removeClb(ctx, KEY_EVENTS));
             } else {

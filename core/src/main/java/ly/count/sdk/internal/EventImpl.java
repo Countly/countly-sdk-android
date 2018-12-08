@@ -53,9 +53,9 @@ class EventImpl implements Event, JSONable {
         this.recorder = recorder;
         this.key = key;
         this.count = 1;
-        this.timestamp = Device.uniqueTimestamp();
-        this.hour = Device.currentHour();
-        this.dow = Device.currentDayOfWeek();
+        this.timestamp = Device.dev.uniqueTimestamp();
+        this.hour = Device.dev.currentHour();
+        this.dow = Device.dev.currentDayOfWeek();
     }
 
     @Override
@@ -68,7 +68,7 @@ class EventImpl implements Event, JSONable {
 
     @Override
     public void endAndRecord() {
-        setDuration((Device.uniqueTimestamp() - timestamp) / 1000);
+        setDuration((Device.dev.uniqueTimestamp() - timestamp) / 1000);
         record();
     }
 
@@ -241,7 +241,7 @@ class EventImpl implements Event, JSONable {
      * Deserialize from JSON format according to Countly server requirements
      * @return JSON string
      */
-    static EventImpl fromJSON(String jsonString) {
+    static EventImpl fromJSON(String jsonString, EventRecorder recorder) {
         try {
             JSONObject json = new JSONObject(jsonString);
 
@@ -249,12 +249,12 @@ class EventImpl implements Event, JSONable {
                 L.wtf("Bad JSON for deserialization of event: " + jsonString);
                 return null;
             }
-            EventImpl event = new EventImpl(new EventRecorder() {
+            EventImpl event = new EventImpl(recorder == null ? new EventRecorder() {
                 @Override
                 public void recordEvent(Event event) {
                     Log.wtf("Shouldn't record serialized events");
                 }
-            }, json.getString(KEY_KEY));
+            } : recorder, json.getString(KEY_KEY));
 
             event.count = json.optInt(COUNT_KEY, 1);
             if (json.has(SUM_KEY) && !json.isNull(SUM_KEY)) {

@@ -5,12 +5,12 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
 
-import ly.count.sdk.Countly;
-import ly.count.sdk.android.internal.Core;
+import ly.count.sdk.Cly;
+import ly.count.sdk.android.internal.Ctx;
 import ly.count.sdk.android.internal.CtxImpl;
 import ly.count.sdk.android.internal.SDK;
+import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
-import ly.count.sdk.Config;
 
 /**
  * Lifecycle-related methods.
@@ -24,11 +24,9 @@ public class CountlyLifecycle extends Cly {
     protected Context legacyContext = null;
 
     protected static final Log.Module L = Log.module("Countly");
-    protected static Countly instance;
-    protected final Core core;
 
-    public CountlyLifecycle(Core core) {
-        this.core = core;
+    protected CountlyLifecycle() {
+        super();
     }
 
     /**
@@ -39,22 +37,22 @@ public class CountlyLifecycle extends Cly {
      * @param config configuration object
      */
     public static void init (final Application application, final Config config) {
-        Cly.init(new CtxImpl(new SDK(), config, application));
         if (config == null) {
             L.wtf("Config cannot be null");
+        } else if (application == null) {
+            L.wtf("Application cannot be null");
         } else {
-            if (instance != null) {
+            if (cly != null) {
                 L.wtf("Countly shouldn't be initialized twice. Please either use Countly.isInitialized() to check status or call Countly.stop() before second Countly.init().");
                 stop(application, false);
             }
 
-            Core core = Core.init(config, application);
-            if (core == null) {
-                // TODO: inconsistent state, couldn't init, TBD
-                return;
-            }
-            instance = new Countly(core);
-            instance.legacyContext = application;
+            SDK sdk = new SDK();
+            Ctx ctx = new CtxImpl(sdk, new InternalConfig(config), application);
+
+            sdk.init(ctx);
+
+            cly = new Countly(sdk, new CtxImpl(sdk, sdk.config(), application));
         }
     }
 
@@ -67,9 +65,9 @@ public class CountlyLifecycle extends Cly {
      * @param clearData whether to clear all Countly data or not
      */
     public static void stop (final Context context, boolean clearData) {
-        if (instance != null) {
-            instance.core.stop(context, clearData);
-            instance = null;
+        if (cly != null) {
+            ((Countly)cly).sdk.stop(new CtxImpl(((Countly)cly).sdk, ((Countly)cly).sdk.config(), context), clearData);
+            cly = null;
         } else {
             Log.wtf("Countly isn't initialized to stop it");
         }
@@ -80,14 +78,14 @@ public class CountlyLifecycle extends Cly {
      *
      * @return true if already initialized
      */
-    public static boolean isInitialized() { return instance != null; }
+    public static boolean isInitialized() { return cly != null; }
 
     /**
      * Returns whether Countly SDK has been given consent to record data for a particular {@link Config.Feature} or not.
      *
      * @return true if consent has been given
      */
-    public static boolean isTracking(Config.Feature feature) { return isInitialized() && instance.core.isTracking(feature); }
+    public static boolean isTracking(Config.Feature feature) { return isInitialized() && ((Countly)cly).sdk.isTracking(feature.getIndex()); }
 
     /**
      * Activity callback to be called for apps which support API levels below 14
@@ -100,14 +98,14 @@ public class CountlyLifecycle extends Cly {
             Log.wtf("Countly isn't initialized yet");
         } else {
             // TODO: deep links
-            instance.core.onActivityCreated(activity, bundle);
+            ((Countly)cly).sdk.onActivityCreated(activity, bundle);
         }
     }
 
     /**
      * Activity callback to be called for apps which support API levels below 14
      *
-     * @deprecated since 18.X, use {@link #onActivityCreated(Activity, Bundle)} instead
+     * @deprecated since 19.X, use {@link #onActivityCreated(Activity, Bundle)} instead
      * @param activity Activity instance
      */
     @Deprecated
@@ -124,14 +122,14 @@ public class CountlyLifecycle extends Cly {
         if (!isInitialized()) {
             Log.wtf("Countly isn't initialized yet");
         } else {
-            instance.core.onActivityStarted(activity);
+            ((Countly)cly).sdk.onActivityStarted(activity);
         }
     }
 
     /**
      * Activity callback to be called for apps which support API levels below 14
      *
-     * @deprecated since 18.X, use {@link #onActivityStarted(Activity)}} instead
+     * @deprecated since 19.X, use {@link #onActivityStarted(Activity)}} instead
      * @param activity Activity instance
      */
     @Deprecated
@@ -148,14 +146,14 @@ public class CountlyLifecycle extends Cly {
         if (!isInitialized()) {
             Log.wtf("Countly isn't initialized yet");
         } else {
-            instance.core.onActivityStarted(activity);
+            ((Countly)cly).sdk.onActivityStarted(activity);
         }
     }
 
     /**
      * Activity callback to be called for apps which support API levels below 14
      *
-     * @deprecated since 18.X, use {@link #onActivityStopped(Activity)}} instead
+     * @deprecated since 19.X, use {@link #onActivityStopped(Activity)}} instead
      * @param activity Activity instance
      */
     @Deprecated

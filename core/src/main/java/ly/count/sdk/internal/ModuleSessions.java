@@ -16,6 +16,7 @@ public class ModuleSessions extends ModuleBase {
      * Current Session instance
      */
     private SessionImpl session = null;
+    private TimedEvents timedEvents;
 
     public SessionImpl getSession() {
         return session;
@@ -47,12 +48,32 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
+    public void onContextAcquired(Ctx ctx) {
+        super.onContextAcquired(ctx);
+
+        try {
+            timedEvents = Storage.read(ctx, new TimedEvents());
+            if (timedEvents == null) {
+                timedEvents = new TimedEvents();
+            }
+        } catch (Throwable e) {
+            L.wtf("Cannot happen", e);
+            timedEvents = new TimedEvents();
+        }
+    }
+
+    @Override
     public boolean isActive() {
         return super.isActive() || executor != null;
     }
 
     @Override
     public void stop(Ctx ctx, boolean clear) {
+        if (!clear) {
+            Storage.pushAsync(ctx, timedEvents);
+        }
+        timedEvents = null;
+
         if (executor != null) {
             try {
                 executor.shutdown();
@@ -86,23 +107,23 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     public synchronized void onActivityStarted(Ctx ctx) {
-        if (activityCount == 0) {
+        if (ctx.getConfig().isAutoSessionsTrackingEnabled() && activityCount == 0) {
             if (getSession() == null) {
                 L.i("starting new session");
                 session(ctx, null).begin();
             }
-            if (ctx.getConfig().getSendUpdateEachSeconds() > 0 && executor == null) {
-                executor = Executors.newScheduledThreadPool(1);
-                executor.scheduleWithFixedDelay(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isActive() && getSession() != null) {
-                            L.i("updating session");
-                            getSession().update();
-                        }
+        }
+        if (ctx.getConfig().getSendUpdateEachSeconds() > 0 && executor == null) {
+            executor = Executors.newScheduledThreadPool(1);
+            executor.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    if (isActive() && getSession() != null) {
+                        L.i("updating session");
+                        getSession().update();
                     }
-                }, ctx.getConfig().getSendUpdateEachSeconds(), ctx.getConfig().getSendUpdateEachSeconds(), TimeUnit.SECONDS);
-            }
+                }
+            }, ctx.getConfig().getSendUpdateEachSeconds(), ctx.getConfig().getSendUpdateEachSeconds(), TimeUnit.SECONDS);
         }
         activityCount++;
     }
@@ -141,4 +162,7 @@ public class ModuleSessions extends ModuleBase {
         }
     }
 
+    public TimedEvents timedEvents() {
+        return timedEvents;
+    }
 }

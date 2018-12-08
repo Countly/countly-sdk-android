@@ -33,13 +33,19 @@ import ly.count.sdk.internal.Params;
  */
 
 public class Device extends ly.count.sdk.internal.Device {
+    public static Device dev;
+
+    private Device() {
+        dev = this;
+    }
 
     /**
      * Get operation system name
      *
      * @return the display name of the current operating system.
      */
-    public static String getOS() {
+    @Override
+    public String getOS() {
         return "Android";
     }
 
@@ -48,7 +54,8 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return current operating system version as a displayable string.
      */
-    public static String getOSVersion() {
+    @Override
+    public String getOSVersion() {
         return android.os.Build.VERSION.RELEASE;
     }
 
@@ -57,7 +64,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return device model name.
      */
-    public static String getDevice() {
+    public String getDevice() {
         return android.os.Build.MODEL;
     }
 
@@ -68,7 +75,7 @@ public class Device extends ly.count.sdk.internal.Device {
      * @param context context to use to retrieve the current WindowManager
      * @return a string in the format "WxH", or the empty string "" if resolution cannot be determined
      */
-    public static String getResolution(final android.content.Context context) {
+    public String getResolution(final android.content.Context context) {
         // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
         // were returning null, even though the documentation doesn't say they should do so; so now
         // we catch Throwable and return empty string if that happens
@@ -93,7 +100,7 @@ public class Device extends ly.count.sdk.internal.Device {
      * @return a string constant representing the current display density, or the
      *         empty string if the density is unknown
      */
-    public static String getDensity(final android.content.Context context) {
+    public String getDensity(final android.content.Context context) {
         String densityStr = "";
         final int density = context.getResources().getDisplayMetrics().densityDpi;
         switch (density) {
@@ -157,7 +164,7 @@ public class Device extends ly.count.sdk.internal.Device {
      * @return the display name of the current network operator, or the empty
      *         string if it cannot be accessed or determined
      */
-    public static String getCarrier(final android.content.Context context) {
+    public String getCarrier(final android.content.Context context) {
         String carrier = "";
         final TelephonyManager manager = (TelephonyManager) context.getSystemService(android.content.Context.TELEPHONY_SERVICE);
         if (manager != null) {
@@ -176,7 +183,7 @@ public class Device extends ly.count.sdk.internal.Device {
      * @return string stored in the specified context's package info versionName field,
      * or "1.0" if versionName is not present.
      */
-    public static String getAppVersion(final ly.count.sdk.android.internal.Ctx context) {
+    public String getAppVersion(final ly.count.sdk.android.internal.Ctx context) {
         String result = context.getConfig().getApplicationVersion();
         if (Utils.isEmpty(result)) {
             result = "1.0";
@@ -195,7 +202,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return package name of the store
      */
-    static String getStore(final android.content.Context context) {
+    String getStore(final android.content.Context context) {
         String result = "";
         try {
             result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
@@ -214,7 +221,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @param ctx Ctx in which to request metrics
      */
-    public static Params buildMetrics(final ly.count.sdk.android.internal.Ctx ctx) {
+    public Params buildMetrics(final ly.count.sdk.android.internal.Ctx ctx) {
         android.content.Context context = ctx.getContext();
         Params params = new Params();
         params.obj("metrics")
@@ -232,7 +239,7 @@ public class Device extends ly.count.sdk.internal.Device {
         return params;
     }
 
-    public static boolean API(int min) {
+    public boolean API(int min) {
         return Build.VERSION.SDK_INT >= min;
     }
 
@@ -241,7 +248,8 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return total RAM in Mb or null if cannot determine
      */
-    public static Long getRAMTotal() {
+    @Override
+    public Long getRAMTotal() {
         RandomAccessFile reader = null;
         try {
             reader = new RandomAccessFile("/proc/meminfo", "r");
@@ -277,7 +285,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return device manufacturer string
      */
-    public static String getManufacturer() {
+    public String getManufacturer() {
         return Build.MANUFACTURER;
     }
 
@@ -286,7 +294,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return main CPU ABI
      */
-    public static String getCpu() {
+    public String getCpu() {
         if (Utils.API(Build.VERSION_CODES.LOLLIPOP)) {
             return Build.SUPPORTED_ABIS[0];
         } else {
@@ -299,7 +307,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return OpenGL version, falls back to 1 if cannot determine
      */
-    public static Integer getOpenGL(android.content.Context context) {
+    public Integer getOpenGL(android.content.Context context) {
         PackageManager packageManager = context.getPackageManager();
         FeatureInfo[] featureInfos = packageManager.getSystemAvailableFeatures();
         if (featureInfos == null || featureInfos.length == 0) {
@@ -323,7 +331,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return currently available RAM in Mb or {@code null} if couldn't determine
      */
-    public static Long getRAMAvailable(android.content.Context context) {
+    public Long getRAMAvailable(android.content.Context context) {
         Long total = getRAMTotal();
         if (total == null) {
             return null;
@@ -340,7 +348,8 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return currently available disk space in Mb
      */
-    public static Long getDiskAvailable() {
+    @Override
+    public Long getDiskAvailable() {
         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
         long total = getDiskTotal() * BYTES_IN_MB, free;
         if (Utils.API(18)) {
@@ -356,7 +365,8 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return total device disk space in Mb
      */
-    public static Long getDiskTotal() {
+    @Override
+    public Long getDiskTotal() {
         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
         long total;
         if (Utils.API(18)) {
@@ -372,7 +382,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return device battery left in percent or {@code null} if couldn't determine
      */
-    public static Float getBatteryLevel(android.content.Context context) {
+    public Float getBatteryLevel(android.content.Context context) {
         try {
             Intent batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
             if(batteryIntent != null) {
@@ -396,7 +406,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return orientation name or {@code null} if couldn't determine
      */
-    public static String getOrientation(android.content.Context context) {
+    public String getOrientation(android.content.Context context) {
         int orientation = context.getResources().getConfiguration().orientation;
         switch (orientation) {
             case  Configuration.ORIENTATION_LANDSCAPE:
@@ -415,7 +425,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return {@code true} if rooted, {@code false} otherwise
      */
-    public static Boolean isRooted() {
+    public Boolean isRooted() {
         String[] paths = {
                 "/sbin/su", "/system/bin/su", "/system/xbin/su",
                 "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
@@ -432,7 +442,7 @@ public class Device extends ly.count.sdk.internal.Device {
      * @return {@code true} if has connectivity, {@code false} if doesn't, {@code null} if cannot determine
      */
     @SuppressLint("MissingPermission")
-    public static Boolean isOnline(android.content.Context context) {
+    public Boolean isOnline(android.content.Context context) {
         try {
             ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
             if (conMgr != null && conMgr.getActiveNetworkInfo() != null
@@ -453,7 +463,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return {@code true} if muted, {@code false} if not, {@code null}  if cannot determine
      */
-    public static Boolean isMuted(android.content.Context context) {
+    public Boolean isMuted(android.content.Context context) {
         AudioManager audio = (AudioManager) context.getSystemService(android.content.Context.AUDIO_SERVICE);
         if (audio == null) {
             return null;
@@ -474,7 +484,7 @@ public class Device extends ly.count.sdk.internal.Device {
      * @param context context to check in
      * @return {@code true} if running in foreground, {@code false} otherwise
      */
-    public static boolean isAppRunningInForeground (android.content.Context context) {
+    public boolean isAppRunningInForeground (android.content.Context context) {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
         if (activityManager != null) {
             List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
@@ -491,7 +501,8 @@ public class Device extends ly.count.sdk.internal.Device {
         return false;
     }
 
-    public static boolean isDebuggerConnected() {
+    @Override
+    public boolean isDebuggerConnected() {
         return Debug.isDebuggerConnected();
     }
 
@@ -501,7 +512,7 @@ public class Device extends ly.count.sdk.internal.Device {
      * @param context Ctx to run in
      * @return process name String or {@code null} if cannot determine
      */
-    public static String getProcessName(android.content.Context context) {
+    public String getProcessName(android.content.Context context) {
         ActivityManager manager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
         if (manager != null) {
             List<ActivityManager.RunningAppProcessInfo> infos = manager.getRunningAppProcesses();
@@ -517,11 +528,11 @@ public class Device extends ly.count.sdk.internal.Device {
         return null;
     }
 
-    public static boolean isInLimitedProcess(android.content.Context context) {
+    public boolean isInLimitedProcess(android.content.Context context) {
         return Utils.contains(getProcessName(context), ":countly");
     }
 
-    public static boolean isSingleProcess(android.content.Context context) {
+    public boolean isSingleProcess(android.content.Context context) {
         ActivityManager manager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
         if (manager != null) {
             List<ActivityManager.RunningAppProcessInfo> infos = manager.getRunningAppProcesses();

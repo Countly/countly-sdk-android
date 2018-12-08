@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Handler;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.android.Countly;
 
 /**
@@ -33,18 +33,19 @@ public class App extends Application {
         new Handler(getMainLooper()).postDelayed(new Runnable() {
             @Override
             public void run() {
-                if (Countly.user() != null) {
-                    Countly.user().edit().addToCohort("manual").commit();
+                if (Countly.user(getApplicationContext()) != null) {
+                    Countly.user(getApplicationContext()).edit().addToCohort("manual").commit();
                 }
             }
         }, 3000);
     }
 
     public static Config getCountlyConfig () {
-        return new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
+        return (Config) new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
+                .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID)
+                .enableFeatures(Config.Feature.Events, Config.Feature.Sessions, Config.Feature.CrashReporting)
+                .setAutoSessionsTracking(true)
                 .enableTestMode()
-                .setLoggingLevel(Config.LoggingLevel.DEBUG)
-                .setFeatures(Config.Feature.AutoSessionTracking, Config.Feature.Push, Config.Feature.CrashReporting, Config.Feature.AutoViewTracking)
-                .setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
+                .setLoggingLevel(Config.LoggingLevel.DEBUG);
     }
 }

@@ -1,6 +1,5 @@
 package ly.count.sdk.android.internal;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -82,7 +81,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
     @Override
     public void onContextAcquired(final Ctx ctx) {
         if (!limited) {
-            if (config.getCrashReportingANRTimeout() > 0 && !Device.isDebuggerConnected()) {
+            if (config.getCrashReportingANRTimeout() > 0 && !Device.dev.isDebuggerConnected()) {
                 context = ctx;
                 nextTick();
             }
@@ -95,7 +94,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
         }
         L.d("next tick " + tick);
         tickToCheck = tick;
-        Core.handler.post(ticker);
+        SDK.instance.postToMainThread(ticker);
         executorService.schedule(checker, config.getCrashReportingANRTimeout(), TimeUnit.SECONDS);
     }
 

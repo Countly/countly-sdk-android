@@ -2,7 +2,6 @@ package ly.count.sdk.android;
 
 import android.app.Activity;
 import android.app.Application;
-import android.app.Service;
 import android.content.Context;
 import android.os.Bundle;
 
@@ -11,10 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ly.count.sdk.Cly;
+import ly.count.sdk.android.internal.Ctx;
 import ly.count.sdk.android.internal.CtxImpl;
-import ly.count.sdk.android.internal.Core;
+import ly.count.sdk.android.internal.SDK;
 import ly.count.sdk.android.internal.Utils;
-import ly.count.sdk.Config;
 import ly.count.sdk.Crash;
 import ly.count.sdk.CrashProcessor;
 import ly.count.sdk.Event;
@@ -25,7 +25,7 @@ import ly.count.sdk.UserEditor;
 /**
  * Main Countly SDK API class.
  * <ul>
- *     <li>Initialize Countly SDK using {@link #init(Application, Config)}.</li>
+ *     <li>Initialize Countly SDK using {@code #init(Application, Config)}.</li>
  *     <li>Stop Countly SDK with {@link #stop(Context, boolean)} if needed.</li>
  *     <li>Call {@link #onActivityCreated(Activity, Bundle)}, {@link #onActivityStarted(Activity)} {@link #onActivityStopped(Activity)} if targeting API levels < 14.</li>
  *     <li>Use {@link #session(Context)} to get a {@link Session} instance.</li>
@@ -35,8 +35,18 @@ import ly.count.sdk.UserEditor;
 
 public class Countly extends CountlyLifecycle {
 
-    protected Countly(Core core) {
-        super(core);
+    protected static Countly cly;
+    protected SDK sdk;
+
+    protected Countly(SDK sdk, Ctx ctx) {
+        super();
+        cly = this;
+        super.sdk = this.sdk = sdk;
+        this.ctx = ctx;
+    }
+
+    private static Ctx ctx(Context context) {
+        return new CtxImpl(cly.sdk, cly.sdk.config(), context);
     }
 
     /**
@@ -54,7 +64,7 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         }
-        return instance.core.session(new CtxImpl(context), null);
+        return Cly.session(ctx(context));
     }
 
     /**
@@ -71,7 +81,7 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         }
-        return instance.core.getSession();
+        return Cly.getSession();
     }
 
     /**
@@ -93,37 +103,30 @@ public class Countly extends CountlyLifecycle {
         return session(context).event(key);
     }
 
-    /**
-     * Get current User Profile object.
-     *
-     * @see User#edit() to get {@link UserEditor} object
-     * @see UserEditor#commit() to submit changes to the server
-     * @return current User Profile instance
-     */
-    public static User user() {
+    public static User user(Context context) {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         }
-        return instance.core.user();
+        return session(ctx(context)).user();
     }
 
-    /**
-     * Token refresh callback to be called from {@code FirebaseInstanceIdService} whenever new token is acquired.
-     *
-     * @param service context to run in (supposed to be called from {@code FirebaseInstanceIdService})
-     * @param token String token to be sent to Countly server
-     */
-    public static void onFirebaseToken(Service service, String token) {
-        if (!isInitialized()) {
-            L.wtf("Countly SDK is not initialized yet.");
-        } else {
-            Core.onPushTokenRefresh(service, token);
-        }
-    }
+//    /**
+//     * Token refresh callback to be called from {@code FirebaseInstanceIdService} whenever new token is acquired.
+//     *
+//     * @param service context to run in (supposed to be called from {@code FirebaseInstanceIdService})
+//     * @param token String token to be sent to Countly server
+//     */
+//    public static void onFirebaseToken(Service service, String token) {
+//        if (!isInitialized()) {
+//            L.wtf("Countly SDK is not initialized yet.");
+//        } else {
+//            Core.onPushTokenRefresh(service, token);
+//        }
+//    }
 
     /**
      * Login function to set device (user) id on Countly server to the string specified here.
-     * Closes current session, then starts new one automatically if {@link Config.Feature#AutoSessionTracking} is on, acquires device id.
+     * Closes current session, then starts new one automatically if {@link Config#autoSessionsTracking} is on, acquires device id.
      *
      * @param context Ctx to run in
      * @param id new user / device id string, cannot be empty
@@ -132,7 +135,7 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         } else {
-            instance.core.login(context, id);
+            cly.sdk.login(ctx(context), id);
         }
     }
 
@@ -149,7 +152,7 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         } else {
-            instance.core.logout(context);
+            cly.sdk.logout(ctx(context));
         }
     }
 
@@ -167,7 +170,7 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         } else {
-            instance.core.logout(context);
+            cly.sdk.resetId(ctx(context), id);
         }
     }
 
@@ -183,7 +186,11 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         } else {
-            instance.core.onConsent(new CtxImpl(context), features);
+            int ftrs = 0;
+            for (Config.Feature f : features) {
+                ftrs = ftrs | f.getIndex();
+            }
+            cly.sdk.onConsent(ctx(context), ftrs);
         }
     }
 
@@ -199,7 +206,11 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         } else {
-            instance.core.onConsentRemoval(new CtxImpl(context), features);
+            int ftrs = 0;
+            for (Config.Feature f : features) {
+                ftrs = ftrs | f.getIndex();
+            }
+            cly.sdk.onConsentRemoval(ctx(context), ftrs);
         }
     }
 
@@ -208,14 +219,14 @@ public class Countly extends CountlyLifecycle {
      */
 
     public static Countly sharedInstance() {
-        return instance;
+        return cly;
     }
 
     /**
      * Changes current device id to the one specified in parameter. Merges user profile with new id
      * (if any) with old profile.
      *
-     * @deprecated since 18.X, use {@link #login(Context, String)}}, {@link #logout(Context)}
+     * @deprecated since 19.X, use {@link #login(Context, String)}}, {@link #logout(Context)}
      * an {@link #resetDeviceId(Context, String)} instead
      * @param context Ctx to run in
      * @param id new user / device id string
@@ -232,7 +243,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with no segmentation values, a count of one and a sum of zero.
      *
-     * @deprecated since 18.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.X, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
@@ -245,7 +256,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with no segmentation values, the specified count, and a sum of zero.
      *
-     * @deprecated since 18.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.X, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param count count to associate with the event, should be more than zero
      * @throws IllegalStateException if Countly SDK has not been initialized
@@ -259,7 +270,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with no segmentation values, and the specified count and sum.
      *
-     * @deprecated since 18.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.X, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
@@ -274,7 +285,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with the specified segmentation values and count, and a sum of zero.
      *
-     * @deprecated since 18.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.X, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
@@ -289,7 +300,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with the specified values.
      *
-     * @deprecated since 18.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.X, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
@@ -306,7 +317,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with the specified values.
      *
-     * @deprecated since 18.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.X, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
@@ -321,7 +332,7 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.init() must be called before recordEvent");
         } else {
-            Event event = session(instance.legacyContext).event(key);
+            Event event = session(cly.ctx).event(key);
             if (segmentation != null) {
                 event.setSegmentation(segmentation);
             }
@@ -345,12 +356,12 @@ public class Countly extends CountlyLifecycle {
      * In case session ends and last view haven't been ended yet, it will be ended automatically.
      * Creates begin request if this session hasn't yet been began.
      *
-     * @deprecated since 18.X, use {@link Session#view(String)}} instead
+     * @deprecated since 19.X, use {@link Session#view(String)}} instead
      * @param viewName String representing name of this View
      */
     @Deprecated
     public Countly recordView(String viewName) {
-        session(instance.legacyContext).view(viewName).start(false);
+        session(cly.ctx).view(viewName).start(false);
         return this;
     }
 
@@ -386,7 +397,7 @@ public class Countly extends CountlyLifecycle {
      * </li>
      * </ul>
      *
-     * @deprecated since 18.X, use {@link #user()} instead
+     * @deprecated since 19.X, use {@link #user()} instead
      * @param data Map&lt;String, String&gt; with user data
      */
     @Deprecated
@@ -428,7 +439,7 @@ public class Countly extends CountlyLifecycle {
      * </li>
      * </ul>
      *
-     * @deprecated since 18.X, use {@link #user()} instead
+     * @deprecated since 19.X, use {@link #user()} instead
      * @param data Map&lt;String, String&gt; with user data
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
      */
@@ -452,7 +463,7 @@ public class Countly extends CountlyLifecycle {
      * Sets custom properties.
      * In custom properties you can provide any string key values to be stored with user
      *
-     * @deprecated since 18.X, use {@link #user()} instead
+     * @deprecated since 19.X, use {@link #user()} instead
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
      */
     @Deprecated
@@ -467,13 +478,13 @@ public class Countly extends CountlyLifecycle {
      * it's better to supply exact location of user.
      * Allows sending messages to a custom segment of users located in a particular area.
      *
-     * @deprecated since 18.X, use {@link Session#addLocation(double, double)} instead
+     * @deprecated since 19.X, use {@link Session#addLocation(double, double)} instead
      * @param lat Latitude
      * @param lon Longitude
      */
     @Deprecated
     public Countly setLocation(double lat, double lon) {
-        session(instance.legacyContext).addLocation(lat, lon);
+        session(cly.ctx).addLocation(lat, lon);
         return this;
     }
 
@@ -481,7 +492,7 @@ public class Countly extends CountlyLifecycle {
      * Example {@link CrashProcessor} class to make legacy crash reporting methods work:
      * {@link #setCustomCrashSegments(Map)}, {@link #addCrashLog(String)}
      *
-     * @deprecated since 18.X, use {@link Config#setCrashProcessorClass(Class)} instead
+     * @deprecated since 19.X, use {@link Config#setCrashProcessorClass(Class)} instead
      */
     @Deprecated
     public static class DefaultCrashProcessor implements CrashProcessor {
@@ -506,7 +517,7 @@ public class Countly extends CountlyLifecycle {
      * Sets custom segments to be reported with crash reports
      * In custom segments you can provide any string key values to segments crashes by
      *
-     * @deprecated since 18.X, use {@link Config#setCrashProcessorClass(Class)} instead
+     * @deprecated since 19.X, use {@link Config#setCrashProcessorClass(Class)} instead
      * @param segments Map&lt;String, String&gt; key segments and their values
      */
     @Deprecated
@@ -521,7 +532,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Add crash breadcrumb like log record to the log that will be send together with crash report
      *
-     * @deprecated since 18.X, use {@link Config#setCrashProcessorClass(Class)} instead
+     * @deprecated since 19.X, use {@link Config#setCrashProcessorClass(Class)} instead
      * @param record String a bread crumb for the crash report
      */
     @Deprecated
@@ -536,7 +547,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Log handled exception to report it to server as non fatal crash
      *
-     * @deprecated since 18.X, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
+     * @deprecated since 19.X, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
      * @param exception Exception to log
      */
     @Deprecated
@@ -547,46 +558,46 @@ public class Countly extends CountlyLifecycle {
     /**
      * Log handled exception to report it to server
      *
-     * @deprecated since 18.X, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
+     * @deprecated since 19.X, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
      * @param exception Exception to log
      * @param fatal {@code true} if this exception is fatal, that is app cannot continue running
      */
     @Deprecated
     public Countly logException(Throwable exception, boolean fatal) {
-        session(instance.legacyContext).addCrashReport(exception, fatal);
+        session(cly.ctx).addCrashReport(exception, fatal);
         return this;
     }
 
     /**
      * Start timed event with a specified key
      *
-     * @deprecated since 18.X, use {@link Session#timedEvent(String)} instead
+     * @deprecated since 19.X, use {@link Session#timedEvent(String)} instead
      * @param key name of the custom event, required, must not be the empty string or null
      * @return true if no event with this key existed before and event is started, false otherwise
      */
     @Deprecated
     public synchronized boolean startEvent(final String key) {
-        session(instance.legacyContext).timedEvent(key);
+        session(cly.ctx).timedEvent(key);
         return false;
     }
 
     /**
      * End timed event with a specified key
      *
-     * @deprecated since 18.X, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
+     * @deprecated since 19.X, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
      * @param key name of the custom event, required, must not be the empty string or null
      * @return true if event with this key has been previously started, false otherwise
      */
     @Deprecated
     public synchronized boolean endEvent(final String key) {
-        session(instance.legacyContext).timedEvent(key).endAndRecord();
+        session(cly.ctx).timedEvent(key).endAndRecord();
         return true;
     }
 
     /**
      * End timed event with a specified key
      *
-     * @deprecated since 18.X, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
+     * @deprecated since 19.X, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
@@ -598,7 +609,7 @@ public class Countly extends CountlyLifecycle {
      */
     @Deprecated
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
-        Event event = session(instance.legacyContext).timedEvent(key);
+        Event event = session(cly.ctx).timedEvent(key);
         if (segmentation != null && segmentation.size() > 0) {
             event.setSegmentation(segmentation);
         }

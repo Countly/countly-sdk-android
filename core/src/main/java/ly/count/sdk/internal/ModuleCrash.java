@@ -81,7 +81,7 @@ public class ModuleCrash extends ModuleBase {
     }
 
     public void onCrash(Ctx ctx, final ly.count.sdk.internal.CrashImpl crash) {
-        long running = started == 0 ? 0 : Device.nsToMs(System.nanoTime() - started);
+        long running = started == 0 ? 0 : Device.dev.nsToMs(System.nanoTime() - started);
         crash.putMetrics(ctx, running);
         if (crashProcessor != null) {
             try {

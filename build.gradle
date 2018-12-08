@@ -2,8 +2,8 @@
 
 buildscript {
     repositories {
-        jcenter()
         google()
+        jcenter()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.2.1'
@@ -21,6 +21,7 @@ allprojects {
         options.addStringOption('Xdoclint:none', '-quiet')
     }
     repositories {
+        google()
         jcenter()
         mavenLocal()
         maven {

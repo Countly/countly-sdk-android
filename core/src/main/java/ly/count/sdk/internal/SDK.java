@@ -15,6 +15,9 @@ public interface SDK {
     UserImpl user();
     InternalConfig config();
 
+    void init(Ctx ctx);
+    void stop(Ctx ctx, boolean clear);
+
     void onDeviceId(Ctx ctx, Config.DID id, Config.DID old);
 
     SessionImpl getSession();

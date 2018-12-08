@@ -16,6 +16,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.xml.bind.DatatypeConverter;
+
 /**
  * Utility class
  */
@@ -459,6 +461,34 @@ public class Utils {
                 bytes.close();
                 stream.close();
             } catch (Throwable ignored){}
+        }
+    }
+
+    public static class Base64 {
+        public static String encode(byte[] bytes) {
+            return DatatypeConverter.printBase64Binary(bytes);
+        }
+
+        public static String encode(String string) {
+            try {
+                return encode(string.getBytes(UTF8));
+            } catch (UnsupportedEncodingException e) {
+                // shouldn't happen
+                return null;
+            }
+        }
+
+        public static byte[] decode(String string) {
+            return DatatypeConverter.parseBase64Binary(string);
+        }
+
+        public static String decodeToString(String string) {
+            try {
+                return new String(decode(string), UTF8);
+            } catch (UnsupportedEncodingException e) {
+                // shouldn't happen
+                return null;
+            }
         }
     }
 

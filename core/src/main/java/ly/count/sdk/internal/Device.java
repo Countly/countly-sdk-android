@@ -19,6 +19,12 @@ import java.util.regex.Pattern;
  */
 
 public class Device {
+    public static Device dev = new Device();
+
+    protected Device () {
+        dev = this;
+    }
+
     protected static final Log.Module L = Log.module("Device");
 
     /**
@@ -92,15 +98,15 @@ public class Device {
         }
     }
 
-    protected static TimeGenerator uniqueTimer = new UniqueTimeGenerator();
-    protected static TimeGenerator uniformTimer = new UniformTimeGenerator();
+    protected TimeGenerator uniqueTimer = new UniqueTimeGenerator();
+    protected TimeGenerator uniformTimer = new UniformTimeGenerator();
 
     /**
      * Get operation system name
      *
      * @return the display name of the current operating system.
      */
-    public static String getOS() {
+    public String getOS() {
         return System.getProperty("os.name");
     }
 
@@ -109,7 +115,7 @@ public class Device {
      *
      * @return current operating system version as a displayable string.
      */
-    public static String getOSVersion() {
+    public String getOSVersion() {
         return System.getProperty("os.version", "n/a");
 //                + " / " + System.getProperty("os.arch", "n/a");
     }
@@ -119,7 +125,7 @@ public class Device {
      *
      * @return timezone offset in seconds
      */
-    public static int getTimezoneOffset() {
+    public int getTimezoneOffset() {
         return TimeZone.getDefault().getOffset(new Date().getTime()) / 60000;
     }
 
@@ -128,7 +134,7 @@ public class Device {
      *
      * @return current locale (ex. "en_US").
      */
-    public static String getLocale() {
+    public String getLocale() {
         final Locale locale = Locale.getDefault();
         return locale.getLanguage() + "_" + locale.getCountry();
     }
@@ -138,7 +144,7 @@ public class Device {
      *
      * @param ctx Ctx in which to request metrics
      */
-    public static Params buildMetrics(final InternalConfig config, final Ctx ctx) {
+    public Params buildMetrics(final InternalConfig config, final Ctx ctx) {
         Params params = new Params();
         params.obj("metrics")
                 .put("_os", getOS())
@@ -157,7 +163,7 @@ public class Device {
      *
      * @return unique time in ms
      */
-    public static synchronized long uniqueTimestamp() {
+    public synchronized long uniqueTimestamp() {
         return uniqueTimer.timestamp();
     }
 
@@ -167,7 +173,7 @@ public class Device {
      *
      * @return uniform time in ms
      */
-    public static synchronized long uniformTimestamp() {
+    public synchronized long uniformTimestamp() {
         return uniformTimer.timestamp();
     }
 
@@ -176,7 +182,7 @@ public class Device {
      *
      * @return day of week value, Sunday = 0, Saturday = 6
      */
-    public static int currentDayOfWeek() {
+    public int currentDayOfWeek() {
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
         switch (day) {
             case Calendar.SUNDAY:
@@ -202,7 +208,7 @@ public class Device {
      *
      * @return current hour of day
      */
-    public static int currentHour() {
+    public int currentHour() {
         return Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
     }
 
@@ -212,7 +218,7 @@ public class Device {
      * @param ns time in nanoseconds
      * @return ns in milliseconds
      */
-    public static long nsToMs(long ns) {
+    public long nsToMs(long ns) {
         return Math.round(ns / NS_IN_MS);
     }
 
@@ -222,7 +228,7 @@ public class Device {
      * @param ns time in nanoseconds
      * @return ns in seconds
      */
-    public static long nsToSec(long ns) {
+    public long nsToSec(long ns) {
         return Math.round(ns / NS_IN_SECOND);
     }
 
@@ -232,7 +238,7 @@ public class Device {
      * @param sec time in seconds
      * @return sec in nanoseconds
      */
-    public static long secToNs(long sec) {
+    public long secToNs(long sec) {
         return Math.round(sec * NS_IN_SECOND);
     }
 
@@ -242,7 +248,7 @@ public class Device {
      * @param sec time in seconds
      * @return sec in nanoseconds
      */
-    public static long secToMs(long sec) {
+    public long secToMs(long sec) {
         return Math.round(sec * MS_IN_SECOND);
     }
 
@@ -251,7 +257,7 @@ public class Device {
      *
      * @return total RAM in Mb or null if cannot determine
      */
-    public static Long getRAMTotal() {
+    public Long getRAMTotal() {
         RandomAccessFile reader = null;
         try {
             reader = new RandomAccessFile("/proc/meminfo", "r");
@@ -287,7 +293,7 @@ public class Device {
      *
      * @return currently available RAM in Mb or {@code null} if couldn't determine
      */
-    public static Long getRAMAvailable() {
+    public Long getRAMAvailable() {
         Long total = Runtime.getRuntime().totalMemory();
         Long availMem = Runtime.getRuntime().freeMemory();
         return (total - availMem) / BYTES_IN_MB;
@@ -298,7 +304,7 @@ public class Device {
      *
      * @return currently available disk space in Mb
      */
-    public static Long getDiskAvailable() {
+    public Long getDiskAvailable() {
         long total = 0, free = 0;
         for (File f : File.listRoots()) {
             total += f.getTotalSpace();
@@ -312,7 +318,7 @@ public class Device {
      *
      * @return total device disk space in Mb
      */
-    public static Long getDiskTotal() {
+    public Long getDiskTotal() {
         long total = 0;
         for (File f : File.listRoots()) {
             total += f.getTotalSpace();
@@ -320,8 +326,13 @@ public class Device {
         return total / BYTES_IN_MB;
     }
 
-    public static boolean isDebuggerConnected() {
-        return ManagementFactory.getRuntimeMXBean().getInputArguments().contains("-Xdebug") || ManagementFactory.getRuntimeMXBean().getInputArguments().contains("jdwp=");
+    public boolean isDebuggerConnected() {
+        try {
+            return ManagementFactory.getRuntimeMXBean().getInputArguments().contains("-Xdebug") || ManagementFactory.getRuntimeMXBean().getInputArguments().contains("jdwp=");
+        } catch (Throwable e) {
+            Log.i("Cannot determine whether debugger is connected, skipping", e);
+            return false;
+        }
     }
 
 }

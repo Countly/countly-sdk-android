@@ -36,18 +36,18 @@ public class ModuleAttribution extends ModuleBase {
     private String adid = null;
 
     public static class AttributionReferrerReceiver extends BroadcastReceiver {
-        private InternalConfig config = null;
+        private ly.count.sdk.android.internal.Ctx ctx = null;
 
         @Override
         public void onReceive(android.content.Context context, Intent intent) {
             final PendingResult[] pendingResult = new PendingResult[1];
-            if (Device.API(11)) {
+            if (Device.dev.API(11)) {
                 pendingResult[0] = goAsync();
             }
 
-            config = SDK.instance.config();
-            if (config == null) {
-                L.wtf("No config in AttributionReferrerReceiver");
+            ctx = SDK.instance.ctx(context);
+            if (ctx == null) {
+                L.wtf("No ctx in AttributionReferrerReceiver");
                 return;
             }
 
@@ -89,7 +89,7 @@ public class ModuleAttribution extends ModuleBase {
                     @Override
                     public void call(Boolean success) throws Exception {
                         L.i("Done adding request: " + (success ? "success" : "failure"));
-                        if (Device.API(11)) {
+                        if (Device.dev.API(11)) {
                             pendingResult[0].finish();
                         }
                     }
@@ -98,7 +98,7 @@ public class ModuleAttribution extends ModuleBase {
         }
 
         public Request recordRequest(String cid, String uid) {
-            Request request = ModuleRequests.nonSessionRequest(config);
+            Request request = ModuleRequests.nonSessionRequest(ctx);
             request.params.add("campaign_id", cid, "campaign_user", uid);
             request.own(ModuleAttribution.class);
             return request;

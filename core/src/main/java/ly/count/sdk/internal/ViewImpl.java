@@ -44,7 +44,7 @@ class ViewImpl implements View {
 
         start = session.event(EVENT).addSegments(NAME, this.name,
                 VISIT, VISIT_VALUE,
-                SEGMENT, Device.getOS());
+                SEGMENT, Device.dev.getOS());
 
         if (firstView) {
             start.addSegment(START, START_VALUE);
@@ -63,7 +63,7 @@ class ViewImpl implements View {
         EventImpl event = (EventImpl) session.event(EVENT).addSegments(NAME, this.name,
                 SEGMENT, SEGMENT_VALUE);
 
-        event.setDuration(Device.uniqueTimestamp() - event.getTimestamp());
+        event.setDuration(Device.dev.uniqueTimestamp() - event.getTimestamp());
 
         if (lastView) {
             event.addSegment(EXIT, EXIT_VALUE);

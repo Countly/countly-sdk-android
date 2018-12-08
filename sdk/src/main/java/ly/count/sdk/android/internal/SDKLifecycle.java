@@ -7,9 +7,6 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import ly.count.sdk.internal.Byteable;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
@@ -18,33 +15,29 @@ import ly.count.sdk.internal.SDKCore;
 import ly.count.sdk.internal.Storage;
 
 /**
- * Application lifecycle-related methods of {@link Core}
+ * Application lifecycle-related methods of {@link ly.count.sdk.internal.SDK}
  */
 
 public abstract class SDKLifecycle extends SDKCore {
     private static final Log.Module L = Log.module("SDKLifecycle");
 
     /**
-     * Current instance of Core
-     */
-    static Core instance;
-
-    /**
      * Core instance config
      */
     protected InternalConfig config;
 
-    /**
-     * List of {@link Module} instances built based on {@link #config}
-     */
-    protected final List<Module> modules = new ArrayList<>();
-
-    protected SDKLifecycle(InternalConfig config) {
-        super(config);
+    protected SDKLifecycle() {
+        super();
     }
 
     CtxImpl ctx (Context context) {
         return new CtxImpl(this, config, context);
+    }
+
+    @Override
+    public void stop(ly.count.sdk.internal.Ctx ctx, boolean clear) {
+        super.stop(ctx, clear);
+        config = null;
     }
 
     /**
@@ -52,15 +45,13 @@ public abstract class SDKLifecycle extends SDKCore {
      * doesn't need to call those from each activity. In case app supports earlier version,
      * it's developer responsibility. In any case, for API 14+ Countly ignores dev calls.
      */
-    protected void onContextAcquired(final Application application) {
+    @Override
+    protected void onContextAcquired(final ly.count.sdk.internal.Ctx ctx) {
         L.d("Application created");
 
-        Ctx ctx = new CtxImpl(this, config(), application);
+        final Application application = ((Ctx) ctx).getApplication();
 
-        Storage.push(ctx, this.config);
         onSignal(ctx, Signal.Start.getIndex(), null);
-
-        this.config.setLimited(false);
 
         if (Utils.API(14)) {
             application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
@@ -127,9 +118,13 @@ public abstract class SDKLifecycle extends SDKCore {
             });
         }
 
-        for (Module m : modules) {
-            m.onContextAcquired(ctx);
-        }
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onContextAcquired(ctx);
+
+            }
+        });
     }
 
     public void onApplicationTrimMemory(int level) {
@@ -198,60 +193,85 @@ public abstract class SDKLifecycle extends SDKCore {
         // TODO: think about recording crash report
     }
 
+    // TODO: think about this
     private void onConfigurationChangedInternal(Application application, Configuration configuration) {
-        CtxImpl ctx = new CtxImpl(this, config(), application);
-        for (Module m : modules) {
-            m.onConfigurationChanged(ctx);
-        }
+        final Ctx ctx = ctx(application.getApplicationContext());
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onConfigurationChanged(ctx);
+            }
+        });
     }
 
     private void onActivityCreatedInternal(Activity activity, Bundle bundle) {
-        CtxImpl ctx = new CtxImpl(this, config(), activity, bundle);
-        for (Module m : modules) {
-            m.onActivityCreated(ctx);
-        }
+        final CtxImpl ctx = new CtxImpl(this, config(), activity, bundle);
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onActivityCreated(ctx);
+            }
+        });
     }
 
     private void onActivityStartedInternal(Activity activity) {
-        CtxImpl ctx = new CtxImpl(this, config(), activity, null);
-        for (Module m : modules) {
-            m.onActivityStarted(ctx);
-        }
+        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onActivityStarted(ctx);
+            }
+        });
     }
 
     private void onActivityResumedInternal(Activity activity) {
-        CtxImpl ctx = new CtxImpl(this, config(), activity, null);
-        for (Module m : modules) {
-            m.onActivityResumed(ctx);
-        }
+        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onActivityResumed(ctx);
+            }
+        });
     }
 
     private void onActivityPausedInternal(Activity activity) {
-        CtxImpl ctx = new CtxImpl(this, config(), activity, null);
-        for (Module m : modules) {
-            m.onActivityCreated(ctx);
-        }
+        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onActivityCreated(ctx);
+            }
+        });
     }
 
     private void onActivityStoppedInternal(Activity activity) {
-        CtxImpl ctx = new CtxImpl(this, config(), activity, null);
-        for (Module m : modules) {
-            m.onActivityStopped(ctx);
-        }
+        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onActivityStopped(ctx);
+            }
+        });
     }
 
     private void onActivitySaveInstanceStateInternal(Activity activity, Bundle bundle) {
-        CtxImpl ctx = new CtxImpl(this, config(), activity, bundle);
-        for (Module m : modules) {
-            m.onActivitySaveInstanceState(ctx);
-        }
+        final CtxImpl ctx = new CtxImpl(this, config(), activity, bundle);
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onActivitySaveInstanceState(ctx);
+            }
+        });
     }
 
     private void onActivityDestroyedInternal(Activity activity) {
-        CtxImpl ctx = new CtxImpl(this, config(), activity, null);
-        for (Module m : modules) {
-            m.onActivityDestroyed(ctx);
-        }
+        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onActivityDestroyed(ctx);
+            }
+        });
     }
 
     @Override

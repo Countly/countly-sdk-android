@@ -26,7 +26,7 @@ public class CrashImpl implements Crash, Storable {
     private Throwable throwable;
 
     protected CrashImpl() {
-        this(Device.uniformTimestamp());
+        this(Device.dev.uniformTimestamp());
     }
 
     protected CrashImpl(Long id) {
@@ -189,12 +189,12 @@ public class CrashImpl implements Crash, Storable {
     }
 
     public CrashImpl putMetrics(Ctx ctx, Long runningTime) {
-        return add("_os", Device.getOS())
-                .add("_os_version", Device.getOSVersion())
-                .add("_ram_current", Device.getRAMAvailable())
-                .add("_ram_total", Device.getRAMTotal())
-                .add("_disk_current", Device.getDiskAvailable())
-                .add("_disk_total", Device.getDiskTotal())
+        return add("_os", Device.dev.getOS())
+                .add("_os_version", Device.dev.getOSVersion())
+                .add("_ram_current", Device.dev.getRAMAvailable())
+                .add("_ram_total", Device.dev.getRAMTotal())
+                .add("_disk_current", Device.dev.getDiskAvailable())
+                .add("_disk_total", Device.dev.getDiskTotal())
                 .add("_run", runningTime);
     }
 
