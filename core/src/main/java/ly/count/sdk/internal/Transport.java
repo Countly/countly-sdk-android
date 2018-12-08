@@ -51,7 +51,7 @@ import ly.count.sdk.User;
 
 //class Network extends ModuleBase { - may be
 
-class Network implements X509TrustManager {
+class Transport implements X509TrustManager {
     private static final Log.Module L = Log.module("network");
     private static final String PARAMETER_TAMPERING_DIGEST = "SHA-256";
     private static final String CHECKSUM = "checksum256";
@@ -72,7 +72,7 @@ class Network implements X509TrustManager {
         REMOVE      // bad request, remove
     }
 
-    Network() {
+    Transport() {
     }
 
     /**
@@ -406,7 +406,7 @@ class Network implements X509TrustManager {
 
         if (keys != null) for (String key : keys) {
             try {
-                byte[] data = Utils.readStream(Network.class.getClassLoader().getResourceAsStream(key));
+                byte[] data = Utils.readStream(Transport.class.getClassLoader().getResourceAsStream(key));
                 if (data != null) {
                     String string = new String(data);
                     if (string.contains("--BEGIN")) {
@@ -433,7 +433,7 @@ class Network implements X509TrustManager {
         }
 
         if (certs != null) for (String cert : certs) {
-            byte[] data = Utils.readStream(Network.class.getClassLoader().getResourceAsStream(cert));
+            byte[] data = Utils.readStream(Transport.class.getClassLoader().getResourceAsStream(cert));
             if (data != null) {
                 String string = new String(data);
                 if (string.contains("--BEGIN")) {

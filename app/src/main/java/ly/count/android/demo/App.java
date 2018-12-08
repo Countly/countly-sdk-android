@@ -18,11 +18,11 @@ public class App extends Application {
 //    private static final String COUNTLY_SERVER_URL = "http://YOUR_SERVER.com";
 //    private static final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
 //    private static final String COUNTLY_SERVER_URL = "http://192.168.1.149:3001";
-//    private static final String COUNTLY_SERVER_URL = "http://192.168.3.77:3001";
-    private static final String COUNTLY_SERVER_URL = "http://artem.count.ly";
+    private static final String COUNTLY_SERVER_URL = "http://192.168.3.77:3001";
+//    private static final String COUNTLY_SERVER_URL = "http://artem.count.ly";
 //    private static final String COUNTLY_APP_KEY = "33a5dd24fd38c4471573da5ee06b355a3a9b1283";
-//    private static final String COUNTLY_APP_KEY = "7e21d7e256952b150d3db09808fbcb255bc761e6";
-    private static final String COUNTLY_APP_KEY = "33a5dd24fd38c4471573da5ee06b355a3a9b1283";
+    private static final String COUNTLY_APP_KEY = "f564319de7ad388c7c2bcc7ce89b1caa0806302d";
+//    private static final String COUNTLY_APP_KEY = "33a5dd24fd38c4471573da5ee06b355a3a9b1283";
 
     @Override
     public void onCreate() {

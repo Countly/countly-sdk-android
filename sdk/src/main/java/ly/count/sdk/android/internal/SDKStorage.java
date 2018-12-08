@@ -217,6 +217,8 @@ abstract class SDKStorage extends SDKLifecycle {
         Ctx ctx = (Ctx) context;
         prefix = prefix + FILE_NAME_SEPARATOR;
 
+        String alternativePrefix = FILE_NAME_PREFIX + FILE_NAME_SEPARATOR + prefix;
+
         List<Long> list = new ArrayList<>();
         String[] files = ctx.getContext().getApplicationContext().fileList();
         Arrays.sort(files);
@@ -225,9 +227,9 @@ abstract class SDKStorage extends SDKLifecycle {
         for (int i = 0; i < files.length; i++) {
             int idx = slice >= 0 ? i : files.length - 1 - i;
             String file = files[idx];
-            if (file.startsWith(prefix)) {
+            if (file.startsWith(prefix) || file.startsWith(alternativePrefix)) {
                 try {
-                    list.add(Long.parseLong(extractName(file, prefix)));
+                    list.add(Long.parseLong(extractName(file, file.startsWith(prefix) ? prefix : alternativePrefix)));
                 } catch (NumberFormatException nfe) {
                     Log.e("Wrong file name: " + file + " / " + prefix);
                 }

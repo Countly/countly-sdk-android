@@ -47,7 +47,11 @@ public class SDK extends SDKStorage {
 
     @Override
     public void onRequest(ly.count.sdk.internal.Ctx ctx, Request request) {
-        onSignal(ctx, Signal.Ping.getIndex(), null);
+        if (ctx.getConfig().isDefaultNetworking()) {
+            networking.check(ctx);
+        } else {
+            onSignal(ctx, Signal.Ping.getIndex(), null);
+        }
     }
 
     public void postToMainThread(Runnable ticker) {

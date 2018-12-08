@@ -36,6 +36,11 @@ public final class InternalConfig extends Config implements Storable {
     private boolean limited = false;
 
     /**
+     * Whether to use default networking, meaning networking in the same process with SDK
+     */
+    private boolean defaultNetworking = true;
+
+    /**
      * {@link Config.DID} instances generated from Countly SDK (currently maximum 2: Countly device id + FCM).
      * Stored to be able to refresh them.
      */
@@ -318,4 +323,12 @@ public final class InternalConfig extends Config implements Storable {
     public int getFeatures() { return features; }
 
     public Set<Integer> getModuleOverrides() { return moduleOverrides == null ? new HashSet<Integer>() : moduleOverrides.keySet(); }
+
+    public boolean isDefaultNetworking() {
+        return defaultNetworking;
+    }
+
+    public void setDefaultNetworking(boolean defaultNetworking) {
+        this.defaultNetworking = defaultNetworking;
+    }
 }

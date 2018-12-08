@@ -18,6 +18,7 @@ public abstract class SDKCore extends SDKModules {
 
     private UserImpl user;
     private InternalConfig config;
+    protected Networking networking;
 
     public enum Signal {
         DID(1),
@@ -98,6 +99,12 @@ public abstract class SDKCore extends SDKModules {
 
             onContextAcquired(ctx);
         }
+
+        if (config.isDefaultNetworking()) {
+            networking = new DefaultNetworking();
+            networking.init(ctx);
+            networking.check(ctx);
+        }
     }
 
     protected void onLimitedContextAcquired(final Ctx ctx) {
@@ -121,6 +128,10 @@ public abstract class SDKCore extends SDKModules {
     public void stop(final Ctx ctx, final boolean clear) {
         if (instance == null) {
             return;
+        }
+
+        if (networking != null) {
+            networking.stop(ctx);
         }
 
         L.i("Stopping Countly SDK" + (clear ? " and clearing all data" : ""));
@@ -148,12 +159,20 @@ public abstract class SDKCore extends SDKModules {
 
     @Override
     public void onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String[] logs) {
-
+        ModuleCrash module = (ModuleCrash) module(CoreFeature.CrashReporting.getIndex());
+        if (module != null) {
+            module.onCrash(ctx, t, fatal, name, segments, logs);
+        }
     }
 
     @Override
-    public void onUserChanged(Ctx ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved) {
-
+    public void onUserChanged(final Ctx ctx, final JSONObject changes, final Set<String> cohortsAdded, final Set<String> cohortsRemoved) {
+        eachModule(new Modulator() {
+            @Override
+            public void run(int feature, Module module) {
+                module.onUserChanged(ctx, changes, cohortsAdded, cohortsRemoved);
+            }
+        });
     }
 
     @Override
@@ -228,5 +247,20 @@ public abstract class SDKCore extends SDKModules {
 
     public static boolean enabled(CoreFeature feature) {
         return enabled(feature.getIndex());
+    }
+
+    public Boolean isRequestReady(Request request) {
+        Class<? extends Module> cls = request.owner();
+        if (cls == null) {
+            return true;
+        } else {
+            Module module = module(cls);
+            request.params.remove(Request.MODULE);
+            if (module == null) {
+                return true;
+            } else {
+                return module.onRequest(request);
+            }
+        }
     }
 }

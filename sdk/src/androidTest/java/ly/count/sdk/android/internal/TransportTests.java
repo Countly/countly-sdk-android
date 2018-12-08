@@ -34,7 +34,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 @RunWith(AndroidJUnit4.class)
-public class NetworkTests extends BaseTests {
+public class TransportTests extends BaseTests {
     @Rule
     public TestName testName = new TestName();
 
