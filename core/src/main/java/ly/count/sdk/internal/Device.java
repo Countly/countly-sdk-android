@@ -144,14 +144,14 @@ public class Device {
      *
      * @param ctx Ctx in which to request metrics
      */
-    public Params buildMetrics(final InternalConfig config, final Ctx ctx) {
+    public Params buildMetrics(final Ctx ctx) {
         Params params = new Params();
         params.obj("metrics")
                 .put("_os", getOS())
                 .put("_os_version", getOSVersion())
                 .put("_locale", getLocale())
-                .put("_store", config.getApplicationName())
-                .put("_app_version", config.getApplicationVersion())
+                .put("_store", ctx.getConfig().getApplicationName())
+                .put("_app_version", ctx.getConfig().getApplicationVersion())
             .add();
 
         return params;

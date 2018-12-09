@@ -33,10 +33,10 @@ import ly.count.sdk.internal.Params;
  */
 
 public class Device extends ly.count.sdk.internal.Device {
-    public static Device dev;
+    public static Device dev = new Device();
 
     private Device() {
-        dev = this;
+        ly.count.sdk.internal.Device.dev = dev = this;
     }
 
     /**
@@ -219,9 +219,11 @@ public class Device extends ly.count.sdk.internal.Device {
     /**
      * Build metrics {@link Params} object as required by Countly server
      *
-     * @param ctx Ctx in which to request metrics
+     * @param sdkctx Ctx in which to request metrics
      */
-    public Params buildMetrics(final ly.count.sdk.android.internal.Ctx ctx) {
+    @Override
+    public Params buildMetrics(final ly.count.sdk.internal.Ctx sdkctx) {
+        Ctx ctx = (Ctx) sdkctx;
         android.content.Context context = ctx.getContext();
         Params params = new Params();
         params.obj("metrics")

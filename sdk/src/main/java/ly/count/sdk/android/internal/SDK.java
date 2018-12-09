@@ -29,6 +29,9 @@ public class SDK extends SDKStorage {
     public SDK() {
         super();
         SDK.instance = this;
+
+        // just initialize overridden instance
+        Device.dev.getOS();
     }
 
     @Override
