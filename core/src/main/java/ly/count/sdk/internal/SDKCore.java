@@ -84,9 +84,17 @@ public abstract class SDKCore extends SDKModules {
             modules.remove(feature);
         }
 
+        if (config.isDefaultNetworking()) {
+            networking = new DefaultNetworking();
+            networking.init(ctx);
+            networking.check(ctx);
+        }
+
         if (config.isLimited()) {
             onLimitedContextAcquired(ctx);
         } else {
+            recover(ctx);
+
             try {
                 user = Storage.read(ctx, new UserImpl(ctx));
                 if (user == null) {
@@ -100,11 +108,6 @@ public abstract class SDKCore extends SDKModules {
             onContextAcquired(ctx);
         }
 
-        if (config.isDefaultNetworking()) {
-            networking = new DefaultNetworking();
-            networking.init(ctx);
-            networking.check(ctx);
-        }
     }
 
     protected void onLimitedContextAcquired(final Ctx ctx) {
@@ -260,6 +263,27 @@ public abstract class SDKCore extends SDKModules {
                 return true;
             } else {
                 return module.onRequest(request);
+            }
+        }
+    }
+
+    protected void recover (Ctx ctx) {
+        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
+
+        for (Long id : crashes) {
+            L.i("Found unprocessed crash " + id);
+            onSignal(ctx, Signal.Crash.getIndex(), id.toString());
+        }
+
+        List<Long> sessions = Storage.list(ctx, SessionImpl.getStoragePrefix());
+        for (Long id : sessions) {
+            L.d("recovering session " + id);
+            SessionImpl session = Storage.read(ctx, new SessionImpl(ctx, id));
+            if (session == null) {
+                L.wtf("no session with id " + id + " found while recovering");
+            } else {
+                Boolean success = session.recover(config);
+                L.d("session " + id + " recovery " + (success == null ? "won't recover" : success ? "success" : "failure"));
             }
         }
     }

@@ -7,7 +7,6 @@ import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.ModuleViews;
 import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.SDKCore;
 
 public class SDK extends SDKStorage {
     private static final Log.Module L = Log.module("SDK");
@@ -47,11 +46,7 @@ public class SDK extends SDKStorage {
 
     @Override
     public void onRequest(ly.count.sdk.internal.Ctx ctx, Request request) {
-        if (ctx.getConfig().isDefaultNetworking()) {
-            networking.check(ctx);
-        } else {
-            onSignal(ctx, Signal.Ping.getIndex(), null);
-        }
+        onSignal(ctx, Signal.Ping.getIndex(), null);
     }
 
     public void postToMainThread(Runnable ticker) {

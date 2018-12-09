@@ -11,6 +11,8 @@ import ly.count.sdk.internal.Byteable;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
+import ly.count.sdk.internal.ModuleRequests;
+import ly.count.sdk.internal.Request;
 import ly.count.sdk.internal.SDKCore;
 import ly.count.sdk.internal.Storage;
 
@@ -289,12 +291,38 @@ public abstract class SDKLifecycle extends SDKCore {
 
     @Override
     public void onSignal(ly.count.sdk.internal.Ctx ctx, int id, String param) {
-        Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
-        intent.putExtra(CountlyService.CMD, id);
-        if (Utils.isNotEmpty(param)) {
-            intent.putExtra(CountlyService.PARAM_1, param);
+        if (ctx.getConfig().isDefaultNetworking()) {
+            if (id == Signal.Crash.getIndex()) {
+                try {
+                    CrashImpl crash = new CrashImpl(Long.parseLong(param));
+                    crash = Storage.read(ctx, crash);
+                    if (crash == null) {
+                        L.e("Cannot read crash from storage, skipping");
+                        return;
+                    }
+
+                    Request request = ModuleRequests.nonSessionRequest(ctx);
+                    ModuleCrash.putCrashIntoParams(crash, request.params);
+                    if (Storage.push(ctx, request)) {
+                        L.i("Added request " + request.storageId() + " instead of crash " + crash.storageId());
+                        Boolean success = Storage.remove(ctx, crash);
+                        L.d("crash " + id + " removal result is " + success);
+                    } else {
+                        L.e("Couldn't write request " + request.storageId() + " instead of crash " + crash.storageId());
+                    }
+                } catch (Throwable t) {
+                    L.wtf("Error when making a request out of a crash", t);
+                }
+            }
+            networking.check(ctx);
+        } else {
+            Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
+            intent.putExtra(CountlyService.CMD, id);
+            if (Utils.isNotEmpty(param)) {
+                intent.putExtra(CountlyService.PARAM_1, param);
+            }
+            ((Context)ctx.getContext()).startService(intent);
         }
-        ((Context)ctx.getContext()).startService(intent);
     }
 
 }
