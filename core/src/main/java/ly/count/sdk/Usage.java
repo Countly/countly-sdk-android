@@ -106,4 +106,29 @@ public interface Usage {
      * @return new but already started {@link View}, you're responsible for its ending by calling {@link View#stop(boolean)}
      */
     View view(String name);
+
+    /**
+     * Login function to set device (user) id on Countly server to the string specified here.
+     * Closes current session, then starts new one automatically if {@link Config#autoSessionsTracking} is on, acquires device id.
+     *
+     * @param id new user / device id string, cannot be empty
+     */
+    Usage login(String id);
+
+    /**
+     * Logout function to make current user anonymous (that is with random id according to
+     * {@link Config#deviceIdStrategy} and such). Obviously makes sense only after a call to {@link #login(String)},
+     * so it throws error or does nothing (depending on {@link Config#testMode}) if current id wasn't set using {@link #login(String)}.
+     *
+     * Closes current session.
+     */
+    Usage logout();
+
+    /**
+     * Resetting id without merging profiles on server, just set device id to new one.
+     * Neither closes session, nor affects any other place in the SDK.
+     *
+     * @param id new user / device id string, cannot be empty
+     */
+    Usage resetDeviceId(String id);
 }

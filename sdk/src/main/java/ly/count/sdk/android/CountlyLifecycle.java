@@ -16,7 +16,7 @@ import ly.count.sdk.internal.Log;
  * Lifecycle-related methods.
  */
 
-public class CountlyLifecycle extends Cly {
+public abstract class CountlyLifecycle extends Cly {
     /**
      * Ctx stored for legacy methods.
      */
@@ -48,10 +48,9 @@ public class CountlyLifecycle extends Cly {
             }
 
             SDK sdk = new SDK();
-            Ctx ctx = new CtxImpl(sdk, new InternalConfig(config), application);
+            sdk.init(new CtxImpl(sdk, new InternalConfig(config), application));
 
-            sdk.init(ctx);
-
+            // config has been changed, thus recreating ctx
             cly = new Countly(sdk, new CtxImpl(sdk, sdk.config(), application));
         }
     }

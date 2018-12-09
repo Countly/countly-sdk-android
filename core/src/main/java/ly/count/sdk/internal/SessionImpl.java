@@ -15,6 +15,7 @@ import java.util.concurrent.Future;
 import ly.count.sdk.Config;
 import ly.count.sdk.Event;
 import ly.count.sdk.Session;
+import ly.count.sdk.Usage;
 import ly.count.sdk.User;
 import ly.count.sdk.View;
 
@@ -312,6 +313,24 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
     public View view(String name) {
         return view(name, startView);
+    }
+
+    @Override
+    public Usage login(String id) {
+        SDKCore.instance.login(ctx, id);
+        return this;
+    }
+
+    @Override
+    public Usage logout() {
+        SDKCore.instance.logout(ctx);
+        return this;
+    }
+
+    @Override
+    public Usage resetDeviceId(String id) {
+        SDKCore.instance.resetDeviceId(ctx, id);
+        return this;
     }
 
     public Session addParam(String key, Object value) {

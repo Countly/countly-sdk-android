@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import ly.count.sdk.Cly;
+import ly.count.sdk.Usage;
 import ly.count.sdk.android.internal.Ctx;
 import ly.count.sdk.android.internal.CtxImpl;
 import ly.count.sdk.android.internal.SDK;
@@ -157,11 +158,11 @@ public class Countly extends CountlyLifecycle {
     }
 
     /**
-     * Resetting id without merging profiles on server:
-     * Logout function to make current user anonymous (that is with random id according to
-     * {@link Config#deviceIdStrategy} and such). Obviously makes sense only after a call to {@link #login(Context, String)}.
-     *
-     * Closes current session.
+     * Resetting id without merging profiles on server, just set device id to new one:
+     * <ul>
+     *     <li>End current session if any</li>
+     *     <li>Begin new session with new id if previously ended a session</li>
+     * </ul>
      *
      * @param context Ctx to run in
      * @param id new user / device id string, cannot be empty
@@ -170,7 +171,7 @@ public class Countly extends CountlyLifecycle {
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
         } else {
-            cly.sdk.resetId(ctx(context), id);
+            cly.sdk.resetDeviceId(ctx(context), id);
         }
     }
 
@@ -485,6 +486,24 @@ public class Countly extends CountlyLifecycle {
     @Deprecated
     public Countly setLocation(double lat, double lon) {
         session(cly.ctx).addLocation(lat, lon);
+        return this;
+    }
+
+    @Override
+    public Usage login(String id) {
+        sdk.login(ctx, id);
+        return this;
+    }
+
+    @Override
+    public Usage logout() {
+        sdk.logout(ctx);
+        return this;
+    }
+
+    @Override
+    public Usage resetDeviceId(String id) {
+        sdk.resetDeviceId(ctx, id);
         return this;
     }
 

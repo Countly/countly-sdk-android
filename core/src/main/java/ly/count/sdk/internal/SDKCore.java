@@ -240,8 +240,8 @@ public abstract class SDKCore extends SDKModules {
         ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).logout(ctx);
     }
 
-    public void resetId(Ctx ctx, String id) {
-        ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).resetId(ctx, id);
+    public void resetDeviceId(Ctx ctx, String id) {
+        ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).resetDeviceId(ctx, id);
     }
 
     public static boolean enabled(int feature) {

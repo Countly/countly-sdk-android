@@ -273,7 +273,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param ctx context to run in
      * @param id new user id
      */
-    public void resetId(Ctx ctx, String id) {
+    public void resetDeviceId(Ctx ctx, String id) {
         if (Utils.isEmpty(id)) {
             L.wtf("Empty id passed to resetId method");
         } else {
