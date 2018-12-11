@@ -25,13 +25,17 @@ import static org.mockito.Mockito.validateMockitoUsage;
 
 @RunWith(AndroidJUnit4.class)
 public class CtxImplTests {
+    Application application = mock(Application.class);
+    Activity activity = mock(Activity.class);
+    SDK sdk = mock(SDK.class);
+    InternalConfig config;
+
     @Before
     public void setupEveryTest() throws Exception {
-        Config config = new Config("http://www.serverurl.com", "1234");
-        InternalConfig internalConfig = new InternalConfig(config);
+        config = new InternalConfig(new Config("http://www.serverurl.com", "1234"));
 
         Log log = new Log();
-        log.init(internalConfig);
+        log.init(config);
     }
 
     @After
@@ -41,51 +45,49 @@ public class CtxImplTests {
 
     @Test
     public void contextImpl_usageWithApplication(){
-        Application application = mock(Application.class);
         doReturn(getContext()).when(application).getApplicationContext();
-        CtxImpl contextImpl = new CtxImpl(application);
+        CtxImpl contextImpl = new CtxImpl(sdk, config, application);
 
         Assert.assertEquals(application, contextImpl.getApplication());
         Assert.assertEquals(application, contextImpl.getContext());
-        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertNull(contextImpl.getActivity());
 
         contextImpl.expire();
 
-        Assert.assertEquals(null, contextImpl.getApplication());
-        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertNull(contextImpl.getApplication());
+        Assert.assertNull(contextImpl.getActivity());
         Assert.assertEquals(getContext(), contextImpl.getContext());
     }
 
     @Test
     public void contextImpl_usageWithActivity(){
-        Activity activity = mock(Activity.class);
         doReturn(getContext()).when(activity).getApplicationContext();
-        CtxImpl contextImpl = new CtxImpl(activity);
+        CtxImpl contextImpl = new CtxImpl(sdk, config, activity);
 
-        Assert.assertEquals(null, contextImpl.getApplication());
+        Assert.assertNull(contextImpl.getApplication());
         Assert.assertEquals(activity, contextImpl.getContext());
         Assert.assertEquals(activity, contextImpl.getActivity());
 
         contextImpl.expire();
 
-        Assert.assertEquals(null, contextImpl.getApplication());
-        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertNull(contextImpl.getApplication());
+        Assert.assertNull(contextImpl.getActivity());
         Assert.assertEquals(getContext(), contextImpl.getContext());
     }
 
     @Test
     public void contextImpl_usageWithContext(){
         Context context = InstrumentationRegistry.getContext();
-        CtxImpl contextImpl = new CtxImpl(context);
+        CtxImpl contextImpl = new CtxImpl(sdk, config, context);
 
-        Assert.assertEquals(null, contextImpl.getApplication());
-        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertNull(contextImpl.getApplication());
+        Assert.assertNull(contextImpl.getActivity());
         Assert.assertEquals(context, contextImpl.getContext());
 
         contextImpl.expire();
 
-        Assert.assertEquals(null, contextImpl.getApplication());
-        Assert.assertEquals(null, contextImpl.getActivity());
+        Assert.assertNull(contextImpl.getApplication());
+        Assert.assertNull(contextImpl.getActivity());
         Assert.assertEquals(context.getApplicationContext(), contextImpl.getContext());
     }
 }

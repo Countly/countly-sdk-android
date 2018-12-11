@@ -145,6 +145,9 @@ public class Config extends ly.count.sdk.Config {
      */
     public Config(String serverURL, String serverAppKey) {
         super(serverURL, serverAppKey);
+        setSdkName("java-native-android");
+        setApplicationName(getSdkName());
+        enableFeatures(Feature.Events, Feature.Sessions, Feature.CrashReporting, Feature.Location, Feature.UserProfiles);
     }
 
     /**
@@ -298,6 +301,8 @@ public class Config extends ly.count.sdk.Config {
         }
         return ftrs;
     }
+
+    public int getFeaturesMap() { return features; }
 
     /**
      * Whether a feature is enabled in this config, that is exists in {@link #features}

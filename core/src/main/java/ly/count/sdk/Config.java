@@ -197,17 +197,17 @@ public class Config {
     /**
      * Countly SDK version to be sent in HTTP requests
      */
-    protected String sdkVersion = "17.04";
+    protected String sdkVersion = "19.01";
 
     /**
      * Countly SDK name to be sent in HTTP requests
      */
-    protected String applicationName = "java-native";
+    protected String applicationName = sdkName;
 
     /**
      * Countly SDK version to be sent in HTTP requests
      */
-    protected String applicationVersion = "17.04";
+    protected String applicationVersion = sdkVersion;
 
     /**
      * Force usage of POST method for all requests

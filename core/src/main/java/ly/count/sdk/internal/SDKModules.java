@@ -229,7 +229,7 @@ public abstract class SDKModules implements SDK {
      * @return {@link Module} instance or null if no such module is instantiated
      */
     @SuppressWarnings("unchecked")
-    protected <T extends Module> T module(Class<T> cls) {
+    public  <T extends Module> T module(Class<T> cls) {
         for (Module module: modules.values()) {
             if (module.getClass().isAssignableFrom(cls)) {
                 return (T) module;

@@ -284,7 +284,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
     @Override
     public Session addCrashReport(Throwable t, boolean fatal) {
-        return addCrashReport(t, fatal, null, null, null);
+        return addCrashReport(t, fatal, null, null);
     }
 
     @Override

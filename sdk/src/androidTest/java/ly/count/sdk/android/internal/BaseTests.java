@@ -9,8 +9,7 @@ import org.powermock.reflect.Whitebox;
 
 import java.util.List;
 
-import ly.count.sdk.Config;
-import ly.count.sdk.internal.Ctx;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
@@ -36,58 +35,60 @@ public class BaseTests {
     protected Module dummy = null;
     protected Utils utils = null;
 
-    protected Core core = null;
+    protected SDK sdk = null;
     protected CountlyService service = null;
 
-    public static Config config() {
+    public Config config() {
         return new Config(SERVER, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG);
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        ctx = new CtxImpl(getContext());
-        utils = Mockito.spy(new Utils());
-        Utils.reflectiveSetField(Utils.class, "utils", utils);
-    }
-
-    protected void setUpApplication(Config config) throws Exception {
-        setUpCore(config == null ? defaultConfig() : config, false);
-    }
-
-    protected void setUpService(Config config) throws Exception {
-        setUpCore(config, true);
-        this.service = spy(new CountlyService());
-        doReturn(ctx.getContext()).when(service).getApplicationContext();
-    }
-
-    private void setUpCore(Config config, boolean limited) throws Exception {
-        new Log().init(this.config == null ? new InternalConfig(defaultConfig()) : this.config);
-        this.dummy = mock(ModuleBase.class);
-        Utils.reflectiveSetField(Core.class, "testDummyModule", dummy);
-        this.core = Core.init(config, application(), limited);
-        this.config = Core.initialized();
     }
 
     protected Config defaultConfig() throws Exception {
         return config();
     }
 
-    protected Config defaultConfigWithLogsForConfigTests() throws Exception {
+    protected ly.count.sdk.Config defaultConfigWithLogsForConfigTests() throws Exception {
         InternalConfig config = new InternalConfig(defaultConfig());
         new Log().init(config);
         return config;
     }
 
+    @Before
+    public void setUp() throws Exception {
+        ctx = new CtxImpl(this.sdk, this.config == null ? new InternalConfig(defaultConfig()) : this.config, getContext());
+        utils = Mockito.spy(new Utils());
+        Utils.reflectiveSetField(Utils.class, "utils", utils);
+    }
+
+    protected void setUpApplication(Config config) throws Exception {
+        setUpSDK(config == null ? defaultConfig() : config, false);
+    }
+
+    protected void setUpService(Config config) throws Exception {
+        setUpSDK(config, true);
+        this.service = spy(new CountlyService());
+        doReturn(ctx.getContext()).when(service).getApplicationContext();
+    }
+
+    private void setUpSDK(Config config, boolean limited) throws Exception {
+        new Log().init(this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config);
+        this.dummy = mock(ModuleBase.class);
+        Utils.reflectiveSetField(SDK.class, "testDummyModule", dummy);
+        this.sdk = new SDK();
+        this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(defaultConfig()), getContext()));
+        this.config = SDK.instance.config();
+        this.ctx = new CtxImpl(this.sdk, this.config, getContext());
+    }
+
     @SuppressWarnings("unchecked")
     protected <T extends Module> T module(Class<T> cls, boolean mock) {
-        T module = core.module(cls);
+        T module = sdk.module(cls);
 
         if (module == null) {
             return null;
         }
 
         if (mock) {
-            List<Module> list = Whitebox.getInternalState(core, "modules");
+            List<Module> list = Whitebox.getInternalState(sdk, "modules");
             list.remove(module);
             module = Mockito.spy(module);
             list.add(1, module);
@@ -113,14 +114,16 @@ public class BaseTests {
 
     @After
     public void tearDown() throws Exception  {
-        if (Core.instance != null && ctx != null) {
-            Core.instance.stop(ctx.getContext(), true);
+        if (this.sdk != null && ctx != null) {
+            this.sdk.stop(ctx, true);
+            this.sdk = null;
         } else {
             Storage.await();
-            Core.deinit();
-            Core.purgeInternalStorage(ctx == null ? new CtxImpl(getContext()) : ctx, null);
+            this.sdk = new SDK();
+            this.sdk.storablePurge(ctx == null ? new CtxImpl(this.sdk, this.config == null ? new InternalConfig(defaultConfig()) : this.config, getContext()) : ctx, null);
+            this.sdk = null;
         }
-        Utils.reflectiveSetField(Core.class, "testDummyModule", null);
+        Utils.reflectiveSetField(SDK.class, "testDummyModule", null);
     }
 
 }

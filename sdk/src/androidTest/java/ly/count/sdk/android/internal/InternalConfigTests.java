@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 
 import java.net.URL;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.InternalConfig;
 
 import static ly.count.sdk.Config.LoggingLevel.WARN;
@@ -47,7 +47,7 @@ public class InternalConfigTests {
 
         Assert.assertEquals(new URL(serverUrl), internalConfig.getServerURL());
         Assert.assertEquals(serverAppKey, internalConfig.getServerAppKey());
-        Assert.assertEquals(config.getFeatures(), internalConfig.getFeatures());
+        Assert.assertEquals(config.getFeaturesMap(), internalConfig.getFeatures());
         Assert.assertEquals(config.getLoggingTag(), internalConfig.getLoggingTag());
         Assert.assertEquals(config.getLoggingLevel(), internalConfig.getLoggingLevel());
         Assert.assertEquals(config.getSdkName(), internalConfig.getSdkName());
@@ -83,9 +83,9 @@ public class InternalConfigTests {
         config.setCrashReportingANRTimeout(2);
         config.enableTestMode();
 
-        Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.ANDROID_ID, "openudid");
-        Config.DID adv = new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID, Config.DeviceIdStrategy.ADVERTISING_ID, "adid");
-        Config.DID ptk = new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, "push token");
+        Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.ANDROID_ID.getIndex(), "openudid");
+        Config.DID adv = new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID.getIndex(), Config.DeviceIdStrategy.ADVERTISING_ID.getIndex(), "adid");
+        Config.DID ptk = new Config.DID(Config.DeviceIdRealm.FCM_TOKEN.getIndex(), Config.DeviceIdStrategy.INSTANCE_ID.getIndex(), "push token");
 
         InternalConfig internalConfig = new InternalConfig(config);
         internalConfig.setDeviceId(dev);
@@ -99,7 +99,7 @@ public class InternalConfigTests {
 
         Assert.assertEquals(new URL(serverUrl), internalConfig.getServerURL());
         Assert.assertEquals(serverAppKey, internalConfig.getServerAppKey());
-        Assert.assertEquals(config.getFeatures(), internalConfig.getFeatures());
+        Assert.assertEquals(config.getFeaturesMap(), internalConfig.getFeatures());
         Assert.assertEquals(config.getLoggingTag(), internalConfig.getLoggingTag());
         Assert.assertEquals(config.getLoggingLevel(), internalConfig.getLoggingLevel());
         Assert.assertEquals(config.getSdkName(), internalConfig.getSdkName());
@@ -116,10 +116,10 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getCrashReportingANRTimeout(), internalConfig.getCrashReportingANRTimeout());
 
         Assert.assertNotNull(internalConfig.getDeviceId());
-        Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID));
-        Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
+        Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID.getIndex()));
+        Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN.getIndex()));
         Assert.assertEquals(dev, internalConfig.getDeviceId());
-        Assert.assertEquals(adv, internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID));
-        Assert.assertEquals(ptk, internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN));
+        Assert.assertEquals(adv, internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID.getIndex()));
+        Assert.assertEquals(ptk, internalConfig.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN.getIndex()));
     }
 }

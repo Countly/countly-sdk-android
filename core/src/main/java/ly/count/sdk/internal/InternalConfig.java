@@ -1,7 +1,5 @@
 package ly.count.sdk.internal;
 
-import com.sun.org.apache.xpath.internal.operations.Mod;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

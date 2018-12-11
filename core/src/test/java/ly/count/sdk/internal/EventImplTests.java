@@ -1,12 +1,10 @@
-package ly.count.sdk.android.internal;
+package ly.count.sdk.internal;
 
-import android.support.test.runner.AndroidJUnit4;
-
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.powermock.reflect.Whitebox;
 
 import java.util.HashMap;
@@ -14,24 +12,21 @@ import java.util.Map;
 
 import ly.count.sdk.Config;
 import ly.count.sdk.Event;
-import ly.count.sdk.internal.Ctx;
-import ly.count.sdk.internal.EventImpl;
-import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.SessionImpl;
 
-import static android.support.test.InstrumentationRegistry.getContext;
+import static org.mockito.Mockito.mock;
 
-@RunWith(AndroidJUnit4.class)
-public class EventImplTests {
+@RunWith(JUnit4.class)
+public class EventImplTests extends BaseTests {
     private Ctx ctx;
+    SDK sdk = mock(SDK.class);
+    InternalConfig config;
 
     @Before
     public void setupEveryTest() throws Exception {
-        String serverUrl = "http://www.serverurl.com";
-        String serverAppKey = "1234";
-        new Log().init(new InternalConfig(new Config(serverUrl, serverAppKey).enableTestMode()));
-        ctx = new CtxImpl(getContext());
+        config = new InternalConfig(new Config("http://www.serverurl.com", "1234"));
+        Log log = new Log();
+        log.init(config);
+        ctx = new BaseTests.CtxImpl(sdk, config, new Object());
     }
 
     @Test
@@ -62,7 +57,7 @@ public class EventImplTests {
                 .setDuration(3)
                 .setSum(4);
 
-        Assert.assertEquals(event, EventImpl.fromJSON(session, event.toJSON()));
+        Assert.assertEquals(event, EventImpl.fromJSON(event.toJSON(), session));
     }
 
     @Test(expected = IllegalStateException.class)
@@ -188,7 +183,7 @@ public class EventImplTests {
             event.setDuration(Double.NEGATIVE_INFINITY);
         } catch (IllegalStateException ignored) {}
 
-        Assert.assertEquals(session, event.record());
+        event.record();
         Assert.assertEquals(0, session.events.size());
     }
 

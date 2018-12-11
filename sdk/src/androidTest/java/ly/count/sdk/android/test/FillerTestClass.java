@@ -1,4 +1,4 @@
-package ly.count.sdk.android.sdk.test;
+package ly.count.sdk.android.test;
 
 import android.content.Context;
 

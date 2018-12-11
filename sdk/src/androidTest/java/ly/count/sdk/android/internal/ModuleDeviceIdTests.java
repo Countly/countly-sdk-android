@@ -10,13 +10,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.ModuleDeviceId;
 import ly.count.sdk.internal.Params;
 import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.SessionImpl;
 import ly.count.sdk.internal.Storage;
 import ly.count.sdk.internal.Tasks;
 
@@ -36,9 +35,10 @@ public class ModuleDeviceIdTests extends BaseTests {
     public void checkStrictAdvertisingId() throws Exception {
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
-        InternalConfig config = new InternalConfig(defaultConfig());
-        config.setDeviceIdFallbackAllowed(false);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
+        Config cfg = defaultConfig();
+        cfg.setDeviceIdFallbackAllowed(false);
+        cfg.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
+        InternalConfig config = new InternalConfig(cfg);
         ModuleDeviceId module = new ModuleDeviceId();
         module.init(config);
     }
@@ -278,13 +278,13 @@ public class ModuleDeviceIdTests extends BaseTests {
         Utils.reflectiveSetField(ModuleDeviceId.class, "testSleep", 2000L);
 
         setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
-        moduleDeviceId = (ModuleDeviceId) core.module(Config.InternalFeature.DeviceId);
+        moduleDeviceId = (ModuleDeviceId) sdk.module(Config.InternalFeature.DeviceId);
 
-        Assert.assertNull(Utils.reflectiveGetField(core, "session"));
+        Assert.assertNull(Utils.reflectiveGetField(sdk, "session"));
 
         //  make ModuleAutoSessions begin a session
-        core.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
-        Assert.assertNotNull(Utils.reflectiveGetField(core, "session"));
+        sdk.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        Assert.assertNotNull(Utils.reflectiveGetField(sdk, "session"));
 
         // ensure session is written
         List<Long> ids = Storage.list(ctx, SessionImpl.getStoragePrefix());
@@ -380,9 +380,9 @@ public class ModuleDeviceIdTests extends BaseTests {
         Utils.reflectiveSetField(ModuleDeviceId.class, "testSleep", 2000L);
 
         setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
-        moduleDeviceId = (ModuleDeviceId) core.module(Config.InternalFeature.DeviceId);
+        moduleDeviceId = (ModuleDeviceId) sdk.module(Config.InternalFeature.DeviceId);
 
-        core.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        sdk.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
         Thread.sleep(1000 * config.getSendUpdateEachSeconds());
 
         String idString = config.getDeviceId().id;
@@ -418,16 +418,16 @@ public class ModuleDeviceIdTests extends BaseTests {
         Assert.assertTrue(request.params.toString().contains("end_session=1"));
 
         // Activity stop doesn't do anything
-        Assert.assertNull(Utils.reflectiveGetField(core, "session"));
-        core.module(Config.Feature.AutoSessionTracking).onActivityStopped(ctx);
+        Assert.assertNull(Utils.reflectiveGetField(sdk, "session"));
+        sdk.module(Config.Feature.AutoSessionTracking).onActivityStopped(ctx);
         Thread.sleep(1000);
-        Assert.assertNull(Utils.reflectiveGetField(core, "session"));
+        Assert.assertNull(Utils.reflectiveGetField(sdk, "session"));
         ids = Storage.list(ctx, Request.getStoragePrefix());
         Assert.assertEquals(6, ids.size());
 
         // Starting another activity begins session
-        core.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
-        Assert.assertNotNull(Utils.reflectiveGetField(core, "session"));
+        sdk.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        Assert.assertNotNull(Utils.reflectiveGetField(sdk, "session"));
 
         // new session begin with old id
         ids = Storage.list(ctx, Request.getStoragePrefix());

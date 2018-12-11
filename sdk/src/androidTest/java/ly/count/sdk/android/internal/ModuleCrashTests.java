@@ -5,14 +5,15 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.ModuleCrash;
+import ly.count.sdk.internal.SDKCore;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
 public class ModuleCrashTests extends BaseTests {
     @Override
-    protected Config defaultConfig() throws Exception {
+    protected ly.count.sdk.android.Config defaultConfig() throws Exception {
         return super.defaultConfig().enableFeatures(Config.Feature.CrashReporting);
     }
 
@@ -60,7 +61,7 @@ public class ModuleCrashTests extends BaseTests {
         Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
         Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
 
-        Core.instance.stop(getContext(), true);
+        SDK.instance.stop(SDK.instance.ctx(getContext()), true);
 
         Thread.sleep(config.getCrashReportingANRTimeout() * 1000);
 

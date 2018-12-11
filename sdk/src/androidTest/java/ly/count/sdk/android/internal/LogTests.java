@@ -24,7 +24,7 @@ public class LogTests {
     private InternalConfig config;
 
     @Before
-    public void setupEveryTest() throws Exception{
+    public void setupEveryTest() {
         String serverUrl = "http://www.serverurl.com";
         String serverAppKey = "1234";
         config = new InternalConfig(new Config(serverUrl, serverAppKey));
@@ -42,13 +42,13 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_enableTestMode() throws Exception {
+    public void logInit_enableTestMode() {
         config.enableTestMode();
 
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertTrue(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(INFO, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -66,14 +66,14 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelDebug() throws Exception {
+    public void logInit_setLevelDebug() {
         config.setLoggingLevel(DEBUG)
                 .enableTestMode();
 
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertTrue(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(DEBUG, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -91,14 +91,14 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelInfo() throws Exception {
+    public void logInit_setLevelInfo() {
         config.setLoggingLevel(INFO)
                 .enableTestMode();
 
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertTrue(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(INFO, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -116,14 +116,14 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelWarn() throws Exception {
+    public void logInit_setLevelWarn() {
         config.setLoggingLevel(WARN)
                 .enableTestMode();
 
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertTrue(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(WARN, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -141,13 +141,13 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelError() throws Exception {
+    public void logInit_setLevelError() {
         config.setLoggingLevel(ERROR);
 
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(false, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertFalse(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(ERROR, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -165,13 +165,13 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_setLevelOff() throws Exception {
+    public void logInit_setLevelOff() {
         config.setLoggingLevel(OFF);
 
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(false, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertFalse(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(OFF, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -189,11 +189,11 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_noLevel() throws Exception {
+    public void logInit_noLevel() {
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(false, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertFalse(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(OFF, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -211,11 +211,11 @@ public class LogTests {
     }
 
     @Test
-    public void logInit_wtf_noLevel() throws Exception {
+    public void logInit_wtf_noLevel() {
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(false, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertFalse(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(OFF, Whitebox.getInternalState(log, "level"));
 
         Log.Logger logger = mock(Log.Logger.class);
@@ -235,13 +235,13 @@ public class LogTests {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void logInit_wtf_testMode() throws Exception {
+    public void logInit_wtf_testMode() {
         config.enableTestMode();
 
         Log log = new Log();
         log.init(config);
 
-        Assert.assertEquals(true, (boolean)Whitebox.<Boolean>getInternalState(log, "testMode"));
+        Assert.assertTrue(Whitebox.<Boolean>getInternalState(log, "testMode"));
         Assert.assertEquals(INFO, Whitebox.getInternalState(log, "level"));
 
         Log.wtf(message, exception);

@@ -70,7 +70,7 @@ public class ModulePushTests extends BaseTests {
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(fid), isNull(Config.DID.class));
 
-        UserImpl user = Utils.reflectiveGetField(core, "user");
+        UserImpl user = Utils.reflectiveGetField(sdk, "user");
         user.edit().addToCohort("COHORT_NEW").removeFromCohort("COHORT_OLD").commit();
 
         Mockito.verify(dummy, times(1)).onUserChanged(isA(ctx.getClass()), isA(JSONObject.class), eq(new HashSet<String>(Collections.singletonList("COHORT_NEW"))), eq(new HashSet<String>(Collections.singletonList("COHORT_OLD"))));

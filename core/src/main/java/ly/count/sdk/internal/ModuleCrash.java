@@ -59,7 +59,7 @@ public class ModuleCrash extends ModuleBase {
                     crashed = true;
 
                     if (isActive()) {
-                        onCrash(ctx, throwable, true, null, null, null);
+                        onCrash(ctx, throwable, true, null, null);
                     }
 
                     if (handler != null) {

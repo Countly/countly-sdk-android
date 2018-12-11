@@ -1,4 +1,4 @@
-package ly.count.sdk.android.internal;
+package ly.count.sdk.internal;
 
 import junit.framework.Assert;
 

@@ -1,4 +1,4 @@
-package ly.count.sdk.android.sdk;
+package ly.count.sdk.android;
 
 
 import android.support.test.runner.AndroidJUnit4;
@@ -12,8 +12,8 @@ import org.junit.runner.RunWith;
 import java.net.URL;
 import java.util.Set;
 
+import ly.count.sdk.android.Config;
 import ly.count.sdk.android.internal.BaseTests;
-import ly.count.sdk.Config;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -24,7 +24,12 @@ public class ConfigTests extends BaseTests {
 
     @Before
     public void setUp() throws Exception {
-        config = defaultConfigWithLogsForConfigTests();
+        config = (Config) defaultConfigWithLogsForConfigTests();
+    }
+
+    @Override
+    protected Config defaultConfig() throws Exception {
+        return new Config(serverUrl, serverAppKey);
     }
 
     @Test (expected = IllegalArgumentException.class)
@@ -171,61 +176,61 @@ public class ConfigTests extends BaseTests {
 
     @Test
     public void programmaticSessionsControl_default(){
-        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(true, config.isAutoSessionsTrackingEnabled());
     }
 
     @Test
     public void programmaticSessionsControl_enableAndDisable(){
-        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
-        config.disableFeatures(Config.Feature.AutoSessionTracking);
-        Assert.assertEquals(false, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
-        config.enableFeatures(Config.Feature.AutoSessionTracking);
-        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(true, config.isAutoSessionsTrackingEnabled());
+        config.setAutoSessionsTracking(false);
+        Assert.assertEquals(false, config.isAutoSessionsTrackingEnabled());
     }
 
     @Test
     public void sendUpdateEachSeconds_default(){
-        Assert.assertEquals(30, config.sendUpdateEachSeconds);
+        Assert.assertEquals(30, config.getSendUpdateEachSeconds());
     }
 
     @Test
     public void sendUpdateEachSeconds_disable(){
         config.disableUpdateRequests();
-        Assert.assertEquals(0, config.sendUpdateEachSeconds);
+        Assert.assertEquals(0, config.getSendUpdateEachSeconds());
     }
 
     @Test
     public void sendUpdateEachSeconds_set(){
         int secondsAmount = 123;
         config.setSendUpdateEachSeconds(secondsAmount);
-        Assert.assertEquals(secondsAmount, config.sendUpdateEachSeconds);
+        Assert.assertEquals(secondsAmount, config.getSendUpdateEachSeconds());
     }
 
     @Test
     public void sendUpdateEachEvents_default(){
-        Assert.assertEquals(10, config.eventsBufferSize);
+        Assert.assertEquals(10, config.getEventsBufferSize());
     }
 
     @Test
     public void sendUpdateEachEvents_disable(){
         config.disableUpdateRequests();
-        Assert.assertEquals(0, config.eventsBufferSize);
+        Assert.assertEquals(0, config.getEventsBufferSize());
     }
 
     @Test
     public void sendUpdateEachEvents_set(){
         int eventsAmount = 123;
         config.setEventsBufferSize(eventsAmount);
-        Assert.assertEquals(eventsAmount, config.eventsBufferSize);
+        Assert.assertEquals(eventsAmount, config.getEventsBufferSize());
     }
 
     @Test (expected = IllegalStateException.class)
     public void enableFeatures_null(){
-        Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(false, features.contains(null));
-        Assert.assertEquals(1, features.size());
-
-        config.enableFeatures(null);
+        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Events));
+        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Sessions));
+        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.CrashReporting));
+        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Location));
+        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.UserProfiles));
+        Assert.assertFalse(config.isFeatureEnabled(Config.Feature.Push));
+        Assert.assertFalse(config.isFeatureEnabled(Config.Feature.Views));
     }
 
     @Test (expected = IllegalStateException.class)
@@ -236,17 +241,17 @@ public class ConfigTests extends BaseTests {
     @Test
     public void addFeature_simple(){
         Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(1, features.size());
+        Assert.assertEquals(5, features.size());
 
-        config.enableFeatures(Config.Feature.CrashReporting);
+        config.enableFeatures(Config.Feature.Views);
         features = config.getFeatures();
-        Assert.assertEquals(2, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
+        Assert.assertEquals(6, features.size());
+        Assert.assertEquals(true, features.contains(Config.Feature.Views));
 
         config.enableFeatures(Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
-        Assert.assertEquals(3, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
+        Assert.assertEquals(7, features.size());
+        Assert.assertEquals(true, features.contains(Config.Feature.Views));
         Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertEquals(false, features.contains(Config.Feature.Push));
     }
@@ -255,7 +260,7 @@ public class ConfigTests extends BaseTests {
     public void setFeature_null(){
         Set<Config.Feature> features = config.getFeatures();
         Assert.assertEquals(false, features.contains(null));
-        Assert.assertEquals(1, features.size());
+        Assert.assertEquals(5, features.size());
 
         Config.Feature[] featureList = null;
 
@@ -268,12 +273,12 @@ public class ConfigTests extends BaseTests {
     @Test
     public void setFeature_simple(){
         Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(1, features.size());
+        Assert.assertEquals(5, features.size());
 
         config.setFeatures(Config.Feature.CrashReporting, Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
         Assert.assertEquals(2, features.size());
-        Assert.assertEquals(false, features.contains(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(false, features.contains(Config.Feature.Events));
         Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
         Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertEquals(false, features.contains(Config.Feature.Push));
@@ -282,14 +287,14 @@ public class ConfigTests extends BaseTests {
     @Test
     public void setFeature_overwrite(){
         Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(1, features.size());
+        Assert.assertEquals(5, features.size());
 
         config.enableFeatures(Config.Feature.Push);
         features = config.getFeatures();
-        Assert.assertEquals(2, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(6, features.size());
+        Assert.assertEquals(true, features.contains(Config.Feature.Events));
         Assert.assertEquals(true, features.contains(Config.Feature.Push));
-        Assert.assertEquals(false, features.contains(Config.Feature.CrashReporting));
+        Assert.assertEquals(false, features.contains(Config.Feature.Views));
         Assert.assertEquals(false, features.contains(Config.Feature.PerformanceMonitoring));
 
         config.setFeatures(Config.Feature.CrashReporting, Config.Feature.PerformanceMonitoring);
@@ -298,7 +303,7 @@ public class ConfigTests extends BaseTests {
         Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
         Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertEquals(false, features.contains(Config.Feature.Push));
-        Assert.assertEquals(false, features.contains(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(false, features.contains(Config.Feature.Views));
     }
 
     @Test
@@ -312,13 +317,14 @@ public class ConfigTests extends BaseTests {
         Config.Feature[] features = Config.Feature.values();
         Assert.assertEquals(Config.Feature.Events, features[0]);
         Assert.assertEquals(Config.Feature.Sessions, features[1]);
+        Assert.assertEquals(Config.Feature.Views, features[1]);
         Assert.assertEquals(Config.Feature.CrashReporting, features[2]);
+        Assert.assertEquals(Config.Feature.Location, features[2]);
+        Assert.assertEquals(Config.Feature.UserProfiles, features[8]);
         Assert.assertEquals(Config.Feature.Push, features[3]);
         Assert.assertEquals(Config.Feature.Attribution, features[4]);
         Assert.assertEquals(Config.Feature.StarRating, features[5]);
-        Assert.assertEquals(Config.Feature.AutoViewTracking, features[6]);
-        Assert.assertEquals(Config.Feature.AutoSessionTracking, features[7]);
-        Assert.assertEquals(Config.Feature.UserProfiles, features[8]);
+        Assert.assertEquals(Config.Feature.RemoteConfig, features[6]);
         Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[9]);
     }
 

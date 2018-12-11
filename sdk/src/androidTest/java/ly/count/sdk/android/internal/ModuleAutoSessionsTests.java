@@ -90,15 +90,15 @@ public class ModuleAutoSessionsTests extends BaseTests {
 
         SessionImpl sessionTarget = new SessionImpl(ctx, 123L);
         sessionTarget.begin().end();
-        Whitebox.<SessionImpl>setInternalState(core, "session", sessionTarget);
+        Whitebox.<SessionImpl>setInternalState(sdk, "session", sessionTarget);
 
         moduleAutoSessions.onActivityStarted(ctx);
         moduleAutoSessions.onActivityStarted(ctx);
-        Assert.assertEquals(sessionTarget, Whitebox.getInternalState(core, "session"));
+        Assert.assertEquals(sessionTarget, Whitebox.getInternalState(sdk, "session"));
         Assert.assertEquals(2, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
 
         moduleAutoSessions.onActivityStopped(ctx);
-        Assert.assertEquals(sessionTarget, Whitebox.getInternalState(core, "session"));
+        Assert.assertEquals(sessionTarget, Whitebox.getInternalState(sdk, "session"));
     }
 
     @Test
@@ -107,18 +107,18 @@ public class ModuleAutoSessionsTests extends BaseTests {
         moduleAutoSessions = module(ModuleAutoSessions.class, false);
 
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
-        Assert.assertNull(Whitebox.getInternalState(core, "session"));
+        Assert.assertNull(Whitebox.getInternalState(sdk, "session"));
 
         moduleAutoSessions.onActivityStarted(ctx);
         Assert.assertEquals(1, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
-        Assert.assertNotNull(Whitebox.getInternalState(core, "session"));
+        Assert.assertNotNull(Whitebox.getInternalState(sdk, "session"));
 
-        SessionImpl session = Whitebox.<SessionImpl>getInternalState(core, "session");
+        SessionImpl session = Whitebox.<SessionImpl>getInternalState(sdk, "session");
         Assert.assertTrue(session.isActive());
 
         moduleAutoSessions.onActivityStopped(ctx);
         Assert.assertEquals(0, (int) Whitebox.<Integer>getInternalState(moduleAutoSessions, "activityCount"));
-        Assert.assertNull(Whitebox.getInternalState(core, "session"));
+        Assert.assertNull(Whitebox.getInternalState(sdk, "session"));
         Assert.assertFalse(session.isActive());
         Assert.assertNotNull(session.ended);
     }

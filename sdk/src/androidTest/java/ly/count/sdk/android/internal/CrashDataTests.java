@@ -592,31 +592,31 @@ public class CrashDataTests extends BaseTests {
 
     @Test
     public void testAll() {
-        Assert.assertEquals(DeviceInfo.getOS(), Device.getOS());
-        Assert.assertEquals(DeviceInfo.getOSVersion(), Device.getOSVersion());
-        Assert.assertEquals(DeviceInfo.getDevice(), Device.getDevice());
-        Assert.assertEquals(DeviceInfo.getResolution(ctx.getContext()), Device.getResolution(ctx.getContext()));
-        Assert.assertEquals(DeviceInfo.getDensity(ctx.getContext()), Device.getDensity(ctx.getContext()));
-        Assert.assertEquals(DeviceInfo.getCarrier(ctx.getContext()), Device.getCarrier(ctx.getContext()));
-        Assert.assertEquals(DeviceInfo.getTimezoneOffset(), Device.getTimezoneOffset());
-        Assert.assertEquals(DeviceInfo.getLocale(), Device.getLocale());
-        Assert.assertEquals(DeviceInfo.getAppVersion(ctx.getContext()), Device.getAppVersion(ctx.getContext()));
-        Assert.assertEquals(DeviceInfo.getStore(ctx.getContext()), Device.getStore(ctx.getContext()));
-        Assert.assertEquals((Long)CrashDetails.getTotalRAM(), Device.getRAMTotal());
-        Assert.assertEquals(CrashDetails.getManufacturer(), Device.getManufacturer());
-        Assert.assertEquals(CrashDetails.getCpu(), Device.getCpu());
-        Assert.assertEquals(CrashDetails.getOpenGL(ctx.getContext()), String.valueOf(Device.getOpenGL(ctx.getContext())));
-        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getRamCurrent(ctx.getContext())), Device.getRAMAvailable(ctx.getContext())));
-//        Assert.assertEquals(CrashDetails.getRamCurrent(ctx.getContext()), String.valueOf(Device.getRAMAvailable(ctx.getContext())));
-        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskTotal()), Device.getDiskTotal()));
-        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskCurrent()), Device.getDiskAvailable()));
-//        Assert.assertEquals(CrashDetails.getDiskTotal(), String.valueOf(Device.getDiskTotal()));
-//        Assert.assertEquals(CrashDetails.getDiskCurrent(), String.valueOf(Device.getDiskAvailable()));
-        Assert.assertEquals(CrashDetails.getBatteryLevel(ctx.getContext()), String.valueOf(Device.getBatteryLevel(ctx.getContext())));
-        Assert.assertEquals(CrashDetails.getOrientation(ctx.getContext()), Device.getOrientation(ctx.getContext()));
-        Assert.assertEquals(CrashDetails.isRooted(), String.valueOf(Device.isRooted()));
-        Assert.assertEquals(String.valueOf(CrashDetails.isOnline(ctx.getContext())), String.valueOf(Device.isOnline(ctx.getContext())));
-        Assert.assertEquals(String.valueOf(CrashDetails.isMuted(ctx.getContext())), String.valueOf(Device.isMuted(ctx.getContext())));
+        Assert.assertEquals(DeviceInfo.getOS(), Device.dev.getOS());
+        Assert.assertEquals(DeviceInfo.getOSVersion(), Device.dev.getOSVersion());
+        Assert.assertEquals(DeviceInfo.getDevice(), Device.dev.getDevice());
+        Assert.assertEquals(DeviceInfo.getResolution(ctx.getContext()), Device.dev.getResolution(ctx.getContext()));
+        Assert.assertEquals(DeviceInfo.getDensity(ctx.getContext()), Device.dev.getDensity(ctx.getContext()));
+        Assert.assertEquals(DeviceInfo.getCarrier(ctx.getContext()), Device.dev.getCarrier(ctx.getContext()));
+        Assert.assertEquals(DeviceInfo.getTimezoneOffset(), Device.dev.getTimezoneOffset());
+        Assert.assertEquals(DeviceInfo.getLocale(), Device.dev.getLocale());
+        Assert.assertEquals(DeviceInfo.getAppVersion(ctx.getContext()), Device.dev.getAppVersion(ctx));
+        Assert.assertEquals(DeviceInfo.getStore(ctx.getContext()), Device.dev.getStore(ctx.getContext()));
+        Assert.assertEquals((Long)CrashDetails.getTotalRAM(), Device.dev.getRAMTotal());
+        Assert.assertEquals(CrashDetails.getManufacturer(), Device.dev.getManufacturer());
+        Assert.assertEquals(CrashDetails.getCpu(), Device.dev.getCpu());
+        Assert.assertEquals(CrashDetails.getOpenGL(ctx.getContext()), String.valueOf(Device.dev.getOpenGL(ctx.getContext())));
+        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getRamCurrent(ctx.getContext())), Device.dev.getRAMAvailable(ctx.getContext())));
+//        Assert.assertEquals(CrashDetails.getRamCurrent(ctx.getContext()), String.valueOf(Device.dev.getRAMAvailable(ctx.getContext())));
+        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskTotal()), Device.dev.getDiskTotal()));
+        Assert.assertTrue(ensureSimilar(Long.valueOf(CrashDetails.getDiskCurrent()), Device.dev.getDiskAvailable()));
+//        Assert.assertEquals(CrashDetails.getDiskTotal(), String.valueOf(Device.dev.getDiskTotal()));
+//        Assert.assertEquals(CrashDetails.getDiskCurrent(), String.valueOf(Device.dev.getDiskAvailable()));
+        Assert.assertEquals(CrashDetails.getBatteryLevel(ctx.getContext()), String.valueOf(Device.dev.getBatteryLevel(ctx.getContext())));
+        Assert.assertEquals(CrashDetails.getOrientation(ctx.getContext()), Device.dev.getOrientation(ctx.getContext()));
+        Assert.assertEquals(CrashDetails.isRooted(), String.valueOf(Device.dev.isRooted()));
+        Assert.assertEquals(String.valueOf(CrashDetails.isOnline(ctx.getContext())), String.valueOf(Device.dev.isOnline(ctx.getContext())));
+        Assert.assertEquals(String.valueOf(CrashDetails.isMuted(ctx.getContext())), String.valueOf(Device.dev.isMuted(ctx.getContext())));
     }
 
     private boolean ensureSimilar(Long a, Long b) {

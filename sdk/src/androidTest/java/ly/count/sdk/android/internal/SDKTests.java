@@ -12,12 +12,12 @@ import org.powermock.reflect.Whitebox;
 
 import java.util.List;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Module;
 
 @RunWith(AndroidJUnit4.class)
-public class CoreTests extends BaseTests {
+public class SDKTests extends BaseTests {
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -26,7 +26,7 @@ public class CoreTests extends BaseTests {
 
     @Test
     public void constructor_basic(){
-        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.Sessions));
         Assert.assertEquals(Config.LoggingLevel.DEBUG, config.getLoggingLevel());
 
         Core core = Core.init(config, application());

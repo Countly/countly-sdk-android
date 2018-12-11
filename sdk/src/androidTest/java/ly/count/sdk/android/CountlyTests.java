@@ -1,4 +1,4 @@
-package ly.count.sdk.android.sdk;
+package ly.count.sdk.android;
 
 import org.junit.After;
 import org.junit.Before;
@@ -26,30 +26,30 @@ public class CountlyTests {
 //    @Test
 //    public void init(){
 //        Application application = mock(Application.class);
-//        final Core core = mock(Core.class);
+//        final Core sdk = mock(Core.class);
 //
 //        Cly.init(application, config, new Cly.CreationOverride() {
 //            @Override
 //            public Core createCore(Config config) {
-//                return core;
+//                return sdk;
 //            }
 //        });
 //
-//        verify(core, times(1)).onContextAcquired(application);
+//        verify(sdk, times(1)).onContextAcquired(application);
 //    }
 //
 //    @Test
 //    public void constructor_core(){
 //        Cly cn = new Cly(config);
 //
-//        CoreTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "core"));
+//        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
 //    }
 //
 //    @Test
 //    public void constructor_config(){
-//        Core core = new Core(config);
-//        Cly cn = new Cly(core);
-//        CoreTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "core"));
+//        Core sdk = new Core(config);
+//        Cly cn = new Cly(sdk);
+//        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
 //    }
 
 }
