@@ -6,7 +6,8 @@ import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 import ly.count.sdk.android.Config;
-import ly.count.sdk.internal.ModuleCrash;
+//import ly.count.sdk.internal.ModuleCrash;
+import ly.count.sdk.android.internal.ModuleCrash;
 import ly.count.sdk.internal.SDKCore;
 
 import static android.support.test.InstrumentationRegistry.getContext;

@@ -1,5 +1,7 @@
 package ly.count.sdk.android.internal;
 
+import android.app.Application;
+import android.content.Context;
 import android.os.Handler;
 
 import ly.count.sdk.android.Config;
@@ -36,7 +38,16 @@ public class SDK extends SDKStorage {
 
     @Override
     public void init(ly.count.sdk.internal.Ctx ctx) {
-        handler = new Handler(((Ctx)ctx).getApplication().getMainLooper());
+        Application app = ((Ctx)ctx).getApplication();
+
+        if(app != null){
+            handler = new Handler(app.getMainLooper());
+        } else {
+            //todo, is it fine getting main looper like this? (AK, 10.12.18)
+            Context context = ((Ctx)ctx).getContext();
+            handler = new Handler(context.getMainLooper());
+        }
+
         super.init(ctx);
     }
 

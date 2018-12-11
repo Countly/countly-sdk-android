@@ -51,73 +51,88 @@ public abstract class SDKLifecycle extends SDKCore {
     protected void onContextAcquired(final ly.count.sdk.internal.Ctx ctx) {
         L.d("Application created");
 
-        final Application application = ((Ctx) ctx).getApplication();
+        final Application application;
+
+        if(((Ctx) ctx).getApplication() != null) {
+            application = ((Ctx) ctx).getApplication();
+        } else {
+            //todo, is it fine doing a fallback like this? (AK, 10.12.18)
+            Activity act = ((Ctx) ctx).getActivity();
+            if(act != null) {
+                application = act.getApplication();
+            } else {
+                application = null;
+            }
+        }
 
         onSignal(ctx, Signal.Start.getIndex(), null);
 
         if (Utils.API(14)) {
-            application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-                @Override
-                public void onActivityCreated(Activity activity, Bundle bundle) {
-                    L.d("Activity created: " + activity.getClass().getSimpleName());
-                    SDKLifecycle.this.onActivityCreatedInternal(activity, bundle);
-                }
+            if(application != null) {
+                //there can be occasions where this is not set
+                application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+                    @Override
+                    public void onActivityCreated(Activity activity, Bundle bundle) {
+                        L.d("Activity created: " + activity.getClass().getSimpleName());
+                        SDKLifecycle.this.onActivityCreatedInternal(activity, bundle);
+                    }
 
-                @Override
-                public void onActivityStarted(Activity activity) {
-                    L.d("Activity started: " + activity.getClass().getSimpleName());
-                    SDKLifecycle.this.onActivityStartedInternal(activity);
-                }
+                    @Override
+                    public void onActivityStarted(Activity activity) {
+                        L.d("Activity started: " + activity.getClass().getSimpleName());
+                        SDKLifecycle.this.onActivityStartedInternal(activity);
+                    }
 
-                @Override
-                public void onActivityResumed(Activity activity) {
-                    L.d("Activity resumed: " + activity.getClass().getSimpleName());
-                    SDKLifecycle.this.onActivityResumedInternal(activity);
-                }
+                    @Override
+                    public void onActivityResumed(Activity activity) {
+                        L.d("Activity resumed: " + activity.getClass().getSimpleName());
+                        SDKLifecycle.this.onActivityResumedInternal(activity);
+                    }
 
-                @Override
-                public void onActivityPaused(Activity activity) {
-                    L.d("Activity paused: " + activity.getClass().getSimpleName());
-                    SDKLifecycle.this.onActivityPausedInternal(activity);
-                }
+                    @Override
+                    public void onActivityPaused(Activity activity) {
+                        L.d("Activity paused: " + activity.getClass().getSimpleName());
+                        SDKLifecycle.this.onActivityPausedInternal(activity);
+                    }
 
-                @Override
-                public void onActivityStopped(Activity activity) {
-                    L.d("Activity stopped: " + activity.getClass().getSimpleName());
-                    SDKLifecycle.this.onActivityStoppedInternal(activity);
-                }
+                    @Override
+                    public void onActivityStopped(Activity activity) {
+                        L.d("Activity stopped: " + activity.getClass().getSimpleName());
+                        SDKLifecycle.this.onActivityStoppedInternal(activity);
+                    }
 
-                @Override
-                public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-                    L.d("Activity save state: " + activity.getClass().getSimpleName());
-                    SDKLifecycle.this.onActivitySaveInstanceStateInternal(activity, bundle);
-                }
+                    @Override
+                    public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+                        L.d("Activity save state: " + activity.getClass().getSimpleName());
+                        SDKLifecycle.this.onActivitySaveInstanceStateInternal(activity, bundle);
+                    }
 
-                @Override
-                public void onActivityDestroyed(Activity activity) {
-                    L.d("Activity destroyed: " + activity.getClass().getSimpleName());
-                    SDKLifecycle.this.onActivityDestroyedInternal(activity);
-                }
-            });
-            application.registerComponentCallbacks(new ComponentCallbacks2() {
-                @Override
-                public void onTrimMemory(int i) {
-                    L.d("Trim memory " + i);
-                    SDKLifecycle.this.onApplicationTrimMemoryInternal(i);
-                }
+                    @Override
+                    public void onActivityDestroyed(Activity activity) {
+                        L.d("Activity destroyed: " + activity.getClass().getSimpleName());
+                        SDKLifecycle.this.onActivityDestroyedInternal(activity);
+                    }
+                });
+                application.registerComponentCallbacks(new ComponentCallbacks2() {
+                    @Override
+                    public void onTrimMemory(int i) {
+                        L.d("Trim memory " + i);
+                        SDKLifecycle.this.onApplicationTrimMemoryInternal(i);
+                    }
 
-                @Override
-                public void onConfigurationChanged(Configuration configuration) {
-                    // TODO: Operator, screen, etc
-                    L.d("Configuration changed: " + configuration.toString());
-                    SDKLifecycle.this.onConfigurationChangedInternal(application, configuration);
-                }
+                    @Override
+                    public void onConfigurationChanged(Configuration configuration) {
+                        // TODO: Operator, screen, etc
+                        L.d("Configuration changed: " + configuration.toString());
+                        SDKLifecycle.this.onConfigurationChangedInternal(application, configuration);
+                    }
 
-                @Override
-                public void onLowMemory() {
-                    L.d("Low memory");
-                }
-            });
+                    @Override
+                    public void onLowMemory() {
+                        L.d("Low memory");
+                    }
+                });
+            }
         }
 
         eachModule(new Modulator() {
