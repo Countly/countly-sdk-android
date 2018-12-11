@@ -227,7 +227,7 @@ public class Countly extends CountlyLifecycle {
      * Changes current device id to the one specified in parameter. Merges user profile with new id
      * (if any) with old profile.
      *
-     * @deprecated since 19.X, use {@link #login(Context, String)}}, {@link #logout(Context)}
+     * @deprecated since 19.0, use {@link #login(Context, String)}}, {@link #logout(Context)}
      * an {@link #resetDeviceId(Context, String)} instead
      * @param context Ctx to run in
      * @param id new user / device id string
@@ -244,7 +244,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with no segmentation values, a count of one and a sum of zero.
      *
-     * @deprecated since 19.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.0, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
@@ -257,7 +257,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with no segmentation values, the specified count, and a sum of zero.
      *
-     * @deprecated since 19.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.0, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param count count to associate with the event, should be more than zero
      * @throws IllegalStateException if Countly SDK has not been initialized
@@ -271,7 +271,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with no segmentation values, and the specified count and sum.
      *
-     * @deprecated since 19.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.0, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
@@ -286,7 +286,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with the specified segmentation values and count, and a sum of zero.
      *
-     * @deprecated since 19.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.0, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
@@ -301,7 +301,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with the specified values.
      *
-     * @deprecated since 19.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.0, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
@@ -318,7 +318,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Records a custom event with the specified values.
      *
-     * @deprecated since 19.X, use {@link #event(Context, String)} instead
+     * @deprecated since 19.0, use {@link #event(Context, String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
@@ -357,7 +357,7 @@ public class Countly extends CountlyLifecycle {
      * In case session ends and last view haven't been ended yet, it will be ended automatically.
      * Creates begin request if this session hasn't yet been began.
      *
-     * @deprecated since 19.X, use {@link Session#view(String)}} instead
+     * @deprecated since 19.0, use {@link Session#view(String)}} instead
      * @param viewName String representing name of this View
      */
     @Deprecated
@@ -398,7 +398,7 @@ public class Countly extends CountlyLifecycle {
      * </li>
      * </ul>
      *
-     * @deprecated since 19.X, use {@link #user()} instead
+     * @deprecated since 19.0, use {@link #user()} instead
      * @param data Map&lt;String, String&gt; with user data
      */
     @Deprecated
@@ -440,7 +440,7 @@ public class Countly extends CountlyLifecycle {
      * </li>
      * </ul>
      *
-     * @deprecated since 19.X, use {@link #user()} instead
+     * @deprecated since 19.0, use {@link #user()} instead
      * @param data Map&lt;String, String&gt; with user data
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
      */
@@ -464,7 +464,7 @@ public class Countly extends CountlyLifecycle {
      * Sets custom properties.
      * In custom properties you can provide any string key values to be stored with user
      *
-     * @deprecated since 19.X, use {@link #user()} instead
+     * @deprecated since 19.0, use {@link #user()} instead
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
      */
     @Deprecated
@@ -479,7 +479,7 @@ public class Countly extends CountlyLifecycle {
      * it's better to supply exact location of user.
      * Allows sending messages to a custom segment of users located in a particular area.
      *
-     * @deprecated since 19.X, use {@link Session#addLocation(double, double)} instead
+     * @deprecated since 19.0, use {@link Session#addLocation(double, double)} instead
      * @param lat Latitude
      * @param lon Longitude
      */
@@ -511,7 +511,7 @@ public class Countly extends CountlyLifecycle {
      * Example {@link CrashProcessor} class to make legacy crash reporting methods work:
      * {@link #setCustomCrashSegments(Map)}, {@link #addCrashLog(String)}
      *
-     * @deprecated since 19.X, use {@link Config#setCrashProcessorClass(Class)} instead
+     * @deprecated since 19.0, use {@link Config#setCrashProcessorClass(Class)} instead
      */
     @Deprecated
     public static class DefaultCrashProcessor implements CrashProcessor {
@@ -536,7 +536,7 @@ public class Countly extends CountlyLifecycle {
      * Sets custom segments to be reported with crash reports
      * In custom segments you can provide any string key values to segments crashes by
      *
-     * @deprecated since 19.X, use {@link Config#setCrashProcessorClass(Class)} instead
+     * @deprecated since 19.0, use {@link Config#setCrashProcessorClass(Class)} instead
      * @param segments Map&lt;String, String&gt; key segments and their values
      */
     @Deprecated
@@ -551,7 +551,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Add crash breadcrumb like log record to the log that will be send together with crash report
      *
-     * @deprecated since 19.X, use {@link Config#setCrashProcessorClass(Class)} instead
+     * @deprecated since 19.0, use {@link Config#setCrashProcessorClass(Class)} instead
      * @param record String a bread crumb for the crash report
      */
     @Deprecated
@@ -566,7 +566,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Log handled exception to report it to server as non fatal crash
      *
-     * @deprecated since 19.X, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
+     * @deprecated since 19.0, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
      * @param exception Exception to log
      */
     @Deprecated
@@ -577,7 +577,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Log handled exception to report it to server
      *
-     * @deprecated since 19.X, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
+     * @deprecated since 19.0, use {@link Session#addCrashReport(Throwable, boolean, String, Map, String...)} instead
      * @param exception Exception to log
      * @param fatal {@code true} if this exception is fatal, that is app cannot continue running
      */
@@ -590,7 +590,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Start timed event with a specified key
      *
-     * @deprecated since 19.X, use {@link Session#timedEvent(String)} instead
+     * @deprecated since 19.0, use {@link Session#timedEvent(String)} instead
      * @param key name of the custom event, required, must not be the empty string or null
      * @return true if no event with this key existed before and event is started, false otherwise
      */
@@ -603,7 +603,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * End timed event with a specified key
      *
-     * @deprecated since 19.X, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
+     * @deprecated since 19.0, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
      * @param key name of the custom event, required, must not be the empty string or null
      * @return true if event with this key has been previously started, false otherwise
      */
@@ -616,7 +616,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * End timed event with a specified key
      *
-     * @deprecated since 19.X, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
+     * @deprecated since 19.0, use {@link Event#endAndRecord()} on {@link Session#timedEvent(String)} instead
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero

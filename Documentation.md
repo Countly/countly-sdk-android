@@ -1,10 +1,10 @@
 # Introduction
-Countly SDK 19.X is a completely redesigned version of our Android SDK. Please use it with caution 
-since it hasn't yet tested by thousands of developers in thousands of applications as 
+Countly SDK 19.0 is a completely redesigned version of our Android SDK. Please use it with caution 
+since it had't yet been tested by thousands of developers in thousands of applications as 
 our previous SDK versions.
 
 ## Highlights
-Here's a list of notable changes and new features of Countly Android SDK 19.X:
+Here's a list of notable changes and new features of Countly Android SDK 19.0:
 * **Initialization** now must be done from `Application` subclass' `onCreate` method.
 * **API** is substantially simplified (no `sharedInstance()` needed for example), thus changed.
 We have lots of legacy methods marked with `@Deprecated` for easy migration. 
@@ -53,7 +53,7 @@ devices, etc.
 At first you need to add Countly SDK Gradle dependency and sync your project:
 ```
 dependencies {
-		compile 'ly.count.android:sdk:19.X'
+		compile 'ly.count.android:sdk:19.0'
 }
 ```
 
@@ -90,10 +90,11 @@ public class App extends Application {
         Config config = new Config("http://YOUR.SERVER.COM", "YOUR_APP_KEY")
                 .enableTestMode()
                 .setLoggingLevel(Config.LoggingLevel.DEBUG)
-                .setFeatures(Config.Feature.Crash)
-                .setDeviceIdStrategy(Config.DeviceIdStrategy.OPEN_UDID);
+                .enableFeatures(Config.Feature.Events, Config.Feature.Sessions, Config.Feature.CrashReporting, Config.Feature.UserProfiles)
+                .setAutoSessionsTracking(true)
+                .setDeviceIdStrategy(Config.DeviceIdStrategy.UUID);
         
-        CountlyNeo.init(this, config);
+        Countly.init(this, config);
 
     }
 }
@@ -125,10 +126,9 @@ In our `Config` instance we:
 in Production!).
  * Set logging level to `DEBUG`
 to make sure everything works as expected.
- * Enabled crash reporting feature and tell SDK to
-use `OPEN_UDID` as device id. 
+ * Enabled crash reporting feature and tell SDK to use `UUID` strategy, that is random UUID string, as device id. 
  * Use default session lifecycle management, that is start a `Session` when first `Activity` is started
-and end that `Session` when last `Activity` is stopped. This is called automatic session control.
+and end that `Session` when last `Activity` is stopped. This is called automatic session tracking.
 
 In case minimum API level supported by your application is more or equal to 14, then that's pretty much it.
 Once you launch your application, it will start sending requests. In case you need to support API levels below 14,
@@ -156,49 +156,37 @@ Whenever Purchase button is pressed, Countly will record an event with a key `pu
  Now launch your app, open your Countly dashboard and make sure data is there. In case it's not, make sure
  you used correct server url and app key. If they are, check logs in `logcat`. 
 
+## Modify user profile
+Changing user profile data is also redesigned and simplified. To set standard properties, call 
+respective methods of `UserEditor`:
+
+```
+    Countly.user(getApplicationContext()).edit()
+        .setName("Firstname Lastname")
+        .setUsername("nickname")
+        .setEmail("test@test.com")
+        .setOrg("Tester")
+        .setPhone("+123456789")
+        .commit();
+
+```
+To set custom properties, call `set()`. To send modification operations, call corresponding method: 
+```
+    Countly.user(getApplicationContext()).edit()
+        .set("mostFavoritePet", "dog")
+        .inc("phoneCalls", 1)
+        .pushUnique("tags", "fan")
+        .pushUnique("skill", "singer")
+        .commit();
+
+```
+
 # Architecture
 Now let's have an overview of Countly SDK internals. 
-## Components
-Starting version 19.X Countly SDK supports 2 ways of operation:
-
-* **Separate process (default) model.** SDK runs split in 2 parts. Backend part lives in a
-separate process, performs network requests to Countly server and detects crashes
-of your main app process. Frontend part runs along with your application and is being used by
- your application to record events, process push notifications, etc.
-
-* **Single process model.** In this model SDK is not split and lives in your application
- process with lifecycle identical to your app.
-
-Main benefit of separate process model is that sending requests process is no longer 
- bound to your application lifecycle. That's important in several cases like 
- network connectivity issues, application force-quit or crash. Previously a crash wasn't sent to 
- Countly server until next app launch. Some crashes weren't sent at all in case 
- they occur right on application launch.
-
-Another important benefit is performance. Countly doesn't pollute your application 
-memory stack with sometimes huge volume of unsent data. All I/O is now performed 
-in background threads or in a separate process in case of network I/O. 
-There's almost no synchronization or locking of any kind in our SDK anymore. 
-
-When you add `sdk` gradle dependency, `service` element is automatically injected in your `AndroidManifest.xml`.
-To switch from default 2-process model to single process model, just add `tools` namespace to your `AndroidManifest.xml` 
-and override our service definition and remove `android:process` attribute from it:
-```
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="... your package ..."
-    xmlns:tools="http://schemas.android.com/tools">
-    
-    <application ...>
-        ...
-        <service android:name="ly.count.sdk.android.internal.CountlyService" tools:remove="android:process">
-        </service>
-    </application>
-</manifest>
-```
 
 ## Storage
-Countly SDK stores serialized versions of following classes: `InternalConfig`, `SessionImpl`, `RequestImpl`, `CrashImpl` and `UserImpl`.
- All those are stored in device memory, in a separate files with filenames prefixed with `[CLY]_`.
+Countly SDK stores serialized versions of following classes: `InternalConfig`, `SessionImpl`, `RequestImpl`, `CrashImpl`, `UserImpl` & `TimedEvents`.
+ All those are stored in device memory, in binary form, in separate files with filenames prefixed with `[CLY]_`.
  
 ## Modules
 There is a set of classes implementing `Module` interface. They encapsulate logic of specific 
@@ -214,8 +202,8 @@ through reflection, so Countly SDK doesn't have any external dependencies anymor
 * `ModulePush` decodes incoming push notifications sent from Countly server through Firebase
 Cloud Messaging.
 * `ModuleRequests` is just a single place to construct and set up network requests.
-* `ModuleSessions` has logic responsible for automatic session control: start a session
-when first `Activity` is started, end it when last `Activity` is stopped.
+* `ModuleSessions` has logic responsible for session control: start a session
+when first `Activity` is started or `Countly.session()` is called, hold session instance, end it when last `Activity` is stopped.
 * `ModuleViews` is responsible for automatic view recording, that is recording a view named after `Activity`
  class name starting it on `Activity` start and stoping it on `Activity` view.
 
@@ -238,12 +226,13 @@ in production.
 
 ## Device ID
 Android SDK supports following strategies of device ID generation:
-* `OPEN_UDID`. Default. Basically `ANDROID_ID` if it is available or a pseudo-random `String` if it's not.
+* `UUID`. Standard java `UUID`.
+* `ANDROID_ID`. Basically `Settings.Secure.ANDROID_ID` if it is available, `UUID` otherwise.
 * `ADVERTISING_ID`. ID is taken from `AdvertisingId` class.
 * `INSTANCE_ID`. Firebase `InstanceId`.
 * `CUSTOM_ID`. Developer-specified device ID `String`.
 
-None of the strategies above is 100% persistent or 100% non-persistent, that is living across
+None of the strategies above is 100% persistent, that is living across
 multiple app installs. Some of them, in some cases, maintain ID between different app installs.
 
 Strategy is set in `Config` class prior to `Countly.init()` with `setDeviceIdStrategy()` method.
@@ -253,10 +242,10 @@ With no special steps performed, SDK will count any new app install (see note ab
 persistence) as new user. In some cases, like when you have some kind of authentication system 
 in your app, that's not what you want. When actual person should be counted as one user in Countly
 irrespective of number of app installs this user has and when you can provide user id to Countly SDK, 
-you should call `Countly.login(String)` with your specific user ID `String`. 
+you should call `Countly.login(Context, String)` with your specific user ID `String`. 
 After this method call reaches Countly server, it will:
  * take old user profile (and all the events happened prior to login), 
-let's say with `OPEN_UDID`-based id;
+let's say with `UUID`-based id;
  * take user profile with your new ID if any (user could already have a profile associated with 
  this new ID);
  * and will merge these profiles together. 
@@ -271,16 +260,16 @@ and only ends current `Session` with old id & instructs SDK to use new device id
 
 ## Sessions
 Session in Countly is a single app launch or several app launches if time between them is less 
-than 30 seconds (by default). Of course you can override this behaviour, but lets describe how 
+than 30 seconds (by default). Of course you can override this behaviour, but lets describe how the
 standard way works at first.
 
-In Android SDK default way of detecting an app launch is monitoring number of active `Activity` 
+Default way of detecting an app launch in Countly SDK is monitoring number of active `Activity` 
 instances. To make this happen our SDK registers `Application.ActivityLifecycleCallbacks` and 
 just increments an integer whenever `onActivityStarted` is called and decrements it 
 whenever `onActivityStopped` is called. The only catch here is that `Application.ActivityLifecycleCallbacks` 
 is available only in API levels 14+, meaning in case your app supports API levels lower than 14,
 you'll need to make your own `Activity` superclass and subclass all your activities from it. 
-Also add `onActivityCreated` for the sake of other parts of SDK:
+That's needed to be able to call `onActivityCreated`/`onActivityStarted`/`onActivityStopped` on `Countly`:
 ```
 public class BaseActivity extends Activity {
     @Override
@@ -316,8 +305,8 @@ applications have very different `Session` definitions:
 * Utility apps.
 * Etc.
 
-For these apps Countly supports what we call programmatic session control. First, to disable automatic
-session tracking, you need to call `Config.disableFeatures(Config.Feature.AutoSessionTracking)` 
+For these apps Countly supports what we call programmatic session tracking. First, to disable automatic
+session tracking, you need to call `Config.setAutoSessionsTracking(false)` 
 at initialization phase. With this set up Countly won't start, update or end any sessions, 
 it's your responsibility now. But there are two exceptions: 
 * when device id changes (`Countly.login(String)`, `Countly.logout()`, `Countly.resetDeviceId(String)`), 
@@ -332,13 +321,18 @@ There are only 2 `Session`-related API methods:
 
 `Session` lifecycle methods include:
 * `session.begin()` must be called when you want to send begin session request to the server. Called with 
-first `Activity.onStart()` in auto session mode.
+first `Activity.onStart()` in auto session mode. This request contains all device metrics: device, model, carrier, etc.
 * `session.update()` can be called to send a session duration update to the server along with any events,
 user properties and any other data types supported by Countly SDK. Called each `Config.sendUpdateEachSeconds`
 seconds in auto session mode.
 * `session.end()` must be called to mark end of session. All the data recorded since last `session.update()`
 or since `session.begin()` in case no updates have been sent yet, is sent in this request as well. 
 Called with last `Activity.onStop()` in auto session mode.
+
+Keep in mind that even if auto session tracking is off, SDK still uses `Session` object internally 
+for pretty much everything. Even if you didn't start a session, it can exist. 
+But SDK won't send session requests to Countly server in this case, resulting in server lacking
+session information: device metrics, sessions quantity, duration, retention, etc.
 
 We also made some additions which would increase consistency of `Session` management. A 
 developer can accidentally start multiple sessions, stop the same session multiple times. In such 
@@ -386,7 +380,7 @@ right away. Instead, Countly SDK will wait until one of following happens:
 
 To send events right away you can set `Config.eventsBufferSize` to `1` or call 
 `Countly.session(getApplicationContext()).update()` to manually send a request containing all 
-recent data: events, parameters, crashes, etc.
+buffered data: events, parameters, crashes, etc.
 
 ### Timed events
 There is also special type of `Event` supported by Countly - timed events. Timed events help you to
@@ -409,15 +403,18 @@ Once this event is sent to the server, you'll see:
 With timed events, there is one thing to keep in mind: you have to end timed event for it to be
 recorded. Without `endAndRecord()` call, nothing will happen.
 
+Also note that timed events are persistent, thus you can start an event at one app launch and 
+finish it in another. Yet there can be only one timed event with a specific key at any point in time. 
+
 ## Crash reporting
 In order to enable crash reporting, add `Config.enableFeatures(Config.Feature.Crash)` 
 to your feature list. Once started, SDK will set `Thread.UncaughtExceptionHandler` on main thread
 and will report about any uncaught exceptions automatically.
 
-With SDK 19.X we've also added ANR detection. It works by continuously scheduling a `Runnable` on 
-main thread of your app and on some background thread. Whenever `Runnable` on main thread 
+With SDK 19.0 we've also added ANR detection. It works by scheduling a `Runnable` on 
+main thread of your app once in a while and on some background thread. Whenever `Runnable` on main thread 
 wasn't executed in `Config.crashReportingANRTimeout` seconds, background thread records all stack
-traces of the threads running and submits them to Countly server as a ANR crash. ANR detection
+traces of the threads running and submits them to Countly server as ANR crash. ANR detection
 is enabled by default when you enable `Config.Feature.Crash`, but you can always disable it 
 by calling `Config.disableANRCrashReporting()`. 
 
@@ -449,7 +446,7 @@ public void onCreate() {
 ```
 
 ## Push notifications
-Countly SDK 19.X supports only Firebase Cloud Messaging (FCM). Support for Google Cloud Messaging (GCM)
+Countly SDK 19.0 supports only Firebase Cloud Messaging (FCM). Support for Google Cloud Messaging (GCM)
 has been dropped and exists only in previous versions of SDK (17.09 and below). 
 
 To enable FCM in your app, first follow standard [Firebase setting up guide](https://firebase.google.com/docs/android/setup]).
@@ -549,14 +546,14 @@ While functionality & APIs of these 2 systems (FCM & GCM) are very similar, ther
 Countly server automatically distinguishes GCM server key from FCM server key and picks correct server URL.
 
 Common migration guide consists of following steps:
-1. Update Countly SDK to 19.X and enable Firebase in your app.
+1. Update Countly SDK to 19.0 and enable Firebase in your app.
 2. Change server key in Countly dashboard from GCM (or legacy) server key to FCM server key you got from Firebase Console.
 
 Once done:
 * Old GCM device tokens will start going through new FCM server URL with new FCM server key. Google allows that 
   for easy migration.
 * New FCM device tokens will eventually replace old GCM device tokens in Countly server as your users
-launch your updated app with Countly SDK 19.X+ and FCM dependencies in it.
+launch your updated app with Countly SDK 19.0+ and FCM dependencies in it.
 * Device tokens of users who don't launch your app will eventually expire and stop receiving 
  notifications until new app launch with updated SDK & Firebase libraries.
 

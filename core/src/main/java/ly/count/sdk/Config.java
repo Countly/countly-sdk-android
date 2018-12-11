@@ -197,7 +197,7 @@ public class Config {
     /**
      * Countly SDK version to be sent in HTTP requests
      */
-    protected String sdkVersion = "19.01";
+    protected String sdkVersion = "19.0";
 
     /**
      * Countly SDK name to be sent in HTTP requests
@@ -343,6 +343,10 @@ public class Config {
      */
     protected boolean autoViewsTracking = true;
 
+    // TODO: storage limits & configuration
+//    protected int maxRequestsStored = 0;
+//    protected int storageDirectory = "";
+//    protected int storagePrefix = "[CLY]_";
     /**
      * The only Config constructor.
      *

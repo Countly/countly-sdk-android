@@ -104,7 +104,7 @@ public abstract class CountlyLifecycle extends Cly {
     /**
      * Activity callback to be called for apps which support API levels below 14
      *
-     * @deprecated since 19.X, use {@link #onActivityCreated(Activity, Bundle)} instead
+     * @deprecated since 19.0, use {@link #onActivityCreated(Activity, Bundle)} instead
      * @param activity Activity instance
      */
     @Deprecated
@@ -128,7 +128,7 @@ public abstract class CountlyLifecycle extends Cly {
     /**
      * Activity callback to be called for apps which support API levels below 14
      *
-     * @deprecated since 19.X, use {@link #onActivityStarted(Activity)}} instead
+     * @deprecated since 19.0, use {@link #onActivityStarted(Activity)}} instead
      * @param activity Activity instance
      */
     @Deprecated
@@ -152,7 +152,7 @@ public abstract class CountlyLifecycle extends Cly {
     /**
      * Activity callback to be called for apps which support API levels below 14
      *
-     * @deprecated since 19.X, use {@link #onActivityStopped(Activity)}} instead
+     * @deprecated since 19.0, use {@link #onActivityStopped(Activity)}} instead
      * @param activity Activity instance
      */
     @Deprecated
