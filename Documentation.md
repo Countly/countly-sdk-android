@@ -49,6 +49,19 @@ Process of setting up Countly SDK includes 2 simple steps: adding SDK as depende
 and initializing SDK. Once those are done, you'll have basic analytics on your server like users, sessions,
 devices, etc.
 
+## Migration from old versions of Countly SDK
+There is no specific actions needed to be done in order to update SDK. Just remove old 
+dependency and add new one. In case you stumbled across some API which has been changed, you'll have
+to update your code with new one. Note that pretty much all old API methods are deprecated in favour of
+new ones.  
+
+All the unsent data your app might had in previous versions of SDK will be seamlessly migrated to the new 
+storage format and will be sent to the server whenever possible. No data loss is expected.
+
+The only special note is about `OPEN_UDID` device id type used previously. In case your app used it,
+remove `org.openudid.OpenUDID_service` service from your `AndroidManifest.xml` and use any other
+device id generation strategy available in new version of the SDK. Closest alternative is `ANDROID_ID`.
+
 ## Adding dependency
 At first you need to add Countly SDK Gradle dependency and sync your project:
 ```
