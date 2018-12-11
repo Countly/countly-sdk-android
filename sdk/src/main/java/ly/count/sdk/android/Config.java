@@ -3,6 +3,7 @@ package ly.count.sdk.android;
 import java.util.HashSet;
 import java.util.Set;
 
+import ly.count.sdk.CrashProcessor;
 import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
@@ -21,18 +22,30 @@ public class Config extends ly.count.sdk.Config {
 
         private final int index;
 
-        DeviceIdStrategy(int level){
+        DeviceIdStrategy(int level) {
             this.index = level;
         }
 
-        public int getIndex(){ return index; }
+        public int getIndex() {
+            return index;
+        }
 
-        public static DeviceIdStrategy fromIndex(int index){
-            if (index == UUID.index) { return UUID; }
-            if (index == ANDROID_ID.index) { return ANDROID_ID; }
-            if (index == ADVERTISING_ID.index) { return ADVERTISING_ID; }
-            if (index == INSTANCE_ID.index) { return INSTANCE_ID; }
-            if (index == CUSTOM_ID.index) { return CUSTOM_ID; }
+        public static DeviceIdStrategy fromIndex(int index) {
+            if (index == UUID.index) {
+                return UUID;
+            }
+            if (index == ANDROID_ID.index) {
+                return ANDROID_ID;
+            }
+            if (index == ADVERTISING_ID.index) {
+                return ADVERTISING_ID;
+            }
+            if (index == INSTANCE_ID.index) {
+                return INSTANCE_ID;
+            }
+            if (index == CUSTOM_ID.index) {
+                return CUSTOM_ID;
+            }
             return null;
         }
     }
@@ -47,16 +60,24 @@ public class Config extends ly.count.sdk.Config {
 
         private final int index;
 
-        DeviceIdRealm(int level){
+        DeviceIdRealm(int level) {
             this.index = level;
         }
 
-        public int getIndex(){ return index; }
+        public int getIndex() {
+            return index;
+        }
 
         public static DeviceIdRealm fromIndex(int index) {
-            if (index == DEVICE_ID.index) { return DEVICE_ID; }
-            if (index == FCM_TOKEN.index) { return FCM_TOKEN; }
-            if (index == ADVERTISING_ID.index) { return ADVERTISING_ID; }
+            if (index == DEVICE_ID.index) {
+                return DEVICE_ID;
+            }
+            if (index == FCM_TOKEN.index) {
+                return FCM_TOKEN;
+            }
+            if (index == ADVERTISING_ID.index) {
+                return ADVERTISING_ID;
+            }
             return null;
         }
     }
@@ -79,9 +100,13 @@ public class Config extends ly.count.sdk.Config {
 
         private final int index;
 
-        Feature(int index){ this.index = index; }
+        Feature(int index) {
+            this.index = index;
+        }
 
-        public int getIndex(){ return index; }
+        public int getIndex() {
+            return index;
+        }
 
         public static Feature byIndex(int index) {
             if (index == Events.index) {
@@ -124,19 +149,19 @@ public class Config extends ly.count.sdk.Config {
 
     /**
      * Set device id generation strategy:
-     *
+     * <p>
      * - {@link DeviceIdStrategy#INSTANCE_ID} to use InstanceID if available (requires Play Services).
      * Falls back to OpenUDID if no Play Services available, default.
-     *
+     * <p>
      * - {@link DeviceIdStrategy#ANDROID_ID} to use OpenUDID derivative - unique, semi-persistent
      * (stored in {@code SharedPreferences} in Android).
-     *
+     * <p>
      * - {@link DeviceIdStrategy#ADVERTISING_ID} to use com.google.android.gms.ads.identifier.AdvertisingIdClient
      * if available (requires Play Services). Falls back to OpenUDID if no Play Services available.
-     *
+     * <p>
      * - {@link DeviceIdStrategy#CUSTOM_ID} to use your own device id for Countly.
      *
-     * @param strategy strategy to use instead of default OpenUDID
+     * @param strategy       strategy to use instead of default OpenUDID
      * @param customDeviceId device id for use with {@link DeviceIdStrategy#CUSTOM_ID}
      * @return {@code this} instance for method chaining
      */
@@ -180,6 +205,7 @@ public class Config extends ly.count.sdk.Config {
 
     /**
      * Getter for {@link #deviceIdStrategy}
+     *
      * @return {@link #deviceIdStrategy} value as enum
      */
     public DeviceIdStrategy getDeviceIdStrategyEnum() {
@@ -246,7 +272,7 @@ public class Config extends ly.count.sdk.Config {
      * Override some {@link Module} functionality with your own class.
      *
      * @param feature {@link Feature} to override
-     * @param cls {@link Class} to use instead of Countly SDK standard class
+     * @param cls     {@link Class} to use instead of Countly SDK standard class
      * @return {@code this} instance for method chaining
      */
     public Config overrideModule(Feature feature, Class<? extends Module> cls) {
@@ -260,6 +286,7 @@ public class Config extends ly.count.sdk.Config {
 
     /**
      * Getter for {@link #features}
+     *
      * @return {@link #features} value
      */
     public Set<Feature> getFeatures() {
@@ -274,6 +301,7 @@ public class Config extends ly.count.sdk.Config {
 
     /**
      * Whether a feature is enabled in this config, that is exists in {@link #features}
+     *
      * @return {@code true} if {@link #features} contains supplied argument, {@code false} otherwise
      */
     public boolean isFeatureEnabled(Feature feature) {
@@ -282,10 +310,358 @@ public class Config extends ly.count.sdk.Config {
 
     /**
      * Getter for {@link #moduleOverrides}
+     *
      * @return {@link #moduleOverrides} value for {@code Feature} specified
      */
     public Class<? extends Module> getModuleOverride(Feature feature) {
         return moduleOverrides == null ? null : moduleOverrides.get(feature.index);
     }
 
+    public Config setDeviceIdFallbackAllowed(boolean deviceIdFallbackAllowed) {
+        super.setDeviceIdFallbackAllowed(deviceIdFallbackAllowed);
+        return this;
+    }
+
+    /**
+     * Force usage of POST method for all requests
+     *
+     * @return {@code this} instance for method chaining
+     */
+    public Config enableUsePOST() {
+        super.enableUsePOST();
+        return this;
+    }
+
+    /**
+     * Force usage of POST method for all requests.
+     *
+     * @param usePOST whether to force using POST method for all requests or not
+     * @return {@code this} instance for method chaining
+     */
+    public Config setUsePOST(boolean usePOST) {
+        super.setUsePOST(usePOST);
+        return this;
+    }
+
+    /**
+     * Enable parameter tampering protection
+     *
+     * @param salt String to add to each request bebfore calculating checksum
+     * @return {@code this} instance for method chaining
+     */
+    public Config enableParameterTamperingProtection(String salt) {
+        super.enableParameterTamperingProtection(salt);
+        return this;
+    }
+
+    /**
+     * Tag used for logging
+     *
+     * @param loggingTag tag string to use
+     * @return {@code this} instance for method chaining
+     */
+    public Config setLoggingTag(String loggingTag) {
+        super.setLoggingTag(loggingTag);
+        return this;
+    }
+
+    /**
+     * Logging level for Countly SDK
+     *
+     * @param loggingLevel log level to use
+     * @return {@code this} instance for method chaining
+     */
+    public Config setLoggingLevel(LoggingLevel loggingLevel) {
+        super.setLoggingLevel(loggingLevel);
+        return this;
+    }
+
+    /**
+     * Enable test mode:
+     * <ul>
+     * <li>Raise exceptions when SDK is in inconsistent state as opposed to silently
+     * trying to ignore them when testMode is off</li>
+     * <li>Put Firebase token under {@code test} devices if {@code Feature.Push} is enabled.</li>
+     * </ul>
+     * Note: this method automatically sets {@link #loggingLevel} to {@link LoggingLevel#INFO} in
+     * case it was {@link LoggingLevel#OFF} (default).
+     *
+     * @return {@code this} instance for method chaining
+     */
+    public Config enableTestMode() {
+        super.enableTestMode();
+        return this;
+    }
+
+    /**
+     * Disable test mode, so SDK will silently avoid raising exceptions whenever possible.
+     * Test mode is disabled by default.
+     *
+     * @return {@code this} instance for method chaining
+     */
+    public Config disableTestMode() {
+        super.disableTestMode();
+        return this;
+    }
+
+    /**
+     * Set maximum amount of time in seconds between two update requests to the server
+     * reporting session duration and other parameters if any added between update requests.
+     * <p>
+     * Update request is also sent when number of unsent events reached {@link #setEventsBufferSize(int)}.
+     *
+     * @param sendUpdateEachSeconds max time interval between two update requests, set to 0 to disable update requests based on time.
+     * @return {@code this} instance for method chaining
+     */
+    public Config setSendUpdateEachSeconds(int sendUpdateEachSeconds) {
+        super.setSendUpdateEachSeconds(sendUpdateEachSeconds);
+        return this;
+    }
+
+    /**
+     * Sets maximum number of events to hold until forcing update request to be sent to the server
+     * <p>
+     * Update request is also sent when last update request was sent more than {@link #setSendUpdateEachSeconds(int)} seconds ago.
+     *
+     * @param eventsBufferSize max number of events between two update requests, set to 0 to disable update requests based on events.
+     * @return {@code this} instance for method chaining
+     */
+    public Config setEventsBufferSize(int eventsBufferSize) {
+        super.setEventsBufferSize(eventsBufferSize);
+        return this;
+    }
+
+    /**
+     * Disable update requests completely. Only begin & end requests will be sent + some special
+     * cases if applicable like User Profile change or Push token updated.
+     *
+     * @return {@code this} instance for method chaining
+     * @see #setSendUpdateEachSeconds(int)
+     * @see #setEventsBufferSize(int)
+     */
+    public Config disableUpdateRequests() {
+        super.disableUpdateRequests();
+        return this;
+    }
+
+    /**
+     * Set minimal amount of time between sessions in seconds.
+     * For now used only when recovering from a crash as a session extension period.
+     *
+     * @param sessionCooldownPeriod min time interval between two sessions
+     * @return {@code this} instance for method chaining
+     */
+    public Config setSessionCooldownPeriod(int sessionCooldownPeriod) {
+        super.setSessionCooldownPeriod(sessionCooldownPeriod);
+        return this;
+    }
+
+    /**
+     * Change name of SDK used in HTTP requests
+     *
+     * @param sdkName new name of SDK
+     * @return {@code this} instance for method chaining
+     */
+    public Config setSdkName(String sdkName) {
+        super.setSdkName(sdkName);
+        return this;
+    }
+
+    /**
+     * Change version of SDK used in HTTP requests
+     *
+     * @param sdkVersion new version of SDK
+     * @return {@code this} instance for method chaining
+     */
+    public Config setSdkVersion(String sdkVersion) {
+        super.setSdkVersion(sdkVersion);
+        return this;
+    }
+
+    /**
+     * Change application name reported to Countly server
+     *
+     * @param name new name
+     * @return {@code this} instance for method chaining
+     */
+    public Config setApplicationName(String name) {
+        super.setApplicationName(name);
+        return this;
+    }
+
+    /**
+     * Change application version reported to Countly server
+     *
+     * @param version new version
+     * @return {@code this} instance for method chaining
+     */
+    public Config setApplicationVersion(String version) {
+        super.setApplicationVersion(version);
+        return this;
+    }
+
+    /**
+     * Set connection timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
+     *
+     * @param seconds network timeout in seconds
+     * @return {@code this} instance for method chaining
+     */
+    public Config setNetworkConnectTimeout(int seconds) {
+        super.setNetworkConnectTimeout(seconds);
+        return this;
+    }
+
+    /**
+     * Set read timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
+     *
+     * @param seconds read timeout in seconds
+     * @return {@code this} instance for method chaining
+     */
+    public Config setNetworkReadTimeout(int seconds) {
+        super.setNetworkReadTimeout(seconds);
+        return this;
+    }
+
+    /**
+     * Enable SSL public key pinning. Improves HTTPS security by not allowing MiM attacks
+     * based on SSL certificate replacing somewhere between Android device and Countly server.
+     * Here you can set one or more PEM-encoded public keys which Countly SDK verifies against
+     * public keys provided by Countly's web server for each HTTPS connection. At least one match
+     * results in connection being established, no matches result in request not being sent stored for next try.
+     * <p>
+     * NOTE: Public key pinning is preferred over certificate pinning due to the fact
+     * that public keys are usually not changed when certificate expires and you generate new one.
+     * This ensures pinning continues to work after certificate prolongation.
+     * Certificates ({@link #certificatePins}) on the other hand have specific expiry date.
+     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
+     * have both certificates (old & new) until expiry date.
+     * <p>
+     * NOTE: when {@link #serverURL} doesn't have {@code "https://"} public key pinning doesn't work
+     *
+     * @param pemEncodedPublicKey PEM-encoded SSL public key string to add
+     * @return {@code this} instance for method chaining
+     */
+    public Config addPublicKeyPin(String pemEncodedPublicKey) {
+        super.addPublicKeyPin(pemEncodedPublicKey);
+        return this;
+    }
+
+    /**
+     * Enable SSL certificate pinning. Improves HTTPS security by not allowing MiM attacks
+     * based on SSL certificate replacing somewhere between Android device and Countly server.
+     * Here you can set one or more PEM-encoded certificates which Countly SDK verifies against
+     * certificates provided by Countly's web server for each HTTPS connection. At least one match
+     * results in connection being established, no matches result in request not being sent stored for next try.
+     * <p>
+     * NOTE: Public key pinning ({@link #publicKeyPins}) is preferred over certificate pinning due to the fact
+     * that public keys are usually not changed when certificate expires and you generate new one.
+     * This ensures pinning continues to work after certificate prolongation.
+     * Certificates on the other hand have specific expiry date.
+     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
+     * have both certificates (old & new) until expiry date.
+     * <p>
+     * NOTE: when {@link #serverURL} doesn't have {@code "https://"} certificate pinning doesn't work
+     *
+     * @param pemEncodedCertificate PEM-encoded SSL certificate string to add
+     * @return {@code this} instance for method chaining
+     */
+    public Config addCertificatePin(String pemEncodedCertificate) {
+        super.addCertificatePin(pemEncodedCertificate);
+        return this;
+    }
+
+    /**
+     * Change timeout when ANR is detected. ANR reporting is enabled by default once you enable {@code Feature.CrashReporting}.
+     * Default timeout is 5 seconds.
+     * To disable ANR reporting, use {@link #disableANRCrashReporting()}.
+     *
+     * @param timeoutInSeconds how much time main thread must be blocked before ANR is detected
+     * @return {@code this} instance for method chaining
+     */
+    public Config setCrashReportingANRTimeout(int timeoutInSeconds) {
+        super.setCrashReportingANRTimeout(timeoutInSeconds);
+        return this;
+    }
+
+    /**
+     * Disable ANR detection and thus reporting to Countly server.
+     *
+     * @return {@code this} instance for method chaining
+     */
+    public Config disableANRCrashReporting() {
+        super.disableANRCrashReporting();
+        return this;
+    }
+
+    /**
+     * Set crash processor class responsible .
+     * Defaults automatically to main activity class.
+     *
+     * @param crashProcessorClass {@link CrashProcessor}-implementing class
+     * @return {@code this} instance for method chaining
+     */
+    public Config setCrashProcessorClass(Class<? extends CrashProcessor> crashProcessorClass) {
+        super.setCrashProcessorClass(crashProcessorClass);
+        return this;
+    }
+
+    /**
+     * Override some {@link Module} functionality with your own class.
+     *
+     * @param feature feature index to override
+     * @param cls     {@link Class} to use instead of Countly SDK standard class
+     * @return {@code this} instance for method chaining
+     */
+    protected Config overrideModule(Integer feature, Class<? extends Module> cls) {
+        super.overrideModule(feature, cls);
+        return this;
+    }
+
+    /**
+     * Enable GDPR compliance by disallowing SDK to record any data until corresponding consent
+     * calls are made.
+     *
+     * @param requiresConsent {@code true} to enable GDPR compliance
+     * @return {@code this} instance for method chaining
+     */
+    public Config setRequiresConsent(boolean requiresConsent) {
+        super.setRequiresConsent(requiresConsent);
+        return this;
+    }
+
+    /**
+     * Enable auto views tracking
+     *
+     * @param autoViewsTracking whether to enable it or disable
+     * @return {@code this} instance for method chaining
+     * @see #autoViewsTracking
+     */
+    public Config setAutoViewsTracking(boolean autoViewsTracking) {
+        super.setAutoViewsTracking(autoViewsTracking);
+        return this;
+    }
+
+    /**
+     * Enable auto sessions tracking
+     *
+     * @param autoSessionsTracking whether to enable it or disable
+     * @return {@code this} instance for method chaining
+     * @see #autoSessionsTracking
+     */
+    public Config setAutoSessionsTracking(boolean autoSessionsTracking) {
+        super.setAutoSessionsTracking(autoSessionsTracking);
+        return this;
+    }
+
+    /**
+     * Wait this much time before ending session in auto session tracking mode
+     *
+     * @param sessionAutoCloseAfter time in seconds
+     * @return {@code this} instance for method chaining
+     * @see #autoSessionsTracking
+     */
+    public Config setSessionAutoCloseAfter(int sessionAutoCloseAfter) {
+        super.setSessionAutoCloseAfter(sessionAutoCloseAfter);
+        return this;
+    }
 }
