@@ -176,13 +176,7 @@ public class ModuleRequests extends ModuleBase {
         //add other missing fields
         if(!request.params.has("sdk_name")){
             request.params.add("sdk_name", config.getSdkName());
-        }
-
-        if(!request.params.has("sdk_version")){
             request.params.add("sdk_version", config.getSdkVersion());
-        }
-
-        if(!request.params.has("app_key")){
             request.params.add("app_key", config.getServerAppKey());
         }
 
