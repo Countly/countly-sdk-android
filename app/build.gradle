@@ -40,6 +40,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    //implementation 'ly.count.android:sdk:19.01-sdk2-pre-rc'
     implementation project(':sdk')
 
     implementation 'com.android.support:appcompat-v7:26.1.0'
@@ -48,7 +49,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-messaging:17.3.0'
     implementation 'com.android.support:design:26.1.0'
 
-//    implementation 'ly.count.android:sdk:16.06.04'
+
 //    implementation 'ly.count.android:sdk:16.06.04@aar'
 }
 
