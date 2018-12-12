@@ -46,7 +46,7 @@ public class BaseTests {
         return config();
     }
 
-    protected ly.count.sdk.Config defaultConfigWithLogsForConfigTests() throws Exception {
+    protected InternalConfig defaultConfigWithLogsForConfigTests() throws Exception {
         InternalConfig config = new InternalConfig(defaultConfig());
         new Log().init(config);
         return config;

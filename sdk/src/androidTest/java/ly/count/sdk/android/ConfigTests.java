@@ -12,24 +12,26 @@ import org.junit.runner.RunWith;
 import java.net.URL;
 import java.util.Set;
 
-import ly.count.sdk.android.Config;
 import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.internal.InternalConfig;
 
 
 @RunWith(AndroidJUnit4.class)
 public class ConfigTests extends BaseTests {
+    private InternalConfig internalConfig;
     private Config config;
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";
 
     @Before
     public void setUp() throws Exception {
-        config = (Config) defaultConfigWithLogsForConfigTests();
+        internalConfig = defaultConfigWithLogsForConfigTests();
+        config = defaultConfig();
     }
 
     @Override
     protected Config defaultConfig() throws Exception {
-        return new Config(serverUrl, serverAppKey);
+        return new Config(serverUrl, serverAppKey).enableTestMode();
     }
 
     @Test (expected = IllegalArgumentException.class)
@@ -40,8 +42,8 @@ public class ConfigTests extends BaseTests {
     @Test
     public void setup_urlAndKey() throws Exception{
         URL url = new URL(serverUrl);
-        Assert.assertEquals(serverAppKey, config.getServerAppKey());
-        Assert.assertEquals(url, config.getServerURL());
+        Assert.assertEquals(serverAppKey, internalConfig.getServerAppKey());
+        Assert.assertEquals(url, internalConfig.getServerURL());
     }
 
     @Test
@@ -55,41 +57,41 @@ public class ConfigTests extends BaseTests {
 
     @Test
     public void setUsePost_setAndDeset(){
-        Assert.assertEquals(false, config.isUsePOST());
-        config.enableUsePOST();
-        Assert.assertEquals(true, config.isUsePOST());
-        config.setUsePOST(false);
-        Assert.assertEquals(false, config.isUsePOST());
-        config.setUsePOST(true);
-        Assert.assertEquals(true, config.isUsePOST());
+        Assert.assertFalse(internalConfig.isUsePOST());
+        internalConfig.enableUsePOST();
+        Assert.assertTrue(internalConfig.isUsePOST());
+        internalConfig.setUsePOST(false);
+        Assert.assertFalse(internalConfig.isUsePOST());
+        internalConfig.setUsePOST(true);
+        Assert.assertTrue(internalConfig.isUsePOST());
     }
 
     @Test
     public void setLoggingTag_default(){
-        Assert.assertEquals("Countly", config.getLoggingTag());
+        Assert.assertEquals("Countly", internalConfig.getLoggingTag());
     }
 
     @Test (expected = IllegalStateException.class)
     public void setLoggingTag_null(){
-        config.setLoggingTag(null);
+        internalConfig.setLoggingTag(null);
     }
 
     @Test (expected = IllegalStateException.class)
     public void setLoggingTag_empty(){
-        config.setLoggingTag("");
+        internalConfig.setLoggingTag("");
     }
 
     @Test
     public void setLoggingTag_simple(){
         String tagName = "simpleName";
-        config.setLoggingTag(tagName);
-        Assert.assertEquals(tagName, config.getLoggingTag());
+        internalConfig.setLoggingTag(tagName);
+        Assert.assertEquals(tagName, internalConfig.getLoggingTag());
     }
 
     @Test(expected = IllegalStateException.class)
     public void setLoggingLevel_null(){
-        config.setLoggingLevel(null);
-        Assert.assertEquals(null, config.getLoggingLevel());
+        internalConfig.setLoggingLevel(null);
+        Assert.assertNull(internalConfig.getLoggingLevel());
     }
 
     @Test
@@ -110,119 +112,119 @@ public class ConfigTests extends BaseTests {
 
     @Test
     public void configTestMode_default() throws Exception {
-        Assert.assertEquals(new Config(serverUrl, serverAppKey).isTestModeEnabled(), false);
+        Assert.assertFalse(new Config(serverUrl, serverAppKey).isTestModeEnabled());
     }
 
     @Test
     public void configTestMode_enabling() throws Exception {
         Config config = new Config(serverUrl, serverAppKey);
-        Assert.assertEquals(false, config.isTestModeEnabled());
+        Assert.assertFalse(config.isTestModeEnabled());
         config.enableTestMode();
-        Assert.assertEquals(true, config.isTestModeEnabled());
+        Assert.assertTrue(config.isTestModeEnabled());
     }
 
     @Test
     public void sdkName_default(){
-        Assert.assertEquals("java-native-android", config.getSdkName());
+        Assert.assertEquals("java-native-android", internalConfig.getSdkName());
     }
 
     @Test(expected = IllegalStateException.class)
     public void sdkName_null(){
-        config.setSdkName(null);
-        Assert.assertEquals(null, config.getSdkName());
+        internalConfig.setSdkName(null);
+        Assert.assertNull(internalConfig.getSdkName());
     }
 
     @Test(expected = IllegalStateException.class)
     public void sdkName_empty(){
-        config.setSdkName("");
+        internalConfig.setSdkName("");
     }
 
     @Test
     public void sdkName_setting(){
         String newSdkName = "new-some-name";
-        config.setSdkName(newSdkName);
-        Assert.assertEquals(newSdkName, config.getSdkName());
+        internalConfig.setSdkName(newSdkName);
+        Assert.assertEquals(newSdkName, internalConfig.getSdkName());
 
         newSdkName = "another-name";
-        config.setSdkName(newSdkName);
-        Assert.assertEquals(newSdkName, config.getSdkName());
+        internalConfig.setSdkName(newSdkName);
+        Assert.assertEquals(newSdkName, internalConfig.getSdkName());
     }
 
     @Test
     public void sdkVersion_default(){
-        Assert.assertEquals("17.04", config.getSdkVersion());
+        Assert.assertEquals("19.01-sdk2-pre-rc", internalConfig.getSdkVersion());
     }
 
     @Test(expected = IllegalStateException.class)
     public void sdkVersion_null(){
-        config.setSdkVersion(null);
+        internalConfig.setSdkVersion(null);
     }
 
     @Test(expected = IllegalStateException.class)
     public void sdkVersion_empty(){
-        config.setSdkVersion("");
+        internalConfig.setSdkVersion("");
     }
 
     @Test
     public void sdkVersion_setting(){
         String versionName = "123";
-        config.setSdkVersion(versionName);
-        Assert.assertEquals(versionName, config.getSdkVersion());
+        internalConfig.setSdkVersion(versionName);
+        Assert.assertEquals(versionName, internalConfig.getSdkVersion());
 
         versionName = "asd";
-        config.setSdkVersion(versionName);
-        Assert.assertEquals(versionName, config.getSdkVersion());
+        internalConfig.setSdkVersion(versionName);
+        Assert.assertEquals(versionName, internalConfig.getSdkVersion());
     }
 
     @Test
     public void programmaticSessionsControl_default(){
-        Assert.assertEquals(true, config.isAutoSessionsTrackingEnabled());
+        Assert.assertTrue(internalConfig.isAutoSessionsTrackingEnabled());
     }
 
     @Test
     public void programmaticSessionsControl_enableAndDisable(){
-        Assert.assertEquals(true, config.isAutoSessionsTrackingEnabled());
-        config.setAutoSessionsTracking(false);
-        Assert.assertEquals(false, config.isAutoSessionsTrackingEnabled());
+        Assert.assertTrue(internalConfig.isAutoSessionsTrackingEnabled());
+        internalConfig.setAutoSessionsTracking(false);
+        Assert.assertFalse(internalConfig.isAutoSessionsTrackingEnabled());
     }
 
     @Test
     public void sendUpdateEachSeconds_default(){
-        Assert.assertEquals(30, config.getSendUpdateEachSeconds());
+        Assert.assertEquals(30, internalConfig.getSendUpdateEachSeconds());
     }
 
     @Test
     public void sendUpdateEachSeconds_disable(){
-        config.disableUpdateRequests();
-        Assert.assertEquals(0, config.getSendUpdateEachSeconds());
+        internalConfig.disableUpdateRequests();
+        Assert.assertEquals(0, internalConfig.getSendUpdateEachSeconds());
     }
 
     @Test
     public void sendUpdateEachSeconds_set(){
         int secondsAmount = 123;
-        config.setSendUpdateEachSeconds(secondsAmount);
-        Assert.assertEquals(secondsAmount, config.getSendUpdateEachSeconds());
+        internalConfig.setSendUpdateEachSeconds(secondsAmount);
+        Assert.assertEquals(secondsAmount, internalConfig.getSendUpdateEachSeconds());
     }
 
     @Test
     public void sendUpdateEachEvents_default(){
-        Assert.assertEquals(10, config.getEventsBufferSize());
+        Assert.assertEquals(10, internalConfig.getEventsBufferSize());
     }
 
     @Test
     public void sendUpdateEachEvents_disable(){
-        config.disableUpdateRequests();
-        Assert.assertEquals(0, config.getEventsBufferSize());
+        internalConfig.disableUpdateRequests();
+        Assert.assertEquals(0, internalConfig.getSendUpdateEachSeconds());
     }
 
     @Test
     public void sendUpdateEachEvents_set(){
         int eventsAmount = 123;
-        config.setEventsBufferSize(eventsAmount);
-        Assert.assertEquals(eventsAmount, config.getEventsBufferSize());
+        internalConfig.setEventsBufferSize(eventsAmount);
+        Assert.assertEquals(eventsAmount, internalConfig.getEventsBufferSize());
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test
     public void enableFeatures_null(){
         Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Events));
         Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Sessions));
@@ -246,27 +248,27 @@ public class ConfigTests extends BaseTests {
         config.enableFeatures(Config.Feature.Views);
         features = config.getFeatures();
         Assert.assertEquals(6, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.Views));
+        Assert.assertTrue(features.contains(Config.Feature.Views));
 
         config.enableFeatures(Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
         Assert.assertEquals(7, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.Views));
-        Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
-        Assert.assertEquals(false, features.contains(Config.Feature.Push));
+        Assert.assertTrue(features.contains(Config.Feature.Views));
+        Assert.assertTrue(features.contains(Config.Feature.PerformanceMonitoring));
+        Assert.assertFalse(features.contains(Config.Feature.Push));
     }
 
     @Test
     public void setFeature_null(){
         Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(false, features.contains(null));
+        Assert.assertFalse(features.contains(null));
         Assert.assertEquals(5, features.size());
 
         Config.Feature[] featureList = null;
 
         config.setFeatures(featureList);
         features = config.getFeatures();
-        Assert.assertEquals(false, features.contains(null));
+        Assert.assertFalse(features.contains(null));
         Assert.assertEquals(0, features.size());
     }
 
@@ -278,10 +280,10 @@ public class ConfigTests extends BaseTests {
         config.setFeatures(Config.Feature.CrashReporting, Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
         Assert.assertEquals(2, features.size());
-        Assert.assertEquals(false, features.contains(Config.Feature.Events));
-        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
-        Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
-        Assert.assertEquals(false, features.contains(Config.Feature.Push));
+        Assert.assertFalse(features.contains(Config.Feature.Events));
+        Assert.assertTrue(features.contains(Config.Feature.CrashReporting));
+        Assert.assertTrue(features.contains(Config.Feature.PerformanceMonitoring));
+        Assert.assertFalse(features.contains(Config.Feature.Push));
     }
 
     @Test
@@ -292,24 +294,24 @@ public class ConfigTests extends BaseTests {
         config.enableFeatures(Config.Feature.Push);
         features = config.getFeatures();
         Assert.assertEquals(6, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.Events));
-        Assert.assertEquals(true, features.contains(Config.Feature.Push));
-        Assert.assertEquals(false, features.contains(Config.Feature.Views));
-        Assert.assertEquals(false, features.contains(Config.Feature.PerformanceMonitoring));
+        Assert.assertTrue(features.contains(Config.Feature.Events));
+        Assert.assertTrue(features.contains(Config.Feature.Push));
+        Assert.assertFalse(features.contains(Config.Feature.Views));
+        Assert.assertFalse(features.contains(Config.Feature.PerformanceMonitoring));
 
         config.setFeatures(Config.Feature.CrashReporting, Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
         Assert.assertEquals(2, features.size());
-        Assert.assertEquals(true, features.contains(Config.Feature.CrashReporting));
-        Assert.assertEquals(true, features.contains(Config.Feature.PerformanceMonitoring));
-        Assert.assertEquals(false, features.contains(Config.Feature.Push));
-        Assert.assertEquals(false, features.contains(Config.Feature.Views));
+        Assert.assertTrue(features.contains(Config.Feature.CrashReporting));
+        Assert.assertTrue(features.contains(Config.Feature.PerformanceMonitoring));
+        Assert.assertFalse(features.contains(Config.Feature.Push));
+        Assert.assertFalse(features.contains(Config.Feature.Views));
     }
 
     @Test
     public void configVersionSameAsBuildVersion() {
         String buildVersion = ly.count.sdk.android.sdk.BuildConfig.VERSION_NAME;
-        Assert.assertEquals(buildVersion, config.getSdkVersion());
+        Assert.assertEquals(buildVersion, internalConfig.getSdkVersion());
     }
 
     @Test
@@ -317,15 +319,15 @@ public class ConfigTests extends BaseTests {
         Config.Feature[] features = Config.Feature.values();
         Assert.assertEquals(Config.Feature.Events, features[0]);
         Assert.assertEquals(Config.Feature.Sessions, features[1]);
-        Assert.assertEquals(Config.Feature.Views, features[1]);
-        Assert.assertEquals(Config.Feature.CrashReporting, features[2]);
-        Assert.assertEquals(Config.Feature.Location, features[2]);
-        Assert.assertEquals(Config.Feature.UserProfiles, features[8]);
-        Assert.assertEquals(Config.Feature.Push, features[3]);
-        Assert.assertEquals(Config.Feature.Attribution, features[4]);
-        Assert.assertEquals(Config.Feature.StarRating, features[5]);
-        Assert.assertEquals(Config.Feature.RemoteConfig, features[6]);
-        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[9]);
+        Assert.assertEquals(Config.Feature.Views, features[2]);
+        Assert.assertEquals(Config.Feature.CrashReporting, features[3]);
+        Assert.assertEquals(Config.Feature.Location, features[4]);
+        Assert.assertEquals(Config.Feature.UserProfiles, features[5]);
+        Assert.assertEquals(Config.Feature.Push, features[6]);
+        Assert.assertEquals(Config.Feature.Attribution, features[7]);
+        Assert.assertEquals(Config.Feature.StarRating, features[8]);
+        Assert.assertEquals(Config.Feature.RemoteConfig, features[9]);
+        Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[10]);
     }
 
     @Test
