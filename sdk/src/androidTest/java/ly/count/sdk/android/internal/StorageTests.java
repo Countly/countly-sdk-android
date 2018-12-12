@@ -10,34 +10,39 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import ly.count.sdk.internal.Request;
+import ly.count.sdk.internal.ModuleRequests;
 import ly.count.sdk.internal.Storable;
 import ly.count.sdk.internal.Storage;
 
 @RunWith(AndroidJUnit4.class)
 public class StorageTests extends BaseTests {
-    @Test
-    public void filler(){
 
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        setUpApplication(defaultConfig());
     }
-/*
+
     @Test
     public void core_pushOne() {
-        Storable storable = storable();
-        String prefix = "test_prefix";
-        String name = "test_storable";
+        Storable storable = storable(), restored = storable();
+        Utils.reflectiveSetField(restored, "id", storable.storageId());
 
-        Assert.assertTrue(Core.pushDataToInternalStorage(ctx, prefix, name, storable.store()));
 
-        List<String> files = Core.listDataInInternalStorage(ctx, prefix, 0);
+        Assert.assertTrue(sdk.storableWrite(ctx, storable));
+
+        List<Long> files = sdk.storableList(ctx, storable.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.size());
 
-        byte[] data = Core.popDataFromInternalStorage(ctx, prefix, name);
+        byte[] data = sdk.storableReadBytes(ctx, storable.storagePrefix(), storable.storageId());
         Assert.assertNotNull(data);
-        Assert.assertEquals(storable, restore(storable.storageId(), data));
+        Assert.assertTrue(restored.restore(data));
+        Assert.assertEquals(storable, restored);
 
-        files = Core.listDataInInternalStorage(ctx, null, 0);
+        Assert.assertTrue(sdk.storableRemove(ctx, storable));
+
+        files = sdk.storableList(ctx, storable.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
     }
@@ -46,33 +51,34 @@ public class StorageTests extends BaseTests {
     public void core_pushTwo() {
         Storable storable1 = storable(), storable2 = storable();
 
-        List<String> files = Core.listDataInInternalStorage(ctx, null, 0);
+        List<Long> files = sdk.storableList(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
 
-        Assert.assertTrue(Core.pushDataToInternalStorage(ctx, storable1.storagePrefix(), "" + storable1.storageId(), storable1.store()));
-        Assert.assertTrue(Core.pushDataToInternalStorage(ctx, storable2.storagePrefix(), "" + storable2.storageId(), storable2.store()));
+        Assert.assertTrue(sdk.storableWrite(ctx, storable1));
+        Assert.assertTrue(sdk.storableWrite(ctx, storable2));
 
-        files = Core.listDataInInternalStorage(ctx, storable1.storagePrefix(), 0);
+        files = sdk.storableList(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(2, files.size());
 
-        byte[] data1 = Core.popDataFromInternalStorage(ctx, storable1.storagePrefix(), "" + storable1.storageId());
+        Storable storable1Pop = storable(), storable2Pop = storable();
+        Utils.reflectiveSetField(storable1Pop, "id", storable1.storageId());
+        Utils.reflectiveSetField(storable2Pop, "id", storable2.storageId());
 
-        files = Core.listDataInInternalStorage(ctx, storable1.storagePrefix(), 0);
+        Assert.assertTrue(sdk.storablePop(ctx, storable1Pop));
+
+        files = sdk.storableList(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(1, files.size());
 
-        byte[] data2 = Core.popDataFromInternalStorage(ctx, storable2.storagePrefix(), "" + storable2.storageId());
+        Assert.assertTrue(sdk.storablePop(ctx, storable2Pop));
 
-        Assert.assertNotNull(data1);
-        Assert.assertNotNull(data2);
+        Assert.assertEquals(storable1, storable1Pop);
+        Assert.assertEquals(storable2, storable2Pop);
+        Assert.assertNotSame(storable1Pop, storable2Pop);
 
-        Assert.assertEquals(storable1, restore(storable1.storageId(), data1));
-        Assert.assertEquals(storable2, restore(storable2.storageId(), data2));
-        Assert.assertNotSame(restore(storable1.storageId(), data1), restore(storable2.storageId(), data2));
-
-        files = Core.listDataInInternalStorage(ctx, storable1.storagePrefix(), 0);
+        files = sdk.storableList(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
     }
@@ -82,7 +88,7 @@ public class StorageTests extends BaseTests {
         Storable storable1 = storable(), storable2 = storable();
         Storable storable3 = storable(), storable4 = storable();
 
-        List<String> files = Core.listDataInInternalStorage(ctx, null, 0);
+        List<Long> files = sdk.storableList(ctx, storable1.storagePrefix(), 0);
         Assert.assertNotNull(files);
         Assert.assertEquals(0, files.size());
 
@@ -135,8 +141,10 @@ public class StorageTests extends BaseTests {
         Assert.assertEquals(ids.get(0), storable1.storageId());
         Assert.assertEquals(ids.get(1), storable2.storageId());
 
-        Storable restored1 = new Request(storable1.storageId()),
-                 restored2 = new Request(storable2.storageId());
+        Storable restored1 = storable(), restored2 = storable();
+        Utils.reflectiveSetField(restored1, "id", storable1.storageId());
+        Utils.reflectiveSetField(restored2, "id", storable2.storageId());
+
         restored1 = Storage.pop(ctx, restored1);
         restored2 = Storage.pop(ctx, restored2);
 
@@ -175,10 +183,14 @@ public class StorageTests extends BaseTests {
         Assert.assertEquals(ids.get(0), storable1.storageId());
         Assert.assertEquals(ids.get(1), storable2.storageId());
 
-        Future<Request> restored2 = Storage.readAsync(ctx, new Request(storable2.storageId())),
-                 restored1 = Storage.readAsync(ctx, new Request(storable1.storageId())),
-                 restored1TasksCopy = Storage.readAsync(ctx, new Request(storable1.storageId())),
-                 restored2Copy = Storage.readAsync(ctx, new Request(storable2.storageId()));
+        Storable s1 = storable(), s2 = storable();
+        Utils.reflectiveSetField(s1, "id", storable1.storageId());
+        Utils.reflectiveSetField(s2, "id", storable2.storageId());
+
+        Future<Storable> restored2 = Storage.readAsync(ctx, s2),
+                 restored1 = Storage.readAsync(ctx, s1),
+                 restored1TasksCopy = Storage.readAsync(ctx, s1),
+                 restored2Copy = Storage.readAsync(ctx, s2);
 
         Assert.assertNotNull(restored1);
         Assert.assertNotNull(restored1TasksCopy);
@@ -186,7 +198,10 @@ public class StorageTests extends BaseTests {
         Assert.assertSame(restored1, restored1TasksCopy);
         Assert.assertNotSame(restored1, restored2);
 
-        Request req = Storage.read(ctx, new Request(storable1.storageId()));
+        Storable s1c = storable();
+        Utils.reflectiveSetField(s1c, "id", storable1.storageId());
+
+        Storable req = Storage.read(ctx, s1c);
         Assert.assertNotNull(req);
         Assert.assertEquals(storable1, req);
 
@@ -196,7 +211,10 @@ public class StorageTests extends BaseTests {
         Assert.assertEquals(ids.get(0), storable1.storageId());
         Assert.assertEquals(ids.get(1), storable2.storageId());
 
-        req = Storage.readOne(ctx, new Request(0L), true);
+        Storable s0 = storable();
+        Utils.reflectiveSetField(s0, "id", 0L);
+
+        req = Storage.readOne(ctx, s0, true);
         ids = Storage.list(ctx, storable1.storagePrefix());
 
         Assert.assertNotNull(req);
@@ -343,13 +361,6 @@ public class StorageTests extends BaseTests {
 //    }
 
     private Storable storable() {
-        return new Request("param", "value");
+        return ModuleRequests.nonSessionRequest(ctx);
     }
-
-    private Storable restore(long id, byte[] data){
-        Request request = new Request(id);
-        request.restore(data);
-        return request;
-    }
-    */
 }

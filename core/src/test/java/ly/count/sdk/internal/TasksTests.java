@@ -1,29 +1,25 @@
-package ly.count.sdk.android.internal;
-
-import android.support.test.runner.AndroidJUnit4;
-
-import junit.framework.Assert;
+package ly.count.sdk.internal;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.powermock.reflect.Whitebox;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.Tasks;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(JUnit4.class)
 public class TasksTests extends BaseTests{
     private Tasks tasks;
     @Test
     public void filler(){
 
     }
-/*
+
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -44,7 +40,7 @@ public class TasksTests extends BaseTests{
     }
 
     @Test
-    public void testShutdown() throws Exception {
+    public void testShutdown() {
         Tasks other = new Tasks("test");
         other.run(new Tasks.Task<Object>(0L) {
             @Override
@@ -56,7 +52,7 @@ public class TasksTests extends BaseTests{
         });
         long now = System.nanoTime();
         other.shutdown();
-        long timeToShutdown = Device.nsToMs(System.nanoTime() - now);
+        long timeToShutdown = Device.dev.nsToMs(System.nanoTime() - now);
         Log.i("time to shutdown " + timeToShutdown);
         Assert.assertTrue(Whitebox.<ExecutorService>getInternalState(other, "executor").isShutdown());
         Assert.assertTrue(Whitebox.<ExecutorService>getInternalState(other, "executor").isTerminated());
@@ -70,13 +66,13 @@ public class TasksTests extends BaseTests{
 
         tasks.run(new Tasks.Task<Object>(0L) {
             @Override
-            public Object call() throws Exception {
+            public Object call() {
                 called[0] = true;
                 return result;
             }
         }, new Tasks.Callback<Object>() {
             @Override
-            public void call(Object param) throws Exception {
+            public void call(Object param) {
                 Assert.assertEquals(result, param);
                 called[1] = true;
             }
@@ -129,5 +125,4 @@ public class TasksTests extends BaseTests{
 
         Assert.assertEquals(1, modification[0]);
     }
-    */
 }

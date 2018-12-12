@@ -214,6 +214,9 @@ abstract class SDKStorage extends SDKLifecycle {
 
     @Override
     public List<Long> storableList(ly.count.sdk.internal.Ctx context, String prefix, int slice) {
+        if (Utils.isEmpty(prefix)) {
+            Log.wtf("Cannot get list of ids without prefix");
+        }
         Ctx ctx = (Ctx) context;
         prefix = prefix + FILE_NAME_SEPARATOR;
 

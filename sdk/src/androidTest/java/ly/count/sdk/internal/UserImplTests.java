@@ -1,27 +1,22 @@
-package ly.count.sdk.android.internal;
+package ly.count.sdk.internal;
+
 
 import android.support.test.runner.AndroidJUnit4;
 
-import junit.framework.Assert;
-
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 
 import java.util.Arrays;
 
 import ly.count.sdk.User;
-import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.Storage;
-import ly.count.sdk.internal.UserImpl;
+import ly.count.sdk.android.internal.BaseTests;
 
 @RunWith(AndroidJUnit4.class)
 public class UserImplTests extends BaseTests {
-    @Test
-    public void filler(){
 
-    }
-/*
     @Test
     public void testStorageAllSet() throws Exception {
         UserImpl user = new UserImpl(ctx);
@@ -104,7 +99,7 @@ public class UserImplTests extends BaseTests {
     public void testCommit() throws Exception {
         setUpApplication(defaultConfig());
 
-        UserImpl user = Core.instance.user();
+        UserImpl user = sdk.user();
         Assert.assertNotNull(user);
 
         user.edit().setName("N").setUsername("U").setEmail("E").setOrg("O").setPhone("P")
@@ -141,7 +136,7 @@ public class UserImplTests extends BaseTests {
     public void testCommitLocationOptOut() throws Exception {
         setUpApplication(defaultConfig());
 
-        UserImpl user = Core.instance.user();
+        UserImpl user = sdk.user();
         Assert.assertNotNull(user);
 
         user.edit().setName("N").setUsername("U").setEmail("E").setOrg("O").setPhone("P")
@@ -177,7 +172,7 @@ public class UserImplTests extends BaseTests {
     public void testCommitLocationNulling() throws Exception {
         setUpApplication(defaultConfig());
 
-        UserImpl user = Core.instance.user();
+        UserImpl user = sdk.user();
         Assert.assertNotNull(user);
         user.locale = "en_US";
         user.country = "US";
@@ -212,5 +207,4 @@ public class UserImplTests extends BaseTests {
         Assert.assertFalse(query.endsWith("&location="));
 
     }
-    */
 }

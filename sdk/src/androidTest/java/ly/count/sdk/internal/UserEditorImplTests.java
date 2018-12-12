@@ -1,4 +1,4 @@
-package ly.count.sdk.android.internal;
+package ly.count.sdk.internal;
 
 import android.support.test.runner.AndroidJUnit4;
 
@@ -15,27 +15,18 @@ import java.util.HashSet;
 import java.util.Set;
 
 import ly.count.sdk.User;
-import ly.count.sdk.internal.Ctx;
-import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Log;
-//import ly.count.sdk.internal.UserEditorImpl;
-import ly.count.sdk.internal.UserImpl;
-
-import static android.support.test.InstrumentationRegistry.getContext;
 
 @RunWith(AndroidJUnit4.class)
-public class UserEditorImplTests {
+public class UserEditorImplTests extends ly.count.sdk.android.internal.BaseTests {
     private UserImpl user;
-    private Ctx ctx;
 
     @Test
     public void filler(){
 
     }
-/*
+
     @Before
     public void setUp() throws Exception {
-        ctx = new CtxImpl(getContext());
         user = new UserImpl(ctx);
         user.name = "name";
         user.username = "username";
@@ -49,7 +40,7 @@ public class UserEditorImplTests {
         user.country = "US";
         user.city = "NY";
         user.location = "9,9";
-        new Log().init(new InternalConfig(BaseTests.config()));
+        defaultConfigWithLogsForConfigTests();
     }
 
     @Test
@@ -103,7 +94,7 @@ public class UserEditorImplTests {
         Assert.assertEquals(User.Gender.MALE, user.gender());
         Assert.assertEquals("M", object.getString("gender"));
 
-        Assert.assertTrue(1900 == user.birthyear());
+        Assert.assertEquals(1900, (int) user.birthyear());
         Assert.assertEquals(1900, object.getInt("byear"));
     }
 
@@ -226,23 +217,22 @@ public class UserEditorImplTests {
         Assert.assertEquals("pushstring2", object.getJSONObject("push").getJSONArray("$push").getString(1));
         Assert.assertEquals(2, object.getJSONObject("pull").getJSONArray("$pull").getInt(0));
         Assert.assertEquals(1, object.getJSONObject("pull").getJSONArray("$pull").getInt(1));
-        Assert.assertEquals(false, object.getJSONObject("pushUnique").getJSONArray("$addToSet").getBoolean(0));
-        Assert.assertEquals(true, object.getJSONObject("pushUnique").getJSONArray("$addToSet").getBoolean(1));
+        Assert.assertFalse(object.getJSONObject("pushUnique").getJSONArray("$addToSet").getBoolean(0));
+        Assert.assertTrue(object.getJSONObject("pushUnique").getJSONArray("$addToSet").getBoolean(1));
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testLocationFormat1() throws Exception {
+    public void testLocationFormat1() {
         user.edit().setLocation("a,b");
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testLocationFormat2() throws Exception {
+    public void testLocationFormat2() {
         user.edit().setLocation("12");
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testLocationFormat3() throws Exception {
+    public void testLocationFormat3() {
         user.edit().setLocation("3,4,5");
     }
-    */
 }

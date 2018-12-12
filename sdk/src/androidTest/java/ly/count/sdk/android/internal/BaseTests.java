@@ -74,7 +74,7 @@ public class BaseTests {
         this.dummy = mock(ModuleBase.class);
         Utils.reflectiveSetField(SDK.class, "testDummyModule", dummy);
         this.sdk = new SDK();
-        this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(defaultConfig()), getContext()));
+        this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(defaultConfig()), application()));
         this.config = SDK.instance.config();
         this.ctx = new CtxImpl(this.sdk, this.config, getContext());
     }

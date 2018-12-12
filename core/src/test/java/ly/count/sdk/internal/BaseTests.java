@@ -109,7 +109,7 @@ public class BaseTests {
     }
 
     private Object getContext() {
-        return null;
+        return new Object();
     }
 
     @After
