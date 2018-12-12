@@ -55,7 +55,7 @@ public class Request implements Storable {
 
     boolean isEmpty() {
         Map<String, String> map = this.params.map();
-        return map.isEmpty() || (map.size() == 1 && !map.containsKey(Params.PARAM_DEVICE_ID));
+        return map.isEmpty() || (map.size() == 1 && map.containsKey(Params.PARAM_DEVICE_ID));
     }
 
     boolean isGettable(URL serverUrl) {

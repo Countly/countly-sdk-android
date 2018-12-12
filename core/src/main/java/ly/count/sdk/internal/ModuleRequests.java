@@ -157,19 +157,33 @@ public class ModuleRequests extends ModuleBase {
     }
 
     static Request addRequired(InternalConfig config, Request request) {
+        if(request.isEmpty()){
+            //if nothing was in the request, no need to add these mandatory fields
+            return request;
+        }
+
+        //check if it has the device ID
         if (!request.params.has(Params.PARAM_DEVICE_ID)) {
             if (config.getDeviceId() == null) {
+                //no ID possible, no reason to send a request that is not tied to a user, return null
                 return null;
             } else {
+                //ID possible, add it to the request
                 request.params.add(Params.PARAM_DEVICE_ID, config.getDeviceId().id);
-                return request;
             }
         }
 
-        if (!request.isEmpty() && !request.params.has("sdk_name")) {
-            request.params.add("sdk_name", config.getSdkName())
-                    .add("sdk_version", config.getSdkVersion())
-                    .add("app_key", config.getServerAppKey());
+        //add other missing fields
+        if(!request.params.has("sdk_name")){
+            request.params.add("sdk_name", config.getSdkName());
+        }
+
+        if(!request.params.has("sdk_version")){
+            request.params.add("sdk_version", config.getSdkVersion());
+        }
+
+        if(!request.params.has("app_key")){
+            request.params.add("app_key", config.getServerAppKey());
         }
 
         return request;
