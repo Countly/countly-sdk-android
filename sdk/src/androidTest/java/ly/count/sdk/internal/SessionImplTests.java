@@ -23,7 +23,6 @@ import ly.count.sdk.Crash;
 import ly.count.sdk.CrashProcessor;
 import ly.count.sdk.Event;
 import ly.count.sdk.android.internal.BaseTests;
-import ly.count.sdk.android.internal.CrashImpl;
 import ly.count.sdk.android.internal.Device;
 import ly.count.sdk.android.internal.Utils;
 

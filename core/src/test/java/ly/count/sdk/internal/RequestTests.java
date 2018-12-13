@@ -1,20 +1,15 @@
-package ly.count.sdk.android.internal;
+package ly.count.sdk.internal;
 
-import android.support.test.runner.AndroidJUnit4;
-
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.powermock.reflect.Whitebox;
 
 import java.net.URL;
 
-import ly.count.sdk.internal.Params;
-import ly.count.sdk.internal.Request;
-
-@RunWith(AndroidJUnit4.class)
+@RunWith(JUnit4.class)
 public class RequestTests {
     private final String urlString = "http://www.google.com";
     private URL url;
@@ -52,7 +47,7 @@ public class RequestTests {
         Params requestParams = request.params;
         Assert.assertEquals(params.toString(), requestParams.toString());
     }
-/*
+
     @Test
     public void request_build(){
         String[] paramsParts = new String[] {"abc", "123", "qwe", "456"};
@@ -99,13 +94,13 @@ public class RequestTests {
 
 
     @Test
-    public void isGettable_ParamsEmptyUnderLimit() throws Exception, Exception{
+    public void isGettable_ParamsEmptyUnderLimit() throws Exception{
         Request request = Whitebox.invokeConstructor(Request.class, "");
-        Assert.assertEquals(true, request.isGettable(url, 0));
+        Assert.assertTrue(request.isGettable(url, 0));
     }
 
     @Test
-    public void isGettable_ParamsFilledAboveLimitLarge() throws Exception, Exception{
+    public void isGettable_ParamsFilledAboveLimitLarge() throws Exception{
         StringBuilder sbParams = new StringBuilder();
 
         for(int a = 0 ; a < 1000 ; a++) {
@@ -116,7 +111,6 @@ public class RequestTests {
 
         Request request = Whitebox.invokeConstructor(Request.class, sbParams.toString());
 
-        Assert.assertEquals(false, request.isGettable(url, 0));
+        Assert.assertFalse(request.isGettable(url, 0));
     }
-    */
 }
