@@ -487,7 +487,7 @@ public class CrashDataTests extends BaseTests {
 
                     // Error checking that probably isn't needed but I added just in case.
                     if (level > -1 && scale > 0) {
-                        return Float.toString(((float) level / (float) scale) * 100.0f);
+                        return Float.toString(100.0f * (float) level / (float) scale);
                     }
                 }
             }

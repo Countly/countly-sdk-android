@@ -116,8 +116,8 @@ public class ModuleCrash extends ModuleBase {
             case DIVISION_BY_ZERO:
                 int test = 10/0;
             case OOM:
-                Object[] o = null;
-                while (true) { o = new Object[] { o }; }
+                String s = "qwe";
+                while (true) { s = s + s; }
             case RUNTIME_EXCEPTION:
                 throw new RuntimeException("This is a crash");
             case NULLPOINTER_EXCEPTION:

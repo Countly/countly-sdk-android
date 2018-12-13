@@ -38,10 +38,10 @@ public class ModuleCrashTests extends BaseTests {
         ModuleCrash.crashTest(ModuleCrash.CrashType.RUNTIME_EXCEPTION);
     }
 
-//    @Test(expected = OutOfMemoryError.class)
-//    public void raise_oom() {
-//        ModuleCrash.crashTest(ModuleCrash.CrashType.OOM);
-//    }
+    @Test(expected = OutOfMemoryError.class)
+    public void raise_oom() {
+        ModuleCrash.crashTest(ModuleCrash.CrashType.OOM);
+    }
 
     @Test
     public void checkTicks() throws Exception {
