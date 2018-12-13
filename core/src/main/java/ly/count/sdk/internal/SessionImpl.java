@@ -50,11 +50,6 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     protected final List<Event> events = new ArrayList<>();
 
     /**
-     * List of events still not added to request
-     */
-    protected final Map<String, Event> timedEvents = new HashMap<>();
-
-    /**
      * Additional parameters to send with next request
      */
     protected final Params params = new Params();
@@ -248,8 +243,10 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     }
 
     public Event timedEvent(String key) {
-        return SDKCore.instance.timedEvents().event(ctx, key);
+        return timedEvents().event(ctx, key);
     }
+
+    protected TimedEvents timedEvents () { return SDKCore.instance.timedEvents(); }
 
     @Override
     public void recordEvent(Event event) {
@@ -257,7 +254,6 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
         if (began == null) {
             begin();
         }
-        timedEvents.remove(((EventImpl)event).getKey());
 
         synchronized (storageId()) {
             events.add(event);

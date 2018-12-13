@@ -5,6 +5,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import ly.count.sdk.android.Countly;
 import ly.count.sdk.internal.Ctx;
 import ly.count.sdk.internal.Device;
 import ly.count.sdk.internal.InternalConfig;
@@ -22,7 +23,6 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
 
     private volatile int tick = 0;
     private int tickToCheck = 0;
-    private InternalConfig config;
     private Ctx context = null;
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private Runnable ticker = new Runnable() {
@@ -59,7 +59,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
 
     @Override
     public void init(InternalConfig config) {
-        this.config = config;
+        super.init(config);
         limited = config.isLimited();
     }
 
@@ -99,6 +99,13 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
     }
 
     public void onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
-        onCrash(ctx, new CrashImpl().setThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs));
+        CrashImpl crash = new CrashImpl();
+        crash.setThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs);
+
+        if (Countly.legacyMethodCrashProcessor != null) {
+            Countly.legacyMethodCrashProcessor.process(crash);
+        }
+
+        onCrash(ctx, crash);
     }
 }

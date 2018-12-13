@@ -13,7 +13,7 @@ public class CrashImpl extends ly.count.sdk.internal.CrashImpl implements Crash,
         super();
     }
 
-    protected CrashImpl(Long id) {
+    public CrashImpl(Long id) {
         super(id);
     }
 

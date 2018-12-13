@@ -1,4 +1,4 @@
-package ly.count.sdk.android.internal;
+package ly.count.sdk.internal;
 
 import android.support.test.runner.AndroidJUnit4;
 
@@ -17,16 +17,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.android.Countly;
 import ly.count.sdk.Crash;
 import ly.count.sdk.CrashProcessor;
 import ly.count.sdk.Event;
-//import ly.count.sdk.internal.EventImpl;
-import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.Request;
-//import ly.count.sdk.internal.SessionImpl;
-import ly.count.sdk.internal.Storage;
+import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.CrashImpl;
+import ly.count.sdk.android.internal.Device;
+import ly.count.sdk.android.internal.Utils;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplTests extends BaseTests {
@@ -37,12 +36,13 @@ public class SessionImplTests extends BaseTests {
     public void filler(){
 
     }
-/*
+
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        if (testName.getMethodName().equals("session_crashRecordedWithCustomProcessor")) {
-            Countly.init(application(), defaultConfig().setCrashProcessorClass(CrashProcessorImpl.class));
+        if (testName.getMethodName().equals("session_crashRecordedWithCustomProcessor") ||
+                testName.getMethodName().equals("session_crashRecordedWithLegacyData")) {
+            setUpApplication(defaultConfig().setCrashProcessorClass(CrashProcessorImpl.class));
         } else {
             setUpApplication(defaultConfig());
         }
@@ -56,11 +56,11 @@ public class SessionImplTests extends BaseTests {
     @Test
     public void constructor_empty(){
         final long allowance = 3;
-        long time = Device.uniqueTimestamp();
+        long time = ly.count.sdk.android.internal.Device.dev.uniqueTimestamp();
         SessionImpl session = new SessionImpl(ctx);
 
         long diff = session.getId() - time;
-        Assert.assertEquals(true, diff < allowance);
+        Assert.assertTrue(diff < allowance);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void addParams() throws Exception{
+    public void addParams() {
         SessionImpl session = new SessionImpl(ctx);
         Assert.assertNotNull(session.params);
 
@@ -93,7 +93,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void beginEndSession_doubleBegin() throws Exception{
+    public void beginEndSession_doubleBegin() {
         long sessionID = 12345;
         SessionImpl session = new SessionImpl(ctx, sessionID);
 
@@ -139,13 +139,13 @@ public class SessionImplTests extends BaseTests {
         final long sessionTimeEnd = session.getEnded();
         final long sessionTimeDiff = sessionTimeEnd - sessionTimeStart;
 
-        Assert.assertEquals(true, sessionTimeDiff <= timeGuardDiff);
+        Assert.assertTrue(sessionTimeDiff <= timeGuardDiff);
     }
 
     @Test
     public void secondIsCorrect() {
         long secondInMs = 1000 * 1000 * 1000;
-        Assert.assertEquals((double)secondInMs, Device.NS_IN_SECOND);
+        Assert.assertEquals((double)secondInMs, ly.count.sdk.android.internal.Device.NS_IN_SECOND);
     }
 
     @Test
@@ -161,14 +161,14 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void beginAfterEnd() throws Exception {
+    public void beginAfterEnd() {
         long timeBegin = 123L;
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
 
         session.end();
-        Assert.assertEquals(null, session.getBegan());
-        Assert.assertEquals(null, session.getEnded());
+        Assert.assertNull(session.getBegan());
+        Assert.assertNull(session.getEnded());
 
         session.begin(timeBegin);
         session.end(timeEnd, null, null);
@@ -178,31 +178,31 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void beginAfterEndSet() throws Exception {
+    public void beginAfterEndSet() {
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
 
         session.ended = timeEnd;
         session.begin();
 
-        Assert.assertEquals(null, session.getBegan());
+        Assert.assertNull(session.getBegan());
         Assert.assertEquals(timeEnd, (long) session.getEnded());
     }
 
     @Test
-    public void endedTwice() throws Exception {
+    public void endedTwice() {
         long timeBegin = 123L;
         long timeEnd = 345L;
         long timeEndSecond = 678L;
         SessionImpl session = new SessionImpl(ctx);
 
-        Assert.assertEquals(null, session.getBegan());
-        Assert.assertEquals(null, session.getEnded());
+        Assert.assertNull(session.getBegan());
+        Assert.assertNull(session.getEnded());
 
         session.begin(timeBegin);
 
         Assert.assertEquals(timeBegin, (long) session.getBegan());
-        Assert.assertEquals(null, session.getEnded());
+        Assert.assertNull(session.getEnded());
 
         session.end(timeEnd, null, null);
 
@@ -218,27 +218,27 @@ public class SessionImplTests extends BaseTests {
     @Test
     public void updateDuration_simple() throws Exception{
         int beginOffsetSeconds = 4;
-        long timeBeginOffset = (long) (Device.NS_IN_SECOND * beginOffsetSeconds);
+        long timeBeginOffset = (long) (ly.count.sdk.android.internal.Device.NS_IN_SECOND * beginOffsetSeconds);
 
         SessionImpl session = new SessionImpl(ctx);
         final long timeGuardBase = System.nanoTime() - timeBeginOffset;
         session.begin(timeGuardBase);
 
         final long timeGuardStart = System.nanoTime();
-        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration", null);
+        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration", (Object[]) null);
         final long timeGuardEnd = System.nanoTime();
 
-        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / Device.NS_IN_SECOND);
-        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / Device.NS_IN_SECOND);
+        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / ly.count.sdk.android.internal.Device.NS_IN_SECOND);
+        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / ly.count.sdk.android.internal.Device.NS_IN_SECOND);
 
-        Assert.assertEquals(true, duration >= timeGuardDurStart);
-        Assert.assertEquals(true, duration <= timeGuardDurEnded);
+        Assert.assertTrue(duration >= timeGuardDurStart);
+        Assert.assertTrue(duration <= timeGuardDurEnded);
     }
 
     @Test
     public void updateDuration_notFirstUpdate() throws Exception{
         int beginOffsetSeconds = 12;
-        long timeBeginOffset = (long) (Device.NS_IN_SECOND * beginOffsetSeconds);
+        long timeBeginOffset = (long) (ly.count.sdk.android.internal.Device.NS_IN_SECOND * beginOffsetSeconds);
 
         final long timeGuardBase = System.nanoTime() - timeBeginOffset;
         SessionImpl session = new SessionImpl(ctx);
@@ -246,14 +246,14 @@ public class SessionImplTests extends BaseTests {
         Whitebox.setInternalState(session, "updated", timeGuardBase);
 
         final long timeGuardStart = System.nanoTime();
-        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration", null);
+        Long duration = Whitebox.<Long>invokeMethod(session, "updateDuration", (Object[]) null);
         final long timeGuardEnd = System.nanoTime();
 
-        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / Device.NS_IN_SECOND);
-        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / Device.NS_IN_SECOND);
+        final long timeGuardDurStart = Math.round((timeGuardStart - timeGuardBase) / ly.count.sdk.android.internal.Device.NS_IN_SECOND);
+        final long timeGuardDurEnded = Math.round((timeGuardEnd - timeGuardBase) / ly.count.sdk.android.internal.Device.NS_IN_SECOND);
 
-        Assert.assertEquals(true, duration >= timeGuardDurStart);
-        Assert.assertEquals(true, duration <= timeGuardDurEnded);
+        Assert.assertTrue(duration >= timeGuardDurStart);
+        Assert.assertTrue(duration <= timeGuardDurEnded);
     }
 
     @Test
@@ -274,27 +274,27 @@ public class SessionImplTests extends BaseTests {
         final long sessionTimeEnd = session.getEnded();
         final long sessionTimeDiff = sessionTimeEnd - sessionTimeStart;
 
-        Assert.assertEquals(true, sessionTimeDiff >= (sleepTimeMs * 1000));
-        Assert.assertEquals(true, sessionTimeDiff <= timeGuardDiff);
+        Assert.assertTrue(sessionTimeDiff >= (sleepTimeMs * 1000));
+        Assert.assertTrue(sessionTimeDiff <= timeGuardDiff);
     }
 
 
     @Test
-    public void update_simple() throws Exception {
+    public void update_simple() {
         long timeBegin = 123L;
         long timeEnd = 345L;
         SessionImpl session = new SessionImpl(ctx);
 
         session.update();
 
-        Assert.assertEquals(null, session.getBegan());
-        Assert.assertEquals(null, session.getEnded());
+        Assert.assertNull(session.getBegan());
+        Assert.assertNull(session.getEnded());
 
         session.begin(timeBegin);
         session.update();
 
         Assert.assertEquals(timeBegin, (long) session.getBegan());
-        Assert.assertEquals(null, session.getEnded());
+        Assert.assertNull(session.getEnded());
 
         session.end(timeEnd, null, null);
         session.update();
@@ -303,7 +303,8 @@ public class SessionImplTests extends BaseTests {
         Assert.assertEquals(timeEnd, (long)session.getEnded());
     }
 
-    public void storeRestore_simple() throws InterruptedException {
+    @Test
+    public void storeRestore_simple() {
         SessionImpl session = new SessionImpl(ctx);
         byte[] data = session.store();
         Assert.assertNotNull(data);
@@ -350,7 +351,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void autostore() throws Exception {
+    public void autostore() {
         SessionImpl session = new SessionImpl(ctx);
         session.begin().event("key1")
                 .setCount(2)
@@ -380,7 +381,7 @@ public class SessionImplTests extends BaseTests {
     public void timedEvent() throws Exception {
         SessionImpl session = new SessionImpl(ctx);
         Event event1 = session.begin().timedEvent("key1");
-        Assert.assertEquals(1, session.timedEvents.size());
+        Assert.assertEquals(1, session.timedEvents().size());
 
         Thread.sleep(1100);
 
@@ -389,44 +390,49 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void timedEventContinues() throws Exception {
+    public void timedEventContinues() {
         SessionImpl session = new SessionImpl(ctx);
+        Utils.reflectiveSetField(SDKCore.instance.module(ModuleSessions.class), "session", session);
+
         Event event1 = session.begin().timedEvent("key1")
                 .addSegment("k1", "v1");
 
-        Assert.assertEquals(1, session.timedEvents.size());
+        Assert.assertEquals(1, session.timedEvents().size());
 
         session.timedEvent("key1")
                 .addSegment("k2", "v2");
 
-        Assert.assertEquals(1, session.timedEvents.size());
+        Assert.assertEquals(1, session.timedEvents().size());
 
         session.timedEvent("key1")
                 .setSum(9.99);
 
-        Assert.assertEquals(1, session.timedEvents.size());
+        Assert.assertEquals(1, session.timedEvents().size());
 
         Event event2 = session.timedEvent("key2");
 
-        Assert.assertEquals(2, session.timedEvents.size());
+        Assert.assertEquals(2, session.timedEvents().size());
 
         session.timedEvent("key1").endAndRecord();
 
-        Assert.assertEquals(1, session.timedEvents.size());
-        Assert.assertSame(event1, session.events.get(0));
+        Assert.assertEquals(1, session.timedEvents().size());
+        Assert.assertEquals(1, session.events.size());
+        Assert.assertTrue(session.timedEvents().has("key2"));
+        Assert.assertSame(event2, session.timedEvents().event(ctx, "key2"));
 
         event2.addSegment("k2", "v2").addSegment("k1", "v1").setSum(9.99).record();
 
-        Assert.assertEquals(0, session.timedEvents.size());
+        Assert.assertEquals(0, session.timedEvents().size());
+        Assert.assertEquals(2, session.events.size());
         Assert.assertSame(event1, session.events.get(0));
         Assert.assertSame(event2, session.events.get(1));
         Assert.assertNotNull(((EventImpl) event1).getDuration());
         Assert.assertEquals(0d, ((EventImpl) event1).getDuration());
-        Assert.assertNull(((EventImpl) event2).getDuration());
+        Assert.assertNotNull(((EventImpl) event2).getDuration());
     }
 
     @Test
-    public void session_lifecycle() throws InterruptedException {
+    public void session_lifecycle() {
         SessionImpl session = new SessionImpl(ctx);
         session.begin();
         Long began = Whitebox.getInternalState(session, "began");
@@ -465,7 +471,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void session_updateBeforeBegin() throws InterruptedException {
+    public void session_updateBeforeBegin() {
         SessionImpl session = new SessionImpl(ctx);
         session.update();
         Assert.assertNull(Whitebox.getInternalState(session, "began"));
@@ -474,7 +480,7 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void session_endBeforeBegin() throws InterruptedException {
+    public void session_endBeforeBegin() {
         SessionImpl session = new SessionImpl(ctx);
         session.end();
         Assert.assertNull(Whitebox.getInternalState(session, "began"));
@@ -484,8 +490,8 @@ public class SessionImplTests extends BaseTests {
 
     @Test
     public void session_recoverNoUpdate() throws Exception {
-        long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
-        SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - Device.secToNs(config.getSessionCooldownPeriod() * 3));
+        long beginNs = System.nanoTime() - ly.count.sdk.android.internal.Device.dev.secToNs(config.getSessionCooldownPeriod() * 3);
+        SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - ly.count.sdk.android.internal.Device.dev.secToNs(config.getSessionCooldownPeriod() * 3));
         session.begin(beginNs);
 
         Thread.sleep(300);
@@ -513,10 +519,10 @@ public class SessionImplTests extends BaseTests {
 
     @Test
     public void session_recoverWithUpdate() throws Exception {
-        long beginNs = System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 3);
-        SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - Device.secToMs(config.getSessionCooldownPeriod() * 3));
+        long beginNs = System.nanoTime() - ly.count.sdk.android.internal.Device.dev.secToNs(config.getSessionCooldownPeriod() * 3);
+        SessionImpl session = new SessionImpl(ctx, System.currentTimeMillis() - ly.count.sdk.android.internal.Device.dev.secToMs(config.getSessionCooldownPeriod() * 3));
         session.begin(beginNs);
-        session.update(System.nanoTime() - Device.secToNs(config.getSessionCooldownPeriod() * 2));
+        session.update(System.nanoTime() - ly.count.sdk.android.internal.Device.dev.secToNs(config.getSessionCooldownPeriod() * 2));
 
         Thread.sleep(300);
 
@@ -545,10 +551,10 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void session_recoversNothingWithEnd() throws Exception {
+    public void session_recoversNothingWithEnd() {
         SessionImpl session = new SessionImpl(ctx);
-        session.begin(System.nanoTime() - Device.secToNs(20));
-        session.update(System.nanoTime() - Device.secToNs(10));
+        session.begin(System.nanoTime() - ly.count.sdk.android.internal.Device.dev.secToNs(20));
+        session.update(System.nanoTime() - ly.count.sdk.android.internal.Device.dev.secToNs(10));
         session.end();
 
         Storage.await();
@@ -581,14 +587,14 @@ public class SessionImplTests extends BaseTests {
     }
 
     @Test
-    public void session_crashRecorded() throws Exception {
+    public void session_crashRecorded() {
         String name = "crashname";
         String[] logs = new String[]{"log1", "log2", "log3"};
         Map<String, String> segments = new HashMap<>();
         segments.put("a", "b");
         segments.put("c", "d");
         SessionImpl session = new SessionImpl(ctx);
-        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.begin(System.nanoTime() - ly.count.sdk.android.internal.Device.dev.secToNs(20));
         session.addCrashReport(new IllegalStateException("Illegal state out here"), false, name, segments, logs);
         session.end();
 
@@ -597,15 +603,15 @@ public class SessionImplTests extends BaseTests {
         Assert.assertNull(Storage.read(ctx, session));
 
         List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
-        Assert.assertEquals(2, requests.size());
+        Assert.assertEquals(3, requests.size());
 
-        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
-        Assert.assertEquals(1, crashes.size());
+        List<Long> crashes = Storage.list(ctx, ly.count.sdk.android.internal.CrashImpl.getStoragePrefix());
+        Assert.assertEquals(0, crashes.size());
 
-        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
-        Assert.assertNotNull(crash);
+        Request request = Storage.read(ctx, new Request(requests.get(1)));
+        Assert.assertNotNull(request);
 
-        String json = crash.getJSON();
+        String json = request.params.get("crash");
         Log.d(json);
         Assert.assertTrue(json.contains("\"_nonfatal\":true"));
         Assert.assertTrue(json.contains("\"_name\":\"" + name + "\""));
@@ -630,7 +636,7 @@ public class SessionImplTests extends BaseTests {
         Countly.sharedInstance().addCrashLog(logs[2]);
 
         SessionImpl session = new SessionImpl(ctx);
-        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.begin(System.nanoTime() - ly.count.sdk.android.internal.Device.dev.secToNs(20));
         session.addCrashReport(new IllegalStateException("Illegal state out here"), true);
         session.end();
 
@@ -639,15 +645,15 @@ public class SessionImplTests extends BaseTests {
         Assert.assertNull(Storage.read(ctx, session));
 
         List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
-        Assert.assertEquals(2, requests.size());
+        Assert.assertEquals(3, requests.size());
 
-        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
-        Assert.assertEquals(1, crashes.size());
+        List<Long> crashes = Storage.list(ctx, ly.count.sdk.android.internal.CrashImpl.getStoragePrefix());
+        Assert.assertEquals(0, crashes.size());
 
-        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
-        Assert.assertNotNull(crash);
+        Request request = Storage.read(ctx, new Request(requests.get(1)));
+        Assert.assertNotNull(request);
 
-        String json = crash.getJSON();
+        String json = request.params.get("crash");
         Log.d(json);
         Assert.assertTrue(json.contains("\"_nonfatal\":false"));
         Assert.assertTrue(json.contains("\"_logs\":\"" + logs[0] + "\\n" + logs[1] + "\\n" + logs[2] + "\""));
@@ -679,7 +685,7 @@ public class SessionImplTests extends BaseTests {
         segments.put("c", "d");
 
         SessionImpl session = new SessionImpl(ctx);
-        session.begin(System.nanoTime() - Device.secToNs(20));
+        session.begin(System.nanoTime() - Device.dev.secToNs(20));
         session.addCrashReport(new IllegalStateException("Illegal state out here"), true);
         session.end();
 
@@ -688,15 +694,15 @@ public class SessionImplTests extends BaseTests {
         Assert.assertNull(Storage.read(ctx, session));
 
         List<Long> requests = Storage.list(ctx, Request.getStoragePrefix());
-        Assert.assertEquals(2, requests.size());
+        Assert.assertEquals(3, requests.size());
 
-        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
-        Assert.assertEquals(1, crashes.size());
+        List<Long> crashes = Storage.list(ctx, ly.count.sdk.android.internal.CrashImpl.getStoragePrefix());
+        Assert.assertEquals(0, crashes.size());
 
-        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
-        Assert.assertNotNull(crash);
+        Request request = Storage.read(ctx, new Request(requests.get(1)));
+        Assert.assertNotNull(request);
 
-        String json = crash.getJSON();
+        String json = request.params.get("crash");
         Log.d(json);
         Assert.assertTrue(json.contains("\"_name\":\"" + name + "\""));
         Assert.assertTrue(json.contains("\"_nonfatal\":false"));
@@ -706,5 +712,4 @@ public class SessionImplTests extends BaseTests {
         Assert.assertTrue(json.contains("Illegal state out here"));
         Assert.assertTrue(json.contains("session_crashRecorded"));
     }
-    */
 }

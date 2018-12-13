@@ -15,7 +15,7 @@ public class ModuleCrash extends ModuleBase {
     private boolean limited = false;
     private boolean crashed = false;
 
-    private InternalConfig config;
+    protected InternalConfig config;
     private Thread.UncaughtExceptionHandler previousHandler = null;
     protected CrashProcessor crashProcessor = null;
 

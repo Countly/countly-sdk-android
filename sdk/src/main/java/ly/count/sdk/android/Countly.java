@@ -529,7 +529,6 @@ public class Countly extends CountlyLifecycle {
         }
     }
 
-    @Deprecated
     public static DefaultCrashProcessor legacyMethodCrashProcessor = null;
 
     /**

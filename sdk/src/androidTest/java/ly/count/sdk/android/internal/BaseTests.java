@@ -70,11 +70,12 @@ public class BaseTests {
     }
 
     private void setUpSDK(Config config, boolean limited) throws Exception {
-        new Log().init(this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config);
+        this.config = this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config;
+        new Log().init(this.config);
         this.dummy = mock(ModuleBase.class);
         Utils.reflectiveSetField(SDK.class, "testDummyModule", dummy);
         this.sdk = new SDK();
-        this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(defaultConfig()), application()));
+        this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(this.config), application()));
         this.config = SDK.instance.config();
         this.ctx = new CtxImpl(this.sdk, this.config, getContext());
     }

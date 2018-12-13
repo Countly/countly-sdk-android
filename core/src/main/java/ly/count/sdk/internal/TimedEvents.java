@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ly.count.sdk.Event;
+import ly.count.sdk.Session;
 
 class TimedEvents implements Storable, EventImpl.EventRecorder {
     private static final Log.Module L = Log.module("TimedEvents");
@@ -124,7 +125,17 @@ class TimedEvents implements Storable, EventImpl.EventRecorder {
 
     @Override
     public void recordEvent(Event event) {
-        event.endAndRecord();
-        events.remove(((EventImpl)event).getKey());
+        if (events.containsKey(((EventImpl)event).getKey())) {
+            event.endAndRecord();
+            events.remove(((EventImpl)event).getKey());
+            Session session = SDKCore.instance.getSession();
+            if (session != null) {
+                ((SessionImpl) session).recordEvent(event);
+            }
+        }
+    }
+
+    public int size() {
+        return events.size();
     }
 }
