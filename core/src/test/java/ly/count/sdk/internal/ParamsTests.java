@@ -1,17 +1,13 @@
-package ly.count.sdk.android.internal;
-
-import android.support.test.runner.AndroidJUnit4;
-
-import junit.framework.Assert;
+package ly.count.sdk.internal;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-import ly.count.sdk.internal.Params;
-
-@RunWith(AndroidJUnit4.class)
+@RunWith(JUnit4.class)
 public class ParamsTests {
     @Before
     public void setupEveryTest(){

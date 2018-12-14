@@ -1,5 +1,8 @@
 package ly.count.sdk.internal;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ly.count.sdk.Config;
 import ly.count.sdk.Session;
 import ly.count.sdk.View;
@@ -9,6 +12,13 @@ import ly.count.sdk.View;
  */
 
 public class ModuleViews extends ModuleBase {
+    private Map<Integer, View> views = null;
+
+    @Override
+    public void init(InternalConfig config) {
+        super.init(config);
+        views = new HashMap<>();
+    }
 
     /**
      * When new {@code Activity} started, starts new {@link View} with name
@@ -19,7 +29,7 @@ public class ModuleViews extends ModuleBase {
         Session session = SDKCore.instance.getSession();
         if (session != null && SDKCore.enabled(CoreFeature.Views) && ctx.getConfig().isAutoViewsTrackingEnabled()) {
             Class cls = ctx.getContext().getClass();
-            session.view(cls.getSimpleName());
+            views.put(ctx.getContext().hashCode(), session.view(cls.getSimpleName()));
         }
     }
 
@@ -30,9 +40,10 @@ public class ModuleViews extends ModuleBase {
     public void onActivityStopped(Ctx ctx) {
         Session session = SDKCore.instance.getSession();
         if (session != null && SDKCore.enabled(CoreFeature.Views) && ctx.getConfig().isAutoViewsTrackingEnabled()) {
-            Class cls = ctx.getContext().getClass();
-            // TODO: no correct lastView here
-            session.view(cls.getSimpleName()).stop(false);
+            int cls = ctx.getContext().hashCode();
+            if (views.containsKey(cls)) {
+                views.remove(cls).stop(false);
+            }
         }
     }
 
