@@ -1,4 +1,4 @@
-package ly.count.sdk.android.internal;
+package ly.count.sdk.internal;
 
 import android.support.test.runner.AndroidJUnit4;
 
@@ -11,14 +11,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import ly.count.sdk.Config;
-import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.ModuleDeviceId;
-import ly.count.sdk.internal.ModuleRequests;
-import ly.count.sdk.internal.Params;
-import ly.count.sdk.internal.Request;
-//import ly.count.sdk.internal.SessionImpl;
-import ly.count.sdk.internal.Storage;
+import ly.count.sdk.android.Config;
+import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.Device;
+import ly.count.sdk.android.internal.ModuleDeviceId;
 
 import static org.mockito.Mockito.doReturn;
 
@@ -40,7 +36,6 @@ public class RequestsTests extends BaseTests {
 
     }
 
-/*
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -50,26 +45,21 @@ public class RequestsTests extends BaseTests {
     }
 
     @Test
-    public void init() {
-        Assert.assertEquals(config, Whitebox.getInternalState(ModuleRequests.class, "config"));
-    }
-
-    @Test
     public void metrics() throws Exception {
         Params params = Whitebox.getInternalState(ModuleRequests.class, "metrics");
         Assert.assertNotNull(params);
         Assert.assertTrue(params.has("metrics"));
 
         JSONObject object = new JSONObject(params.get("metrics"));
-        Assert.assertEquals(object.get("_device"), Device.getDevice());
-        Assert.assertEquals(object.get("_os"), Device.getOS());
-        Assert.assertEquals(object.get("_os_version"), Device.getOSVersion());
-        Assert.assertEquals(object.get("_carrier"), Device.getCarrier(ctx.getContext()));
-        Assert.assertEquals(object.get("_resolution"), Device.getResolution(ctx.getContext()));
-        Assert.assertEquals(object.get("_density"), Device.getDensity(ctx.getContext()));
-        Assert.assertEquals(object.get("_locale"), Device.getLocale());
-        Assert.assertEquals(object.isNull("_app_version"), Device.getAppVersion(ctx.getContext()) == null);
-        Assert.assertEquals(object.get("_store"), Device.getStore(ctx.getContext()));
+        Assert.assertEquals(object.get("_device"), Device.dev.getDevice());
+        Assert.assertEquals(object.get("_os"), Device.dev.getOS());
+        Assert.assertEquals(object.get("_os_version"), Device.dev.getOSVersion());
+        Assert.assertEquals(object.get("_carrier"), Device.dev.getCarrier(ctx.getContext()));
+        Assert.assertEquals(object.get("_resolution"), Device.dev.getResolution(ctx.getContext()));
+        Assert.assertEquals(object.get("_density"), Device.dev.getDensity(ctx.getContext()));
+        Assert.assertEquals(object.get("_locale"), Device.dev.getLocale());
+        Assert.assertEquals(object.isNull("_app_version"), Device.dev.getAppVersion(ctx) == null);
+        Assert.assertEquals(object.get("_store"), Device.dev.getStore(ctx.getContext()));
     }
 
     @Test
@@ -78,7 +68,7 @@ public class RequestsTests extends BaseTests {
 
         session.params.add("test", "value");
         Long now = System.nanoTime();
-        session.begin(now - Device.secToNs(123));
+        session.begin(now - Device.dev.secToNs(123));
 
         Request request = Storage.readOne(ctx, new Request(0L), true);
         Log.d("read 1st: " + request);
@@ -108,15 +98,15 @@ public class RequestsTests extends BaseTests {
         Assert.assertEquals(event.getString("key"), "eve");
         Assert.assertEquals(event.getInt("count"), 1);
         Assert.assertEquals(event.getInt("dur"), 3);
-        Assert.assertEquals(event.getInt("dow"), Device.currentDayOfWeek());
+        Assert.assertEquals(event.getInt("dow"), Device.dev.currentDayOfWeek());
         Assert.assertEquals(event.getJSONObject("segmentation").get("k"), "v");
         Assert.assertTrue(event.has("timestamp"));
         Assert.assertTrue(event.has("hour"));
         Storage.remove(ctx, request);
 
         session.params.add("testEnd", "valueEnd");
-        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
-        session.end(now + Device.secToNs(19), null, null);
+        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.CUSTOM_ID.getIndex(), "devid"));
+        session.end(now + Device.dev.secToNs(19), null, null);
 
         request = Storage.readOne(ctx, new Request(0L), true);
         Assert.assertNotNull(request);
@@ -130,7 +120,7 @@ public class RequestsTests extends BaseTests {
     }
 
     @Test
-    public void location() throws Exception {
+    public void location() {
         double lat = 12.223, lon = 33.992;
         ModuleRequests.location(ctx, lat, lon);
         Request request = Storage.readOne(ctx, new Request(0L), true);
@@ -139,39 +129,29 @@ public class RequestsTests extends BaseTests {
     }
 
     @Test
-    public void nonSessionRequest() throws Exception {
-        Request request = ModuleRequests.nonSessionRequest(config);
+    public void nonSessionRequest() {
+        Request request = ModuleRequests.nonSessionRequest(ctx);
         Assert.assertNotNull(request);
-        Assert.assertTrue(request.params.has("timestamp"));
-        Assert.assertTrue(request.params.has("dow"));
-        Assert.assertTrue(request.params.has("hour"));
-        Assert.assertTrue(request.params.has("tz"));
+        Assert.assertFalse(request.params.has("timestamp"));
+        Assert.assertFalse(request.params.has("dow"));
+        Assert.assertFalse(request.params.has("hour"));
+        Assert.assertFalse(request.params.has("tz"));
         Assert.assertFalse(request.params.has("device_id"));
 
-        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
-        request = ModuleRequests.nonSessionRequest(config);
+        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.CUSTOM_ID.getIndex(), "devid"));
+        request = ModuleRequests.nonSessionRequest(ctx);
+        Assert.assertNull(ModuleRequests.pushAsync(ctx, request));
+
+        request = ModuleRequests.nonSessionRequest(ctx);
         Assert.assertNotNull(request);
+
+        request.params.add("some", "param");
+        Assert.assertNotNull(ModuleRequests.pushAsync(ctx, request));
+
         Assert.assertTrue(request.params.has("timestamp"));
         Assert.assertTrue(request.params.has("dow"));
         Assert.assertTrue(request.params.has("hour"));
         Assert.assertTrue(request.params.has("tz"));
         Assert.assertEquals(request.params.get("device_id"), "devid");
     }
-
-    @Test
-    public void addRequired() throws Exception {
-        Request request = ModuleRequests.nonSessionRequest(config);
-        Assert.assertNotNull(request);
-        Assert.assertNull(ModuleRequests.addRequired(config, request));
-
-        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
-        request = ModuleRequests.addRequired(config, request);
-
-        Assert.assertNotNull(request);
-        Assert.assertEquals(request.params.get("device_id"), "devid");
-        Assert.assertEquals(request.params.get("sdk_name"), config.getSdkName());
-        Assert.assertEquals(request.params.get("sdk_version"), config.getSdkVersion());
-        Assert.assertEquals(request.params.get("app_key"), config.getServerAppKey());
-    }
-    */
 }

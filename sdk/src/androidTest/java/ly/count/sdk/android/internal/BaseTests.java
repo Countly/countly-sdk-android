@@ -57,6 +57,8 @@ public class BaseTests {
         ctx = new CtxImpl(this.sdk, this.config == null ? new InternalConfig(defaultConfig()) : this.config, getContext());
         utils = Mockito.spy(new Utils());
         Utils.reflectiveSetField(Utils.class, "utils", utils);
+        Utils.reflectiveSetField(ly.count.sdk.internal.Utils.class, "utils", utils);
+//        Whitebox.setInternalState(Utils.class,"utils", (Utils)utils);
     }
 
     protected void setUpApplication(Config config) throws Exception {

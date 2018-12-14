@@ -2,8 +2,6 @@ package ly.count.sdk.internal;
 
 import java.util.concurrent.Future;
 
-import ly.count.sdk.Config;
-import ly.count.sdk.Session;
 import ly.count.sdk.User;
 
 /**
@@ -66,7 +64,7 @@ public class ModuleRequests extends ModuleBase {
             }
         }
 
-        if (!request.isEmpty() && ctx.getConfig().getDeviceId() != null) {
+        if (ctx.getConfig().getDeviceId() != null) {
             request.params.add(Params.PARAM_DEVICE_ID, ctx.getConfig().getDeviceId().id);
         }
 
@@ -175,9 +173,9 @@ public class ModuleRequests extends ModuleBase {
 
         //add other missing fields
         if(!request.params.has("sdk_name")){
-            request.params.add("sdk_name", config.getSdkName());
-            request.params.add("sdk_version", config.getSdkVersion());
-            request.params.add("app_key", config.getServerAppKey());
+            request.params.add("sdk_name", config.getSdkName())
+                    .add("sdk_version", config.getSdkVersion())
+                    .add("app_key", config.getServerAppKey());
         }
 
         return request;
@@ -204,6 +202,23 @@ public class ModuleRequests extends ModuleBase {
      */
     public static Future<Boolean> pushAsync(final Ctx ctx, final Request request, final Tasks.Callback<Boolean> callback) {
         L.d("New request " + request.storageId() + ": " + request);
+
+        if (request.isEmpty()) {
+            if (callback != null) {
+                try {
+                    callback.call(null);
+                } catch (Exception e) {
+                    L.wtf("Exception in a callback", e);
+                }
+            }
+            return null;
+        }
+
+        request.params.add("timestamp", Device.dev.uniqueTimestamp())
+                .add("tz", Device.dev.getTimezoneOffset())
+                .add("hour", Device.dev.currentHour())
+                .add("dow", Device.dev.currentDayOfWeek());
+
         return Storage.pushAsync(ctx, request, new Tasks.Callback<Boolean>() {
             @Override
             public void call(Boolean param) throws Exception {

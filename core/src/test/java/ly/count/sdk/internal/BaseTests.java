@@ -55,7 +55,7 @@ public class BaseTests {
         }
     }
 
-    public static Config config() {
+    public Config config() {
         return new Config(SERVER, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG);
     }
 

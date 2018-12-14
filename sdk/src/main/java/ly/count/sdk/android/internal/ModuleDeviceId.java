@@ -13,7 +13,7 @@ import ly.count.sdk.internal.Utils;
 public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
     private static final Log.Module L = Log.module("ModuleDeviceId");
 
-    static final String ADVERTISING_ID_CLIENT_CLASS_NAME = "com.google.android.gms.ads.identifier.AdvertisingIdClient";
+    public static final String ADVERTISING_ID_CLIENT_CLASS_NAME = "com.google.android.gms.ads.identifier.AdvertisingIdClient";
     static final String INSTANCE_ID_CLASS_NAME = "com.google.firebase.iid.FirebaseInstanceId";
 
     static {
@@ -96,7 +96,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
 
             @Override
             public boolean isAvailable() {
-                return Utils.reflectiveClassExists(ADVERTISING_ID_CLIENT_CLASS_NAME);
+                return Utils.reflectiveClassExists(INSTANCE_ID_CLASS_NAME);
             }
 
             @Override

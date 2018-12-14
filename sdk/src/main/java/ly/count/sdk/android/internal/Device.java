@@ -202,7 +202,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return package name of the store
      */
-    String getStore(final android.content.Context context) {
+    public String getStore(final android.content.Context context) {
         String result = "";
         try {
             result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
