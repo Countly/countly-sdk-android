@@ -27,6 +27,10 @@ import ly.count.sdk.android.internal.Device;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplServiceTests extends BaseTests {
+    @Test
+    public void nothing () {
+        Assert.assertTrue(5 < 10);
+    }
 //    @Rule
 //    public TestName testName = new TestName();
 //

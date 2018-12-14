@@ -164,7 +164,7 @@ public class UserImplTests extends BaseTests {
         Assert.assertTrue(query.contains("&remove_cohorts=" + Utils.urlencode("[\"d\"]") + "&"));
         Assert.assertTrue(query.contains("&country_code=&"));
         Assert.assertTrue(query.contains("&city=&"));
-        Assert.assertTrue(query.endsWith("&location="));
+        Assert.assertTrue(query.contains("&location=&"));
 
     }
 
