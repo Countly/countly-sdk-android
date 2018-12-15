@@ -1,10 +1,17 @@
 package ly.count.sdk.android;
 
+import android.app.Application;
+
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
+import ly.count.sdk.Cly;
 import ly.count.sdk.Config;
+import ly.count.sdk.android.internal.SDKTests;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.validateMockitoUsage;
 
 //@RunWith(AndroidJUnit4.class)
@@ -22,34 +29,35 @@ public class CountlyTests {
     public void cleanupEveryTests(){
         validateMockitoUsage();
     }
-//
-//    @Test
-//    public void init(){
-//        Application application = mock(Application.class);
-//        final Core sdk = mock(Core.class);
-//
-//        Cly.init(application, config, new Cly.CreationOverride() {
-//            @Override
-//            public Core createCore(Config config) {
-//                return sdk;
-//            }
-//        });
-//
-//        verify(sdk, times(1)).onContextAcquired(application);
-//    }
-//
-//    @Test
-//    public void constructor_core(){
-//        Cly cn = new Cly(config);
-//
-//        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
-//    }
-//
-//    @Test
-//    public void constructor_config(){
-//        Core sdk = new Core(config);
-//        Cly cn = new Cly(sdk);
-//        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
-//    }
 
+/*
+    @Test
+    public void init(){
+        Application application = mock(Application.class);
+        final Core sdk = mock(Core.class);
+
+        Cly.init(application, config, new Cly.CreationOverride() {
+            @Override
+            public Core createCore(Config config) {
+                return sdk;
+            }
+        });
+
+        verify(sdk, times(1)).onContextAcquired(application);
+    }
+
+    @Test
+    public void constructor_core(){
+        Cly cn = new Cly(config);
+
+        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
+    }
+
+    @Test
+    public void constructor_config(){
+        Core sdk = new Core(config);
+        Cly cn = new Cly(sdk);
+        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
+    }
+*/
 }

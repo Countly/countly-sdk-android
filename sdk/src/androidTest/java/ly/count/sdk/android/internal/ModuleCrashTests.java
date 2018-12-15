@@ -1,5 +1,7 @@
 package ly.count.sdk.android.internal;
 
+import android.os.Handler;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -8,7 +10,9 @@ import org.powermock.reflect.Whitebox;
 import ly.count.sdk.android.Config;
 //import ly.count.sdk.internal.ModuleCrash;
 import ly.count.sdk.android.internal.ModuleCrash;
+import ly.count.sdk.internal.Request;
 import ly.count.sdk.internal.SDKCore;
+import ly.count.sdk.internal.Storage;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
@@ -74,48 +78,45 @@ public class ModuleCrashTests extends BaseTests {
         Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
         Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
 
-//        Assert.assertNotSame(Whitebox.getInternalState(module, "tick"), Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertNotSame(Whitebox.getInternalState(module, "tick"), Whitebox.getInternalState(module, "tickToCheck"));
     }
 
-//    @Test
-//    public void checkANRs() throws Exception {
-//        Ctx ctx = new CtxImpl(getContext());
-//        Core.purgeInternalStorage(ctx, null);
-//
-//        final Config config = TestingUtilityInternal.setupConfig().enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG).enableFeatures(Config.Feature.CrashReporting);
-//        Core.initForApplication(config, getContext());
-//        Core.instance.onContextAcquired(TestingUtilityInternal.mockApplication(getContext()));
-//
-//        ModuleCrash module = (ModuleCrash) Core.instance.module(Config.Feature.CrashReporting);
-//
-//        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
-//        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
-//
-//        Thread.sleep(500);
-//
-//        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
-//        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
-//        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
-//        Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
-//
-//        new Handler(getContext().getMainLooper()).post(new Runnable() {
-//            @Override
-//            public void run() {
-//                long start = System.nanoTime(), tmp = 0;
-//                while (System.nanoTime() - start < Device.secToNs(config.getCrashReportingANRTimeout())) {
-//                    tmp++;
-//                }
-//            }
-//        });
-//
-//        Thread.sleep(config.getCrashReportingANRTimeout() * 2000);
-//
-//        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
-//        Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
-//
-//        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
-//        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
-//
-////        Assert.assertNotSame(Whitebox.getInternalState(module, "tick"), Whitebox.getInternalState(module, "tickToCheck"));
-//    }
+    /*
+    //todo, not sure how to fix this test, check it out. (AK, 13.12.18)
+    @Test
+    public void checkANRs() throws Exception {
+        setUpApplication(null);
+        ModuleCrash module = module(ModuleCrash.class, false);
+
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
+        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
+
+        Thread.sleep(500);
+
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
+        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+        Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
+
+        new Handler(getContext().getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                long start = System.nanoTime(), tmp = 0;
+                while (System.nanoTime() - start < Device.dev.secToNs(config.getCrashReportingANRTimeout())) {
+                    tmp++;
+                }
+            }
+        });
+
+        Thread.sleep(config.getCrashReportingANRTimeout() * 2000);
+
+        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+        Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
+
+        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
+
+        Assert.assertNotSame(Whitebox.getInternalState(module, "tick"), Whitebox.getInternalState(module, "tickToCheck"));
+    }
+    */
 }

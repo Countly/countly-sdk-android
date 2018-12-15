@@ -126,27 +126,27 @@ public class UtilsTests {
         String res = Utils.join(objects, separator);
         Assert.assertEquals("str&string&int&999&float&0.2&long&2&double&0.2", res);
     }
-/*
+
     @Test
     public void uniqueTimestamp(){
         Set<Long> timestamps = new HashSet<>();
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
-        timestamps.add(Device.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
+        timestamps.add(Device.dev.uniqueTimestamp());
         Assert.assertEquals(10, timestamps.size());
     }
 
     @Test
     public void currentDayOfWeek() {
         int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
-        Assert.assertEquals(Device.currentDayOfWeek(), day - 1);
+        Assert.assertEquals(Device.dev.currentDayOfWeek(), day - 1);
     }
 
     @Test
@@ -196,5 +196,5 @@ public class UtilsTests {
         Assert.assertFalse(Utils.isNotEmpty(""));
         Assert.assertFalse(Utils.isNotEmpty(null));
     }
-    */
+
 }
