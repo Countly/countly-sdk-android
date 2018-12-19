@@ -202,12 +202,12 @@ public class Config {
     /**
      * Countly SDK name to be sent in HTTP requests
      */
-    protected String applicationName = sdkName;
+    protected String applicationName;
 
     /**
      * Countly SDK version to be sent in HTTP requests
      */
-    protected String applicationVersion = sdkVersion;
+    protected String applicationVersion;
 
     /**
      * Force usage of POST method for all requests

@@ -244,6 +244,9 @@ public class Config extends ly.count.sdk.Config {
             Log.wtf("Features array cannot be null");
         } else {
             for (Feature f : features) {
+                if (f == null) {
+                    Log.wtf("Feature cannot be null");
+                }
                 this.features = this.features & ~f.getIndex();
             }
         }

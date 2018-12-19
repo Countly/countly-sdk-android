@@ -66,7 +66,7 @@ public class CrashImpl implements Crash, Storable {
             PrintWriter pw = new PrintWriter(sw);
 
             if (main != null && traces.containsKey(main)) {
-                pw.println("Thread [Main]:");
+                pw.println("Thread [main]:");
                 printTraces(pw, null, traces.get(main));
                 pw.append("\n\n");
             }

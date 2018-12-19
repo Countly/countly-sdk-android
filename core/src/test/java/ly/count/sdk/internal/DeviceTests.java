@@ -1,13 +1,12 @@
 package ly.count.sdk.internal;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 public class DeviceTests {
 
     @Test
-    public void testAsIs() throws Exception {
+    public void testAsIs() {
         Device.UniqueTimeGenerator simulator = new Device.UniqueTimeGenerator();
 
         long last = simulator.timestamp();
@@ -19,7 +18,7 @@ public class DeviceTests {
     }
 
     @Test
-    public void testMidTimeChange() throws Exception {
+    public void testMidTimeChange() {
         Device.UniqueTimeGenerator simulator = new Device.UniqueTimeGenerator();
 
         long last = simulator.timestamp();
@@ -52,7 +51,7 @@ public class DeviceTests {
     }
 
     @Test
-    public void testMidTimeRandomChange() throws Exception {
+    public void testMidTimeRandomChange() {
         Device.UniqueTimeGenerator simulator = new Device.UniqueTimeGenerator();
 
         long last = simulator.timestamp();

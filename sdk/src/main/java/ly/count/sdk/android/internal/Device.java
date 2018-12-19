@@ -82,6 +82,10 @@ public class Device extends ly.count.sdk.internal.Device {
         String resolution = "";
         try {
             final WindowManager wm = (WindowManager) context.getSystemService(android.content.Context.WINDOW_SERVICE);
+            if (wm == null) {
+                L.w("WindowManager is null");
+                return resolution;
+            }
             final Display display = wm.getDefaultDisplay();
             final DisplayMetrics metrics = new DisplayMetrics();
             display.getMetrics(metrics);
@@ -101,7 +105,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *         empty string if the density is unknown
      */
     public String getDensity(final android.content.Context context) {
-        String densityStr = "";
+        String densityStr;
         final int density = context.getResources().getDisplayMetrics().densityDpi;
         switch (density) {
             case DisplayMetrics.DENSITY_LOW:
@@ -296,6 +300,7 @@ public class Device extends ly.count.sdk.internal.Device {
      *
      * @return main CPU ABI
      */
+    @SuppressWarnings("deprecation")
     public String getCpu() {
         if (Utils.API(Build.VERSION_CODES.LOLLIPOP)) {
             return Build.SUPPORTED_ABIS[0];
@@ -341,6 +346,9 @@ public class Device extends ly.count.sdk.internal.Device {
         total = total * BYTES_IN_MB;
         ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
         ActivityManager activityManager = (ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        if (activityManager == null) {
+            return null;
+        }
         activityManager.getMemoryInfo(mi);
         return (total - mi.availMem) / BYTES_IN_MB;
     }
@@ -447,13 +455,9 @@ public class Device extends ly.count.sdk.internal.Device {
     public Boolean isOnline(android.content.Context context) {
         try {
             ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
-            if (conMgr != null && conMgr.getActiveNetworkInfo() != null
+            return conMgr != null && conMgr.getActiveNetworkInfo() != null
                     && conMgr.getActiveNetworkInfo().isAvailable()
-                    && conMgr.getActiveNetworkInfo().isConnected()) {
-
-                return true;
-            }
-            return false;
+                    && conMgr.getActiveNetworkInfo().isConnected();
         } catch(Exception e) {
             L.w("Exception while determining connectivity", e);
         }

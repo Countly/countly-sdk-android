@@ -130,8 +130,8 @@ public final class InternalConfig extends Config implements Storable {
             stream.writeInt(loggingLevel.getLevel());
             stream.writeUTF(sdkName);
             stream.writeUTF(sdkVersion);
-            stream.writeUTF(applicationName);
-            stream.writeUTF(applicationVersion);
+            stream.writeObject(applicationName);
+            stream.writeObject(applicationVersion);
             stream.writeBoolean(usePOST);
             stream.writeObject(salt);
             stream.writeInt(networkConnectionTimeout);
@@ -213,8 +213,8 @@ public final class InternalConfig extends Config implements Storable {
 
             sdkName = stream.readUTF();
             sdkVersion = stream.readUTF();
-            applicationName = stream.readUTF();
-            applicationVersion = stream.readUTF();
+            applicationName = (String) stream.readObject();
+            applicationVersion = (String) stream.readObject();
             usePOST = stream.readBoolean();
             salt = (String) stream.readObject();
             networkConnectionTimeout = stream.readInt();

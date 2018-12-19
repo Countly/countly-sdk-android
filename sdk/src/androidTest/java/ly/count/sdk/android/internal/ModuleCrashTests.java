@@ -111,8 +111,15 @@ public class ModuleCrashTests extends BaseTests {
         Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
         Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
 
-        Assert.assertEquals(3, Whitebox.getInternalState(module, "tickMain"));
-        Assert.assertEquals(2, Whitebox.getInternalState(module, "tickBg"));
+        int tickMain = Whitebox.getInternalState(module, "tickMain");
+        int tickBg = Whitebox.getInternalState(module, "tickBg");
+        if (tickMain == 3) {
+            Assert.assertEquals(tickBg, 2);
+        } else if (tickMain == 2) {
+            Assert.assertEquals(tickBg, 1);
+        } else {
+            Assert.fail("invalid tickMain");
+        }
 
         Assert.assertNotSame(Whitebox.getInternalState(module, "tickMain"), Whitebox.getInternalState(module, "tickBg"));
 
@@ -141,7 +148,7 @@ public class ModuleCrashTests extends BaseTests {
         Assert.assertTrue(crash.has("_error"));
         String error = crash.getString("_error");
         System.out.println(error);
-        Assert.assertTrue(error.contains("MAIN THREAD"));
+        Assert.assertTrue(error.contains("Thread [main]"));
         Assert.assertTrue(error.contains("Thread ["));
     }
 

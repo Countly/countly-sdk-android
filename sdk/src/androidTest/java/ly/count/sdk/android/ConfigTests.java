@@ -236,8 +236,13 @@ public class ConfigTests extends BaseTests {
     }
 
     @Test (expected = IllegalStateException.class)
-    public void disableFeatures_null(){
-        config.disableFeatures(null);
+    public void disableFeatures_nullFeature(){
+        config.disableFeatures((Config.Feature)null);
+    }
+
+    @Test (expected = IllegalStateException.class)
+    public void disableFeatures_nullFeatures(){
+        config.disableFeatures((Config.Feature[])null);
     }
 
     @Test
