@@ -24,6 +24,7 @@ public class CrashImpl implements Crash, Storable {
     private final Long id;
     private final JSONObject data;
     private Throwable throwable;
+    private Map<Thread, StackTraceElement[]> traces;
 
     protected CrashImpl() {
         this(Device.dev.uniformTimestamp());
@@ -36,12 +37,11 @@ public class CrashImpl implements Crash, Storable {
     }
 
     @Override
-    public CrashImpl setThrowable(Throwable throwable) {
+    public CrashImpl addThrowable(Throwable throwable) {
         if (throwable == null) {
             L.wtf("Throwable cannot be null");
             return this;
         } else {
-            this.throwable = throwable;
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             throwable.printStackTrace(pw);
@@ -50,8 +50,44 @@ public class CrashImpl implements Crash, Storable {
     }
 
     @Override
-    public CrashImpl setException(Exception e) {
-        return setThrowable(e);
+    public CrashImpl addException(Exception e) {
+        return addThrowable(e);
+    }
+
+    @Override
+    public CrashImpl addTraces(Thread main, Map<Thread, StackTraceElement[]> traces) {
+        if (traces == null) {
+            L.wtf("traces cannot be null");
+            return this;
+        } else {
+            this.traces = traces;
+
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+
+            if (main != null && traces.containsKey(main)) {
+                pw.println("Thread [Main]:");
+                printTraces(pw, null, traces.get(main));
+                pw.append("\n\n");
+            }
+
+            for (Thread thread : traces.keySet()) {
+                if (thread != main) {
+                    printTraces(pw, thread, traces.get(thread));
+                    pw.append("\n\n");
+                }
+            }
+            return add("_type", "anr").add("_error", sw.toString());
+        }
+    }
+
+    private void printTraces(PrintWriter pw, Thread thread, StackTraceElement[] traces) {
+        if (thread != null) {
+            pw.append("Thread [").append(thread.getName()).append("]:\n");
+        }
+        for (StackTraceElement el : traces) {
+            pw.append("\tat ").append(el == null ? "<<Unknown>>" : el.toString()).append("\n");
+        }
     }
 
     @Override
@@ -83,6 +119,11 @@ public class CrashImpl implements Crash, Storable {
     @Override
     public Throwable getThrowable() {
         return throwable;
+    }
+
+    @Override
+    public Map<Thread, StackTraceElement[]> getTraces() {
+        return traces;
     }
 
     @Override

@@ -308,7 +308,7 @@ public class Config {
      * When main thread doesn't respond for time more than this property in seconds,
      * SDK reports ANR crash back to Countly server.
      */
-    protected int crashReportingANRTimeout = 5;
+    protected int crashReportingANRCheckingPeriod = 5;
 
     /**
      * {@link CrashProcessor}-implementing class which is instantiated when application
@@ -692,18 +692,23 @@ public class Config {
     }
 
     /**
-     * Change timeout when ANR is detected. ANR reporting is enabled by default once you enable {@code Feature.CrashReporting}.
-     * Default timeout is 5 seconds.
+     * Change period when a check for ANR is made. ANR reporting is enabled by default once you enable {@code Feature.CrashReporting}.
+     * Default period is 5 seconds. This is *NOT* a timeout for any possible time frame within app running time, it's a checking period.
+     * Meaning *some* ANRs are to be recorded if main thread is blocked for slightly more than {@link #crashReportingANRCheckingPeriod}.
+     * Statistically it should be good enough as you don't really need all ANRs on the server.
+     * *More* ANRs will be recorded in case main thread is blocked for {@code 1.5 * crashReportingANRCheckingPeriod}. Almost all ANRs
+     * are going to be recorded once main thread is blocked for {@code 2 * crashReportingANRCheckingPeriod} or more seconds.
+     *
      * To disable ANR reporting, use {@link #disableANRCrashReporting()}.
      *
-     * @param timeoutInSeconds how much time main thread must be blocked before ANR is detected
+     * @param periodInSeconds how much time the SDK waits between individual ANR checks
      * @return {@code this} instance for method chaining
      */
-    public Config setCrashReportingANRTimeout(int timeoutInSeconds) {
-        if (timeoutInSeconds < 0) {
+    public Config setCrashReportingANRCheckingPeriod(int periodInSeconds) {
+        if (periodInSeconds < 0) {
             Log.wtf("ANR timeout less than zero doesn't make sense");
         } else {
-            this.crashReportingANRTimeout = timeoutInSeconds;
+            this.crashReportingANRCheckingPeriod = periodInSeconds;
         }
         return this;
     }
@@ -714,7 +719,7 @@ public class Config {
      * @return {@code this} instance for method chaining
      */
     public Config disableANRCrashReporting() {
-        this.crashReportingANRTimeout = 0;
+        this.crashReportingANRCheckingPeriod = 0;
         return this;
     }
 
@@ -1000,11 +1005,11 @@ public class Config {
     public Set<String> getCertificatePins() { return certificatePins; }
 
     /**
-     * Getter for {@link #crashReportingANRTimeout}
-     * @return {@link #crashReportingANRTimeout} value
+     * Getter for {@link #crashReportingANRCheckingPeriod}
+     * @return {@link #crashReportingANRCheckingPeriod} value
      */
-    public int getCrashReportingANRTimeout() {
-        return crashReportingANRTimeout;
+    public int getCrashReportingANRCheckingPeriod() {
+        return crashReportingANRCheckingPeriod;
     }
 
     /**

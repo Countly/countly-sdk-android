@@ -8,7 +8,6 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -145,7 +144,7 @@ public final class InternalConfig extends Config implements Storable {
             stream.writeInt(eventsBufferSize);
             stream.writeInt(sessionCooldownPeriod);
             stream.writeBoolean(testMode);
-            stream.writeInt(crashReportingANRTimeout);
+            stream.writeInt(crashReportingANRCheckingPeriod);
             stream.writeObject(crashProcessorClass);
             stream.writeInt(moduleOverrides == null ? 0 : moduleOverrides.size());
             if (moduleOverrides != null && moduleOverrides.size() > 0) {
@@ -234,7 +233,7 @@ public final class InternalConfig extends Config implements Storable {
             eventsBufferSize = stream.readInt();
             sessionCooldownPeriod = stream.readInt();
             testMode = stream.readBoolean();
-            crashReportingANRTimeout = stream.readInt();
+            crashReportingANRCheckingPeriod = stream.readInt();
             crashProcessorClass = (String) stream.readObject();
 
             l = stream.readInt();

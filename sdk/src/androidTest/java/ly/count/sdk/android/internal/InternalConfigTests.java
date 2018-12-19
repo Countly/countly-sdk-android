@@ -41,7 +41,7 @@ public class InternalConfigTests {
         config.setSendUpdateEachSeconds(123);
         config.setEventsBufferSize(222);
         config.enableTestMode();
-        config.setCrashReportingANRTimeout(1);
+        config.setCrashReportingANRCheckingPeriod(1);
 
         InternalConfig internalConfig = new InternalConfig(config);
 
@@ -61,7 +61,7 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getSendUpdateEachSeconds(), internalConfig.getSendUpdateEachSeconds());
         Assert.assertEquals(config.getEventsBufferSize(), internalConfig.getEventsBufferSize());
         Assert.assertEquals(config.isTestModeEnabled(), internalConfig.isTestModeEnabled());
-        Assert.assertEquals(config.getCrashReportingANRTimeout(), internalConfig.getCrashReportingANRTimeout());
+        Assert.assertEquals(config.getCrashReportingANRCheckingPeriod(), internalConfig.getCrashReportingANRCheckingPeriod());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class InternalConfigTests {
         config.addCertificatePin("cert-pin");
         config.setSendUpdateEachSeconds(123);
         config.setEventsBufferSize(222);
-        config.setCrashReportingANRTimeout(2);
+        config.setCrashReportingANRCheckingPeriod(2);
         config.enableTestMode();
 
         Config.DID dev = new Config.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.ANDROID_ID.getIndex(), "openudid");
@@ -113,7 +113,7 @@ public class InternalConfigTests {
         Assert.assertEquals(config.getSendUpdateEachSeconds(), internalConfig.getSendUpdateEachSeconds());
         Assert.assertEquals(config.getEventsBufferSize(), internalConfig.getEventsBufferSize());
         Assert.assertEquals(config.isTestModeEnabled(), internalConfig.isTestModeEnabled());
-        Assert.assertEquals(config.getCrashReportingANRTimeout(), internalConfig.getCrashReportingANRTimeout());
+        Assert.assertEquals(config.getCrashReportingANRCheckingPeriod(), internalConfig.getCrashReportingANRCheckingPeriod());
 
         Assert.assertNotNull(internalConfig.getDeviceId());
         Assert.assertNotNull(internalConfig.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID.getIndex()));

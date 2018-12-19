@@ -4,14 +4,14 @@ import android.os.Handler;
 
 import junit.framework.Assert;
 
+import org.json.JSONObject;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 import ly.count.sdk.android.Config;
 //import ly.count.sdk.internal.ModuleCrash;
-import ly.count.sdk.android.internal.ModuleCrash;
+import ly.count.sdk.internal.ModuleRequests;
 import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.SDKCore;
 import ly.count.sdk.internal.Storage;
 
 import static android.support.test.InstrumentationRegistry.getContext;
@@ -53,48 +53,46 @@ public class ModuleCrashTests extends BaseTests {
 
         ModuleCrash module = module(ModuleCrash.class, false);
 
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
 
         Thread.sleep(500);
 
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
 
-        Thread.sleep(config.getCrashReportingANRTimeout() * 1000);
+        Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 1000);
 
-        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(2, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickBg"));
 
         SDK.instance.stop(SDK.instance.ctx(getContext()), true);
 
-        Thread.sleep(config.getCrashReportingANRTimeout() * 1000);
+        Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 1000);
 
-        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(2, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickBg"));
 
-        Thread.sleep(config.getCrashReportingANRTimeout() * 1000);
+        Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 1000);
 
-        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(2, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickBg"));
 
-        Assert.assertNotSame(Whitebox.getInternalState(module, "tick"), Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertNotSame(Whitebox.getInternalState(module, "tickMain"), Whitebox.getInternalState(module, "tickBg"));
     }
 
-    /*
-    //todo, not sure how to fix this test, check it out. (AK, 13.12.18)
     @Test
     public void checkANRs() throws Exception {
         setUpApplication(null);
         ModuleCrash module = module(ModuleCrash.class, false);
 
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
 
         Thread.sleep(500);
 
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
         Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
         Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
 
@@ -102,21 +100,128 @@ public class ModuleCrashTests extends BaseTests {
             @Override
             public void run() {
                 long start = System.nanoTime(), tmp = 0;
-                while (System.nanoTime() - start < Device.dev.secToNs(config.getCrashReportingANRTimeout())) {
+                while (System.nanoTime() - start < Device.dev.secToNs(config.getCrashReportingANRCheckingPeriod())) {
                     tmp++;
                 }
             }
         });
 
-        Thread.sleep(config.getCrashReportingANRTimeout() * 2000);
+        Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 2000);
 
         Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
         Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
 
-        Assert.assertEquals(2, Whitebox.getInternalState(module, "tick"));
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertEquals(3, Whitebox.getInternalState(module, "tickMain"));
+        Assert.assertEquals(2, Whitebox.getInternalState(module, "tickBg"));
 
-        Assert.assertNotSame(Whitebox.getInternalState(module, "tick"), Whitebox.getInternalState(module, "tickToCheck"));
+        Assert.assertNotSame(Whitebox.getInternalState(module, "tickMain"), Whitebox.getInternalState(module, "tickBg"));
+
+        new Handler(getContext().getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                long start = System.nanoTime(), tmp = 0;
+                while (System.nanoTime() - start < 2 * Device.dev.secToNs(config.getCrashReportingANRCheckingPeriod())) {
+                    tmp++;
+                }
+            }
+        });
+
+        Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 2000);
+
+        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+        Assert.assertEquals(1, Storage.list(ctx, Request.getStoragePrefix()).size());
+
+        Request request = Storage.readOne(ctx, ModuleRequests.nonSessionRequest(ctx), false);
+        Assert.assertNotNull(request);
+
+        Assert.assertTrue(request.params.has("crash"));
+
+        JSONObject crash = new JSONObject(request.params.get("crash"));
+
+        Assert.assertTrue(crash.has("_error"));
+        String error = crash.getString("_error");
+        System.out.println(error);
+        Assert.assertTrue(error.contains("MAIN THREAD"));
+        Assert.assertTrue(error.contains("Thread ["));
     }
-    */
+
+// ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▃▄▅▆▇█▓▒░ K K ░▒▓█▇▆▅▄▃▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂
+//                                   █▀▀█ █░░ █▀▀ █▀▀█ ▀▀█▀▀
+//                                   █▄▄█ █░░ █▀▀ █▄▄▀ ░░█░░
+//                                   ▀░░▀ ▀▀▀ ▀▀▀ ▀░▀▀ ░░▀░░
+//
+//                                            (◕‿◕)
+//
+//                                These tests are not for Travis
+//                                    They run for minutes
+//                               I commented them out on purpose!
+// ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂
+//
+//    @Test
+//    public void checkNoANRsInCPUHeavyCase() throws Exception {
+//        setUpApplication(null);
+//        ModuleCrash module = module(ModuleCrash.class, false);
+//
+//        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+//        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
+//
+//        Thread.sleep(500);
+//
+//        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+//        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
+//        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+//        Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
+//
+//        for (int i = 0; i < 50; i++) {
+//            new Handler(getContext().getMainLooper()).post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    long start = System.nanoTime(), tmp = 0;
+//                    while (System.nanoTime() - start < Device.dev.secToNs(config.getCrashReportingANRCheckingPeriod())) {
+//                        tmp++;
+//                    }
+//                }
+//            });
+//
+//            Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 1000);
+//
+//            Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+//            Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
+//        }
+//    }
+//
+//    @Test
+//    public void checkSomeANRsInCPUHeavierCase() throws Exception {
+//        setUpApplication(null);
+//        ModuleCrash module = module(ModuleCrash.class, false);
+//
+//        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+//        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
+//
+//        Thread.sleep(500);
+//
+//        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
+//        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
+//        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+//        Assert.assertEquals(0, Storage.list(ctx, Request.getStoragePrefix()).size());
+//
+//        for (int i = 0; i < 50; i++) {
+//            new Handler(getContext().getMainLooper()).post(new Runnable() {
+//                @Override
+//                public void run() {
+//                    long start = System.nanoTime(), tmp = 0;
+//                    while (System.nanoTime() - start < 1.1f * Device.dev.secToNs(config.getCrashReportingANRCheckingPeriod())) {
+//                        tmp++;
+//                    }
+//                }
+//            });
+//
+//            Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 1000);
+//        }
+//
+//        Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
+//        Assert.assertTrue(Storage.list(ctx, Request.getStoragePrefix()).size() > 0);
+//    }
+//
+// ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂
 }

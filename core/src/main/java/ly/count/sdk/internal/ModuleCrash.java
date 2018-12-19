@@ -2,6 +2,7 @@ package ly.count.sdk.internal;
 
 import java.util.Map;
 
+import ly.count.sdk.Crash;
 import ly.count.sdk.CrashProcessor;
 
 /**
@@ -76,16 +77,23 @@ public class ModuleCrash extends ModuleBase {
         return CoreFeature.CrashReporting.getIndex();
     }
 
-    public void onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
-        onCrash(ctx, new CrashImpl().setThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs));
+    public CrashImpl onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+        return onCrash(ctx, new CrashImpl().addThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs));
     }
 
-    public void onCrash(Ctx ctx, final ly.count.sdk.internal.CrashImpl crash) {
+    public CrashImpl onCrash(Ctx ctx, ly.count.sdk.internal.CrashImpl crash) {
         long running = started == 0 ? 0 : Device.dev.nsToMs(System.nanoTime() - started);
         crash.putMetrics(ctx, running);
         if (crashProcessor != null) {
             try {
-                crashProcessor.process(crash);
+                Crash result = crashProcessor.process(crash);
+
+                if (result == null) {
+                    L.i("Crash is set to be ignored by CrashProcessor#process(Crash) " + crashProcessor);
+                    Storage.remove(ctx, crash);
+                    return null;
+                }
+
             } catch (Throwable t) {
                 Log.e("Error when calling CrashProcessor#process(Crash)", t);
             }
@@ -95,6 +103,7 @@ public class ModuleCrash extends ModuleBase {
         } else {
             SDKCore.instance.onSignal(ctx, SDKCore.Signal.Crash.getIndex(), crash.storageId().toString());
         }
+        return crash;
     }
 
     public static void putCrashIntoParams(CrashImpl crash, Params params) {

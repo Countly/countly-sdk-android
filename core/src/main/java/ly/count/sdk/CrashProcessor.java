@@ -22,6 +22,7 @@ public interface CrashProcessor {
      * @see Crash#setSegments(Map) to add custom crash segments sent to the server along with a crash
      *
      * @param crash {@link Crash} instance to process
+     * @return {@code null} if crash shouldn't be sent, {@code crash} parameter value otherwise
      */
-    void process(Crash crash);
+    Crash process(Crash crash);
 }

@@ -689,7 +689,7 @@ public class SessionImplServiceTests extends BaseTests {
     public static class CrashProcessorImpl implements CrashProcessor {
 
         @Override
-        public void process(Crash crash) {
+        public Crash process(Crash crash) {
             crash.setName("crashname");
             crash.setLogs(new String[]{"log1", "log2", "log3"});
 
@@ -697,6 +697,7 @@ public class SessionImplServiceTests extends BaseTests {
             segments.put("a", "b");
             segments.put("c", "d");
             crash.setSegments(segments);
+            return crash;
         }
     }
     @Test

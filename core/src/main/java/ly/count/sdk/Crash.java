@@ -10,21 +10,30 @@ import java.util.Map;
 public interface Crash {
     /**
      * Set {@link Throwable} object to be sent to the server.
-     * Does the same job as {@link #setException(Exception)}.
+     * Does the same job as {@link #addException(Exception)}.
      *
      * @param t Throwable to send
      * @return this instance for method chaining
      */
-    Crash setThrowable(Throwable t);
+    Crash addThrowable(Throwable t);
 
     /**
      * Set {@link Exception} object to be sent to the server.
-     * Does the same job as {@link #setThrowable(Throwable)}.
+     * Does the same job as {@link #addThrowable(Throwable)}.
      *
      * @param e Exception to send
      * @return this instance for method chaining
      */
-    Crash setException(Exception e);
+    Crash addException(Exception e);
+
+    /**
+     * Record stack traces of all threads.
+     *
+     * @param main Thread to record first
+     * @param traces all stack traces to send
+     * @return this instance for method chaining
+     */
+    Crash addTraces(Thread main, Map<Thread, StackTraceElement[]> traces);
 
     /**
      * Set whether crash was fatal (uncaught {@link Exception} or very bad caught {@link Exception}
@@ -63,6 +72,11 @@ public interface Crash {
      * @return {@link Throwable} of this crash
      */
     Throwable getThrowable();
+
+    /**
+     * @return thread traces of this crash
+     */
+    Map<Thread, StackTraceElement[]> getTraces();
 
     /**
      * @return whether this crash was recorded as fatal or not

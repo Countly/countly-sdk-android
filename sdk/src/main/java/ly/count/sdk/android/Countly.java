@@ -519,13 +519,14 @@ public class Countly extends CountlyLifecycle {
         public final List<String> logs = new ArrayList<>();
 
         @Override
-        public void process(Crash crash) {
+        public Crash process(Crash crash) {
             if (segments.size() > 0) {
                 crash.setSegments(segments);
             }
             if (logs.size() > 0) {
                 crash.setLogs(logs.toArray(new String[0]));
             }
+            return crash;
         }
     }
 

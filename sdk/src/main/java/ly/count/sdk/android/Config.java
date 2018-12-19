@@ -577,15 +577,19 @@ public class Config extends ly.count.sdk.Config {
     }
 
     /**
-     * Change timeout when ANR is detected. ANR reporting is enabled by default once you enable {@code Feature.CrashReporting}.
-     * Default timeout is 5 seconds.
+     * Change period when a check for ANR is made. ANR reporting is enabled by default once you enable {@code Feature.CrashReporting}.
+     * Default period is 5 seconds. This is *NOT* a timeout for any possible time frame within app running time, it's a checking period.
+     * Meaning *SOME* ANRs will be recorded if main thread is blocked for slightly more than {@link #crashReportingANRCheckingPeriod}.
+     * *MORE* ANRs will be recorded if main thread is blocked for {@code 1.5 * crashReportingANRCheckingPeriod}. Almost all ANRs
+     * is going to be recorded once main thread is blocked for {@link #crashReportingANRCheckingPeriod} or more seconds.
+     *
      * To disable ANR reporting, use {@link #disableANRCrashReporting()}.
      *
-     * @param timeoutInSeconds how much time main thread must be blocked before ANR is detected
+     * @param periodInSeconds how much time the SDK waits between individual ANR checks
      * @return {@code this} instance for method chaining
      */
-    public Config setCrashReportingANRTimeout(int timeoutInSeconds) {
-        super.setCrashReportingANRTimeout(timeoutInSeconds);
+    public Config setCrashReportingANRCheckingPeriod(int periodInSeconds) {
+        super.setCrashReportingANRCheckingPeriod(periodInSeconds);
         return this;
     }
 

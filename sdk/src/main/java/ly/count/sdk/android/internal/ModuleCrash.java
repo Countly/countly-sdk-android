@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 
 import ly.count.sdk.android.Countly;
 import ly.count.sdk.internal.Ctx;
-import ly.count.sdk.internal.Device;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 
@@ -21,15 +20,15 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
     private boolean limited = false;
     private boolean crashed = false;
 
-    private volatile int tick = 0;
-    private int tickToCheck = 0;
+    private volatile int tickMain = 0;
+    private int tickBg = 0;
     private Ctx context = null;
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private Runnable ticker = new Runnable() {
         @Override
         public void run() {
-            L.d("ticker " + tick + " => " + (tick + 1) + " / " + tickToCheck);
-            tick++;
+            L.d("ticker " + tickMain + " => " + (tickMain + 1) + " / " + tickBg);
+            tickMain++;
         }
     };
 
@@ -39,18 +38,17 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
             if (crashed) {
                 return;
             }
-            L.d("checker " + tick + " / " + tickToCheck);
-            if (tick <= tickToCheck) {
+            L.d("checker " + tickMain + " / " + tickBg);
+            if (tickMain <= tickBg) {
                 crashed = true;
-                // TODO: report all stacktraces here
-                onCrash(context, new IllegalStateException("ANR"), true, null, null, null);
-                L.e("ANR detected. Waiting 3 x crashReportingANRTimeout and resuming watching for ANR.");
+                onANR(context);
+                L.e("ANR detected. Waiting 3 x crashReportingANRCheckingPeriod and resuming watching for ANR.");
                 executorService.schedule(new Runnable() {
                     @Override
                     public void run() {
                         nextTick();
                     }
-                }, 3 * config.getCrashReportingANRTimeout(), TimeUnit.SECONDS);
+                }, 3 * config.getCrashReportingANRCheckingPeriod(), TimeUnit.SECONDS);
             } else {
                 nextTick();
             }
@@ -67,21 +65,22 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
     public void stop(Ctx ctx, boolean clear) {
         try {
             super.stop(ctx, clear);
-
             executorService.shutdownNow();
-            context = null;
-            ticker = null;
-            checker = null;
-            executorService = null;
         } catch (Throwable t) {
             L.e("Exception while stopping crash reporting", t);
         }
+        context = null;
+        ticker = null;
+        checker = null;
+        executorService = null;
     }
 
     @Override
     public void onContextAcquired(final Ctx ctx) {
+        // uncomment the debugger disabling line below to debug ANRs
         if (!limited) {
-            if (config.getCrashReportingANRTimeout() > 0 && !Device.dev.isDebuggerConnected()) {
+            if (config.getCrashReportingANRCheckingPeriod() > 0) {
+//            if (config.getCrashReportingANRCheckingPeriod() > 0 && !Device.dev.isDebuggerConnected()) {
                 context = ctx;
                 nextTick();
             }
@@ -92,20 +91,31 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
         if (!isActive()) {
             return;
         }
-        L.d("next tick " + tick);
-        tickToCheck = tick;
+        L.d("next tickMain " + tickMain);
+        tickBg = tickMain;
         SDK.instance.postToMainThread(ticker);
-        executorService.schedule(checker, config.getCrashReportingANRTimeout(), TimeUnit.SECONDS);
+        executorService.schedule(checker, config.getCrashReportingANRCheckingPeriod(), TimeUnit.SECONDS);
     }
 
-    public void onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+    public CrashImpl onANR(Ctx ctx) {
         CrashImpl crash = new CrashImpl();
-        crash.setThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs);
+        crash.addTraces(SDK.instance.mainThread(), Thread.getAllStackTraces());
 
         if (Countly.legacyMethodCrashProcessor != null) {
             Countly.legacyMethodCrashProcessor.process(crash);
         }
 
-        onCrash(ctx, crash);
+        return (CrashImpl) onCrash(ctx, crash);
+    }
+
+    public CrashImpl onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+        CrashImpl crash = new CrashImpl();
+        crash.addThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs);
+
+        if (Countly.legacyMethodCrashProcessor != null) {
+            Countly.legacyMethodCrashProcessor.process(crash);
+        }
+
+        return (CrashImpl) onCrash(ctx, crash);
     }
 }

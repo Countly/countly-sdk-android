@@ -65,4 +65,8 @@ public class SDK extends SDKStorage {
     public void postToMainThread(Runnable ticker) {
         handler.post(ticker);
     }
+
+    public Thread mainThread() {
+        return handler.getLooper().getThread();
+    }
 }
