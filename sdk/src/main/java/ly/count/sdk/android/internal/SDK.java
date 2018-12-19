@@ -43,7 +43,6 @@ public class SDK extends SDKStorage {
         if(app != null){
             handler = new Handler(app.getMainLooper());
         } else {
-            //todo, is it fine getting main looper like this? (AK, 10.12.18)
             Context context = ((Ctx)ctx).getContext();
             handler = new Handler(context.getMainLooper());
         }

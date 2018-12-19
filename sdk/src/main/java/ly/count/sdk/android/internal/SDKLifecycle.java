@@ -56,7 +56,6 @@ public abstract class SDKLifecycle extends SDKCore {
         if(((Ctx) ctx).getApplication() != null) {
             application = ((Ctx) ctx).getApplication();
         } else {
-            //todo, is it fine doing a fallback like this? (AK, 10.12.18)
             Activity act = ((Ctx) ctx).getActivity();
             if(act != null) {
                 application = act.getApplication();
