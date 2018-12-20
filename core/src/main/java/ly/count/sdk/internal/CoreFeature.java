@@ -8,7 +8,8 @@ public enum CoreFeature {
     Views(1 << 3),
     CrashReporting(1 << 4),
     Location(1 << 5),
-    UserProfiles(1 << 5),
+    UserProfiles(1 << 6),
+    StarRating(1 << 7),
 
     DeviceId(1 << 20),
     Requests(1 << 21),

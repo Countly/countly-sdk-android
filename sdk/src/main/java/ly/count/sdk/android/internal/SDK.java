@@ -25,6 +25,7 @@ public class SDK extends SDKStorage {
         registerDefaultModuleMapping(Config.Feature.Attribution.getIndex(), ModuleAttribution.class);
         registerDefaultModuleMapping(Config.Feature.Push.getIndex(), ModulePush.class);
         registerDefaultModuleMapping(Config.Feature.Views.getIndex(), ModuleViews.class);
+        registerDefaultModuleMapping(Config.Feature.StarRating.getIndex(), ModuleRating.class);
     }
 
     private Handler handler;

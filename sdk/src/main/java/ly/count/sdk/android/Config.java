@@ -92,9 +92,9 @@ public class Config extends ly.count.sdk.Config {
         CrashReporting(CoreFeature.CrashReporting.getIndex()),
         Location(CoreFeature.Location.getIndex()),
         UserProfiles(CoreFeature.UserProfiles.getIndex()),
+        StarRating(CoreFeature.StarRating.getIndex()),
         Push(1 << 10),
         Attribution(1 << 11),
-        StarRating(1 << 12),
         RemoteConfig(1 << 13),
         PerformanceMonitoring(1 << 14);
 

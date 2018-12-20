@@ -231,6 +231,9 @@ public class StorageTests extends BaseTests {
 
     }
 
+    /*
+        Storage performance test that is used on demand seldom
+    */
 //    @Test
 //    public void storage_performanceTest() {
 //        long time = System.nanoTime(), diff;

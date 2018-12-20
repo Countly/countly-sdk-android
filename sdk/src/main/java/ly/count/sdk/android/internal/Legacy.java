@@ -68,6 +68,7 @@ public class Legacy {
         String locationStr = preferences(ctx).getString(KEY_LOCATION, null);
         String starStr = preferences(ctx).getString(KEY_STAR, null);
 
+        //migrate stored requests
         if (Utils.isNotEmpty(requestsStr)) {
             String[] requests = requestsStr.split(DELIMITER);
             L.d("Migrating " + requests.length + " requests");
@@ -92,6 +93,7 @@ public class Legacy {
             }
         }
 
+        //migrate events
         if (Utils.isNotEmpty(eventsStr)) {
             String[] events = eventsStr.split(DELIMITER);
             L.d("Migrating " + events.length + " events");
@@ -112,6 +114,7 @@ public class Legacy {
             }
         }
 
+        //migrate location
         if (Utils.isNotEmpty(locationStr)) {
             String[] comps = locationStr.split(",");
             if (comps.length == 2) {
@@ -127,7 +130,47 @@ public class Legacy {
             preferences(ctx).edit().remove(KEY_LOCATION).commit();
         }
 
-        // TODO: city/country, star rating
+        //migrate star rating
+        if (Utils.isNotEmpty(starStr)) {
+            L.d("Migrating Star Rating preferences");
+
+            JSONObject srJSON;
+            try {
+                srJSON = new JSONObject(starStr);
+
+                try {
+                    srp.appVersion = json.getString(KEY_APP_VERSION);
+                    srp.sessionLimit = json.optInt(KEY_SESSION_LIMIT, 5);
+                    srp.sessionAmount = json.optInt(KEY_SESSION_AMOUNT, 0);
+                    srp.isShownForCurrentVersion = json.optBoolean(KEY_IS_SHOWN_FOR_CURRENT, false);
+                    srp.automaticRatingShouldBeShown = json.optBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN, true);
+                    srp.disabledAutomaticForNewVersions = json.optBoolean(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS, false);
+                    srp.automaticHasBeenShown = json.optBoolean(KEY_AUTOMATIC_HAS_BEEN_SHOWN, false);
+                    srp.isDialogCancellable = json.optBoolean(KEY_DIALOG_IS_CANCELLABLE, true);
+
+                    if(!json.isNull(KEY_DIALOG_TEXT_TITLE)) {
+                        srp.dialogTextTitle = json.getString(KEY_DIALOG_TEXT_TITLE);
+                    }
+
+                    if(!json.isNull(KEY_DIALOG_TEXT_MESSAGE)) {
+                        srp.dialogTextMessage = json.getString(KEY_DIALOG_TEXT_MESSAGE);
+                    }
+
+                    if(!json.isNull(KEY_DIALOG_TEXT_DISMISS)) {
+                        srp.dialogTextDismiss = json.getString(KEY_DIALOG_TEXT_DISMISS);
+                    }
+
+                } catch (JSONException e) {
+                    L.w("Got exception converting JSON to a StarRatingPreferences", e);
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+                //failed to read preferences, resort to defaults
+                srp = new StarRatingPreferences();
+            }
+        }
+
+        // TODO: city/country
     }
 
     private static Tasks.Callback<Boolean> removeClb(final Ctx ctx, final String key) {
