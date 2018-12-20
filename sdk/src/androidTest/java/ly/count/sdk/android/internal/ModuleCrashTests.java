@@ -86,9 +86,6 @@ public class ModuleCrashTests extends BaseTests {
         setUpApplication(null);
         ModuleCrash module = module(ModuleCrash.class, false);
 
-        Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
-        Assert.assertEquals(0, Whitebox.getInternalState(module, "tickBg"));
-
         Thread.sleep(500);
 
         Assert.assertEquals(1, Whitebox.getInternalState(module, "tickMain"));
