@@ -3,7 +3,6 @@ package ly.count.sdk.internal;
 import java.util.HashMap;
 import java.util.Map;
 
-import ly.count.sdk.Config;
 import ly.count.sdk.Session;
 import ly.count.sdk.View;
 

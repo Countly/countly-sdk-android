@@ -5,6 +5,7 @@ import android.content.Context;
 import android.provider.Settings;
 
 
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.DeviceIdGenerator;
 import ly.count.sdk.internal.Log;
@@ -25,7 +26,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
 
             @Override
             public String generate(ly.count.sdk.internal.Ctx context, int realm) {
-                if (realm != ly.count.sdk.Config.DID.REALM_DID) {
+                if (realm != ConfigCore.DID.REALM_DID) {
                     return null;
                 }
                 @SuppressLint("HardwareIds")
@@ -50,7 +51,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
 
             @Override
             public String generate(ly.count.sdk.internal.Ctx context, int realm) {
-                if (realm != ly.count.sdk.Config.DID.REALM_DID && realm != Config.DeviceIdRealm.ADVERTISING_ID.getIndex()) {
+                if (realm != ConfigCore.DID.REALM_DID && realm != Config.DeviceIdRealm.ADVERTISING_ID.getIndex()) {
                     return null;
                 }
 
@@ -101,7 +102,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
 
             @Override
             public String generate(ly.count.sdk.internal.Ctx context, int realm) {
-                if (realm != ly.count.sdk.Config.DID.REALM_DID && realm != Config.DeviceIdRealm.FCM_TOKEN.getIndex()) {
+                if (realm != ConfigCore.DID.REALM_DID && realm != Config.DeviceIdRealm.FCM_TOKEN.getIndex()) {
                     return null;
                 }
 
@@ -112,7 +113,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
                         return null;
                     } else {
                         Object idObj;
-                        if (realm == ly.count.sdk.Config.DID.REALM_DID) {
+                        if (realm == ConfigCore.DID.REALM_DID) {
                             idObj = Utils.reflectiveCall(instance.getClass().getName(), instance, "getId");
                         } else {
                             idObj = Utils.reflectiveCall(instance.getClass().getName(), instance, "getToken");
@@ -159,7 +160,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
             if (Utils.isNotEmpty(legacyDeviceId)) {
                 L.d("Migrating device id " + legacyDeviceId);
 
-                ly.count.sdk.Config.DID did = new ly.count.sdk.Config.DID(ly.count.sdk.Config.DID.REALM_DID, ctx.getConfig().getDeviceIdStrategy(), legacyDeviceId);
+                ConfigCore.DID did = new ConfigCore.DID(ConfigCore.DID.REALM_DID, ctx.getConfig().getDeviceIdStrategy(), legacyDeviceId);
                 callOnDeviceId(ctx, did, did);
                 return;
             }

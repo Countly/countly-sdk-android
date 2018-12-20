@@ -9,14 +9,10 @@ import java.nio.channels.FileLock;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import ly.count.sdk.Config;
-import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.Storable;
 import ly.count.sdk.internal.Storage;
 

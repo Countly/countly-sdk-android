@@ -1,20 +1,6 @@
 package ly.count.sdk.android.internal;
 
-import android.content.Intent;
-
-import junit.framework.Assert;
-
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
-
-import java.util.List;
-
-import ly.count.sdk.Config;
-import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.Request;
 //import ly.count.sdk.internal.SessionImpl;
-import ly.count.sdk.internal.Storage;
-import ly.count.sdk.internal.Tasks;
 
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -124,7 +110,7 @@ public class CountlyServiceTests extends BaseTests {
 //
 //    @Test
 //    public void receiving_crash() throws Exception {
-//        setUpApplication(defaultConfig().enableFeatures(Config.Feature.CrashReporting));
+//        setUpApplication(defaultConfig().enableFeatures(ConfigCore.Feature.CrashReporting));
 //        SessionImpl session = new SessionImpl(ctx);
 //        session.begin();
 //

@@ -12,7 +12,7 @@ import java.net.URL;
 import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.InternalConfig;
 
-import static ly.count.sdk.Config.LoggingLevel.WARN;
+import static ly.count.sdk.ConfigCore.LoggingLevel.WARN;
 
 @RunWith(AndroidJUnit4.class)
 public class InternalConfigTests {

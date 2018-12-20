@@ -328,9 +328,9 @@ public class ConfigTests extends BaseTests {
         Assert.assertEquals(Config.Feature.CrashReporting, features[3]);
         Assert.assertEquals(Config.Feature.Location, features[4]);
         Assert.assertEquals(Config.Feature.UserProfiles, features[5]);
-        Assert.assertEquals(Config.Feature.Push, features[6]);
-        Assert.assertEquals(Config.Feature.Attribution, features[7]);
-        Assert.assertEquals(Config.Feature.StarRating, features[8]);
+        Assert.assertEquals(Config.Feature.StarRating, features[6]);
+        Assert.assertEquals(Config.Feature.Push, features[7]);
+        Assert.assertEquals(Config.Feature.Attribution, features[8]);
         Assert.assertEquals(Config.Feature.RemoteConfig, features[9]);
         Assert.assertEquals(Config.Feature.PerformanceMonitoring, features[10]);
     }

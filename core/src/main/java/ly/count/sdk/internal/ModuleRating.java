@@ -39,7 +39,9 @@ public class ModuleRating extends ModuleBase {
      * Returns a object with the loaded preferences
      * @return
      */
+    /*
     protected static StarRatingPreferences loadStarRatingPreferences() {
+
         Storage.read(this.)
         CountlyStore cs = new CountlyStore(context);
         String srpString = cs.getStarRatingPreferences();
@@ -58,15 +60,15 @@ public class ModuleRating extends ModuleBase {
             srp = new StarRatingPreferences();
         }
         return srp;
-    }
+    }*/
 
     /**
      * Save the star rating preferences object
      * @param srp
      */
     protected static void saveStarRatingPreferences(StarRatingPreferences srp) {
-        CountlyStore cs = new CountlyStore(context);
-        cs.setStarRatingPreferences(srp.toJSON().toString());
+        //CountlyStore cs = new CountlyStore(context);
+        //cs.setStarRatingPreferences(srp.toJSON().toString());
     }
 
     /**
@@ -101,6 +103,7 @@ public class ModuleRating extends ModuleBase {
          * Create a JSONObject from the current state
          * @return
          */
+        /*
         JSONObject toJSON() {
             final JSONObject json = new JSONObject();
 
@@ -123,13 +126,14 @@ public class ModuleRating extends ModuleBase {
             }
 
             return json;
-        }
+        }*/
 
         /**
          * Load the preference state from a JSONObject
-         * @param json
+         * //@param json
          * @return
          */
+        /*
         static StarRatingPreferences fromJSON(final JSONObject json) {
 
             StarRatingPreferences srp = new StarRatingPreferences();
@@ -164,7 +168,7 @@ public class ModuleRating extends ModuleBase {
 
             return srp;
         }
-
+*/
         @Override
         public Long storageId() {
             return null;

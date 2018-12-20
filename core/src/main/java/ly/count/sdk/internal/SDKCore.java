@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Future;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 
 public abstract class SDKCore extends SDKModules {
     private static final Log.Module L = Log.module("SDKCore");
@@ -183,7 +183,7 @@ public abstract class SDKCore extends SDKModules {
     }
 
     @Override
-    public void onDeviceId(Ctx ctx, Config.DID id, Config.DID old) {
+    public void onDeviceId(Ctx ctx, ConfigCore.DID id, ConfigCore.DID old) {
         L.d((config.isLimited() ? "limited" : "non-limited") + " onDeviceId " + id + ", old " + old);
 
         if (config.isLimited()) {
@@ -215,7 +215,7 @@ public abstract class SDKCore extends SDKModules {
         if (config.isLimited()) {
             config = Storage.read(ctx, new InternalConfig());
             if (config == null) {
-                L.wtf("Config reload gave null instance");
+                L.wtf("ConfigCore reload gave null instance");
             } else {
                 config.setLimited(true);
             }
@@ -225,14 +225,14 @@ public abstract class SDKCore extends SDKModules {
             }
         }
 
-        if (!config.isLimited() && id != null && id.realm == Config.DID.REALM_DID) {
+        if (!config.isLimited() && id != null && id.realm == ConfigCore.DID.REALM_DID) {
             user.id = id.id;
             L.d("5");
         }
     }
 
 
-    public Future<Config.DID> acquireId(final Ctx ctx, final Config.DID holder, final boolean fallbackAllowed, final Tasks.Callback<Config.DID> callback) {
+    public Future<ConfigCore.DID> acquireId(final Ctx ctx, final ConfigCore.DID holder, final boolean fallbackAllowed, final Tasks.Callback<ConfigCore.DID> callback) {
         return ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).acquireId(ctx, holder, fallbackAllowed, callback);
     }
 

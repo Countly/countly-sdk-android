@@ -20,7 +20,7 @@ import ly.count.sdk.internal.Utils;
 /**
  * Countly configuration object.
  */
-public class Config {
+public class ConfigCore {
 
     /**
      * Logging level for {@link Log} module
@@ -350,12 +350,12 @@ public class Config {
 //    protected int storageDirectory = "";
 //    protected int storagePrefix = "[CLY]_";
     /**
-     * The only Config constructor.
+     * The only ConfigCore constructor.
      *
      * @param serverURL valid {@link URL} of Countly server
      * @param serverAppKey App Key from Management -> Applications section of your Countly Dashboard
      */
-    public Config(String serverURL, String serverAppKey) {
+    public ConfigCore(String serverURL, String serverAppKey) {
         //the last '/' should be deleted
         if(serverURL != null && serverURL.length() > 0 && serverURL.charAt(serverURL.length() - 1) == '/') {
             serverURL = serverURL.substring(0, serverURL.length() - 1);
@@ -375,7 +375,7 @@ public class Config {
      * @param deviceIdFallbackAllowed true if fallback is allowed
      * @return {@code this} instance for method chaining
      */
-    public Config setDeviceIdFallbackAllowed(boolean deviceIdFallbackAllowed) {
+    public ConfigCore setDeviceIdFallbackAllowed(boolean deviceIdFallbackAllowed) {
         this.deviceIdFallbackAllowed = deviceIdFallbackAllowed;
         return this;
     }
@@ -385,7 +385,7 @@ public class Config {
      *
      * @return {@code this} instance for method chaining
      */
-    public Config enableUsePOST() {
+    public ConfigCore enableUsePOST() {
         this.usePOST = true;
         return this;
     }
@@ -396,7 +396,7 @@ public class Config {
      * @param usePOST whether to force using POST method for all requests or not
      * @return {@code this} instance for method chaining
      */
-    public Config setUsePOST(boolean usePOST) {
+    public ConfigCore setUsePOST(boolean usePOST) {
         this.usePOST = usePOST;
         return this;
     }
@@ -407,7 +407,7 @@ public class Config {
      * @param salt String to add to each request bebfore calculating checksum
      * @return {@code this} instance for method chaining
      */
-    public Config enableParameterTamperingProtection(String salt) {
+    public ConfigCore enableParameterTamperingProtection(String salt) {
         if (Utils.isEmpty(salt)) {
             Log.wtf("Salt cannot be empty in enableParameterTamperingProtection");
         } else {
@@ -422,7 +422,7 @@ public class Config {
      * @param loggingTag tag string to use
      * @return {@code this} instance for method chaining
      */
-    public Config setLoggingTag(String loggingTag) {
+    public ConfigCore setLoggingTag(String loggingTag) {
         if (loggingTag == null || loggingTag.equals("")) {
             Log.wtf("Logging tag cannot be empty");
         } else {
@@ -437,7 +437,7 @@ public class Config {
      * @param loggingLevel log level to use
      * @return {@code this} instance for method chaining
      */
-    public Config setLoggingLevel(LoggingLevel loggingLevel) {
+    public ConfigCore setLoggingLevel(LoggingLevel loggingLevel) {
         if (loggingLevel == null) {
             Log.wtf("Logging level cannot be null");
         } else {
@@ -458,7 +458,7 @@ public class Config {
      *
      * @return {@code this} instance for method chaining
      */
-    public Config enableTestMode() {
+    public ConfigCore enableTestMode() {
         this.testMode = true;
         this.loggingLevel = this.loggingLevel == LoggingLevel.OFF ? LoggingLevel.INFO : this.loggingLevel;
         return this;
@@ -470,7 +470,7 @@ public class Config {
      *
      * @return {@code this} instance for method chaining
      */
-    public Config disableTestMode() {
+    public ConfigCore disableTestMode() {
         this.testMode = false;
         return this;
     }
@@ -484,7 +484,7 @@ public class Config {
      * @param sendUpdateEachSeconds max time interval between two update requests, set to 0 to disable update requests based on time.
      * @return {@code this} instance for method chaining
      */
-    public Config setSendUpdateEachSeconds(int sendUpdateEachSeconds) {
+    public ConfigCore setSendUpdateEachSeconds(int sendUpdateEachSeconds) {
         if (sendUpdateEachSeconds < 0) {
             Log.wtf("sendUpdateEachSeconds cannot be negative");
         } else {
@@ -501,7 +501,7 @@ public class Config {
      * @param eventsBufferSize max number of events between two update requests, set to 0 to disable update requests based on events.
      * @return {@code this} instance for method chaining
      */
-    public Config setEventsBufferSize(int eventsBufferSize) {
+    public ConfigCore setEventsBufferSize(int eventsBufferSize) {
         if (eventsBufferSize < 0) {
             Log.wtf("eventsBufferSize cannot be negative");
         } else {
@@ -518,7 +518,7 @@ public class Config {
      * @see #setEventsBufferSize(int)
      * @return {@code this} instance for method chaining
      */
-    public Config disableUpdateRequests() {
+    public ConfigCore disableUpdateRequests() {
         this.sendUpdateEachSeconds = 0;
         return this;
     }
@@ -530,7 +530,7 @@ public class Config {
      * @param sessionCooldownPeriod min time interval between two sessions
      * @return {@code this} instance for method chaining
      */
-    public Config setSessionCooldownPeriod(int sessionCooldownPeriod) {
+    public ConfigCore setSessionCooldownPeriod(int sessionCooldownPeriod) {
         if (sessionCooldownPeriod < 0) {
             Log.wtf("sessionCooldownPeriod cannot be negative");
         } else {
@@ -545,7 +545,7 @@ public class Config {
      * @param sdkName new name of SDK
      * @return {@code this} instance for method chaining
      */
-    public Config setSdkName(String sdkName) {
+    public ConfigCore setSdkName(String sdkName) {
         if (Utils.isEmpty(sdkName)) {
             Log.wtf("sdkName cannot be empty");
         } else {
@@ -560,7 +560,7 @@ public class Config {
      * @param sdkVersion new version of SDK
      * @return {@code this} instance for method chaining
      */
-    public Config setSdkVersion(String sdkVersion) {
+    public ConfigCore setSdkVersion(String sdkVersion) {
         if (Utils.isEmpty(sdkVersion)) {
             Log.wtf("sdkVersion cannot be empty");
         } else {
@@ -575,7 +575,7 @@ public class Config {
      * @param name new name
      * @return {@code this} instance for method chaining
      */
-    public Config setApplicationName(String name) {
+    public ConfigCore setApplicationName(String name) {
         if (Utils.isEmpty(name)) {
             Log.wtf("name cannot be empty");
         } else {
@@ -590,7 +590,7 @@ public class Config {
      * @param version new version
      * @return {@code this} instance for method chaining
      */
-    public Config setApplicationVersion(String version) {
+    public ConfigCore setApplicationVersion(String version) {
         if (Utils.isEmpty(version)) {
             Log.wtf("version cannot be empty");
         } else {
@@ -605,7 +605,7 @@ public class Config {
      * @param seconds network timeout in seconds
      * @return {@code this} instance for method chaining
      */
-    public Config setNetworkConnectTimeout(int seconds) {
+    public ConfigCore setNetworkConnectTimeout(int seconds) {
         if (seconds <= 0 || seconds > 300) {
             Log.wtf("Connection timeout must be between 0 and 300");
         } else {
@@ -620,7 +620,7 @@ public class Config {
      * @param seconds read timeout in seconds
      * @return {@code this} instance for method chaining
      */
-    public Config setNetworkReadTimeout(int seconds) {
+    public ConfigCore setNetworkReadTimeout(int seconds) {
         if (seconds <= 0 || seconds > 300) {
             Log.wtf("Read timeout must be between 0 and 300");
         } else {
@@ -648,7 +648,7 @@ public class Config {
      * @param pemEncodedPublicKey PEM-encoded SSL public key string to add
      * @return {@code this} instance for method chaining
      */
-    public Config addPublicKeyPin(String pemEncodedPublicKey) {
+    public ConfigCore addPublicKeyPin(String pemEncodedPublicKey) {
         if (Utils.isEmpty(pemEncodedPublicKey)) {
             Log.wtf("pemEncodedPublicKey cannot be empty");
         } else {
@@ -680,7 +680,7 @@ public class Config {
      * @param pemEncodedCertificate PEM-encoded SSL certificate string to add
      * @return {@code this} instance for method chaining
      */
-    public Config addCertificatePin(String pemEncodedCertificate) {
+    public ConfigCore addCertificatePin(String pemEncodedCertificate) {
         if (Utils.isEmpty(pemEncodedCertificate)) {
             Log.wtf("pemEncodedCertificate cannot be empty");
         } else {
@@ -706,7 +706,7 @@ public class Config {
      * @param periodInSeconds how much time the SDK waits between individual ANR checks
      * @return {@code this} instance for method chaining
      */
-    public Config setCrashReportingANRCheckingPeriod(int periodInSeconds) {
+    public ConfigCore setCrashReportingANRCheckingPeriod(int periodInSeconds) {
         if (periodInSeconds < 0) {
             Log.wtf("ANR timeout less than zero doesn't make sense");
         } else {
@@ -720,7 +720,7 @@ public class Config {
      *
      * @return {@code this} instance for method chaining
      */
-    public Config disableANRCrashReporting() {
+    public ConfigCore disableANRCrashReporting() {
         this.crashReportingANRCheckingPeriod = 0;
         return this;
     }
@@ -732,7 +732,7 @@ public class Config {
      * @param crashProcessorClass {@link CrashProcessor}-implementing class
      * @return {@code this} instance for method chaining
      */
-    public Config setCrashProcessorClass(Class<? extends CrashProcessor> crashProcessorClass) {
+    public ConfigCore setCrashProcessorClass(Class<? extends CrashProcessor> crashProcessorClass) {
         if (crashProcessorClass == null) {
             Log.wtf("crashProcessorClass cannot be null");
         } else {
@@ -748,7 +748,7 @@ public class Config {
      * @param cls {@link Class} to use instead of Countly SDK standard class
      * @return {@code this} instance for method chaining
      */
-    protected Config overrideModule(Integer feature, Class<? extends Module> cls) {
+    protected ConfigCore overrideModule(Integer feature, Class<? extends Module> cls) {
         if (feature == null || cls == null) {
             Log.wtf("Feature & class cannot be null");
         } else {
@@ -767,7 +767,7 @@ public class Config {
      * @param requiresConsent {@code true} to enable GDPR compliance
      * @return {@code this} instance for method chaining
      */
-    public Config setRequiresConsent(boolean requiresConsent) {
+    public ConfigCore setRequiresConsent(boolean requiresConsent) {
         this.requiresConsent = requiresConsent;
         return this;
     }
@@ -779,7 +779,7 @@ public class Config {
      * @param autoViewsTracking whether to enable it or disable
      * @return {@code this} instance for method chaining
      */
-    public Config setAutoViewsTracking(boolean autoViewsTracking) {
+    public ConfigCore setAutoViewsTracking(boolean autoViewsTracking) {
         this.autoViewsTracking = autoViewsTracking;
         return this;
     }
@@ -791,7 +791,7 @@ public class Config {
      * @param autoSessionsTracking whether to enable it or disable
      * @return {@code this} instance for method chaining
      */
-    public Config setAutoSessionsTracking(boolean autoSessionsTracking) {
+    public ConfigCore setAutoSessionsTracking(boolean autoSessionsTracking) {
         this.autoSessionsTracking = autoSessionsTracking;
         return this;
     }
@@ -803,7 +803,7 @@ public class Config {
      * @param sessionAutoCloseAfter time in seconds
      * @return {@code this} instance for method chaining
      */
-    public Config setSessionAutoCloseAfter(int sessionAutoCloseAfter) {
+    public ConfigCore setSessionAutoCloseAfter(int sessionAutoCloseAfter) {
         this.sessionAutoCloseAfter = sessionAutoCloseAfter;
         return this;
     }

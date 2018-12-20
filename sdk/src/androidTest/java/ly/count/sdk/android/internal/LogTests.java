@@ -10,11 +10,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 
-import static ly.count.sdk.Config.LoggingLevel.*;
+import static ly.count.sdk.ConfigCore.LoggingLevel.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(AndroidJUnit4.class)
@@ -27,7 +27,7 @@ public class LogTests {
     public void setupEveryTest() {
         String serverUrl = "http://www.serverurl.com";
         String serverAppKey = "1234";
-        config = new InternalConfig(new Config(serverUrl, serverAppKey));
+        config = new InternalConfig(new ConfigCore(serverUrl, serverAppKey));
     }
 
     @After

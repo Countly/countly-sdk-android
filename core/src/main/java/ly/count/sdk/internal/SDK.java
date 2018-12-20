@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 
 /**
  * Abstraction over particular SDK implementation: java-native or Android
@@ -18,7 +18,7 @@ public interface SDK {
     void init(Ctx ctx);
     void stop(Ctx ctx, boolean clear);
 
-    void onDeviceId(Ctx ctx, Config.DID id, Config.DID old);
+    void onDeviceId(Ctx ctx, ConfigCore.DID id, ConfigCore.DID old);
 
     SessionImpl getSession();
 

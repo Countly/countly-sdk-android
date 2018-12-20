@@ -6,13 +6,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.Event;
 import ly.count.sdk.Session;
 import ly.count.sdk.Usage;
@@ -189,7 +188,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
         return ret;
     }
 
-    Boolean recover(Config config) {
+    Boolean recover(ConfigCore config) {
         if ((System.currentTimeMillis() - id) < Device.dev.secToMs(config.getSessionCooldownPeriod() * 2)) {
             return null;
         } else {
@@ -260,7 +259,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
             if (pushOnChange) {
                 Storage.pushAsync(ctx, this);
             }
-            Config config = SDKCore.instance.config();
+            ConfigCore config = SDKCore.instance.config();
             if (config != null && config.getEventsBufferSize() <= events.size()) {
                 update();
             }

@@ -9,7 +9,7 @@ import java.util.Map;
 public interface Event {
     /**
      * Add event to the buffer, send it to the server in case number of events in the session
-     * is equal or bigger than {@link Config#eventsBufferSize} or wait until next {@link Session#update()}.
+     * is equal or bigger than {@link ConfigCore#eventsBufferSize} or wait until next {@link Session#update()}.
      */
     void record();
 
@@ -17,7 +17,7 @@ public interface Event {
      * Set timed {@link Event} duration as difference between moment {@link Event} was created
      * and current time in seconds. Then add the event to its session (if they're enabled),
      * send it to the server in case number of events in the session is equal or bigger
-     * than {@link Config#eventsBufferSize} or wait until next {@link Session#update()}.
+     * than {@link ConfigCore#eventsBufferSize} or wait until next {@link Session#update()}.
      */
     void endAndRecord();
 

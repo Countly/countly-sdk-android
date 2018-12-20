@@ -10,7 +10,7 @@ import org.powermock.reflect.Whitebox;
 import java.util.HashMap;
 import java.util.Map;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.Event;
 
 import static org.mockito.Mockito.mock;
@@ -23,7 +23,7 @@ public class EventImplTests extends BaseTests {
 
     @Before
     public void setupEveryTest() throws Exception {
-        config = new InternalConfig(new Config("http://www.serverurl.com", "1234"));
+        config = new InternalConfig(new ConfigCore("http://www.serverurl.com", "1234"));
         Log log = new Log();
         log.init(config);
         ctx = new BaseTests.CtxImpl(sdk, config, new Object());

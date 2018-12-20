@@ -13,7 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 
@@ -32,7 +32,7 @@ public class CtxImplTests {
 
     @Before
     public void setupEveryTest() throws Exception {
-        config = new InternalConfig(new Config("http://www.serverurl.com", "1234"));
+        config = new InternalConfig(new ConfigCore("http://www.serverurl.com", "1234"));
 
         Log log = new Log();
         log.init(config);

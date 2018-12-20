@@ -31,8 +31,8 @@ public class SDKTests extends BaseTests {
 /*
     @Test
     public void constructor_basic(){
-        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.Sessions));
-        Assert.assertEquals(Config.LoggingLevel.DEBUG, config.getLoggingLevel());
+        Assert.assertEquals(true, config.isFeatureEnabled(ConfigCore.Feature.Sessions));
+        Assert.assertEquals(ConfigCore.LoggingLevel.DEBUG, config.getLoggingLevel());
 
         Core core = Core.init(config, application());
 
@@ -43,8 +43,8 @@ public class SDKTests extends BaseTests {
 
     @Test
     public void constructor_basicWithLogging(){
-        config.setLoggingLevel(Config.LoggingLevel.WARN);
-        Assert.assertEquals(Config.LoggingLevel.WARN, config.getLoggingLevel());
+        config.setLoggingLevel(ConfigCore.LoggingLevel.WARN);
+        Assert.assertEquals(ConfigCore.LoggingLevel.WARN, config.getLoggingLevel());
 
         Core core = Core.init(config, application());
 

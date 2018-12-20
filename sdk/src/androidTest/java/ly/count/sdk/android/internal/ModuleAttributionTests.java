@@ -1,31 +1,15 @@
 package ly.count.sdk.android.internal;
 
-import android.content.*;
-
-import junit.framework.Assert;
-
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import ly.count.sdk.Config;
-import ly.count.sdk.internal.ModuleDeviceId;
-import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.Tasks;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -48,8 +32,8 @@ public class ModuleAttributionTests extends BaseTests {
 //    }
 //
 //    @Override
-//    protected Config defaultConfig() throws Exception {
-//        return super.defaultConfig().enableFeatures(Config.Feature.Attribution);
+//    protected ConfigCore defaultConfig() throws Exception {
+//        return super.defaultConfig().enableFeatures(ConfigCore.Feature.Attribution);
 //    }
 //
 //    @Test
@@ -64,17 +48,17 @@ public class ModuleAttributionTests extends BaseTests {
 //        Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
 //        tasks.await();
 //
-//        Config.DID did = config.getDeviceId();
-//        Config.DID aid = config.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
+//        ConfigCore.DID did = config.getDeviceId();
+//        ConfigCore.DID aid = config.getDeviceId(ConfigCore.DeviceIdRealm.ADVERTISING_ID);
 //        Assert.assertNotNull(did);
 //        Assert.assertNotNull(did.id);
 //        Assert.assertNotNull(aid);
 //        Assert.assertNotNull(aid.id);
 //        Assert.assertFalse(aid.id.equals(did.id));
-//        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
-//        Assert.assertEquals(aid.strategy, Config.DeviceIdStrategy.ADVERTISING_ID);
-//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
-//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(aid), isNull(Config.DID.class));
+//        Assert.assertEquals(did.strategy, ConfigCore.DeviceIdStrategy.ANDROID_ID);
+//        Assert.assertEquals(aid.strategy, ConfigCore.DeviceIdStrategy.ADVERTISING_ID);
+//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
+//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(aid), isNull(ConfigCore.DID.class));
 //    }
 //
 //    @Test
@@ -83,23 +67,23 @@ public class ModuleAttributionTests extends BaseTests {
 //        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 //        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 //
-//        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID));
+//        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ADVERTISING_ID));
 //        moduleDeviceId = module(ModuleDeviceId.class, false);
 //
 //        Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
 //        tasks.await();
 //
-//        Config.DID did = config.getDeviceId();
-//        Config.DID aid = config.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID);
+//        ConfigCore.DID did = config.getDeviceId();
+//        ConfigCore.DID aid = config.getDeviceId(ConfigCore.DeviceIdRealm.ADVERTISING_ID);
 //        Assert.assertNotNull(did);
 //        Assert.assertNotNull(did.id);
 //        Assert.assertNotNull(aid);
 //        Assert.assertNotNull(aid.id);
 //        Assert.assertTrue(aid.id.equals(did.id));
-//        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ADVERTISING_ID);
-//        Assert.assertEquals(aid.strategy, Config.DeviceIdStrategy.ADVERTISING_ID);
-//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
-//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(aid), isNull(Config.DID.class));
+//        Assert.assertEquals(did.strategy, ConfigCore.DeviceIdStrategy.ADVERTISING_ID);
+//        Assert.assertEquals(aid.strategy, ConfigCore.DeviceIdStrategy.ADVERTISING_ID);
+//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
+//        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(aid), isNull(ConfigCore.DID.class));
 //    }
 //
 //    @Test
@@ -107,7 +91,7 @@ public class ModuleAttributionTests extends BaseTests {
 //        ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
 //        doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 //
-//        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ANDROID_ID));
+//        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ANDROID_ID));
 //        moduleDeviceId = module(ModuleDeviceId.class, false);
 //        moduleAttribution = module(ModuleAttribution.class, false);
 //
@@ -123,7 +107,7 @@ public class ModuleAttributionTests extends BaseTests {
 //        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 //        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 //
-//        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ANDROID_ID));
+//        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ANDROID_ID));
 //        moduleDeviceId = module(ModuleDeviceId.class, false);
 //        moduleAttribution = module(ModuleAttribution.class, false);
 //

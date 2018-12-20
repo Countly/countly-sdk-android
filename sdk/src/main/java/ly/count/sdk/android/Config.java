@@ -3,13 +3,14 @@ package ly.count.sdk.android;
 import java.util.HashSet;
 import java.util.Set;
 
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.CrashProcessor;
 import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.Utils;
 
-public class Config extends ly.count.sdk.Config {
+public class Config extends ConfigCore {
     /**
      * Strategy for device id generation
      */

@@ -1,7 +1,5 @@
 package ly.count.sdk.internal;
 
-import ly.count.sdk.Config;
-
 /**
  * Interface for {@link Module} calls uncoupling from Android SDK.
  * Contract:

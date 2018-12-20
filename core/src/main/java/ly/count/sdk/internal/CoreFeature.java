@@ -1,7 +1,5 @@
 package ly.count.sdk.internal;
 
-import ly.count.sdk.Config;
-
 public enum CoreFeature {
     Events(1 << 1),
     Sessions(1 << 2),

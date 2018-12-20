@@ -119,15 +119,15 @@ public class CountlyService extends android.app.Service {
 //                    L.d("Device id");
 //                }
 //                // reread config & notify modules
-//                Config.DID id = null;
-//                Config.DID old = null;
+//                ConfigCore.DID id = null;
+//                ConfigCore.DID old = null;
 //                boolean success = true;
 //                if (intent.hasExtra(PARAM_1)) {
-//                    id = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.ANDROID_ID, null);
+//                    id = new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.ANDROID_ID, null);
 //                    success = id.restore(intent.getByteArrayExtra(PARAM_1));
 //                }
 //                if (intent.hasExtra(PARAM_2)) {
-//                    old = new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.ANDROID_ID, null);
+//                    old = new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.ANDROID_ID, null);
 //                    success = success && !old.restore(intent.getByteArrayExtra(PARAM_2));
 //                }
 //                if (success) {

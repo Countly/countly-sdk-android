@@ -274,10 +274,10 @@ public class ModulePush extends ModuleBase {
 //
 //    @Override
 //    public void onContextAcquired(final Ctx ctx) {
-//        if (config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN) == null) {
-//            Core.instance.acquireId(ctx, new Config.DID(Config.DeviceIdRealm.FCM_TOKEN, Config.DeviceIdStrategy.INSTANCE_ID, null), false, new Tasks.Callback<Config.DID>() {
+//        if (config.getDeviceId(ConfigCore.DeviceIdRealm.FCM_TOKEN) == null) {
+//            Core.instance.acquireId(ctx, new ConfigCore.DID(ConfigCore.DeviceIdRealm.FCM_TOKEN, ConfigCore.DeviceIdStrategy.INSTANCE_ID, null), false, new Tasks.Callback<ConfigCore.DID>() {
 //                @Override
-//                public void call(Config.DID did) throws Exception {
+//                public void call(ConfigCore.DID did) throws Exception {
 //                    if (did == null) {
 //                        L.w("Couldn't acquire FCM token, messaging doesn't work yet");
 //                    } else {
@@ -290,8 +290,8 @@ public class ModulePush extends ModuleBase {
 //    }
 //
 //    @Override
-//    public void onDeviceId(Ctx ctx, final Config.DID deviceId, Config.DID oldDeviceId) {
-//        if (deviceId != null && deviceId.realm == Config.DeviceIdRealm.FCM_TOKEN) {
+//    public void onDeviceId(Ctx ctx, final ConfigCore.DID deviceId, ConfigCore.DID oldDeviceId) {
+//        if (deviceId != null && deviceId.realm == ConfigCore.DeviceIdRealm.FCM_TOKEN) {
 //            localeSent = Device.getLocale();
 //            ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
 //                @Override
@@ -302,7 +302,7 @@ public class ModulePush extends ModuleBase {
 //                            "test_mode", config.isTestModeEnabled() ? 2 : 0);
 //                }
 //            });
-//        } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == Config.DeviceIdRealm.FCM_TOKEN) {
+//        } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == ConfigCore.DeviceIdRealm.FCM_TOKEN) {
 //            ModuleRequests.injectParams(ctx, new ModuleRequests.ParamsInjector() {
 //                @Override
 //                public void call(Params params) {
@@ -365,8 +365,8 @@ public class ModulePush extends ModuleBase {
 //    }
 //
 //    @Override
-//    public Config.Feature getFeature() {
-//        return Config.Feature.Push;
+//    public ConfigCore.Feature getFeature() {
+//        return ConfigCore.Feature.Push;
 //    }
 //
 //    static CountlyPush.Message decodeMessage(Map<String, String> data) {

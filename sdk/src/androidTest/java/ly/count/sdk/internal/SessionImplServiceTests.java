@@ -45,8 +45,8 @@ public class SessionImplServiceTests extends BaseTests {
 //    }
 //
 //    @Override
-//    protected Config defaultConfig() throws Exception {
-//        return super.defaultConfig().disableTestMode().enableFeatures(Config.Feature.CrashReporting);
+//    protected ConfigCore defaultConfig() throws Exception {
+//        return super.defaultConfig().disableTestMode().enableFeatures(ConfigCore.Feature.CrashReporting);
 //    }
 //
 //    @Test

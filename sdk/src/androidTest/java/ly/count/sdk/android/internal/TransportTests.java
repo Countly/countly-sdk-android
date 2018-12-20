@@ -1,37 +1,15 @@
 package ly.count.sdk.android.internal;
 
-import android.content.Intent;
 import android.support.test.runner.AndroidJUnit4;
 
-import junit.framework.Assert;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.List;
-import java.util.concurrent.Future;
-
-import ly.count.sdk.Config;
-import ly.count.sdk.internal.InternalConfig;
 //import ly.count.sdk.internal.Network;
-import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.Storage;
-import ly.count.sdk.internal.Tasks;
 //import ly.count.sdk.internal.UserEditorImpl;
-import ly.count.sdk.internal.UserImpl;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
+
 
 @RunWith(AndroidJUnit4.class)
 public class TransportTests extends BaseTests {
@@ -50,9 +28,9 @@ public class TransportTests extends BaseTests {
     public MockWebServer server;
 
     @Override
-    protected Config defaultConfig() throws Exception {
-        InternalConfig config = new InternalConfig(new Config("http://localhost:" + PORT, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG));
-        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "devid"));
+    protected ConfigCore defaultConfig() throws Exception {
+        InternalConfig config = new InternalConfig(new ConfigCore("http://localhost:" + PORT, APP_KEY).enableTestMode().setLoggingLevel(ConfigCore.LoggingLevel.DEBUG));
+        config.setDeviceId(new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.CUSTOM_ID, "devid"));
         return config;
     }
 
@@ -309,13 +287,13 @@ public class TransportTests extends BaseTests {
 
     @Test(expected = IllegalArgumentException.class)
     public void testPinBadKeyFormat() throws Exception {
-        Config config = defaultConfigWithLogsForConfigTests().addPublicKeyPin("aaa");
+        ConfigCore config = defaultConfigWithLogsForConfigTests().addPublicKeyPin("aaa");
         new Network().init(new InternalConfig(config));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testPinBadCertFormat() throws Exception {
-        Config config = defaultConfigWithLogsForConfigTests().addCertificatePin("aaa");
+        ConfigCore config = defaultConfigWithLogsForConfigTests().addCertificatePin("aaa");
         new Network().init(new InternalConfig(config));
     }
 
@@ -404,7 +382,7 @@ public class TransportTests extends BaseTests {
             "-----END PUBLIC KEY-----";
 
     private void testParsing(boolean isKey, String value) throws Exception {
-        Config config = defaultConfigWithLogsForConfigTests();
+        ConfigCore config = defaultConfigWithLogsForConfigTests();
         if (isKey) config.addPublicKeyPin(value);
         else config.addCertificatePin(value);
         Network network = new Network();
@@ -481,8 +459,8 @@ public class TransportTests extends BaseTests {
     }
 
     private void setUpPinning(String[] keys, String[] certs) throws Exception {
-        Config cfg = new Config("https://count.ly", "111")
-                .setLoggingLevel(Config.LoggingLevel.DEBUG)
+        ConfigCore cfg = new ConfigCore("https://count.ly", "111")
+                .setLoggingLevel(ConfigCore.LoggingLevel.DEBUG)
                 .enableTestMode()
                 .setCustomDeviceId("did");
 
@@ -499,7 +477,7 @@ public class TransportTests extends BaseTests {
         }
 
         config = new InternalConfig(cfg);
-        config.setDeviceId(new Config.DID(Config.DeviceIdRealm.DEVICE_ID, Config.DeviceIdStrategy.CUSTOM_ID, "did"));
+        config.setDeviceId(new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.CUSTOM_ID, "did"));
         Storage.push(ctx, config);
 
         setUpService(config);

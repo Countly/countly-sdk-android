@@ -41,9 +41,9 @@ public class ModuleDeviceIdTests extends BaseTests {
     public void checkStrictAdvertisingId() throws Exception {
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
-        Config cfg = defaultConfig();
+        ConfigCore cfg = defaultConfig();
         cfg.setDeviceIdFallbackAllowed(false);
-        cfg.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
+        cfg.setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ADVERTISING_ID);
         InternalConfig config = new InternalConfig(cfg);
         ModuleDeviceId module = new ModuleDeviceId();
         module.init(config);
@@ -55,7 +55,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         InternalConfig config = new InternalConfig(defaultConfig());
         config.setDeviceIdFallbackAllowed(false);
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
+        config.setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.INSTANCE_ID);
         ModuleDeviceId module = new ModuleDeviceId();
         module.init(config);
     }
@@ -65,7 +65,7 @@ public class ModuleDeviceIdTests extends BaseTests {
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
         InternalConfig config = new InternalConfig(defaultConfig());
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID);
+        config.setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ADVERTISING_ID);
         ModuleDeviceId module = new ModuleDeviceId();
         module.init(config);
         Assert.assertTrue(true);
@@ -76,7 +76,7 @@ public class ModuleDeviceIdTests extends BaseTests {
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
 
         InternalConfig config = new InternalConfig(defaultConfig());
-        config.setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID);
+        config.setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.INSTANCE_ID);
         ModuleDeviceId module = new ModuleDeviceId();
         module.init(config);
         Assert.assertTrue(true);
@@ -95,16 +95,16 @@ public class ModuleDeviceIdTests extends BaseTests {
         String deviceId = "123dev";
         setUpApplication(defaultConfig().setCustomDeviceId(deviceId));
 
-        Config.DID did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        ConfigCore.DID did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertTrue(did.strategy == Config.DeviceIdStrategy.CUSTOM_ID);
+        Assert.assertTrue(did.strategy == ConfigCore.DeviceIdStrategy.CUSTOM_ID);
         Assert.assertEquals(deviceId, did.id);
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertTrue(did.strategy == Config.DeviceIdStrategy.CUSTOM_ID);
+        Assert.assertTrue(did.strategy == ConfigCore.DeviceIdStrategy.CUSTOM_ID);
         Assert.assertEquals(deviceId, did.id);
     }
 
@@ -117,17 +117,17 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         setUpApplication(defaultConfig().setCustomDeviceId(deviceId));
 
-        Config.DID did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        ConfigCore.DID did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertTrue(did.strategy == Config.DeviceIdStrategy.CUSTOM_ID);
+        Assert.assertTrue(did.strategy == ConfigCore.DeviceIdStrategy.CUSTOM_ID);
         Assert.assertEquals(legacyId, did.id);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), eq(did));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertTrue(did.strategy == Config.DeviceIdStrategy.CUSTOM_ID);
+        Assert.assertTrue(did.strategy == ConfigCore.DeviceIdStrategy.CUSTOM_ID);
         Assert.assertEquals(legacyId, did.id);
     }
 
@@ -137,20 +137,20 @@ public class ModuleDeviceIdTests extends BaseTests {
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ADVERTISING_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = config.getDeviceId();
+        ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(ModuleDeviceId.AdvIdInfo.deviceId, did.id);
-        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
         Assert.assertEquals(ModuleDeviceId.AdvIdInfo.deviceId, did.id);
     }
@@ -164,19 +164,19 @@ public class ModuleDeviceIdTests extends BaseTests {
         String legacyId = "123legacy";
         getContext().getSharedPreferences(Legacy.PREFERENCES, android.content.Context.MODE_PRIVATE).edit().putString(Legacy.KEY_ID_ID, legacyId).commit();
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ADVERTISING_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
         Assert.assertNull(Utils.reflectiveGetField(moduleDeviceId, "tasks"));
 
-        Config.DID did = config.getDeviceId();
+        ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(legacyId, did.id);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), eq(did));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
         Assert.assertEquals(legacyId, did.id);
     }
@@ -186,23 +186,23 @@ public class ModuleDeviceIdTests extends BaseTests {
         ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ADVERTISING_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = config.getDeviceId();
+        ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
-        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
+        Assert.assertEquals(did.strategy, ConfigCore.DeviceIdStrategy.ANDROID_ID);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
+        Assert.assertEquals(did.strategy, ConfigCore.DeviceIdStrategy.ANDROID_ID);
     }
 
     @Test
@@ -211,20 +211,20 @@ public class ModuleDeviceIdTests extends BaseTests {
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
         doReturn(new ModuleDeviceId.InstIdInstance()).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.INSTANCE_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = config.getDeviceId();
+        ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(ModuleDeviceId.InstIdInstance.deviceId, did.id);
-        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
         Assert.assertEquals(ModuleDeviceId.InstIdInstance.deviceId, did.id);
     }
@@ -238,19 +238,19 @@ public class ModuleDeviceIdTests extends BaseTests {
         String legacyId = "123legacy";
         getContext().getSharedPreferences(Legacy.PREFERENCES, android.content.Context.MODE_PRIVATE).edit().putString(Legacy.KEY_ID_ID, legacyId).commit();
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.INSTANCE_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
         Assert.assertNull(Utils.reflectiveGetField(moduleDeviceId, "tasks"));
 
-        Config.DID did = config.getDeviceId();
+        ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertEquals(legacyId, did.id);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), eq(did));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
         Assert.assertEquals(legacyId, did.id);
     }
@@ -260,23 +260,23 @@ public class ModuleDeviceIdTests extends BaseTests {
         ModuleDeviceId.InstIdInstance.deviceId = "123inst";
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.INSTANCE_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = config.getDeviceId();
+        ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
         Assert.assertFalse(did.id.equals(ModuleDeviceId.AdvIdInfo.deviceId));
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
-        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
+        Assert.assertEquals(did.strategy, ConfigCore.DeviceIdStrategy.ANDROID_ID);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
-        did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID);
+        did = config.getDeviceId(ConfigCore.DeviceIdRealm.DEVICE_ID);
         Assert.assertNotNull(did);
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID);
+        Assert.assertEquals(did.strategy, ConfigCore.DeviceIdStrategy.ANDROID_ID);
     }
 
     @Test
@@ -284,12 +284,12 @@ public class ModuleDeviceIdTests extends BaseTests {
         Utils.reflectiveSetField(ModuleDeviceId.class, "testSleep", 2000L);
 
         setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
-        moduleDeviceId = (ModuleDeviceId) sdk.module(Config.InternalFeature.DeviceId);
+        moduleDeviceId = (ModuleDeviceId) sdk.module(ConfigCore.InternalFeature.DeviceId);
 
         Assert.assertNull(Utils.reflectiveGetField(sdk, "session"));
 
         //  make ModuleAutoSessions begin a session
-        sdk.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        sdk.module(ConfigCore.Feature.AutoSessionTracking).onActivityStarted(ctx);
         Assert.assertNotNull(Utils.reflectiveGetField(sdk, "session"));
 
         // ensure session is written
@@ -386,9 +386,9 @@ public class ModuleDeviceIdTests extends BaseTests {
         Utils.reflectiveSetField(ModuleDeviceId.class, "testSleep", 2000L);
 
         setUpApplication(defaultConfig().setSendUpdateEachSeconds(5));
-        moduleDeviceId = (ModuleDeviceId) sdk.module(Config.InternalFeature.DeviceId);
+        moduleDeviceId = (ModuleDeviceId) sdk.module(ConfigCore.InternalFeature.DeviceId);
 
-        sdk.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        sdk.module(ConfigCore.Feature.AutoSessionTracking).onActivityStarted(ctx);
         Thread.sleep(1000 * config.getSendUpdateEachSeconds());
 
         String idString = config.getDeviceId().id;
@@ -425,14 +425,14 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         // Activity stop doesn't do anything
         Assert.assertNull(Utils.reflectiveGetField(sdk, "session"));
-        sdk.module(Config.Feature.AutoSessionTracking).onActivityStopped(ctx);
+        sdk.module(ConfigCore.Feature.AutoSessionTracking).onActivityStopped(ctx);
         Thread.sleep(1000);
         Assert.assertNull(Utils.reflectiveGetField(sdk, "session"));
         ids = Storage.list(ctx, Request.getStoragePrefix());
         Assert.assertEquals(6, ids.size());
 
         // Starting another activity begins session
-        sdk.module(Config.Feature.AutoSessionTracking).onActivityStarted(ctx);
+        sdk.module(ConfigCore.Feature.AutoSessionTracking).onActivityStarted(ctx);
         Assert.assertNotNull(Utils.reflectiveGetField(sdk, "session"));
 
         // new session begin with old id

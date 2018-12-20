@@ -4,7 +4,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 
 public class ModuleSessions extends ModuleBase {
     private static final Log.Module L = Log.module("ModuleSessions");
@@ -39,7 +39,7 @@ public class ModuleSessions extends ModuleBase {
     }
 
     /**
-     * @throws IllegalArgumentException when {@link ly.count.sdk.Config#autoSessionsTracking}
+     * @throws IllegalArgumentException when {@link ConfigCore#autoSessionsTracking}
      * is off since this module is for a case when it's on
      */
     @Override
@@ -96,11 +96,11 @@ public class ModuleSessions extends ModuleBase {
 
     /**
      * Handles one single case of device id change with auto sessions handling, see first {@code if} here:
-     * @see ModuleDeviceId#onDeviceId(Ctx, Config.DID, Config.DID)
+     * @see ModuleDeviceId#onDeviceId(Ctx, ConfigCore.DID, ConfigCore.DID)
      */
-    public void onDeviceId(final Ctx ctx, final Config.DID deviceId, final Config.DID oldDeviceId) {
+    public void onDeviceId(final Ctx ctx, final ConfigCore.DID deviceId, final ConfigCore.DID oldDeviceId) {
         L.d("onDeviceId " + deviceId + ", old " + oldDeviceId);
-        if (deviceId != null && oldDeviceId != null && deviceId.realm == Config.DID.REALM_DID && !deviceId.equals(oldDeviceId) && getSession() == null) {
+        if (deviceId != null && oldDeviceId != null && deviceId.realm == ConfigCore.DID.REALM_DID && !deviceId.equals(oldDeviceId) && getSession() == null) {
             session(ctx, null).begin();
         }
     }

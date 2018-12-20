@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 
 /**
  * {@link Module}-related methods of {@link SDK}
@@ -15,7 +15,7 @@ public abstract class SDKModules implements SDK {
     private static Module testDummyModule = null;
 
     /**
-     * All known mappings of {@code Config.Feature} to {@link Module} class.
+     * All known mappings of {@code ConfigCore.Feature} to {@link Module} class.
      */
     private static final Map<Integer, Class<? extends Module>> DEFAULT_MAPPINGS = new HashMap<>();
 
@@ -126,7 +126,7 @@ public abstract class SDKModules implements SDK {
 
     /**
      * Create instances of {@link Module}s required by {@link #config}.
-     * Uses {@link #moduleMappings} for {@code Config.Feature} / {@link CoreFeature}
+     * Uses {@link #moduleMappings} for {@code ConfigCore.Feature} / {@link CoreFeature}
      * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
      * @param ctx {@link Ctx} object containing config with mapping overrides
@@ -149,7 +149,7 @@ public abstract class SDKModules implements SDK {
 
     /**
      * Create instances of {@link Module}s required by {@link #config}.
-     * Uses {@link #moduleMappings} for {@code Config.Feature} / {@link CoreFeature}
+     * Uses {@link #moduleMappings} for {@code ConfigCore.Feature} / {@link CoreFeature}
      * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
      * @param ctx {@link Ctx} object
@@ -158,13 +158,13 @@ public abstract class SDKModules implements SDK {
      * @throws IllegalStateException when this module is run second time on the same {@code Core} instance.
      */
     protected void buildModules(Ctx ctx, int features) throws IllegalArgumentException, IllegalStateException {
-        // override module mappings in native/Android parts, overriding by Config ones if necessary
+        // override module mappings in native/Android parts, overriding by ConfigCore ones if necessary
 
         if (modules.size() > 0) {
             throw new IllegalStateException("Modules can only be built once");
         }
 
-        if (ctx.getConfig().getLoggingLevel() != Config.LoggingLevel.OFF) {
+        if (ctx.getConfig().getLoggingLevel() != ConfigCore.LoggingLevel.OFF) {
             modules.put(CoreFeature.Logs.getIndex(), instantiateModule(moduleMappings.get(CoreFeature.Logs.getIndex())));
         }
 
@@ -213,7 +213,7 @@ public abstract class SDKModules implements SDK {
     }
 
     /**
-     * Return module instance by {@code Config.Feature}
+     * Return module instance by {@code ConfigCore.Feature}
      *
      * @param feature to get a {@link Module} instance for
      * @return {@link Module} instance or null if no such module is instantiated

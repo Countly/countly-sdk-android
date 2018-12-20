@@ -8,7 +8,7 @@ import org.powermock.reflect.Whitebox;
 
 import java.util.List;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 
 import static org.mockito.Mockito.mock;
 
@@ -55,15 +55,15 @@ public class BaseTests {
         }
     }
 
-    public Config config() {
-        return new Config(SERVER, APP_KEY).enableTestMode().setLoggingLevel(Config.LoggingLevel.DEBUG);
+    public ConfigCore config() {
+        return new ConfigCore(SERVER, APP_KEY).enableTestMode().setLoggingLevel(ConfigCore.LoggingLevel.DEBUG);
     }
 
-    protected Config defaultConfig() throws Exception {
+    protected ConfigCore defaultConfig() throws Exception {
         return config();
     }
 
-    protected Config defaultConfigWithLogsForConfigTests() throws Exception {
+    protected ConfigCore defaultConfigWithLogsForConfigTests() throws Exception {
         InternalConfig config = new InternalConfig(defaultConfig());
         new Log().init(config);
         return config;
@@ -76,11 +76,11 @@ public class BaseTests {
         Utils.reflectiveSetField(Utils.class, "utils", utils);
     }
 
-    protected void setUpApplication(Config config) throws Exception {
+    protected void setUpApplication(ConfigCore config) throws Exception {
         setUpSDK(config == null ? defaultConfig() : config, false);
     }
 
-    private void setUpSDK(Config config, boolean limited) throws Exception {
+    private void setUpSDK(ConfigCore config, boolean limited) throws Exception {
         new Log().init(this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config);
         this.dummy = mock(ModuleBase.class);
         Utils.reflectiveSetField(SDK.class, "testDummyModule", dummy);

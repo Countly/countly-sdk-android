@@ -4,7 +4,7 @@ import org.json.JSONObject;
 
 import java.util.Set;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.Session;
 
 /**
@@ -13,7 +13,7 @@ import ly.count.sdk.Session;
 
 public abstract class ModuleBase extends ly.count.sdk.internal.ModuleBase {
 
-    public void onDeviceId(Ctx ctx, Config.DID deviceId, Config.DID oldDeviceId) {
+    public void onDeviceId(Ctx ctx, ConfigCore.DID deviceId, ConfigCore.DID oldDeviceId) {
     }
 
     public void stop(Ctx ctx, boolean clear) {

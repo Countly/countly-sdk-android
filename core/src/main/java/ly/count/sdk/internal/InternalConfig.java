@@ -13,13 +13,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import ly.count.sdk.Config;
+import ly.count.sdk.ConfigCore;
 
 /**
  * Internal to Countly SDK configuration class. Can and should contain options hidden from outside.
- * Only members of {@link InternalConfig} can be changed, members of {@link Config} are non-modifiable.
+ * Only members of {@link InternalConfig} can be changed, members of {@link ConfigCore} are non-modifiable.
  */
-public final class InternalConfig extends Config implements Storable {
+public final class InternalConfig extends ConfigCore implements Storable {
     private static final Log.Module L = Log.module("InternalConfig");
 
     /**
@@ -38,7 +38,7 @@ public final class InternalConfig extends Config implements Storable {
     private boolean defaultNetworking = true;
 
     /**
-     * {@link Config.DID} instances generated from Countly SDK (currently maximum 2: Countly device id + FCM).
+     * {@link ConfigCore.DID} instances generated from Countly SDK (currently maximum 2: Countly device id + FCM).
      * Stored to be able to refresh them.
      */
     private List<DID> dids = new ArrayList<>();
@@ -55,12 +55,12 @@ public final class InternalConfig extends Config implements Storable {
         super("http://count.ly", "not a key");
     }
 
-    public InternalConfig(Config config) throws IllegalArgumentException {
+    public InternalConfig(ConfigCore config) throws IllegalArgumentException {
         super(config.getServerURL().toString(), config.getServerAppKey());
         setFrom(config);
     }
 
-    public void setFrom(Config config) {
+    public void setFrom(ConfigCore config) {
         List<Field> local = Utils.reflectiveGetDeclaredFields(getClass());
         List<Field> remot = Utils.reflectiveGetDeclaredFields(config.getClass());
 

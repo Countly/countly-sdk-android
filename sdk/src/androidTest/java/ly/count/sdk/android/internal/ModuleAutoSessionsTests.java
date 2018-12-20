@@ -2,14 +2,9 @@ package ly.count.sdk.android.internal;
 
 import android.support.test.runner.AndroidJUnit4;
 
-import junit.framework.Assert;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 
-import ly.count.sdk.Config;
-import ly.count.sdk.internal.InternalConfig;
 //import ly.count.sdk.internal.SessionImpl;
 
 import static org.mockito.Mockito.mock;
@@ -35,9 +30,9 @@ public class ModuleAutoSessionsTests extends BaseTests {
     public void init_withSessionControl() throws Exception {
         ModuleAutoSessions moduleAutoSessions = new ModuleAutoSessions();
         config = new InternalConfig(defaultConfig());
-        config.disableFeatures(Config.Feature.AutoSessionTracking);
+        config.disableFeatures(ConfigCore.Feature.AutoSessionTracking);
 
-        Assert.assertEquals(false, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(false, config.isFeatureEnabled(ConfigCore.Feature.AutoSessionTracking));
         moduleAutoSessions.init(config);
     }
 
@@ -45,7 +40,7 @@ public class ModuleAutoSessionsTests extends BaseTests {
     public void init_withoutSessionControl() throws Exception {
         ModuleAutoSessions moduleAutoSessions = new ModuleAutoSessions();
         config = new InternalConfig(defaultConfig());
-        Assert.assertEquals(true, config.isFeatureEnabled(Config.Feature.AutoSessionTracking));
+        Assert.assertEquals(true, config.isFeatureEnabled(ConfigCore.Feature.AutoSessionTracking));
         moduleAutoSessions.init(config);
     }
 

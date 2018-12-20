@@ -1,15 +1,9 @@
 package ly.count.sdk.android;
 
-import android.app.Application;
-
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
 
-import ly.count.sdk.Cly;
-import ly.count.sdk.Config;
-import ly.count.sdk.android.internal.SDKTests;
+import ly.count.sdk.ConfigCore;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.validateMockitoUsage;
@@ -18,11 +12,11 @@ import static org.mockito.Mockito.validateMockitoUsage;
 public class CountlyTests {
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";
-    private Config config;
+    private ConfigCore config;
 
     @Before
     public void setupEveryTest() throws Exception{
-        config = new Config(serverUrl, serverAppKey);
+        config = new ConfigCore(serverUrl, serverAppKey);
     }
 
     @After
@@ -38,7 +32,7 @@ public class CountlyTests {
 
         Cly.init(application, config, new Cly.CreationOverride() {
             @Override
-            public Core createCore(Config config) {
+            public Core createCore(ConfigCore config) {
                 return sdk;
             }
         });

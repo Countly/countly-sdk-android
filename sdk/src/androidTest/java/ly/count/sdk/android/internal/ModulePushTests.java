@@ -1,31 +1,15 @@
 package ly.count.sdk.android.internal;
 
-import android.os.Parcel;
 import android.support.annotation.NonNull;
 
-import junit.framework.Assert;
-
-import org.json.JSONObject;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
 
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-
-import ly.count.sdk.Config;
 import ly.count.sdk.internal.ModuleDeviceId;
-import ly.count.sdk.internal.Tasks;
-import ly.count.sdk.internal.UserImpl;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
 
 public class ModulePushTests extends BaseTests {
     private ModuleDeviceId moduleDeviceId = null;
@@ -37,8 +21,8 @@ public class ModulePushTests extends BaseTests {
 
 /*
     @Override
-    protected Config defaultConfig() throws Exception {
-        return super.defaultConfig().enableFeatures(Config.Feature.Push);
+    protected ConfigCore defaultConfig() throws Exception {
+        return super.defaultConfig().enableFeatures(ConfigCore.Feature.Push);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -56,25 +40,25 @@ public class ModulePushTests extends BaseTests {
         doReturn(instance).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
         doReturn(instance).when(utils)._reflectiveCall(eq(ModulePush.FIREBASE_MESSAGING_CLASS), ArgumentMatchers.isNull(), eq("getInstance"));
 
-        setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID));
+        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.INSTANCE_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
 
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();
 
-        Config.DID did = config.getDeviceId();
-        Config.DID fid = config.getDeviceId(Config.DeviceIdRealm.FCM_TOKEN);
+        ConfigCore.DID did = config.getDeviceId();
+        ConfigCore.DID fid = config.getDeviceId(ConfigCore.DeviceIdRealm.FCM_TOKEN);
         Assert.assertNotNull(did);
         Assert.assertNotNull(did.id);
         Assert.assertNotNull(fid);
         Assert.assertNotNull(fid.id);
         Assert.assertTrue(fid.id.equals(did.id));
-        Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.INSTANCE_ID);
-        Assert.assertEquals(fid.strategy, Config.DeviceIdStrategy.INSTANCE_ID);
-        Assert.assertEquals(did.realm, Config.DeviceIdRealm.DEVICE_ID);
-        Assert.assertEquals(fid.realm, Config.DeviceIdRealm.FCM_TOKEN);
-        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(Config.DID.class));
-        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(fid), isNull(Config.DID.class));
+        Assert.assertEquals(did.strategy, ConfigCore.DeviceIdStrategy.INSTANCE_ID);
+        Assert.assertEquals(fid.strategy, ConfigCore.DeviceIdStrategy.INSTANCE_ID);
+        Assert.assertEquals(did.realm, ConfigCore.DeviceIdRealm.DEVICE_ID);
+        Assert.assertEquals(fid.realm, ConfigCore.DeviceIdRealm.FCM_TOKEN);
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
+        Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(fid), isNull(ConfigCore.DID.class));
 
         UserImpl user = Utils.reflectiveGetField(sdk, "user");
         user.edit().addToCohort("COHORT_NEW").removeFromCohort("COHORT_OLD").commit();

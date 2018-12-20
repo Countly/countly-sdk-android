@@ -109,7 +109,7 @@ public interface Usage {
 
     /**
      * Login function to set device (user) id on Countly server to the string specified here.
-     * Closes current session, then starts new one automatically if {@link Config#autoSessionsTracking} is on, acquires device id.
+     * Closes current session, then starts new one automatically if {@link ConfigCore#autoSessionsTracking} is on, acquires device id.
      *
      * @param id new user / device id string, cannot be empty
      */
@@ -117,8 +117,8 @@ public interface Usage {
 
     /**
      * Logout function to make current user anonymous (that is with random id according to
-     * {@link Config#deviceIdStrategy} and such). Obviously makes sense only after a call to {@link #login(String)},
-     * so it throws error or does nothing (depending on {@link Config#testMode}) if current id wasn't set using {@link #login(String)}.
+     * {@link ConfigCore#deviceIdStrategy} and such). Obviously makes sense only after a call to {@link #login(String)},
+     * so it throws error or does nothing (depending on {@link ConfigCore#testMode}) if current id wasn't set using {@link #login(String)}.
      *
      * Closes current session.
      */
