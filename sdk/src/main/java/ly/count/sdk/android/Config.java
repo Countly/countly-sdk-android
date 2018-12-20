@@ -147,7 +147,6 @@ public class Config extends ly.count.sdk.Config {
         super(serverURL, serverAppKey);
         setSdkName("java-native-android");
         setSdkVersion(ly.count.sdk.android.sdk.BuildConfig.VERSION_NAME);
-        setApplicationName(getSdkName());
         enableFeatures(Feature.Events, Feature.Sessions, Feature.CrashReporting, Feature.Location, Feature.UserProfiles);
     }
 

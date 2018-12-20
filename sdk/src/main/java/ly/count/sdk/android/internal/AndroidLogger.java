@@ -2,7 +2,7 @@ package ly.count.sdk.android.internal;
 
 import ly.count.sdk.internal.Log;
 
-class AndroidLogger implements Log.Logger {
+public class AndroidLogger implements Log.Logger {
     private String tag;
 
     public AndroidLogger(String tag) {

@@ -38,9 +38,7 @@ public abstract class SDKCore extends SDKModules {
         instance = this;
     }
 
-    public void init(final Ctx ctx) {
-        L.i("Initializing Countly in " + (ctx.getConfig().isLimited() ? "limited" : "full") + " mode");
-
+    protected InternalConfig prepareConfig(Ctx ctx) {
         InternalConfig loaded = null;
         try {
             loaded = Storage.read(ctx, new InternalConfig());
@@ -49,11 +47,17 @@ public abstract class SDKCore extends SDKModules {
         }
 
         if (loaded == null) {
-            config = ctx.getConfig();
+            return ctx.getConfig();
         } else {
-            config = loaded;
-            config.setFrom(ctx.getConfig());
+            loaded.setFrom(ctx.getConfig());
+            return loaded;
         }
+    }
+
+    public void init(final Ctx ctx) {
+        L.i("Initializing Countly in " + (ctx.getConfig().isLimited() ? "limited" : "full") + " mode");
+
+        config = prepareConfig(ctx);
 
         super.init(ctx);
 
