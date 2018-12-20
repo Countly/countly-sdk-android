@@ -83,12 +83,12 @@ dependencies {
     api project(':core')
 
     androidTestImplementation project(':core')
-    androidTestImplementation 'com.android.support.test:runner:0.5'
-    androidTestImplementation 'com.android.support.test:rules:0.5'
-    androidTestImplementation "com.android.support:support-annotations:25.1.0"
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+    androidTestImplementation "com.android.support:support-annotations:28.0.0"
     androidTestImplementation 'junit:junit:4.12'
 
-    androidTestImplementation 'org.mockito:mockito-core:2.0.42-beta'
+    androidTestImplementation 'org.mockito:mockito-core:2.8.9'
 
     androidTestImplementation "org.powermock:powermock-core:${powermockVersion}"
     androidTestImplementation "org.powermock:powermock-module-junit4:${powermockVersion}"
