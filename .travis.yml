@@ -22,6 +22,7 @@ env:
   - EMULATOR_API_LEVEL=22  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-22
   - EMULATOR_API_LEVEL=21  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-21
   - EMULATOR_API_LEVEL=19  ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
+  - ADB_INSTALL_TIMEOUT=4
 
   global:
     - ANDROID_API_LEVEL=27
