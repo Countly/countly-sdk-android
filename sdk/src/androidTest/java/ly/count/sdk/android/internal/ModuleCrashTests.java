@@ -130,7 +130,7 @@ public class ModuleCrashTests extends BaseTests {
             }
         });
 
-        Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 2000);
+        Thread.sleep(config.getCrashReportingANRCheckingPeriod() * 2500);
 
         Assert.assertEquals(0, Storage.list(ctx, CrashImpl.getStoragePrefix()).size());
         Assert.assertEquals(1, Storage.list(ctx, Request.getStoragePrefix()).size());
