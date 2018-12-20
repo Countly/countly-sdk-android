@@ -152,19 +152,16 @@ public class Config extends ly.count.sdk.Config {
 
     /**
      * Set device id generation strategy:
-     * <p>
+     * - {@link DeviceIdStrategy#UUID} to use standard java random UUID. Default.
      * - {@link DeviceIdStrategy#INSTANCE_ID} to use InstanceID if available (requires Play Services).
-     * Falls back to OpenUDID if no Play Services available, default.
-     * <p>
+     * Falls back to UUID if no Play Services available.
      * - {@link DeviceIdStrategy#ANDROID_ID} to use OpenUDID derivative - unique, semi-persistent
-     * (stored in {@code SharedPreferences} in Android).
-     * <p>
+     * (stored in {@code SharedPreferences} in Android). Falls back to INSTANCE_ID and then to UUID.
      * - {@link DeviceIdStrategy#ADVERTISING_ID} to use com.google.android.gms.ads.identifier.AdvertisingIdClient
-     * if available (requires Play Services). Falls back to OpenUDID if no Play Services available.
-     * <p>
+     * if available (requires Play Services). Falls back to ANDROID_ID, INSTANCE_ID and then to UUID.
      * - {@link DeviceIdStrategy#CUSTOM_ID} to use your own device id for Countly.
      *
-     * @param strategy       strategy to use instead of default OpenUDID
+     * @param strategy       strategy to use instead of default UUID
      * @param customDeviceId device id for use with {@link DeviceIdStrategy#CUSTOM_ID}
      * @return {@code this} instance for method chaining
      */
@@ -183,7 +180,7 @@ public class Config extends ly.count.sdk.Config {
     /**
      * Shorthand method for {@link #setDeviceIdStrategy(DeviceIdStrategy, String)}
      *
-     * @param strategy strategy to use instead of default OpenUDID
+     * @param strategy strategy to use instead of default UUID
      * @return {@code this} instance for method chaining
      */
     public Config setDeviceIdStrategy(DeviceIdStrategy strategy) {
