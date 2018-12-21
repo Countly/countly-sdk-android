@@ -25,6 +25,7 @@ android:
 #    - sys-img-x86-google_apis-26
 
 licenses:
+  - 'android-sdk-license-.+'
   - '.+'
 
 # Emulator Management: Create, Start and Wait
