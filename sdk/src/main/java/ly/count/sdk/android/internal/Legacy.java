@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import ly.count.sdk.internal.Log;
+import ly.count.sdk.internal.ModuleRating;
 import ly.count.sdk.internal.ModuleRequests;
 import ly.count.sdk.internal.Params;
 import ly.count.sdk.internal.Request;
@@ -134,40 +135,45 @@ public class Legacy {
         if (Utils.isNotEmpty(starStr)) {
             L.d("Migrating Star Rating preferences");
 
+            final String KEY_APP_VERSION = "sr_app_version";
+            final String KEY_SESSION_LIMIT = "sr_session_limit";
+            final String KEY_SESSION_AMOUNT = "sr_session_amount";
+            final String KEY_IS_SHOWN_FOR_CURRENT = "sr_is_shown";
+            final String KEY_AUTOMATIC_RATING_IS_SHOWN = "sr_is_automatic_shown";
+            final String KEY_DISABLE_AUTOMATIC_NEW_VERSIONS = "sr_is_disable_automatic_new";
+            final String KEY_AUTOMATIC_HAS_BEEN_SHOWN = "sr_automatic_has_been_shown";
+            final String KEY_DIALOG_IS_CANCELLABLE = "sr_automatic_dialog_is_cancellable";
+            final String KEY_DIALOG_TEXT_TITLE = "sr_text_title";
+            final String KEY_DIALOG_TEXT_MESSAGE = "sr_text_message";
+            final String KEY_DIALOG_TEXT_DISMISS = "sr_text_dismiss";
+
+            ModuleRating.StarRatingPreferences srp = new ModuleRating.StarRatingPreferences();
             JSONObject srJSON;
             try {
                 srJSON = new JSONObject(starStr);
 
-                try {
-                    srp.appVersion = json.getString(KEY_APP_VERSION);
-                    srp.sessionLimit = json.optInt(KEY_SESSION_LIMIT, 5);
-                    srp.sessionAmount = json.optInt(KEY_SESSION_AMOUNT, 0);
-                    srp.isShownForCurrentVersion = json.optBoolean(KEY_IS_SHOWN_FOR_CURRENT, false);
-                    srp.automaticRatingShouldBeShown = json.optBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN, true);
-                    srp.disabledAutomaticForNewVersions = json.optBoolean(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS, false);
-                    srp.automaticHasBeenShown = json.optBoolean(KEY_AUTOMATIC_HAS_BEEN_SHOWN, false);
-                    srp.isDialogCancellable = json.optBoolean(KEY_DIALOG_IS_CANCELLABLE, true);
-
-                    if(!json.isNull(KEY_DIALOG_TEXT_TITLE)) {
-                        srp.dialogTextTitle = json.getString(KEY_DIALOG_TEXT_TITLE);
-                    }
-
-                    if(!json.isNull(KEY_DIALOG_TEXT_MESSAGE)) {
-                        srp.dialogTextMessage = json.getString(KEY_DIALOG_TEXT_MESSAGE);
-                    }
-
-                    if(!json.isNull(KEY_DIALOG_TEXT_DISMISS)) {
-                        srp.dialogTextDismiss = json.getString(KEY_DIALOG_TEXT_DISMISS);
-                    }
-
-                } catch (JSONException e) {
-                    L.w("Got exception converting JSON to a StarRatingPreferences", e);
+                if(srJSON.length() > 0)
+                {
+                    //if there are any fields set
+                    srp.appVersion = srJSON.getString(KEY_APP_VERSION);
+                    srp.sessionLimit = srJSON.getInt(KEY_SESSION_LIMIT);
+                    srp.sessionAmount = srJSON.getInt(KEY_SESSION_AMOUNT);
+                    srp.isShownForCurrentVersion = srJSON.getBoolean(KEY_IS_SHOWN_FOR_CURRENT);
+                    srp.automaticRatingShouldBeShown = srJSON.getBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN);
+                    srp.disabledAutomaticForNewVersions = srJSON.getBoolean(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS);
+                    srp.automaticHasBeenShown = srJSON.getBoolean(KEY_AUTOMATIC_HAS_BEEN_SHOWN);
+                    srp.isDialogCancellable = srJSON.getBoolean(KEY_DIALOG_IS_CANCELLABLE);
+                    srp.dialogTextTitle = srJSON.getString(KEY_DIALOG_TEXT_TITLE);
+                    srp.dialogTextMessage = srJSON.getString(KEY_DIALOG_TEXT_MESSAGE);
+                    srp.dialogTextDismiss = srJSON.getString(KEY_DIALOG_TEXT_DISMISS);
                 }
             } catch (JSONException e) {
-                e.printStackTrace();
+                L.w("Got exception converting JSON to a StarRatingPreferences", e);
                 //failed to read preferences, resort to defaults
-                srp = new StarRatingPreferences();
             }
+
+            //save srp to disk
+            Storage.push(ctx, srp);
         }
 
         // TODO: city/country

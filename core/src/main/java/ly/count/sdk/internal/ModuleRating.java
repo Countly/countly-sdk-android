@@ -3,6 +3,8 @@ package ly.count.sdk.internal;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
+
 public class ModuleRating extends ModuleBase {
 
     protected static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
@@ -74,18 +76,18 @@ public class ModuleRating extends ModuleBase {
     /**
      * Class that handles star rating internal state
      */
-    static class StarRatingPreferences implements Storable {
-        String appVersion = ""; //the name of the current version that we keep track of
-        int sessionLimit = 5; //session limit for the automatic star rating
-        int sessionAmount = 0; //session amount for the current version
-        boolean isShownForCurrentVersion = false; //if automatic star rating has been shown for the current version
-        boolean automaticRatingShouldBeShown = false; //if the automatic star rating should be shown
-        boolean disabledAutomaticForNewVersions = false; //if the automatic star star should not be shown for every new apps version
-        boolean automaticHasBeenShown = false; //if automatic star rating has been shown for any app's version
-        boolean isDialogCancellable = true; //if star rating dialog is cancellable
-        String dialogTextTitle = "App rating";
-        String dialogTextMessage = "Please rate this app";
-        String dialogTextDismiss = "Cancel";
+    public static class StarRatingPreferences implements Storable {
+        public String appVersion = ""; //the name of the current version that we keep track of
+        public int sessionLimit = 5; //session limit for the automatic star rating
+        public int sessionAmount = 0; //session amount for the current version
+        public boolean isShownForCurrentVersion = false; //if automatic star rating has been shown for the current version
+        public boolean automaticRatingShouldBeShown = false; //if the automatic star rating should be shown
+        public boolean disabledAutomaticForNewVersions = false; //if the automatic star star should not be shown for every new apps version
+        public boolean automaticHasBeenShown = false; //if automatic star rating has been shown for any app's version
+        public boolean isDialogCancellable = true; //if star rating dialog is cancellable
+        public String dialogTextTitle = "App rating";
+        public String dialogTextMessage = "Please rate this app";
+        public String dialogTextDismiss = "Cancel";
 
         private static final String KEY_APP_VERSION = "sr_app_version";
         private static final String KEY_SESSION_LIMIT = "sr_session_limit";
@@ -103,7 +105,6 @@ public class ModuleRating extends ModuleBase {
          * Create a JSONObject from the current state
          * @return
          */
-        /*
         JSONObject toJSON() {
             final JSONObject json = new JSONObject();
 
@@ -126,14 +127,13 @@ public class ModuleRating extends ModuleBase {
             }
 
             return json;
-        }*/
+        }
 
         /**
          * Load the preference state from a JSONObject
          * //@param json
          * @return
          */
-        /*
         static StarRatingPreferences fromJSON(final JSONObject json) {
 
             StarRatingPreferences srp = new StarRatingPreferences();
@@ -168,24 +168,42 @@ public class ModuleRating extends ModuleBase {
 
             return srp;
         }
-*/
+
         @Override
         public Long storageId() {
-            return null;
+            return 123L;
         }
 
         @Override
         public String storagePrefix() {
-            return null;
+            return "rating";
         }
 
         @Override
         public byte[] store() {
-            return new byte[0];
+            try {
+                return toJSON().toString().getBytes(Utils.UTF8);
+            } catch (UnsupportedEncodingException e) {
+                L.wtf("UTF is not supported for Rating", e);
+                return null;
+            }
         }
 
         @Override
         public boolean restore(byte[] data) {
+            try {
+                String json = new String (data, Utils.UTF8);
+                try {
+                    JSONObject obj = new JSONObject(json);
+                    fromJSON(obj);
+                } catch (JSONException e) {
+                    L.e("Couldn't decode Rating data successfully", e);
+                }
+                return true;
+            } catch (UnsupportedEncodingException e) {
+                L.wtf("Cannot deserialize Rating", e);
+            }
+
             return false;
         }
     }

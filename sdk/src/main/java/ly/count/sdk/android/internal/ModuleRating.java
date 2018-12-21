@@ -27,8 +27,8 @@ public class ModuleRating extends ly.count.sdk.internal.ModuleRating {
      * @param callback
      */
     public static void showStarRating(Context context, final ModuleRating.RatingCallback callback){
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
-        showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
+        //StarRatingPreferences srp = loadStarRatingPreferences(context);
+        //showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
 
     /**
@@ -52,7 +52,7 @@ public class ModuleRating extends ly.count.sdk.internal.ModuleRating {
             L.e("Can't show star rating dialog, the provided context is not based off a activity");
             return;
         }
-
+/*
         LayoutInflater inflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
         View dialogLayout = inflater.inflate(R.layout.star_rating_layout, null);
         RatingBar ratingBar = (RatingBar) dialogLayout.findViewById(R.id.ratingBar);
@@ -102,6 +102,6 @@ public class ModuleRating extends ly.count.sdk.internal.ModuleRating {
                     callback.onRate(rating);
                 }
             }
-        });
+        });*/
     }
 }
