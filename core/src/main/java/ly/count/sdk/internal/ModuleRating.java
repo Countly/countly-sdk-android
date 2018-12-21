@@ -12,6 +12,7 @@ public class ModuleRating extends ModuleBase {
     protected static final Log.Module L = Log.module("Rating");
 
     InternalConfig internalConfig = null;
+    protected Ctx _ctx = null;
 
     @Override
     public void init(InternalConfig config) {
@@ -29,7 +30,7 @@ public class ModuleRating extends ModuleBase {
     }
 
     void initiate(Ctx ctx){
-
+        _ctx = ctx;
     }
 
     @Override
@@ -41,36 +42,19 @@ public class ModuleRating extends ModuleBase {
      * Returns a object with the loaded preferences
      * @return
      */
-    /*
-    protected static StarRatingPreferences loadStarRatingPreferences() {
 
-        Storage.read(this.)
-        CountlyStore cs = new CountlyStore(context);
-        String srpString = cs.getStarRatingPreferences();
-        StarRatingPreferences srp;
-
-        if(!srpString.equals("")) {
-            JSONObject srJSON;
-            try {
-                srJSON = new JSONObject(srpString);
-                srp = StarRatingPreferences.fromJSON(srJSON);
-            } catch (JSONException e) {
-                e.printStackTrace();
-                srp = new StarRatingPreferences();
-            }
-        } else {
-            srp = new StarRatingPreferences();
-        }
+    protected StarRatingPreferences loadStarRatingPreferences() {
+        StarRatingPreferences srp = new StarRatingPreferences();
+        Storage.read(_ctx, srp);
         return srp;
-    }*/
+    }
 
     /**
      * Save the star rating preferences object
      * @param srp
      */
-    protected static void saveStarRatingPreferences(StarRatingPreferences srp) {
-        //CountlyStore cs = new CountlyStore(context);
-        //cs.setStarRatingPreferences(srp.toJSON().toString());
+    protected void saveStarRatingPreferences(StarRatingPreferences srp) {
+        Storage.push(_ctx, srp);
     }
 
     /**

@@ -12,6 +12,8 @@ import android.widget.RatingBar;
 import java.util.HashMap;
 import java.util.Map;
 
+import ly.count.sdk.android.sdk.R;
+
 public class ModuleRating extends ly.count.sdk.internal.ModuleRating {
     /**
      * Callbacks for star rating dialog
@@ -23,41 +25,36 @@ public class ModuleRating extends ly.count.sdk.internal.ModuleRating {
 
     /**
      * Call to manually show star rating dialog
-     * @param context
+     * @param activity
      * @param callback
      */
-    public static void showStarRating(Context context, final ModuleRating.RatingCallback callback){
-        //StarRatingPreferences srp = loadStarRatingPreferences(context);
-        //showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
+    public void showStarRating(Activity activity, final ModuleRating.RatingCallback callback){
+        StarRatingPreferences srp = loadStarRatingPreferences();
+        showStarRatingCustom(activity, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
 
     /**
      * Method that created the star rating dialog
-     * @param context
+     * @param activity
      * @param title
      * @param message
      * @param cancelText
      * @param isCancellable
      * @param callback
      */
-    public static void showStarRatingCustom(
-            final Context context,
+    public void showStarRatingCustom(
+            final Activity activity,
             final String title,
             final String message,
             final String cancelText,
             final boolean isCancellable,
             final ModuleRating.RatingCallback callback) {
 
-        if(!(context instanceof Activity)) {
-            L.e("Can't show star rating dialog, the provided context is not based off a activity");
-            return;
-        }
-/*
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
+        LayoutInflater inflater = (LayoutInflater) activity.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
         View dialogLayout = inflater.inflate(R.layout.star_rating_layout, null);
         RatingBar ratingBar = (RatingBar) dialogLayout.findViewById(R.id.ratingBar);
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(context)
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
                 .setTitle(title)
                 .setMessage(message)
                 .setCancelable(isCancellable)
@@ -88,20 +85,20 @@ public class ModuleRating extends ly.count.sdk.internal.ModuleRating {
             public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
                 int rating = (int) v;
 
-                if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
+                //if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
                     Map<String, String> segm = new HashMap<>();
                     segm.put("platform", "android");
-                    segm.put("app_version", DeviceInfo.getAppVersion(context));
+                    //segm.put("app_version", Device.dev.getAppVersion(_ctx));
                     segm.put("rating", "" + rating);
 
-                    Countly.sharedInstance().recordEvent(STAR_RATING_EVENT_KEY, segm, 1);
-                }
+                    //Countly.sharedInstance().recordEvent(STAR_RATING_EVENT_KEY, segm, 1);
+                //}
 
                 dialog.dismiss();
                 if(callback != null) {
                     callback.onRate(rating);
                 }
             }
-        });*/
+        });
     }
 }
