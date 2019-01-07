@@ -3,12 +3,12 @@ package ly.count.sdk;
 import java.util.Map;
 
 import ly.count.sdk.internal.Ctx;
-import ly.count.sdk.internal.SDK;
+import ly.count.sdk.internal.SDKInterface;
 
 public abstract class Cly implements Usage {
     protected static Cly cly;
     protected Ctx ctx;
-    protected SDK sdk;
+    protected SDKInterface sdk;
 
     protected Cly() {
         cly = this;

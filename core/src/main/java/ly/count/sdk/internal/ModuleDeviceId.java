@@ -205,7 +205,7 @@ public class ModuleDeviceId extends ModuleBase {
     }
 
     /**
-     * Just a wrapper around {@link SDK#onSignal(Ctx, int, Byteable, Byteable)}} for {@link ly.count.sdk.internal.SDKCore.Signal#DID} case
+     * Just a wrapper around {@link SDKInterface#onSignal(Ctx, int, Byteable, Byteable)}} for {@link ly.count.sdk.internal.SDKCore.Signal#DID} case
      *
      * @param ctx Ctx to run in
      * @param id new {@link ConfigCore.DID} if any

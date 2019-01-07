@@ -11,6 +11,6 @@ package ly.count.sdk.internal;
 public interface Ctx {
     Object getContext();
     InternalConfig getConfig();
-    SDK getSDK();
+    SDKInterface getSDK();
     boolean isExpired();
 }

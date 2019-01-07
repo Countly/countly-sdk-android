@@ -11,7 +11,7 @@ import ly.count.sdk.ConfigCore;
 /**
  * Abstraction over particular SDK implementation: java-native or Android
  */
-public interface SDK {
+public interface SDKInterface {
     UserImpl user();
     InternalConfig config();
 

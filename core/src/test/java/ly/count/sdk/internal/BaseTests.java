@@ -24,11 +24,11 @@ public class BaseTests {
     protected SDKCore sdk = null;
 
     public class CtxImpl implements Ctx {
-        private SDK sdk;
+        private SDKInterface sdk;
         private Object ctx;
         private InternalConfig config;
 
-        public CtxImpl(SDK sdk, InternalConfig config, Object ctx) {
+        public CtxImpl(SDKInterface sdk, InternalConfig config, Object ctx) {
             this.sdk = sdk;
             this.config = config;
             this.ctx = ctx;
@@ -45,7 +45,7 @@ public class BaseTests {
         }
 
         @Override
-        public SDK getSDK() {
+        public SDKInterface getSDK() {
             return sdk;
         }
 
@@ -83,7 +83,7 @@ public class BaseTests {
     private void setUpSDK(ConfigCore config, boolean limited) throws Exception {
         new Log().init(this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config);
         this.dummy = mock(ModuleBase.class);
-        Utils.reflectiveSetField(SDK.class, "testDummyModule", dummy);
+        Utils.reflectiveSetField(SDKInterface.class, "testDummyModule", dummy);
         this.sdk = mock(SDKCore.class);
         this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(defaultConfig()), getContext()));
         this.config = this.sdk.config();
@@ -118,7 +118,7 @@ public class BaseTests {
             this.sdk.stop(ctx, true);
             this.sdk = null;
         }
-        Utils.reflectiveSetField(SDK.class, "testDummyModule", null);
+        Utils.reflectiveSetField(SDKInterface.class, "testDummyModule", null);
     }
 
 }

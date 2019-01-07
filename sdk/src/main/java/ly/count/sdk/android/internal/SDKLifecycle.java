@@ -14,10 +14,11 @@ import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.ModuleRequests;
 import ly.count.sdk.internal.Request;
 import ly.count.sdk.internal.SDKCore;
+import ly.count.sdk.internal.SDKInterface;
 import ly.count.sdk.internal.Storage;
 
 /**
- * Application lifecycle-related methods of {@link ly.count.sdk.internal.SDK}
+ * Application lifecycle-related methods of {@link SDKInterface}
  */
 
 public abstract class SDKLifecycle extends SDKCore {

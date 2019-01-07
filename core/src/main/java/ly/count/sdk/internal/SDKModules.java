@@ -7,10 +7,10 @@ import java.util.Map;
 import ly.count.sdk.ConfigCore;
 
 /**
- * {@link Module}-related methods of {@link SDK}
+ * {@link Module}-related methods of {@link SDKInterface}
  */
 
-public abstract class SDKModules implements SDK {
+public abstract class SDKModules implements SDKInterface {
     private static final Log.Module L = Log.module("SDKModules");
     private static Module testDummyModule = null;
 
