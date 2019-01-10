@@ -598,7 +598,7 @@ public class SessionImplServiceTests extends BaseTests {
 //        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
 //        Assert.assertEquals(1, crashes.size());
 //
-//        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
+//        CrashImpl crash = Storage.read(ctx, new CrashImplCore(crashes.get(0)));
 //        Assert.assertNotNull(crash);
 //
 //        String json = crash.getJSON();
@@ -640,7 +640,7 @@ public class SessionImplServiceTests extends BaseTests {
 //        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
 //        Assert.assertEquals(1, crashes.size());
 //
-//        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
+//        CrashImpl crash = Storage.read(ctx, new CrashImplCore(crashes.get(0)));
 //        Assert.assertNotNull(crash);
 //
 //        String json = crash.getJSON();
@@ -689,7 +689,7 @@ public class SessionImplServiceTests extends BaseTests {
 //        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
 //        Assert.assertEquals(1, crashes.size());
 //
-//        CrashImpl crash = Storage.read(ctx, new CrashImpl(crashes.get(0)));
+//        CrashImpl crash = Storage.read(ctx, new CrashImplCore(crashes.get(0)));
 //        Assert.assertNotNull(crash);
 //
 //        String json = crash.getJSON();

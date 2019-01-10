@@ -199,7 +199,7 @@ public class CountlyService extends android.app.Service {
 //    }
 //
 //    private boolean processCrash(Long id) {
-//        CrashImpl crash = new CrashImpl(id);
+//        CrashImpl crash = new CrashImplCore(id);
 //        crash = Storage.read(ctx, crash);
 //        if (crash == null) {
 //            L.e("Cannot read crash from storage, skipping");

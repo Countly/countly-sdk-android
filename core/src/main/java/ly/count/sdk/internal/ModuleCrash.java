@@ -12,7 +12,7 @@ import ly.count.sdk.CrashProcessor;
 public class ModuleCrash extends ModuleBase {
     private static final Log.Module L = Log.module("ModuleCrash");
 
-    private long started = 0;
+    protected long started = 0;
     private boolean limited = false;
     private boolean crashed = false;
 
@@ -41,7 +41,7 @@ public class ModuleCrash extends ModuleBase {
                 Thread.setDefaultUncaughtExceptionHandler(previousHandler);
             }
             if (clear) {
-                ctx.getSDK().storablePurge(ctx, CrashImpl.getStoragePrefix());
+                ctx.getSDK().storablePurge(ctx, CrashImplCore.getStoragePrefix());
             }
         } catch (Throwable t) {
             L.e("Exception while stopping crash reporting", t);
@@ -77,11 +77,11 @@ public class ModuleCrash extends ModuleBase {
         return CoreFeature.CrashReporting.getIndex();
     }
 
-    public CrashImpl onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
-        return onCrash(ctx, new CrashImpl().addThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs));
+    public CrashImplCore onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+        return onCrash(ctx, new CrashImplCore().addThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs));
     }
 
-    public CrashImpl onCrash(Ctx ctx, ly.count.sdk.internal.CrashImpl crash) {
+    public CrashImplCore onCrash(Ctx ctx, CrashImplCore crash) {
         long running = started == 0 ? 0 : DeviceCore.dev.nsToMs(System.nanoTime() - started);
         crash.putMetrics(ctx, running);
         if (crashProcessor != null) {
@@ -106,7 +106,7 @@ public class ModuleCrash extends ModuleBase {
         return crash;
     }
 
-    public static void putCrashIntoParams(CrashImpl crash, Params params) {
+    public static void putCrashIntoParams(CrashImplCore crash, Params params) {
         params.add("crash", crash.getJSON());
     }
 

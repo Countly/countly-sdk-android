@@ -18,7 +18,7 @@ import ly.count.sdk.Crash;
  * Crash-encapsulating class
  */
 
-public class CrashImpl implements Crash, Storable {
+public class CrashImplCore implements Crash, Storable {
     private static final Log.Module L = Log.module("CrashImpl");
 
     private final Long id;
@@ -26,18 +26,18 @@ public class CrashImpl implements Crash, Storable {
     private Throwable throwable;
     private Map<Thread, StackTraceElement[]> traces;
 
-    protected CrashImpl() {
+    protected CrashImplCore() {
         this(DeviceCore.dev.uniformTimestamp());
     }
 
-    protected CrashImpl(Long id) {
+    protected CrashImplCore(Long id) {
         this.id = id;
         this.data = new JSONObject();
         this.add("_nonfatal", true);
     }
 
     @Override
-    public CrashImpl addThrowable(Throwable throwable) {
+    public CrashImplCore addThrowable(Throwable throwable) {
         if (throwable == null) {
             L.wtf("Throwable cannot be null");
             return this;
@@ -50,12 +50,12 @@ public class CrashImpl implements Crash, Storable {
     }
 
     @Override
-    public CrashImpl addException(Exception e) {
+    public CrashImplCore addException(Exception e) {
         return addThrowable(e);
     }
 
     @Override
-    public CrashImpl addTraces(Thread main, Map<Thread, StackTraceElement[]> traces) {
+    public CrashImplCore addTraces(Thread main, Map<Thread, StackTraceElement[]> traces) {
         if (traces == null) {
             L.wtf("traces cannot be null");
             return this;
@@ -91,17 +91,17 @@ public class CrashImpl implements Crash, Storable {
     }
 
     @Override
-    public CrashImpl setFatal(boolean fatal) {
+    public CrashImplCore setFatal(boolean fatal) {
         return add("_nonfatal", !fatal);
     }
 
     @Override
-    public CrashImpl setName(String name) {
+    public CrashImplCore setName(String name) {
         return add("_name", name);
     }
 
     @Override
-    public CrashImpl setSegments(Map<String, String> segments) {
+    public CrashImplCore setSegments(Map<String, String> segments) {
         if (segments != null && segments.size() > 0) {
             return add("_custom", new JSONObject(segments));
         }
@@ -109,7 +109,7 @@ public class CrashImpl implements Crash, Storable {
     }
 
     @Override
-    public CrashImpl setLogs(String[] logs) {
+    public CrashImplCore setLogs(String[] logs) {
         if (logs != null && logs.length > 0) {
             return add("_logs", Utils.join(Arrays.asList(logs), "\n"));
         }
@@ -173,7 +173,7 @@ public class CrashImpl implements Crash, Storable {
         }
     }
 
-    protected CrashImpl add(String key, Object value) {
+    protected CrashImplCore add(String key, Object value) {
         if (Utils.isNotEmpty(key) && value != null) {
             try {
                 this.data.put(key, value);
@@ -229,7 +229,7 @@ public class CrashImpl implements Crash, Storable {
         return "crash";
     }
 
-    public CrashImpl putMetrics(Ctx ctx, Long runningTime) {
+    public CrashImplCore putMetrics(Ctx ctx, Long runningTime) {
         return add("_os", DeviceCore.dev.getOS())
                 .add("_os_version", DeviceCore.dev.getOSVersion())
                 .add("_ram_current", DeviceCore.dev.getRAMAvailable())

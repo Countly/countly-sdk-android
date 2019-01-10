@@ -1,13 +1,14 @@
 package ly.count.sdk.android.internal;
 
 import ly.count.sdk.Crash;
+import ly.count.sdk.internal.CrashImplCore;
 import ly.count.sdk.internal.Storable;
 
 /**
  * Crash-encapsulating class
  */
 
-public class CrashImpl extends ly.count.sdk.internal.CrashImpl implements Crash, Storable {
+public class CrashImpl extends CrashImplCore implements Crash, Storable {
 
     protected CrashImpl() {
         super();

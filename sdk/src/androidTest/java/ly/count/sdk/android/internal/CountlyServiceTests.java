@@ -141,7 +141,7 @@ public class CountlyServiceTests extends BaseTests {
 //
 //        Storage.await();
 //
-//        CrashImpl crash = Storage.read(ctx, new CrashImpl(Storage.list(ctx, CrashImpl.getStoragePrefix()).get(0)));
+//        CrashImpl crash = Storage.read(ctx, new CrashImplCore(Storage.list(ctx, CrashImplCore.getStoragePrefix()).get(0)));
 //        Assert.assertNotNull(crash);
 //
 //        intent.putExtra(CountlyService.CMD, CountlyService.CMD_CRASH);

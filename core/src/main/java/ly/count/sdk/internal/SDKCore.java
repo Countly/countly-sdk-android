@@ -272,7 +272,7 @@ public abstract class SDKCore extends SDKModules {
     }
 
     protected void recover (Ctx ctx) {
-        List<Long> crashes = Storage.list(ctx, CrashImpl.getStoragePrefix());
+        List<Long> crashes = Storage.list(ctx, CrashImplCore.getStoragePrefix());
 
         for (Long id : crashes) {
             L.i("Found unprocessed crash " + id);
