@@ -26,17 +26,18 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ly.count.sdk.internal.DeviceCore;
 import ly.count.sdk.internal.Params;
 
 /**
  * Class encapsulating most of device-specific logic: metrics, info, etc.
  */
 
-public class Device extends ly.count.sdk.internal.Device {
+public class Device extends DeviceCore {
     public static Device dev = new Device();
 
     private Device() {
-        ly.count.sdk.internal.Device.dev = dev = this;
+        DeviceCore.dev = dev = this;
     }
 
     /**

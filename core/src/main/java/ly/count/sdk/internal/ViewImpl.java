@@ -1,9 +1,7 @@
 package ly.count.sdk.internal;
 
-import ly.count.sdk.Event;
 import ly.count.sdk.Session;
 import ly.count.sdk.View;
-import ly.count.sdk.internal.EventImpl;
 
 /**
  * View implementation for Countly Views plugin
@@ -44,7 +42,7 @@ class ViewImpl implements View {
 
         start = (EventImpl) session.event(EVENT).addSegments(NAME, this.name,
                 VISIT, VISIT_VALUE,
-                SEGMENT, Device.dev.getOS());
+                SEGMENT, DeviceCore.dev.getOS());
 
         if (firstView) {
             start.addSegment(START, START_VALUE);
@@ -63,7 +61,7 @@ class ViewImpl implements View {
         EventImpl event = (EventImpl) session.event(EVENT).addSegments(NAME, this.name,
                 SEGMENT, SEGMENT_VALUE);
 
-        event.setDuration(Device.dev.uniqueTimestamp() - start.getTimestamp());
+        event.setDuration(DeviceCore.dev.uniqueTimestamp() - start.getTimestamp());
 
         if (lastView) {
             event.addSegment(EXIT, EXIT_VALUE);

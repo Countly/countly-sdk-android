@@ -25,7 +25,7 @@ public class ModuleRequests extends ModuleBase {
     @Override
     public void onContextAcquired(Ctx ctx) {
         super.onContextAcquired(ctx);
-        ModuleRequests.metrics = Device.dev.buildMetrics(ctx);
+        ModuleRequests.metrics = DeviceCore.dev.buildMetrics(ctx);
     }
 
     @Override
@@ -214,10 +214,10 @@ public class ModuleRequests extends ModuleBase {
             return null;
         }
 
-        request.params.add("timestamp", Device.dev.uniqueTimestamp())
-                .add("tz", Device.dev.getTimezoneOffset())
-                .add("hour", Device.dev.currentHour())
-                .add("dow", Device.dev.currentDayOfWeek());
+        request.params.add("timestamp", DeviceCore.dev.uniqueTimestamp())
+                .add("tz", DeviceCore.dev.getTimezoneOffset())
+                .add("hour", DeviceCore.dev.currentHour())
+                .add("dow", DeviceCore.dev.currentDayOfWeek());
 
         return Storage.pushAsync(ctx, request, new Tasks.Callback<Boolean>() {
             @Override

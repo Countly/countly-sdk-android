@@ -72,7 +72,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
      * Create session with current time as id.
      */
     protected SessionImpl(Ctx ctx) {
-        this.id = Device.dev.uniformTimestamp();
+        this.id = DeviceCore.dev.uniformTimestamp();
         this.ctx = ctx;
     }
 
@@ -81,7 +81,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
      */
     protected SessionImpl(Ctx ctx, Long id) {
         this.ctx = ctx;
-        this.id = id == null ? Device.dev.uniformTimestamp() : id;
+        this.id = id == null ? DeviceCore.dev.uniformTimestamp() : id;
     }
 
     @Override
@@ -189,16 +189,16 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     }
 
     Boolean recover(ConfigCore config) {
-        if ((System.currentTimeMillis() - id) < Device.dev.secToMs(config.getSessionCooldownPeriod() * 2)) {
+        if ((System.currentTimeMillis() - id) < DeviceCore.dev.secToMs(config.getSessionCooldownPeriod() * 2)) {
             return null;
         } else {
             Future<Boolean> future = null;
             if (began == null) {
                 return Storage.remove(ctx, this);
             } else if (ended == null && updated == null) {
-                future = end(began + Device.dev.secToNs(config.getSessionCooldownPeriod()), null, null);
+                future = end(began + DeviceCore.dev.secToNs(config.getSessionCooldownPeriod()), null, null);
             } else if (ended == null) {
-                future = end(updated + Device.dev.secToNs(config.getSessionCooldownPeriod()), null, null);
+                future = end(updated + DeviceCore.dev.secToNs(config.getSessionCooldownPeriod()), null, null);
             } else {
                 // began != null && ended != null
                 return Storage.remove(ctx, this);
@@ -234,7 +234,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
             duration = now - updated;
         }
         updated = now;
-        return Device.dev.nsToSec(duration);
+        return DeviceCore.dev.nsToSec(duration);
     }
 
     public Event event(String key) {

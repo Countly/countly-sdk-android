@@ -18,10 +18,10 @@ import java.util.regex.Pattern;
  * Class encapsulating most of device-specific logic: metrics, info, etc.
  */
 
-public class Device {
-    public static Device dev = new Device();
+public class DeviceCore {
+    public static DeviceCore dev = new DeviceCore();
 
-    protected Device () {
+    protected DeviceCore() {
         dev = this;
     }
 

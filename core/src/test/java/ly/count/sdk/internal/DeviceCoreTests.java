@@ -3,11 +3,11 @@ package ly.count.sdk.internal;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class DeviceTests {
+public class DeviceCoreTests {
 
     @Test
     public void testAsIs() {
-        Device.UniqueTimeGenerator simulator = new Device.UniqueTimeGenerator();
+        DeviceCore.UniqueTimeGenerator simulator = new DeviceCore.UniqueTimeGenerator();
 
         long last = simulator.timestamp();
 
@@ -19,7 +19,7 @@ public class DeviceTests {
 
     @Test
     public void testMidTimeChange() {
-        Device.UniqueTimeGenerator simulator = new Device.UniqueTimeGenerator();
+        DeviceCore.UniqueTimeGenerator simulator = new DeviceCore.UniqueTimeGenerator();
 
         long last = simulator.timestamp();
 
@@ -52,7 +52,7 @@ public class DeviceTests {
 
     @Test
     public void testMidTimeRandomChange() {
-        Device.UniqueTimeGenerator simulator = new Device.UniqueTimeGenerator();
+        DeviceCore.UniqueTimeGenerator simulator = new DeviceCore.UniqueTimeGenerator();
 
         long last = simulator.timestamp();
 

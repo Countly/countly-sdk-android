@@ -52,7 +52,7 @@ public class TasksTests extends BaseTests{
         });
         long now = System.nanoTime();
         other.shutdown();
-        long timeToShutdown = Device.dev.nsToMs(System.nanoTime() - now);
+        long timeToShutdown = DeviceCore.dev.nsToMs(System.nanoTime() - now);
         Log.i("time to shutdown " + timeToShutdown);
         Assert.assertTrue(Whitebox.<ExecutorService>getInternalState(other, "executor").isShutdown());
         Assert.assertTrue(Whitebox.<ExecutorService>getInternalState(other, "executor").isTerminated());

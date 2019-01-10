@@ -6,10 +6,8 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import ly.count.sdk.Event;
-import ly.count.sdk.Session;
 
 /**
  * Event base class implementation
@@ -53,9 +51,9 @@ class EventImpl implements Event, JSONable {
         this.recorder = recorder;
         this.key = key;
         this.count = 1;
-        this.timestamp = Device.dev.uniqueTimestamp();
-        this.hour = Device.dev.currentHour();
-        this.dow = Device.dev.currentDayOfWeek();
+        this.timestamp = DeviceCore.dev.uniqueTimestamp();
+        this.hour = DeviceCore.dev.currentHour();
+        this.dow = DeviceCore.dev.currentDayOfWeek();
     }
 
     @Override
@@ -68,7 +66,7 @@ class EventImpl implements Event, JSONable {
 
     @Override
     public void endAndRecord() {
-        setDuration((Device.dev.uniqueTimestamp() - timestamp) / 1000);
+        setDuration((DeviceCore.dev.uniqueTimestamp() - timestamp) / 1000);
         record();
     }
 
