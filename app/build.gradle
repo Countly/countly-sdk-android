@@ -40,8 +40,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    //implementation 'ly.count.android:core:19.01-sdk2-pre-rc'
-    //implementation 'ly.count.android:sdk:19.01-sdk2-pre-rc'
+    //implementation 'ly.count.android:sdk:19.01-sdk2-pre-rc2'
     implementation project(':sdk')
 
     implementation 'com.android.support:appcompat-v7:26.1.0'

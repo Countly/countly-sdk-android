@@ -40,7 +40,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'core'
-    publishVersion = '19.01-sdk2-pre-rc'
+    publishVersion = '19.01-sdk2-pre-rc2'
     desc = 'SDK core for Countly Java/Android SDK'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

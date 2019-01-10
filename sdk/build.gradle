@@ -24,7 +24,7 @@ android {
         minSdkVersion 9
         targetSdkVersion 26
         versionCode 1
-        versionName "19.01-sdk2-pre-rc"
+        versionName "19.01-sdk2-pre-rc2"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         testHandleProfiling true
@@ -112,7 +112,7 @@ afterEvaluate { project ->
 
                 pom.whenConfigured { pom ->
                     pom.dependencies.forEach { dep ->
-                        pom.version = "19.01-sdk2-pre-rc"
+                        pom.version = "19.01-sdk2-pre-rc2"
                         pom.artifactId = "core"
                         pom.groupId = "ly.count.android"
                     }
@@ -126,7 +126,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk'
-    publishVersion = '19.01-sdk2-pre-rc'
+    publishVersion = '19.01-sdk2-pre-rc2'
     desc = 'Android SDK for Countly mobile analytics'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

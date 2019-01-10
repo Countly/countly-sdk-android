@@ -152,7 +152,7 @@ public class ConfigTests extends BaseTests {
 
     @Test
     public void sdkVersion_default(){
-        Assert.assertEquals("19.01-sdk2-pre-rc", internalConfig.getSdkVersion());
+        Assert.assertEquals("19.01-sdk2-pre-rc2", internalConfig.getSdkVersion());
     }
 
     @Test(expected = IllegalStateException.class)
