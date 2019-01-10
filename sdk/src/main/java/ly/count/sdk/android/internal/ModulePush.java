@@ -1,27 +1,6 @@
 package ly.count.sdk.android.internal;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import ly.count.sdk.android.Config;
-import ly.count.sdk.internal.Ctx;
-import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.ModuleRequests;
-import ly.count.sdk.internal.Params;
-import ly.count.sdk.internal.Tasks;
 
 /**
  * Messaging support module.
@@ -274,6 +253,7 @@ public class ModulePush extends ModuleBase {
 //
 //    @Override
 //    public void onContextAcquired(final Ctx ctx) {
+//        super.onContextAcquired(ctx);
 //        if (config.getDeviceId(ConfigCore.DeviceIdRealm.FCM_TOKEN) == null) {
 //            Core.instance.acquireId(ctx, new ConfigCore.DID(ConfigCore.DeviceIdRealm.FCM_TOKEN, ConfigCore.DeviceIdStrategy.INSTANCE_ID, null), false, new Tasks.Callback<ConfigCore.DID>() {
 //                @Override

@@ -77,6 +77,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
 
     @Override
     public void onContextAcquired(final CtxCore ctx) {
+        super.onContextAcquired(ctx);
         // uncomment the debugger disabling line below to debug ANRs
         if (!limited) {
             if (config.getCrashReportingANRCheckingPeriod() > 0) {
@@ -112,9 +113,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
         CrashImpl crash = new CrashImpl();
 
         long running = started == 0 ? 0 : Device.dev.nsToMs(System.nanoTime() - started);
-        //crash.putMetrics(ctx, running);
-
-        //crash.putMetrics(ctx, 123L);
+        crash.putMetrics((Ctx)ctx, running);
         crash.addThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs);
 
 
