@@ -144,7 +144,7 @@ public class DeviceCore {
      *
      * @param ctx Ctx in which to request metrics
      */
-    public Params buildMetrics(final Ctx ctx) {
+    public Params buildMetrics(final CtxCore ctx) {
         Params params = new Params();
         params.obj("metrics")
                 .put("_os", getOS())

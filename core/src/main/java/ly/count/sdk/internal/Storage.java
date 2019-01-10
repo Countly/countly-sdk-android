@@ -31,7 +31,7 @@ public class Storage {
      * @param storable Object to store
      * @return true when storing succeeded, false otherwise
      */
-    public static boolean push(Ctx ctx, Storable storable) {
+    public static boolean push(CtxCore ctx, Storable storable) {
         L.d("Pushing " + name(storable));
         try {
             return pushAsync(ctx, storable).get();
@@ -50,7 +50,7 @@ public class Storage {
      * @param callback nullable callback to call when done
      * @return Future<Boolean> object which resolves as true when storing succeeded, false otherwise
      */
-    public static Future<Boolean> pushAsync(final Ctx ctx, final Storable storable, Tasks.Callback<Boolean> callback) {
+    public static Future<Boolean> pushAsync(final CtxCore ctx, final Storable storable, Tasks.Callback<Boolean> callback) {
         L.d("Pushing async " + name(storable));
         return tasks.run(new Tasks.Task<Boolean>(storable.storageId()) {
             @Override
@@ -61,13 +61,13 @@ public class Storage {
     }
 
     /**
-     * Shorthand for {@link #pushAsync(Ctx, Storable, Tasks.Callback)}
+     * Shorthand for {@link #pushAsync(CtxCore, Storable, Tasks.Callback)}
      *
      * @param ctx context to run in
      * @param storable Object to store
      * @return Future<Boolean> object which resolves as true when storing succeeded, false otherwise
      */
-    public static Future<Boolean> pushAsync(final Ctx ctx, final Storable storable) {
+    public static Future<Boolean> pushAsync(final CtxCore ctx, final Storable storable) {
         return pushAsync(ctx, storable, null);
     }
     /**
@@ -77,7 +77,7 @@ public class Storage {
      * @param storable Object to remove
      * @return true if removed, false otherwise
      */
-    public static <T extends Storable> Boolean remove(final Ctx ctx, T storable) {
+    public static <T extends Storable> Boolean remove(final CtxCore ctx, T storable) {
         L.d("removing " + name(storable));
         try {
             return removeAsync(ctx, storable, null).get();
@@ -95,7 +95,7 @@ public class Storage {
      * @param storable Object to remove
      * @return Future<Boolean> object which resolves to true if storable is removed, false otherwise
      */
-    public static <T extends Storable> Future<Boolean> removeAsync(final Ctx ctx, final T storable, Tasks.Callback<Boolean> callback) {
+    public static <T extends Storable> Future<Boolean> removeAsync(final CtxCore ctx, final T storable, Tasks.Callback<Boolean> callback) {
         return tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
             @Override
             public Boolean call() throws Exception {
@@ -112,7 +112,7 @@ public class Storage {
      * @param storable Object to reinitialize
      * @return storable object passed as param when restoring succeeded, null otherwise
      */
-    public static <T extends Storable> T pop(Ctx ctx, T storable) {
+    public static <T extends Storable> T pop(CtxCore ctx, T storable) {
         L.d("Popping " + name(storable));
         try {
             return popAsync(ctx, storable).get();
@@ -130,7 +130,7 @@ public class Storage {
      * @param storable Object to reinitialize
      * @return Future<Storable> object which resolves as object passed as param when restoring succeeded, null otherwise
      */
-    public static <T extends Storable> Future<T> popAsync(final Ctx ctx, final T storable) {
+    public static <T extends Storable> Future<T> popAsync(final CtxCore ctx, final T storable) {
         return tasks.run(new Tasks.Task<T>(-storable.storageId()) {
             @Override
             public T call() throws Exception {
@@ -151,7 +151,7 @@ public class Storage {
      * @param prefix Object to reinitialize
      * @return storable object passed as param when reading succeeded, null otherwise
      */
-    static <T extends Storable> boolean transform(final Ctx ctx, final String prefix, final Transformer transformer) {
+    static <T extends Storable> boolean transform(final CtxCore ctx, final String prefix, final Transformer transformer) {
         L.d("readAll " + prefix);
         try {
             return tasks.run(new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
@@ -190,7 +190,7 @@ public class Storage {
      * @param storable Object to reinitialize
      * @return storable object passed as param when reading succeeded, null otherwise
      */
-    public static <T extends Storable> T read(Ctx ctx, T storable) {
+    public static <T extends Storable> T read(CtxCore ctx, T storable) {
         L.d("read " + name(storable));
         try {
             return readAsync(ctx, storable).get();
@@ -208,7 +208,7 @@ public class Storage {
      * @param storable Object to reinitialize
      * @return Future<Storable> object which resolves as object passed as param when reading succeeded, null otherwise
      */
-    public static <T extends Storable> Future<T> readAsync(final Ctx ctx, final T storable) {
+    public static <T extends Storable> Future<T> readAsync(final CtxCore ctx, final T storable) {
         return readAsync(ctx, storable, null);
     }
 
@@ -221,7 +221,7 @@ public class Storage {
      * @param callback Callback to call with read result
      * @return Future<Storable> object which resolves as object passed as param when reading succeeded, null otherwise
      */
-    public static <T extends Storable> Future<T> readAsync(final Ctx ctx, final T storable, final Tasks.Callback<T> callback) {
+    public static <T extends Storable> Future<T> readAsync(final CtxCore ctx, final T storable, final Tasks.Callback<T> callback) {
         return tasks.run(new Tasks.Task<T>(-storable.storageId()) {
             @Override
             public T call() throws Exception {
@@ -248,7 +248,7 @@ public class Storage {
      * @param asc true if reading first storable, false if reading last one
      * @return storable object passed as param when reading succeeded, null otherwise
      */
-    public static <T extends Storable> T readOne(Ctx ctx, T storable, boolean asc) {
+    public static <T extends Storable> T readOne(CtxCore ctx, T storable, boolean asc) {
         L.d("readOne " + storable.storagePrefix());
         try {
             return readOneAsync(ctx, storable, asc).get();
@@ -267,7 +267,7 @@ public class Storage {
      * @param asc true if reading first storable, false if reading last one
      * @return Future<Storable> object which resolves as object passed as param when reading succeeded, null otherwise
      */
-    public static <T extends Storable> Future<T> readOneAsync(final Ctx ctx, final T storable, final boolean asc) {
+    public static <T extends Storable> Future<T> readOneAsync(final CtxCore ctx, final T storable, final boolean asc) {
         return tasks.run(new Tasks.Task<T>(-storable.storageId()) {
             @Override
             public T call() throws Exception {
@@ -293,7 +293,7 @@ public class Storage {
      * @param prefix String representing type of storable to list (prefix of file names)
      * @return List<Long> object which resolves as list of storable ids, not null
      */
-    public static List<Long> list(Ctx ctx, String prefix) {
+    public static List<Long> list(CtxCore ctx, String prefix) {
         return list(ctx, prefix, 0);
     }
 
@@ -308,7 +308,7 @@ public class Storage {
      *              -1..-N to return last N records ordered from last to first
      * @return List<Long> object which resolves as list of storable ids, not null
      */
-    public static List<Long> list(Ctx ctx, String prefix, int slice) {
+    public static List<Long> list(CtxCore ctx, String prefix, int slice) {
         L.d("Listing " + prefix);
         try {
             return listAsync(ctx, prefix, slice).get();
@@ -329,7 +329,7 @@ public class Storage {
      *              -1..-N to return last N records ordered from last to first
      * @return Future<List<Long>> object which resolves as list of storable ids, not null
      */
-    public static Future<List<Long>> listAsync(final Ctx ctx, final String prefix, final int slice) {
+    public static Future<List<Long>> listAsync(final CtxCore ctx, final String prefix, final int slice) {
         return tasks.run(new Tasks.Task<List<Long>>(Tasks.ID_STRICT) {
             @Override
             public List<Long> call() throws Exception {

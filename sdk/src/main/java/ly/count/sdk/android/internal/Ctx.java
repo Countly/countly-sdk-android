@@ -3,7 +3,9 @@ package ly.count.sdk.android.internal;
 import android.app.Activity;
 import android.app.Application;
 
-public interface Ctx extends ly.count.sdk.internal.Ctx {
+import ly.count.sdk.internal.CtxCore;
+
+public interface Ctx extends CtxCore {
     @Override
     android.content.Context getContext();
 

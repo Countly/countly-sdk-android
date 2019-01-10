@@ -4,19 +4,18 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 
 import ly.count.sdk.android.Config;
-import ly.count.sdk.internal.Ctx;
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.ModuleRequests;
 import ly.count.sdk.internal.Request;
-import ly.count.sdk.internal.SDKCore;
 import ly.count.sdk.internal.Tasks;
 
 /**
  * Attribution plugin implementation:
  * <ul>
- *     <li>Get Advertising ID from {@link ModuleDeviceId#acquireId(Ctx, Config.DID, boolean, Tasks.Callback)}, save it in {@link InternalConfig}</li>
+ *     <li>Get Advertising ID from {@link ModuleDeviceId#acquireId(CtxCore, Config.DID, boolean, Tasks.Callback)}, save it in {@link InternalConfig}</li>
  *     <li>Implement {@link android.content.BroadcastReceiver} listening & decoding for INSTALL_REFERRER broadcast</li>
  *     <li>Sends corresponding requests if needed</li>
  * </ul>
@@ -112,10 +111,10 @@ public class ModuleAttribution extends ModuleBase {
 
     /**
      * Getting {@link Config.DeviceIdRealm#ADVERTISING_ID} procedure.
-     * Works in line with {@link Module#onDeviceId(Ctx, Config.DID, Config.DID)} in some cases.
+     * Works in line with {@link Module#onDeviceId(CtxCore, Config.DID, Config.DID)} in some cases.
      */
     @Override
-    public void onContextAcquired(final Ctx ctx) {
+    public void onContextAcquired(final CtxCore ctx) {
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID.getIndex()) {
             L.d("waiting for ModuleDeviceId to finish acquiring ADVERTISING_ID");
         } else {
@@ -150,10 +149,10 @@ public class ModuleAttribution extends ModuleBase {
 
     /**
      * Getting {@link Config.DeviceIdRealm#ADVERTISING_ID} procedure.
-     * Works in line with {@link #onContextAcquired(Ctx)}} in some cases.
+     * Works in line with {@link #onContextAcquired(CtxCore)}} in some cases.
      */
     @Override
-    public void onDeviceId(Ctx ctx, Config.DID deviceId, Config.DID oldDeviceId) {
+    public void onDeviceId(CtxCore ctx, Config.DID deviceId, Config.DID oldDeviceId) {
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID.getIndex() && deviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID.getIndex()) {
             if (deviceId.strategy == Config.DeviceIdStrategy.ADVERTISING_ID.getIndex()) {
                 L.d("waiting for ModuleDeviceId to finish acquiring ADVERTISING_ID done: " + deviceId);

@@ -16,14 +16,14 @@ public class BaseTests {
     protected static String SERVER = "http://www.serverurl.com";
     protected static String APP_KEY = "1234";
 
-    protected Ctx ctx;
+    protected CtxCore ctx;
     protected InternalConfig config = null;
     protected Module dummy = null;
     protected Utils utils = null;
 
     protected SDKCore sdk = null;
 
-    public class CtxImpl implements Ctx {
+    public class CtxImpl implements CtxCore {
         private SDKInterface sdk;
         private Object ctx;
         private InternalConfig config;

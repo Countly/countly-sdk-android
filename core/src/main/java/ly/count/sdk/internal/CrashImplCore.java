@@ -229,7 +229,7 @@ public class CrashImplCore implements Crash, Storable {
         return "crash";
     }
 
-    public CrashImplCore putMetrics(Ctx ctx, Long runningTime) {
+    public CrashImplCore putMetricsCore(CtxCore ctx, Long runningTime) {
         return add("_os", DeviceCore.dev.getOS())
                 .add("_os_version", DeviceCore.dev.getOSVersion())
                 .add("_ram_current", DeviceCore.dev.getRAMAvailable())

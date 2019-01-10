@@ -19,11 +19,11 @@ public abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void onDeviceId(Ctx ctx, ConfigCore.DID deviceId, ConfigCore.DID oldDeviceId) {
+    public void onDeviceId(CtxCore ctx, ConfigCore.DID deviceId, ConfigCore.DID oldDeviceId) {
     }
 
     @Override
-    public void stop(Ctx ctx, boolean clear) {
+    public void stop(CtxCore ctx, boolean clear) {
     }
 
     @Override
@@ -32,57 +32,57 @@ public abstract class ModuleBase implements Module {
     }
 
     @Override
-    public void onContextAcquired(Ctx ctx) {
+    public void onContextAcquired(CtxCore ctx) {
     }
 
     @Override
-    public void onLimitedContextAcquired(Ctx ctx) {
+    public void onLimitedContextAcquired(CtxCore ctx) {
     }
 
     @Override
-    public void onActivityCreated(Ctx ctx) {
+    public void onActivityCreated(CtxCore ctx) {
     }
 
     @Override
-    public void onActivityStarted(Ctx ctx) {
+    public void onActivityStarted(CtxCore ctx) {
     }
 
     @Override
-    public void onActivityResumed(Ctx ctx) {
+    public void onActivityResumed(CtxCore ctx) {
     }
 
     @Override
-    public void onActivityPaused(Ctx ctx) {
+    public void onActivityPaused(CtxCore ctx) {
     }
 
     @Override
-    public void onActivityStopped(Ctx ctx) {
+    public void onActivityStopped(CtxCore ctx) {
     }
 
     @Override
-    public void onActivitySaveInstanceState(Ctx ctx) {
+    public void onActivitySaveInstanceState(CtxCore ctx) {
     }
 
     @Override
-    public void onActivityDestroyed(Ctx ctx) {
+    public void onActivityDestroyed(CtxCore ctx) {
     }
 
     @Override
-    public void onSessionBegan(Session session, Ctx ctx) {
+    public void onSessionBegan(Session session, CtxCore ctx) {
     }
 
     @Override
-    public void onSessionEnded(Session session, Ctx ctx) {
+    public void onSessionEnded(Session session, CtxCore ctx) {
     }
 
     @Override
-    public void onUserChanged(Ctx ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved){
+    public void onUserChanged(CtxCore ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved){
     }
 
     @Override
     public Boolean onRequest (Request request) { return false; }
 
     @Override
-    public void onConfigurationChanged(Ctx ctx) {}
+    public void onConfigurationChanged(CtxCore ctx) {}
 
 }

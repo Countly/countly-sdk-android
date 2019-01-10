@@ -15,10 +15,10 @@ public interface SDKInterface {
     UserImpl user();
     InternalConfig config();
 
-    void init(Ctx ctx);
-    void stop(Ctx ctx, boolean clear);
+    void init(CtxCore ctx);
+    void stop(CtxCore ctx, boolean clear);
 
-    void onDeviceId(Ctx ctx, ConfigCore.DID id, ConfigCore.DID old);
+    void onDeviceId(CtxCore ctx, ConfigCore.DID id, ConfigCore.DID old);
 
     SessionImpl getSession();
 
@@ -29,7 +29,7 @@ public interface SDKInterface {
      * @param id ID of new {@link SessionImpl} if needed
      * @return current {@link SessionImpl} instance
      */
-    SessionImpl session(Ctx ctx, Long id);
+    SessionImpl session(CtxCore ctx, Long id);
 
     /**
      * Notify all {@link Module} instances about new session has just been started
@@ -37,7 +37,7 @@ public interface SDKInterface {
      * @param session session to begin
      * @return supplied session for method chaining
      */
-    SessionImpl onSessionBegan(Ctx ctx, SessionImpl session);
+    SessionImpl onSessionBegan(CtxCore ctx, SessionImpl session);
 
     /**
      * Notify all {@link Module} instances session was ended
@@ -45,25 +45,25 @@ public interface SDKInterface {
      * @param session session to end
      * @return supplied session for method chaining
      */
-    SessionImpl onSessionEnded(Ctx ctx, SessionImpl session);
+    SessionImpl onSessionEnded(CtxCore ctx, SessionImpl session);
 
-    void onRequest(Ctx ctx, Request request);
-    void onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String[] logs);
-    void onUserChanged(Ctx ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved);
+    void onRequest(CtxCore ctx, Request request);
+    void onCrash(CtxCore ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String[] logs);
+    void onUserChanged(CtxCore ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved);
 
     // -------------------- Storage -----------------------
-    int storablePurge(Ctx ctx, String prefix);
-    Boolean storableWrite(Ctx ctx, String prefix, Long id, byte[] data);
-    <T extends Storable> Boolean storableWrite(Ctx ctx, T storable);
-    <T extends Storable> Boolean storableRead(Ctx ctx, T storable);
-    byte[] storableReadBytes(Ctx ctx, String name);
-    byte[] storableReadBytes(Ctx ctx, String prefix, Long id);
-    <T extends Storable> Map.Entry<Long, byte[]> storableReadBytesOneOf(Ctx ctx, T storable, boolean asc);
-    <T extends Storable> Boolean storableRemove(Ctx ctx, T storable);
-    <T extends Storable> Boolean storablePop(Ctx ctx, T storable);
-    List<Long> storableList(Ctx ctx, String prefix, int slice);
+    int storablePurge(CtxCore ctx, String prefix);
+    Boolean storableWrite(CtxCore ctx, String prefix, Long id, byte[] data);
+    <T extends Storable> Boolean storableWrite(CtxCore ctx, T storable);
+    <T extends Storable> Boolean storableRead(CtxCore ctx, T storable);
+    byte[] storableReadBytes(CtxCore ctx, String name);
+    byte[] storableReadBytes(CtxCore ctx, String prefix, Long id);
+    <T extends Storable> Map.Entry<Long, byte[]> storableReadBytesOneOf(CtxCore ctx, T storable, boolean asc);
+    <T extends Storable> Boolean storableRemove(CtxCore ctx, T storable);
+    <T extends Storable> Boolean storablePop(CtxCore ctx, T storable);
+    List<Long> storableList(CtxCore ctx, String prefix, int slice);
 
     // -------------------- Service ------------------------
-    void onSignal(Ctx ctx, int id, Byteable param1, Byteable param2);
-    void onSignal(Ctx ctx, int id, String param);
+    void onSignal(CtxCore ctx, int id, Byteable param1, Byteable param2);
+    void onSignal(CtxCore ctx, int id, String param);
 }

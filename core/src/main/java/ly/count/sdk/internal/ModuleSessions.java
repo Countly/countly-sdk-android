@@ -22,7 +22,7 @@ public class ModuleSessions extends ModuleBase {
         return session;
     }
 
-    public synchronized SessionImpl session(Ctx ctx, Long id) {
+    public synchronized SessionImpl session(CtxCore ctx, Long id) {
         if (session == null) {
             session = new SessionImpl(ctx, id);
         }
@@ -48,7 +48,7 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
-    public void onContextAcquired(Ctx ctx) {
+    public void onContextAcquired(CtxCore ctx) {
         super.onContextAcquired(ctx);
 
         try {
@@ -68,7 +68,7 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
-    public void stop(Ctx ctx, boolean clear) {
+    public void stop(CtxCore ctx, boolean clear) {
         if (!clear) {
             Storage.pushAsync(ctx, timedEvents);
         }
@@ -96,9 +96,9 @@ public class ModuleSessions extends ModuleBase {
 
     /**
      * Handles one single case of device id change with auto sessions handling, see first {@code if} here:
-     * @see ModuleDeviceId#onDeviceId(Ctx, ConfigCore.DID, ConfigCore.DID)
+     * @see ModuleDeviceId#onDeviceId(CtxCore, ConfigCore.DID, ConfigCore.DID)
      */
-    public void onDeviceId(final Ctx ctx, final ConfigCore.DID deviceId, final ConfigCore.DID oldDeviceId) {
+    public void onDeviceId(final CtxCore ctx, final ConfigCore.DID deviceId, final ConfigCore.DID oldDeviceId) {
         L.d("onDeviceId " + deviceId + ", old " + oldDeviceId);
         if (deviceId != null && oldDeviceId != null && deviceId.realm == ConfigCore.DID.REALM_DID && !deviceId.equals(oldDeviceId) && getSession() == null) {
             session(ctx, null).begin();
@@ -106,7 +106,7 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
-    public synchronized void onActivityStarted(Ctx ctx) {
+    public synchronized void onActivityStarted(CtxCore ctx) {
         if (ctx.getConfig().isAutoSessionsTrackingEnabled() && activityCount == 0) {
             if (getSession() == null) {
                 L.i("starting new session");
@@ -129,7 +129,7 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
-    public synchronized void onActivityStopped(Ctx ctx) {
+    public synchronized void onActivityStopped(CtxCore ctx) {
         activityCount--;
         if (activityCount == 0) {
             if (executor == null && ctx.getConfig().isAutoSessionsTrackingEnabled()) {

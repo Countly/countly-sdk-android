@@ -8,7 +8,7 @@ package ly.count.sdk.internal;
  * </ul>
  */
 
-public interface Ctx {
+public interface CtxCore {
     Object getContext();
     InternalConfig getConfig();
     SDKInterface getSDK();

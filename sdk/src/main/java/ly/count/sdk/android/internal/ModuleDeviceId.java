@@ -7,6 +7,7 @@ import android.provider.Settings;
 
 import ly.count.sdk.ConfigCore;
 import ly.count.sdk.android.Config;
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.DeviceIdGenerator;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Utils;
@@ -25,7 +26,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
             }
 
             @Override
-            public String generate(ly.count.sdk.internal.Ctx context, int realm) {
+            public String generate(CtxCore context, int realm) {
                 if (realm != ConfigCore.DID.REALM_DID) {
                     return null;
                 }
@@ -50,7 +51,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
             }
 
             @Override
-            public String generate(ly.count.sdk.internal.Ctx context, int realm) {
+            public String generate(CtxCore context, int realm) {
                 if (realm != ConfigCore.DID.REALM_DID && realm != Config.DeviceIdRealm.ADVERTISING_ID.getIndex()) {
                     return null;
                 }
@@ -101,7 +102,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
             }
 
             @Override
-            public String generate(ly.count.sdk.internal.Ctx context, int realm) {
+            public String generate(CtxCore context, int realm) {
                 if (realm != ConfigCore.DID.REALM_DID && realm != Config.DeviceIdRealm.FCM_TOKEN.getIndex()) {
                     return null;
                 }
@@ -151,7 +152,7 @@ public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
      * @param ctx Ctx
      */
     @Override
-    public void onContextAcquired(final ly.count.sdk.internal.Ctx ctx) {
+    public void onContextAcquired(final CtxCore ctx) {
         if (ctx.getConfig().getDeviceId() == null) {
             // either fresh install, or migration from legacy SDK
 

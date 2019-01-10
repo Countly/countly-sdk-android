@@ -2,19 +2,19 @@ package ly.count.sdk;
 
 import java.util.Map;
 
-import ly.count.sdk.internal.Ctx;
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.SDKInterface;
 
 public abstract class Cly implements Usage {
     protected static Cly cly;
-    protected Ctx ctx;
+    protected CtxCore ctx;
     protected SDKInterface sdk;
 
     protected Cly() {
         cly = this;
     }
 
-    protected static Session session(Ctx ctx) {
+    protected static Session session(CtxCore ctx) {
         return cly.sdk.session(ctx, null);
     }
 

@@ -38,14 +38,14 @@ public interface Module {
      *     <li>Remove all module-related {@link Storable} files if {@code clear} is {@code true}</li>
      * </ul>
      *
-     * @param ctx {@link Ctx} to run in
+     * @param ctx {@link CtxCore} to run in
      * @param clear {@code true} if module must clear it's data files, {@code false} otherwise
      */
-    void stop(Ctx ctx, boolean clear);
+    void stop(CtxCore ctx, boolean clear);
 
     /**
      * A method to be used by module itself to determine if it was initialized by {@link #init(InternalConfig)}
-     * and haven't been stopped yet by {@link #stop(Ctx, boolean)}.
+     * and haven't been stopped yet by {@link #stop(CtxCore, boolean)}.
      *
      * @return {@code true} if module is allowed to continue to run, {@code false} otherwise
      */
@@ -54,17 +54,17 @@ public interface Module {
     /**
      * SDK got a first context. Called only in main mode (from {@code Application#onCreate()})
      *
-     * @param ctx {@link Ctx} with application instance
+     * @param ctx {@link CtxCore} with application instance
      */
-    void onContextAcquired(Ctx ctx);
+    void onContextAcquired(CtxCore ctx);
 
     /**
      * SDK got a first context. Called only in {@link InternalConfig#limited} mode,
      * that is from {@code CountlyService} or {@code android.content.BroadcastReceiver}.
      *
-     * @param ctx {@link Ctx} with application context instance
+     * @param ctx {@link CtxCore} with application context instance
      */
-    void onLimitedContextAcquired(Ctx ctx);
+    void onLimitedContextAcquired(CtxCore ctx);
 
     /**
      * Device ID has been acquired from device id provider.
@@ -75,69 +75,69 @@ public interface Module {
      * @param deviceId deviceId valid from now on
      * @param oldDeviceId deviceId valid previously if any
      */
-    void onDeviceId(Ctx ctx, ConfigCore.DID deviceId, ConfigCore.DID oldDeviceId);
+    void onDeviceId(CtxCore ctx, ConfigCore.DID deviceId, ConfigCore.DID oldDeviceId);
 
     /**
      * Activity is being created.
      *
-     * @param ctx {@link Ctx} with activity set
+     * @param ctx {@link CtxCore} with activity set
      */
-    void onActivityCreated (Ctx ctx);
+    void onActivityCreated (CtxCore ctx);
 
     /**
      * Activity is being launched.
-     * @param ctx {@link Ctx} with activity set
+     * @param ctx {@link CtxCore} with activity set
      */
-    void onActivityStarted (Ctx ctx);
+    void onActivityStarted (CtxCore ctx);
 
     /**
      * Activity is being resumed.
      *
-     * @param ctx {@link Ctx} with activity set
+     * @param ctx {@link CtxCore} with activity set
      */
-    void onActivityResumed (Ctx ctx);
+    void onActivityResumed (CtxCore ctx);
 
     /**
      * Activity is being paused.
      *
-     * @param ctx {@link Ctx} with activity set
+     * @param ctx {@link CtxCore} with activity set
      */
-    void onActivityPaused (Ctx ctx);
+    void onActivityPaused (CtxCore ctx);
 
     /**
      * Activity is being stopped.
      *
-     * @param ctx {@link Ctx} with activity set
+     * @param ctx {@link CtxCore} with activity set
      */
-    void onActivityStopped (Ctx ctx);
+    void onActivityStopped (CtxCore ctx);
 
     /**
      * Activity is saving state.
      *
-     * @param ctx {@link Ctx} with activity set
+     * @param ctx {@link CtxCore} with activity set
      */
-    void onActivitySaveInstanceState(Ctx ctx);
+    void onActivitySaveInstanceState(CtxCore ctx);
 
     /**
      * Activity is being destroyed.
      *
-     * @param ctx {@link Ctx} with activity set
+     * @param ctx {@link CtxCore} with activity set
      */
-    void onActivityDestroyed (Ctx ctx);
+    void onActivityDestroyed (CtxCore ctx);
 
     /**
      * Session is started.
      *
      * @param session session which began
      */
-    void onSessionBegan(Session session, Ctx ctx);
+    void onSessionBegan(Session session, CtxCore ctx);
 
     /**
      * Session is ended.
      *
      * @param session session which ended
      */
-    void onSessionEnded (Session session, Ctx ctx);
+    void onSessionEnded (Session session, CtxCore ctx);
 
     /**
      * User object has been changed.
@@ -147,7 +147,7 @@ public interface Module {
      * @param cohortsAdded set of cohorts this user has just been added to
      * @param cohortsRemoved set of cohorts this user has just been removed from
      */
-    void onUserChanged(Ctx ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved);
+    void onUserChanged(CtxCore ctx, JSONObject changes, Set<String> cohortsAdded, Set<String> cohortsRemoved);
 
     /**
      * This method is called only on owning module only if module marks request as owned ({@link Request#own(Class)}.
@@ -162,9 +162,9 @@ public interface Module {
     /**
      * Called when {@code android.content.res.Configuration} changes.
      *
-     * @param ctx {@link Ctx} with only context set
+     * @param ctx {@link CtxCore} with only context set
      */
-    void onConfigurationChanged(Ctx ctx);
+    void onConfigurationChanged(CtxCore ctx);
 
     /**
      * @return Module feature index if any

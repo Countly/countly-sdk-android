@@ -12,7 +12,7 @@ public class ModuleRating extends ModuleBase {
     protected static final Log.Module L = Log.module("Rating");
 
     InternalConfig internalConfig = null;
-    protected Ctx _ctx = null;
+    protected CtxCore _ctx = null;
 
     @Override
     public void init(InternalConfig config) {
@@ -20,16 +20,16 @@ public class ModuleRating extends ModuleBase {
     }
 
     @Override
-    public void onContextAcquired(Ctx ctx) {
+    public void onContextAcquired(CtxCore ctx) {
         initiate(ctx);
     }
 
     @Override
-    public void onLimitedContextAcquired(Ctx ctx) {
+    public void onLimitedContextAcquired(CtxCore ctx) {
         initiate(ctx);
     }
 
-    void initiate(Ctx ctx){
+    void initiate(CtxCore ctx){
         _ctx = ctx;
     }
 

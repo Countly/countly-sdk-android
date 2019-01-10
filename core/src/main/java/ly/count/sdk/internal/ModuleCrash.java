@@ -35,7 +35,7 @@ public class ModuleCrash extends ModuleBase {
     }
 
     @Override
-    public void stop(Ctx ctx, boolean clear) {
+    public void stop(CtxCore ctx, boolean clear) {
         try {
             if (previousHandler != null) {
                 Thread.setDefaultUncaughtExceptionHandler(previousHandler);
@@ -49,7 +49,7 @@ public class ModuleCrash extends ModuleBase {
     }
 
     @Override
-    public void onContextAcquired(final Ctx ctx) {
+    public void onContextAcquired(final CtxCore ctx) {
         if (!limited) {
             previousHandler = Thread.getDefaultUncaughtExceptionHandler();
             final Thread.UncaughtExceptionHandler handler = Thread.getDefaultUncaughtExceptionHandler();
@@ -77,13 +77,13 @@ public class ModuleCrash extends ModuleBase {
         return CoreFeature.CrashReporting.getIndex();
     }
 
-    public CrashImplCore onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+    public CrashImplCore onCrash(CtxCore ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
         return onCrash(ctx, new CrashImplCore().addThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs));
     }
 
-    public CrashImplCore onCrash(Ctx ctx, CrashImplCore crash) {
+    public CrashImplCore onCrash(CtxCore ctx, CrashImplCore crash) {
         long running = started == 0 ? 0 : DeviceCore.dev.nsToMs(System.nanoTime() - started);
-        crash.putMetrics(ctx, running);
+        crash.putMetricsCore(ctx, running);
         if (crashProcessor != null) {
             try {
                 Crash result = crashProcessor.process(crash);

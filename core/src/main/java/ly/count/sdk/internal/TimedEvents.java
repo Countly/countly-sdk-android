@@ -25,7 +25,7 @@ class TimedEvents implements Storable, EventImpl.EventRecorder {
         return events.keySet();
     }
 
-    EventImpl event(Ctx ctx, String key) {
+    EventImpl event(CtxCore ctx, String key) {
         EventImpl event = events.get(key);
         if (event == null) {
             event = new EventImpl(this, key);

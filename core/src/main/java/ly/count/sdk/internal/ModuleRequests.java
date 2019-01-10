@@ -23,7 +23,7 @@ public class ModuleRequests extends ModuleBase {
     }
 
     @Override
-    public void onContextAcquired(Ctx ctx) {
+    public void onContextAcquired(CtxCore ctx) {
         super.onContextAcquired(ctx);
         ModuleRequests.metrics = DeviceCore.dev.buildMetrics(ctx);
     }
@@ -33,7 +33,7 @@ public class ModuleRequests extends ModuleBase {
         return CoreFeature.Requests.getIndex();
     }
 
-    private static Request sessionRequest(Ctx ctx, SessionImpl session, String type, Long value) {
+    private static Request sessionRequest(CtxCore ctx, SessionImpl session, String type, Long value) {
         Request request = Request.build();
 
         if (SDKCore.enabled(CoreFeature.Sessions) && session != null) {
@@ -84,17 +84,17 @@ public class ModuleRequests extends ModuleBase {
         return request;
     }
 
-    public static Future<Boolean> sessionBegin(Ctx ctx, SessionImpl session) {
+    public static Future<Boolean> sessionBegin(CtxCore ctx, SessionImpl session) {
         Request request = sessionRequest(ctx, session, "begin_session", 1L);
         return request.isEmpty() ? null : pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> sessionUpdate(Ctx ctx, SessionImpl session, Long seconds) {
+    public static Future<Boolean> sessionUpdate(CtxCore ctx, SessionImpl session, Long seconds) {
         Request request = sessionRequest(ctx, session, "session_duration", seconds);
         return request.isEmpty() ? null : pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> sessionEnd(Ctx ctx, SessionImpl session, Long seconds, String did, Tasks.Callback<Boolean> callback) {
+    public static Future<Boolean> sessionEnd(CtxCore ctx, SessionImpl session, Long seconds, String did, Tasks.Callback<Boolean> callback) {
         Request request = sessionRequest(ctx, session, "end_session", 1L);
 
         if (did != null && Utils.isNotEqual(did, request.params.get(Params.PARAM_DEVICE_ID))) {
@@ -120,7 +120,7 @@ public class ModuleRequests extends ModuleBase {
         }
     }
 
-    public static Future<Boolean> location(Ctx ctx, double latitude, double longitude) {
+    public static Future<Boolean> location(CtxCore ctx, double latitude, double longitude) {
         if (!SDKCore.enabled(CoreFeature.Location)) {
             return null;
         }
@@ -130,20 +130,20 @@ public class ModuleRequests extends ModuleBase {
         return pushAsync(ctx, request);
     }
 
-    public static Future<Boolean> changeId(Ctx ctx, InternalConfig config, Ctx context, String oldId) {
+    public static Future<Boolean> changeId(CtxCore ctx, InternalConfig config, CtxCore context, String oldId) {
         // TODO
         return null;
     }
 
-    public static Request nonSessionRequest(Ctx ctx) {
+    public static Request nonSessionRequest(CtxCore ctx) {
         return sessionRequest(ctx, null, null, null);
     }
 
-    public static Request nonSessionRequest(Ctx ctx, Long timestamp) {
+    public static Request nonSessionRequest(CtxCore ctx, Long timestamp) {
         return new Request(timestamp);
     }
 
-    public static void injectParams(Ctx ctx, ParamsInjector injector) {
+    public static void injectParams(CtxCore ctx, ParamsInjector injector) {
         SessionImpl session = SDKCore.instance.getSession();
         if (session == null) {
             Request request = nonSessionRequest(ctx);
@@ -188,7 +188,7 @@ public class ModuleRequests extends ModuleBase {
      * @param request Request to store
      * @return {@link Future} which resolves to {@code} true if stored successfully, false otherwise
      */
-    public static Future<Boolean> pushAsync(Ctx ctx, Request request) {
+    public static Future<Boolean> pushAsync(CtxCore ctx, Request request) {
         return pushAsync(ctx, request, null);
     }
 
@@ -200,7 +200,7 @@ public class ModuleRequests extends ModuleBase {
      * @param callback Callback (nullable) to call when storing is done, called in {@link Storage} {@link Thread}
      * @return {@link Future} which resolves to {@code} true if stored successfully, false otherwise
      */
-    public static Future<Boolean> pushAsync(final Ctx ctx, final Request request, final Tasks.Callback<Boolean> callback) {
+    public static Future<Boolean> pushAsync(final CtxCore ctx, final Request request, final Tasks.Callback<Boolean> callback) {
         L.d("New request " + request.storageId() + ": " + request);
 
         if (request.isEmpty()) {

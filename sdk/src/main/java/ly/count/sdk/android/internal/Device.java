@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.DeviceCore;
 import ly.count.sdk.internal.Params;
 
@@ -227,7 +228,7 @@ public class Device extends DeviceCore {
      * @param sdkctx Ctx in which to request metrics
      */
     @Override
-    public Params buildMetrics(final ly.count.sdk.internal.Ctx sdkctx) {
+    public Params buildMetrics(final CtxCore sdkctx) {
         Ctx ctx = (Ctx) sdkctx;
         android.content.Context context = ctx.getContext();
         Params params = new Params();

@@ -38,7 +38,7 @@ public abstract class SDKCore extends SDKModules {
         instance = this;
     }
 
-    protected InternalConfig prepareConfig(Ctx ctx) {
+    protected InternalConfig prepareConfig(CtxCore ctx) {
         InternalConfig loaded = null;
         try {
             loaded = Storage.read(ctx, new InternalConfig());
@@ -54,7 +54,7 @@ public abstract class SDKCore extends SDKModules {
         }
     }
 
-    public void init(final Ctx ctx) {
+    public void init(final CtxCore ctx) {
         L.i("Initializing Countly in " + (ctx.getConfig().isLimited() ? "limited" : "full") + " mode");
 
         config = prepareConfig(ctx);
@@ -114,7 +114,7 @@ public abstract class SDKCore extends SDKModules {
 
     }
 
-    protected void onLimitedContextAcquired(final Ctx ctx) {
+    protected void onLimitedContextAcquired(final CtxCore ctx) {
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -123,7 +123,7 @@ public abstract class SDKCore extends SDKModules {
         });
     }
 
-    protected void onContextAcquired(final Ctx ctx) {
+    protected void onContextAcquired(final CtxCore ctx) {
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -132,7 +132,7 @@ public abstract class SDKCore extends SDKModules {
         });
     }
 
-    public void stop(final Ctx ctx, final boolean clear) {
+    public void stop(final CtxCore ctx, final boolean clear) {
         if (instance == null) {
             return;
         }
@@ -165,7 +165,7 @@ public abstract class SDKCore extends SDKModules {
     }
 
     @Override
-    public void onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String[] logs) {
+    public void onCrash(CtxCore ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String[] logs) {
         ModuleCrash module = (ModuleCrash) module(CoreFeature.CrashReporting.getIndex());
         if (module != null) {
             module.onCrash(ctx, t, fatal, name, segments, logs);
@@ -173,7 +173,7 @@ public abstract class SDKCore extends SDKModules {
     }
 
     @Override
-    public void onUserChanged(final Ctx ctx, final JSONObject changes, final Set<String> cohortsAdded, final Set<String> cohortsRemoved) {
+    public void onUserChanged(final CtxCore ctx, final JSONObject changes, final Set<String> cohortsAdded, final Set<String> cohortsRemoved) {
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -183,7 +183,7 @@ public abstract class SDKCore extends SDKModules {
     }
 
     @Override
-    public void onDeviceId(Ctx ctx, ConfigCore.DID id, ConfigCore.DID old) {
+    public void onDeviceId(CtxCore ctx, ConfigCore.DID id, ConfigCore.DID old) {
         L.d((config.isLimited() ? "limited" : "non-limited") + " onDeviceId " + id + ", old " + old);
 
         if (config.isLimited()) {
@@ -232,19 +232,19 @@ public abstract class SDKCore extends SDKModules {
     }
 
 
-    public Future<ConfigCore.DID> acquireId(final Ctx ctx, final ConfigCore.DID holder, final boolean fallbackAllowed, final Tasks.Callback<ConfigCore.DID> callback) {
+    public Future<ConfigCore.DID> acquireId(final CtxCore ctx, final ConfigCore.DID holder, final boolean fallbackAllowed, final Tasks.Callback<ConfigCore.DID> callback) {
         return ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).acquireId(ctx, holder, fallbackAllowed, callback);
     }
 
-    public void login(Ctx ctx, String id) {
+    public void login(CtxCore ctx, String id) {
         ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).login(ctx, id);
     }
 
-    public void logout(Ctx ctx) {
+    public void logout(CtxCore ctx) {
         ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).logout(ctx);
     }
 
-    public void resetDeviceId(Ctx ctx, String id) {
+    public void resetDeviceId(CtxCore ctx, String id) {
         ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).resetDeviceId(ctx, id);
     }
 
@@ -271,7 +271,7 @@ public abstract class SDKCore extends SDKModules {
         }
     }
 
-    protected void recover (Ctx ctx) {
+    protected void recover (CtxCore ctx) {
         List<Long> crashes = Storage.list(ctx, CrashImplCore.getStoragePrefix());
 
         for (Long id : crashes) {

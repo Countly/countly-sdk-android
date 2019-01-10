@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import ly.count.sdk.internal.Byteable;
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
@@ -38,7 +39,7 @@ public abstract class SDKLifecycle extends SDKCore {
     }
 
     @Override
-    public void stop(ly.count.sdk.internal.Ctx ctx, boolean clear) {
+    public void stop(CtxCore ctx, boolean clear) {
         super.stop(ctx, clear);
         config = null;
     }
@@ -49,7 +50,7 @@ public abstract class SDKLifecycle extends SDKCore {
      * it's developer responsibility. In any case, for API 14+ Countly ignores dev calls.
      */
     @Override
-    protected void onContextAcquired(final ly.count.sdk.internal.Ctx ctx) {
+    protected void onContextAcquired(final CtxCore ctx) {
         L.d("Application created");
 
         final Application application;
@@ -292,7 +293,7 @@ public abstract class SDKLifecycle extends SDKCore {
     }
 
     @Override
-    public void onSignal(ly.count.sdk.internal.Ctx ctx, int id, Byteable param1, Byteable param2) {
+    public void onSignal(CtxCore ctx, int id, Byteable param1, Byteable param2) {
         Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
         intent.putExtra(CountlyService.CMD, id);
         if (param1 != null) {
@@ -305,7 +306,7 @@ public abstract class SDKLifecycle extends SDKCore {
     }
 
     @Override
-    public void onSignal(ly.count.sdk.internal.Ctx ctx, int id, String param) {
+    public void onSignal(CtxCore ctx, int id, String param) {
         if (ctx.getConfig().isDefaultNetworking()) {
             if (id == Signal.Crash.getIndex()) {
                 try {

@@ -36,7 +36,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
      */
     protected final Long id;
 
-    protected final Ctx ctx;
+    protected final CtxCore ctx;
 
     /**
      * {@link System#nanoTime()} of {@link #begin()}, {@link #update()} and {@link #end()} calls respectively.
@@ -71,7 +71,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     /**
      * Create session with current time as id.
      */
-    protected SessionImpl(Ctx ctx) {
+    protected SessionImpl(CtxCore ctx) {
         this.id = DeviceCore.dev.uniformTimestamp();
         this.ctx = ctx;
     }
@@ -79,7 +79,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     /**
      * Deserialization constructor (use existing id).
      */
-    protected SessionImpl(Ctx ctx, Long id) {
+    protected SessionImpl(CtxCore ctx, Long id) {
         this.ctx = ctx;
         this.id = id == null ? DeviceCore.dev.uniformTimestamp() : id;
     }

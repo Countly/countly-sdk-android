@@ -26,9 +26,9 @@ public class UserImpl extends User implements Storable {
     Integer birthyear;
     Set<String> cohorts;
     Map<String, Object> custom;
-    Ctx ctx;
+    CtxCore ctx;
 
-    UserImpl(Ctx ctx) {
+    UserImpl(CtxCore ctx) {
         this.ctx = ctx;
         this.custom = new HashMap<>();
         this.cohorts = new HashSet<>();

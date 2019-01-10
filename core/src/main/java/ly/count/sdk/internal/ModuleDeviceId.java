@@ -31,7 +31,7 @@ public class ModuleDeviceId extends ModuleBase {
         }
 
         @Override
-        public String generate(Ctx context, int realm) {
+        public String generate(CtxCore context, int realm) {
             return UUID.randomUUID().toString();
         }
     }
@@ -83,7 +83,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param ctx Ctx
      */
     @Override
-    public void onContextAcquired(final Ctx ctx) {
+    public void onContextAcquired(final CtxCore ctx) {
         if (ctx.getConfig().getDeviceId() == null) {
             // either fresh install, or migration from legacy SDK
 
@@ -115,7 +115,7 @@ public class ModuleDeviceId extends ModuleBase {
     }
 
     @Override
-    public void onDeviceId(final Ctx ctx, final ConfigCore.DID deviceId, final ConfigCore.DID oldDeviceId) {
+    public void onDeviceId(final CtxCore ctx, final ConfigCore.DID deviceId, final ConfigCore.DID oldDeviceId) {
         if (ctx.getConfig().isLimited()) {
             return;
         }
@@ -190,7 +190,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param deviceId deviceId string
      * @return {@code true} if {@link Request}s changed successfully, {@code false} otherwise
      */
-    private boolean transformRequests(final Ctx ctx, final String deviceId) {
+    private boolean transformRequests(final CtxCore ctx, final String deviceId) {
         return Storage.transform(ctx, Request.getStoragePrefix(), new Transformer() {
             @Override
             public byte[] doTheJob(Long id, byte[] data) {
@@ -205,13 +205,13 @@ public class ModuleDeviceId extends ModuleBase {
     }
 
     /**
-     * Just a wrapper around {@link SDKInterface#onSignal(Ctx, int, Byteable, Byteable)}} for {@link ly.count.sdk.internal.SDKCore.Signal#DID} case
+     * Just a wrapper around {@link SDKInterface#onSignal(CtxCore, int, Byteable, Byteable)}} for {@link ly.count.sdk.internal.SDKCore.Signal#DID} case
      *
      * @param ctx Ctx to run in
      * @param id new {@link ConfigCore.DID} if any
      * @param old old {@link ConfigCore.DID} if any
      */
-    private void sendDIDSignal(Ctx ctx, ConfigCore.DID id, ConfigCore.DID old) {
+    private void sendDIDSignal(CtxCore ctx, ConfigCore.DID id, ConfigCore.DID old) {
         L.d("Sending device id signal: " + id + ", was " + old);
         SDKCore.instance.onSignal(ctx, SDKCore.Signal.DID.getIndex(), id, old);
     }
@@ -224,7 +224,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param ctx ctx to run in
      * @param id device id to change to
      */
-    public void login(Ctx ctx, String id) {
+    public void login(CtxCore ctx, String id) {
         if (Utils.isEmpty(id)) {
             L.wtf("Empty id passed to login method");
         } else {
@@ -244,7 +244,7 @@ public class ModuleDeviceId extends ModuleBase {
      *
      * @param ctx context to run in
      */
-    public void logout(final Ctx ctx) {
+    public void logout(final CtxCore ctx) {
         final ConfigCore.DID old = ctx.getConfig().getDeviceId();
         ctx.getConfig().removeDeviceId(old);
         Storage.push(ctx, ctx.getConfig());
@@ -273,7 +273,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param ctx context to run in
      * @param id new user id
      */
-    public void resetDeviceId(Ctx ctx, String id) {
+    public void resetDeviceId(CtxCore ctx, String id) {
         if (Utils.isEmpty(id)) {
             L.wtf("Empty id passed to resetId method");
         } else {
@@ -286,7 +286,7 @@ public class ModuleDeviceId extends ModuleBase {
         }
     }
 
-    protected Future<ConfigCore.DID> acquireId(final Ctx ctx, final ConfigCore.DID holder, final boolean fallbackAllowed, final Tasks.Callback<ConfigCore.DID> callback) {
+    protected Future<ConfigCore.DID> acquireId(final CtxCore ctx, final ConfigCore.DID holder, final boolean fallbackAllowed, final Tasks.Callback<ConfigCore.DID> callback) {
         L.d("d4");
         if (this.tasks == null) {
             this.tasks = new Tasks("deviceId");
@@ -309,7 +309,7 @@ public class ModuleDeviceId extends ModuleBase {
      * @param fallbackAllowed whether to automatically fallback to any available alternative or not
      * @return {@link ConfigCore.DID} instance with an id
      */
-    protected ConfigCore.DID acquireIdSync(final Ctx ctx, final ConfigCore.DID holder, final boolean fallbackAllowed) {
+    protected ConfigCore.DID acquireIdSync(final CtxCore ctx, final ConfigCore.DID holder, final boolean fallbackAllowed) {
         if (testSleep > 0) {
             try {
                 Thread.sleep(testSleep);
@@ -365,12 +365,12 @@ public class ModuleDeviceId extends ModuleBase {
         return null;
     }
 
-    protected void callOnDeviceId(Ctx ctx, ConfigCore.DID id, ConfigCore.DID old) {
+    protected void callOnDeviceId(CtxCore ctx, ConfigCore.DID id, ConfigCore.DID old) {
         SDKCore.instance.onDeviceId(ctx, id, old);
     }
 
     @Override
-    public void stop(Ctx ctx, boolean clear) {
+    public void stop(CtxCore ctx, boolean clear) {
         if (tasks != null) {
             tasks.shutdown();
             tasks = null;

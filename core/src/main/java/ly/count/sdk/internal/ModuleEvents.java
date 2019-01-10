@@ -40,7 +40,7 @@ public class ModuleEvents extends ModuleBase {
     }
 
     @Override
-    public void stop(Ctx ctx, boolean clear) {
+    public void stop(CtxCore ctx, boolean clear) {
         if (!clear) {
             dumpEvents(ctx);
         }
@@ -48,7 +48,7 @@ public class ModuleEvents extends ModuleBase {
     }
 
     @Override
-    public void onSessionBegan(Session session, Ctx ctx) {
+    public void onSessionBegan(Session session, CtxCore ctx) {
         this.session = session;
         if (events != null && events.size() > 0) {
             for (Event event : events) {
@@ -59,11 +59,11 @@ public class ModuleEvents extends ModuleBase {
     }
 
     @Override
-    public void onSessionEnded(Session session, Ctx ctx) {
+    public void onSessionEnded(Session session, CtxCore ctx) {
         this.session = null;
     }
 
-    private void dumpEvents(Ctx ctx) {
+    private void dumpEvents(CtxCore ctx) {
         if (events != null && events.size() > SDKCore.instance.config().getEventsBufferSize()) {
             Request request = ModuleRequests.nonSessionRequest(ctx);
             request.params.arr("events").put(events);
@@ -71,7 +71,7 @@ public class ModuleEvents extends ModuleBase {
         }
     }
 
-    public Event event(Ctx ctx, String name) {
+    public Event event(CtxCore ctx, String name) {
         ModuleSessions sessions = (ModuleSessions)SDKCore.instance.module(CoreFeature.Sessions.getIndex());
         dumpEvents(ctx);
         return new EventImpl(sessions == null || sessions.getSession() == null ? recorder : sessions.getSession(), name);

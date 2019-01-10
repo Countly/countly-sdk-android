@@ -60,12 +60,12 @@ public abstract class SDKModules implements SDKInterface {
     }
 
     @Override
-    public void init(Ctx ctx) {
+    public void init(CtxCore ctx) {
         prepareMappings(ctx);
     }
 
     @Override
-    public void stop(final Ctx ctx, final boolean clear) {
+    public void stop(final CtxCore ctx, final boolean clear) {
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -86,7 +86,7 @@ public abstract class SDKModules implements SDKInterface {
      *
      * @param consent consents to add
      */
-    public void onConsent(Ctx ctx, int consent) {
+    public void onConsent(CtxCore ctx, int consent) {
         for (Integer feature : moduleMappings.keySet()) {
             if (ctx.getConfig().isFeatureEnabled(feature) && (feature & consent) > 0 && !modules.containsKey(feature)) {
                 Class<? extends Module> cls = moduleMappings.get(feature);
@@ -112,7 +112,7 @@ public abstract class SDKModules implements SDKInterface {
      *
      * @param noConsent consents to remove
      */
-    public void onConsentRemoval(Ctx ctx, int noConsent) {
+    public void onConsentRemoval(CtxCore ctx, int noConsent) {
         for (Integer feature : moduleMappings.keySet()) {
             if ((feature & noConsent) > 0 && modules.containsKey(feature)) {
                 Module module = module(feature);
@@ -129,11 +129,11 @@ public abstract class SDKModules implements SDKInterface {
      * Uses {@link #moduleMappings} for {@code ConfigCore.Feature} / {@link CoreFeature}
      * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
-     * @param ctx {@link Ctx} object containing config with mapping overrides
+     * @param ctx {@link CtxCore} object containing config with mapping overrides
      * @throws IllegalArgumentException in case some {@link Module} finds {@link #config} inconsistent.
      * @throws IllegalStateException when this module is run second time on the same {@code Core} instance.
      */
-    protected void prepareMappings(Ctx ctx) throws IllegalStateException {
+    protected void prepareMappings(CtxCore ctx) throws IllegalStateException {
         if (modules.size() > 0) {
             throw new IllegalStateException("Modules can only be built once");
         }
@@ -152,12 +152,12 @@ public abstract class SDKModules implements SDKInterface {
      * Uses {@link #moduleMappings} for {@code ConfigCore.Feature} / {@link CoreFeature}
      * - Class&lt;Module&gt; mapping to enable overriding by app developer.
      *
-     * @param ctx {@link Ctx} object
+     * @param ctx {@link CtxCore} object
      * @param features consents bitmask to check against
      * @throws IllegalArgumentException in case some {@link Module} finds {@link #config} inconsistent.
      * @throws IllegalStateException when this module is run second time on the same {@code Core} instance.
      */
-    protected void buildModules(Ctx ctx, int features) throws IllegalArgumentException, IllegalStateException {
+    protected void buildModules(CtxCore ctx, int features) throws IllegalArgumentException, IllegalStateException {
         // override module mappings in native/Android parts, overriding by ConfigCore ones if necessary
 
         if (modules.size() > 0) {
@@ -245,7 +245,7 @@ public abstract class SDKModules implements SDKInterface {
     }
 
     @Override
-    public SessionImpl onSessionBegan(Ctx ctx, SessionImpl session){
+    public SessionImpl onSessionBegan(CtxCore ctx, SessionImpl session){
         for (Module m : modules.values()) {
             m.onSessionBegan(session, ctx);
         }
@@ -253,7 +253,7 @@ public abstract class SDKModules implements SDKInterface {
     }
 
     @Override
-    public SessionImpl onSessionEnded(Ctx ctx, SessionImpl session){
+    public SessionImpl onSessionEnded(CtxCore ctx, SessionImpl session){
         for (Module m : modules.values()) {
             m.onSessionEnded(session, ctx);
         }
@@ -274,7 +274,7 @@ public abstract class SDKModules implements SDKInterface {
     }
 
     @Override
-    public SessionImpl session(Ctx ctx, Long id) {
+    public SessionImpl session(CtxCore ctx, Long id) {
         ModuleSessions sessions = (ModuleSessions) module(CoreFeature.Sessions.getIndex());
         if (sessions != null) {
             return sessions.session(ctx, id);

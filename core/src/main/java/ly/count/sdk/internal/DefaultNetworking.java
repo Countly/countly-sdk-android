@@ -8,7 +8,7 @@ public class DefaultNetworking implements Networking {
     private boolean shutdown;
 
     @Override
-    public void init(Ctx ctx) {
+    public void init(CtxCore ctx) {
         shutdown = false;
         transport = new Transport();
         transport.init(ctx.getConfig());
@@ -21,7 +21,7 @@ public class DefaultNetworking implements Networking {
     }
 
     @Override
-    public boolean check(Ctx ctx) {
+    public boolean check(CtxCore ctx) {
         L.d("state: shutdown " + shutdown + " / tasks running " + tasks.isRunning() + " / net running " + tasks.isRunning() + " / device id " + ctx.getConfig().getDeviceId());
         if (!shutdown && !tasks.isRunning() && !tasks.isRunning() && ctx.getConfig().getDeviceId() != null) {
             tasks.run(submit(ctx));
@@ -29,7 +29,7 @@ public class DefaultNetworking implements Networking {
         return tasks.isRunning();
     }
 
-    protected Tasks.Task<Boolean> submit(final Ctx ctx) {
+    protected Tasks.Task<Boolean> submit(final CtxCore ctx) {
         return new Tasks.Task<Boolean>(Tasks.ID_STRICT) {
             @Override
             public Boolean call() throws Exception {
@@ -67,7 +67,7 @@ public class DefaultNetworking implements Networking {
     }
 
     @Override
-    public void stop(Ctx ctx) {
+    public void stop(CtxCore ctx) {
         shutdown = true;
         tasks.shutdown();
     }

@@ -24,7 +24,7 @@ public class ModuleViews extends ModuleBase {
      * set as {@code Activity} class name.
      */
     @Override
-    public void onActivityStarted(Ctx ctx) {
+    public void onActivityStarted(CtxCore ctx) {
         Session session = SDKCore.instance.getSession();
         if (session != null && SDKCore.enabled(CoreFeature.Views) && ctx.getConfig().isAutoViewsTrackingEnabled()) {
             Class cls = ctx.getContext().getClass();
@@ -36,7 +36,7 @@ public class ModuleViews extends ModuleBase {
      * When {@code Activity} stopped, stops previously started {@link View}.
      */
     @Override
-    public void onActivityStopped(Ctx ctx) {
+    public void onActivityStopped(CtxCore ctx) {
         Session session = SDKCore.instance.getSession();
         if (session != null && SDKCore.enabled(CoreFeature.Views) && ctx.getConfig().isAutoViewsTrackingEnabled()) {
             int cls = ctx.getContext().hashCode();

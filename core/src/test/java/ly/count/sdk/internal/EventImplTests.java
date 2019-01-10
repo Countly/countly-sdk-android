@@ -17,7 +17,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(JUnit4.class)
 public class EventImplTests extends BaseTests {
-    private Ctx ctx;
+    private CtxCore ctx;
     SDKInterface sdk = mock(SDKInterface.class);
     InternalConfig config;
 

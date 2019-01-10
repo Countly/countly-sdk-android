@@ -6,7 +6,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import ly.count.sdk.android.Countly;
-import ly.count.sdk.internal.Ctx;
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 
@@ -22,7 +22,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
 
     private volatile int tickMain = 0;
     private int tickBg = 0;
-    private Ctx context = null;
+    private CtxCore context = null;
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private Runnable ticker = new Runnable() {
         @Override
@@ -62,7 +62,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
     }
 
     @Override
-    public void stop(Ctx ctx, boolean clear) {
+    public void stop(CtxCore ctx, boolean clear) {
         try {
             super.stop(ctx, clear);
             executorService.shutdownNow();
@@ -76,7 +76,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
     }
 
     @Override
-    public void onContextAcquired(final Ctx ctx) {
+    public void onContextAcquired(final CtxCore ctx) {
         // uncomment the debugger disabling line below to debug ANRs
         if (!limited) {
             if (config.getCrashReportingANRCheckingPeriod() > 0) {
@@ -97,7 +97,7 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
         executorService.schedule(checker, config.getCrashReportingANRCheckingPeriod(), TimeUnit.SECONDS);
     }
 
-    public CrashImpl onANR(Ctx ctx) {
+    public CrashImpl onANR(CtxCore ctx) {
         CrashImpl crash = new CrashImpl();
         crash.addTraces(SDK.instance.mainThread(), Thread.getAllStackTraces());
 
@@ -108,9 +108,16 @@ public class ModuleCrash extends ly.count.sdk.internal.ModuleCrash {
         return (CrashImpl) onCrash(ctx, crash);
     }
 
-    public CrashImpl onCrash(Ctx ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
+    public CrashImpl onCrash(CtxCore ctx, Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
         CrashImpl crash = new CrashImpl();
+
+        long running = started == 0 ? 0 : Device.dev.nsToMs(System.nanoTime() - started);
+        //crash.putMetrics(ctx, running);
+
+        //crash.putMetrics(ctx, 123L);
         crash.addThrowable(t).setFatal(fatal).setName(name).setSegments(segments).setLogs(logs);
+
+
 
         if (Countly.legacyMethodCrashProcessor != null) {
             Countly.legacyMethodCrashProcessor.process(crash);
