@@ -10,9 +10,10 @@ import ly.count.sdk.android.Config;
 import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.DeviceIdGenerator;
 import ly.count.sdk.internal.Log;
+import ly.count.sdk.internal.ModuleDeviceIdCore;
 import ly.count.sdk.internal.Utils;
 
-public class ModuleDeviceId extends ly.count.sdk.internal.ModuleDeviceId {
+public class ModuleDeviceId extends ModuleDeviceIdCore {
     private static final Log.Module L = Log.module("ModuleDeviceId");
 
     public static final String ADVERTISING_ID_CLIENT_CLASS_NAME = "com.google.android.gms.ads.identifier.AdvertisingIdClient";

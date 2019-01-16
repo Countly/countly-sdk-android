@@ -1,11 +1,7 @@
 package ly.count.sdk.android.internal;
 
-import android.support.annotation.NonNull;
-
 import org.junit.Test;
 
-
-import ly.count.sdk.internal.ModuleDeviceId;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -32,16 +28,16 @@ public class ModulePushTests extends BaseTests {
 
     @Test
     public void checkTokenGeneration() throws Exception {
-        ModuleDeviceId.InstIdInstance.deviceId = "123inst";
-        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
+        ModuleDeviceIdCore.InstIdInstance.deviceId = "123inst";
+        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceIdCore.INSTANCE_ID_CLASS_NAME);
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModulePush.FIREBASE_MESSAGING_CLASS);
 
-        ModuleDeviceId.InstIdInstance instance = new ModuleDeviceId.InstIdInstance();
-        doReturn(instance).when(utils)._reflectiveCall(eq(ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
+        ModuleDeviceIdCore.InstIdInstance instance = new ModuleDeviceIdCore.InstIdInstance();
+        doReturn(instance).when(utils)._reflectiveCall(eq(ModuleDeviceIdCore.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
         doReturn(instance).when(utils)._reflectiveCall(eq(ModulePush.FIREBASE_MESSAGING_CLASS), ArgumentMatchers.isNull(), eq("getInstance"));
 
         setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.INSTANCE_ID));
-        moduleDeviceId = module(ModuleDeviceId.class, false);
+        moduleDeviceId = module(ModuleDeviceIdCore.class, false);
 
         Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
         tasks.await();

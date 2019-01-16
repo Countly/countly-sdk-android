@@ -16,8 +16,8 @@ import ly.count.sdk.ConfigCore;
  *     <li>Must be able to manage different branches of ids: at least Countly device id & push device token.</li>
  * </ul>
  */
-public class ModuleDeviceId extends ModuleBase {
-    private static final Log.Module L = Log.module("ModuleDeviceId");
+public class ModuleDeviceIdCore extends ModuleBase {
+    private static final Log.Module L = Log.module("ModuleDeviceIdCore");
 
     /**
      * Tasks instance for async execution

@@ -160,7 +160,7 @@ public class Utils {
     }
 
     /**
-     * Check wether class exists in default class loader.
+     * Check whether class exists in default class loader.
      *
      * @param cls Class name to check
      * @return true if class exists, false otherwise

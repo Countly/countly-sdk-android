@@ -24,7 +24,7 @@ public class ModuleAttributionTests extends BaseTests {
 //    private static final String TEST_REFERRER = "countly_cid%3D" + TEST_CID + "%26countly_cuid%3D" + TEST_UID;
 //    private static final String INVALID_REFERRER = "some=param";
 //    private ModuleAttribution moduleAttribution = null;
-//    private ModuleDeviceId moduleDeviceId = null;
+//    private ModuleDeviceIdCore moduleDeviceId = null;
 //
 //    @Before
 //    public void setUp() throws Exception {
@@ -38,12 +38,12 @@ public class ModuleAttributionTests extends BaseTests {
 //
 //    @Test
 //    public void checkOpenUDID() throws Exception {
-//        ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-//        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-//        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
+//        ModuleDeviceIdCore.AdvIdInfo.deviceId = "123adv";
+//        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceIdCore.ADVERTISING_ID_CLIENT_CLASS_NAME);
+//        doReturn(new ModuleDeviceIdCore.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceIdCore.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 //
 //        setUpApplication(defaultConfig());
-//        moduleDeviceId = module(ModuleDeviceId.class, false);
+//        moduleDeviceId = module(ModuleDeviceIdCore.class, false);
 //
 //        Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
 //        tasks.await();
@@ -63,12 +63,12 @@ public class ModuleAttributionTests extends BaseTests {
 //
 //    @Test
 //    public void checkAdvertisingId() throws Exception {
-//        ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-//        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-//        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
+//        ModuleDeviceIdCore.AdvIdInfo.deviceId = "123adv";
+//        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceIdCore.ADVERTISING_ID_CLIENT_CLASS_NAME);
+//        doReturn(new ModuleDeviceIdCore.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceIdCore.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 //
 //        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ADVERTISING_ID));
-//        moduleDeviceId = module(ModuleDeviceId.class, false);
+//        moduleDeviceId = module(ModuleDeviceIdCore.class, false);
 //
 //        Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
 //        tasks.await();
@@ -88,11 +88,11 @@ public class ModuleAttributionTests extends BaseTests {
 //
 //    @Test
 //    public void requestNoAdId() throws Exception {
-//        ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-//        doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
+//        ModuleDeviceIdCore.AdvIdInfo.deviceId = "123adv";
+//        doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceIdCore.ADVERTISING_ID_CLIENT_CLASS_NAME);
 //
 //        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ANDROID_ID));
-//        moduleDeviceId = module(ModuleDeviceId.class, false);
+//        moduleDeviceId = module(ModuleDeviceIdCore.class, false);
 //        moduleAttribution = module(ModuleAttribution.class, false);
 //
 //        Tasks tasks = Utils.reflectiveGetField(moduleDeviceId, "tasks");
@@ -103,12 +103,12 @@ public class ModuleAttributionTests extends BaseTests {
 //
 //    @Test
 //    public void requestAdId() throws Exception {
-//        ModuleDeviceId.AdvIdInfo.deviceId = "123adv";
-//        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-//        doReturn(new ModuleDeviceId.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
+//        ModuleDeviceIdCore.AdvIdInfo.deviceId = "123adv";
+//        doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceIdCore.ADVERTISING_ID_CLIENT_CLASS_NAME);
+//        doReturn(new ModuleDeviceIdCore.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceIdCore.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 //
 //        setUpApplication(defaultConfig().setDeviceIdStrategy(ConfigCore.DeviceIdStrategy.ANDROID_ID));
-//        moduleDeviceId = module(ModuleDeviceId.class, false);
+//        moduleDeviceId = module(ModuleDeviceIdCore.class, false);
 //        moduleAttribution = module(ModuleAttribution.class, false);
 //
 //        Request request = new Request().own(ModuleAttribution.class);
@@ -119,7 +119,7 @@ public class ModuleAttributionTests extends BaseTests {
 //        tasks.await();
 //
 //        Assert.assertTrue(moduleAttribution.onRequest(request));
-//        Assert.assertTrue(request.params.toString().contains(ModuleAttribution.CLY_AID + "=" + ModuleDeviceId.AdvIdInfo.deviceId));
+//        Assert.assertTrue(request.params.toString().contains(ModuleAttribution.CLY_AID + "=" + ModuleDeviceIdCore.AdvIdInfo.deviceId));
 //    }
 //
 //    @Test

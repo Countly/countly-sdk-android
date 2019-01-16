@@ -233,19 +233,19 @@ public abstract class SDKCore extends SDKModules {
 
 
     public Future<ConfigCore.DID> acquireId(final CtxCore ctx, final ConfigCore.DID holder, final boolean fallbackAllowed, final Tasks.Callback<ConfigCore.DID> callback) {
-        return ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).acquireId(ctx, holder, fallbackAllowed, callback);
+        return ((ModuleDeviceIdCore)module(CoreFeature.DeviceId.getIndex())).acquireId(ctx, holder, fallbackAllowed, callback);
     }
 
     public void login(CtxCore ctx, String id) {
-        ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).login(ctx, id);
+        ((ModuleDeviceIdCore)module(CoreFeature.DeviceId.getIndex())).login(ctx, id);
     }
 
     public void logout(CtxCore ctx) {
-        ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).logout(ctx);
+        ((ModuleDeviceIdCore)module(CoreFeature.DeviceId.getIndex())).logout(ctx);
     }
 
     public void resetDeviceId(CtxCore ctx, String id) {
-        ((ModuleDeviceId)module(CoreFeature.DeviceId.getIndex())).resetDeviceId(ctx, id);
+        ((ModuleDeviceIdCore)module(CoreFeature.DeviceId.getIndex())).resetDeviceId(ctx, id);
     }
 
     public static boolean enabled(int feature) {

@@ -24,7 +24,7 @@ public abstract class SDKModules implements SDKInterface {
     }
 
     static {
-        registerDefaultModuleMapping(CoreFeature.DeviceId.getIndex(), ModuleDeviceId.class);
+        registerDefaultModuleMapping(CoreFeature.DeviceId.getIndex(), ModuleDeviceIdCore.class);
         registerDefaultModuleMapping(CoreFeature.Requests.getIndex(), ModuleRequests.class);
         registerDefaultModuleMapping(CoreFeature.Logs.getIndex(), Log.class);
         registerDefaultModuleMapping(CoreFeature.Views.getIndex(), ModuleViews.class);

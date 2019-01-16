@@ -96,7 +96,7 @@ public class ModuleSessions extends ModuleBase {
 
     /**
      * Handles one single case of device id change with auto sessions handling, see first {@code if} here:
-     * @see ModuleDeviceId#onDeviceId(CtxCore, ConfigCore.DID, ConfigCore.DID)
+     * @see ModuleDeviceIdCore#onDeviceId(CtxCore, ConfigCore.DID, ConfigCore.DID)
      */
     public void onDeviceId(final CtxCore ctx, final ConfigCore.DID deviceId, final ConfigCore.DID oldDeviceId) {
         L.d("onDeviceId " + deviceId + ", old " + oldDeviceId);

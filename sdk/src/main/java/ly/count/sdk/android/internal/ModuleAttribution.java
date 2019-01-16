@@ -116,7 +116,7 @@ public class ModuleAttribution extends ModuleBase {
     @Override
     public void onContextAcquired(final CtxCore ctx) {
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID.getIndex()) {
-            L.d("waiting for ModuleDeviceId to finish acquiring ADVERTISING_ID");
+            L.d("waiting for ModuleDeviceIdCore to finish acquiring ADVERTISING_ID");
         } else {
             Config.DID did = config.getDeviceId();
             Config.DID adv = config.getDeviceId(Config.DeviceIdRealm.ADVERTISING_ID.getIndex());
@@ -155,10 +155,10 @@ public class ModuleAttribution extends ModuleBase {
     public void onDeviceId(CtxCore ctx, Config.DID deviceId, Config.DID oldDeviceId) {
         if (config.getDeviceIdStrategy() == Config.DeviceIdStrategy.ADVERTISING_ID.getIndex() && deviceId != null && deviceId.realm == Config.DeviceIdRealm.DEVICE_ID.getIndex()) {
             if (deviceId.strategy == Config.DeviceIdStrategy.ADVERTISING_ID.getIndex()) {
-                L.d("waiting for ModuleDeviceId to finish acquiring ADVERTISING_ID done: " + deviceId);
+                L.d("waiting for ModuleDeviceIdCore to finish acquiring ADVERTISING_ID done: " + deviceId);
                 SDK.instance.onDeviceId(ctx, new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID.getIndex(), Config.DeviceIdStrategy.ADVERTISING_ID.getIndex(), deviceId.id), null);
             } else {
-                L.w("no ADVERTISING_ID available, Countly Attribution is unavailable after ModuleDeviceId flow");
+                L.w("no ADVERTISING_ID available, Countly Attribution is unavailable after ModuleDeviceIdCore flow");
                 advertisingIdNotAvailable = true;
             }
         } else if (deviceId != null && deviceId.realm == Config.DeviceIdRealm.ADVERTISING_ID.getIndex()) {
