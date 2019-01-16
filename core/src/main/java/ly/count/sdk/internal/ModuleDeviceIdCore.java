@@ -36,9 +36,23 @@ public class ModuleDeviceIdCore extends ModuleBase {
         }
     }
 
+    private static final class CustomIDGenerator implements DeviceIdGenerator {
+        @Override
+        public boolean isAvailable() {
+            return true;
+        }
+
+        @Override
+        public String generate(CtxCore context, int realm) {
+            Log.wtf("We should never be here for CustomIDGenerator");
+            return null;
+        }
+    }
+
     private static final Map<Integer, DeviceIdGenerator> generators = new HashMap<>();
     static {
         registerGenerator(ConfigCore.DID.STRATEGY_UUID, new UUIDGenerator());
+        registerGenerator(ConfigCore.DID.STRATEGY_CUSTOM, new CustomIDGenerator());
     }
 
     public static void registerGenerator(int index, DeviceIdGenerator generator) {
@@ -96,7 +110,8 @@ public class ModuleDeviceIdCore extends ModuleBase {
                 SDKCore.instance.onDeviceId(ctx, did, null);
             } else {
                 // regular flow - acquire id using specified strategy
-                acquireId(ctx, new ConfigCore.DID(ConfigCore.DID.REALM_DID, ctx.getConfig().getDeviceIdStrategy(), null), ctx.getConfig().isDeviceIdFallbackAllowed(), new Tasks.Callback<ConfigCore.DID>() {
+                ConfigCore.DID did = new ConfigCore.DID(ConfigCore.DID.REALM_DID, ctx.getConfig().getDeviceIdStrategy(), null);
+                acquireId(ctx, did, ctx.getConfig().isDeviceIdFallbackAllowed(), new Tasks.Callback<ConfigCore.DID>() {
                     @Override
                     public void call(ConfigCore.DID id) throws Exception {
                         if (id != null) {
@@ -335,7 +350,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
 //            }
 //        }
 
-        while (index > 0) {
+        while (index >= 0) {
             DeviceIdGenerator generator = generators.get(index);
             if (generator == null || !generator.isAvailable()) {
                 if (fallbackAllowed) {
