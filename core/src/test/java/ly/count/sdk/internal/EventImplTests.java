@@ -29,15 +29,12 @@ public class EventImplTests extends BaseTests {
         ctx = new BaseTests.CtxImpl(sdk, config, new Object());
     }
 
-    /*
-    //todo, fix this
     @Test
     public void constructor(){
         SessionImpl session = new SessionImpl(ctx);
         String key = "key";
         EventImpl event = new EventImpl(session, key);
 
-        Assert.assertEquals(Whitebox.getInternalState(event, "session"), session);
         Assert.assertEquals(Whitebox.getInternalState(event, "key"), key);
         Assert.assertEquals(Whitebox.getInternalState(event, "count"), 1);
         Assert.assertNull(Whitebox.getInternalState(event, "sum"));
@@ -47,7 +44,6 @@ public class EventImplTests extends BaseTests {
         Assert.assertTrue((int)Whitebox.getInternalState(event, "dow") >= 0);
         Assert.assertNull(Whitebox.getInternalState(event, "segmentation"));
     }
-    */
 
     @Test
     public void constructor_deserialize(){
@@ -62,43 +58,44 @@ public class EventImplTests extends BaseTests {
 
         Assert.assertEquals(event, EventImpl.fromJSON(event.toJSON(), session));
     }
-    /*
-        //todo, fix this
-        @Test(expected = IllegalStateException.class)
-        public void constructor_throwsIllegalStateExceptionWhenSessionIsNull() {
-            new EventImpl(null, "key");
-        }
 
-        @Test(expected = IllegalStateException.class)
-        public void constructor_throwsIllegalStateExceptionWhenKeyIsNull() {
-            new EventImpl(new SessionImpl(ctx), null);
-        }
-
-    @Test(expected = IllegalStateException.class)
-    public void constructor_throwsIllegalStateExceptionWhenKeyIsEmpty() {
-        new EventImpl(new SessionImpl(ctx), "");
+    @Test
+    public void constructor_throwsIllegalStateExceptionWhenSessionIsNull() {
+        EventImpl event = new EventImpl(null, "key");
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
     }
-    */
 
-        /*
-        //todo, fix this
-        @Test(expected = IllegalStateException.class)
-        public void segmentation_throwsIllegalStateExceptionWhenNull() {
-            SessionImpl session = new SessionImpl(ctx);
+    @Test
+    public void constructor_throwsIllegalStateExceptionWhenKeyIsNull() {
+        EventImpl event = new EventImpl(new SessionImpl(ctx), null);
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
+    }
 
-            EventImpl event = new EventImpl(session, "key");
-            Assert.assertNull(Whitebox.getInternalState(event, "segmentation"));
-            event.addSegment("k", null);
-        }
+    @Test
+    public void constructor_throwsIllegalStateExceptionWhenKeyIsEmpty() {
+        EventImpl event = new EventImpl(new SessionImpl(ctx), "");
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
+    }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
+    public void segmentation_throwsIllegalStateExceptionWhenNull() {
+        SessionImpl session = new SessionImpl(ctx);
+
+        EventImpl event = new EventImpl(session, "key");
+        Assert.assertNull(Whitebox.getInternalState(event, "segmentation"));
+        event.addSegment("k", null);
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
+    }
+
+    @Test
     public void segmentation_throwsIllegalStateExceptionWhenValueEmpty() {
         SessionImpl session = new SessionImpl(ctx);
 
         EventImpl event = new EventImpl(session, "key");
         Assert.assertNull(Whitebox.getInternalState(event, "segmentation"));
         event.addSegment("k", "");
-    }*/
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
+    }
 
     @Test
     public void segmentation_addsSegment(){
@@ -155,35 +152,37 @@ public class EventImplTests extends BaseTests {
         Assert.assertNull(((Map)Whitebox.getInternalState(event, "segmentation")).get(k2));
         Assert.assertEquals(v, ((Map)Whitebox.getInternalState(event, "segmentation")).get(k3));
     }
-/*
-    //todo, fix this
-    @Test (expected = IllegalStateException.class)
+
+    @Test
     public void sum_NaN(){
-        new EventImpl(new SessionImpl(ctx), "key").setSum(Double.NaN);
+        EventImpl event = (EventImpl)new EventImpl(new SessionImpl(ctx), "key").setSum(Double.NaN);
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
     }
-    */
-/*
-    //todo, fix this
-    @Test (expected = IllegalStateException.class)
+
+    @Test
     public void sum_Inf() {
-        new EventImpl(new SessionImpl(ctx), "key").setSum(Double.NEGATIVE_INFINITY);
+        EventImpl event = (EventImpl)new EventImpl(new SessionImpl(ctx), "key").setSum(Double.NEGATIVE_INFINITY);
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test
     public void dur_NaN(){
-        new EventImpl(new SessionImpl(ctx), "key").setDuration(Double.NaN);
+        EventImpl event = (EventImpl)new EventImpl(new SessionImpl(ctx), "key").setDuration(Double.NaN);
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test
     public void dur_Inf() {
-        new EventImpl(new SessionImpl(ctx), "key").setDuration(Double.NEGATIVE_INFINITY);
+        EventImpl event = (EventImpl)new EventImpl(new SessionImpl(ctx), "key").setDuration(Double.NEGATIVE_INFINITY);
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test
     public void dur_Neg() {
-        new EventImpl(new SessionImpl(ctx), "key").setDuration(-2);
+        EventImpl event = (EventImpl)new EventImpl(new SessionImpl(ctx), "key").setDuration(-2);
+        Assert.assertTrue((boolean)Whitebox.getInternalState(event, "invalid"));
     }
-*/
+
     @Test
     public void dur_Inf_invalid() {
         SessionImpl session = new SessionImpl(ctx);

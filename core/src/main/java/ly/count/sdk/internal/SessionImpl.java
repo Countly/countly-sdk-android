@@ -28,7 +28,7 @@ import ly.count.sdk.View;
  *
  */
 
-class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
+public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     private static final Log.Module L = Log.module("SessionImpl");
 
     /**
@@ -79,7 +79,7 @@ class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     /**
      * Deserialization constructor (use existing id).
      */
-    protected SessionImpl(CtxCore ctx, Long id) {
+    public SessionImpl(CtxCore ctx, Long id) {
         this.ctx = ctx;
         this.id = id == null ? DeviceCore.dev.uniformTimestamp() : id;
     }
