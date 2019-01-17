@@ -394,14 +394,4 @@ public class ModuleDeviceIdCore extends ModuleBase {
 
     private static long testSleep = 0L;
 
-    public static class AdvIdInfo {
-        public static String deviceId;
-        public String getId() { return deviceId; }
-    }
-
-    public static class InstIdInstance {
-        public static String deviceId;
-        public String getId() { return deviceId; }
-        public String getToken() { return deviceId; }
-    }
 }

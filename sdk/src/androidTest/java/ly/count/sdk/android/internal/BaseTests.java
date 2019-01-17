@@ -10,6 +10,7 @@ import org.powermock.reflect.Whitebox;
 import java.util.List;
 
 import ly.count.sdk.android.Config;
+import ly.count.sdk.android.Countly;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
@@ -32,7 +33,7 @@ public class BaseTests {
 
     protected Ctx ctx;
     protected InternalConfig config = null;
-    protected Module dummy = null;
+    protected Module dummy = null;//needed for checking if module calls are done
     protected Utils utils = null;
 
     protected SDK sdk = null;
@@ -65,7 +66,7 @@ public class BaseTests {
         setUpSDK(config == null ? defaultConfig() : config, false);
     }
 
-    protected void setUpService(Config config) throws Exception {
+    public void setUpService(Config config) throws Exception {
         setUpSDK(config, true);
         this.service = spy(new CountlyService());
         doReturn(ctx.getContext()).when(service).getApplicationContext();
@@ -73,13 +74,20 @@ public class BaseTests {
 
     private void setUpSDK(Config config, boolean limited) throws Exception {
         this.config = this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config;
+        this.config.setLimited(limited);
+
         new Log().init(this.config);
         this.dummy = mock(ModuleBase.class);
         Utils.reflectiveSetField(SDK.class, "testDummyModule", dummy);
         this.sdk = new SDK();
+        this.ctx = new CtxImpl(this.sdk, this.config, getContext());
         this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(this.config), application()));
         this.config = SDK.instance.config();
-        this.ctx = new CtxImpl(this.sdk, this.config, getContext());
+
+        //to make sure it seems initialised
+        Countly cly = Whitebox.invokeConstructor(Countly.class);
+        Whitebox.setInternalState(Countly.class, "cly", cly);
+        Whitebox.setInternalState(cly, "sdk", sdk);
     }
 
     @SuppressWarnings("unchecked")
@@ -129,4 +137,16 @@ public class BaseTests {
         Utils.reflectiveSetField(SDK.class, "testDummyModule", null);
     }
 
+    //region Needed for testing ModuleDeviceId
+    public static class AdvIdInfo {
+        public static String deviceId;
+        public String getId() { return deviceId; }
+    }
+
+    public static class InstIdInstance {
+        public static String deviceId;
+        public String getId() { return deviceId; }
+        public String getToken() { return deviceId; }
+    }
+    //endregion
 }
