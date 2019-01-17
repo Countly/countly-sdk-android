@@ -16,8 +16,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.xml.bind.DatatypeConverter;
-
 /**
  * Utility class
  */
@@ -466,7 +464,7 @@ public class Utils {
 
     public static class Base64 {
         public static String encode(byte[] bytes) {
-            return DatatypeConverter.printBase64Binary(bytes);
+            return ly.count.sdk.internal.Base64.encodeBytes(bytes);
         }
 
         public static String encode(String string) {
@@ -479,7 +477,14 @@ public class Utils {
         }
 
         public static byte[] decode(String string) {
-            return DatatypeConverter.parseBase64Binary(string);
+            byte[] res = null;
+            try {
+                res = ly.count.sdk.internal.Base64.decode(string);
+            } catch (IOException e) {
+                //should not get here
+                L.wtf("Error while decoding base64 string, " + e.toString());
+            }
+            return res;
         }
 
         public static String decodeToString(String string) {
