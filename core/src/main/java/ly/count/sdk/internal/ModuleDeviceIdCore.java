@@ -44,8 +44,12 @@ public class ModuleDeviceIdCore extends ModuleBase {
 
         @Override
         public String generate(CtxCore context, int realm) {
-            Log.wtf("We should never be here for CustomIDGenerator");
-            return null;
+            String customId = context.getConfig().getCustomDeviceId();
+            if(customId == null || customId.isEmpty()){
+                Log.wtf("Device ID should never be empty or null for CustomIDGenerator");
+            }
+
+            return customId;
         }
     }
 

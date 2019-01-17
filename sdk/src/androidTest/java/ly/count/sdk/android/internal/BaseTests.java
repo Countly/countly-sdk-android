@@ -62,16 +62,19 @@ public class BaseTests {
 //        Whitebox.setInternalState(Utils.class,"utils", (Utils)utils);
     }
 
+    //Call this if you want to setup the SDK for normal app use
     protected void setUpApplication(Config config) throws Exception {
         setUpSDK(config == null ? defaultConfig() : config, false);
     }
 
+    //Call this if you want to setup the SDK for service use in limited mode
     public void setUpService(Config config) throws Exception {
         setUpSDK(config, true);
         this.service = spy(new CountlyService());
         doReturn(ctx.getContext()).when(service).getApplicationContext();
     }
 
+    //common SDK setup call
     private void setUpSDK(Config config, boolean limited) throws Exception {
         this.config = this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config;
         this.config.setLimited(limited);

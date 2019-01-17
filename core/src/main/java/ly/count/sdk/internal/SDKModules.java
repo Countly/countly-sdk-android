@@ -12,7 +12,7 @@ import ly.count.sdk.ConfigCore;
 
 public abstract class SDKModules implements SDKInterface {
     private static final Log.Module L = Log.module("SDKModules");
-    private static Module testDummyModule = null;
+    private static Module testDummyModule = null;//set during testing when trying to check the SDK's lifecycle
 
     /**
      * All known mappings of {@code ConfigCore.Feature} to {@link Module} class.
@@ -180,6 +180,11 @@ public abstract class SDKModules implements SDKInterface {
                     modules.put(feature, m);
                 }
             }
+        }
+
+        // dummy module for tests if any
+        if (testDummyModule != null) {
+            modules.put(CoreFeature.TestDummy.getIndex(), testDummyModule);
         }
     }
 

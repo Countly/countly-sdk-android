@@ -359,7 +359,7 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
         return getStoragePrefix();
     }
 
-    static String getStoragePrefix() {
+    public static String getStoragePrefix() {
         return "session";
     }
 

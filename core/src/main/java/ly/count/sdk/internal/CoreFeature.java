@@ -9,6 +9,7 @@ public enum CoreFeature {
     UserProfiles(1 << 6),
     StarRating(1 << 7),
 
+    TestDummy(1 << 19),//used during testing
     DeviceId(1 << 20),
     Requests(1 << 21),
     Logs(1 << 22);

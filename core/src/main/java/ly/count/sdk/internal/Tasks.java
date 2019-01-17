@@ -46,7 +46,7 @@ public class Tasks {
      */
     private final Map<Long, Future> pending;
 
-    Tasks(final String name) {
+    public Tasks(final String name) {
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(Runnable runnable) {
@@ -66,7 +66,7 @@ public class Tasks {
      * @param <T> Callable result type
      * @return Future of task result
      */
-    <T> Future<T> run(final Task<T> task) {
+    public <T> Future<T> run(final Task<T> task) {
         return run(task, null);
     }
 
