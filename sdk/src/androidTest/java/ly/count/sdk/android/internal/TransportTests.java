@@ -1,14 +1,39 @@
 package ly.count.sdk.android.internal;
 
+import android.content.Intent;
 import android.support.test.runner.AndroidJUnit4;
+import junit.framework.Assert;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
 
-//import ly.count.sdk.internal.Network;
-//import ly.count.sdk.internal.UserEditorImpl;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.concurrent.Future;
+
+import ly.count.sdk.ConfigCore;
+import ly.count.sdk.android.Config;
+import ly.count.sdk.android.Countly;
+import ly.count.sdk.internal.InternalConfig;
+import ly.count.sdk.internal.Request;
+import ly.count.sdk.internal.Storage;
+import ly.count.sdk.internal.Tasks;
+
+import ly.count.sdk.internal.Transport;
+import ly.count.sdk.internal.UserEditorImpl;
+import ly.count.sdk.internal.UserImpl;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 
 
 @RunWith(AndroidJUnit4.class)
@@ -22,53 +47,61 @@ public class TransportTests extends BaseTests {
 
     }
 
-/*
-    private Network network;
+    private Transport network;
 
     public MockWebServer server;
 
     @Override
-    protected ConfigCore defaultConfig() throws Exception {
+    protected Config defaultConfig() throws Exception {
+        Config configC = new Config("http://localhost:" + PORT, APP_KEY).enableTestMode().setLoggingLevel(ConfigCore.LoggingLevel.DEBUG);
+        configC.setCustomDeviceId("devid");
+        return  configC;
+/*
         InternalConfig config = new InternalConfig(new ConfigCore("http://localhost:" + PORT, APP_KEY).enableTestMode().setLoggingLevel(ConfigCore.LoggingLevel.DEBUG));
-        config.setDeviceId(new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.CUSTOM_ID, "devid"));
-        return config;
+        config.setDeviceId(new ConfigCore.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.CUSTOM_ID.getIndex(), "devid"));
+        return (Config)((ConfigCore)config);//todo, does this work or will it break things? (AK, 16.01.2019)
+        */
     }
 
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        if (!testName.getMethodName().startsWith("testPin")) {
-            server = new MockWebServer();
-            server.start(PORT);
 
-            Storage.push(ctx, new InternalConfig(config == null ? defaultConfig() : config));
+        server = new MockWebServer();
+        server.start(PORT);
 
-            setUpService(defaultConfig());
+        setUpService(defaultConfig());
 
-            service.onCreate();
+        /*
+        //todo, this should be uncommented when CountlyService is fixed. (AK, 16.01.2019)
+        service.onCreate();
 
-            Utils.reflectiveSetField(service, "singleProcess", false);
+        Utils.reflectiveSetField(service, "singleProcess", false);
+        */
 //            Intent intent = new Intent();
 //            intent.putExtra(CountlyService.CMD, CountlyService.CMD_DEVICE_ID);
 //            service.onStartCommand(intent, 0, 0);
 
-            network = Whitebox.getInternalState(service, "network");
-            Utils.reflectiveSetField(network, "sleeps", false);
-        }
+        /*
+        //todo, this should be uncommented when CountlyService is fixed. (AK, 16.01.2019)
+        network = Whitebox.getInternalState(service, "network");
+        Utils.reflectiveSetField(network, "sleeps", false);
+        */
     }
 
     @After
-    public void cleanupEveryTests() throws IOException {
-        if (!testName.getMethodName().startsWith("testPin")) {
-            server.shutdown();
-        }
+    public void cleanupEveryTests() throws Exception {
+        server.shutdown();
+
+        Tasks storageTasks = Utils.reflectiveGetField(Storage.class, "tasks");
+        Whitebox.invokeMethod(storageTasks, "await");
     }
 
     @Test
     public void testOpenConnectionGET() throws Exception {
         String url = "http://try.count.ly/i?",
                 params = "a=1&b=2";
-        HttpURLConnection connection = new Network().openConnection(url, params, true);
+        HttpURLConnection connection = new Transport().openConnection(url, params, true);
         Assert.assertEquals("GET", connection.getRequestMethod());
         Assert.assertEquals(new URL(url + params), connection.getURL());
         Assert.assertEquals(false, connection.getDoOutput());
@@ -78,20 +111,22 @@ public class TransportTests extends BaseTests {
     public void testOpenConnectionPOST() throws Exception {
         String url = "http://try.count.ly/i?",
                 params = "a=1&b=2";
-        HttpURLConnection connection = new Network().openConnection(url, params, false);
+        HttpURLConnection connection = new Transport().openConnection(url, params, false);
         Assert.assertEquals("POST", connection.getRequestMethod());
         Assert.assertEquals(new URL(url), connection.getURL());
         Assert.assertEquals(true, connection.getDoOutput());
     }
 
+    /*
+    //todo, this should be uncommented when CountlyService is fixed. (AK, 16.01.2019)
     @Test
     public void test4XX() throws Exception {
         server.enqueue(new MockResponse().setBody("Baaad").setResponseCode(404));
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.REMOVE, result);
     }
 
     @Test
@@ -100,8 +135,8 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.REMOVE, result);
     }
 
     @Test
@@ -110,8 +145,8 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.RETRY, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.RETRY, result);
     }
 
     @Test
@@ -120,8 +155,8 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.RETRY, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.RETRY, result);
     }
 
     @Test
@@ -130,8 +165,8 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.OK, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.OK, result);
     }
 
     @Test
@@ -140,25 +175,25 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.OK, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.OK, result);
     }
 
-//    @Test
-//    public void testChecksum() throws Exception {
-//        server.enqueue(new MockResponse().setBody("Success").setResponseCode(200));
-//
-//        Request request = new Request("a", 1, "b", "something", "c", false);
-//
-//        Network.RequestResult result = network.send(request).call();
-//        Assert.assertEquals(Network.RequestResult.OK, result);
-//
-//        RecordedRequest rr = server.takeRequest();
-//        String query = rr.getRequestUrl().encodedQuery();
-//        String[] parts = query.split("&");
-//
-//        Assert.assertTrue(parts[parts.length - 1].startsWith("checksum256"));
-//    }
+    @Test
+    public void testChecksum() throws Exception {
+        server.enqueue(new MockResponse().setBody("Success").setResponseCode(200));
+
+        Request request = new Request("a", 1, "b", "something", "c", false);
+
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.OK, result);
+
+        RecordedRequest rr = server.takeRequest();
+        String query = rr.getRequestUrl().encodedQuery();
+        String[] parts = query.split("&");
+
+        Assert.assertTrue(parts[parts.length - 1].startsWith("checksum256"));
+    }
 
     @Test
     public void testCheckGetHeaders() throws Exception {
@@ -166,8 +201,8 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.OK, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.OK, result);
 
         RecordedRequest rr = server.takeRequest();
         Assert.assertEquals("GET", rr.getMethod());
@@ -182,8 +217,8 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", 1, "b", "something", "c", false);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.OK, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.OK, result);
 
         RecordedRequest rr = server.takeRequest();
         Assert.assertEquals("POST", rr.getMethod());
@@ -197,8 +232,8 @@ public class TransportTests extends BaseTests {
 
         Request request = new Request("a", String.format("%1000.1000s", "x"));
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.OK, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.OK, result);
 
         RecordedRequest rr = server.takeRequest();
         Assert.assertEquals("POST", rr.getMethod());
@@ -208,14 +243,14 @@ public class TransportTests extends BaseTests {
 
     @Test
     public void testMultiPart() throws Exception {
-        Utils.reflectiveSetField(Core.instance, "user", new UserImpl(ctx));
-        Core.instance.user().edit().setPicture("picturebytes".getBytes()).commit();
+        Utils.reflectiveSetField(Countly.sharedInstance(), "user", new UserImpl(ctx));
+        Countly.sharedInstance().user().edit().setPicture("picturebytes".getBytes()).commit();
         server.enqueue(new MockResponse().setResponseCode(200));
 
         Request request = new Request("k1", "value 1", "k2", 2, "k3", false, UserEditorImpl.PICTURE_PATH, UserEditorImpl.PICTURE_IN_USER_PROFILE);
 
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.OK, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.OK, result);
 
         RecordedRequest rr = server.takeRequest();
         Assert.assertEquals("POST", rr.getMethod());
@@ -247,8 +282,8 @@ public class TransportTests extends BaseTests {
         Request request2 = new Request("a", 2, "b", "something2", "c", true);
 
         Tasks tasks = new Tasks("tmp");
-        Future<Network.RequestResult> future1 = tasks.run(network.send(request1));
-        Future<Network.RequestResult> future2 = tasks.run(network.send(request2));
+        Future<Transport.RequestResult> future1 = tasks.run(network.send(request1));
+        Future<Transport.RequestResult> future2 = tasks.run(network.send(request2));
 
         Thread.sleep(1200);
         Assert.assertEquals(1, Utils.reflectiveGetField(network, "slept"));
@@ -276,25 +311,26 @@ public class TransportTests extends BaseTests {
         Assert.assertTrue(future1.isDone());
         Assert.assertFalse(future2.isDone());
         Assert.assertEquals(0, Utils.reflectiveGetField(network, "slept"));
-        Assert.assertEquals(Network.RequestResult.OK, future1.get());
+        Assert.assertEquals(Transport.RequestResult.OK, future1.get());
         Thread.sleep(1000);
         Assert.assertEquals(0, Utils.reflectiveGetField(network, "slept"));
         Assert.assertTrue(future1.isDone());
         Assert.assertTrue(future2.isDone());
-        Assert.assertEquals(Network.RequestResult.OK, future1.get());
-        Assert.assertEquals(Network.RequestResult.OK, future2.get());
+        Assert.assertEquals(Transport.RequestResult.OK, future1.get());
+        Assert.assertEquals(Transport.RequestResult.OK, future2.get());
     }
+    */
 
     @Test(expected = IllegalArgumentException.class)
     public void testPinBadKeyFormat() throws Exception {
         ConfigCore config = defaultConfigWithLogsForConfigTests().addPublicKeyPin("aaa");
-        new Network().init(new InternalConfig(config));
+        new Transport().init(new InternalConfig(config));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testPinBadCertFormat() throws Exception {
         ConfigCore config = defaultConfigWithLogsForConfigTests().addCertificatePin("aaa");
-        new Network().init(new InternalConfig(config));
+        new Transport().init(new InternalConfig(config));
     }
 
     private String validPubKeyPem = "-----BEGIN PUBLIC KEY-----\n" +
@@ -385,7 +421,7 @@ public class TransportTests extends BaseTests {
         ConfigCore config = defaultConfigWithLogsForConfigTests();
         if (isKey) config.addPublicKeyPin(value);
         else config.addCertificatePin(value);
-        Network network = new Network();
+        Transport network = new Transport();
         network.init(new InternalConfig(config));
         Assert.assertEquals(1, ((List)Utils.reflectiveGetField(network, isKey ? "keyPins" : "certPins")).size());
 
@@ -393,7 +429,7 @@ public class TransportTests extends BaseTests {
         if (isKey) config.addPublicKeyPin(value.replaceAll("\n", ""));
         else config.addCertificatePin(value.replaceAll("\n", ""));
 
-        network = new Network();
+        network = new Transport();
         network.init(new InternalConfig(config));
         Assert.assertEquals(1, ((List)Utils.reflectiveGetField(network, isKey ? "keyPins" : "certPins")).size());
     }
@@ -458,8 +494,10 @@ public class TransportTests extends BaseTests {
         testParsing(false, "cert.der");
     }
 
+    /*
+    //todo to fix these tests, CountlyService needs to be fixed/finished. (AK, 16.01.2019)
     private void setUpPinning(String[] keys, String[] certs) throws Exception {
-        ConfigCore cfg = new ConfigCore("https://count.ly", "111")
+        Config cfg = new Config("https://count.ly", "111")
                 .setLoggingLevel(ConfigCore.LoggingLevel.DEBUG)
                 .enableTestMode()
                 .setCustomDeviceId("did");
@@ -477,7 +515,7 @@ public class TransportTests extends BaseTests {
         }
 
         config = new InternalConfig(cfg);
-        config.setDeviceId(new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.CUSTOM_ID, "did"));
+        config.setDeviceId(new ConfigCore.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.CUSTOM_ID.getIndex(), "did"));
         Storage.push(ctx, config);
 
         setUpService(config);
@@ -498,8 +536,8 @@ public class TransportTests extends BaseTests {
         setUpPinning(new String[]{validPubKeyPem}, null);
 
         Request request = new Request("a", 1, "b", "something", "c", false);
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.REMOVE, result);
     }
 
     @Test
@@ -507,8 +545,8 @@ public class TransportTests extends BaseTests {
         setUpPinning(new String[]{selfSignedKey}, null);
 
         Request request = new Request("a", 1, "b", "something", "c", false);
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.RETRY, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.RETRY, result);
     }
 
     @Test
@@ -516,8 +554,8 @@ public class TransportTests extends BaseTests {
         setUpPinning(null, new String[]{validCertPem});
 
         Request request = new Request("a", 1, "b", "something", "c", false);
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.REMOVE, result);
     }
 
     @Test
@@ -525,8 +563,8 @@ public class TransportTests extends BaseTests {
         setUpPinning(null, new String[]{selfSignedCert});
 
         Request request = new Request("a", 1, "b", "something", "c", false);
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.RETRY, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.RETRY, result);
     }
 
     @Test
@@ -534,8 +572,8 @@ public class TransportTests extends BaseTests {
         setUpPinning(new String[]{selfSignedKey, validPubKeyPem}, null);
 
         Request request = new Request("a", 1, "b", "something", "c", false);
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.REMOVE, result);
     }
 
     @Test
@@ -543,8 +581,8 @@ public class TransportTests extends BaseTests {
         setUpPinning(null, new String[]{selfSignedCert, validCertPem});
 
         Request request = new Request("a", 1, "b", "something", "c", false);
-        Network.RequestResult result = network.send(request).call();
-        Assert.assertEquals(Network.RequestResult.REMOVE, result);
+        Transport.RequestResult result = network.send(request).call();
+        Assert.assertEquals(Transport.RequestResult.REMOVE, result);
     }
     */
 }

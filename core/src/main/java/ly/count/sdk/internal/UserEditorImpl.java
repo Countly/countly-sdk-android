@@ -16,7 +16,7 @@ import java.util.Set;
 import ly.count.sdk.User;
 import ly.count.sdk.UserEditor;
 
-class UserEditorImpl implements UserEditor {
+public class UserEditorImpl implements UserEditor {
     private static final Log.Module L = Log.module("UserEditorImpl");
 
     static class Op {
@@ -120,8 +120,8 @@ class UserEditorImpl implements UserEditor {
     static final String ORG = "org";
     static final String PHONE = "phone";
     static final String PICTURE = "picture";
-    static final String PICTURE_PATH = "picturePath";
-    static final String PICTURE_IN_USER_PROFILE = "[CLY]_USER_PROFILE_PICTURE";
+    public static final String PICTURE_PATH = "picturePath";
+    public static final String PICTURE_IN_USER_PROFILE = "[CLY]_USER_PROFILE_PICTURE";
     static final String GENDER = "gender";
     static final String BIRTHYEAR = "byear";
     static final String LOCALE = "locale";

@@ -26,7 +26,7 @@ public class Request implements Storable {
     /**
      * Create request from params with current time as id.
      */
-    protected Request(Object... params) {
+    public Request(Object... params) {
         this.id = DeviceCore.dev.uniformTimestamp();
         this.params = new Params(params);
     }
@@ -49,7 +49,7 @@ public class Request implements Storable {
     /**
      * Deserialization constructor (use existing id).
      */
-    protected Request(Long id) {
+    public Request(Long id) {
         this.id = id;
     }
 

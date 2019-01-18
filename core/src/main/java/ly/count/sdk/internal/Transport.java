@@ -51,7 +51,7 @@ import ly.count.sdk.User;
 
 //class Network extends ModuleBase { - may be
 
-class Transport implements X509TrustManager {
+public class Transport implements X509TrustManager {
     private static final Log.Module L = Log.module("network");
     private static final String PARAMETER_TAMPERING_DIGEST = "SHA-256";
     private static final String CHECKSUM = "checksum256";
@@ -66,13 +66,13 @@ class Transport implements X509TrustManager {
     private List<byte[]> certPins = null;   // list of parsed cert pins
     private X509TrustManager defaultTrustManager = null;    // default TrustManager to call along with Network one
 
-    enum RequestResult {
+    public enum RequestResult {
         OK,         // success
         RETRY,      // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
         REMOVE      // bad request, remove
     }
 
-    Transport() {
+    public Transport() {
     }
 
     /**
@@ -81,7 +81,7 @@ class Transport implements X509TrustManager {
      * @param config
      * @throws IllegalArgumentException
      */
-    void init (InternalConfig config) throws IllegalArgumentException {
+    public void init (InternalConfig config) throws IllegalArgumentException {
         // ssl config (cert & public key pinning)
         // sha1 signing
         // 301/302 handling, probably configurable (like allowFollowingRedirects) and with response
@@ -113,7 +113,7 @@ class Transport implements X509TrustManager {
     /**
      * For testing purposes
      */
-    HttpURLConnection openConnection(String url, String params, boolean usingGET) throws IOException {
+    public HttpURLConnection openConnection(String url, String params, boolean usingGET) throws IOException {
         URL u;
         if (usingGET) {
             u = new URL(url + params);
@@ -299,7 +299,7 @@ class Transport implements X509TrustManager {
         }
     }
 
-    Tasks.Task<RequestResult> send(final Request request) {
+    public Tasks.Task<RequestResult> send(final Request request) {
         return new Tasks.Task<RequestResult>(request.storageId()) {
             @Override
             public RequestResult call() {

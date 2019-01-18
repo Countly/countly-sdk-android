@@ -28,7 +28,7 @@ public class UserImpl extends User implements Storable {
     Map<String, Object> custom;
     CtxCore ctx;
 
-    UserImpl(CtxCore ctx) {
+    public UserImpl(CtxCore ctx) {
         this.ctx = ctx;
         this.custom = new HashMap<>();
         this.cohorts = new HashSet<>();
