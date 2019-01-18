@@ -17,7 +17,7 @@ public abstract class SDKCore extends SDKModules {
     protected static SDKCore instance;
 
     private UserImpl user;
-    private InternalConfig config;
+    public InternalConfig config;
     protected Networking networking;
 
     public enum Signal {

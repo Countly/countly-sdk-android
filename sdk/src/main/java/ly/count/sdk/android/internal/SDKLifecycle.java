@@ -25,11 +25,6 @@ import ly.count.sdk.internal.Storage;
 public abstract class SDKLifecycle extends SDKCore {
     private static final Log.Module L = Log.module("SDKLifecycle");
 
-    /**
-     * Core instance config
-     */
-    protected InternalConfig config;
-
     protected SDKLifecycle() {
         super();
     }

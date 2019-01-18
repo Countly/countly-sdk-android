@@ -39,6 +39,9 @@ public class Countly extends CountlyLifecycle {
     protected static Countly cly;
     protected SDK sdk;
 
+    //needed for testing
+    private Countly(){}
+
     protected Countly(SDK sdk, Ctx ctx) {
         super();
         cly = this;

@@ -154,7 +154,8 @@ public class Utils {
     }
 
     public static boolean reflectiveClassExists(String cls) {
-        return utils._reflectiveClassExists(cls);
+        boolean res = utils._reflectiveClassExists(cls);
+        return res;
     }
 
     /**

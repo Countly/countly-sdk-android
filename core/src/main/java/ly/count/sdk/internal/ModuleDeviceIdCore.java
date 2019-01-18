@@ -342,17 +342,6 @@ public class ModuleDeviceIdCore extends ModuleBase {
         L.i("Generating " + holder.strategy + " / " + holder.realm);
 
         int index = holder.strategy;
-//        DeviceIdGenerator generator = generators.get(index);
-//        if ((generator == null || !generator.isAvailable()) && !fallbackAllowed) {
-//            Log.wtf("Device id strategy " + index + " is not available, while fallback is not allowed. SDK won't function properly.");
-//        } else {
-//            String id = generator.generate(ctx, holder.realm);
-//            if (Utils.isNotEmpty(id)) {
-//                return new ConfigCore.DID(holder.realm, index, id);
-//            } else if (!fallbackAllowed) {
-//                Log.wtf("Device id " + index + " is not available, while fallback is not allowed. SDK won't function properly.");
-//            }
-//        }
 
         while (index >= 0) {
             DeviceIdGenerator generator = generators.get(index);

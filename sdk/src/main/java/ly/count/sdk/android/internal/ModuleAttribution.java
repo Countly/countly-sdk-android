@@ -35,7 +35,7 @@ public class ModuleAttribution extends ModuleBase {
     private String adid = null;
 
     public static class AttributionReferrerReceiver extends BroadcastReceiver {
-        private ly.count.sdk.android.internal.Ctx ctx = null;
+        private ly.count.sdk.android.internal.Ctx receiveiverCtx = null;
 
         @Override
         public void onReceive(android.content.Context context, Intent intent) {
@@ -44,9 +44,9 @@ public class ModuleAttribution extends ModuleBase {
                 pendingResult[0] = goAsync();
             }
 
-            ctx = SDK.instance.ctx(context);
-            if (ctx == null) {
-                L.wtf("No ctx in AttributionReferrerReceiver");
+            //receiveiverCtx = SDK.instance.config;// ctx(context);
+            receiveiverCtx = new CtxImpl(SDK.instance, SDK.instance.config, context);
+            if (receiveiverCtx == null) {
                 return;
             }
 
@@ -97,7 +97,7 @@ public class ModuleAttribution extends ModuleBase {
         }
 
         public Request recordRequest(String cid, String uid) {
-            Request request = ModuleRequests.nonSessionRequest(ctx);
+            Request request = ModuleRequests.nonSessionRequest(receiveiverCtx);
             request.params.add("campaign_id", cid, "campaign_user", uid);
             request.own(ModuleAttribution.class);
             return request;
@@ -127,7 +127,8 @@ public class ModuleAttribution extends ModuleBase {
                     SDK.instance.onDeviceId(ctx, adv, null);
                 } else {
                     L.d("getting ADVERTISING_ID");
-                    SDK.instance.acquireId(ctx, new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID.getIndex(), Config.DeviceIdStrategy.ADVERTISING_ID.getIndex(), null), false, new Tasks.Callback<Config.DID>() {
+                    Config.DID newDid = new Config.DID(Config.DeviceIdRealm.ADVERTISING_ID.getIndex(), Config.DeviceIdStrategy.ADVERTISING_ID.getIndex(), null);
+                    SDK.instance.acquireId(ctx, newDid, false, new Tasks.Callback<Config.DID>() {
                         @Override
                         public void call(Config.DID param) throws Exception {
                             if (param != null && param.id != null) {

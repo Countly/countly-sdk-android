@@ -42,10 +42,6 @@ public class TransportTests extends BaseTests {
     public TestName testName = new TestName();
 
     private static final int PORT = 30301;
-    @Test
-    public void filler(){
-
-    }
 
     private Transport network;
 
