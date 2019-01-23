@@ -32,7 +32,7 @@ public class Request implements Storable {
     }
 
     public Request own(Class<? extends Module> module) {
-        this.params.add("module", module.getName());
+        this.params.add(MODULE, module.getName());
         return this;
     }
 

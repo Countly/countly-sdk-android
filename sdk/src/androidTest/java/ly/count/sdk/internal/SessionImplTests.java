@@ -41,7 +41,7 @@ public class SessionImplTests extends BaseTests {
         super.setUp();
         if (testName.getMethodName().equals("session_crashRecordedWithCustomProcessor") ||
                 testName.getMethodName().equals("session_crashRecordedWithLegacyData")) {
-            setUpApplication(defaultConfig().setCrashProcessorClass(CrashProcessorImpl.class));
+            setUpApplication(defaultConfig().setCrashProcessorClass(CrashProcessorImpl.class), false);
         } else {
             setUpApplication(defaultConfig());
         }

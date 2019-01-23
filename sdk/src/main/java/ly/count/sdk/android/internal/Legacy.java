@@ -8,7 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import ly.count.sdk.internal.Log;
-import ly.count.sdk.internal.ModuleRating;
+import ly.count.sdk.internal.ModuleRatingCore;
 import ly.count.sdk.internal.ModuleRequests;
 import ly.count.sdk.internal.Params;
 import ly.count.sdk.internal.Request;
@@ -147,7 +147,7 @@ public class Legacy {
             final String KEY_DIALOG_TEXT_MESSAGE = "sr_text_message";
             final String KEY_DIALOG_TEXT_DISMISS = "sr_text_dismiss";
 
-            ModuleRating.StarRatingPreferences srp = new ModuleRating.StarRatingPreferences();
+            ModuleRatingCore.StarRatingPreferences srp = new ModuleRatingCore.StarRatingPreferences();
             JSONObject srJSON;
             try {
                 srJSON = new JSONObject(starStr);
@@ -174,6 +174,7 @@ public class Legacy {
 
             //save srp to disk
             Storage.push(ctx, srp);
+            Storage.await();
         }
 
         // TODO: city/country

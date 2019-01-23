@@ -5,14 +5,17 @@ import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 
-public class ModuleRating extends ModuleBase {
+public class ModuleRatingCore extends ModuleBase {
 
     protected static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
 
     protected static final Log.Module L = Log.module("Rating");
 
+    public final static Long storableStorageId = 123L;
+    public final static String storableStoragePrefix = "rating";
+
     InternalConfig internalConfig = null;
-    protected CtxCore _ctx = null;
+    protected CtxCore ctx = null;
 
     @Override
     public void init(InternalConfig config) {
@@ -21,16 +24,7 @@ public class ModuleRating extends ModuleBase {
 
     @Override
     public void onContextAcquired(CtxCore ctx) {
-        initiate(ctx);
-    }
-
-    @Override
-    public void onLimitedContextAcquired(CtxCore ctx) {
-        initiate(ctx);
-    }
-
-    void initiate(CtxCore ctx){
-        _ctx = ctx;
+        this.ctx = ctx;
     }
 
     @Override
@@ -39,13 +33,24 @@ public class ModuleRating extends ModuleBase {
     }
 
     /**
+     * Callbacks for star rating dialog
+     */
+    public interface RatingCallback {
+        void onRate(int rating);
+        void onDismiss();
+    }
+
+    public void PurgeRatingInfo(){
+        ctx.getSDK().storablePurge(ctx, storableStoragePrefix);
+    }
+
+    /**
      * Returns a object with the loaded preferences
      * @return
      */
-
     protected StarRatingPreferences loadStarRatingPreferences() {
         StarRatingPreferences srp = new StarRatingPreferences();
-        Storage.read(_ctx, srp);
+        Storage.read(ctx, srp);
         return srp;
     }
 
@@ -54,7 +59,94 @@ public class ModuleRating extends ModuleBase {
      * @param srp
      */
     protected void saveStarRatingPreferences(StarRatingPreferences srp) {
-        Storage.push(_ctx, srp);
+        Storage.push(ctx, srp);
+    }
+
+    /**
+     * Setting things that would be provided during initial config
+     * @param limit limit for automatic rating
+     * @param starRatingTextTitle provided title
+     * @param starRatingTextMessage provided message
+     * @param starRatingTextDismiss provided dismiss text
+     */
+    public void setStarRatingInitConfig(int limit, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
+        StarRatingPreferences srp = loadStarRatingPreferences();
+
+        if(limit >= 0) {
+            srp.sessionLimit = limit;
+        }
+
+        if(starRatingTextTitle != null) {
+            srp.dialogTextTitle = starRatingTextTitle;
+        }
+
+        if(starRatingTextMessage != null) {
+            srp.dialogTextMessage = starRatingTextMessage;
+        }
+
+        if(starRatingTextDismiss != null) {
+            srp.dialogTextDismiss = starRatingTextDismiss;
+        }
+
+        saveStarRatingPreferences(srp);
+    }
+
+    /**
+     * Set if the star rating dialog should be shown automatically
+     * @param shouldShow
+     */
+    public void setShowDialogAutomatically(boolean shouldShow) {
+        StarRatingPreferences srp = loadStarRatingPreferences();
+        srp.automaticRatingShouldBeShown = shouldShow;
+        saveStarRatingPreferences(srp);
+    }
+
+    /**
+     * Set if automatic star rating should be disabled for each new version.
+     * By default automatic star rating will be shown for every new app version.
+     * If this is set to true, star rating will be shown only once over apps lifetime
+     * @param disableAsking if set true, will not show star rating for every new app version
+     */
+    public void setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
+        StarRatingPreferences srp = loadStarRatingPreferences();
+        srp.disabledAutomaticForNewVersions = disableAsking;
+        saveStarRatingPreferences(srp);
+    }
+
+    /**
+     * Returns the session limit set for automatic star rating
+     */
+    public int getAutomaticStarRatingSessionLimit(){
+        StarRatingPreferences srp = loadStarRatingPreferences();
+        return srp.sessionLimit;
+    }
+
+    /**
+     * Returns how many sessions has star rating counted internally
+     * @return
+     */
+    public int getCurrentVersionsSessionCount(){
+        StarRatingPreferences srp = loadStarRatingPreferences();
+        return srp.sessionAmount;
+    }
+
+    /**
+     * Set the automatic star rating session count back to 0
+     */
+    public void clearAutomaticStarRatingSessionCount(){
+        StarRatingPreferences srp = loadStarRatingPreferences();
+        srp.sessionAmount = 0;
+        saveStarRatingPreferences(srp);
+    }
+
+    /**
+     * Set if the star rating dialog is cancellable
+     * @param isCancellable
+     */
+    public void setIfRatingDialogIsCancellable(boolean isCancellable){
+        StarRatingPreferences srp = loadStarRatingPreferences();
+        srp.isDialogCancellable = isCancellable;
+        saveStarRatingPreferences(srp);
     }
 
     /**
@@ -89,7 +181,7 @@ public class ModuleRating extends ModuleBase {
          * Create a JSONObject from the current state
          * @return
          */
-        JSONObject toJSON() {
+        public JSONObject toJSON() {
             final JSONObject json = new JSONObject();
 
             try {
@@ -118,49 +210,45 @@ public class ModuleRating extends ModuleBase {
          * //@param json
          * @return
          */
-        static StarRatingPreferences fromJSON(final JSONObject json) {
-
-            StarRatingPreferences srp = new StarRatingPreferences();
+        public void fromJSON(final JSONObject json) {
 
             if(json != null) {
                 try {
-                    srp.appVersion = json.getString(KEY_APP_VERSION);
-                    srp.sessionLimit = json.optInt(KEY_SESSION_LIMIT, 5);
-                    srp.sessionAmount = json.optInt(KEY_SESSION_AMOUNT, 0);
-                    srp.isShownForCurrentVersion = json.optBoolean(KEY_IS_SHOWN_FOR_CURRENT, false);
-                    srp.automaticRatingShouldBeShown = json.optBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN, true);
-                    srp.disabledAutomaticForNewVersions = json.optBoolean(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS, false);
-                    srp.automaticHasBeenShown = json.optBoolean(KEY_AUTOMATIC_HAS_BEEN_SHOWN, false);
-                    srp.isDialogCancellable = json.optBoolean(KEY_DIALOG_IS_CANCELLABLE, true);
+                    appVersion = json.getString(KEY_APP_VERSION);
+                    sessionLimit = json.optInt(KEY_SESSION_LIMIT, 5);
+                    sessionAmount = json.optInt(KEY_SESSION_AMOUNT, 0);
+                    isShownForCurrentVersion = json.optBoolean(KEY_IS_SHOWN_FOR_CURRENT, false);
+                    automaticRatingShouldBeShown = json.optBoolean(KEY_AUTOMATIC_RATING_IS_SHOWN, true);
+                    disabledAutomaticForNewVersions = json.optBoolean(KEY_DISABLE_AUTOMATIC_NEW_VERSIONS, false);
+                    automaticHasBeenShown = json.optBoolean(KEY_AUTOMATIC_HAS_BEEN_SHOWN, false);
+                    isDialogCancellable = json.optBoolean(KEY_DIALOG_IS_CANCELLABLE, true);
 
                     if(!json.isNull(KEY_DIALOG_TEXT_TITLE)) {
-                        srp.dialogTextTitle = json.getString(KEY_DIALOG_TEXT_TITLE);
+                        dialogTextTitle = json.getString(KEY_DIALOG_TEXT_TITLE);
                     }
 
                     if(!json.isNull(KEY_DIALOG_TEXT_MESSAGE)) {
-                        srp.dialogTextMessage = json.getString(KEY_DIALOG_TEXT_MESSAGE);
+                        dialogTextMessage = json.getString(KEY_DIALOG_TEXT_MESSAGE);
                     }
 
                     if(!json.isNull(KEY_DIALOG_TEXT_DISMISS)) {
-                        srp.dialogTextDismiss = json.getString(KEY_DIALOG_TEXT_DISMISS);
+                        dialogTextDismiss = json.getString(KEY_DIALOG_TEXT_DISMISS);
                     }
 
                 } catch (JSONException e) {
                     L.w("Got exception converting JSON to a StarRatingPreferences", e);
                 }
             }
-
-            return srp;
         }
 
         @Override
         public Long storageId() {
-            return 123L;
+            return ModuleRatingCore.storableStorageId;
         }
 
         @Override
         public String storagePrefix() {
-            return "rating";
+            return ModuleRatingCore.storableStoragePrefix;
         }
 
         @Override

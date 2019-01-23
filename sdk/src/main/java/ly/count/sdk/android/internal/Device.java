@@ -1,7 +1,10 @@
 package ly.count.sdk.android.internal;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.UiModeManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.FeatureInfo;
@@ -29,6 +32,8 @@ import java.util.regex.Pattern;
 import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.DeviceCore;
 import ly.count.sdk.internal.Params;
+
+import static android.content.Context.UI_MODE_SERVICE;
 
 /**
  * Class encapsulating most of device-specific logic: metrics, info, etc.
@@ -561,4 +566,41 @@ public class Device extends DeviceCore {
         return true;
     }
 
+    //https://stackoverflow.com/a/40310535
+    /**
+     * Used for detecting if current device is a tablet of phone
+     */
+    protected static boolean isDeviceTablet(Activity activity) {
+        Context activityContext = activity;
+        boolean device_large = ((activityContext.getResources().getConfiguration().screenLayout &
+                Configuration.SCREENLAYOUT_SIZE_MASK) ==
+                Configuration.SCREENLAYOUT_SIZE_LARGE);
+
+        if (device_large) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            activity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
+
+            if (metrics.densityDpi == DisplayMetrics.DENSITY_DEFAULT
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_HIGH
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_MEDIUM
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_TV
+                    || metrics.densityDpi == DisplayMetrics.DENSITY_XHIGH) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Used for detecting if device is a tv
+     * @return
+     */
+    protected static boolean isDeviceTv(Context context){
+        UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);
+        if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

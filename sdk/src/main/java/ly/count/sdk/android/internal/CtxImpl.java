@@ -70,7 +70,8 @@ public class CtxImpl implements Ctx {
         if (expired) {
             L.wtf("Ctx is expired");
         }
-        return context != null ? context : activity != null ? activity : application;
+        android.content.Context ret = context != null ? context : activity != null ? activity : application;
+        return ret;
     }
 
     @Override
