@@ -24,4 +24,11 @@
         android:layout_height="wrap_content"
         android:id="@+id/button42"
         android:onClick="onClickStarRating"/>
+
+    <Button
+        android:id="@+id/buttonRatingWidget"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickRatingWidget"
+        android:text="ask for rating widget" />
 </LinearLayout>

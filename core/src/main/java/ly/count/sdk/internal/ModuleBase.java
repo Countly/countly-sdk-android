@@ -83,6 +83,11 @@ public abstract class ModuleBase implements Module {
     public Boolean onRequest (Request request) { return false; }
 
     @Override
+    public void onRequestCompleted(Request request, String response, int responseCode){
+
+    }
+
+    @Override
     public void onConfigurationChanged(CtxCore ctx) {}
 
 }

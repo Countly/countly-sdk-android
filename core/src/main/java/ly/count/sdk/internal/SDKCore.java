@@ -271,6 +271,23 @@ public abstract class SDKCore extends SDKModules {
         }
     }
 
+    /**
+     * After a network request has been finished
+     * propagate that response to the module
+     * that owns the request
+     * @param request the request that was sent, used to identify the request
+     */
+    public void propagateNetworkRequest(Request request, String response, int responseCode){
+        Class<? extends Module> cls = request.owner();
+        if (cls != null) {
+            Module module = module(cls);
+
+            if (module != null) {
+                module.onRequestCompleted(request, response, responseCode);
+            }
+        }
+    }
+
     protected void recover (CtxCore ctx) {
         List<Long> crashes = Storage.list(ctx, CrashImplCore.getStoragePrefix());
 

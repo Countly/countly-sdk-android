@@ -3,8 +3,10 @@ package ly.count.android.demo;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import ly.count.sdk.android.Countly;
+import ly.count.sdk.android.internal.ModuleRating;
 
 /**
  * Demo Activity explaining other features of Countly SDK:
@@ -15,10 +17,14 @@ import ly.count.sdk.android.Countly;
  */
 
 public class ActivityExampleOthers extends Activity {
+
+    Activity activity;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_others);
+        activity = this;
     }
 
     public void onClickCustomParameter(View v) {
@@ -26,6 +32,7 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickStarRating(View v) {
+        Toast.makeText(this, "onClickStarRating called", Toast.LENGTH_SHORT).show();
 //        Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
 //            @Override
 //            public void onRate(int rating) {
@@ -37,5 +44,19 @@ public class ActivityExampleOthers extends Activity {
 //                Toast.makeText(activity, "onDismiss called", Toast.LENGTH_SHORT).show();
 //            }
 //        });
+    }
+
+    public void onClickRatingWidget(View v) {
+        Toast.makeText(this, "onClickRatingWidget called", Toast.LENGTH_SHORT).show();
+        String widgetId = "5c4a041c8f5ec579bc794a49";
+
+        //Countly.Ratings().setAutomaticStarRatingSessionLimit()
+
+        Countly.showFeedbackPopup(widgetId, "close",this, new ModuleRating.FeedbackRatingCallback() {
+            @Override
+            public void callback(String error) {
+                Toast.makeText(activity, "callback after onClickRatingWidget called, " + error, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }

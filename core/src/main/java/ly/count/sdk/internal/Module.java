@@ -160,6 +160,13 @@ public interface Module {
     Boolean onRequest (Request request);
 
     /**
+     * Called when the request is executed.
+     * Gives the module the ability to respond to the response received
+     * Request identification should be done through the Request ID
+     */
+    void onRequestCompleted(Request request, String response, int responseCode);
+
+    /**
      * Called when {@code android.content.res.Configuration} changes.
      *
      * @param ctx {@link CtxCore} with only context set
