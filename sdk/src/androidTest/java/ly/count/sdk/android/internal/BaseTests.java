@@ -64,18 +64,22 @@ public class BaseTests {
 
     //Call this if you want to setup the SDK for normal app use
     protected void setUpApplication(Config config) throws Exception {
-        setUpSDK(config == null ? defaultConfig() : config, false);
+        setUpSDK(config == null ? defaultConfig() : config, false, false);
+    }
+
+    protected void setUpApplication(Config config, boolean useAlternateCtxInit) throws Exception {
+        setUpSDK(config == null ? defaultConfig() : config, false, useAlternateCtxInit);
     }
 
     //Call this if you want to setup the SDK for service use in limited mode
     public void setUpService(Config config) throws Exception {
-        setUpSDK(config, true);
+        setUpSDK(config, true, false);
         this.service = spy(new CountlyService());
         doReturn(ctx.getContext()).when(service).getApplicationContext();
     }
 
     //common SDK setup call
-    private void setUpSDK(Config config, boolean limited) throws Exception {
+    private void setUpSDK(Config config, boolean limited, boolean useAlternateCtxInit) throws Exception {
         this.config = this.config == null ? new InternalConfig(config == null ? defaultConfig() : config) : this.config;
         this.config.setLimited(limited);
 
@@ -83,8 +87,22 @@ public class BaseTests {
         this.dummy = mock(ModuleBase.class);
         Utils.reflectiveSetField(SDK.class, "testDummyModule", dummy);
         this.sdk = new SDK();
-        this.ctx = new CtxImpl(this.sdk, this.config, getContext());
-        this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(this.config), application()));
+
+
+        if(useAlternateCtxInit){
+            this.ctx = new CtxImpl(this.sdk, this.config, getContext());
+            this.sdk.init(this.ctx);
+            //this.ctx = new CtxImpl(this.sdk, this.config, application());
+        } else {
+            this.ctx = new CtxImpl(this.sdk, this.config, getContext());
+            this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(this.config), application()));
+        }
+
+
+        //this.ctx = new CtxImpl(this.sdk, this.config, getContext());
+        //this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(this.config), application()));
+
+
         this.config = SDK.instance.config();
 
         //to make sure it seems initialised

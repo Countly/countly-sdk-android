@@ -11,6 +11,11 @@ public class ModuleRatingCore extends ModuleBase {
 
     protected static final Log.Module L = Log.module("Rating");
 
+    //disabled is set when a empty module is created
+    //in instances when the rating feature was not enabled
+    //when a module is disabled, developer facing functions do nothing
+    protected boolean disabledModule = false;
+
     public final static Long storableStorageId = 123L;
     public final static String storableStoragePrefix = "rating";
 
@@ -30,6 +35,10 @@ public class ModuleRatingCore extends ModuleBase {
     @Override
     public Integer getFeature() {
         return CoreFeature.StarRating.getIndex();
+    }
+
+    public void disableModule(){
+        disabledModule = true;
     }
 
     /**
@@ -277,6 +286,104 @@ public class ModuleRatingCore extends ModuleBase {
             }
 
             return false;
+        }
+    }
+
+    protected class RatingsCore {
+        /**
+         * Set's the text's for the different fields in the star rating dialog. Set value null if for some field you want to keep the old value
+         * @param starRatingTextTitle dialog's title text
+         * @param starRatingTextMessage dialog's message text
+         * @param starRatingTextDismiss dialog's dismiss buttons text
+         */
+        public synchronized void setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
+            if(disabledModule) { return; }
+
+            L.d("Setting star rating texts");
+
+            ModuleRatingCore.this.setStarRatingInitConfig(-1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+        }
+
+        /**
+         * Set if the star rating should be shown automatically
+         * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
+         */
+        public synchronized void setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
+            if(disabledModule) { return; }
+
+            L.d("Setting to show star rating automatically: [" + IsShownAutomatically + "]");
+
+            ModuleRatingCore.this.setShowDialogAutomatically(IsShownAutomatically);
+        }
+
+        /**
+         * Set if the star rating is shown only once per app lifetime
+         * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
+         */
+        public synchronized void setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
+            if(disabledModule) { return; }
+            L.d("Setting to disable showing of star rating for each app version:[" + disableAsking + "]");
+
+            ModuleRatingCore.this.setStarRatingDisableAskingForEachAppVersion(disableAsking);
+        }
+
+        /**
+         * Set after how many sessions the automatic star rating will be shown for each app version
+         * @param limit app session amount for the limit
+         * @return Returns link to Countly for call chaining
+         */
+        public synchronized void setAutomaticStarRatingSessionLimit(int limit) {
+            if(disabledModule) { return; }
+
+            L.d("Setting automatic star rating session limit: [" + limit + "]");
+            ModuleRatingCore.this.setStarRatingInitConfig(limit, null, null, null);
+        }
+
+        /**
+         * Returns the session limit set for automatic star rating
+         */
+        public int getAutomaticStarRatingSessionLimit(){
+            if(disabledModule) { return -1; }
+
+            int sessionLimit = ModuleRatingCore.this.getAutomaticStarRatingSessionLimit();
+
+            L.d("Getting automatic star rating session limit: [" + sessionLimit + "]");
+            return sessionLimit;
+        }
+
+        /**
+         * Returns how many sessions has star rating counted internally for the current apps version
+         */
+        public int getStarRatingsCurrentVersionsSessionCount(){
+            if(disabledModule) { return -1; }
+
+            int sessionCount = ModuleRatingCore.this.getCurrentVersionsSessionCount();
+
+            L.d("Getting star rating current version session count: [" + sessionCount + "]");
+            return sessionCount;
+        }
+
+        /**
+         * Set the automatic star rating session count back to 0
+         */
+        public void clearAutomaticStarRatingSessionCount(){
+            if(disabledModule) { return; }
+
+            L.d("Clearing star rating session count");
+
+            ModuleRatingCore.this.clearAutomaticStarRatingSessionCount();
+        }
+
+        /**
+         * Set if the star rating dialog is cancellable
+         * @param isCancellable set this true if it should be cancellable
+         */
+        public synchronized void setIfStarRatingDialogIsCancellable(boolean isCancellable){
+            if(disabledModule) { return; }
+
+            L.d("Setting if star rating is cancellable: [" + isCancellable + "]");
+
+            ModuleRatingCore.this.setIfRatingDialogIsCancellable(isCancellable);
         }
     }
 }

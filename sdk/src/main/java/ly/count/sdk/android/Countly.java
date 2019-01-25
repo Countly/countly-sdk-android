@@ -14,6 +14,7 @@ import ly.count.sdk.Cly;
 import ly.count.sdk.Usage;
 import ly.count.sdk.android.internal.Ctx;
 import ly.count.sdk.android.internal.CtxImpl;
+import ly.count.sdk.android.internal.ModuleRating;
 import ly.count.sdk.android.internal.SDK;
 import ly.count.sdk.android.internal.Utils;
 import ly.count.sdk.Crash;
@@ -70,6 +71,8 @@ public class Countly extends CountlyLifecycle {
         }
         return Cly.session(ctx(context));
     }
+
+
 
     /**
      * Returns active {@link Session} if any or {@code null} otherwise.
@@ -215,6 +218,42 @@ public class Countly extends CountlyLifecycle {
                 ftrs = ftrs | f.getIndex();
             }
             cly.sdk.onConsentRemoval(ctx(context), ftrs);
+        }
+    }
+
+    /**
+     * Show the rating dialog to the user
+     * @param widgetId ID that identifies this dialog
+     * @return
+     */
+    public static synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final ModuleRating.FeedbackRatingCallback callback){
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+        } else {
+            ModuleRating mr = cly.sdk.module(ModuleRating.class);
+            if(mr != null){
+                mr.showFeedbackPopup(widgetId, closeButtonText, activity, callback);
+            }
+
+            //CountlyStarRating.showFeedbackPopup(widgetId, closeButtonText, activity, this, connectionQueue_, callback);
+            //cly.sdk.resetDeviceId(ctx(context), id);
+        }
+    }
+
+    public static ModuleRating.Ratings Ratings(){
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+            return null;
+        } else {
+            ModuleRating mr = cly.sdk.module(ModuleRating.class);
+            if (mr != null) {
+                return mr.new Ratings();
+            }
+            //if it is null, feature was not enabled, return mock
+            L.wtf("Star Ratings module was not enabled, returning dummy module");
+            ModuleRating emptyMr = new ModuleRating();
+            emptyMr.disableModule();
+            return emptyMr.new Ratings();
         }
     }
 

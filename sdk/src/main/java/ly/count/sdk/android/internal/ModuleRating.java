@@ -28,9 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ly.count.sdk.android.sdk.R;
+import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.ModuleRatingCore;
-
-import static android.content.Context.UI_MODE_SERVICE;
+import ly.count.sdk.internal.ModuleRequests;
+import ly.count.sdk.internal.Request;
 
 public class ModuleRating extends ModuleRatingCore {
 
@@ -161,8 +162,13 @@ public class ModuleRating extends ModuleRatingCore {
          */
         void callback(String error);
     }
-/*
-    protected static synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final Countly countly, final ConnectionQueue connectionQueue_, final FeedbackRatingCallback devCallback){
+
+    @Override
+    public void onRequestCompleted(Request request, String response, int responseCode){
+
+    }
+
+    public synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback devCallback){
         L.d("Showing Feedback popup for widget id: [" + widgetId + "]");
 
         if(widgetId == null || widgetId.isEmpty()){
@@ -172,76 +178,82 @@ public class ModuleRating extends ModuleRatingCore {
             throw new IllegalArgumentException("Countly widgetId cannot be null or empty");
         }
 
-        if(countly.getConsent(Countly.CountlyFeatureNames.starRating)) {
-            //check the device type
-            final boolean deviceIsPhone;
-            final boolean deviceIsTablet;
-            final boolean deviceIsTv;
-
-            deviceIsTv = Device.dev.isDeviceTv(activity);
-
-            if(!deviceIsTv) {
-                deviceIsPhone = !Device.dev.isDeviceTablet(activity);
-                deviceIsTablet = Device.dev.isDeviceTablet(activity);
-            } else {
-                deviceIsTablet = false;
-                deviceIsPhone = false;
+        if(activity == null){
+            if(devCallback != null){
+                devCallback.callback("Activity cannot be null or empty");
             }
+            throw new IllegalArgumentException("Activity cannot be null or empty");
+        }
 
-            final String checkUrl = connectionQueue_.getServerURL() + "/o/feedback/widget?app_key=" + connectionQueue_.getAppKey() + "&widget_id=" + widgetId;
-            final String ratingWidgetUrl = connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + connectionQueue_.getDeviceId().getId() + "&app_key=" + connectionQueue_.getAppKey();
+        //devCallback.callback("yo");
 
-            L.d("Check url: [" + checkUrl+ "], rating widget url :[" + ratingWidgetUrl + "]");
 
-            (new RatingAvailabilityChecker()).execute(checkUrl, new InternalFeedbackRatingCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    if(checkResponse == null){
-                        L.d("Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
-                        if(devCallback != null){
-                            devCallback.callback("Not possible to show Rating popup, probably no internet connection");
-                        }
-                    } else {
-                        try {
-                            JSONObject jDevices = checkResponse.getJSONObject("target_devices");
+        final boolean deviceIsPhone;
+        final boolean deviceIsTablet;
+        final boolean deviceIsTv;
 
-                            boolean showOnTv = jDevices.optBoolean("desktop", false);
-                            boolean showOnPhone = jDevices.optBoolean("phone", false);
-                            boolean showOnTablet = jDevices.optBoolean("tablet", false);
+        deviceIsTv = Device.dev.isDeviceTv(activity);
 
-                            if((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)){
-                                //it's possible to show the rating window on this device
-                                L.d("Showing Feedback popup for widget id: [" + widgetId + "]");
+        if(!deviceIsTv) {
+            deviceIsPhone = !Device.dev.isDeviceTablet(activity);
+            deviceIsTablet = Device.dev.isDeviceTablet(activity);
+        } else {
+            deviceIsTablet = false;
+            deviceIsPhone = false;
+        }
 
-                                RatingDialogWebView webView = new RatingDialogWebView(activity);
-                                webView.getSettings().setJavaScriptEnabled(true);
-                                webView.loadUrl(ratingWidgetUrl);
 
-                                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                                builder.setView(webView);
-                                if(closeButtonText != null && !closeButtonText.isEmpty()) {
-                                    builder.setNeutralButton(closeButtonText, null);
-                                }
-                                builder.show();
-                            } else {
-                                if(devCallback != null){
-                                    devCallback.callback("Rating dialog is not meant for this form factor");
-                                }
+        InternalConfig config = ctx.getConfig();
+
+        final String checkUrl = config.getServerURL() + "/o/feedback/widget?app_key=" + config.getServerAppKey() + "&widget_id=" + widgetId;
+        final String ratingWidgetUrl = config.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + config.getDeviceId().id + "&app_key=" + config.getServerAppKey();
+
+        L.d("Check url: [" + checkUrl+ "], rating widget url :[" + ratingWidgetUrl + "]");
+
+        (new RatingAvailabilityChecker()).execute(checkUrl, new InternalFeedbackRatingCallback() {
+            @Override
+            public void callback(JSONObject checkResponse) {
+                if(checkResponse == null){
+                    L.d("Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
+                    if(devCallback != null){
+                        devCallback.callback("Not possible to show Rating popup, probably no internet connection");
+                    }
+                } else {
+                    try {
+                        JSONObject jDevices = checkResponse.getJSONObject("target_devices");
+
+                        boolean showOnTv = jDevices.optBoolean("desktop", false);
+                        boolean showOnPhone = jDevices.optBoolean("phone", false);
+                        boolean showOnTablet = jDevices.optBoolean("tablet", false);
+
+                        if((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)){
+                            //it's possible to show the rating window on this device
+                            L.d("Showing Feedback popup for widget id: [" + widgetId + "]");
+
+                            RatingDialogWebView webView = new RatingDialogWebView(activity);
+                            webView.getSettings().setJavaScriptEnabled(true);
+                            webView.loadUrl(ratingWidgetUrl);
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                            builder.setView(webView);
+                            if(closeButtonText != null && !closeButtonText.isEmpty()) {
+                                builder.setNeutralButton(closeButtonText, null);
                             }
-
-                        } catch (JSONException e) {
-                            L.e("Ēxception while handling rating request", e);
+                            builder.show();
+                        } else {
+                            if(devCallback != null){
+                                devCallback.callback("Rating dialog is not meant for this form factor");
+                            }
                         }
+
+                    } catch (JSONException e) {
+                        L.e("Ēxception while handling rating request", e);
                     }
                 }
-            });
-        } else {
-            if(devCallback != null){
-                devCallback.callback("Consent is not granted");
             }
-        }
+        });
     }
-*/
+
     private static class RatingDialogWebView extends WebView {
         public RatingDialogWebView(Context context) {
             super(context);
@@ -314,6 +326,33 @@ public class ModuleRating extends ModuleRatingCore {
             if(callback != null){
                 callback.callback(result);
             }
+        }
+    }
+
+    public void Test(Activity activity){
+        String widgetId = "5c4a041c8f5ec579bc794a49";
+        Request req = ModuleRequests.ratingWidgetAvailabilityCheck(ctx, widgetId, ctx.getConfig());
+
+
+
+    }
+
+    public class Ratings extends RatingsCore {
+        /**
+         * Shows the star rating dialog
+         * @param activity the activity that will own the dialog
+         * @param callback callback for the star rating dialog "rate" and "dismiss" events
+         */
+        public void showStarRating(Activity activity, RatingCallback callback){
+            if(disabledModule) { return; }
+            L.d("Showing star rating");
+
+
+            ModuleRating.this.showStarRating(activity, callback);
+        }
+
+        public void Test(Activity activity){
+            ModuleRating.this.Test(activity);
         }
     }
 }

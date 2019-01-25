@@ -11,6 +11,7 @@ import org.powermock.reflect.Whitebox;
 import java.util.List;
 
 import ly.count.sdk.android.Config;
+import ly.count.sdk.android.Countly;
 import ly.count.sdk.internal.CrashImplCore;
 import ly.count.sdk.internal.ModuleRatingCore;
 import ly.count.sdk.internal.Storage;
@@ -145,7 +146,7 @@ public class ModuleRatingTests extends BaseTests {
     }
 
     /**
-     * Make sure that accessors get the expected fields
+     * Make sure that accessors in the module get the expected fields
      */
     @Test
     public void accessStorageAccessors() throws Exception {
@@ -202,6 +203,64 @@ public class ModuleRatingTests extends BaseTests {
         Assert.assertEquals(values[1], srpLoaded.dialogTextMessage);
         Assert.assertEquals(values[2], srpLoaded.dialogTextDismiss);
     }
+
+    /**
+     * Make sure that accessors provided by the SDK get the expected fields
+     */
+    @Test
+    public void accessStorageSDKAccessors() throws Exception {
+        //startup SDK
+        setUpApplication(defaultConfig(), true);
+        moduleRating = module(ModuleRating.class, false);
+
+        ModuleRatingCore.StarRatingPreferences srpDefault = new ModuleRatingCore.StarRatingPreferences();
+        ModuleRatingCore.StarRatingPreferences srpValues = CreatePreferences();
+        ModuleRatingCore.StarRatingPreferences srpLoaded;
+
+        ModuleRating.Ratings ratings = Countly.Ratings();
+
+        String [] values = new String[]{"asd", "ert", "poi"};
+        int[] numbers = new int[] {6489, 8564, 38376};
+
+        ratings.setIfStarRatingShownAutomatically(true);
+        Assert.assertEquals(true, LoadPreferences(moduleRating).automaticRatingShouldBeShown);
+        ratings.setIfStarRatingShownAutomatically(false);
+        Assert.assertEquals(false, LoadPreferences(moduleRating).automaticRatingShouldBeShown);
+
+        ratings.setIfStarRatingDialogIsCancellable(true);
+        Assert.assertEquals(true, LoadPreferences(moduleRating).isDialogCancellable);
+        ratings.setIfStarRatingDialogIsCancellable(false);
+        Assert.assertEquals(false, LoadPreferences(moduleRating).isDialogCancellable);
+
+        ratings.setStarRatingDisableAskingForEachAppVersion(true);
+        Assert.assertEquals(true, LoadPreferences(moduleRating).disabledAutomaticForNewVersions);
+        ratings.setStarRatingDisableAskingForEachAppVersion(false);
+        Assert.assertEquals(false, LoadPreferences(moduleRating).disabledAutomaticForNewVersions);
+
+        Assert.assertNotEquals(numbers[0], LoadPreferences(moduleRating).sessionLimit);
+        ratings.setAutomaticStarRatingSessionLimit(numbers[0]);
+        Assert.assertEquals(numbers[0], ratings.getAutomaticStarRatingSessionLimit());
+
+        Assert.assertNotEquals(numbers[1], LoadPreferences(moduleRating).sessionAmount);
+        srpLoaded = LoadPreferences(moduleRating);
+        srpLoaded.sessionAmount = numbers[1];
+        SavePreferences(moduleRating, srpLoaded);
+        Assert.assertEquals(numbers[1], ratings.getStarRatingsCurrentVersionsSessionCount());
+        ratings.clearAutomaticStarRatingSessionCount();
+        Assert.assertNotEquals(numbers[1], LoadPreferences(moduleRating).sessionAmount);
+
+        srpLoaded = LoadPreferences(moduleRating);
+        Assert.assertNotEquals(values[0], srpLoaded.dialogTextTitle);
+        Assert.assertNotEquals(values[1], srpLoaded.dialogTextMessage);
+        Assert.assertNotEquals(values[2], srpLoaded.dialogTextDismiss);
+        ratings.setStarRatingDialogTexts(values[0], values[1], values[2]);
+
+        srpLoaded = LoadPreferences(moduleRating);
+        Assert.assertEquals(values[0], srpLoaded.dialogTextTitle);
+        Assert.assertEquals(values[1], srpLoaded.dialogTextMessage);
+        Assert.assertEquals(values[2], srpLoaded.dialogTextDismiss);
+    }
+
 
     public void RegisterSession(){
 
