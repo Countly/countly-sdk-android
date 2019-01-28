@@ -157,7 +157,7 @@ public interface Module {
      * @return {@code true} if ok to send now, {@code false} if not ok to (remove request
      * from queue), {@code null} if cannot decide yet
      */
-    Boolean onRequest (Request request);
+    Boolean onRequest(Request request);
 
     /**
      * Called when the request is executed.

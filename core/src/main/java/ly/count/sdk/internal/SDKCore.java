@@ -257,11 +257,11 @@ public abstract class SDKCore extends SDKModules {
     }
 
     public Boolean isRequestReady(Request request) {
-        Class<? extends Module> cls = request.owner();
+        Class cls = request.owner();
         if (cls == null) {
             return true;
         } else {
-            Module module = module(cls);
+            ModuleBase module = (ModuleBase)module(cls);
             request.params.remove(Request.MODULE);
             if (module == null) {
                 return true;
@@ -277,10 +277,9 @@ public abstract class SDKCore extends SDKModules {
      * that owns the request
      * @param request the request that was sent, used to identify the request
      */
-    public void propagateNetworkRequest(Request request, String response, int responseCode){
-        Class<? extends Module> cls = request.owner();
-        if (cls != null) {
-            Module module = module(cls);
+    public void propagateNetworkRequest(Request request, String response, int responseCode, Class<? extends Module> requestOwner){
+        if (requestOwner != null) {
+            Module module = module(requestOwner);
 
             if (module != null) {
                 module.onRequestCompleted(request, response, responseCode);

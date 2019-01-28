@@ -11,6 +11,7 @@ import java.util.Map;
 
 public class Request implements Storable {
     public static final String MODULE = "module";
+    public static final String ENDPOINT = "endpoint";
     private final Long id;
 
     /**
@@ -38,6 +39,11 @@ public class Request implements Storable {
 
     public Request own(Class<? extends Module> module) {
         this.params.add(MODULE, module.getName());
+        return this;
+    }
+
+    public Request endpoint(String value){
+        this.params.add(ENDPOINT, value);
         return this;
     }
 

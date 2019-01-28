@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -141,7 +142,8 @@ public class Transport implements X509TrustManager {
      * @throws IOException from {@link HttpURLConnection} in case of error
      */
     HttpURLConnection connection(final Request request, final User user) throws IOException {
-        String endpoint = request.customEndpoint == null ? "/i?" : request.customEndpoint;
+        String endpoint = request.params.remove(Request.ENDPOINT);
+        if(endpoint == null) { endpoint = "/i?"; }
         String path = config.getServerURL().toString() + endpoint;
         String picture = request.params.remove(UserEditorImpl.PICTURE_PATH);
         boolean usingGET = !config.isUsePOST() && request.isGettable(config.getServerURL()) && Utils.isEmpty(picture);
@@ -281,7 +283,18 @@ public class Transport implements X509TrustManager {
     String response(HttpURLConnection connection) {
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            InputStream responseInputStream;
+
+            try{
+                //assume there will be no error
+                responseInputStream = connection.getInputStream();
+            } catch (Exception ex){
+                //in case of exception, assume there was a error in the request
+                //and change streams
+                responseInputStream = connection.getErrorStream();
+            }
+
+            reader = new BufferedReader(new InputStreamReader(responseInputStream));
             StringBuilder total = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -335,6 +348,8 @@ public class Transport implements X509TrustManager {
                 HttpURLConnection connection = null;
                 try {
                     ModuleRequests.addRequired(config, request);
+                    Class requestOwner = request.owner();
+                    request.params.remove(Request.MODULE);
 
                     connection = connection(request, SDKCore.instance.user());
                     connection.connect();
@@ -342,7 +357,7 @@ public class Transport implements X509TrustManager {
                     int code = connection.getResponseCode();
                     String response = response(connection);
 
-                    SDKCore.instance.propagateNetworkRequest(request, response, code);
+                    SDKCore.instance.propagateNetworkRequest(request, response, code, requestOwner);
 
                     return processResponse(code, response);
 

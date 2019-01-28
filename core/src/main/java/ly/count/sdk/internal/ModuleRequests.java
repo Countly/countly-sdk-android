@@ -153,10 +153,10 @@ public class ModuleRequests extends ModuleBase {
      * @param config
      * @return
      */
-    public static Request ratingWidgetAvailabilityCheck(CtxCore ctx, String widgetId, InternalConfig config){
+    public static Request ratingWidgetAvailabilityCheck(CtxCore ctx, String widgetId, InternalConfig config, Class<? extends Module> module){
         Request req = Request.build("widget_id", widgetId, "app_key", config.getServerAppKey());
-        req.own(ModuleRequests.class);
-        req.SetCustomEndpoint("/o/feedback/widget");
+        req.own(module);
+        req.endpoint("/o/feedback/widget?");
 
         return req;
     }
@@ -173,7 +173,7 @@ public class ModuleRequests extends ModuleBase {
     }
 
     static Request addRequired(InternalConfig config, Request request) {
-        if(request.isEmpty()){
+        if (request.isEmpty()) {
             //if nothing was in the request, no need to add these mandatory fields
             return request;
         }
@@ -189,11 +189,15 @@ public class ModuleRequests extends ModuleBase {
             }
         }
 
+        //add app key if needed
+        if(!request.params.has("app_key")){
+            request.params.add("app_key", config.getServerAppKey());
+        }
+
         //add other missing fields
-        if(!request.params.has("sdk_name")){
+        if (!request.params.has("sdk_name")) {
             request.params.add("sdk_name", config.getSdkName())
-                    .add("sdk_version", config.getSdkVersion())
-                    .add("app_key", config.getServerAppKey());
+                    .add("sdk_version", config.getSdkVersion());
         }
 
         return request;

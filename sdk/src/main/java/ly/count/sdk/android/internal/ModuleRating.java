@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -34,6 +36,24 @@ import ly.count.sdk.internal.ModuleRequests;
 import ly.count.sdk.internal.Request;
 
 public class ModuleRating extends ModuleRatingCore {
+
+    // timeout in milliseconds.
+    // After how much time the timeout error is returned,
+    // if the widget availability check does not return anything.
+    final long ratingWidgetTimeout = 10000;
+
+    //which ID is used for the networking request
+    String networkingRequestId = null;
+
+    Request currentWidgetCheckRequest = null;
+
+    InternalFeedbackRatingCallback ratingWidgetCheckCallback = null;
+
+    void ClearWidgetRequestFields (){
+        ratingWidgetCheckCallback = null;
+        networkingRequestId = null;
+        currentWidgetCheckRequest = null;
+    }
 
     /**
      * Call to manually show star rating dialog
@@ -143,13 +163,21 @@ public class ModuleRating extends ModuleRatingCore {
     }
 */
 
+    @Override
+    public Boolean onRequest(Request request){
+        //indicate that this module is the owner
+        request.own(ModuleRating.class);
+        //returned to indicate that the request is ready
+        return true;
+    }
+
     /// Countly webDialog user rating
 
     /**
      * Used for callback from async task
      */
     protected interface InternalFeedbackRatingCallback {
-        void callback(JSONObject checkResponse);
+        void callback(JSONObject checkResponse, String returnedError);
     }
 
     /**
@@ -164,14 +192,57 @@ public class ModuleRating extends ModuleRatingCore {
     }
 
     @Override
-    public void onRequestCompleted(Request request, String response, int responseCode){
+    public void onRequestCompleted(Request request, String response, int responseCode) {
+        L.d("[TEST] req completed");
 
+        if (currentWidgetCheckRequest == null) {
+            //this incoming request probably is from a previous session, ignore it
+            L.w("Received a widget availability response from a previous request");
+            return;
+        }
+
+        if (!currentWidgetCheckRequest.storageId().equals(request.storageId())) {
+            //if id's don't match then the response is not from the request we are expecting
+            //assume that there is a another response coming and ignore this
+            L.w("Received a widget availability response from a request with a different ID");
+            return;
+        }
+
+        if (responseCode == 200) {
+            //continue only if good response
+
+            try {
+                JSONObject jobj = new JSONObject(response);
+
+                if (ratingWidgetCheckCallback != null) { ratingWidgetCheckCallback.callback(jobj, null); }
+            } catch (JSONException e) {
+                //can't create object, probably returned something unexpected, return error
+                if (ratingWidgetCheckCallback != null) { ratingWidgetCheckCallback.callback(null, "Server returned unexpected result"); }
+            }
+        } else {
+            //assume error
+            L.w("Received a widget availability response from a request with a different ID");
+
+            try {
+                JSONObject jobj = new JSONObject(response);
+
+                String returnedError = jobj.getString("result");
+
+                if (ratingWidgetCheckCallback != null) { ratingWidgetCheckCallback.callback(null, "Server returned error: [" + returnedError + "]"); }
+            } catch (JSONException e) {
+                if (ratingWidgetCheckCallback != null) { ratingWidgetCheckCallback.callback(null, "Server returned unexpected result"); }
+            }
+        }
+
+        //always cleat everything
+        ClearWidgetRequestFields();
     }
 
     public synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback devCallback){
         L.d("Showing Feedback popup for widget id: [" + widgetId + "]");
 
         if(widgetId == null || widgetId.isEmpty()){
+            L.e("Countly widgetId cannot be null or empty");
             if(devCallback != null){
                 devCallback.callback("Countly widgetId cannot be null or empty");
             }
@@ -179,14 +250,12 @@ public class ModuleRating extends ModuleRatingCore {
         }
 
         if(activity == null){
+            L.e("Activity cannot be null or empty");
             if(devCallback != null){
                 devCallback.callback("Activity cannot be null or empty");
             }
             throw new IllegalArgumentException("Activity cannot be null or empty");
         }
-
-        //devCallback.callback("yo");
-
 
         final boolean deviceIsPhone;
         final boolean deviceIsTablet;
@@ -204,54 +273,108 @@ public class ModuleRating extends ModuleRatingCore {
 
 
         InternalConfig config = ctx.getConfig();
-
-        final String checkUrl = config.getServerURL() + "/o/feedback/widget?app_key=" + config.getServerAppKey() + "&widget_id=" + widgetId;
         final String ratingWidgetUrl = config.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + config.getDeviceId().id + "&app_key=" + config.getServerAppKey();
 
-        L.d("Check url: [" + checkUrl+ "], rating widget url :[" + ratingWidgetUrl + "]");
+        //prepare request
+        L.d("Preparing rating widget availability check request");
+        final Request req = ModuleRequests.ratingWidgetAvailabilityCheck(ctx, widgetId, ctx.getConfig(), ModuleRating.class);
+        currentWidgetCheckRequest = req;
 
-        (new RatingAvailabilityChecker()).execute(checkUrl, new InternalFeedbackRatingCallback() {
+        //create a timeout in case nothing returns for a while
+        final Handler handler = new Handler();
+        final Runnable timeoutRunnable = new Runnable() {
             @Override
-            public void callback(JSONObject checkResponse) {
+            public void run() {
+                if(req != null && currentWidgetCheckRequest != null && req.storageId().equals(currentWidgetCheckRequest.storageId())) {
+                    //continue with cancellation if the request id's are the same
+                    if (devCallback != null) {
+                        devCallback.callback("Timeout reached, request cancelled");
+                    }
+
+                    ClearWidgetRequestFields();
+                }
+            }
+        };
+
+        ratingWidgetCheckCallback = new InternalFeedbackRatingCallback() {
+            @Override
+            public void callback(JSONObject checkResponse, final String returnedError) {
+                //cancel timeout timer
+                handler.removeCallbacks(timeoutRunnable);
+
+                if(returnedError != null){
+                    L.d("Not possible to show Feedback popup for widget id: [" + widgetId + "], encountered problem during processing the request: [" + returnedError + "]");
+                    if(devCallback != null) {
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() { devCallback.callback(returnedError); }
+                        });
+                    }
+                    return;
+                }
+
                 if(checkResponse == null){
                     L.d("Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
                     if(devCallback != null){
-                        devCallback.callback("Not possible to show Rating popup, probably no internet connection");
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() { devCallback.callback("Not possible to show Rating popup, probably no internet connection"); }
+                        });
                     }
-                } else {
-                    try {
-                        JSONObject jDevices = checkResponse.getJSONObject("target_devices");
+                    return;
+                }
 
-                        boolean showOnTv = jDevices.optBoolean("desktop", false);
-                        boolean showOnPhone = jDevices.optBoolean("phone", false);
-                        boolean showOnTablet = jDevices.optBoolean("tablet", false);
+                try {
+                    JSONObject jDevices = checkResponse.getJSONObject("target_devices");
 
-                        if((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)){
-                            //it's possible to show the rating window on this device
-                            L.d("Showing Feedback popup for widget id: [" + widgetId + "]");
+                    boolean showOnTv = jDevices.optBoolean("desktop", false);
+                    boolean showOnPhone = jDevices.optBoolean("phone", false);
+                    boolean showOnTablet = jDevices.optBoolean("tablet", false);
 
-                            RatingDialogWebView webView = new RatingDialogWebView(activity);
-                            webView.getSettings().setJavaScriptEnabled(true);
-                            webView.loadUrl(ratingWidgetUrl);
+                    if((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)){
+                        //it's possible to show the rating window on this device
+                        L.d("Showing Feedback popup for widget id: [" + widgetId + "]");
 
-                            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                            builder.setView(webView);
-                            if(closeButtonText != null && !closeButtonText.isEmpty()) {
-                                builder.setNeutralButton(closeButtonText, null);
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                RatingDialogWebView webView = new RatingDialogWebView(activity);
+                                webView.getSettings().setJavaScriptEnabled(true);
+                                webView.loadUrl(ratingWidgetUrl);
+
+                                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                                builder.setView(webView);
+                                if(closeButtonText != null && !closeButtonText.isEmpty()) {
+                                    builder.setNeutralButton(closeButtonText, null);
+                                }
+                                builder.show();
                             }
-                            builder.show();
-                        } else {
-                            if(devCallback != null){
-                                devCallback.callback("Rating dialog is not meant for this form factor");
-                            }
+                        });
+                    } else {
+                        if(devCallback != null){
+                            activity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() { devCallback.callback("Rating dialog is not meant for this form factor"); }
+                            });
                         }
-
-                    } catch (JSONException e) {
-                        L.e("Ēxception while handling rating request", e);
+                    }
+                } catch (JSONException e) {
+                    L.e("Exception while handling rating request", e);
+                    if(devCallback != null){
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() { devCallback.callback("Exception while handling rating widget request"); }
+                        });
                     }
                 }
             }
-        });
+        };
+
+        //after request has been prepared, push it into networking
+        ModuleRequests.pushAsync(ctx, req);
+
+        //start timeout timer
+        handler.postDelayed(timeoutRunnable, ratingWidgetTimeout);
     }
 
     private static class RatingDialogWebView extends WebView {
@@ -268,75 +391,6 @@ public class ModuleRating extends ModuleRatingCore {
         }
     }
 
-    /**
-     * Ascync task for checking the Rating dialog availability
-     */
-    private static class RatingAvailabilityChecker extends AsyncTask<Object, Void, JSONObject> {
-        InternalFeedbackRatingCallback callback;
-
-        protected JSONObject doInBackground(Object... params) {
-            callback = (InternalFeedbackRatingCallback)params[1];
-
-            HttpURLConnection connection = null;
-            BufferedReader reader = null;
-
-            try {
-                URL url = new URL((String)params[0]);
-                connection = (HttpURLConnection) url.openConnection();
-                connection.connect();
-
-                InputStream stream = connection.getInputStream();
-
-                reader = new BufferedReader(new InputStreamReader(stream));
-
-                StringBuffer buffer = new StringBuffer();
-                String line = "";
-
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line+"\n");
-                }
-
-                return new JSONObject(buffer.toString());
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
-                try {
-                    if (reader != null) {
-                        reader.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject result) {
-            super.onPostExecute(result);
-            //Log.d(TAG, "Post exec: [" + result + "]");
-
-            if(callback != null){
-                callback.callback(result);
-            }
-        }
-    }
-
-    public void Test(Activity activity){
-        String widgetId = "5c4a041c8f5ec579bc794a49";
-        Request req = ModuleRequests.ratingWidgetAvailabilityCheck(ctx, widgetId, ctx.getConfig());
-
-
-
-    }
-
     public class Ratings extends RatingsCore {
         /**
          * Shows the star rating dialog
@@ -349,10 +403,6 @@ public class ModuleRating extends ModuleRatingCore {
 
 
             ModuleRating.this.showStarRating(activity, callback);
-        }
-
-        public void Test(Activity activity){
-            ModuleRating.this.Test(activity);
         }
     }
 }

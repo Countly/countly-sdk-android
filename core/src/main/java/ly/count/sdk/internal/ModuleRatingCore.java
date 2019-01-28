@@ -37,6 +37,11 @@ public class ModuleRatingCore extends ModuleBase {
         return CoreFeature.StarRating.getIndex();
     }
 
+    @Override
+    public Boolean onRequest(Request request){
+        return true;
+    }
+
     public void disableModule(){
         disabledModule = true;
     }

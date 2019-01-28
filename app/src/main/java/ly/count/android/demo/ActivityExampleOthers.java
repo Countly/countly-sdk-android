@@ -47,16 +47,17 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickRatingWidget(View v) {
-        Toast.makeText(this, "onClickRatingWidget called", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "onClickRatingWidget called", Toast.LENGTH_SHORT).show();
         String widgetId = "5c4a041c8f5ec579bc794a49";
-
-        //Countly.Ratings().setAutomaticStarRatingSessionLimit()
 
         Countly.showFeedbackPopup(widgetId, "close",this, new ModuleRating.FeedbackRatingCallback() {
             @Override
             public void callback(String error) {
-                Toast.makeText(activity, "callback after onClickRatingWidget called, " + error, Toast.LENGTH_LONG).show();
+                if(error != null) {
+                    Toast.makeText(activity, "callback after onClickRatingWidget called, " + error, Toast.LENGTH_LONG).show();
+                }
             }
         });
+
     }
 }
