@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import ly.count.sdk.android.Countly;
 import ly.count.sdk.android.sdk.R;
 import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.InternalConfig;
@@ -133,14 +134,14 @@ public class ModuleRating extends ModuleRatingCore {
             public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
                 int rating = (int) v;
 
-                //if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
-                    Map<String, String> segm = new HashMap<>();
-                    segm.put("platform", "android");
-                    //segm.put("app_version", Device.dev.getAppVersion(_ctx));
-                    segm.put("rating", "" + rating);
+                Map<String, String> segm = new HashMap<>();
+                segm.put("platform", "android");
+                segm.put("rating", "" + rating);
 
-                    //Countly.sharedInstance().recordEvent(STAR_RATING_EVENT_KEY, segm, 1);
-                //}
+                Countly.session(activity).event(STAR_RATING_EVENT_KEY)
+                        .addSegment("platform", "android")
+                        .addSegment("rating", "" + rating)
+                        .setCount(1).record();
 
                 dialog.dismiss();
                 if(callback != null) {
@@ -217,8 +218,6 @@ public class ModuleRating extends ModuleRatingCore {
 
     @Override
     public void onRequestCompleted(Request request, String response, int responseCode) {
-        L.d("[TEST] req completed");
-
         if (currentWidgetCheckRequest == null) {
             //this incoming request probably is from a previous session, ignore it
             L.w("Received a widget availability response from a previous request");
