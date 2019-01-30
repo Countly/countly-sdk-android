@@ -221,25 +221,6 @@ public class Countly extends CountlyLifecycle {
         }
     }
 
-    /**
-     * Show the rating dialog to the user
-     * @param widgetId ID that identifies this dialog
-     * @return
-     */
-    public static synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final ModuleRating.FeedbackRatingCallback callback){
-        if (!isInitialized()) {
-            L.wtf("Countly SDK is not initialized yet.");
-        } else {
-            ModuleRating mr = cly.sdk.module(ModuleRating.class);
-            if(mr != null){
-                mr.showFeedbackPopup(widgetId, closeButtonText, activity, callback);
-            }
-
-            //CountlyStarRating.showFeedbackPopup(widgetId, closeButtonText, activity, this, connectionQueue_, callback);
-            //cly.sdk.resetDeviceId(ctx(context), id);
-        }
-    }
-
     public static ModuleRating.Ratings Ratings(){
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");

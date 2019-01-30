@@ -1,5 +1,7 @@
 package ly.count.sdk.internal;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -327,5 +329,37 @@ public final class InternalConfig extends ConfigCore implements Storable {
 
     public void setDefaultNetworking(boolean defaultNetworking) {
         this.defaultNetworking = defaultNetworking;
+    }
+
+    public long getRatingWidgetTimeout(){
+        return ratingWidgetTimeout;
+    }
+
+    public Integer getStarRatingSessionLimit(){
+        return starRatingSessionLimit;
+    }
+
+    public String getStarRatingTextTitle(){
+        return starRatingTextTitle;
+    }
+
+    public String getStarRatingTextMessage(){
+        return starRatingTextMessage;
+    }
+
+    public String getStarRatingTextDismiss(){
+        return starRatingTextDismiss;
+    }
+
+    public Boolean getAutomaticStarRatingShouldBeShown(){
+        return automaticStarRatingShouldBeShown;
+    }
+
+    public Boolean getStarRatingDialogIsCancelable(){
+        return starRatingIsDialogCancelable;
+    }
+
+    public Boolean getStarRatingDisabledForNewVersion(){
+        return starRatingDisabledAutomaticForNewVersions;
     }
 }

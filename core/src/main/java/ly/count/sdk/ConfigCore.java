@@ -343,6 +343,51 @@ public class ConfigCore {
      */
     protected boolean autoViewsTracking = true;
 
+    /**
+     * If star rating dialog should be cancellable
+     */
+    protected Boolean starRatingIsDialogCancelable = null;
+
+    /**
+     * if star rating should be shown for each new version
+     */
+    protected Boolean starRatingDisabledAutomaticForNewVersions = null;
+
+    //region Rating Module related fields
+
+    /**
+     * After how much time the timeout error is returned when showing rating widget
+     */
+    protected long ratingWidgetTimeout = 10000l;
+
+    /**
+     * After how many sessions the automatic star rating is shown
+     */
+    protected int starRatingSessionLimit = -1;
+
+    /**
+     * Star rating dialog title
+     */
+    protected String starRatingTextTitle = null;
+
+    /**
+     * Star rating dialog message
+     */
+    protected String starRatingTextMessage = null;
+
+    /**
+     * Star rating dialog dismiss message
+     */
+    protected String starRatingTextDismiss = null;
+
+    /**
+     * If automatic star rating should be shown
+     */
+    protected Boolean automaticStarRatingShouldBeShown = null;
+
+
+
+    //endregion
 
 
     // TODO: storage limits & configuration

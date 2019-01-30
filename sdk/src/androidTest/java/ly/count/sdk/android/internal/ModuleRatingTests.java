@@ -13,6 +13,8 @@ import java.util.List;
 import ly.count.sdk.android.Config;
 import ly.count.sdk.android.Countly;
 import ly.count.sdk.internal.CrashImplCore;
+import ly.count.sdk.internal.InternalConfig;
+import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.ModuleRatingCore;
 import ly.count.sdk.internal.Storage;
 
@@ -134,6 +136,7 @@ public class ModuleRatingTests extends BaseTests {
         ModuleRatingCore.StarRatingPreferences srpLoaded = LoadPreferences(moduleRating);
 
         //make sure defaults are as expected
+        srpDefault.sessionAmount++;
         Assert.assertTrue(RatingEqual(srpDefault, srpLoaded));
 
         //save new values
@@ -222,25 +225,6 @@ public class ModuleRatingTests extends BaseTests {
         String [] values = new String[]{"asd", "ert", "poi"};
         int[] numbers = new int[] {6489, 8564, 38376};
 
-        ratings.setIfStarRatingShownAutomatically(true);
-        Assert.assertEquals(true, LoadPreferences(moduleRating).automaticRatingShouldBeShown);
-        ratings.setIfStarRatingShownAutomatically(false);
-        Assert.assertEquals(false, LoadPreferences(moduleRating).automaticRatingShouldBeShown);
-
-        ratings.setIfStarRatingDialogIsCancellable(true);
-        Assert.assertEquals(true, LoadPreferences(moduleRating).isDialogCancellable);
-        ratings.setIfStarRatingDialogIsCancellable(false);
-        Assert.assertEquals(false, LoadPreferences(moduleRating).isDialogCancellable);
-
-        ratings.setStarRatingDisableAskingForEachAppVersion(true);
-        Assert.assertEquals(true, LoadPreferences(moduleRating).disabledAutomaticForNewVersions);
-        ratings.setStarRatingDisableAskingForEachAppVersion(false);
-        Assert.assertEquals(false, LoadPreferences(moduleRating).disabledAutomaticForNewVersions);
-
-        Assert.assertNotEquals(numbers[0], LoadPreferences(moduleRating).sessionLimit);
-        ratings.setAutomaticStarRatingSessionLimit(numbers[0]);
-        Assert.assertEquals(numbers[0], ratings.getAutomaticStarRatingSessionLimit());
-
         Assert.assertNotEquals(numbers[1], LoadPreferences(moduleRating).sessionAmount);
         srpLoaded = LoadPreferences(moduleRating);
         srpLoaded.sessionAmount = numbers[1];
@@ -262,8 +246,70 @@ public class ModuleRatingTests extends BaseTests {
     }
 
 
-    public void RegisterSession(){
+    public void registerSession(){
 
+    }
+
+    void UpdateRatingModuleConfigs(Config config, ModuleRating module){
+        InternalConfig iconf = new InternalConfig(config);
+        module.init(iconf);
+        module.onContextAcquired(ctx);
+    }
+
+    @Test
+    public void correctConfigHandling() throws Exception {
+        //setup SDK
+        Config config = defaultConfig();
+        setUpApplication(defaultConfig(), true);
+        moduleRating = module(ModuleRating.class, false);
+
+        //get defaults
+        ModuleRatingCore.StarRatingPreferences srpDefault = new ModuleRatingCore.StarRatingPreferences();
+
+        //get current prefs
+        srpDefault.sessionAmount++;
+        Assert.assertTrue(RatingEqual(srpDefault, LoadPreferences(moduleRating)));
+
+        //start testing
+        long val = 1234567l;
+        config.setRatingWidgetTimeout(val);
+        UpdateRatingModuleConfigs(config, moduleRating);
+        srpDefault.sessionAmount++;
+        Assert.assertEquals(val, moduleRating.ratingWidgetTimeout);
+
+        int valI = 345;
+        config.setStarRatingSessionLimit(valI);
+        UpdateRatingModuleConfigs(config, moduleRating);
+        srpDefault.sessionLimit = valI;
+        srpDefault.sessionAmount++;
+        Assert.assertEquals(valI, moduleRating.getAutomaticStarRatingSessionLimit());
+
+        String[] vals = new String[] {"dsfdfd", "vxcvere", "dfcg4545"};
+        config.setStarRatingDialogTexts(vals[0], vals[1], vals[2]);
+        UpdateRatingModuleConfigs(config, moduleRating);
+        srpDefault.dialogTextTitle = vals[0];
+        srpDefault.dialogTextMessage = vals[1];
+        srpDefault.dialogTextDismiss = vals[2];
+        srpDefault.sessionAmount++;
+        Assert.assertTrue(RatingEqual(srpDefault, LoadPreferences(moduleRating)));
+
+        config.setStarRatingAutomaticShouldBeShown(true);
+        UpdateRatingModuleConfigs(config, moduleRating);
+        srpDefault.automaticRatingShouldBeShown = true;
+        srpDefault.sessionAmount++;
+        Assert.assertTrue(RatingEqual(srpDefault, LoadPreferences(moduleRating)));
+
+        config.setStarRatingIsDialogCancelable(false);
+        UpdateRatingModuleConfigs(config, moduleRating);
+        srpDefault.isDialogCancellable = false;
+        srpDefault.sessionAmount++;
+        Assert.assertTrue(RatingEqual(srpDefault, LoadPreferences(moduleRating)));
+
+        config.setStarRatingShouldBeShownForEachVersion(false);
+        UpdateRatingModuleConfigs(config, moduleRating);
+        srpDefault.disabledAutomaticForNewVersions = true;
+        srpDefault.sessionAmount++;
+        Assert.assertTrue(RatingEqual(srpDefault, LoadPreferences(moduleRating)));
     }
 
     /**

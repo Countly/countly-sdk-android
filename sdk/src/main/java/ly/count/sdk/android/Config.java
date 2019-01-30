@@ -674,4 +674,70 @@ public class Config extends ConfigCore {
         super.setSessionAutoCloseAfter(sessionAutoCloseAfter);
         return this;
     }
+
+    /**
+     *
+     * @param timeout after how much time in miliseconds the timeout error will
+     *                be returned when failing to establish connection to
+     *                the server
+     * @return {@code this} instance for method chaining
+     */
+    public Config setRatingWidgetTimeout(long timeout){
+        this.ratingWidgetTimeout = timeout;
+        return this;
+    }
+
+    /**
+     *
+     * @param limit after how many session the automatic star rating dialog should be shown
+     * @return {@code this} instance for method chaining
+     */
+    public Config setStarRatingSessionLimit(int limit){
+        this.starRatingSessionLimit = limit;
+        return this;
+    }
+
+    /**
+     * Set the messages that will be show in the star rating dialog
+     * @param starRatingTextTitle
+     * @param starRatingTextMessage
+     * @param starRatingTextDismiss
+     * @return {@code this} instance for method chaining
+     */
+    public Config setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss){
+        this.starRatingTextDismiss = starRatingTextDismiss;
+        this.starRatingTextMessage = starRatingTextMessage;
+        this.starRatingTextTitle = starRatingTextTitle;
+        return this;
+    }
+
+    /**
+     * Set if the automatic star rating dialog sohuld be shown
+     * @param shouldBeShown
+     * @return
+     */
+    public Config setStarRatingAutomaticShouldBeShown(boolean shouldBeShown){
+        this.automaticStarRatingShouldBeShown = shouldBeShown;
+        return this;
+    }
+
+    /**
+     * Set if star rating dialog should be cancelable
+     * @param itIsCancelable set true for yes
+     * @return
+     */
+    public Config setStarRatingIsDialogCancelable(boolean itIsCancelable){
+        this.starRatingIsDialogCancelable = itIsCancelable;
+        return this;
+    }
+
+    /**
+     * Set if automatic star rating should be shown for every new version
+     * @param shouldBeShown set true if should be shown
+     * @return
+     */
+    public Config setStarRatingShouldBeShownForEachVersion(boolean shouldBeShown){
+        this.starRatingDisabledAutomaticForNewVersions = !shouldBeShown;
+        return this;
+    }
 }

@@ -2,15 +2,9 @@ package ly.count.sdk.android.internal;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.res.Configuration;
-import android.os.AsyncTask;
 import android.os.Handler;
-import android.os.Looper;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.WebView;
@@ -19,17 +13,11 @@ import android.widget.RatingBar;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 import ly.count.sdk.android.sdk.R;
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.ModuleRatingCore;
 import ly.count.sdk.internal.ModuleRequests;
@@ -40,18 +28,46 @@ public class ModuleRating extends ModuleRatingCore {
     // timeout in milliseconds.
     // After how much time the timeout error is returned,
     // if the widget availability check does not return anything.
-    final long ratingWidgetTimeout = 10000;
+    long ratingWidgetTimeout = -1;
 
-    //which ID is used for the networking request
-    String networkingRequestId = null;
-
+    // Link to the current rating widget availability request
     Request currentWidgetCheckRequest = null;
 
+    // Callback to continue after receiving answer from availability request
     InternalFeedbackRatingCallback ratingWidgetCheckCallback = null;
+
+    @Override
+    public void init(InternalConfig config) {
+        super.init(config);
+    }
+
+    @Override
+    public void onContextAcquired(CtxCore ctx) {
+        this.ctx = ctx;
+        ratingWidgetTimeout = internalConfig.getRatingWidgetTimeout();
+
+        Boolean shouldBeShown = internalConfig.getAutomaticStarRatingShouldBeShown();
+        if(shouldBeShown != null){
+            setShowDialogAutomatically(shouldBeShown);
+        }
+
+        setStarRatingInitConfig(internalConfig.getStarRatingSessionLimit(), internalConfig.getStarRatingTextTitle(), internalConfig.getStarRatingTextMessage(), internalConfig.getStarRatingTextDismiss());
+
+        Boolean isCancelable = internalConfig.getStarRatingDialogIsCancelable();
+        if(isCancelable != null) {
+            setIfRatingDialogIsCancellable(isCancelable);
+        }
+
+        Boolean forNewVersion = internalConfig.getStarRatingDisabledForNewVersion();
+        if(forNewVersion != null){
+            setStarRatingDisableAskingForEachAppVersion(forNewVersion);
+        }
+
+        registerAppSession();
+    }
 
     void ClearWidgetRequestFields (){
         ratingWidgetCheckCallback = null;
-        networkingRequestId = null;
         currentWidgetCheckRequest = null;
     }
 
@@ -136,13 +152,11 @@ public class ModuleRating extends ModuleRatingCore {
 
     /**
      * Register that a apps session has transpired. Will increase session counter and show automatic star rating if needed.
-     * @param starRatingCallback
      */
-    /*
-    public void registerAppSession(Activity activity, RatingCallback starRatingCallback) {
+    public void registerAppSession() {
         StarRatingPreferences srp = loadStarRatingPreferences();
 
-        String currentAppVersion = Device.dev.getAppVersion(activity);
+        String currentAppVersion = Device.dev.getAppVersion((Ctx)ctx);
 
         //a new app version is released, reset all counters
         //if we show the rating once per apps lifetime, don't reset the counters
@@ -153,15 +167,25 @@ public class ModuleRating extends ModuleRatingCore {
         }
 
         srp.sessionAmount++;
+
+        saveStarRatingPreferences(srp);
+    }
+
+    /**
+     * Called to check if automatic star rating should be shown
+     * @param activity
+     * @param starRatingCallback
+     */
+    public void showAutomaticStarRatingIfNeeded(Activity activity, RatingCallback starRatingCallback){
+        StarRatingPreferences srp = loadStarRatingPreferences();
+
         if(srp.sessionAmount >= srp.sessionLimit && !srp.isShownForCurrentVersion && srp.automaticRatingShouldBeShown && !(srp.disabledAutomaticForNewVersions && srp.automaticHasBeenShown)) {
             showStarRating(activity, starRatingCallback);
             srp.isShownForCurrentVersion = true;
             srp.automaticHasBeenShown = true;
+            saveStarRatingPreferences(srp);
         }
-
-        saveStarRatingPreferences(srp);
     }
-*/
 
     @Override
     public Boolean onRequest(Request request){
@@ -401,8 +425,26 @@ public class ModuleRating extends ModuleRatingCore {
             if(disabledModule) { return; }
             L.d("Showing star rating");
 
-
             ModuleRating.this.showStarRating(activity, callback);
+        }
+
+        /**
+         * Show the rating dialog to the user
+         * @param widgetId ID that identifies this dialog
+         * @return
+         */
+        public synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final ModuleRating.FeedbackRatingCallback callback){
+            if(disabledModule) { return; }
+            L.d("Showing rating feedback widget");
+
+            ModuleRating.this.showFeedbackPopup(widgetId, closeButtonText, activity, callback);
+        }
+
+        public void showAutomaticStarRatingIfNeeded(Activity activity, RatingCallback starRatingCallback){
+            if(disabledModule) { return; }
+            L.d("Checking if automatic star rating should be shown");
+
+            ModuleRating.this.showAutomaticStarRatingIfNeeded(activity, starRatingCallback);
         }
     }
 }

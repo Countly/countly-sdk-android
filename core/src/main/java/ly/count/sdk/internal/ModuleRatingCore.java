@@ -19,7 +19,7 @@ public class ModuleRatingCore extends ModuleBase {
     public final static Long storableStorageId = 123L;
     public final static String storableStoragePrefix = "rating";
 
-    InternalConfig internalConfig = null;
+    protected InternalConfig internalConfig = null;
     protected CtxCore ctx = null;
 
     @Override
@@ -303,45 +303,9 @@ public class ModuleRatingCore extends ModuleBase {
          */
         public synchronized void setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
             if(disabledModule) { return; }
-
             L.d("Setting star rating texts");
 
             ModuleRatingCore.this.setStarRatingInitConfig(-1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
-        }
-
-        /**
-         * Set if the star rating should be shown automatically
-         * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
-         */
-        public synchronized void setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
-            if(disabledModule) { return; }
-
-            L.d("Setting to show star rating automatically: [" + IsShownAutomatically + "]");
-
-            ModuleRatingCore.this.setShowDialogAutomatically(IsShownAutomatically);
-        }
-
-        /**
-         * Set if the star rating is shown only once per app lifetime
-         * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
-         */
-        public synchronized void setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
-            if(disabledModule) { return; }
-            L.d("Setting to disable showing of star rating for each app version:[" + disableAsking + "]");
-
-            ModuleRatingCore.this.setStarRatingDisableAskingForEachAppVersion(disableAsking);
-        }
-
-        /**
-         * Set after how many sessions the automatic star rating will be shown for each app version
-         * @param limit app session amount for the limit
-         * @return Returns link to Countly for call chaining
-         */
-        public synchronized void setAutomaticStarRatingSessionLimit(int limit) {
-            if(disabledModule) { return; }
-
-            L.d("Setting automatic star rating session limit: [" + limit + "]");
-            ModuleRatingCore.this.setStarRatingInitConfig(limit, null, null, null);
         }
 
         /**
@@ -349,10 +313,9 @@ public class ModuleRatingCore extends ModuleBase {
          */
         public int getAutomaticStarRatingSessionLimit(){
             if(disabledModule) { return -1; }
-
             int sessionLimit = ModuleRatingCore.this.getAutomaticStarRatingSessionLimit();
-
             L.d("Getting automatic star rating session limit: [" + sessionLimit + "]");
+
             return sessionLimit;
         }
 
@@ -361,10 +324,9 @@ public class ModuleRatingCore extends ModuleBase {
          */
         public int getStarRatingsCurrentVersionsSessionCount(){
             if(disabledModule) { return -1; }
-
             int sessionCount = ModuleRatingCore.this.getCurrentVersionsSessionCount();
-
             L.d("Getting star rating current version session count: [" + sessionCount + "]");
+
             return sessionCount;
         }
 
@@ -373,22 +335,9 @@ public class ModuleRatingCore extends ModuleBase {
          */
         public void clearAutomaticStarRatingSessionCount(){
             if(disabledModule) { return; }
-
             L.d("Clearing star rating session count");
 
             ModuleRatingCore.this.clearAutomaticStarRatingSessionCount();
-        }
-
-        /**
-         * Set if the star rating dialog is cancellable
-         * @param isCancellable set this true if it should be cancellable
-         */
-        public synchronized void setIfStarRatingDialogIsCancellable(boolean isCancellable){
-            if(disabledModule) { return; }
-
-            L.d("Setting if star rating is cancellable: [" + isCancellable + "]");
-
-            ModuleRatingCore.this.setIfRatingDialogIsCancellable(isCancellable);
         }
     }
 }
