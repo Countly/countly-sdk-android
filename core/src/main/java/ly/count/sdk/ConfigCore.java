@@ -358,7 +358,7 @@ public class ConfigCore {
     /**
      * After how much time the timeout error is returned when showing rating widget
      */
-    protected long ratingWidgetTimeout = 10000l;
+    protected long ratingWidgetTimeout = 3000L;
 
     /**
      * After how many sessions the automatic star rating is shown
@@ -385,7 +385,19 @@ public class ConfigCore {
      */
     protected Boolean automaticStarRatingShouldBeShown = null;
 
+    //endregion
 
+    //region Remote Config Module fields
+
+    /**
+     * If remote config automatic fetching should be enabled
+     */
+    protected Boolean enableAutomaticRemoteConfig = null;
+
+    /**
+     * After how much time the request is canceled and timeout error returned
+     */
+    protected Long remoteConfigUpdateRequestTimeout = null;
 
     //endregion
 

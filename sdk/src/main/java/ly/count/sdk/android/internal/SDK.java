@@ -9,6 +9,7 @@ import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
+import ly.count.sdk.internal.ModuleRemoteConfig;
 import ly.count.sdk.internal.ModuleViews;
 import ly.count.sdk.internal.Request;
 
@@ -27,6 +28,7 @@ public class SDK extends SDKStorage {
         registerDefaultModuleMapping(Config.Feature.Push.getIndex(), ModulePush.class);
         registerDefaultModuleMapping(Config.Feature.Views.getIndex(), ModuleViews.class);
         registerDefaultModuleMapping(Config.Feature.StarRating.getIndex(), ModuleRating.class);
+        registerDefaultModuleMapping(Config.Feature.RemoteConfig.getIndex(), ModuleRemoteConfig.class);
     }
 
     private Handler handler;

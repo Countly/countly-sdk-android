@@ -331,6 +331,7 @@ public final class InternalConfig extends ConfigCore implements Storable {
         this.defaultNetworking = defaultNetworking;
     }
 
+    //region rating module
     public long getRatingWidgetTimeout(){
         return ratingWidgetTimeout;
     }
@@ -362,4 +363,16 @@ public final class InternalConfig extends ConfigCore implements Storable {
     public Boolean getStarRatingDisabledForNewVersion(){
         return starRatingDisabledAutomaticForNewVersions;
     }
+
+    //endregion
+
+    //region remote config
+    public Boolean getRemoteConfigAutomaticUpdateEnabled(){
+        return enableAutomaticRemoteConfig;
+    }
+
+    public Long getRemoteConfigUpdateTimeoutLength(){
+        return remoteConfigUpdateRequestTimeout;
+    }
+    //endregion
 }

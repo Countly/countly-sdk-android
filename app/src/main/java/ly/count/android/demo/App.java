@@ -42,10 +42,11 @@ public class App extends Application {
 
     public static Config getCountlyConfig () {
         return (Config) new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
-                .setDeviceIdStrategy(Config.DeviceIdStrategy.UUID)
-                .enableFeatures(Config.Feature.Events, Config.Feature.Sessions, Config.Feature.CrashReporting, Config.Feature.UserProfiles, Config.Feature.StarRating)
+                .setDeviceIdStrategy(Config.DeviceIdStrategy.CUSTOM_ID, "sdfert")
+                .enableFeatures(Config.Feature.Events, Config.Feature.Sessions, Config.Feature.CrashReporting, Config.Feature.UserProfiles, Config.Feature.StarRating, Config.Feature.RemoteConfig)
                 .setAutoSessionsTracking(true)
                 .enableTestMode()
-                .setLoggingLevel(Config.LoggingLevel.DEBUG);
+                .setLoggingLevel(Config.LoggingLevel.DEBUG)
+                .setEnableAutomaticRemoteConfig(true);
     }
 }

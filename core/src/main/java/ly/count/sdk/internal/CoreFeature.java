@@ -14,10 +14,10 @@ public enum CoreFeature {
     THEY SHOW WHICH ID'S ARE USED IN ANDROID
     Push(1 << 10),
     Attribution(1 << 11),
-    RemoteConfig(1 << 13),
+
     PerformanceMonitoring(1 << 14);
     */
-
+    RemoteConfig(1 << 13),
     TestDummy(1 << 19),//used during testing
     DeviceId(1 << 20),
     Requests(1 << 21),

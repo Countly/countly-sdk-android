@@ -8,6 +8,7 @@ import android.widget.Toast;
 import ly.count.sdk.android.Countly;
 import ly.count.sdk.android.internal.ModuleRating;
 import ly.count.sdk.internal.ModuleRatingCore;
+import ly.count.sdk.internal.ModuleRemoteConfig;
 
 /**
  * Demo Activity explaining other features of Countly SDK:
@@ -60,5 +61,19 @@ public class ActivityExampleOthers extends Activity {
             }
         });
 
+    }
+
+    public void onClickRequestRemoteConfigUpdate(View v){
+        Countly.RemoteConfig().updateRemoteConfig(new ModuleRemoteConfig.RemoteConfigCallback() {
+            @Override
+            public void callback(String error) {
+                Toast.makeText(activity, "onClickRequestRemoteConfigUpdate callback", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    public void onClickCheckRemoteConfigValue(View v){
+        Object value = Countly.RemoteConfig().remoteConfigValueForKey("button_android");
+        Toast.makeText(activity, "onClickCheckRemoteConfigValue result is [" + value + "]", Toast.LENGTH_LONG).show();
     }
 }

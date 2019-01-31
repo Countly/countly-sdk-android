@@ -31,4 +31,18 @@
         android:layout_height="wrap_content"
         android:onClick="onClickRatingWidget"
         android:text="ask for rating widget" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickRequestRemoteConfigUpdate"
+        android:text="Request remote config update" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCheckRemoteConfigValue"
+        android:text="Check Remote Config Value" />
 </LinearLayout>

@@ -23,6 +23,7 @@ import ly.count.sdk.Event;
 import ly.count.sdk.Session;
 import ly.count.sdk.User;
 import ly.count.sdk.UserEditor;
+import ly.count.sdk.internal.ModuleRemoteConfig;
 
 /**
  * Main Countly SDK API class.
@@ -221,6 +222,10 @@ public class Countly extends CountlyLifecycle {
         }
     }
 
+    /**
+     * Get the interface to Rating related features
+     * @return
+     */
     public static ModuleRating.Ratings Ratings(){
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
@@ -235,6 +240,28 @@ public class Countly extends CountlyLifecycle {
             ModuleRating emptyMr = new ModuleRating();
             emptyMr.disableModule();
             return emptyMr.new Ratings();
+        }
+    }
+
+    /**
+     * Get the interface to remote config related features
+     * @return
+     */
+    public static ModuleRemoteConfig.RemoteConfig RemoteConfig(){
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+            return null;
+        } else {
+            ModuleRemoteConfig mr = cly.sdk.module(ModuleRemoteConfig.class);
+            if(mr!= null){
+                return mr.new RemoteConfig();
+            }
+
+            //if it is null, feature was not enabled, return mock
+            L.wtf("Remote Config module was not enabled, returning dummy module");
+            ModuleRemoteConfig emptyMr = new ModuleRemoteConfig();
+            emptyMr.disableModule();
+            return emptyMr.new RemoteConfig();
         }
     }
 

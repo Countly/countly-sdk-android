@@ -740,4 +740,24 @@ public class Config extends ConfigCore {
         this.starRatingDisabledAutomaticForNewVersions = !shouldBeShown;
         return this;
     }
+
+    /**
+     * Set if automatic remote config should be enabled
+     * @param shouldBeEnabled set true for "yes"
+     * @return
+     */
+    public Config setEnableAutomaticRemoteConfig(boolean shouldBeEnabled){
+        this.enableAutomaticRemoteConfig = shouldBeEnabled;
+        return this;
+    }
+
+    /**
+     * Set after how much time made update request is canceled and a timeout error is returned
+     * @param timeout
+     * @return
+     */
+    public Config setRemoteConfigUpdateRequestTimeout(long timeout){
+        this.remoteConfigUpdateRequestTimeout = timeout;
+        return this;
+    }
 }
