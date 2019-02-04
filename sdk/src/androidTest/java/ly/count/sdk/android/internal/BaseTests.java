@@ -92,23 +92,19 @@ public class BaseTests {
         if(useAlternateCtxInit){
             this.ctx = new CtxImpl(this.sdk, this.config, getContext());
             this.sdk.init(this.ctx);
-            //this.ctx = new CtxImpl(this.sdk, this.config, application());
         } else {
             this.ctx = new CtxImpl(this.sdk, this.config, getContext());
             this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(this.config), application()));
         }
 
-
-        //this.ctx = new CtxImpl(this.sdk, this.config, getContext());
-        //this.sdk.init(new CtxImpl(this.sdk, new InternalConfig(this.config), application()));
-
-
         this.config = SDK.instance.config();
 
         //to make sure it seems initialised
         Countly cly = Whitebox.invokeConstructor(Countly.class);
-        Whitebox.setInternalState(Countly.class, "cly", cly);
         Whitebox.setInternalState(cly, "sdk", sdk);
+        Whitebox.setInternalState(cly, "sdkInterface", sdk);
+        Whitebox.setInternalState(Countly.class, "cly", cly);
+
     }
 
     @SuppressWarnings("unchecked")

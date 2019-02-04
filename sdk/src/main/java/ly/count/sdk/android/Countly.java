@@ -1,7 +1,6 @@
 package ly.count.sdk.android;
 
 import android.app.Activity;
-import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
 
@@ -47,7 +46,7 @@ public class Countly extends CountlyLifecycle {
     protected Countly(SDK sdk, Ctx ctx) {
         super();
         cly = this;
-        super.sdk = this.sdk = sdk;
+        super.sdkInterface = this.sdk = sdk;
         this.ctx = ctx;
     }
 

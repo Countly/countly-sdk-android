@@ -8,28 +8,28 @@ import ly.count.sdk.internal.SDKInterface;
 public abstract class Cly implements Usage {
     protected static Cly cly;
     protected CtxCore ctx;
-    protected SDKInterface sdk;
+    protected SDKInterface sdkInterface;
 
     protected Cly() {
         cly = this;
     }
 
     protected static Session session(CtxCore ctx) {
-        return cly.sdk.session(ctx, null);
+        return cly.sdkInterface.session(ctx, null);
     }
 
     protected static Session getSession() {
-        return cly.sdk.getSession();
+        return cly.sdkInterface.getSession();
     }
 
     @Override
     public Event event(String key) {
-        return ((Session)sdk.session(ctx, null)).event(key);
+        return ((Session) sdkInterface.session(ctx, null)).event(key);
     }
 
     @Override
     public Event timedEvent(String key) {
-        return ((Session)sdk.session(ctx, null)).timedEvent(key);
+        return ((Session) sdkInterface.session(ctx, null)).timedEvent(key);
     }
 
     /**
@@ -41,36 +41,36 @@ public abstract class Cly implements Usage {
      */
     @Override
     public User user() {
-        return ((Session)sdk.session(ctx, null)).user();
+        return ((Session) sdkInterface.session(ctx, null)).user();
     }
 
     @Override
     public Usage addParam(String key, Object value) {
-        return ((Session)sdk.session(ctx, null)).addParam(key, value);
+        return ((Session) sdkInterface.session(ctx, null)).addParam(key, value);
     }
 
     @Override
     public Usage addCrashReport(Throwable t, boolean fatal) {
-        return ((Session)sdk.session(ctx, null)).addCrashReport(t, fatal);
+        return ((Session) sdkInterface.session(ctx, null)).addCrashReport(t, fatal);
     }
 
     @Override
     public Usage addCrashReport(Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
-        return ((Session)sdk.session(ctx, null)).addCrashReport(t, fatal, name, segments, logs);
+        return ((Session) sdkInterface.session(ctx, null)).addCrashReport(t, fatal, name, segments, logs);
     }
 
     @Override
     public Usage addLocation(double latitude, double longitude) {
-        return ((Session)sdk.session(ctx, null)).addLocation(latitude, longitude);
+        return ((Session) sdkInterface.session(ctx, null)).addLocation(latitude, longitude);
     }
 
     @Override
     public View view(String name, boolean start) {
-        return ((Session)sdk.session(ctx, null)).view(name, start);
+        return ((Session) sdkInterface.session(ctx, null)).view(name, start);
     }
 
     @Override
     public View view(String name) {
-        return ((Session)sdk.session(ctx, null)).view(name);
+        return ((Session) sdkInterface.session(ctx, null)).view(name);
     }
 }
