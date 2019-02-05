@@ -27,7 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -61,7 +60,7 @@ public class ConnectionProcessorTests extends AndroidTestCase {
 
     public void testUrlConnectionForEventData() throws IOException {
         final String eventData = "blahblahblah";
-        final URLConnection urlConnection = connectionProcessor.urlConnectionForEventData(eventData);
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData);
         assertEquals(30000, urlConnection.getConnectTimeout());
         assertEquals(30000, urlConnection.getReadTimeout());
         assertFalse(urlConnection.getUseCaches());

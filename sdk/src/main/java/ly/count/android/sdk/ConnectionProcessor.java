@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.text.method.SingleLineTransformationMethod;
 import android.util.Log;
 
 import java.io.BufferedWriter;
@@ -65,13 +66,15 @@ public class ConnectionProcessor implements Runnable {
         sslContext_ = sslContext;
     }
 
-    URLConnection urlConnectionForEventData(final String eventData) throws IOException {
-        String urlStr = serverURL_ + "/i?";
-        if(!eventData.contains("&crash=") && eventData.length() < 2048) {
-            urlStr += eventData;
-            urlStr += "&checksum=" + sha1Hash(eventData + salt);
+    public URLConnection urlConnectionForServerRequest(final String requestData, final String customEndpoint) throws IOException {
+        String urlEndpoint = "/i?";
+        if(customEndpoint != null) {urlEndpoint = customEndpoint;}
+        String urlStr = serverURL_ + urlEndpoint;
+        if(!requestData.contains("&crash=") && requestData.length() < 2048) {
+            urlStr += requestData;
+            urlStr += "&checksum=" + sha1Hash(requestData + salt);
         } else {
-            urlStr += "checksum=" + sha1Hash(eventData + salt);
+            urlStr += "checksum=" + sha1Hash(requestData + salt);
         }
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
@@ -132,7 +135,7 @@ public class ConnectionProcessor implements Runnable {
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
         }
         else {
-            if(eventData.contains("&crash=") || eventData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
+            if(requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.d(Countly.TAG, "Using HTTP POST");
                 }
@@ -140,7 +143,7 @@ public class ConnectionProcessor implements Runnable {
                 conn.setRequestMethod("POST");
                 OutputStream os = conn.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-                writer.write(eventData);
+                writer.write(requestData);
                 writer.flush();
                 writer.close();
                 os.close();
@@ -246,7 +249,7 @@ public class ConnectionProcessor implements Runnable {
                 URLConnection conn = null;
                 try {
                     // initialize and open connection
-                    conn = urlConnectionForEventData(eventData);
+                    conn = urlConnectionForServerRequest(eventData, null);
                     conn.connect();
 
                     // response code has to be 2xx to be considered a success

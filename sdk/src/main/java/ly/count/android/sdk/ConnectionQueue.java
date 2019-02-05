@@ -466,8 +466,12 @@ public class ConnectionQueue {
     void tick() {
         if (!store_.isEmptyConnections() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
-            connectionProcessorFuture_ = executor_.submit(new ConnectionProcessor(serverURL_, store_, deviceId_, sslContext_));
+            connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
         }
+    }
+
+    public ConnectionProcessor createConnectionProcessor(){
+        return new ConnectionProcessor(serverURL_, store_, deviceId_, sslContext_);
     }
 
     // for unit testing
