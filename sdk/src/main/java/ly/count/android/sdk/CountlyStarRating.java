@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
@@ -452,7 +451,7 @@ public class CountlyStarRating {
                 Log.d(Countly.TAG, "rating widget url :[" + ratingWidgetUrl + "]");
             }
 
-            (new RatingAvailabilityChecker()).execute(urlConnection, new InternalFeedbackRatingCallback() {
+            (new ImmediateRequestMaker()).execute(urlConnection, new InternalFeedbackRatingCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     if(checkResponse == null){
@@ -522,9 +521,9 @@ public class CountlyStarRating {
     }
 
     /**
-     * Ascync task for checking the Rating dialog availability
+     * Ascync task for making immediate server requests
      */
-    private static class RatingAvailabilityChecker extends AsyncTask<Object, Void, JSONObject> {
+    protected static class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
         InternalFeedbackRatingCallback callback;
 
         protected JSONObject doInBackground(Object... params) {
@@ -532,12 +531,23 @@ public class CountlyStarRating {
 
             HttpURLConnection connection = null;
             BufferedReader reader = null;
+            boolean wasSuccess = true;
 
             try {
-                connection =(HttpURLConnection)params[0];
+                connection = (HttpURLConnection)params[0];
                 connection.connect();
 
-                InputStream stream = connection.getInputStream();
+                InputStream stream;
+
+                try{
+                    //assume there will be no error
+                    stream = connection.getInputStream();
+                } catch (Exception ex){
+                    //in case of exception, assume there was a error in the request
+                    //and change streams
+                    stream = connection.getErrorStream();
+                    wasSuccess = false;
+                }
 
                 reader = new BufferedReader(new InputStreamReader(stream));
 
@@ -548,7 +558,14 @@ public class CountlyStarRating {
                     buffer.append(line+"\n");
                 }
 
-                return new JSONObject(buffer.toString());
+                if(wasSuccess) {
+                    return new JSONObject(buffer.toString());
+                } else {
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.e(Countly.TAG, "Encountered problem while making a immediate server request, :[" + buffer.toString() + "]");
+                    }
+                    return null;
+                }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {

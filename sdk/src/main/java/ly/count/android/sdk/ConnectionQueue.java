@@ -411,12 +411,8 @@ public class ConnectionQueue {
     private String prepareLocationData(CountlyStore cs, boolean canSendEmptyWithNoConsent){
         String data = "";
 
-        if(!Countly.sharedInstance().anyConsentGiven()){
-            //return data;
-        }
-
         if(canSendEmptyWithNoConsent && (cs.getLocationDisabled() || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location))){
-            //if location is disabled or consent no given, send empty location info
+            //if location is disabled or consent not given, send empty location info
             //this way it is cleared server side and geoip is not used
             //do this only if allowed
             data += "&location=";
@@ -445,6 +441,31 @@ public class ConnectionQueue {
                 }
             }
         }
+        return data;
+    }
+
+    protected String prepareRemoteConfigRequest(String keysInclude, String keysExclude){
+        String data = "method=fetch_remote_config"
+                + "&app_key=" + appKey_
+                +"&tz=" + DeviceInfo.getTimezoneOffset()
+                +"&device_id=" + ConnectionProcessor.urlEncodeString(deviceId_.getId());
+
+        if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+            //add session data if consent given
+            data += "&metrics=" + DeviceInfo.getMetrics(context_);
+        }
+
+        CountlyStore cs = getCountlyStore();
+        String locationData = prepareLocationData(cs, true);
+        data += locationData;
+
+        //add key filters
+        if(keysInclude != null){
+            data += "&keys=" +  ConnectionProcessor.urlEncodeString(keysInclude);
+        } else if(keysExclude != null) {
+            data += "&omit_keys=" + ConnectionProcessor.urlEncodeString(keysExclude);
+        }
+
         return data;
     }
 

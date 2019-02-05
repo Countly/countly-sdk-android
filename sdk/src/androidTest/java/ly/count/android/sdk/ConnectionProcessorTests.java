@@ -60,7 +60,7 @@ public class ConnectionProcessorTests extends AndroidTestCase {
 
     public void testUrlConnectionForEventData() throws IOException {
         final String eventData = "blahblahblah";
-        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData);
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
         assertEquals(30000, urlConnection.getConnectTimeout());
         assertEquals(30000, urlConnection.getReadTimeout());
         assertFalse(urlConnection.getUseCaches());

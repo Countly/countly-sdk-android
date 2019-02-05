@@ -11,6 +11,7 @@
     <string name="activity_name_others">Other examples</string>
     <string name="activity_name_user_detail">User detail examples</string>
     <string name="activity_name_view_tracking">View tracking examples</string>
+    <string name="activity_name_remote_config">Remote Config examples</string>
     <string name="custom_events">Custom Events</string>
     <string name="crash_reporting">Crash Reporting</string>
     <string name="user_details">User Details</string>

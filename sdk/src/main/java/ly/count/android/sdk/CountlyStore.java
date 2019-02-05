@@ -61,6 +61,7 @@ public class CountlyStore {
     private static final String LOCATION_DISABLED_PREFERENCE = "LOCATION_DISABLED";
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
+    private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
     private static final int MAX_EVENTS = 100;
     private static final int MAX_REQUESTS = 1000;
 
@@ -231,6 +232,15 @@ public class CountlyStore {
     String getStarRatingPreferences() {
         return preferences_.getString(STAR_RATING_PREFERENCE, "");
     }
+
+    void setRemoteConfigValues(String values){
+        preferences_.edit().putString(REMOTE_CONFIG_VALUES, values).apply();
+    }
+
+    String getRemoteConfigValues(){
+        return preferences_.getString(REMOTE_CONFIG_VALUES, "");
+    }
+
 
     void setCachedAdvertisingId(String advertisingId) {
         preferences_.edit().putString(CACHED_ADVERTISING_ID, advertisingId).apply();

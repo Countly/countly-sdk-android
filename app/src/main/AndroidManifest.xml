@@ -67,6 +67,11 @@
             android:label="@string/activity_name_view_tracking" >
         </activity>
 
+        <activity
+            android:name=".ActivityExampleRemoteConfig"
+            android:label="@string/activity_name_remote_config" >
+        </activity>
+
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">
             <intent-filter>
                 <action android:name="org.OpenUDID.GETUDID" />

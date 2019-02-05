@@ -60,6 +60,13 @@
             android:onClick="onClickButtonMultiThreading"/>
 
         <Button
+            android:id="@+id/button52"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClickButtonRemoteConfig"
+            android:text="Remote Config" />
+
+        <Button
             android:text="@string/others"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
