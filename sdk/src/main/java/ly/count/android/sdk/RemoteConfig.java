@@ -26,9 +26,13 @@ public class RemoteConfig {
      * Internal call for updating remote config keys
      * @param keysOnly set if these are the only keys to update
      * @param keysExcept set if these keys should be ignored from the update
+     * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
      * @param callback called after the update is done
      */
-    protected static void updateRemoteConfigValues(final Context context, final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final RemoteConfigCallback callback){
+    protected static void updateRemoteConfigValues(final Context context, final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
+        }
         String keysInclude = null;
         String keysExclude = null;
 
@@ -66,9 +70,12 @@ public class RemoteConfig {
             return;
         }
 
-        (new CountlyStarRating.ImmediateRequestMaker()).execute(urlConnection, new CountlyStarRating.InternalFeedbackRatingCallback() {
+        (new CountlyStarRating.ImmediateRequestMaker()).execute(urlConnection, requestShouldBeDelayed, new CountlyStarRating.InternalFeedbackRatingCallback() {
             @Override
             public void callback(JSONObject checkResponse) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Processing remote config received response, receved response is null:[" + (checkResponse == null) + "]");
+                }
                 if(checkResponse == null) {
                     if(callback != null){
                         callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");

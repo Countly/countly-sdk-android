@@ -1,3 +1,8 @@
+19.02
+  * Added remote config
+  * Star rating requests now use the same urlConnection as other requests
+  * Added functionality for adding custom header key/value pairs to every request
+
 18.08.1
   * Fixed bug with events getting unrelated segmentation fields added
   * Added flags to push action intent

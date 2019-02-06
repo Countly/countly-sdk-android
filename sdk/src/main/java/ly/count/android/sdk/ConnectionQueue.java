@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -51,6 +52,8 @@ public class ConnectionQueue {
     private Future<?> connectionProcessorFuture_;
     private DeviceId deviceId_;
     private SSLContext sslContext_;
+
+    private Map<String, String> requestHeaderCustomValues;
 
     // Getters are for unit testing
     String getAppKey() {
@@ -101,6 +104,10 @@ public class ConnectionQueue {
 
     public void setDeviceId(DeviceId deviceId) {
         this.deviceId_ = deviceId;
+    }
+
+    public void setRequestHeaderCustomValues(Map<String, String> headerCustomValues){
+        requestHeaderCustomValues = headerCustomValues;
     }
 
     /**
@@ -492,7 +499,7 @@ public class ConnectionQueue {
     }
 
     public ConnectionProcessor createConnectionProcessor(){
-        return new ConnectionProcessor(serverURL_, store_, deviceId_, sslContext_);
+        return new ConnectionProcessor(serverURL_, store_, deviceId_, sslContext_, requestHeaderCustomValues);
     }
 
     // for unit testing

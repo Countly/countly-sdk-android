@@ -13,7 +13,7 @@ import android.widget.Toast;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.messaging.CountlyMessaging;
 import ly.count.android.sdk.messaging.Message;
-import me.leolin.shortcutbadger.ShortcutBadger;
+//import me.leolin.shortcutbadger.ShortcutBadger;
 
 public class MainActivity extends Activity {
 
@@ -87,7 +87,7 @@ public class MainActivity extends Activity {
                     if(badgeString != null) {
                         int badgeCount = Integer.parseInt(badgeString);
 
-                        boolean succeeded = ShortcutBadger.applyCount(getApplicationContext(), badgeCount);
+                        boolean succeeded = true;// ShortcutBadger.applyCount(getApplicationContext(), badgeCount);
                         if (!succeeded) {
                             Toast.makeText(getApplicationContext(), "Unable to put badge", Toast.LENGTH_SHORT).show();
                         }

@@ -55,7 +55,7 @@ public class Countly {
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
      */
-    public static final String COUNTLY_SDK_VERSION_STRING = "18.08.1";
+    public static final String COUNTLY_SDK_VERSION_STRING = "19.02";
     /**
      * Used as request meta data on every request
      */
@@ -159,6 +159,9 @@ public class Countly {
     //if set to true, it will automatically download remote configs on module startup
     boolean remoteConfigAutomaticUpdateEnabled = false;
     RemoteConfig.RemoteConfigCallback remoteConfigInitCallback = null;
+
+    //custom request header fields
+    Map<String, String> requestHeaderCustomValues;
 
     //GDPR
     protected boolean requiresConsent = false;
@@ -391,6 +394,7 @@ public class Countly {
             connectionQueue_.setAppKey(appKey);
             connectionQueue_.setCountlyStore(countlyStore);
             connectionQueue_.setDeviceId(deviceIdInstance);
+            connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
 
             eventQueue_ = new EventQueue(countlyStore);
 
@@ -434,7 +438,7 @@ public class Countly {
 
             //update remote config values if automatic update is enabled
             if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven()){
-                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, remoteConfigInitCallback);
+                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
             }
         }
 
@@ -728,8 +732,9 @@ public class Countly {
         connectionQueue_.beginSession();
 
         //update remote config values if automatic update is enabled
+        remoteConfigClearValues();
         if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven()){
-            RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, null);
+            RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
     }
 
@@ -760,6 +765,13 @@ public class Countly {
         }
 
         connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());
+
+        //update remote config values if automatic update is enabled
+        remoteConfigClearValues();
+        if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven()){
+            //request should be delayed, because of the delayed server merge
+            RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true,null);
+        }
     }
 
     /**
@@ -2385,7 +2397,7 @@ public class Countly {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigUpdate");
         }
         if(!anyConsentGiven()){ return; }
-        RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, callback);
+        RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, callback);
     }
 
     /**
@@ -2405,7 +2417,7 @@ public class Countly {
             return;
         }
         if (keysToInclude == null && Countly.sharedInstance().isLoggingEnabled()) { Log.w(Countly.TAG,"updateRemoteConfigExceptKeys passed 'keys to include' array is null"); }
-        RemoteConfig.updateRemoteConfigValues(context_, keysToInclude, null, connectionQueue_, callback);
+        RemoteConfig.updateRemoteConfigValues(context_, keysToInclude, null, connectionQueue_, false, callback);
     }
 
     /**
@@ -2425,7 +2437,7 @@ public class Countly {
             return;
         }
         if (keysToExclude == null && Countly.sharedInstance().isLoggingEnabled()) { Log.w(Countly.TAG,"updateRemoteConfigExceptKeys passed 'keys to ignore' array is null"); }
-        RemoteConfig.updateRemoteConfigValues(context_, null, keysToExclude, connectionQueue_, callback);
+        RemoteConfig.updateRemoteConfigValues(context_, null, keysToExclude, connectionQueue_, false, callback);
     }
 
     /**
@@ -2457,6 +2469,19 @@ public class Countly {
         }
 
         RemoteConfig.clearValueStore(context_);
+    }
+
+    /**
+     * Allows you to add custom header key/value pairs to each request
+     */
+    public void addCustomNetworkRequestHeaders(Map<String, String> headerValues){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling addCustomNetworkRequestHeaders");
+        }
+        requestHeaderCustomValues = headerValues;
+        if(connectionQueue_ != null){
+            connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
+        }
     }
 
     // for unit testing

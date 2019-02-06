@@ -526,14 +526,39 @@ public class CountlyStarRating {
     protected static class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
         InternalFeedbackRatingCallback callback;
 
+        /**
+         * params fields:
+         * 0 - urlConnection
+         * 1 - requestShouldBeDelayed
+         * 2 - callback         *
+         */
         protected JSONObject doInBackground(Object... params) {
-            callback = (InternalFeedbackRatingCallback)params[1];
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.v(Countly.TAG, "Starting ImmediateRequestMaker request");
+            }
+            callback = (InternalFeedbackRatingCallback)params[2];
+            boolean requestShouldBeDelayed = (boolean)params[1];
 
             HttpURLConnection connection = null;
             BufferedReader reader = null;
             boolean wasSuccess = true;
 
             try {
+                if(requestShouldBeDelayed){
+                    //used in cases after something has to be done after a device id change
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.v(Countly.TAG, "ImmediateRequestMaker request should be delayed, waiting for 10.5 seconds");
+                    }
+
+                    try {
+                        Thread.sleep(10500);
+                    } catch (InterruptedException e) {
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.w(Countly.TAG, "While waiting for 10 seconds in ImmediateRequestMaker, sleep was interrupted");
+                        }
+                    }
+                }
+
                 connection = (HttpURLConnection)params[0];
                 connection.connect();
 

@@ -37,6 +37,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
+import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -57,13 +58,16 @@ public class ConnectionProcessor implements Runnable {
     private final String serverURL_;
     private final SSLContext sslContext_;
 
+    private Map<String, String> requestHeaderCustomValues_;
+
     protected static String salt;
 
-    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext) {
+    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues) {
         serverURL_ = serverURL;
         store_ = store;
         deviceId_ = deviceId;
         sslContext_ = sslContext;
+        requestHeaderCustomValues_ = requestHeaderCustomValues;
     }
 
     public URLConnection urlConnectionForServerRequest(final String requestData, final String customEndpoint) throws IOException {
@@ -90,6 +94,23 @@ public class ConnectionProcessor implements Runnable {
         conn.setUseCaches(false);
         conn.setDoInput(true);
         conn.setRequestMethod("GET");
+
+        if(requestHeaderCustomValues_ != null){
+            //if there are custom header values, add them
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.v(Countly.TAG, "Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
+            }
+            for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet())
+            {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if(key != null && value != null && !key.isEmpty()){
+                    conn.addRequestProperty(key, value);
+                }
+            }
+        }
+
+
         String picturePath = UserData.getPicturePathFromQuery(url);
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Got picturePath: " + picturePath);
@@ -223,9 +244,6 @@ public class ConnectionProcessor implements Runnable {
                         try {
                             Thread.sleep(10000);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-
                             if (Countly.sharedInstance().isLoggingEnabled()) {
                                 Log.w(Countly.TAG, "While waiting for 10 seconds, sleep was interrupted");
                             }
