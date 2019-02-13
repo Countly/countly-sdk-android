@@ -452,9 +452,8 @@ public class ConnectionQueue {
     }
 
     protected String prepareRemoteConfigRequest(String keysInclude, String keysExclude){
-        String data = "method=fetch_remote_config"
-                + "&app_key=" + appKey_
-                +"&tz=" + DeviceInfo.getTimezoneOffset()
+        String data = prepareCommonRequestData()
+                + "method=fetch_remote_config"
                 +"&device_id=" + ConnectionProcessor.urlEncodeString(deviceId_.getId());
 
         if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
