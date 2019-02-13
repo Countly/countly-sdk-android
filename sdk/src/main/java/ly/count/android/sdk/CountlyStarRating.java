@@ -451,7 +451,7 @@ public class CountlyStarRating {
                 Log.d(Countly.TAG, "rating widget url :[" + ratingWidgetUrl + "]");
             }
 
-            (new ImmediateRequestMaker()).execute(urlConnection, new InternalFeedbackRatingCallback() {
+            (new ImmediateRequestMaker()).execute(urlConnection, false, new InternalFeedbackRatingCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     if(checkResponse == null){

@@ -11,11 +11,11 @@ buildscript {
 }
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 1
         versionName "19.02"
     }
@@ -42,4 +42,5 @@ publish {
     publishVersion = '19.02'
     desc = 'Countly Android SDK with FCM Support'
     website = 'https://github.com/Countly/countly-sdk-android'
+    autoPublish = false
 }
