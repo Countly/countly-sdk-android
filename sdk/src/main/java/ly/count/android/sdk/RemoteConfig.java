@@ -56,6 +56,10 @@ public class RemoteConfig {
         ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
         URLConnection urlConnection;
         String requestData = connectionQueue_.prepareRemoteConfigRequest(keysInclude, keysExclude);
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "RemoteConfig requestData:[" + requestData + "]");
+        }
+
         try {
             urlConnection = cp.urlConnectionForServerRequest(requestData, "/o/sdk?");
         } catch (IOException e) {

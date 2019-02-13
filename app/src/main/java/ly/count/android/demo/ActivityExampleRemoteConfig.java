@@ -36,7 +36,7 @@ public class ActivityExampleRemoteConfig extends Activity {
     }
 
     public void onClickRemoteConfigGetValue(View v) {
-        Object value = Countly.sharedInstance().getRemoteConfigValueForKey("a");
+        Object value = Countly.sharedInstance().getRemoteConfigValueForKey("aa");
         if(value != null){
             Toast.makeText(activity, "Stored Remote Config Value with key 'a': [" + (int)value+ "]", Toast.LENGTH_SHORT).show();
         } else {
@@ -45,7 +45,7 @@ public class ActivityExampleRemoteConfig extends Activity {
     }
 
     public void onClickRemoteConfigGetValueInclusion(View v) {
-        Countly.sharedInstance().updateRemoteConfigForKeysOnly(new String[]{"a", "d"}, new RemoteConfig.RemoteConfigCallback() {
+        Countly.sharedInstance().updateRemoteConfigForKeysOnly(new String[]{"aa", "dd"}, new RemoteConfig.RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 if(error == null) {
@@ -58,7 +58,7 @@ public class ActivityExampleRemoteConfig extends Activity {
     }
 
     public void onClickRemoteConfigGetValueExclusion(View v) {
-        Countly.sharedInstance().updateRemoteConfigExceptKeys(new String[]{"a", "d"}, new RemoteConfig.RemoteConfigCallback() {
+        Countly.sharedInstance().updateRemoteConfigExceptKeys(new String[]{"aa", "dd"}, new RemoteConfig.RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 if (error == null) {
@@ -77,10 +77,10 @@ public class ActivityExampleRemoteConfig extends Activity {
     public void onClickRemoteConfigPrintValues(View v) {
         //this sample assumes that there are 4 keys available on the server
 
-        Object value_1 = Countly.sharedInstance().getRemoteConfigValueForKey("a");
-        Object value_2 = Countly.sharedInstance().getRemoteConfigValueForKey("b");
-        Object value_3 = Countly.sharedInstance().getRemoteConfigValueForKey("c");
-        Object value_4 = Countly.sharedInstance().getRemoteConfigValueForKey("d");
+        Object value_1 = Countly.sharedInstance().getRemoteConfigValueForKey("aa");
+        Object value_2 = Countly.sharedInstance().getRemoteConfigValueForKey("bb");
+        Object value_3 = Countly.sharedInstance().getRemoteConfigValueForKey("cc");
+        Object value_4 = Countly.sharedInstance().getRemoteConfigValueForKey("dd");
 
         String printValues = "";
 

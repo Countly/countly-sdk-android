@@ -453,8 +453,8 @@ public class ConnectionQueue {
 
     protected String prepareRemoteConfigRequest(String keysInclude, String keysExclude){
         String data = prepareCommonRequestData()
-                + "method=fetch_remote_config"
-                +"&device_id=" + ConnectionProcessor.urlEncodeString(deviceId_.getId());
+                + "&method=fetch_remote_config"
+                + "&device_id=" + ConnectionProcessor.urlEncodeString(deviceId_.getId());
 
         if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given

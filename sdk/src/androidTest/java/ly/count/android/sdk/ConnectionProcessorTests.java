@@ -44,7 +44,7 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         super.setUp();
         mockStore = mock(CountlyStore.class);
         mockDeviceId = mock(DeviceId.class);
-        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null);
+        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, null);
         testDeviceId = "123";
     }
 
@@ -52,7 +52,7 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
         final DeviceId mockDeviceId = mock(DeviceId.class);
-        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, null);
+        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, null, null);
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
         assertSame(mockDeviceId, connectionProcessor1.getDeviceId());
