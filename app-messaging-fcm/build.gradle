@@ -13,7 +13,7 @@ android {
     defaultConfig {
         applicationId "ly.count.android.demo.messaging_fcm"
         minSdkVersion 16
-        targetSdkVersion 26
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
 
@@ -33,7 +33,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':sdk-messaging-fcm')
-    //implementation 'ly.count.android:sdk-messaging-fcm:18.08.1'
+    //implementation 'ly.count.android:sdk-messaging-fcm:19.02.1'
 
     implementation 'com.android.support:appcompat-v7:26.1.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'

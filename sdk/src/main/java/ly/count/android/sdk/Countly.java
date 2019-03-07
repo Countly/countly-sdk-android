@@ -1367,7 +1367,7 @@ public class Countly {
      * @return true if event with this key has been previously started, false otherwise
      */
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
-        return endEvent(key, segmentation, null, null, 1, 0);
+        return endEvent(key, segmentation, null, null, count, sum);
     }
     /**
      * End timed event with a specified key

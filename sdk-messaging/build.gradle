@@ -18,7 +18,7 @@ android {
         minSdkVersion 9
         targetSdkVersion 25
         versionCode 1
-        versionName "19.02"
+        versionName "19.02.1"
     }
     buildTypes {
         release {
@@ -43,7 +43,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk-messaging'
-    publishVersion = '19.02'
+    publishVersion = '19.02.1'
     desc = 'Countly Android SDK with GCM Support'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

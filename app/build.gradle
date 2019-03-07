@@ -17,13 +17,13 @@ buildscript {
 }
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 28
     buildToolsVersion '27.0.3'
 
     defaultConfig {
         applicationId "ly.count.android.demo"
         minSdkVersion 12
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
     }
@@ -50,5 +50,5 @@ dependencies {
 
     //implementation 'com.google.android.gms:play-services-gcm:10.0.1'
 
-    //implementation 'ly.count.android:sdk:18.08.1'
+    //implementation 'ly.count.android:sdk:19.02.1'
 }

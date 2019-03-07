@@ -1,3 +1,6 @@
+19.02.1
+  * fixing endEvent bug that ignores provided "count" and "sum" values
+
 19.02
   * Added remote config
   * Star rating requests now use the same urlConnection as other requests
