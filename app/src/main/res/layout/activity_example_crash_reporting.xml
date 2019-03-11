@@ -42,11 +42,12 @@
         android:onClick="onClickCrashReporting04"/>
 
     <Button
-        android:text="@string/assert_fail"
+        android:id="@+id/button24"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button24"
-        android:onClick="onClickCrashReporting05"/>
+        android:enabled="false"
+        android:onClick="onClickCrashReporting05"
+        android:text="@string/assert_fail" />
 
     <Button
         android:text="@string/kill"

@@ -46,7 +46,7 @@ public class CountlyTests {
     Countly mCountly;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         final CountlyStore countlyStore = new CountlyStore(getContext());
         countlyStore.clear();
 
@@ -57,7 +57,7 @@ public class CountlyTests {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
     }
 
     @Test
@@ -465,7 +465,7 @@ public class CountlyTests {
     public void testRecordEvent_keyAndSegmentationAndCount() {
         final String eventKey = "eventKey";
         final int count = 42;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "segvalue1");
         final Countly countly = spy(mCountly);
         doNothing().when(countly).recordEvent(eventKey, segmentation, count, 0.0d);
@@ -478,7 +478,7 @@ public class CountlyTests {
         final String eventKey = "eventKey";
         final int count = 42;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "segvalue1");
 
         try {
@@ -494,7 +494,7 @@ public class CountlyTests {
         final String eventKey = null;
         final int count = 42;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "segvalue1");
 
         try {
@@ -511,7 +511,7 @@ public class CountlyTests {
         final String eventKey = "";
         final int count = 42;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "segvalue1");
 
         try {
@@ -527,7 +527,7 @@ public class CountlyTests {
         final String eventKey = "";
         final int count = 0;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "segvalue1");
 
         try {
@@ -543,7 +543,7 @@ public class CountlyTests {
         final String eventKey = "";
         final int count = -1;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "segvalue1");
 
         try {
@@ -559,7 +559,7 @@ public class CountlyTests {
         final String eventKey = "";
         final int count = 1;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put(null, "segvalue1");
 
         try {
@@ -575,7 +575,7 @@ public class CountlyTests {
         final String eventKey = "";
         final int count = 1;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("", "segvalue1");
 
         try {
@@ -591,7 +591,7 @@ public class CountlyTests {
         final String eventKey = "";
         final int count = 1;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", null);
 
         try {
@@ -607,7 +607,7 @@ public class CountlyTests {
         final String eventKey = "";
         final int count = 1;
         final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "");
 
         try {
@@ -620,6 +620,7 @@ public class CountlyTests {
 
     //todo fix test, problem while mocking
     /*
+    @Test
     public void testRecordEvent() {
         final String eventKey = "eventKey";
         final int count = 42;
@@ -639,6 +640,7 @@ public class CountlyTests {
         verify(countly).sendEventsIfNeeded();
     }
 
+    @Test
     public void testSendEventsIfNeeded_emptyQueue() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -653,6 +655,7 @@ public class CountlyTests {
         verifyZeroInteractions(mockConnectionQueue);
     }
 
+    @Test
     public void testSendEventsIfNeeded_lessThanThreshold() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -667,6 +670,7 @@ public class CountlyTests {
         verifyZeroInteractions(mockConnectionQueue);
     }
 
+    @Test
     public void testSendEventsIfNeeded_equalToThreshold() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -683,6 +687,7 @@ public class CountlyTests {
         verify(mockConnectionQueue, times(1)).recordEvents(eventData);
     }
 
+    @Test
     public void testSendEventsIfNeeded_moreThanThreshold() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -699,6 +704,7 @@ public class CountlyTests {
         verify(mockConnectionQueue, times(1)).recordEvents(eventData);
     }
 
+    @Test
     public void testOnTimer_noActiveSession() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -711,6 +717,7 @@ public class CountlyTests {
         verifyZeroInteractions(mockConnectionQueue, mockEventQueue);
     }
 
+    @Test
     public void testOnTimer_activeSession_emptyEventQueue() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -726,6 +733,7 @@ public class CountlyTests {
         verify(mockConnectionQueue, times(0)).recordEvents(anyString());
     }
 
+    @Test
     public void testOnTimer_activeSession_nonEmptyEventQueue() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -743,6 +751,7 @@ public class CountlyTests {
         verify(mockConnectionQueue).recordEvents(eventData);
     }
 
+    @Test
     public void testOnTimer_activeSession_emptyEventQueue_sessionTimeUpdatesDisabled() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -759,6 +768,7 @@ public class CountlyTests {
         verify(mockConnectionQueue, times(0)).recordEvents(anyString());
     }
 
+    @Test
     public void testOnTimer_activeSession_nonEmptyEventQueue_sessionTimeUpdatesDisabled() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);

@@ -47,7 +47,7 @@ public class ConnectionProcessorTests {
     String testDeviceId;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mockStore = mock(CountlyStore.class);
         mockDeviceId = mock(DeviceId.class);
         connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, null);
@@ -105,7 +105,7 @@ public class ConnectionProcessorTests {
         boolean closed = false;
 
         @Override
-        public int read() throws IOException {
+        public int read() {
             return readCount++ < 1 ? 1 : -1;
         }
 

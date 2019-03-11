@@ -4,8 +4,6 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
-import junit.framework.Assert;
-
 import ly.count.android.sdk.Countly;
 
 @SuppressWarnings("UnusedParameters")
@@ -56,7 +54,7 @@ public class ActivityExampleCrashReporting extends Activity {
 
     public void onClickCrashReporting05(View v) {
         Countly.sharedInstance().addCrashBreadcrumb("Assert fail crash");
-        Assert.assertEquals(1, 0);
+        //Assert.assertEquals(1, 0);
     }
 
     public void onClickCrashReporting06(View v) {

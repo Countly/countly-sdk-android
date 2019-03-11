@@ -77,7 +77,7 @@ public class CountlyStarRating {
 
         LayoutInflater inflater = (LayoutInflater) context.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
         View dialogLayout = inflater.inflate(R.layout.star_rating_layout, null);
-        RatingBar ratingBar = (RatingBar) dialogLayout.findViewById(R.id.ratingBar);
+        RatingBar ratingBar = dialogLayout.findViewById(R.id.ratingBar);
 
         final AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setTitle(title)
@@ -576,11 +576,11 @@ public class CountlyStarRating {
 
                 reader = new BufferedReader(new InputStreamReader(stream));
 
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder buffer = new StringBuilder();
                 String line = "";
 
                 while ((line = reader.readLine()) != null) {
-                    buffer.append(line+"\n");
+                    buffer.append(line).append("\n");
                 }
 
                 if(wasSuccess) {

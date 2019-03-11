@@ -56,54 +56,54 @@ public class EventTests {
         final Event event2 = new Event();
         //noinspection ObjectEqualsNull
         assertFalse(event1.equals(null));
-        assertFalse(event1.equals(new Object()));
-        assertTrue(event1.equals(event2));
+        assertNotEquals(event1, new Object());
+        assertEquals(event1, event2);
         assertEquals(event1.hashCode(), event2.hashCode());
 
         event1.key = "eventKey";
-        assertFalse(event1.equals(event2));
-        assertFalse(event2.equals(event1));
+        assertNotEquals(event1, event2);
+        assertNotEquals(event2, event1);
         assertTrue(event1.hashCode() != event2.hashCode());
 
         event2.key = "eventKey";
-        assertTrue(event1.equals(event2));
-        assertTrue(event2.equals(event1));
+        assertEquals(event1, event2);
+        assertEquals(event2, event1);
         assertEquals(event1.hashCode(), event2.hashCode());
 
         event1.timestamp = 1234;
-        assertFalse(event1.equals(event2));
-        assertFalse(event2.equals(event1));
+        assertNotEquals(event1, event2);
+        assertNotEquals(event2, event1);
         assertTrue(event1.hashCode() != event2.hashCode());
 
         event2.timestamp = 1234;
-        assertTrue(event1.equals(event2));
-        assertTrue(event2.equals(event1));
+        assertEquals(event1, event2);
+        assertEquals(event2, event1);
         assertEquals(event1.hashCode(), event2.hashCode());
 
-        event1.segmentation = new HashMap<String, String>();
-        assertFalse(event1.equals(event2));
-        assertFalse(event2.equals(event1));
+        event1.segmentation = new HashMap<>();
+        assertNotEquals(event1, event2);
+        assertNotEquals(event2, event1);
         assertTrue(event1.hashCode() != event2.hashCode());
 
-        event2.segmentation = new HashMap<String, String>();
-        assertTrue(event1.equals(event2));
-        assertTrue(event2.equals(event1));
+        event2.segmentation = new HashMap<>();
+        assertEquals(event1, event2);
+        assertEquals(event2, event1);
         assertEquals(event1.hashCode(), event2.hashCode());
 
         event1.segmentation.put("segkey", "segvalue");
-        assertFalse(event1.equals(event2));
-        assertFalse(event2.equals(event1));
+        assertNotEquals(event1, event2);
+        assertNotEquals(event2, event1);
         assertTrue(event1.hashCode() != event2.hashCode());
 
         event2.segmentation.put("segkey", "segvalue");
-        assertTrue(event1.equals(event2));
-        assertTrue(event2.equals(event1));
+        assertEquals(event1, event2);
+        assertEquals(event2, event1);
         assertEquals(event1.hashCode(), event2.hashCode());
 
         event1.sum = 3.2;
         event2.count = 42;
-        assertTrue(event1.equals(event2));
-        assertTrue(event2.equals(event1));
+        assertEquals(event1, event2);
+        assertEquals(event2, event1);
         assertEquals(event1.hashCode(), event2.hashCode());
     }
 
@@ -129,7 +129,7 @@ public class EventTests {
         event.timestamp = 1234;
         event.count = 42;
         event.sum = 3.2;
-        event.segmentation = new HashMap<String, String>();
+        event.segmentation = new HashMap<>();
         final JSONObject jsonObj = event.toJSON();
         assertEquals(7, jsonObj.length());
         assertEquals(event.key, jsonObj.getString("key"));
@@ -146,7 +146,7 @@ public class EventTests {
         event.timestamp = 1234;
         event.count = 42;
         event.sum = 3.2;
-        event.segmentation = new HashMap<String, String>();
+        event.segmentation = new HashMap<>();
         event.segmentation.put("segkey", "segvalue");
         final JSONObject jsonObj = event.toJSON();
         assertEquals(7, jsonObj.length());
@@ -165,7 +165,7 @@ public class EventTests {
         event.timestamp = 1234;
         event.count = 42;
         event.sum = Double.NaN;
-        event.segmentation = new HashMap<String, String>();
+        event.segmentation = new HashMap<>();
         event.segmentation.put("segkey", "segvalue");
         final JSONObject jsonObj = event.toJSON();
         assertEquals(6, jsonObj.length());
@@ -293,7 +293,7 @@ public class EventTests {
         expected.timestamp = 1234;
         expected.count = 42;
         expected.sum = 3.2;
-        expected.segmentation = new HashMap<String, String>();
+        expected.segmentation = new HashMap<>();
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put("key", expected.key);
         jsonObj.put("timestamp", expected.timestamp);
@@ -313,7 +313,7 @@ public class EventTests {
         expected.timestamp = 1234;
         expected.count = 42;
         expected.sum = 3.2;
-        expected.segmentation = new HashMap<String, String>();
+        expected.segmentation = new HashMap<>();
         expected.segmentation.put("segkey", "segvalue");
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put("key", expected.key);
@@ -338,7 +338,7 @@ public class EventTests {
         expected.segmentationDouble = new HashMap<>();
         expected.segmentationInt = new HashMap<>();
         expected.segmentationInt.put("segkey", 1234);
-        final Map<Object, Object> badMap = new HashMap<Object, Object>();
+        final Map<Object, Object> badMap = new HashMap<>();
         badMap.put("segkey", 1234); // this should be put into int segments
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put("key", expected.key);

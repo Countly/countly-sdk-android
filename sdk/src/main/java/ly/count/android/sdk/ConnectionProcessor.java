@@ -58,7 +58,7 @@ public class ConnectionProcessor implements Runnable {
     private final String serverURL_;
     private final SSLContext sslContext_;
 
-    private Map<String, String> requestHeaderCustomValues_;
+    private final Map<String, String> requestHeaderCustomValues_;
 
     protected static String salt;
 

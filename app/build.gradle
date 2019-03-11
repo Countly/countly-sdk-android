@@ -48,8 +48,6 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':sdk')
 
-    implementation 'junit:junit:4.12'
-
     //implementation 'com.google.android.gms:play-services-gcm:10.0.1'
 
     //implementation 'ly.count.android:sdk:19.02.1'

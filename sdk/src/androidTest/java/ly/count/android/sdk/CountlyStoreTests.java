@@ -48,13 +48,13 @@ public class CountlyStoreTests {
     CountlyStore store;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         store = new CountlyStore(getContext());
         store.clear();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         store.clear();
     }
 
@@ -157,7 +157,7 @@ public class CountlyStoreTests {
         event1.count = 1;
         event1.dur = 10.0d;
         store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
-        final List<Event> expected = new ArrayList<Event>(1);
+        final List<Event> expected = new ArrayList<>(1);
         expected.add(event1);
         final List<Event> actual = store.eventsList();
         assertEquals(expected, actual);
@@ -183,7 +183,7 @@ public class CountlyStoreTests {
         store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
         store.addEvent(event2.key, event2.segmentation, null, null, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
         store.addEvent(event3.key, event3.segmentation, null, null, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
-        final List<Event> expected = new ArrayList<Event>(3);
+        final List<Event> expected = new ArrayList<>(3);
         expected.add(event2);
         expected.add(event3);
         expected.add(event1);
@@ -210,7 +210,7 @@ public class CountlyStoreTests {
         final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
-        final List<Event> expected = new ArrayList<Event>(2);
+        final List<Event> expected = new ArrayList<>(2);
         expected.add(event1);
         expected.add(event2);
         final List<Event> actual = store.eventsList();
@@ -236,7 +236,7 @@ public class CountlyStoreTests {
         final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
-        final List<Event> expected = new ArrayList<Event>(2);
+        final List<Event> expected = new ArrayList<>(2);
         expected.add(event1);
         expected.add(event2);
         final List<Event> actual = store.eventsList();
@@ -326,7 +326,7 @@ public class CountlyStoreTests {
         event1.count = 42;
         event1.sum = 3.2;
         event1.dur = 10.0d;
-        event1.segmentation = new HashMap<String, String>(2);
+        event1.segmentation = new HashMap<>(2);
         event1.segmentation.put("segKey1", "segValue1");
         event1.segmentation.put("segKey2", "segValue2");
 

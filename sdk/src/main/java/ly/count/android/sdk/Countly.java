@@ -166,9 +166,9 @@ public class Countly {
     //GDPR
     protected boolean requiresConsent = false;
 
-    private Map<String, Boolean> featureConsentValues = new HashMap<>();
-    private Map<String, String[]> groupedFeatures = new HashMap<>();
-    private List<String> collectedConsentChanges = new ArrayList<>();
+    private final Map<String, Boolean> featureConsentValues = new HashMap<>();
+    private final Map<String, String[]> groupedFeatures = new HashMap<>();
+    private final List<String> collectedConsentChanges = new ArrayList<>();
 
     Boolean delayedPushConsent = null;//if this is set, consent for push has to be set before finishing init and sending push changes
     boolean delayedLocationErasure = false;//if location needs to be cleared at the end of init
@@ -190,7 +190,7 @@ public class Countly {
     }
 
     //a list of valid feature names that are used for checking
-    private String[] validFeatureNames = new String[]{
+    private final String[] validFeatureNames = new String[]{
             CountlyFeatureNames.sessions,
             CountlyFeatureNames.events,
             CountlyFeatureNames.views,
@@ -2516,7 +2516,7 @@ public class Countly {
                 Log.d(Countly.TAG, "Running crashTest 2");
             }
 
-            //noinspection UnusedAssignment
+            //noinspection UnusedAssignment,divzero
             @SuppressWarnings("NumericOverflow") int test = 10/0;
 
         }else if (crashNumber == 3){

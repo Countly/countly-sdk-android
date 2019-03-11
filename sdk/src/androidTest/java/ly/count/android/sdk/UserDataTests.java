@@ -22,7 +22,7 @@ public class UserDataTests {
 
     @Test
 	public void testSetData(){
-        HashMap<String, String> data = new HashMap<String, String>();
+        HashMap<String, String> data = new HashMap<>();
         data.put("name", "Test Test");
 		data.put("username", "test");
 		data.put("email", "test@gmail.com");
@@ -45,7 +45,7 @@ public class UserDataTests {
 
     @Test
     public void testCustomData() {
-        HashMap<String, String> data = new HashMap<String, String>();
+        HashMap<String, String> data = new HashMap<>();
         data.put("key1", "value1");
         data.put("key2", "value2");
         UserData.setCustomData(data);
@@ -73,21 +73,21 @@ public class UserDataTests {
     public void testClear() {
         UserData.clear();
 
-        assertEquals(null, UserData.name);
-        assertEquals(null, UserData.username);
-        assertEquals(null, UserData.email);
-        assertEquals(null, UserData.org);
-        assertEquals(null, UserData.phone);
-        assertEquals(null, UserData.gender);
-        assertEquals(null, UserData.picture);
+        assertNull(UserData.name);
+        assertNull(UserData.username);
+        assertNull(UserData.email);
+        assertNull(UserData.org);
+        assertNull(UserData.phone);
+        assertNull(UserData.gender);
+        assertNull(UserData.picture);
         assertEquals(0, UserData.byear);
-        assertEquals(null, UserData.custom);
-        assertEquals(null, UserData.customMods);
+        assertNull(UserData.custom);
+        assertNull(UserData.customMods);
     }
 
     @Test
 	public void testJSON() throws JSONException{
-        HashMap<String, String> data = new HashMap<String, String>();
+        HashMap<String, String> data = new HashMap<>();
         data.put("name", "Test Test");
         data.put("username", "test");
         data.put("email", "test@gmail.com");
@@ -98,7 +98,7 @@ public class UserDataTests {
         data.put("byear", "2000");
         UserData.setData(data);
 
-        HashMap<String, String> customdata = new HashMap<String, String>();
+        HashMap<String, String> customdata = new HashMap<>();
         customdata.put("key1", "value1");
         customdata.put("key2", "value2");
         UserData.setCustomData(customdata);
