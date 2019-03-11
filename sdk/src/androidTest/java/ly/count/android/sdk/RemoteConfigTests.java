@@ -1,16 +1,21 @@
 package ly.count.android.sdk;
 
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
 import org.json.JSONException;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-public class RemoteConfigTests extends AndroidTestCase {
+@RunWith(AndroidJUnit4.class)
+public class RemoteConfigTests {
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
+
     }
 
+    @Test
     public void testSerializeDeserialize() throws JSONException {
         RemoteConfig.RemoteConfigValueStore remoteConfigValueStore = RemoteConfig.RemoteConfigValueStore.dataFromString(null);
 

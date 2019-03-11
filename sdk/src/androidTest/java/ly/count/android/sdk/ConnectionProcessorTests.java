@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -29,25 +29,32 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLConnection;
+import junit.framework.Assert;
 
 import static ly.count.android.sdk.ConnectionProcessor.sha1Hash;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class ConnectionProcessorTests extends AndroidTestCase {
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public class ConnectionProcessorTests {
     ConnectionProcessor connectionProcessor;
     CountlyStore mockStore;
     DeviceId mockDeviceId;
     String testDeviceId;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         mockStore = mock(CountlyStore.class);
         mockDeviceId = mock(DeviceId.class);
         connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, null);
         testDeviceId = "123";
     }
 
+    @Test
     public void testConstructorAndGetters() {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
@@ -58,6 +65,7 @@ public class ConnectionProcessorTests extends AndroidTestCase {
         assertSame(mockDeviceId, connectionProcessor1.getDeviceId());
     }
 
+    @Test
     public void testUrlConnectionForEventData() throws IOException {
         final String eventData = "blahblahblah";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);

@@ -23,34 +23,42 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import static android.support.test.InstrumentationRegistry.getContext;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class CountlyStoreTests extends AndroidTestCase {
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public class CountlyStoreTests {
     CountlyStore store;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
         store = new CountlyStore(getContext());
         store.clear();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         store.clear();
-        super.tearDown();
     }
 
+    @Test
     public void testConstructor_nullContext() {
         try {
             new CountlyStore(null);
@@ -60,17 +68,20 @@ public class CountlyStoreTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testConstructor() {
         Context mockContext = mock(Context.class);
         new CountlyStore(mockContext);
         verify(mockContext).getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
     }
 
+    @Test
     public void testConnections_prefIsNull() {
         // the clear() call in setUp ensures the pref is not present
         assertTrue(Arrays.equals(new String[0], store.connections()));
     }
 
+    @Test
     public void testConnections_prefIsEmptyString() {
         // the following two calls will result in the pref being an empty string
         final String connStr = "blah";
@@ -79,12 +90,14 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertTrue(Arrays.equals(new String[0], store.connections()));
     }
 
+    @Test
     public void testConnections_prefHasSingleValue() {
         final String connStr = "blah";
         store.addConnection(connStr);
         assertTrue(Arrays.equals(new String[]{connStr}, store.connections()));
     }
 
+    @Test
     public void testConnections_prefHasTwoValues() {
         final String connStr1 = "blah1";
         final String connStr2 = "blah2";
@@ -93,11 +106,13 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertTrue(Arrays.equals(new String[]{connStr1,connStr2}, store.connections()));
     }
 
+    @Test
     public void testEvents_prefIsNull() {
         // the clear() call in setUp ensures the pref is not present
         assertTrue(Arrays.equals(new String[0], store.events()));
     }
 
+    @Test
     public void testEvents_prefIsEmptyString() {
         // the following two calls will result in the pref being an empty string
         store.addEvent("eventKey", null, null, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
@@ -105,6 +120,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertTrue(Arrays.equals(new String[0], store.events()));
     }
 
+    @Test
     public void testEvents_prefHasSingleValue() throws JSONException {
         final String eventKey = "eventKey";
         store.addEvent(eventKey, null, null, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
@@ -114,6 +130,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         // this is good enough, we verify the entire JSON content is written in later unit tests
     }
 
+    @Test
     public void testEvents_prefHasTwoValues() throws JSONException {
         final String eventKey1 = "eventKey1";
         final String eventKey2 = "eventKey2";
@@ -127,10 +144,12 @@ public class CountlyStoreTests extends AndroidTestCase {
         // this is good enough, we verify the entire JSON content is written in later unit tests
     }
 
+    @Test
     public void testEventsList_noEvents() {
         assertEquals(new ArrayList<Event>(0), store.eventsList());
     }
 
+    @Test
     public void testEventsList_singleEvent() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
@@ -144,6 +163,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertEquals(expected, actual);
     }
 
+    @Test
     public void testEventsList_sortingOfMultipleEvents() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
@@ -171,6 +191,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertEquals(expected, actual);
     }
 
+    @Test
     public void testEventsList_badJSON() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
@@ -196,6 +217,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertEquals(expected, actual);
     }
 
+    @Test
     public void testEventsList_EventFromJSONReturnsNull() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
@@ -221,11 +243,13 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertEquals(expected, actual);
     }
 
+    @Test
     public void testIsEmptyConnections_prefIsNull() {
         // the clear() call in setUp ensures the pref is not present
         assertTrue(store.isEmptyConnections());
     }
 
+    @Test
     public void testIsEmptyConnections_prefIsEmpty() {
         // the following two calls will result in the pref being an empty string
         final String connStr = "blah";
@@ -234,34 +258,40 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertTrue(store.isEmptyConnections());
     }
 
+    @Test
     public void testIsEmptyConnections_prefIsPopulated() {
         final String connStr = "blah";
         store.addConnection(connStr);
         assertFalse(store.isEmptyConnections());
     }
 
+    @Test
     public void testAddConnection_nullStr() {
         store.addConnection(null);
         assertTrue(store.isEmptyConnections());
     }
 
+    @Test
     public void testAddConnection_emptyStr() {
         store.addConnection("");
         assertTrue(store.isEmptyConnections());
     }
 
+    @Test
     public void testRemoveConnection_nullStr() {
         store.addConnection("blah");
         store.removeConnection(null);
         assertFalse(store.isEmptyConnections());
     }
 
+    @Test
     public void testRemoveConnection_emptyStr() {
         store.addConnection("blah");
         store.removeConnection("");
         assertFalse(store.isEmptyConnections());
     }
 
+    @Test
     public void testRemoveConnection_firstConn() {
         store.addConnection("blah");
         assertFalse(store.isEmptyConnections());
@@ -269,6 +299,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertTrue(store.isEmptyConnections());
     }
 
+    @Test
     public void testRemoveConnection_notFirstConn() {
         store.addConnection("blah1");
         store.addConnection("blah2");
@@ -277,6 +308,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertEquals(1, store.connections().length);
     }
 
+    @Test
     public void testRemoveConnection_onlyRemovesFirstMatchingOne() {
         store.addConnection("blah1");
         store.addConnection("blah2");
@@ -286,6 +318,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertTrue(Arrays.equals(new String[]{"blah2", "blah1"}, store.connections()));
     }
 
+    @Test
     public void testAddEvent() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
@@ -304,9 +337,10 @@ public class CountlyStoreTests extends AndroidTestCase {
         final Event addedEvent = addedEvents.get(0);
         assertEquals(event1, addedEvent);
         assertEquals(event1.count, addedEvent.count);
-        assertEquals(event1.sum, addedEvent.sum);
+        assertEquals(event1.sum, addedEvent.sum, 0.0000001);
     }
 
+    @Test
     public void testRemoveEvents() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
@@ -338,6 +372,7 @@ public class CountlyStoreTests extends AndroidTestCase {
         assertEquals(event3, events.get(0));
     }
 
+    @Test
     public void testClear() {
         final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
         assertFalse(prefs.contains("EVENTS"));

@@ -6,13 +6,13 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:0.8.1'
+        classpath 'com.novoda:bintray-release:0.9'
     }
 }
 
 android {
     compileSdkVersion 28
-    buildToolsVersion "27.0.3"
+    buildToolsVersion "28.0.3"
 
     defaultConfig {
         minSdkVersion 9
@@ -42,14 +42,24 @@ android {
     }
 }
 
+def powermockVersion = "1.7.1"
+
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
 
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test:rules:1.0.2'
+    androidTestImplementation "com.android.support:support-annotations:28.0.0"
     androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.1'
-    androidTestImplementation 'com.android.support.test:rules:1.0.1'
+
     androidTestImplementation 'org.mockito:mockito-core:2.8.9'
+
+    androidTestImplementation "org.powermock:powermock-core:${powermockVersion}"
+    androidTestImplementation "org.powermock:powermock-module-junit4:${powermockVersion}"
+
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.2.0'
+
+    androidTestImplementation 'com.squareup.okhttp3:mockwebserver:3.7.0'
 }
 
 publish {

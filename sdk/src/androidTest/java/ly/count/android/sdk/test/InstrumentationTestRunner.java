@@ -22,8 +22,9 @@ THE SOFTWARE.
 package ly.count.android.sdk.test;
 
 import android.os.Bundle;
+import android.support.test.runner.AndroidJUnitRunner;
 
-public class InstrumentationTestRunner extends android.test.InstrumentationTestRunner {
+public class InstrumentationTestRunner extends AndroidJUnitRunner {
     // TODO: since Android 4.3 dexmaker requires this workaround, can be removed once dexmaker fixes this issue http://code.google.com/p/dexmaker/issues/detail?id=2
     @Override
     public void onCreate(Bundle arguments) {

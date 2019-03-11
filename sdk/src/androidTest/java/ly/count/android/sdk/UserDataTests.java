@@ -1,6 +1,6 @@
 package ly.count.android.sdk;
 
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,7 +10,17 @@ import java.net.URL;
 import java.util.HashMap;
 
 
-public class UserDataTests extends AndroidTestCase {
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public class UserDataTests {
+
+    @Test
 	public void testSetData(){
         HashMap<String, String> data = new HashMap<String, String>();
         data.put("name", "Test Test");
@@ -33,6 +43,7 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals(2000, UserData.byear);
 	}
 
+    @Test
     public void testCustomData() {
         HashMap<String, String> data = new HashMap<String, String>();
         data.put("key1", "value1");
@@ -45,6 +56,7 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals("value_prop", UserData.custom.get("key_prop"));
     }
 
+    @Test
     public void testCustomModifiers() throws JSONException {
         UserData.modifyCustomData("key_inc", 1, "$inc");
         UserData.modifyCustomData("key_mul", 2, "$mul");
@@ -57,6 +69,7 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals("test2", UserData.customMods.get("key_set").getJSONArray("$addToSet").getString(1));
     }
 
+    @Test
     public void testClear() {
         UserData.clear();
 
@@ -71,7 +84,8 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals(null, UserData.custom);
         assertEquals(null, UserData.customMods);
     }
-	
+
+    @Test
 	public void testJSON() throws JSONException{
         HashMap<String, String> data = new HashMap<String, String>();
         data.put("name", "Test Test");
@@ -85,8 +99,8 @@ public class UserDataTests extends AndroidTestCase {
         UserData.setData(data);
 
         HashMap<String, String> customdata = new HashMap<String, String>();
-        data.put("key1", "value1");
-        data.put("key2", "value2");
+        customdata.put("key1", "value1");
+        customdata.put("key2", "value2");
         UserData.setCustomData(customdata);
 
         UserData.setCustomProperty("key_prop", "value_prop");
@@ -112,7 +126,8 @@ public class UserDataTests extends AndroidTestCase {
         assertEquals("test1", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(0));
         assertEquals("test2", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(1));
 	}
-	
+
+    @Test
 	public void testPicturePath() throws MalformedURLException{
 		String path = "http://test.com/?key1=val1&picturePath=%2Fmnt%2Fsdcard%2Fpic.jpg&key2=val2";
 		String picturePath = UserData.getPicturePathFromQuery(new URL(path));

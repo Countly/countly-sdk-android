@@ -22,22 +22,31 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
+
+import org.junit.After;
+import org.junit.Before;
 
 import java.util.HashMap;
 
+import static android.support.test.InstrumentationRegistry.getContext;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class CountlyTests extends AndroidTestCase {
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public class CountlyTests {
     Countly mUninitedCountly;
     Countly mCountly;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-
+    @Before
+    public void setUp() throws Exception {
         final CountlyStore countlyStore = new CountlyStore(getContext());
         countlyStore.clear();
 
@@ -47,11 +56,11 @@ public class CountlyTests extends AndroidTestCase {
         mCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown();
+    @After
+    public void tearDown() throws Exception {
     }
 
+    @Test
     public void testConstructor() {
         assertNotNull(mUninitedCountly.getConnectionQueue());
         assertNull(mUninitedCountly.getConnectionQueue().getContext());
@@ -66,18 +75,21 @@ public class CountlyTests extends AndroidTestCase {
         assertFalse(mUninitedCountly.isLoggingEnabled());
     }
 
+    @Test
     public void testSharedInstance() {
         Countly sharedCountly = Countly.sharedInstance();
         assertNotNull(sharedCountly);
         assertSame(sharedCountly, Countly.sharedInstance());
     }
 
+    @Test
     public void testInitWithNoDeviceID() {
         mUninitedCountly = spy(mUninitedCountly);
         mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
         verify(mUninitedCountly).init(getContext(), "http://test.count.ly", "appkey", null);
     }
 
+    @Test
     public void testInit_nullContext() {
         try {
             mUninitedCountly.init(null, "http://test.count.ly", "appkey", "1234");
@@ -87,6 +99,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_nullServerURL() {
         try {
             mUninitedCountly.init(getContext(), null, "appkey", "1234");
@@ -96,6 +109,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_emptyServerURL() {
         try {
             mUninitedCountly.init(getContext(), "", "appkey", "1234");
@@ -105,6 +119,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_invalidServerURL() {
         try {
             mUninitedCountly.init(getContext(), "not-a-valid-server-url", "appkey", "1234");
@@ -114,6 +129,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_nullAppKey() {
         try {
             mUninitedCountly.init(getContext(), "http://test.count.ly", null, "1234");
@@ -123,6 +139,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_emptyAppKey() {
         try {
             mUninitedCountly.init(getContext(), "http://test.count.ly", "", "1234");
@@ -132,11 +149,13 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_nullDeviceID() {
         // null device ID is okay because it tells Countly to use OpenUDID
        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
     }
 
+    @Test
     public void testInit_emptyDeviceID() {
         try {
             mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "");
@@ -146,6 +165,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_twiceWithSameParams() {
         final String deviceID = "1234";
         final String appKey = "appkey";
@@ -180,6 +200,7 @@ public class CountlyTests extends AndroidTestCase {
     }
     */
 
+    @Test
     public void testInit_twiceWithDifferentServerURL() {
         mUninitedCountly.init(getContext(), "http://test1.count.ly", "appkey", "1234");
         try {
@@ -191,6 +212,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_twiceWithDifferentAppKey() {
         mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey1", "1234");
         try {
@@ -202,6 +224,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_twiceWithDifferentDeviceID() {
         mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
         try {
@@ -213,6 +236,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInit_normal() {
         final String deviceID = "1234";
         final String appKey = "appkey";
@@ -228,6 +252,7 @@ public class CountlyTests extends AndroidTestCase {
         assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.getEventQueue().getCountlyStore());
     }
 
+    @Test
     public void testHalt_notInitialized() {
         mUninitedCountly.halt();
         assertNotNull(mUninitedCountly.getConnectionQueue());
@@ -271,6 +296,7 @@ public class CountlyTests extends AndroidTestCase {
     }*/
 
 
+    @Test
     public void testOnStart_initNotCalled() {
         try {
             mUninitedCountly.onStart(null);
@@ -312,6 +338,7 @@ public class CountlyTests extends AndroidTestCase {
     }
     */
 
+    @Test
     public void testOnStop_initNotCalled() {
         try {
             mUninitedCountly.onStop();
@@ -321,6 +348,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testOnStop_unbalanced() {
         try {
             mCountly.onStop();
@@ -387,6 +415,7 @@ public class CountlyTests extends AndroidTestCase {
     }
     */
 
+    @Test
     public void testRecordEvent_keyOnly() {
         final String eventKey = "eventKey";
         final Countly countly = spy(mCountly);
@@ -395,6 +424,7 @@ public class CountlyTests extends AndroidTestCase {
         verify(countly).recordEvent(eventKey, null, 1, 0.0d);
     }
 
+    @Test
     public void testRecordEvent_keyAndCount() {
         final String eventKey = "eventKey";
         final int count = 42;
@@ -420,6 +450,7 @@ public class CountlyTests extends AndroidTestCase {
         //verify(countly).recordEvent(eventKey, null, count, 0.0d);
     }
 
+    @Test
     public void testRecordEvent_keyAndCountAndSum() {
         final String eventKey = "eventKey";
         final int count = 42;
@@ -430,6 +461,7 @@ public class CountlyTests extends AndroidTestCase {
         verify(countly).recordEvent(eventKey, null, count, sum);
     }
 
+    @Test
     public void testRecordEvent_keyAndSegmentationAndCount() {
         final String eventKey = "eventKey";
         final int count = 42;
@@ -441,6 +473,7 @@ public class CountlyTests extends AndroidTestCase {
         verify(countly).recordEvent(eventKey, segmentation, count, 0.0d);
     }
 
+    @Test
     public void testRecordEvent_initNotCalled() {
         final String eventKey = "eventKey";
         final int count = 42;
@@ -456,6 +489,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_nullKey() {
         final String eventKey = null;
         final int count = 42;
@@ -472,6 +506,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_emptyKey() {
         final String eventKey = "";
         final int count = 42;
@@ -487,6 +522,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_countIsZero() {
         final String eventKey = "";
         final int count = 0;
@@ -502,6 +538,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_countIsNegative() {
         final String eventKey = "";
         final int count = -1;
@@ -517,6 +554,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_segmentationHasNullKey() {
         final String eventKey = "";
         final int count = 1;
@@ -532,6 +570,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_segmentationHasEmptyKey() {
         final String eventKey = "";
         final int count = 1;
@@ -547,6 +586,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_segmentationHasNullValue() {
         final String eventKey = "";
         final int count = 1;
@@ -562,6 +602,7 @@ public class CountlyTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testRecordEvent_segmentationHasEmptyValue() {
         final String eventKey = "";
         final int count = 1;
@@ -737,6 +778,7 @@ public class CountlyTests extends AndroidTestCase {
     }
     */
 
+    @Test
     public void testRoundedSecondsSinceLastSessionDurationUpdate() {
         long prevSessionDurationStartTime = System.nanoTime() - 1000000000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
@@ -755,6 +797,7 @@ public class CountlyTests extends AndroidTestCase {
         assertEquals(1, mCountly.roundedSecondsSinceLastSessionDurationUpdate());
     }
 
+    @Test
     public void testIsValidURL_badURLs() {
         assertFalse(Countly.isValidURL(null));
         assertFalse(Countly.isValidURL(""));
@@ -762,16 +805,19 @@ public class CountlyTests extends AndroidTestCase {
         assertFalse(Countly.isValidURL("blahblahblah.com"));
     }
 
+    @Test
     public void testIsValidURL_goodURL() {
         assertTrue(Countly.isValidURL("http://test.count.ly"));
     }
 
+    @Test
     public void testCurrentTimestamp() {
         final int testTimestamp = (int) (System.currentTimeMillis() / 1000L);
         final int actualTimestamp = Countly.currentTimestamp();
         assertTrue(((testTimestamp - 1) <= actualTimestamp) && ((testTimestamp + 1) >= actualTimestamp));
     }
 
+    @Test
     public void testSetDisableUpdateSessionRequests() {
         assertFalse(mCountly.getDisableUpdateSessionRequests());
         mCountly.setDisableUpdateSessionRequests(true);
@@ -780,6 +826,7 @@ public class CountlyTests extends AndroidTestCase {
         assertFalse(mCountly.getDisableUpdateSessionRequests());
     }
 
+    @Test
     public void testLoggingFlag() {
         assertFalse(mUninitedCountly.isLoggingEnabled());
         mUninitedCountly.setLoggingEnabled(true);

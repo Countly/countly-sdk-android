@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,17 +29,28 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
 @SuppressWarnings("ConstantConditions")
-public class EventTests extends AndroidTestCase {
+public class EventTests {
+
+    @Test
     public void testConstructor() {
         final Event event = new Event();
         assertNull(event.key);
         assertNull(event.segmentation);
         assertEquals(0, event.count);
         assertEquals(0, event.timestamp);
-        assertEquals(0.0d, event.sum);
+        assertEquals(0.0d, event.sum, 0.0000001);
     }
 
+    @Test
     public void testEqualsAndHashCode() {
         final Event event1 = new Event();
         final Event event2 = new Event();
@@ -96,6 +107,7 @@ public class EventTests extends AndroidTestCase {
         assertEquals(event1.hashCode(), event2.hashCode());
     }
 
+    @Test
     public void testToJSON_nullSegmentation() throws JSONException {
         final Event event = new Event();
         event.key = "eventKey";
@@ -107,9 +119,10 @@ public class EventTests extends AndroidTestCase {
         assertEquals(event.key, jsonObj.getString("key"));
         assertEquals(event.timestamp, jsonObj.getInt("timestamp"));
         assertEquals(event.count, jsonObj.getInt("count"));
-        assertEquals(event.sum, jsonObj.getDouble("sum"));
+        assertEquals(event.sum, jsonObj.getDouble("sum"), 0.0000001);
     }
 
+    @Test
     public void testToJSON_emptySegmentation() throws JSONException {
         final Event event = new Event();
         event.key = "eventKey";
@@ -122,10 +135,11 @@ public class EventTests extends AndroidTestCase {
         assertEquals(event.key, jsonObj.getString("key"));
         assertEquals(event.timestamp, jsonObj.getInt("timestamp"));
         assertEquals(event.count, jsonObj.getInt("count"));
-        assertEquals(event.sum, jsonObj.getDouble("sum"));
+        assertEquals(event.sum, jsonObj.getDouble("sum"), 0.0000001);
         assertEquals(0, jsonObj.getJSONObject("segmentation").length());
     }
 
+    @Test
     public void testToJSON_withSegmentation() throws JSONException {
         final Event event = new Event();
         event.key = "eventKey";
@@ -139,11 +153,12 @@ public class EventTests extends AndroidTestCase {
         assertEquals(event.key, jsonObj.getString("key"));
         assertEquals(event.timestamp, jsonObj.getInt("timestamp"));
         assertEquals(event.count, jsonObj.getInt("count"));
-        assertEquals(event.sum, jsonObj.getDouble("sum"));
+        assertEquals(event.sum, jsonObj.getDouble("sum"), 0.0000001);
         assertEquals(1, jsonObj.getJSONObject("segmentation").length());
         assertEquals(event.segmentation.get("segkey"), jsonObj.getJSONObject("segmentation").getString("segkey"));
     }
 
+    @Test
     public void testToJSON_sumNaNCausesJSONException() throws JSONException {
         final Event event = new Event();
         event.key = "eventKey";
@@ -161,6 +176,7 @@ public class EventTests extends AndroidTestCase {
         assertEquals(event.segmentation.get("segkey"), jsonObj.getJSONObject("segmentation").getString("segkey"));
     }
 
+    @Test
     public void testFromJSON_nullJSONObj() {
         try {
             Event.fromJSON(null);
@@ -170,23 +186,27 @@ public class EventTests extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testFromJSON_noKeyCausesJSONException() {
         final JSONObject jsonObj = new JSONObject();
         assertNull(Event.fromJSON(jsonObj));
     }
 
+    @Test
     public void testFromJSON_nullKey() throws JSONException {
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put("key", JSONObject.NULL);
         assertNull(Event.fromJSON(jsonObj));
     }
 
+    @Test
     public void testFromJSON_emptyKey() throws JSONException {
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put("key", "");
         assertNull(Event.fromJSON(jsonObj));
     }
 
+    @Test
     public void testFromJSON_keyOnly() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -195,9 +215,10 @@ public class EventTests extends AndroidTestCase {
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum);
+        assertEquals(expected.sum, actual.sum, 0.0000001);
     }
 
+    @Test
     public void testFromJSON_keyOnly_nullOtherValues() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -209,9 +230,10 @@ public class EventTests extends AndroidTestCase {
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum);
+        assertEquals(expected.sum, actual.sum, 0.0000001);
     }
 
+    @Test
     public void testFromJSON_noSegmentation() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -226,9 +248,10 @@ public class EventTests extends AndroidTestCase {
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum);
+        assertEquals(expected.sum, actual.sum, 0.0000001);
     }
 
+    @Test
     public void testFromJSON_nullSegmentation() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -244,9 +267,10 @@ public class EventTests extends AndroidTestCase {
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum);
+        assertEquals(expected.sum, actual.sum, 0.0000001);
     }
 
+    @Test
     public void testFromJSON_segmentationNotADictionary() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -262,6 +286,7 @@ public class EventTests extends AndroidTestCase {
         assertNull(Event.fromJSON(jsonObj));
     }
 
+    @Test
     public void testFromJSON_emptySegmentation() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -278,9 +303,10 @@ public class EventTests extends AndroidTestCase {
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum);
+        assertEquals(expected.sum, actual.sum, 0.0000001);
     }
 
+    @Test
     public void testFromJSON_withSegmentation() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -298,9 +324,10 @@ public class EventTests extends AndroidTestCase {
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum);
+        assertEquals(expected.sum, actual.sum, 0.0000001);
     }
 
+    @Test
     public void testFromJSON_withSegmentation_nonStringValue() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
@@ -322,6 +349,6 @@ public class EventTests extends AndroidTestCase {
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum);
+        assertEquals(expected.sum, actual.sum, 0.0000001);
     }
 }

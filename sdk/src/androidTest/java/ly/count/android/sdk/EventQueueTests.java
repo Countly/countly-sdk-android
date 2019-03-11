@@ -21,8 +21,9 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
+import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 
 import java.io.UnsupportedEncodingException;
@@ -32,25 +33,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class EventQueueTests extends AndroidTestCase {
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+@RunWith(AndroidJUnit4.class)
+public class EventQueueTests {
     EventQueue mEventQueue;
     CountlyStore mMockCountlyStore;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws Exception {
 
         mMockCountlyStore = mock(CountlyStore.class);
         mEventQueue = new EventQueue(mMockCountlyStore);
     }
 
+    @Test
     public void testConstructor() {
         assertSame(mMockCountlyStore, mEventQueue.getCountlyStore());
     }
 
+    @Test
     public void testRecordEvent() {
         final String eventKey = "eventKey";
         final int count = 42;
@@ -69,16 +76,19 @@ public class EventQueueTests extends AndroidTestCase {
         assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
     }
 
+    @Test
     public void testSize_zeroLenArray() {
         when(mMockCountlyStore.events()).thenReturn(new String[0]);
         assertEquals(0, mEventQueue.size());
     }
 
+    @Test
     public void testSize() {
         when(mMockCountlyStore.events()).thenReturn(new String[2]);
         assertEquals(2, mEventQueue.size());
     }
 
+    @Test
     public void testEvents_emptyList() throws UnsupportedEncodingException {
         final List<Event> eventsList = new ArrayList<Event>();
         when(mMockCountlyStore.eventsList()).thenReturn(eventsList);
@@ -89,6 +99,7 @@ public class EventQueueTests extends AndroidTestCase {
         verify(mMockCountlyStore).removeEvents(eventsList);
     }
 
+    @Test
     public void testEvents_nonEmptyList() throws UnsupportedEncodingException {
         final List<Event> eventsList = new ArrayList<Event>();
         final Event event1 = new Event();
