@@ -150,7 +150,7 @@ public class ConnectionQueue {
         }
 
         CountlyStore cs = getCountlyStore();
-        String locationData = prepareLocationData(cs, false);
+        String locationData = prepareLocationData(cs, true);
 
         if(!locationData.isEmpty()){
             data += locationData;
