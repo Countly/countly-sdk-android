@@ -1,3 +1,7 @@
+19.02.2
+  * Fixing bug with location data not being erased during begin_session
+  * Fix potential issue with push Activity
+
 19.02.1
   * fixing endEvent bug that ignores provided "count" and "sum" values
 
