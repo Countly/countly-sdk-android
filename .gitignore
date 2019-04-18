@@ -21,6 +21,10 @@ local.properties
 *.iws
 .idea/
 
+# NDK build artifacts for sdk-native 
+sdk-native/src/cpp_precompilation/libs 
+sdk-native/src/cpp_precompilation/obj
+
 # Other
 
 .gradle
