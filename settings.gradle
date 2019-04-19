@@ -1,1 +1,1 @@
-include ':app', ':sdk-messaging', ':sdk', ':app-messaging', ':sdk-messaging-fcm', ':app-messaging-fcm', ':sdk-native'
+include ':app', ':sdk-messaging', ':sdk', ':app-messaging', ':sdk-messaging-fcm', ':app-messaging-fcm', ':sdk-native', ':app-native'

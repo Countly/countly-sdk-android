@@ -39,6 +39,7 @@ bool DumpCallback(const google_breakpad::MinidumpDescriptor& descriptor,
                   void* context,
                   bool succeeded){
     LOGD("DumpCallback started");
+    /*
     if (callbackJava) {
 	    JNIEnv *env; 
 	    jint rs = jvm->AttachCurrentThread(&env, NULL);    
@@ -54,8 +55,9 @@ bool DumpCallback(const google_breakpad::MinidumpDescriptor& descriptor,
 	      LOGD("DumpCallback: java callback called successfully."); 
 	      jvm->DetachCurrentThread();  
 	    }   
-    }        
-    LOGD("DumpCallback ===> succeeded %d path=%s", succeeded, descriptor.path());    
+    }
+    */
+    LOGD("DumpCallback ==> succeeded %d path=%s", succeeded, descriptor.path());    
     return succeeded;
 }
 
@@ -63,6 +65,9 @@ JavaVM* gJvm = nullptr;
 
 extern "C" {
 
+// The following is needed to call Java from C++ but currently we don't use it.
+
+/*
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *pjvm, void *reserved) {
     gJvm = pjvm;  // cache the JavaVM pointer
     LOGD("in JNI_OnLoad");
@@ -70,7 +75,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *pjvm, void *reserved) {
     pjvm->GetEnv((void**)&env, JNI_VERSION_1_6);
     LOGD("env ready");
     //replace with one of your classes in the line below
-    auto myClass = env->FindClass("ly/count/clybreakpad/CountlyBreakpad");
+    auto myClass = env->FindClass("ly/count/android/CountlyNative");
     LOGD("class found");
     auto method1 = env->GetStaticMethodID(myClass, "crash", "()V");
     LOGD("crash found");
@@ -82,8 +87,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *pjvm, void *reserved) {
     // mid = method2;
     return JNI_VERSION_1_6;
 }
+*/
 
-JNIEXPORT jint JNICALL Java_ly_count_android_sdknative_CountlyBreakpad_testCrash(JNIEnv* env,
+JNIEXPORT jint JNICALL Java_ly_count_android_sdknative_CountlyNative_testCrash(JNIEnv* env,
                                                                            jobject obj){
     LOGE("native crash capture begin. this may take a few seconds.");
     char *ptr = NULL; *ptr = 1;
@@ -91,17 +97,18 @@ JNIEXPORT jint JNICALL Java_ly_count_android_sdknative_CountlyBreakpad_testCrash
     return 0;
 } 
 
-JNIEXPORT jint JNICALL Java_ly_count_android_sdknative_CountlyBreakpad_init(JNIEnv* env,
+JNIEXPORT jint JNICALL Java_ly_count_android_sdknative_CountlyNative_init(JNIEnv* env,
                                                                       jobject jobj,
                                                                       jstring crash_dump_path){   
     // store JavaVM in global variable jvm
-    jint rs = env->GetJavaVM(&jvm); 
-    assert (rs == JNI_OK);
+    // jint rs = env->GetJavaVM(&jvm);
+    // assert (rs == JNI_OK);
+
     // init breakpad
     const char* path = (char *)env->GetStringUTFChars(crash_dump_path, NULL);    
     google_breakpad::MinidumpDescriptor descriptor(path);
     static google_breakpad::ExceptionHandler eh(descriptor, NULL, DumpCallback, NULL, true, -1);    
-    LOGD("breakpad initialized succeeded. dump file will be saved at %s", path);
+    LOGD("breakpad initialized succeeded. dump files will be saved at %s", path);
     env->ReleaseStringUTFChars(crash_dump_path, path);
     return 1;
 }

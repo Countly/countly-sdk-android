@@ -1,36 +1,45 @@
 package ly.count.android.sdknative;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
+import android.os.Environment;
+import java.io.File;
 
 public class CountlyNative {
     private static String TAG = "Countly";
+    private static String countlyNativeCrashFolderPath;
 
     static boolean loadBreakpadSuccess = false;
 
     static {
         try {
-            System.loadLibrary("breakpad");
+            System.loadLibrary("countly_native");
             loadBreakpadSuccess = true;
-            Log.d(TAG, "breakpad loaded.");
+            Log.d(TAG, "countly_native library loaded.");
         } catch (Exception e) {
             loadBreakpadSuccess = false;
-            Log.e(TAG, "fail to load breakpad");
+            Log.e(TAG, "fail to load countly_native library");
         }
     }
 
     /**
      * init breakpad
-     * @param dumpFileDir the directory of dump file
      * @return true: init success  false: init fail
      */
-    public static boolean initBreakpad(String dumpFileDir){
-        if (TextUtils.isEmpty(dumpFileDir)) {
-            Log.e(TAG, "dumpFileDir can not be empty");
-            return false;
+    public static boolean initNative(Context cxt){
+        // String basePath = Environment.getExternalStorageDirectory().getAbsolutePath();
+        String basePath = cxt.getCacheDir().getAbsolutePath();
+        String countlyFolderName = "Countly";
+        String countlyNativeCrashFolderName = "CrashDumps";
+        countlyNativeCrashFolderPath = basePath + File.separator + countlyFolderName + File.separator + countlyNativeCrashFolderName;
+
+        File folder = new File(countlyNativeCrashFolderPath);
+        if (!folder.exists()) {
+            boolean res = folder.mkdirs();
         }
         if (loadBreakpadSuccess) {
-            return init(dumpFileDir) > 0 ;
+            return init(countlyNativeCrashFolderPath) > 0 ;
         }
         return false;
     }
