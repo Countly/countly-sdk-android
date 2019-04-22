@@ -384,13 +384,12 @@ class CrashDetails {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
-    static String getCrashData(final Context context, String error, Boolean nonfatal) {
+    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash) {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
                 "_error", error,
                 "_nonfatal", Boolean.toString(nonfatal),
-                "_logs", getLogs(),
                 "_device", DeviceInfo.getDevice(),
                 "_os", DeviceInfo.getOS(),
                 "_os_version", DeviceInfo.getOSVersion(),
@@ -399,18 +398,30 @@ class CrashDetails {
                 "_manufacture", getManufacturer(),
                 "_cpu", getCpu(),
                 "_opengl", getOpenGL(context),
-                "_ram_current", getRamCurrent(context),
-                "_ram_total", getRamTotal(),
-                "_disk_current", getDiskCurrent(),
-                "_disk_total", getDiskTotal(),
-                "_bat", getBatteryLevel(context),
-                "_run", getRunningTime(),
-                "_orientation", getOrientation(context),
                 "_root", isRooted(),
-                "_online", isOnline(context),
-                "_muted", isMuted(context),
-                "_background", isInBackground()
+                "_ram_total", getRamTotal(),
+                "_disk_total", getDiskTotal()
                 );
+
+        if(!isNativeCrash){
+            //if is not a native crash
+            fillJSONIfValuesNotEmpty(json,
+                    "_logs", getLogs(),
+                    "_ram_current", getRamCurrent(context),
+                    "_disk_current", getDiskCurrent(),
+                    "_bat", getBatteryLevel(context),
+                    "_run", getRunningTime(),
+                    "_orientation", getOrientation(context),
+                    "_online", isOnline(context),
+                    "_muted", isMuted(context),
+                    "_background", isInBackground()
+            );
+        } else {
+            //if is a native crash
+            try {
+                json.put("_native_cpp", true);
+            } catch (JSONException e) { }
+        }
 
         try {
             json.put("_custom", getCustomSegments());

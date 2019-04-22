@@ -357,7 +357,7 @@ public class ConnectionQueue {
      * Reports a crash with device data to the server.
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void sendCrashReport(String error, boolean nonfatal) {
+    void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash) {
         checkInternalState();
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.crashes)){
@@ -365,10 +365,12 @@ public class ConnectionQueue {
         }
 
         //limit the size of the crash report to 10k characters
-        error = error.substring(0, Math.min(10000, error.length()));
+        if(!isNativeCrash) {
+            error = error.substring(0, Math.min(10000, error.length()));
+        }
 
         final String data = prepareCommonRequestData()
-                          + "&crash=" + ConnectionProcessor.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal));
+                          + "&crash=" + ConnectionProcessor.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash));
 
         store_.addConnection(data);
 
