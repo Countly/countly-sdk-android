@@ -449,10 +449,10 @@ public class Countly {
             if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven()){
                 RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
             }
-
-            //check for previous native crash dumps
-            checkForNativeCrashDumps(context);
         }
+
+        //check for previous native crash dumps
+        checkForNativeCrashDumps(context);
 
         return this;
     }
@@ -1238,6 +1238,7 @@ public class Countly {
      * @param context
      */
     protected synchronized void checkForNativeCrashDumps(Context context){
+        Log.d(TAG, "Checking for native crash dumps");
 
         String basePath = context.getCacheDir().getAbsolutePath();
         String finalPath = basePath + File.separator + countlyFolderName + File.separator + countlyNativeCrashFolderName;
@@ -1254,7 +1255,7 @@ public class Countly {
                 recordNativeException(dumpFiles[i]);
 
                 //delete dump file
-                //dumpFiles[i].delete();
+                dumpFiles[i].delete();
             }
         } else {
             Log.d(TAG, "Native crash folder does not exist");

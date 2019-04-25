@@ -30,3 +30,7 @@ sdk-native/src/cpp_precompilation/obj
 .gradle
 .DS_Store
 /build
+sdknative/build/generated/
+sdknative/build/
+app-native/.externalNativeBuild/cmake/debug/
+app-native/.externalNativeBuild/cmake/release/
