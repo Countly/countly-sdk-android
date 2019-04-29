@@ -28,18 +28,29 @@ android {
         }
     }
 
+    // Use this if you are working with sdk-native subproject and also change the dependency config below
+    /*
     sourceSets {
         main {
             // let gradle pack the shared library into apk
             jniLibs.srcDirs = ['../sdk-native/libs']
         }
     }
-
+    */
 
 }
 
+repositories {
+    // needed for using sdk-native from countly maven repo
+    maven {
+        url 'https://dl.bintray.com/countly/maven'
+    }
+    jcenter()
+}
+
 dependencies {
-    implementation project(':sdk-native')
+    // implementation project(':sdk-native')
+    implementation 'ly.count.android:sdk-native:0.6'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'

@@ -1,16 +1,12 @@
 package ly.count.android.demo.crash;
 
 import android.content.Context;
-import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdknative.CountlyNative;

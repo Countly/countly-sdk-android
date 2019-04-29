@@ -1,4 +1,14 @@
 apply plugin: 'com.android.library'
+apply plugin: 'bintray-release'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.9'
+    }
+}
 
 android {
     compileSdkVersion 28
@@ -32,3 +42,26 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
+
+task copyLibs(type: Copy) {
+    from "libs"
+    into "src/main/jniLibs"
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith('assemble')) {
+        task.dependsOn('copyLibs')
+    }
+}
+
+
+publish {
+    userOrg = 'countly'
+    groupId = 'ly.count.android'
+    artifactId = 'sdk-native'
+    publishVersion = '0.6'
+    desc = 'Countly Android Native Crash Support'
+    website = 'https://github.com/Countly/countly-sdk-android'
+    autoPublish = false
+}
+
