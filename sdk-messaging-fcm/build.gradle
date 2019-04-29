@@ -17,7 +17,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 28
         versionCode 1
-        versionName "19.02.2"
+        versionName "19.02.3"
     }
 
     buildTypes {
@@ -39,7 +39,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk-messaging-fcm'
-    publishVersion = '19.02.2'
+    publishVersion = '19.02.3'
     desc = 'Countly Android SDK with FCM Support'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

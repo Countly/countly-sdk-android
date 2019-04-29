@@ -1,3 +1,6 @@
+19.02.3
+  * Adding support for native crash handling and symbolication
+
 19.02.2
   * Fixing bug with location data not being erased during begin_session
   * Fix potential issue with push Activity
