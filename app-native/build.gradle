@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 
+// uncomment the following to use/test Countly automatic uploads plugin
+// apply plugin: ly.count.android.plugins.UploadSymbolsPlugin
+
 android {
     compileSdkVersion 28
 
@@ -22,13 +25,21 @@ android {
         }
     }
 
+    // You can add Countly plugin tasks to release task like this
+    /*
+    afterEvaluate {
+        assembleRelease.finalizedBy(uploadJavaSymbols)
+    }
+    */
+
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
         }
     }
 
-    // Use this if you are working with sdk-native subproject and also change the dependency config below
+    // Use this if you are working with sdk-native subproject instead of maven library.
+    // Change also the dependency config below.
     /*
     sourceSets {
         main {
@@ -60,3 +71,50 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
+
+buildscript {
+    repositories {
+        maven {
+            url 'https://dl.bintray.com/countly/maven'
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.14.1'
+        // classpath files('../upload-plugin/build/libs/upload-plugin.jar')
+        classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '0.2'
+
+    }
+}
+
+// the following closure is used to configure Countly plugin tasks
+// uploadJavaSymbols: a gradle task for automatic uploading of mapping.txt file to the server
+// uploadNativeSymbols: a gradle task for automatic uploading of breakpad symbols folder to the server
+
+/*
+countly {
+    // required by both tasks
+    server "https://try.count.ly"
+    app_key "XXXXXX"  // same app_key used for SDK integration
+
+    // optional properties for uploadJavaSymbols. Shown are the default values.
+
+    // location of mapping.txt file relative to project build directory
+    mappingFile "outputs/mapping/release/mapping.txt"
+
+    // note that will be saved with the upload and can be checked in the UI
+    noteJava "sdk-plugin automatic upload of mapping.txt"
+
+    // optional properties for uploadNativeSymbols. Shown are the default values.
+
+    // directory of .so files relative to project build directory.
+    // you can check the tar.gz file created under intermediates/countly
+    nativeObjectFilesDir "intermediates/cmake/release/obj"
+
+    // path for breakpad tool dump_syms executable
+    dumpSymsPath "/usr/bin"
+
+    // note that will be saved with the upload and can be checked in the UI
+    noteNative "sdk-plugin automatic upload of breakpad symbols"
+}
+*/
