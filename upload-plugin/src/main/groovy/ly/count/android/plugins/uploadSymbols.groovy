@@ -22,8 +22,8 @@ class UploadSymbolsPluginExtension {
     String mappingFile = "outputs/mapping/release/mapping.txt"
     String dumpSymsPath = "/usr/bin"
     String nativeObjectFilesDir = "intermediates/cmake/release/obj"
-    String noteJava = "sdk-plugin upload of mapping.txt"
-    String noteNative = "sdk-plugin upload of breakpad symbols"
+    String noteJava = "sdk-plugin automatic upload of mapping.txt"
+    String noteNative = "sdk-plugin automatic upload of breakpad symbols"
 }
 
 class UploadSymbolsPlugin implements Plugin<Project> {
