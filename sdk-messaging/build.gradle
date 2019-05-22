@@ -11,12 +11,12 @@ buildscript {
 }
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 28
     buildToolsVersion '28.0.3'
 
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 25
+        targetSdkVersion 28
         versionCode 1
         versionName "19.02.3"
     }
@@ -34,7 +34,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.google.android.gms:play-services-gcm:10.0.1'
+    implementation 'com.google.android.gms:play-services-gcm:16.1.0'
     api project(':sdk')
 //    compile 'ly.count:sdk-android:18.01.2'
 }
