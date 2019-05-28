@@ -43,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
 
         Countly.onCreate(this);
 
-
         // Example of a call to a native method
         TextView tv = findViewById(R.id.sampleText);
         tv.setText(stringFromJNI());

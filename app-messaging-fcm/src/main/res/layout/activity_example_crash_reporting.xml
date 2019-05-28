@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:paddingLeft="@dimen/activity_horizontal_margin"
+              android:paddingRight="@dimen/activity_horizontal_margin"
+              android:paddingTop="@dimen/activity_vertical_margin"
+              android:paddingBottom="@dimen/activity_vertical_margin"
+              tools:context=".ActivityExampleCrashReporting"
+              android:gravity="center_vertical">
+
+    <Button
+        android:text="@string/unrecognized_selector"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button20"
+        android:enabled="false"
+        android:onClick="onClickCrashReporting01"/>
+
+    <Button
+        android:text="@string/out_of_bounds"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button21"
+        android:onClick="onClickCrashReporting02"/>
+
+    <Button
+        android:text="@string/null_pointer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button22"
+        android:onClick="onClickCrashReporting03"/>
+
+    <Button
+        android:text="@string/invalid_geometry"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button23"
+        android:enabled="false"
+        android:onClick="onClickCrashReporting04"/>
+
+    <Button
+        android:id="@+id/button24"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:onClick="onClickCrashReporting05"
+        android:text="@string/assert_fail" />
+
+    <Button
+        android:text="@string/kill"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button25"
+        android:onClick="onClickCrashReporting06"
+        android:enabled="false"/>
+
+    <Button
+        android:text="@string/custom_crash_log"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button26"
+        android:onClick="onClickCrashReporting07"/>
+
+    <Button
+        android:text="@string/record_handled_exception"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button27"
+        android:onClick="onClickCrashReporting08"/>
+
+    <Button
+        android:text="@string/unhandled_exception"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button28"
+        android:onClick="onClickCrashReporting09"/>
+
+    <Button
+        android:id="@+id/button49"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCrashReporting10"
+        android:text="@string/deep_unhandled_exception"/>
+
+    <Button
+        android:id="@+id/button48"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCrashReporting11"
+        android:text="@string/deep_handled_exception"/>
+
+    <Button
+        android:id="@+id/button50"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickCrashReporting13"
+        android:text="@string/add_a_breadcrumb"/>
+</LinearLayout>

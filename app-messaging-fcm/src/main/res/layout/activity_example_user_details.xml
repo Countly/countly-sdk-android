@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:gravity="center_vertical"
+              android:paddingLeft="@dimen/activity_horizontal_margin"
+              android:paddingRight="@dimen/activity_horizontal_margin"
+              android:paddingTop="@dimen/activity_vertical_margin"
+              android:paddingBottom="@dimen/activity_vertical_margin" >
+
+    <Button
+        android:text="@string/record_user_details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button29"
+        android:onClick="onClickUserData01"/>
+
+    <Button
+        android:text="@string/custom_modifiers_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button30"
+        android:onClick="onClickUserData02"/>
+
+    <Button
+        android:text="@string/custom_modifiers_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button31"
+        android:onClick="onClickUserData03"/>
+
+    <Button
+        android:text="@string/user_logged_in"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button32"
+        android:onClick="onClickUserData04"
+        android:enabled="false"/>
+
+    <Button
+        android:text="@string/user_logged_out"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button33"
+        android:onClick="onClickUserData05"
+        android:enabled="false"/>
+</LinearLayout>

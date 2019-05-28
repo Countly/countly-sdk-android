@@ -47,8 +47,11 @@ public class App extends Application {
                 .setRequiresConsent(true)
                 .setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, true)
                 .setLoggingEnabled(true)
-                .setPushIntentAddMetadata(true)
-                .init(this, serverUrl, appKey);
+                .setPushIntentAddMetadata(true);
+
+        Countly.sharedInstance().enableCrashReporting();
+        Countly.sharedInstance().setViewTracking(true);
+        Countly.sharedInstance().init(this, serverUrl, appKey);
 
         CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION);
 
