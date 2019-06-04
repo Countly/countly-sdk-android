@@ -7,8 +7,10 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -34,7 +36,7 @@ public class UserData {
     protected static String picture;
     private static String picturePath;
     protected static String gender;
-    protected static Map<String, String> custom;
+    protected static Map custom;
     protected static Map<String, JSONObject> customMods;
     protected static int byear = 0;
     private static boolean isSynced = true;
@@ -122,7 +124,7 @@ public class UserData {
      * @param data Map&lt;String, String&gt; with user data
      * @param customdata Map&lt;String, String&gt; with custom key values for this user
      */
-    public void setUserData(Map<String, String> data, Map<String, String> customdata) {
+    public void setUserData(Map<String, String> data, Map customdata) {
         UserData.setData(data);
         if(customdata != null)
             UserData.setCustomData(customdata);
@@ -306,9 +308,9 @@ public class UserData {
      * Sets user custom properties and values.
      * @param data Map with user custom key/values
      */
-    public static void setCustomData(Map<String, String> data){
+    public static void setCustomData(Map data){
         if(custom == null)
-            custom = new HashMap<>();
+            custom = new HashMap();
         custom.putAll(data);
         isSynced = false;
     }
@@ -318,9 +320,9 @@ public class UserData {
      * @param key String with key for the property
      * @param value String with value for the property
      */
-    public static void setCustomProperty(String key, String value){
+    public static void setCustomProperty(String key, Object value){
         if(custom == null)
-            custom = new HashMap<>();
+            custom = new HashMap();
         custom.put(key, value);
         isSynced = false;
     }
@@ -473,7 +475,7 @@ public class UserData {
 
             JSONObject ob;
             if(custom != null){
-                ob = new JSONObject(custom);
+                ob = JSONUtils.serializeMap(custom);
             }
             else{
                 ob = new JSONObject();

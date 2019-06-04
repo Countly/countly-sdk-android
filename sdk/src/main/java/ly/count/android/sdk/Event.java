@@ -23,11 +23,13 @@ package ly.count.android.sdk;
 
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,7 +49,7 @@ class Event {
     private static final String HOUR = "hour";
 
     public String key;
-    public Map<String, String> segmentation;
+    public Map segmentation;
     public Map<String, Integer> segmentationInt;
     public Map<String, Double> segmentationDouble;
     public int count;
@@ -82,9 +84,7 @@ class Event {
 
             JSONObject jobj = new JSONObject();
             if (segmentation != null) {
-                for (Map.Entry<String, String> pair : segmentation.entrySet()) {
-                    jobj.put(pair.getKey(), pair.getValue());
-                }
+                jobj = JSONUtils.serializeMap(segmentation);
             }
 
             if(segmentationInt != null){
