@@ -247,15 +247,8 @@ public class ConnectionQueue {
                 + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
                 + "&locale=" + DeviceInfo.getLocale();
 
-        // To ensure begin_session will be fully processed by the server before token_session
-        final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
-        worker.schedule(new Runnable() {
-            @Override
-            public void run() {
-                store_.addConnection(data);
-                tick();
-            }
-        }, 10, TimeUnit.SECONDS);
+        store_.addConnection(data);
+        tick();
     }
 
     /**
