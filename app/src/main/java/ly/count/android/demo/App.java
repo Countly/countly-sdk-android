@@ -46,6 +46,7 @@ public class App extends Application {
                 .enableFeatures(Config.Feature.Events, Config.Feature.Sessions, Config.Feature.CrashReporting, Config.Feature.UserProfiles, Config.Feature.StarRating, Config.Feature.RemoteConfig)
                 .setAutoSessionsTracking(true)
                 .enableTestMode()
+                .setRequiresConsent(true)
                 .setLoggingLevel(Config.LoggingLevel.DEBUG)
                 .setEnableAutomaticRemoteConfig(true);
     }

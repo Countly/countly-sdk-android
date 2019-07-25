@@ -40,6 +40,7 @@ public class UserEditorImpl implements UserEditor {
         }
 
         public void apply(Map<String, Object> custom) {
+            //todo, what is this? (AK, 04.02.2019)
 //            switch (op) {
 //                case INC:
 //                    Object existing = custom.get(key);

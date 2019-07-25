@@ -2,7 +2,7 @@ package ly.count.sdk.android.internal;
 
 import android.content.BroadcastReceiver;
 import android.content.Intent;
-import android.support.test.runner.AndroidJUnit4;
+
 import junit.framework.Assert;
 
 import org.junit.Before;

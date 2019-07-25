@@ -256,6 +256,15 @@ public abstract class SDKCore extends SDKModules {
         return enabled(feature.getIndex());
     }
 
+    public boolean hasConsentForFeature(CoreFeature feature){
+        if(!instance.config.requiresConsent()){
+            //if no consent required, return true
+            return true;
+        }
+
+        return enabled(feature);
+    }
+
     public Boolean isRequestReady(Request request) {
         Class cls = request.owner();
         if (cls == null) {

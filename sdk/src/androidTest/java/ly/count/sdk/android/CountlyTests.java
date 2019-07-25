@@ -24,34 +24,34 @@ public class CountlyTests {
         validateMockitoUsage();
     }
 
-/*
-    @Test
-    public void init(){
-        Application application = mock(Application.class);
-        final Core sdk = mock(Core.class);
 
-        Cly.init(application, config, new Cly.CreationOverride() {
-            @Override
-            public Core createCore(ConfigCore config) {
-                return sdk;
-            }
-        });
+//    @Test
+//    public void init(){
+//        Application application = mock(Application.class);
+//        final Core sdk = mock(Core.class);
+//
+//        Cly.init(application, config, new Cly.CreationOverride() {
+//            @Override
+//            public Core createCore(ConfigCore config) {
+//                return sdk;
+//            }
+//        });
+//
+//        verify(sdk, times(1)).onContextAcquired(application);
+//    }
+//
+//    @Test
+//    public void constructor_core(){
+//        Cly cn = new Cly(config);
+//
+//        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
+//    }
+//
+//    @Test
+//    public void constructor_config(){
+//        Core sdk = new Core(config);
+//        Cly cn = new Cly(sdk);
+//        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
+//    }
 
-        verify(sdk, times(1)).onContextAcquired(application);
-    }
-
-    @Test
-    public void constructor_core(){
-        Cly cn = new Cly(config);
-
-        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
-    }
-
-    @Test
-    public void constructor_config(){
-        Core sdk = new Core(config);
-        Cly cn = new Cly(sdk);
-        SDKTests.assertConfirmConfig(config, Whitebox.<Core>getInternalState(cn, "sdk"));
-    }
-*/
 }

@@ -235,7 +235,7 @@ public class Countly extends CountlyLifecycle {
                 return mr.new Ratings();
             }
             //if it is null, feature was not enabled, return mock
-            L.wtf("Star Ratings module was not enabled, returning dummy module");
+            L.w("Star Ratings module was not enabled, returning dummy module");
             ModuleRating emptyMr = new ModuleRating();
             emptyMr.disableModule();
             return emptyMr.new Ratings();

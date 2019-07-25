@@ -12,9 +12,12 @@ import org.powermock.reflect.Whitebox;
 
 import java.util.List;
 
+import ly.count.sdk.ConfigCore;
 import ly.count.sdk.android.Config;
+import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Module;
+import ly.count.sdk.internal.SDKCore;
 
 @RunWith(AndroidJUnit4.class)
 public class SDKTests extends BaseTests {
@@ -31,10 +34,10 @@ public class SDKTests extends BaseTests {
 /*
     @Test
     public void constructor_basic(){
-        Assert.assertEquals(true, config.isFeatureEnabled(ConfigCore.Feature.Sessions));
+        Assert.assertEquals(true, config.isFeatureEnabled(CoreFeature.Sessions.getIndex()));
         Assert.assertEquals(ConfigCore.LoggingLevel.DEBUG, config.getLoggingLevel());
 
-        Core core = Core.init(config, application());
+        SDKCore core = SDKCore.init(config, application());
 
         Assert.assertTrue(config == Whitebox.<InternalConfig>getInternalState(core, "config"));
         Assert.assertEquals(4, Whitebox.<List<Module>>getInternalState(core, "modules").size());
@@ -52,5 +55,5 @@ public class SDKTests extends BaseTests {
         Assert.assertEquals(4, Whitebox.<List<Module>>getInternalState(core, "modules").size());
         Assert.assertNull(Whitebox.getInternalState(core, "session"));
     }
-    */
+*/
 }
