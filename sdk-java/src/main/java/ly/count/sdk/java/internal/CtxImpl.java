@@ -2,7 +2,6 @@ package ly.count.sdk.java.internal;
 
 import java.io.File;
 
-import ly.count.sdk.internal.Ctx;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 
@@ -14,7 +13,7 @@ public class CtxImpl implements Ctx {
     private SDK sdk;
     private InternalConfig config;
     private File directory;
-    private String view;
+    private String view;//todo not sure about the usefulness of this
 
     private boolean expired = false;
 

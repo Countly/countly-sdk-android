@@ -36,7 +36,7 @@ public abstract class SDKLifecycle extends SDKCore {
     }
 
     @Override
-    public void stop(ly.count.sdk.internal.Ctx ctx, boolean clear) {
+    public void stop(ly.count.sdk.internal.CtxCore ctx, boolean clear) {
         super.stop(ctx, clear);
         config = null;
     }
@@ -47,91 +47,8 @@ public abstract class SDKLifecycle extends SDKCore {
      * it's developer responsibility. In any case, for API 14+ Countly ignores dev calls.
      */
     @Override
-    protected void onContextAcquired(final ly.count.sdk.internal.Ctx ctx) {
+    protected void onContextAcquired(final ly.count.sdk.internal.CtxCore ctx) {
         L.d("Application created");
-
-        final Application application;
-
-        if(((Ctx) ctx).getApplication() != null) {
-            application = ((Ctx) ctx).getApplication();
-        } else {
-            Activity act = ((Ctx) ctx).getActivity();
-            if(act != null) {
-                application = act.getApplication();
-            } else {
-                application = null;
-            }
-        }
-
-        onSignal(ctx, Signal.Start.getIndex(), null);
-
-        if (Utils.API(14)) {
-            if(application != null) {
-                //there can be occasions where this is not set
-                application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-                    @Override
-                    public void onActivityCreated(Activity activity, Bundle bundle) {
-                        L.d("Activity created: " + activity.getClass().getSimpleName());
-                        SDKLifecycle.this.onActivityCreatedInternal(activity, bundle);
-                    }
-
-                    @Override
-                    public void onActivityStarted(Activity activity) {
-                        L.d("Activity started: " + activity.getClass().getSimpleName());
-                        SDKLifecycle.this.onActivityStartedInternal(activity);
-                    }
-
-                    @Override
-                    public void onActivityResumed(Activity activity) {
-                        L.d("Activity resumed: " + activity.getClass().getSimpleName());
-                        SDKLifecycle.this.onActivityResumedInternal(activity);
-                    }
-
-                    @Override
-                    public void onActivityPaused(Activity activity) {
-                        L.d("Activity paused: " + activity.getClass().getSimpleName());
-                        SDKLifecycle.this.onActivityPausedInternal(activity);
-                    }
-
-                    @Override
-                    public void onActivityStopped(Activity activity) {
-                        L.d("Activity stopped: " + activity.getClass().getSimpleName());
-                        SDKLifecycle.this.onActivityStoppedInternal(activity);
-                    }
-
-                    @Override
-                    public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-                        L.d("Activity save state: " + activity.getClass().getSimpleName());
-                        SDKLifecycle.this.onActivitySaveInstanceStateInternal(activity, bundle);
-                    }
-
-                    @Override
-                    public void onActivityDestroyed(Activity activity) {
-                        L.d("Activity destroyed: " + activity.getClass().getSimpleName());
-                        SDKLifecycle.this.onActivityDestroyedInternal(activity);
-                    }
-                });
-                application.registerComponentCallbacks(new ComponentCallbacks2() {
-                    @Override
-                    public void onTrimMemory(int i) {
-                        L.d("Trim memory " + i);
-                        SDKLifecycle.this.onApplicationTrimMemoryInternal(i);
-                    }
-
-                    @Override
-                    public void onConfigurationChanged(Configuration configuration) {
-                        // TODO: Operator, screen, etc
-                        L.d("Configuration changed: " + configuration.toString());
-                        SDKLifecycle.this.onConfigurationChangedInternal(application, configuration);
-                    }
-
-                    @Override
-                    public void onLowMemory() {
-                        L.d("Low memory");
-                    }
-                });
-            }
-        }
 
         eachModule(new Modulator() {
             @Override
@@ -290,7 +207,7 @@ public abstract class SDKLifecycle extends SDKCore {
     }
 
     @Override
-    public void onSignal(ly.count.sdk.internal.Ctx ctx, int id, Byteable param1, Byteable param2) {
+    public void onSignal(ly.count.sdk.internal.CtxCore ctx, int id, Byteable param1, Byteable param2) {
         Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
         intent.putExtra(CountlyService.CMD, id);
         if (param1 != null) {
@@ -303,7 +220,7 @@ public abstract class SDKLifecycle extends SDKCore {
     }
 
     @Override
-    public void onSignal(ly.count.sdk.internal.Ctx ctx, int id, String param) {
+    public void onSignal(ly.count.sdk.internal.CtxCore ctx, int id, String param) {
         if (ctx.getConfig().isDefaultNetworking()) {
             if (id == Signal.Crash.getIndex()) {
                 try {
