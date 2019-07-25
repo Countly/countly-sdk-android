@@ -290,7 +290,7 @@ public class ConfigCore {
      * How much time of user inactivity Countly should wait until automatically ending session.
      * Works only with {@link #autoSessionsTracking} set to {@code true}.
      */
-    protected int sessionAutoCloseAfter = "Android".equals(System.getProperty("os.name")) ? 10 : 1;
+    protected int sessionAutoCloseAfter = "Android".equals(System.getProperty("os.name")) ? 10 : 0;
 
     /**
      * Enable test mode:

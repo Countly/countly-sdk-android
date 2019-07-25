@@ -6,7 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/core/core.iml" filepath="$PROJECT_DIR$/core/core.iml" />
       <module fileurl="file://$PROJECT_DIR$/countly-sdk-android.iml" filepath="$PROJECT_DIR$/countly-sdk-android.iml" />
       <module fileurl="file://$PROJECT_DIR$/sdk/sdk.iml" filepath="$PROJECT_DIR$/sdk/sdk.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sdkJava/sdkJava.iml" filepath="$PROJECT_DIR$/sdkJava/sdkJava.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sdk-java/sdk-java.iml" filepath="$PROJECT_DIR$/sdk-java/sdk-java.iml" />
     </modules>
   </component>
 </project>

@@ -1,24 +1,20 @@
-package ly.count.sdk.android;
+package ly.count.sdk.java;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import ly.count.sdk.ConfigCore;
 import ly.count.sdk.CrashProcessor;
 import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.Utils;
 
-public class Config extends ConfigCore {
+public class Config extends ly.count.sdk.ConfigCore {
     /**
      * Strategy for device id generation
      */
     public enum DeviceIdStrategy {
         UUID(0),
-        ANDROID_ID(1),
-        INSTANCE_ID(2),
-        ADVERTISING_ID(3),
         CUSTOM_ID(10);
 
         private final int index;
@@ -35,15 +31,6 @@ public class Config extends ConfigCore {
             if (index == UUID.index) {
                 return UUID;
             }
-            if (index == ANDROID_ID.index) {
-                return ANDROID_ID;
-            }
-            if (index == ADVERTISING_ID.index) {
-                return ADVERTISING_ID;
-            }
-            if (index == INSTANCE_ID.index) {
-                return INSTANCE_ID;
-            }
             if (index == CUSTOM_ID.index) {
                 return CUSTOM_ID;
             }
@@ -55,9 +42,7 @@ public class Config extends ConfigCore {
      * What this device id is for
      */
     public enum DeviceIdRealm {
-        DEVICE_ID(0),
-        FCM_TOKEN(1),
-        ADVERTISING_ID(2);
+        DEVICE_ID(0);
 
         private final int index;
 
@@ -73,12 +58,6 @@ public class Config extends ConfigCore {
             if (index == DEVICE_ID.index) {
                 return DEVICE_ID;
             }
-            if (index == FCM_TOKEN.index) {
-                return FCM_TOKEN;
-            }
-            if (index == ADVERTISING_ID.index) {
-                return ADVERTISING_ID;
-            }
             return null;
         }
     }
@@ -93,9 +72,7 @@ public class Config extends ConfigCore {
         CrashReporting(CoreFeature.CrashReporting.getIndex()),
         Location(CoreFeature.Location.getIndex()),
         UserProfiles(CoreFeature.UserProfiles.getIndex()),
-        StarRating(CoreFeature.StarRating.getIndex()),
-        Push(1 << 10),
-        Attribution(1 << 11),
+        StarRating(1 << 12),
         RemoteConfig(1 << 13),
         PerformanceMonitoring(1 << 14);
 
@@ -122,10 +99,6 @@ public class Config extends ConfigCore {
                 return Location;
             } else if (index == UserProfiles.index) {
                 return UserProfiles;
-            } else if (index == Push.index) {
-                return Push;
-            } else if (index == Attribution.index) {
-                return Attribution;
             } else if (index == StarRating.index) {
                 return StarRating;
             } else if (index == RemoteConfig.index) {
@@ -146,23 +119,16 @@ public class Config extends ConfigCore {
      */
     public Config(String serverURL, String serverAppKey) {
         super(serverURL, serverAppKey);
-        setSdkName("java-native-android");
-        setSdkVersion(ly.count.sdk.android.sdk.BuildConfig.VERSION_NAME);
+        setSdkName("java-native");
         enableFeatures(Feature.Events, Feature.Sessions, Feature.CrashReporting, Feature.Location, Feature.UserProfiles);
     }
 
     /**
      * Set device id generation strategy:
      * - {@link DeviceIdStrategy#UUID} to use standard java random UUID. Default.
-     * - {@link DeviceIdStrategy#INSTANCE_ID} to use InstanceID if available (requires Play Services).
-     * Falls back to UUID if no Play Services available.
-     * - {@link DeviceIdStrategy#ANDROID_ID} to use OpenUDID derivative - unique, semi-persistent
-     * (stored in {@code SharedPreferences} in Android). Falls back to INSTANCE_ID and then to UUID.
-     * - {@link DeviceIdStrategy#ADVERTISING_ID} to use com.google.android.gms.ads.identifier.AdvertisingIdClient
-     * if available (requires Play Services). Falls back to ANDROID_ID, INSTANCE_ID and then to UUID.
      * - {@link DeviceIdStrategy#CUSTOM_ID} to use your own device id for Countly.
      *
-     * @param strategy       strategy to use instead of default UUID
+     * @param strategy       strategy to use instead of default OpenUDID
      * @param customDeviceId device id for use with {@link DeviceIdStrategy#CUSTOM_ID}
      * @return {@code this} instance for method chaining
      */
@@ -181,7 +147,7 @@ public class Config extends ConfigCore {
     /**
      * Shorthand method for {@link #setDeviceIdStrategy(DeviceIdStrategy, String)}
      *
-     * @param strategy strategy to use instead of default UUID
+     * @param strategy strategy to use instead of default OpenUDID
      * @return {@code this} instance for method chaining
      */
     public Config setDeviceIdStrategy(DeviceIdStrategy strategy) {
@@ -645,124 +611,41 @@ public class Config extends ConfigCore {
     }
 
     /**
-     * Enable auto views tracking
+     * !!! Not available for Java SDK !!!
      *
-     * @param autoViewsTracking whether to enable it or disable
-     * @return {@code this} instance for method chaining
      * @see #autoViewsTracking
      */
     public Config setAutoViewsTracking(boolean autoViewsTracking) {
-        super.setAutoViewsTracking(autoViewsTracking);
+        if (autoViewsTracking) {
+            Log.wtf("Auto views tracking is not available for Java-native SDK");
+        }
+        super.setAutoViewsTracking(false);
         return this;
     }
 
     /**
-     * Enable auto sessions tracking
+     * !!! Not available for Java SDK !!!
      *
-     * @param autoSessionsTracking whether to enable it or disable
-     * @return {@code this} instance for method chaining
      * @see #autoSessionsTracking
      */
     public Config setAutoSessionsTracking(boolean autoSessionsTracking) {
-        super.setAutoSessionsTracking(autoSessionsTracking);
+        if (autoSessionsTracking) {
+            Log.wtf("Auto sessions tracking is not available for Java-native SDK");
+        }
+        super.setAutoSessionsTracking(false);
         return this;
     }
 
     /**
-     * Wait this much time before ending session in auto session tracking mode
+     * !!! Not available for Java SDK !!!
      *
-     * @param sessionAutoCloseAfter time in seconds
-     * @return {@code this} instance for method chaining
      * @see #sessionAutoCloseAfter
      */
     public Config setSessionAutoCloseAfter(int sessionAutoCloseAfter) {
-        super.setSessionAutoCloseAfter(sessionAutoCloseAfter);
-        return this;
-    }
-
-    /**
-     *
-     * @param timeout after how much time in miliseconds the timeout error will
-     *                be returned when failing to establish connection to
-     *                the server
-     * @return {@code this} instance for method chaining
-     */
-    public Config setRatingWidgetTimeout(long timeout){
-        this.ratingWidgetTimeout = timeout;
-        return this;
-    }
-
-    /**
-     *
-     * @param limit after how many session the automatic star rating dialog should be shown
-     * @return {@code this} instance for method chaining
-     */
-    public Config setStarRatingSessionLimit(int limit){
-        this.starRatingSessionLimit = limit;
-        return this;
-    }
-
-    /**
-     * Set the messages that will be show in the star rating dialog
-     * @param starRatingTextTitle
-     * @param starRatingTextMessage
-     * @param starRatingTextDismiss
-     * @return {@code this} instance for method chaining
-     */
-    public Config setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss){
-        this.starRatingTextDismiss = starRatingTextDismiss;
-        this.starRatingTextMessage = starRatingTextMessage;
-        this.starRatingTextTitle = starRatingTextTitle;
-        return this;
-    }
-
-    /**
-     * Set if the automatic star rating dialog sohuld be shown
-     * @param shouldBeShown
-     * @return
-     */
-    public Config setStarRatingAutomaticShouldBeShown(boolean shouldBeShown){
-        this.automaticStarRatingShouldBeShown = shouldBeShown;
-        return this;
-    }
-
-    /**
-     * Set if star rating dialog should be cancelable
-     * @param itIsCancelable set true for yes
-     * @return
-     */
-    public Config setStarRatingIsDialogCancelable(boolean itIsCancelable){
-        this.starRatingIsDialogCancelable = itIsCancelable;
-        return this;
-    }
-
-    /**
-     * Set if automatic star rating should be shown for every new version
-     * @param shouldBeShown set true if should be shown
-     * @return
-     */
-    public Config setStarRatingShouldBeShownForEachVersion(boolean shouldBeShown){
-        this.starRatingDisabledAutomaticForNewVersions = !shouldBeShown;
-        return this;
-    }
-
-    /**
-     * Set if automatic remote config should be enabled
-     * @param shouldBeEnabled set true for "yes"
-     * @return
-     */
-    public Config setEnableAutomaticRemoteConfig(boolean shouldBeEnabled){
-        this.enableAutomaticRemoteConfig = shouldBeEnabled;
-        return this;
-    }
-
-    /**
-     * Set after how much time made update request is canceled and a timeout error is returned
-     * @param timeout
-     * @return
-     */
-    public Config setRemoteConfigUpdateRequestTimeout(long timeout){
-        this.remoteConfigUpdateRequestTimeout = timeout;
+        if (sessionAutoCloseAfter != 0) {
+            Log.wtf("Auto sessions tracking is not available for Java-native SDK");
+        }
+        super.setSessionAutoCloseAfter(0);
         return this;
     }
 }

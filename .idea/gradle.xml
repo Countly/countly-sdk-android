@@ -12,7 +12,7 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/sdk" />
-            <option value="$PROJECT_DIR$/sdkJava" />
+            <option value="$PROJECT_DIR$/sdk-java" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
