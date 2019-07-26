@@ -1,10 +1,6 @@
 package ly.count.sdk.java.internal;
 
-import android.app.Activity;
-import android.app.Application;
-import android.content.res.Configuration;
-import android.os.Build;
-import android.os.Bundle;
+import java.io.File;
 
 import ly.count.sdk.internal.Byteable;
 import ly.count.sdk.internal.InternalConfig;
@@ -31,9 +27,10 @@ public abstract class SDKLifecycle extends SDKCore {
         super();
     }
 
-    CtxImpl ctx (Context context) {
-        return new CtxImpl(this, config, context);
-    }
+    //todo, not sure if this is really needed (AK, 2019.07.25)
+//    CtxImpl ctx (File directory) {
+//        return new CtxImpl(this, config, directory);
+//    }
 
     @Override
     public void stop(ly.count.sdk.internal.CtxCore ctx, boolean clear) {
@@ -59,85 +56,38 @@ public abstract class SDKLifecycle extends SDKCore {
         });
     }
 
-    public void onApplicationTrimMemory(int level) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Trim memory " + level);
-            this.onApplicationTrimMemoryInternal(level);
-        }
+    public void onActivityCreated(String activityName) {
+        L.d("[Callback] Activity created: " + activityName);
+        this.onActivityCreatedInternal();
     }
 
-    public void onActivityCreated(Activity activity, Bundle bundle) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Activity created: " + activity.getClass().getSimpleName());
-            this.onActivityCreatedInternal(activity, bundle);
-        }
+    public void onActivityStarted(String activityName) {
+        L.d("[Callback] Activity started: " + activityName);
+        this.onActivityStartedInternal();
     }
 
-    public void onActivityStarted(Activity activity) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Activity started: " + activity.getClass().getSimpleName());
-            this.onActivityStartedInternal(activity);
-        }
+    public void onActivityResumed(String activityName) {
+        L.d("[Callback] Activity resumed: " + activityName);
+        this.onActivityResumedInternal();
     }
 
-    public void onActivityResumed(Activity activity) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Activity resumed: " + activity.getClass().getSimpleName());
-            this.onActivityResumedInternal(activity);
-        }
+    public void onActivityPaused(String activityName) {
+        L.d("[Callback] Activity paused: " + activityName);
+        this.onActivityPausedInternal();
     }
 
-    public void onActivityPaused(Activity activity) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Activity paused: " + activity.getClass().getSimpleName());
-            this.onActivityPausedInternal(activity);
-        }
+    public void onActivityStopped(String activityName) {
+        L.d("[Callback] Activity stopped: " + activityName);
+        this.onActivityStoppedInternal();
     }
 
-    public void onActivityStopped(Activity activity) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Activity stopped: " + activity.getClass().getSimpleName());
-            this.onActivityStoppedInternal(activity);
-        }
+    public void onActivityDestroyed(String activityName) {
+        L.d("[Callback] Activity destroyed: " + activityName);
+        this.onActivityDestroyedInternal();
     }
 
-    public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Activity save state: " + activity.getClass().getSimpleName());
-            this.onActivitySaveInstanceStateInternal(activity, bundle);
-        }
-    }
-
-    public void onActivityDestroyed(Activity activity) {
-        if (!Utils.API(14)) {
-            L.d("[Callback] Activity destroyed: " + activity.getClass().getSimpleName());
-            this.onActivityDestroyedInternal(activity);
-        }
-    }
-
-    public void onConfigurationChanged(Application application, Configuration configuration) {
-        if (!Utils.API(Build.VERSION_CODES.ICE_CREAM_SANDWICH)) {
-            this.onConfigurationChangedInternal(application, configuration);
-        }
-    }
-
-    private void onApplicationTrimMemoryInternal(int level) {
-        // TODO: think about recording crash report
-    }
-
-    // TODO: think about this
-    private void onConfigurationChangedInternal(Application application, Configuration configuration) {
-        final Ctx ctx = ctx(application.getApplicationContext());
-        eachModule(new Modulator() {
-            @Override
-            public void run(int feature, Module module) {
-                module.onConfigurationChanged(ctx);
-            }
-        });
-    }
-
-    private void onActivityCreatedInternal(Activity activity, Bundle bundle) {
-        final CtxImpl ctx = new CtxImpl(this, config(), activity, bundle);
+    private void onActivityCreatedInternal() {
+        final CtxImpl ctx = new CtxImpl(this, config(), null);
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -146,8 +96,8 @@ public abstract class SDKLifecycle extends SDKCore {
         });
     }
 
-    private void onActivityStartedInternal(Activity activity) {
-        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+    private void onActivityStartedInternal() {
+        final CtxImpl ctx = new CtxImpl(this, config(), null);
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -156,8 +106,8 @@ public abstract class SDKLifecycle extends SDKCore {
         });
     }
 
-    private void onActivityResumedInternal(Activity activity) {
-        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+    private void onActivityResumedInternal() {
+        final CtxImpl ctx = new CtxImpl(this, config(), null);
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -166,8 +116,8 @@ public abstract class SDKLifecycle extends SDKCore {
         });
     }
 
-    private void onActivityPausedInternal(Activity activity) {
-        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+    private void onActivityPausedInternal() {
+        final CtxImpl ctx = new CtxImpl(this, config(), null);
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -176,8 +126,8 @@ public abstract class SDKLifecycle extends SDKCore {
         });
     }
 
-    private void onActivityStoppedInternal(Activity activity) {
-        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+    private void onActivityStoppedInternal() {
+        final CtxImpl ctx = new CtxImpl(this, config(), null);
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -186,18 +136,8 @@ public abstract class SDKLifecycle extends SDKCore {
         });
     }
 
-    private void onActivitySaveInstanceStateInternal(Activity activity, Bundle bundle) {
-        final CtxImpl ctx = new CtxImpl(this, config(), activity, bundle);
-        eachModule(new Modulator() {
-            @Override
-            public void run(int feature, Module module) {
-                module.onActivitySaveInstanceState(ctx);
-            }
-        });
-    }
-
-    private void onActivityDestroyedInternal(Activity activity) {
-        final CtxImpl ctx = new CtxImpl(this, config(), activity, null);
+    private void onActivityDestroyedInternal() {
+        final CtxImpl ctx = new CtxImpl(this, config(), null);
         eachModule(new Modulator() {
             @Override
             public void run(int feature, Module module) {
@@ -208,51 +148,53 @@ public abstract class SDKLifecycle extends SDKCore {
 
     @Override
     public void onSignal(ly.count.sdk.internal.CtxCore ctx, int id, Byteable param1, Byteable param2) {
-        Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
-        intent.putExtra(CountlyService.CMD, id);
-        if (param1 != null) {
-            intent.putExtra(CountlyService.PARAM_1, param1.store());
-        }
-        if (param2 != null) {
-            intent.putExtra(CountlyService.PARAM_2, param2.store());
-        }
-        ((Context)ctx.getContext()).startService(intent);
+        //todo, Artem, what would be the best replacement for this? (AK, 2019.07.25)
+//        Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
+//        intent.putExtra(CountlyService.CMD, id);
+//        if (param1 != null) {
+//            intent.putExtra(CountlyService.PARAM_1, param1.store());
+//        }
+//        if (param2 != null) {
+//            intent.putExtra(CountlyService.PARAM_2, param2.store());
+//        }
+//        ((Context)ctx.getContext()).startService(intent);
     }
 
     @Override
     public void onSignal(ly.count.sdk.internal.CtxCore ctx, int id, String param) {
-        if (ctx.getConfig().isDefaultNetworking()) {
-            if (id == Signal.Crash.getIndex()) {
-                try {
-                    CrashImpl crash = new CrashImpl(Long.parseLong(param));
-                    crash = Storage.read(ctx, crash);
-                    if (crash == null) {
-                        L.e("Cannot read crash from storage, skipping");
-                        return;
-                    }
-
-                    Request request = ModuleRequests.nonSessionRequest(ctx);
-                    ModuleCrash.putCrashIntoParams(crash, request.params);
-                    if (Storage.push(ctx, request)) {
-                        L.i("Added request " + request.storageId() + " instead of crash " + crash.storageId());
-                        Boolean success = Storage.remove(ctx, crash);
-                        L.d("crash " + id + " removal result is " + success);
-                    } else {
-                        L.e("Couldn't write request " + request.storageId() + " instead of crash " + crash.storageId());
-                    }
-                } catch (Throwable t) {
-                    L.wtf("Error when making a request out of a crash", t);
-                }
-            }
-            networking.check(ctx);
-        } else {
-            Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
-            intent.putExtra(CountlyService.CMD, id);
-            if (Utils.isNotEmpty(param)) {
-                intent.putExtra(CountlyService.PARAM_1, param);
-            }
-            ((Context)ctx.getContext()).startService(intent);
-        }
+        //todo, Artem, what would be the best replacement for this? (AK, 2019.07.25)
+//        if (ctx.getConfig().isDefaultNetworking()) {
+//            if (id == Signal.Crash.getIndex()) {
+//                try {
+//                    CrashImpl crash = new CrashImpl(Long.parseLong(param));
+//                    crash = Storage.read(ctx, crash);
+//                    if (crash == null) {
+//                        L.e("Cannot read crash from storage, skipping");
+//                        return;
+//                    }
+//
+//                    Request request = ModuleRequests.nonSessionRequest(ctx);
+//                    ModuleCrash.putCrashIntoParams(crash, request.params);
+//                    if (Storage.push(ctx, request)) {
+//                        L.i("Added request " + request.storageId() + " instead of crash " + crash.storageId());
+//                        Boolean success = Storage.remove(ctx, crash);
+//                        L.d("crash " + id + " removal result is " + success);
+//                    } else {
+//                        L.e("Couldn't write request " + request.storageId() + " instead of crash " + crash.storageId());
+//                    }
+//                } catch (Throwable t) {
+//                    L.wtf("Error when making a request out of a crash", t);
+//                }
+//            }
+//            networking.check(ctx);
+//        } else {
+//            Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
+//            intent.putExtra(CountlyService.CMD, id);
+//            if (Utils.isNotEmpty(param)) {
+//                intent.putExtra(CountlyService.PARAM_1, param);
+//            }
+//            ((Context)ctx.getContext()).startService(intent);
+//        }
     }
 
 }

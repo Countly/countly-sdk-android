@@ -32,7 +32,7 @@ public class Countly extends CountlyLifecycle {
     protected Countly(SDK sdk, CtxImpl ctx) {
         super();
         cly = this;
-        super.sdk = this.sdk = sdk;
+        super.sdkInterface = this.sdk = sdk;
         this.ctx = ctx;
     }
 
@@ -85,5 +85,23 @@ public class Countly extends CountlyLifecycle {
      */
     public static Usage api() {
         return cly;
+    }
+
+    @Override
+    public Usage login(String id) {
+        sdk.login(ctx, id);
+        return this;
+    }
+
+    @Override
+    public Usage logout() {
+        sdk.logout(ctx);
+        return this;
+    }
+
+    @Override
+    public Usage resetDeviceId(String id) {
+        sdk.resetDeviceId(ctx, id);
+        return this;
     }
 }

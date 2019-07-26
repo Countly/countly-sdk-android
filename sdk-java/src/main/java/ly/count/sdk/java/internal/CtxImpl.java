@@ -10,20 +10,20 @@ import ly.count.sdk.internal.Log;
  */
 public class CtxImpl implements Ctx {
     private static final Log.Module L = Log.module("CtxImpl");
-    private SDK sdk;
+    private SDKLifecycle sdk;
     private InternalConfig config;
     private File directory;
     private String view;//todo not sure about the usefulness of this
 
     private boolean expired = false;
 
-    public CtxImpl(SDK sdk, InternalConfig config, File directory) {
+    public CtxImpl(SDKLifecycle sdk, InternalConfig config, File directory) {
         this.sdk = sdk;
         this.config = config;
         this.directory = directory;
     }
 
-    public CtxImpl(SDK sdk, InternalConfig config, File directory, String view) {
+    public CtxImpl(SDKLifecycle sdk, InternalConfig config, File directory, String view) {
         this.sdk = sdk;
         this.config = config;
         this.directory = directory;
@@ -44,7 +44,7 @@ public class CtxImpl implements Ctx {
     }
 
     @Override
-    public SDK getSDK() {
+    public SDKLifecycle getSDK() {
         return sdk;
     }
 

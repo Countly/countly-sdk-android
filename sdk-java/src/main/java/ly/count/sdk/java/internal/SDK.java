@@ -22,26 +22,20 @@ public class SDK extends SDKStorage {
         registerDefaultModuleMapping(Config.Feature.Views.getIndex(), ModuleViews.class);
     }
 
-    private Handler handler;
+    private Thread mainThread;
 
     public SDK() {
         super();
         SDK.instance = this;
 
         // just initialize overridden instance
-        Device.dev.getOS();
+        //Device.dev.getOS();//todo, do it correctly
     }
 
     @Override
     public void init(ly.count.sdk.internal.CtxCore ctx) {
-        Application app = ((Ctx)ctx).getApplication();
-
-        if(app != null){
-            handler = new Handler(app.getMainLooper());
-        } else {
-            Context context = ((Ctx)ctx).getContext();
-            handler = new Handler(context.getMainLooper());
-        }
+        //get main thread
+        mainThread = Thread.currentThread();//todo, Artem please double check this (AK, 2019.07.25)
 
         super.init(ctx);
     }
@@ -50,7 +44,7 @@ public class SDK extends SDKStorage {
     public void stop(ly.count.sdk.internal.CtxCore ctx, boolean clear) {
         super.stop(ctx, clear);
         instance = null;
-        handler = null;
+        mainThread = null;
     }
 
     @Override
@@ -59,10 +53,10 @@ public class SDK extends SDKStorage {
     }
 
     public void postToMainThread(Runnable ticker) {
-        handler.post(ticker);
+        //todo no idea how to best do this (AK, 2019.07.25)
     }
 
     public Thread mainThread() {
-        return handler.getLooper().getThread();
+        return mainThread;
     }
 }
