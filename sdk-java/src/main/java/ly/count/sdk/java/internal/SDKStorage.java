@@ -1,10 +1,14 @@
 package ly.count.sdk.java.internal;
 
+import org.omg.CosNaming.NamingContextOperations;
+
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.channels.FileLock;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -70,12 +74,10 @@ abstract class SDKStorage extends SDKLifecycle {
 
         int deleted = 0;
 
-        //ctx.getContext()
-
-        String[] files = ctx.getContext().getApplicationContext().fileList();
+        String[] files = getFileList(context);
         for (String file : files) {
             if (file.startsWith(prefix)) {
-                if (ctx.getContext().deleteFile(file)) {
+                if (deleteFile(context, file)) {
                     deleted++;
                 }
             }
@@ -92,7 +94,7 @@ abstract class SDKStorage extends SDKLifecycle {
         FileOutputStream stream = null;
         FileLock lock = null;
         try {
-            stream = ctx.getContext().getApplicationContext().openFileOutput(filename, android.content.Context.MODE_PRIVATE);
+            stream = openFileAsOutputStream(context, filename);
             lock = stream.getChannel().tryLock();
             if (lock == null) {
                 return false;
@@ -126,6 +128,22 @@ abstract class SDKStorage extends SDKLifecycle {
         return storableWrite(context, storable.storagePrefix(), storable.storageId(), storable.store());
     }
 
+    private String createFileFullPath(ly.count.sdk.internal.CtxCore context, String filename){
+        String directoryPath = ((File)context.getContext()).getAbsolutePath();
+        String path = directoryPath + "\\" + filename;
+        return path;
+    }
+
+    private FileInputStream openFileAsInputStream(ly.count.sdk.internal.CtxCore context, String filename) throws FileNotFoundException {
+        File initialFile = new File(createFileFullPath(context, filename));
+        return new FileInputStream(initialFile);
+    }
+
+    private FileOutputStream openFileAsOutputStream(ly.count.sdk.internal.CtxCore context, String filename) throws FileNotFoundException {
+        File initialFile = new File(createFileFullPath(context, filename));
+        return new FileOutputStream(initialFile);
+    }
+
     @Override
     public byte[] storableReadBytes(ly.count.sdk.internal.CtxCore context, String filename) {
         Ctx ctx = (Ctx) context;
@@ -135,7 +153,8 @@ abstract class SDKStorage extends SDKLifecycle {
 
         try {
             buffer = new ByteArrayOutputStream();
-            stream = ctx.getContext().getApplicationContext().openFileInput(filename);
+
+            stream = openFileAsInputStream(context, filename);
 
             int read;
             byte data[] = new byte[4096];
@@ -193,10 +212,15 @@ abstract class SDKStorage extends SDKLifecycle {
         return null;
     }
 
+    private boolean deleteFile(ly.count.sdk.internal.CtxCore context, String filename){
+        File file = new File(createFileFullPath(context, filename));
+        return file.delete();
+    }
+
     @Override
     public <T extends Storable> Boolean storableRemove(ly.count.sdk.internal.CtxCore context, T storable) {
         Ctx ctx = (Ctx) context;
-        return ctx.getContext().getApplicationContext().deleteFile(getName(storable.storagePrefix(), storable.storageId().toString()));
+        return deleteFile(context, getName(storable.storagePrefix(), storable.storageId().toString()));
     }
 
     @Override
@@ -208,6 +232,20 @@ abstract class SDKStorage extends SDKLifecycle {
             return storableRemove(ctx, storable);
         }
         return read;
+    }
+
+    private String[] getFileList(ly.count.sdk.internal.CtxCore context){
+        File[] files = ((File)context.getContext()).listFiles();
+        ArrayList<String> fileNames = new ArrayList();
+
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].isFile()) {
+                fileNames.add(files[i].getName());
+            }
+        }
+
+        String[] ret = new String[fileNames.size()];
+        return fileNames.toArray(ret);
     }
 
     @Override
@@ -222,7 +260,7 @@ abstract class SDKStorage extends SDKLifecycle {
 
         List<Long> list = new ArrayList<>();
 
-        String[] files = ctx.getContext().getApplicationContext().fileList();
+        String[] files = getFileList(context);
         Arrays.sort(files);
 
         int max = slice == 0 ? Integer.MAX_VALUE : Math.abs(slice);
