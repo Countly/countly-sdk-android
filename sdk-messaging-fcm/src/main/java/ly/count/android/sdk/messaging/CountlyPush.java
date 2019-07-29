@@ -356,7 +356,9 @@ public class CountlyPush {
             return null;
         }
 
-        if (msg.title() == null && msg.message() == null) {
+        if (msg == null) {
+            return null;
+        } else if (msg.title() == null && msg.message() == null) {
             return null;
         }
 
