@@ -16,6 +16,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':core')
 
+    testImplementation project(':core')
     testImplementation 'junit:junit:4.12'
 
     testImplementation 'org.mockito:mockito-core:2.8.9'
