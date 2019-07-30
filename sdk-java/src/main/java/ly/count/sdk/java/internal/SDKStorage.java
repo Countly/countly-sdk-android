@@ -1,14 +1,11 @@
 package ly.count.sdk.java.internal;
 
-import org.omg.CosNaming.NamingContextOperations;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.channels.FileLock;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -25,7 +22,7 @@ abstract class SDKStorage extends SDKLifecycle {
     private static final String FILE_NAME_PREFIX = "[CLY]";
     private static final String FILE_NAME_SEPARATOR = "_";
 
-    public SDKStorage() {
+    SDKStorage() {
         super();
     }
 
@@ -46,14 +43,14 @@ abstract class SDKStorage extends SDKLifecycle {
         if (names == null || names.length == 0 || Utils.isEmpty(names[0])) {
             return FILE_NAME_PREFIX;
         } else {
-            String prefix = FILE_NAME_PREFIX;
+            StringBuilder prefix = new StringBuilder(FILE_NAME_PREFIX);
             for (String name : names) {
                 if (name == null) {
                     break;
                 }
-                prefix += FILE_NAME_SEPARATOR + name;
+                prefix.append(FILE_NAME_SEPARATOR).append(name);
             }
-            return prefix;
+            return prefix.toString();
         }
     }
 
@@ -67,7 +64,6 @@ abstract class SDKStorage extends SDKLifecycle {
 
     @Override
     public int storablePurge(ly.count.sdk.internal.CtxCore context, String prefix) {
-        Ctx ctx = (Ctx) context;
         prefix = getName(prefix) + FILE_NAME_SEPARATOR;
 
         L.i("Purging storage for prefix " + prefix);
@@ -88,7 +84,6 @@ abstract class SDKStorage extends SDKLifecycle {
 
     @Override
     public Boolean storableWrite(ly.count.sdk.internal.CtxCore context, String prefix, Long id, byte[] data) {
-        Ctx ctx = (Ctx) context;
         String filename = getName(prefix, id.toString());
 
         FileOutputStream stream = null;
@@ -130,8 +125,7 @@ abstract class SDKStorage extends SDKLifecycle {
 
     private String createFileFullPath(ly.count.sdk.internal.CtxCore context, String filename){
         String directoryPath = ((File)context.getContext()).getAbsolutePath();
-        String path = directoryPath + File.separator + filename;
-        return path;
+        return directoryPath + File.separator + filename;
     }
 
     private FileInputStream openFileAsInputStream(ly.count.sdk.internal.CtxCore context, String filename) throws FileNotFoundException {
@@ -146,8 +140,6 @@ abstract class SDKStorage extends SDKLifecycle {
 
     @Override
     public byte[] storableReadBytes(ly.count.sdk.internal.CtxCore context, String filename) {
-        Ctx ctx = (Ctx) context;
-
         ByteArrayOutputStream buffer = null;
         FileInputStream stream = null;
 
@@ -157,7 +149,7 @@ abstract class SDKStorage extends SDKLifecycle {
             stream = openFileAsInputStream(context, filename);
 
             int read;
-            byte data[] = new byte[4096];
+            byte[] data = new byte[4096];
             while((read = stream.read(data, 0, data.length)) != -1){
                 buffer.write(data, 0, read);
             }
@@ -207,7 +199,7 @@ abstract class SDKStorage extends SDKLifecycle {
     public <T extends Storable> Map.Entry<Long, byte[]> storableReadBytesOneOf(ly.count.sdk.internal.CtxCore context, T storable, boolean asc) {
         List<Long> list = storableList(context, storable.storagePrefix(), asc ? 1 : -1);
         if (list.size() > 0) {
-            return new AbstractMap.SimpleEntry<Long, byte[]>(list.get(0), storableReadBytes(context, getName(storable.storagePrefix(), list.get(0).toString())));
+            return new AbstractMap.SimpleEntry<>(list.get(0), storableReadBytes(context, getName(storable.storagePrefix(), list.get(0).toString())));
         }
         return null;
     }
@@ -219,7 +211,6 @@ abstract class SDKStorage extends SDKLifecycle {
 
     @Override
     public <T extends Storable> Boolean storableRemove(ly.count.sdk.internal.CtxCore context, T storable) {
-        Ctx ctx = (Ctx) context;
         return deleteFile(context, getName(storable.storagePrefix(), storable.storageId().toString()));
     }
 
@@ -236,11 +227,15 @@ abstract class SDKStorage extends SDKLifecycle {
 
     private String[] getFileList(ly.count.sdk.internal.CtxCore context){
         File[] files = ((File)context.getContext()).listFiles();
-        ArrayList<String> fileNames = new ArrayList();
+        if (files == null) {
+            return new String[0];
+        }
 
-        for (int i = 0; i < files.length; i++) {
-            if (files[i].isFile()) {
-                fileNames.add(files[i].getName());
+        ArrayList<String> fileNames = new ArrayList<>();
+
+        for (File file : files) {
+            if (file.isFile()) {
+                fileNames.add(file.getName());
             }
         }
 
@@ -253,7 +248,6 @@ abstract class SDKStorage extends SDKLifecycle {
         if (Utils.isEmpty(prefix)) {
             Log.wtf("Cannot get list of ids without prefix");
         }
-        Ctx ctx = (Ctx) context;
         prefix = prefix + FILE_NAME_SEPARATOR;
 
         String alternativePrefix = FILE_NAME_PREFIX + FILE_NAME_SEPARATOR + prefix;
@@ -269,7 +263,10 @@ abstract class SDKStorage extends SDKLifecycle {
             String file = files[idx];
             if (file.startsWith(prefix) || file.startsWith(alternativePrefix)) {
                 try {
-                    list.add(Long.parseLong(extractName(file, file.startsWith(prefix) ? prefix : alternativePrefix)));
+                    String name = extractName(file, file.startsWith(prefix) ? prefix : alternativePrefix);
+                    if (name != null) {
+                        list.add(Long.parseLong(name));
+                    }
                 } catch (NumberFormatException nfe) {
                     Log.e("Wrong file name: " + file + " / " + prefix);
                 }
