@@ -78,15 +78,6 @@ public class Countly extends CountlyLifecycle {
         return Cly.getSession();
     }
 
-    /**
-     * Alternative to {@link #getSession()} & {@link #session()} method for accessing Countly SDK API.
-     *
-     * @return {@link Usage} instance
-     */
-    public static Usage api() {
-        return cly;
-    }
-
     @Override
     public Usage login(String id) {
         sdk.login(ctx, id);

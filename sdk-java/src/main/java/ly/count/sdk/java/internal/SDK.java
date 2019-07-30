@@ -2,6 +2,7 @@ package ly.count.sdk.java.internal;
 
 import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.Log;
+import ly.count.sdk.internal.ModuleCrash;
 import ly.count.sdk.internal.ModuleViews;
 import ly.count.sdk.internal.Request;
 import ly.count.sdk.internal.SDKCore;
@@ -15,7 +16,7 @@ public class SDK extends SDKStorage {
     static {
         // overriding core ones
         registerDefaultModuleMapping(CoreFeature.DeviceId.getIndex(), ModuleDeviceId.class);
-        //registerDefaultModuleMapping(Config.Feature.CrashReporting.getIndex(), ModuleCrash.class);//todo add back in the future
+        registerDefaultModuleMapping(Config.Feature.CrashReporting.getIndex(), ModuleCrash.class);
 
         // adding Android-only features
         //registerDefaultModuleMapping(Config.Feature.Attribution.getIndex(), ModuleAttribution.class);//todo add back in the future

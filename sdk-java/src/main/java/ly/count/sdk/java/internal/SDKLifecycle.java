@@ -149,11 +149,14 @@ public abstract class SDKLifecycle extends SDKCore {
 
     @Override
     public void onSignal(CtxCore ctx, int id, Byteable param1, Byteable param2) {
-        throw new IllegalStateException("Not supported in Java");
+        //throw new IllegalStateException("Not supported in Java");
+        L.d("SDK lifecycle, onSignal #1, id:[" + id + "], param1:[" + param1 + "], param2:[" + param2 + "]");
+        networking.check(ctx);
     }
 
     @Override
     public void onSignal(ly.count.sdk.internal.CtxCore ctx, int id, String param) {
+        L.d("SDK lifecycle, onSignal #2, id:[" + id + "], param:[" + param + "]");
         if (id == Signal.Ping.getIndex()){
             networking.check(ctx);
         }
