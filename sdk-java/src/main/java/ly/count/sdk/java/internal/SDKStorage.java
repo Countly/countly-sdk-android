@@ -130,7 +130,7 @@ abstract class SDKStorage extends SDKLifecycle {
 
     private String createFileFullPath(ly.count.sdk.internal.CtxCore context, String filename){
         String directoryPath = ((File)context.getContext()).getAbsolutePath();
-        String path = directoryPath + "\\" + filename;
+        String path = directoryPath + File.separator + filename;
         return path;
     }
 
