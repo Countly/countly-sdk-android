@@ -18,17 +18,19 @@ public class Sample {
 
         Config config = new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY);
         config.setLoggingLevel(ConfigCore.LoggingLevel.DEBUG);
+        config.setDeviceIdStrategy(Config.DeviceIdStrategy.UUID);
         File targetFolder = new File("d:\\__COUNTLY\\java_test\\");
 
         Countly.init(targetFolder, config);
 
-        Thread.sleep(2000l);
+        //Thread.sleep(2000l);
 
         System.out.println("Boop");
 
-        Thread.sleep(2000l);
+        //Thread.sleep(2000l);
 
-        Countly.api().event("Bruh");
+        //Countly.api().event("Bruh");
+        Countly.session().event("ruhh").record();
 
         Thread.sleep(2000l);
     }

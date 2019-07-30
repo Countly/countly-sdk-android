@@ -19,7 +19,7 @@ public abstract class CountlyLifecycle extends Cly {
         super();
     }
 
-    protected CtxImpl ctx;
+    //protected CtxImpl ctx;
 
     /**
      * Initialize Countly.
