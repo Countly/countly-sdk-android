@@ -3,6 +3,7 @@ package ly.count.sdk.java.internal;
 import java.io.File;
 
 import ly.count.sdk.internal.Byteable;
+import ly.count.sdk.internal.CtxCore;
 import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
@@ -147,54 +148,15 @@ public abstract class SDKLifecycle extends SDKCore {
     }
 
     @Override
-    public void onSignal(ly.count.sdk.internal.CtxCore ctx, int id, Byteable param1, Byteable param2) {
-        //todo, Artem, what would be the best replacement for this? (AK, 2019.07.25)
-//        Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
-//        intent.putExtra(CountlyService.CMD, id);
-//        if (param1 != null) {
-//            intent.putExtra(CountlyService.PARAM_1, param1.store());
-//        }
-//        if (param2 != null) {
-//            intent.putExtra(CountlyService.PARAM_2, param2.store());
-//        }
-//        ((Context)ctx.getContext()).startService(intent);
+    public void onSignal(CtxCore ctx, int id, Byteable param1, Byteable param2) {
+        throw new IllegalStateException("Not supported in Java");
     }
 
     @Override
     public void onSignal(ly.count.sdk.internal.CtxCore ctx, int id, String param) {
-        //todo, Artem, what would be the best replacement for this? (AK, 2019.07.25)
-//        if (ctx.getConfig().isDefaultNetworking()) {
-//            if (id == Signal.Crash.getIndex()) {
-//                try {
-//                    CrashImpl crash = new CrashImpl(Long.parseLong(param));
-//                    crash = Storage.read(ctx, crash);
-//                    if (crash == null) {
-//                        L.e("Cannot read crash from storage, skipping");
-//                        return;
-//                    }
-//
-//                    Request request = ModuleRequests.nonSessionRequest(ctx);
-//                    ModuleCrash.putCrashIntoParams(crash, request.params);
-//                    if (Storage.push(ctx, request)) {
-//                        L.i("Added request " + request.storageId() + " instead of crash " + crash.storageId());
-//                        Boolean success = Storage.remove(ctx, crash);
-//                        L.d("crash " + id + " removal result is " + success);
-//                    } else {
-//                        L.e("Couldn't write request " + request.storageId() + " instead of crash " + crash.storageId());
-//                    }
-//                } catch (Throwable t) {
-//                    L.wtf("Error when making a request out of a crash", t);
-//                }
-//            }
-//            networking.check(ctx);
-//        } else {
-//            Intent intent = new Intent((Context) ctx.getContext(), CountlyService.class);
-//            intent.putExtra(CountlyService.CMD, id);
-//            if (Utils.isNotEmpty(param)) {
-//                intent.putExtra(CountlyService.PARAM_1, param);
-//            }
-//            ((Context)ctx.getContext()).startService(intent);
-//        }
+        if (id == Signal.Ping.getIndex()){
+            networking.check(ctx);
+        }
     }
 
 }

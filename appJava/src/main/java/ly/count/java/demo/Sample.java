@@ -17,7 +17,7 @@ public class Sample {
         //Countly.api()
 
         Config config = new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY);
-        config.setLoggingLevel(ConfigCore.LoggingLevel.DEBUG);
+        config.setLoggingLevel(Config.LoggingLevel.DEBUG);
         config.setDeviceIdStrategy(Config.DeviceIdStrategy.UUID);
         File targetFolder = new File("d:\\__COUNTLY\\java_test\\");
 
