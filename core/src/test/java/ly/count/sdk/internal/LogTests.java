@@ -1,6 +1,4 @@
-package ly.count.sdk.android.internal;
-
-import android.support.test.runner.AndroidJUnit4;
+package ly.count.sdk.internal;
 
 import junit.framework.Assert;
 
@@ -8,6 +6,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.powermock.reflect.Whitebox;
 
 import ly.count.sdk.ConfigCore;
@@ -17,7 +16,7 @@ import ly.count.sdk.internal.Log;
 import static ly.count.sdk.ConfigCore.LoggingLevel.*;
 import static org.mockito.Mockito.*;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(JUnit4.class)
 public class LogTests {
     private static final String message = "message";
     private static final Throwable exception = new IllegalStateException("IAS");
