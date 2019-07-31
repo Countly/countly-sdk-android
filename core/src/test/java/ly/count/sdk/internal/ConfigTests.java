@@ -159,7 +159,7 @@ public class ConfigTests extends BaseTests {
 
     @Test
     public void sdkVersion_default(){
-        Assert.assertEquals("19.01-sdk2-pre-rc2", internalConfig.getSdkVersion());
+        Assert.assertEquals("19.07", internalConfig.getSdkVersion());
     }
 
 }
