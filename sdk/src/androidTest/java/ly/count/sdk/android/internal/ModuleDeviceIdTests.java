@@ -34,7 +34,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ModuleDeviceIdTests extends BaseTests {
+public class ModuleDeviceIdTests extends BaseTestsAndroid {
     private ModuleDeviceId moduleDeviceId = null;
 
     @Before
@@ -143,7 +143,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
     @Test
     public void checkAdvId_fresh() throws Exception {
-        BaseTests.AdvIdInfo.deviceId = "123adv";
+        BaseTestsAndroid.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ly.count.sdk.android.internal.ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         doReturn(new AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ly.count.sdk.android.internal.ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
@@ -155,19 +155,19 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
-        Assert.assertEquals(BaseTests.AdvIdInfo.deviceId, did.id);
+        Assert.assertEquals(BaseTestsAndroid.AdvIdInfo.deviceId, did.id);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
         did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID.getIndex());
         Assert.assertNotNull(did);
-        Assert.assertEquals(BaseTests.AdvIdInfo.deviceId, did.id);
+        Assert.assertEquals(BaseTestsAndroid.AdvIdInfo.deviceId, did.id);
     }
 
     @Test
     public void checkAdvId_legacy() throws Exception {
-        BaseTests.AdvIdInfo.deviceId = "123adv";
+        BaseTestsAndroid.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ly.count.sdk.android.internal.ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
         doReturn(new AdvIdInfo()).when(utils)._reflectiveCall(eq(ly.count.sdk.android.internal.ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), isA(android.content.Context.class));
 
@@ -193,7 +193,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
     @Test
     public void checkAdvId_Fallback() throws Exception {
-        BaseTests.AdvIdInfo.deviceId = "123adv";
+        BaseTestsAndroid.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ly.count.sdk.android.internal.ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
         setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID));
@@ -204,7 +204,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
-        Assert.assertFalse(did.id.equals(BaseTests.AdvIdInfo.deviceId));
+        Assert.assertFalse(did.id.equals(BaseTestsAndroid.AdvIdInfo.deviceId));
         Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID.getIndex());
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 
@@ -217,7 +217,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
     @Test
     public void checkInstId_fresh() throws Exception {
-        BaseTests.InstIdInstance.deviceId = "123inst";
+        BaseTestsAndroid.InstIdInstance.deviceId = "123inst";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ly.count.sdk.android.internal.ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
         doReturn(new InstIdInstance()).when(utils)._reflectiveCall(eq(ly.count.sdk.android.internal.ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"));
 
@@ -229,19 +229,19 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
-        Assert.assertEquals(BaseTests.InstIdInstance.deviceId, did.id);
+        Assert.assertEquals(BaseTestsAndroid.InstIdInstance.deviceId, did.id);
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 
         config = Storage.read(ctx, config);
         Assert.assertNotNull(config);
         did = config.getDeviceId(Config.DeviceIdRealm.DEVICE_ID.getIndex());
         Assert.assertNotNull(did);
-        Assert.assertEquals(BaseTests.InstIdInstance.deviceId, did.id);
+        Assert.assertEquals(BaseTestsAndroid.InstIdInstance.deviceId, did.id);
     }
 
     @Test
     public void checkInstId_legacy() throws Exception {
-        BaseTests.InstIdInstance.deviceId = "123inst";
+        BaseTestsAndroid.InstIdInstance.deviceId = "123inst";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ly.count.sdk.android.internal.ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
         doReturn(new InstIdInstance()).when(utils)._reflectiveCall(eq(ly.count.sdk.android.internal.ModuleDeviceId.INSTANCE_ID_CLASS_NAME), ArgumentMatchers.isNull(), eq("getInstance"), isA(android.content.Context.class));
 
@@ -267,7 +267,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
     @Test
     public void checkInstId_Fallback() throws Exception {
-        BaseTests.InstIdInstance.deviceId = "123inst";
+        BaseTestsAndroid.InstIdInstance.deviceId = "123inst";
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ly.count.sdk.android.internal.ModuleDeviceId.INSTANCE_ID_CLASS_NAME);
 
         setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.INSTANCE_ID));
@@ -278,7 +278,7 @@ public class ModuleDeviceIdTests extends BaseTests {
 
         ConfigCore.DID did = config.getDeviceId();
         Assert.assertNotNull(did);
-        Assert.assertFalse(did.id.equals(BaseTests.AdvIdInfo.deviceId));
+        Assert.assertFalse(did.id.equals(BaseTestsAndroid.AdvIdInfo.deviceId));
         Assert.assertEquals(did.strategy, Config.DeviceIdStrategy.ANDROID_ID.getIndex());
         Mockito.verify(dummy, times(1)).onDeviceId(isA(ctx.getClass()), eq(did), isNull(ConfigCore.DID.class));
 

@@ -15,7 +15,7 @@ import ly.count.sdk.internal.Storable;
 import ly.count.sdk.internal.Storage;
 
 @RunWith(AndroidJUnit4.class)
-public class StorageTests extends BaseTests {
+public class StorageTests extends BaseTestsAndroid {
 
     @Override
     public void setUp() throws Exception {

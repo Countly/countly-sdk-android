@@ -12,12 +12,12 @@ import org.junit.runner.RunWith;
 import java.net.URL;
 import java.util.Set;
 
-import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.BaseTestsAndroid;
 import ly.count.sdk.internal.InternalConfig;
 
 
 @RunWith(AndroidJUnit4.class)
-public class ConfigTests extends BaseTests {
+public class ConfigTests extends BaseTestsAndroid {
     private InternalConfig internalConfig;
     private Config config;
     private String serverUrl = "http://www.serverurl.com";

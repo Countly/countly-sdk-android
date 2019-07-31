@@ -12,7 +12,7 @@ import org.junit.runners.JUnit4;
 import java.util.Map;
 
 @RunWith(JUnit4.class)
-public class ModuleRemoteConfigTests extends BaseTests {
+public class ModuleRemoteConfigTests extends BaseTestsCore {
     String [] keys = new String[]{"qwe", "123", "asd", "zxc", "wer", "sdf", "xcv"};
     JSONArray jsonArray = new JSONArray();
 

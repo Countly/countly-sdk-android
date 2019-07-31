@@ -16,7 +16,7 @@ import ly.count.sdk.Event;
 import static org.mockito.Mockito.mock;
 
 @RunWith(JUnit4.class)
-public class EventImplTests extends BaseTests {
+public class EventImplTests extends BaseTestsCore {
     private CtxCore ctx;
     SDKInterface sdk = mock(SDKInterface.class);
     InternalConfig config;
@@ -26,7 +26,7 @@ public class EventImplTests extends BaseTests {
         config = new InternalConfig(new ConfigCore("http://www.serverurl.com", "1234"));
         Log log = new Log();
         log.init(config);
-        ctx = new BaseTests.CtxImpl(sdk, config, new Object());
+        ctx = new BaseTestsCore.CtxImpl(sdk, config, new Object());
     }
 
     @Test

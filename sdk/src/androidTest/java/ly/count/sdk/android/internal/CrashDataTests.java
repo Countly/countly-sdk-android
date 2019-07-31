@@ -38,7 +38,7 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class CrashDataTests extends BaseTests {
+public class CrashDataTests extends BaseTestsAndroid {
     static class DeviceInfo {
         /**
          * Returns the display name of the current operating system.

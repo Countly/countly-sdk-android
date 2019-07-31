@@ -22,12 +22,12 @@ import ly.count.sdk.android.Countly;
 import ly.count.sdk.Crash;
 import ly.count.sdk.CrashProcessor;
 import ly.count.sdk.Event;
-import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.BaseTestsAndroid;
 import ly.count.sdk.android.internal.Device;
 import ly.count.sdk.android.internal.Utils;
 
 @RunWith(AndroidJUnit4.class)
-public class SessionImplTests extends BaseTests {
+public class SessionImplTests extends BaseTestsAndroid {
     @Rule
     public TestName testName = new TestName();
 

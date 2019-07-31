@@ -15,12 +15,12 @@ import java.util.Map;
 import ly.count.sdk.Event;
 import ly.count.sdk.View;
 import ly.count.sdk.android.Config;
-import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.BaseTestsAndroid;
 
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
-public class ModuleViewsTests extends BaseTests {
+public class ModuleViewsTests extends BaseTestsAndroid {
     private static final String firstViewName = "firstViewName";
     private static final String secondViewName = "secondViewName";
 

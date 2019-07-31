@@ -15,9 +15,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import ly.count.sdk.User;
+import ly.count.sdk.android.internal.BaseTestsAndroid;
 
 @RunWith(AndroidJUnit4.class)
-public class UserEditorImplTests extends ly.count.sdk.android.internal.BaseTests {
+public class UserEditorImplTests extends BaseTestsAndroid {
     private UserImpl user;
 
     @Test

@@ -13,7 +13,7 @@ import java.util.concurrent.Future;
 
 
 @RunWith(JUnit4.class)
-public class TasksTests extends BaseTests{
+public class TasksTests extends BaseTestsCore {
     private Tasks tasks;
     @Test
     public void filler(){

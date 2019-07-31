@@ -10,7 +10,7 @@ import org.junit.runners.JUnit4;
 import java.net.URL;
 
 @RunWith(JUnit4.class)
-public class ConfigTests extends BaseTests {
+public class ConfigTests extends BaseTestsCore {
     private InternalConfig internalConfig;
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";

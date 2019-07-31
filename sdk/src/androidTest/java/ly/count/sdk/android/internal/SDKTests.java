@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 import ly.count.sdk.internal.InternalConfig;
 
 @RunWith(AndroidJUnit4.class)
-public class SDKTests extends BaseTests {
+public class SDKTests extends BaseTestsAndroid {
     @Before
     public void setUp() throws Exception {
         super.setUp();

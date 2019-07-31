@@ -12,7 +12,7 @@ import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.ModuleRatingCore;
 import ly.count.sdk.internal.Storage;
 
-public class ModuleRatingTests extends BaseTests {
+public class ModuleRatingTests extends BaseTestsAndroid {
     ModuleRating moduleRating;
 
     @Override

@@ -7,10 +7,10 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.BaseTestsAndroid;
 
 @RunWith(AndroidJUnit4.class)
-public class SessionImplServiceTests extends BaseTests {
+public class SessionImplServiceTests extends BaseTestsAndroid {
     @Test
     public void testIt() {
         Assert.assertTrue(true);

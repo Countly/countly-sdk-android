@@ -12,7 +12,7 @@ import ly.count.sdk.ConfigCore;
 
 import static org.mockito.Mockito.mock;
 
-public class BaseTests {
+public class BaseTestsCore {
     protected static String SERVER = "http://www.serverurl.com";
     protected static String APP_KEY = "1234";
 

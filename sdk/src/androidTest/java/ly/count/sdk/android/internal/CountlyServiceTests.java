@@ -5,7 +5,7 @@ package ly.count.sdk.android.internal;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-public class CountlyServiceTests extends BaseTests {
+public class CountlyServiceTests extends BaseTestsAndroid {
 //    @Rule
 //    public ServiceTestRule rule = ServiceTestRule.withTimeout(3, TimeUnit.SECONDS);
 

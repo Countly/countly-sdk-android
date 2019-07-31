@@ -7,7 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 
-public class ModulePushTests extends BaseTests {
+public class ModulePushTests extends BaseTestsAndroid {
     private ModuleDeviceId moduleDeviceId = null;
 
     @Test

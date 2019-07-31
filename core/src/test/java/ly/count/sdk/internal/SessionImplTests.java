@@ -12,7 +12,7 @@ import org.junit.runners.JUnit4;
 import ly.count.sdk.ConfigCore;
 
 @RunWith(JUnit4.class)
-public class SessionImplTests extends BaseTests {
+public class SessionImplTests extends BaseTestsCore {
     @Rule
     public TestName testName = new TestName();
 

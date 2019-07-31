@@ -12,14 +12,14 @@ import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
 import ly.count.sdk.android.Config;
-import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.BaseTestsAndroid;
 import ly.count.sdk.android.internal.Device;
 import ly.count.sdk.android.internal.ModuleDeviceId;
 
 import static org.mockito.Mockito.doReturn;
 
 @RunWith(AndroidJUnit4.class)
-public class RequestsTests extends BaseTests {
+public class RequestsTests extends BaseTestsAndroid {
     final int paramsAddedByAddCommon = 6;
 
     //these vals correspond to this time and date: 01/12/2017 @ 1:21pm (UTC), Thursday

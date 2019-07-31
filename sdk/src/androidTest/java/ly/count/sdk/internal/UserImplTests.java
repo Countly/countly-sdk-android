@@ -12,10 +12,10 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 
 import ly.count.sdk.User;
-import ly.count.sdk.android.internal.BaseTests;
+import ly.count.sdk.android.internal.BaseTestsAndroid;
 
 @RunWith(AndroidJUnit4.class)
-public class UserImplTests extends BaseTests {
+public class UserImplTests extends BaseTestsAndroid {
 
     @Test
     public void testStorageAllSet() throws Exception {

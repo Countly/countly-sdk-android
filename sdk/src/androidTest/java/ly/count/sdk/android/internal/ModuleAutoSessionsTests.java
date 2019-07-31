@@ -14,7 +14,7 @@ import ly.count.sdk.internal.SessionImpl;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
-public class ModuleAutoSessionsTests extends BaseTests {
+public class ModuleAutoSessionsTests extends BaseTestsAndroid {
     ModuleSessions moduleSessions;
 
     @Test// (expected = NullPointerException.class)//todo previously had this, but currently throws nothing (AK, 15.01.2019)

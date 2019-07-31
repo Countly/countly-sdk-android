@@ -15,7 +15,7 @@ import ly.count.sdk.internal.Tasks;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
-public class GDPRTests extends BaseTests {
+public class GDPRTests extends BaseTestsAndroid {
 
     @Override
     protected ly.count.sdk.android.Config defaultConfig() throws Exception {

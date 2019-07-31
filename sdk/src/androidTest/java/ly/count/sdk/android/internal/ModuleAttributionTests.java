@@ -31,7 +31,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ModuleAttributionTests extends BaseTests {
+public class ModuleAttributionTests extends BaseTestsAndroid {
 
     private static final String TEST_CID = "cb14e5f33b528334715f1809e4572842c74686df";
     private static final String TEST_UID = "ecf125107e4e27e6bcaacb3ae10ddba66459e6ae";
@@ -52,9 +52,9 @@ public class ModuleAttributionTests extends BaseTests {
 
     @Test
     public void checkOpenUDID() throws Exception {
-        BaseTests.AdvIdInfo.deviceId = "123adv";
+        BaseTestsAndroid.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-        doReturn(new BaseTests.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
+        doReturn(new BaseTestsAndroid.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
         setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ANDROID_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
@@ -77,9 +77,9 @@ public class ModuleAttributionTests extends BaseTests {
 
     @Test
     public void checkAdvertisingId() throws Exception {
-        BaseTests.AdvIdInfo.deviceId = "123adv";
+        BaseTestsAndroid.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-        doReturn(new BaseTests.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
+        doReturn(new BaseTestsAndroid.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
         setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ADVERTISING_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
@@ -102,7 +102,7 @@ public class ModuleAttributionTests extends BaseTests {
 
     @Test
     public void requestNoAdId() throws Exception {
-        BaseTests.AdvIdInfo.deviceId = "123adv";
+        BaseTestsAndroid.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.FALSE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
 
         //test mode is disabled so that the exception, from failing to get the attribution id, is not thrown
@@ -120,9 +120,9 @@ public class ModuleAttributionTests extends BaseTests {
 
     @Test
     public void requestAdId() throws Exception {
-        BaseTests.AdvIdInfo.deviceId = "123adv";
+        BaseTestsAndroid.AdvIdInfo.deviceId = "123adv";
         doReturn(Boolean.TRUE).when(utils)._reflectiveClassExists(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME);
-        doReturn(new BaseTests.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
+        doReturn(new BaseTestsAndroid.AdvIdInfo()).when(utils)._reflectiveCallStrict(eq(ModuleDeviceId.ADVERTISING_ID_CLIENT_CLASS_NAME), ArgumentMatchers.isNull(), eq("getAdvertisingIdInfo"), eq(android.content.Context.class), isA(android.content.Context.class));
 
         setUpApplication(defaultConfig().setDeviceIdStrategy(Config.DeviceIdStrategy.ANDROID_ID));
         moduleDeviceId = module(ModuleDeviceId.class, false);
@@ -136,7 +136,7 @@ public class ModuleAttributionTests extends BaseTests {
         Whitebox.invokeMethod(tasks, "await");
 
         Assert.assertTrue(moduleAttribution.onRequest(request));
-        Assert.assertTrue(request.params.toString().contains(ModuleAttribution.CLY_AID + "=" + BaseTests.AdvIdInfo.deviceId));
+        Assert.assertTrue(request.params.toString().contains(ModuleAttribution.CLY_AID + "=" + BaseTestsAndroid.AdvIdInfo.deviceId));
     }
 
     @Test

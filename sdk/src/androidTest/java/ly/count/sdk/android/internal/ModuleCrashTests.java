@@ -16,7 +16,7 @@ import ly.count.sdk.internal.Storage;
 
 import static android.support.test.InstrumentationRegistry.getContext;
 
-public class ModuleCrashTests extends BaseTests {
+public class ModuleCrashTests extends BaseTestsAndroid {
     @Override
     protected ly.count.sdk.android.Config defaultConfig() throws Exception {
         return super.defaultConfig().enableFeatures(Config.Feature.CrashReporting);

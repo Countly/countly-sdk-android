@@ -7,11 +7,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import ly.count.sdk.internal.BaseTests;
+import ly.count.sdk.internal.BaseTestsCore;
 import ly.count.sdk.internal.InternalConfig;
 
 @RunWith(JUnit4.class)
-public class ConfigTests extends BaseTests {
+public class ConfigTests extends BaseTestsCore {
     private InternalConfig internalConfig;
     private String serverUrl = "http://www.serverurl.com";
     private String serverAppKey = "1234";

@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-public class BaseTests {
+public class BaseTestsAndroid {
     protected static String SERVER = "http://www.serverurl.com";
     protected static String APP_KEY = "1234";
 
