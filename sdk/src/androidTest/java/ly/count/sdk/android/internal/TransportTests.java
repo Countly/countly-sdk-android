@@ -1,6 +1,5 @@
 package ly.count.sdk.android.internal;
 
-import android.content.Intent;
 import android.support.test.runner.AndroidJUnit4;
 import junit.framework.Assert;
 
@@ -12,28 +11,19 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.List;
-import java.util.concurrent.Future;
 
 import ly.count.sdk.ConfigCore;
 import ly.count.sdk.android.Config;
-import ly.count.sdk.android.Countly;
 import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Request;
 import ly.count.sdk.internal.Storage;
 import ly.count.sdk.internal.Tasks;
 
 import ly.count.sdk.internal.Transport;
-import ly.count.sdk.internal.UserEditorImpl;
-import ly.count.sdk.internal.UserImpl;
-import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 
 
 @RunWith(AndroidJUnit4.class)

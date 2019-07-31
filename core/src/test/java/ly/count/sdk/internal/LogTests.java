@@ -10,8 +10,6 @@ import org.junit.runners.JUnit4;
 import org.powermock.reflect.Whitebox;
 
 import ly.count.sdk.ConfigCore;
-import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Log;
 
 import static ly.count.sdk.ConfigCore.LoggingLevel.*;
 import static org.mockito.Mockito.*;

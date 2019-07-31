@@ -6,7 +6,6 @@ import android.content.Context;
 import android.os.Bundle;
 
 import ly.count.sdk.Cly;
-import ly.count.sdk.android.internal.Ctx;
 import ly.count.sdk.android.internal.CtxImpl;
 import ly.count.sdk.android.internal.SDK;
 import ly.count.sdk.internal.InternalConfig;

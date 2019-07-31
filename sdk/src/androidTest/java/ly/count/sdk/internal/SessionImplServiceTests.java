@@ -4,26 +4,10 @@ import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;
 
-import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import ly.count.sdk.Crash;
-import ly.count.sdk.CrashProcessor;
-import ly.count.sdk.Event;
-import ly.count.sdk.android.Config;
-import ly.count.sdk.android.Countly;
 import ly.count.sdk.android.internal.BaseTests;
-import ly.count.sdk.android.internal.CrashImpl;
-import ly.count.sdk.android.internal.Device;
 
 @RunWith(AndroidJUnit4.class)
 public class SessionImplServiceTests extends BaseTests {

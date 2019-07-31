@@ -13,7 +13,7 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/build/classes/java/main" />
     <output-test url="file://$MODULE_DIR$/build/classes/java/test" />
     <exclude-output />
@@ -45,5 +45,15 @@
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: bcprov-jdk15on-1.50" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: okio-1.12.0" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: json-20180813" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="Gradle: _projects_countly_sdk_android_core_build_classes_java_test" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="Gradle: _projects_countly_sdk_android_core_build_resources_test" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
+    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
   </component>
 </module>

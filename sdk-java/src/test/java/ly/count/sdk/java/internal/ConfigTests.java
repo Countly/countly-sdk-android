@@ -1,4 +1,4 @@
-package ly.count.sdk.internal;
+package ly.count.sdk.java.internal;
 
 import junit.framework.Assert;
 
@@ -6,7 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
 import ly.count.sdk.internal.BaseTests;
+import ly.count.sdk.internal.InternalConfig;
 
 @RunWith(JUnit4.class)
 public class ConfigTests extends BaseTests {

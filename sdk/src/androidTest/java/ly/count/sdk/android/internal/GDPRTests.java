@@ -9,7 +9,6 @@ import java.io.IOException;
 
 import ly.count.sdk.User;
 import ly.count.sdk.UserEditor;
-import ly.count.sdk.android.Config;
 import ly.count.sdk.android.Countly;
 import ly.count.sdk.internal.Storage;
 import ly.count.sdk.internal.Tasks;

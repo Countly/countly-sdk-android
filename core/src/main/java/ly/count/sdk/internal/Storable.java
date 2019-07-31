@@ -1,7 +1,5 @@
 package ly.count.sdk.internal;
 
-import ly.count.sdk.internal.Byteable;
-
 /**
  * Serialization interface.
  */

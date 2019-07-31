@@ -11,6 +11,7 @@ import ly.count.sdk.Usage;
 import ly.count.sdk.User;
 import ly.count.sdk.UserEditor;
 import ly.count.sdk.java.internal.CtxImpl;
+import ly.count.sdk.java.internal.Device;
 import ly.count.sdk.java.internal.SDK;
 
 /**
@@ -25,6 +26,13 @@ import ly.count.sdk.java.internal.SDK;
  */
 
 public class Countly extends CountlyLifecycle {
+
+    /**
+     * A class responsible for storage of device information sent to Countly server.
+     * Call respective setters (i.e. {@link Device#setAppVersion(String)} prior to
+     * initializing the SDK to make sure data is reported.
+     */
+    public static Device device = Device.dev;
 
     protected static Countly cly;
     protected SDK sdk;

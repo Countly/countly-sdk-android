@@ -9,7 +9,6 @@ import android.os.Bundle;
 
 import ly.count.sdk.internal.Byteable;
 import ly.count.sdk.internal.CtxCore;
-import ly.count.sdk.internal.InternalConfig;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.ModuleRequests;

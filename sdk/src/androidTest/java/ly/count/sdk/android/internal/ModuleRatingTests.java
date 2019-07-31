@@ -2,19 +2,13 @@ package ly.count.sdk.android.internal;
 
 import android.content.SharedPreferences;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
-import java.util.List;
-
 import ly.count.sdk.android.Config;
 import ly.count.sdk.android.Countly;
-import ly.count.sdk.internal.CrashImplCore;
 import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Module;
 import ly.count.sdk.internal.ModuleRatingCore;
 import ly.count.sdk.internal.Storage;
 

@@ -38,9 +38,9 @@ targetCompatibility = "1.7"
 
 publish {
     userOrg = 'countly'
-    groupId = 'ly.count.android'
+    groupId = 'ly.count.sdk'
     artifactId = 'core'
-    publishVersion = '19.01-sdk2-pre-rc2'
+    publishVersion = '19.01-sdk2-pre-rc3'
     desc = 'SDK core for Countly Java/Android SDK'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

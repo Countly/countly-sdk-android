@@ -10,8 +10,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import ly.count.sdk.internal.Log;
-
 /**
  * Encapsulation of {@link ExecutorService} for single thread case which returns the same
  * {@link Future} for {@link Task}s with the same id.

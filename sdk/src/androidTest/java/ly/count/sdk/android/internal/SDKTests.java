@@ -3,21 +3,11 @@ package ly.count.sdk.android.internal;
 import android.support.test.runner.AndroidJUnit4;
 
 
-import junit.framework.Assert;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
 
-import java.util.List;
-
-import ly.count.sdk.ConfigCore;
-import ly.count.sdk.android.Config;
-import ly.count.sdk.internal.CoreFeature;
 import ly.count.sdk.internal.InternalConfig;
-import ly.count.sdk.internal.Module;
-import ly.count.sdk.internal.SDKCore;
 
 @RunWith(AndroidJUnit4.class)
 public class SDKTests extends BaseTests {

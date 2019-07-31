@@ -1,7 +1,6 @@
 package ly.count.sdk.internal;
 
 import android.app.Activity;
-import android.app.ListActivity;
 import android.support.test.runner.AndroidJUnit4;
 
 import junit.framework.Assert;

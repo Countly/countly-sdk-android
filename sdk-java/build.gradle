@@ -12,11 +12,23 @@ buildscript {
     }
 }
 
+version = '19.07'
+
+task fulljar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Countly Java SDK',
+            'Implementation-Version': version
+    }
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation project(':core')
+    compile project(':core')
 
-    testImplementation project(':core')
+    testCompile project(':core').sourceSets.test.output
     testImplementation 'junit:junit:4.12'
 
     testImplementation 'org.mockito:mockito-core:2.8.9'
@@ -26,6 +38,3 @@ dependencies {
 
     testImplementation 'com.squareup.okhttp3:mockwebserver:3.7.0'
 }
-
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
