@@ -70,7 +70,7 @@ public class ActivityExampleCrashReporting extends Activity {
 
     public void onClickCrashReporting08(View v) {
         Countly.sharedInstance().addCrashBreadcrumb("Recording handled exception 1");
-        Countly.sharedInstance().recordHandledException(new Exception("A logged exception"));
+        Countly.sharedInstance().recordHandledException(new Exception("A custom error text"));
         Countly.sharedInstance().addCrashBreadcrumb("Recording handled exception 3");
     }
 

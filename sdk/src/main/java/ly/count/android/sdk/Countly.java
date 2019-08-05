@@ -2233,6 +2233,11 @@ public class Countly {
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
         final boolean isInit = isInitialized();//is the SDK initialized
 
+        if(!requiresConsent){
+            //if consent is not required, ignore all calls to it
+            return this;
+        }
+
         boolean previousSessionsConsent = false;
         if(featureConsentValues.containsKey(CountlyFeatureNames.sessions)){
             previousSessionsConsent = featureConsentValues.get(CountlyFeatureNames.sessions);
