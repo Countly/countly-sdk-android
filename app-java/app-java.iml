@@ -27,7 +27,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="Gradle: sdk-java-19.08-sdk2-rc" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: java-19.08-sdk2-rc" level="project" />
     <orderEntry type="library" exported="" name="Gradle: core-19.08-sdk2-rc" level="project" />
     <orderEntry type="library" exported="" scope="RUNTIME" name="Gradle: json-20180813" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: json-20180813" level="project" />

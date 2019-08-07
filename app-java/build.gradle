@@ -11,7 +11,7 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 //    implementation project(path: ':sdk-java')
-    implementation "ly.count.sdk:sdk-java:${CLY_VERSION}"
+    implementation "ly.count.sdk:java:${CLY_VERSION}"
 }
 
 mainClassName = 'ly.count.java.demo.Sample'
