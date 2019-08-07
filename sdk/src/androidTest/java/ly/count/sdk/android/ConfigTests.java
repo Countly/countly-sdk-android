@@ -89,11 +89,11 @@ public class ConfigTests extends BaseTestsAndroid {
 
     @Test
     public void enableFeatures_null(){
-        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Events));
-        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Sessions));
-        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.CrashReporting));
-        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.Location));
-        Assert.assertTrue(config.isFeatureEnabled(Config.Feature.UserProfiles));
+        Assert.assertFalse(config.isFeatureEnabled(Config.Feature.Events));
+        Assert.assertFalse(config.isFeatureEnabled(Config.Feature.Sessions));
+        Assert.assertFalse(config.isFeatureEnabled(Config.Feature.CrashReporting));
+        Assert.assertFalse(config.isFeatureEnabled(Config.Feature.Location));
+        Assert.assertFalse(config.isFeatureEnabled(Config.Feature.UserProfiles));
         Assert.assertFalse(config.isFeatureEnabled(Config.Feature.Push));
         Assert.assertFalse(config.isFeatureEnabled(Config.Feature.Views));
     }
@@ -111,16 +111,16 @@ public class ConfigTests extends BaseTestsAndroid {
     @Test
     public void addFeature_simple(){
         Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(5, features.size());
+        Assert.assertEquals(0, features.size());
 
         config.enableFeatures(Config.Feature.Views);
         features = config.getFeatures();
-        Assert.assertEquals(6, features.size());
+        Assert.assertEquals(1, features.size());
         Assert.assertTrue(features.contains(Config.Feature.Views));
 
         config.enableFeatures(Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
-        Assert.assertEquals(7, features.size());
+        Assert.assertEquals(2, features.size());
         Assert.assertTrue(features.contains(Config.Feature.Views));
         Assert.assertTrue(features.contains(Config.Feature.PerformanceMonitoring));
         Assert.assertFalse(features.contains(Config.Feature.Push));
@@ -130,7 +130,7 @@ public class ConfigTests extends BaseTestsAndroid {
     public void setFeature_null(){
         Set<Config.Feature> features = config.getFeatures();
         Assert.assertFalse(features.contains(null));
-        Assert.assertEquals(5, features.size());
+        Assert.assertEquals(0, features.size());
 
         Config.Feature[] featureList = null;
 
@@ -143,7 +143,7 @@ public class ConfigTests extends BaseTestsAndroid {
     @Test
     public void setFeature_simple(){
         Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(5, features.size());
+        Assert.assertEquals(0, features.size());
 
         config.setFeatures(Config.Feature.CrashReporting, Config.Feature.PerformanceMonitoring);
         features = config.getFeatures();
@@ -157,12 +157,12 @@ public class ConfigTests extends BaseTestsAndroid {
     @Test
     public void setFeature_overwrite(){
         Set<Config.Feature> features = config.getFeatures();
-        Assert.assertEquals(5, features.size());
+        Assert.assertEquals(0, features.size());
 
         config.enableFeatures(Config.Feature.Push);
         features = config.getFeatures();
-        Assert.assertEquals(6, features.size());
-        Assert.assertTrue(features.contains(Config.Feature.Events));
+        Assert.assertEquals(1, features.size());
+        Assert.assertFalse(features.contains(Config.Feature.Events));
         Assert.assertTrue(features.contains(Config.Feature.Push));
         Assert.assertFalse(features.contains(Config.Feature.Views));
         Assert.assertFalse(features.contains(Config.Feature.PerformanceMonitoring));
@@ -185,8 +185,8 @@ public class ConfigTests extends BaseTestsAndroid {
     @Test
     public void enumFeature_values() {
         Config.Feature[] features = Config.Feature.values();
-        Assert.assertEquals(Config.Feature.Events, features[0]);
-        Assert.assertEquals(Config.Feature.Sessions, features[1]);
+        Assert.assertEquals(Config.Feature.Sessions, features[0]);
+        Assert.assertEquals(Config.Feature.Events, features[1]);
         Assert.assertEquals(Config.Feature.Views, features[2]);
         Assert.assertEquals(Config.Feature.CrashReporting, features[3]);
         Assert.assertEquals(Config.Feature.Location, features[4]);

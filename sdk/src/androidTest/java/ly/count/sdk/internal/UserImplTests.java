@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 
 import ly.count.sdk.User;
+import ly.count.sdk.android.Config;
 import ly.count.sdk.android.internal.BaseTestsAndroid;
 
 @RunWith(AndroidJUnit4.class)
@@ -96,7 +97,7 @@ public class UserImplTests extends BaseTestsAndroid {
     }
 
     @Test
-    public void testCommit() throws Exception {
+    public void testCommit_withoutLocationConsent() throws Exception {
         setUpApplication(defaultConfig());
 
         UserImpl user = sdk.user();
@@ -107,6 +108,40 @@ public class UserImplTests extends BaseTestsAndroid {
                 .setLocale("ru_RU").setCountry("RU").setCity("Moscow").setLocation(1,2)
                 .addToCohort("c").removeFromCohort("d").commit();
 
+        Request request = Storage.readOne(ctx, new Request(), false);
+        Assert.assertNotNull(request);
+
+        String query = request.params.toString();
+        String json = request.params.get("user_details");
+        Assert.assertNotNull(json);
+        Assert.assertNotNull(new JSONObject(json));
+
+        Assert.assertTrue(json.contains("\"name\":\"N\""));
+        Assert.assertTrue(json.contains("\"username\":\"U\""));
+        Assert.assertTrue(json.contains("\"email\":\"E\""));
+        Assert.assertTrue(json.contains("\"org\":\"O\""));
+        Assert.assertTrue(json.contains("\"phone\":\"P\""));
+        Assert.assertTrue(json.contains("\"gender\":\"M\""));
+        Assert.assertTrue(json.contains("\"byear\":1900"));
+        Assert.assertTrue(query.contains("&add_cohorts=" + Utils.urlencode("[\"c\"]") + "&"));
+        Assert.assertTrue(query.contains("&remove_cohorts=" + Utils.urlencode("[\"d\"]") + "&"));
+        Assert.assertTrue(query.contains("&locale=ru_RU&"));
+        Assert.assertFalse(query.contains("&country_code=RU&"));
+        Assert.assertFalse(query.contains("&city=Moscow&"));
+        Assert.assertFalse(query.contains("&location=" + Utils.urlencode("1.0,2.0")));
+    }
+
+    @Test
+    public void testCommit_withLocationConsent() throws Exception {
+        setUpApplication(defaultConfig().enableFeatures(Config.Feature.Location));
+
+        UserImpl user = sdk.user();
+        Assert.assertNotNull(user);
+
+        user.edit().setName("N").setUsername("U").setEmail("E").setOrg("O").setPhone("P")
+                .setPicture(new byte[]{3, 3, 3}).setGender("M").setBirthyear("1900")
+                .setLocale("ru_RU").setCountry("RU").setCity("Moscow").setLocation(1, 2)
+                .addToCohort("c").removeFromCohort("d").commit();
 
         Request request = Storage.readOne(ctx, new Request(), false);
         Assert.assertNotNull(request);
@@ -129,7 +164,6 @@ public class UserImplTests extends BaseTestsAndroid {
         Assert.assertTrue(query.contains("&country_code=RU&"));
         Assert.assertTrue(query.contains("&city=Moscow&"));
         Assert.assertTrue(query.contains("&location=" + Utils.urlencode("1.0,2.0")));
-
     }
 
     @Test

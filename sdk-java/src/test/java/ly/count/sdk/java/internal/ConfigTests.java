@@ -28,6 +28,6 @@ public class ConfigTests extends BaseTestsCore {
 
     @Test
     public void sdkVersion_default(){
-        Assert.assertEquals("19.07", internalConfig.getSdkVersion());
+        Assert.assertEquals("19.08", internalConfig.getSdkVersion());
     }
 }
