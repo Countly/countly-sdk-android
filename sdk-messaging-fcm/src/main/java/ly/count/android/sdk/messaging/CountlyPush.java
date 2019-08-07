@@ -32,16 +32,13 @@ import android.widget.TextView;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.CountlyStore;
 
 /**
  * Just a public holder class for Messaging-related display logic, listeners, managers, etc.
@@ -105,9 +102,9 @@ public class CountlyPush {
         /**
          * Default message link to open
          *
-         * @return message link URL or {@code null} if no link specified
+         * @return message link Uri or {@code null} if no link specified
          */
-        URL link();
+        Uri link();
 
         /**
          * Message media URL to jpeg or png image
@@ -193,7 +190,7 @@ public class CountlyPush {
          *
          * @return link of this button
          */
-        URL link();
+        Uri link();
 
         /**
          * Record action event for this button, usually after a click
@@ -250,7 +247,7 @@ public class CountlyPush {
 
             if (index == 0) {
                 if (message.link() != null) {
-                    Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.link().toString()));
+                    Intent i = new Intent(Intent.ACTION_VIEW, message.link());
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //                    i.putExtra(EXTRA_MESSAGE, message);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
@@ -260,7 +257,7 @@ public class CountlyPush {
                     context.startActivity(intent);
                 }
             } else {
-                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(message.buttons().get(index - 1).link().toString()));
+                Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 //                i.putExtra(EXTRA_MESSAGE, message);
                 i.putExtra(EXTRA_ACTION_INDEX, index);
@@ -544,7 +541,7 @@ public class CountlyPush {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link().toString()));
+                    Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link());
                     Bundle bundle = new Bundle();
                     bundle.putParcelable(EXTRA_MESSAGE, msg);
                     intent.putExtra(EXTRA_MESSAGE, bundle);

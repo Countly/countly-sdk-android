@@ -1,8 +1,8 @@
 package ly.count.android.sdk.messaging;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -42,7 +42,8 @@ class ModulePush {
         final String id;
         private final String title, message, sound;
         private final Integer badge;
-        private final URL link, media;
+        private final Uri link;
+        private final URL media;
         private final List<CountlyPush.Button> buttons;
         private final Map<String, String> data;
 
@@ -50,9 +51,9 @@ class ModulePush {
             private final CountlyPush.Message message;
             private final int index, icon;
             private final String title;
-            private final URL link;
+            private final Uri link;
 
-            Button(CountlyPush.Message message, int index, String title, URL link) {
+            Button(CountlyPush.Message message, int index, String title, Uri link) {
                 this.message = message;
                 this.index = index;
                 this.title = title;
@@ -60,7 +61,7 @@ class ModulePush {
                 this.icon = 0;
             }
 
-            Button(CountlyPush.Message message, int index, String title, URL link, int icon) {
+            Button(CountlyPush.Message message, int index, String title, Uri link, int icon) {
                 this.message = message;
                 this.index = index;
                 this.title = title;
@@ -79,7 +80,7 @@ class ModulePush {
             }
 
             @Override
-            public URL link() {
+            public Uri link() {
                 return link;
             }
 
@@ -119,15 +120,17 @@ class ModulePush {
             }
             this.badge = b;
 
-            URL u = null;
-            try {
-                u = data.containsKey(KEY_LINK) ? new URL(data.get(KEY_LINK)) : null;
-            } catch (MalformedURLException e) {
-                Log.w("Countly", "Bad link value received, ignoring");
+            Uri uri = null;
+            if (data.get(KEY_LINK) != null) {
+                try {
+                    uri = Uri.parse(data.get(KEY_LINK));
+                } catch (Throwable e) {
+                    Log.w("Countly", "Cannot parse message link", e);
+                }
             }
-            this.link = u;
+            this.link = uri;
 
-            u = null;
+            URL u = null;
             try {
                 u = data.containsKey(KEY_MEDIA) ? new URL(data.get(KEY_MEDIA)) : null;
             } catch (MalformedURLException e) {
@@ -144,15 +147,16 @@ class ModulePush {
                     for (int i = 0; i < array.length(); i++) {
                         JSONObject btn = array.getJSONObject(i);
                         if (btn.has(KEY_BUTTONS_TITLE) && btn.has(KEY_BUTTONS_LINK)) {
-                            u = null;
-                            try {
-                                u = new URL(btn.getString(KEY_BUTTONS_LINK));
-                            } catch (MalformedURLException e) {
-                                Log.w("Countly", "Bad button link value received, ignoring");
+                            uri = null;
+                            if (data.get(KEY_BUTTONS_LINK) != null) {
+                                try {
+                                    uri = Uri.parse(data.get(KEY_BUTTONS_LINK));
+                                } catch (Throwable e) {
+                                    Log.w("Countly", "Cannot parse message link", e);
+                                }
                             }
-                            if (u != null) {
-                                this.buttons.add(new Button(this, i + 1, btn.getString(KEY_BUTTONS_TITLE), u));
-                            }
+
+                            this.buttons.add(new Button(this, i + 1, btn.getString(KEY_BUTTONS_TITLE), uri));
                         }
                     }
                 } catch (Throwable e) {
@@ -188,7 +192,7 @@ class ModulePush {
         }
 
         @Override
-        public URL link() {
+        public Uri link() {
             return link;
         }
 
