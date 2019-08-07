@@ -8,8 +8,8 @@ import ly.count.sdk.java.Countly;
 public class Sample {
     public static void main(String[] args) throws Exception {
 
-        String COUNTLY_SERVER_URL = "XX";
-        String COUNTLY_APP_KEY = "XXX";
+        String COUNTLY_SERVER_URL = "http://localhost:3001";
+        String COUNTLY_APP_KEY = "8f3b5e1e8784eb0447236d2d1ab6211797e3ebb9";
 
         Config config = new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
                 .setLoggingLevel(Config.LoggingLevel.DEBUG)
@@ -21,7 +21,7 @@ public class Sample {
 
         // Countly needs persistent storage for requests, configuration storage, user profiles and other temporary data,
         // therefore requires a separate data folder to run
-        File targetFolder = new File("/projects/countly-sdk-android/appJava/data");
+        File targetFolder = new File("/projects/countly-sdk-android/app-java/data");
 
         // Main initialization call, SDK can be used after this one is done
         Countly.init(targetFolder, config);

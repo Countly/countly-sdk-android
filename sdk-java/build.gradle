@@ -7,14 +7,12 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:0.9'
+        classpath 'com.novoda:bintray-release:0.9.1'
     }
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-//    implementation project(":core")
-    implementation "ly.count.sdk:core:${CLY_VERSION}"
+    api "ly.count.sdk:core:${CLY_VERSION}"
 
     testCompile project(':core').sourceSets.test.output
     testImplementation 'junit:junit:4.12'
@@ -24,33 +22,11 @@ dependencies {
     testImplementation 'com.squareup.okhttp3:mockwebserver:3.7.0'
 }
 
-/*
-This is needed to solve a problem similar to this:
-https://stackoverflow.com/questions/37250675/how-to-setup-dependencies-in-a-multi-module-android-gradle-project-with-interdep
- */
-afterEvaluate { project ->
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                // ... other config here ...
-
-                pom.whenConfigured { pom ->
-                    pom.dependencies.forEach { dep ->
-                        pom.version = "19.08-sdk2-rc"
-                        pom.artifactId = "sdk-java"
-                        pom.groupId = "ly.count.sdk"
-                    }
-                }
-            }
-        }
-    }
-}
-
 publish {
     userOrg = 'countly'
     groupId = 'ly.count.sdk'
-    artifactId = 'sdk-java'
-    publishVersion = "19.08-sdk2-rc"
+    artifactId = 'java'
+    publishVersion = CLY_VERSION
     desc = 'Countly Java SDK'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

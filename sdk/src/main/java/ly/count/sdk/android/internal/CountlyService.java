@@ -4,25 +4,36 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
-//import ly.count.sdk.internal.Network;
-//import ly.count.sdk.internal.SessionImpl;
+import java.util.ArrayList;
+import java.util.List;
+
+import ly.count.sdk.ConfigCore;
+import ly.count.sdk.android.Config;
+import ly.count.sdk.internal.DefaultNetworking;
+import ly.count.sdk.internal.InternalConfig;
+import ly.count.sdk.internal.Networking;
+import ly.count.sdk.internal.Request;
+import ly.count.sdk.internal.SessionImpl;
 import ly.count.sdk.internal.Storage;
+import ly.count.sdk.internal.Tasks;
+
+import static ly.count.sdk.android.internal.Utils.L;
 
 /**
- * {@link Service} which monitors {@link Storage} for new requests and sends them via {@link Network}.
+ * {@link Service} which monitors {@link Storage} for new requests and sends them via {@link ly.count.sdk.internal.Networking}.
  *
  */
 public class CountlyService extends android.app.Service {
+    static final String CMD = "ly.count.cmd";
+    static final String PARAM_1 = "ly.count.param1";
+    static final String PARAM_2 = "ly.count.param2";
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
-//    private static final Log.Module L = Log.module("Service");
+////    private static final Log.Module L = Log.module("Service");
+////
 //
-    static final String CMD = "ly.count.cmd";
-    static final String PARAM_1 = "ly.count.param1";
-    static final String PARAM_2 = "ly.count.param2";
-
 //    /**
 //     * Core instance is being run in {@link InternalConfig#limited} mode.
 //     */
@@ -33,7 +44,7 @@ public class CountlyService extends android.app.Service {
 //     */
 //    private Tasks tasks, networkTasks;
 //    private InternalConfig config;
-//    private Network network;
+//    private Networking network;
 //    private boolean shutdown = false, networking = false;
 //    private Ctx ctx = null;
 //    private List<Long> crashes = null;
@@ -53,7 +64,7 @@ public class CountlyService extends android.app.Service {
 //        this.sessions = new ArrayList<>();
 //        this.tasks = new Tasks("service");
 //        this.networkTasks = new Tasks("net");
-//        this.singleProcess = Device.isSingleProcess(getApplicationContext());
+//        this.singleProcess = Device.dev.isSingleProcess(getApplicationContext());
 //        this.config = Core.initialized();
 //        if (this.config == null) {
 //            // TODO: inconsistent state, TBD
@@ -66,11 +77,11 @@ public class CountlyService extends android.app.Service {
 //            if (config.getDeviceId() != null) {
 //                Ctx ctx = new CtxImpl(CountlyService.this);
 //                Core.onDeviceId(ctx, config.getDeviceId(), config.getDeviceId());
-//                this.network = new Network();
+//                this.network = new DefaultNetworking();
 //                try {
 //                    this.network.init(config);
 //                } catch (Throwable t) {
-//                    Log.e("Error while initializing network", t);
+//                    L.e("Error while initializing network", t);
 //                    this.core.stop(getApplicationContext(), false);
 //                    this.core = null;
 //                    this.network = null;
@@ -110,8 +121,8 @@ public class CountlyService extends android.app.Service {
 //                if (singleProcess) {
 //                    L.d("Ignoring Device id");
 //                    if (config.getDeviceId() != null) {
-//                        this.network = new Network();
-//                        this.network.init(config);
+//                        this.network = new DefaultNetworking();
+//                        this.network.init(ctx);
 //                        check();
 //                    }
 //                    return START_STICKY;
@@ -123,11 +134,11 @@ public class CountlyService extends android.app.Service {
 //                ConfigCore.DID old = null;
 //                boolean success = true;
 //                if (intent.hasExtra(PARAM_1)) {
-//                    id = new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.ANDROID_ID, null);
+//                    id = new ConfigCore.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.ANDROID_ID.getIndex(), null);
 //                    success = id.restore(intent.getByteArrayExtra(PARAM_1));
 //                }
 //                if (intent.hasExtra(PARAM_2)) {
-//                    old = new ConfigCore.DID(ConfigCore.DeviceIdRealm.DEVICE_ID, ConfigCore.DeviceIdStrategy.ANDROID_ID, null);
+//                    old = new ConfigCore.DID(Config.DeviceIdRealm.DEVICE_ID.getIndex(), Config.DeviceIdStrategy.ANDROID_ID.getIndex(), null);
 //                    success = success && !old.restore(intent.getByteArrayExtra(PARAM_2));
 //                }
 //                if (success) {
@@ -135,11 +146,11 @@ public class CountlyService extends android.app.Service {
 //                    Core.onDeviceId(ctx, id, old);
 //                    if (config != null && config.getDeviceId() != null && network == null) {
 //                        L.i("Starting sending requests");
-//                        this.network = new Network();
+//                        this.network = new DefaultNetworking();
 //                        try {
-//                            this.network.init(config);
+//                            this.network.init(ctx);
 //                        } catch (Throwable t) {
-//                            Log.e("Error while initializing network", t);
+//                            L.e("Error while initializing network", t);
 //                            this.core.stop(getApplicationContext(), false);
 //                            this.core = null;
 //                            this.network = null;
@@ -255,7 +266,7 @@ public class CountlyService extends android.app.Service {
 //                        Storage.remove(ctx, request);
 //                        return true;
 //                    } else {
-//                        networkTasks.run(network.send(request), new Tasks.Callback<Network.RequestResult>() {
+//                        networkTasks.run(network.send(request), new Tasks.Callback<DefaultNetworking.RequestResult>() {
 //                            @Override
 //                            public void call(Network.RequestResult requestResult) throws Exception {
 //                                L.d("Request " + request.storageId() + " sent?: " + requestResult);

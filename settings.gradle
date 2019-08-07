@@ -1,1 +1,1 @@
-include ':app', ':sdk', ':sdk-java', ':core', ':appJava'
+include ':app', ':sdk', ':sdk-java', ':core', ':app-java'

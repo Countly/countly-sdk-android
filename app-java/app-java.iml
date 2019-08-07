@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module external.linked.project.id=":appJava" external.linked.project.path="$MODULE_DIR$" external.root.project.path="$MODULE_DIR$/.." external.system.id="GRADLE" type="JAVA_MODULE" version="4">
+<module external.linked.project.id=":app-java" external.linked.project.path="$MODULE_DIR$" external.root.project.path="$MODULE_DIR$/.." external.system.id="GRADLE" type="JAVA_MODULE" version="4">
   <component name="FacetManager">
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
-        <option name="GRADLE_PROJECT_PATH" value=":appJava" />
+        <option name="GRADLE_PROJECT_PATH" value=":app-java" />
       </configuration>
     </facet>
     <facet type="java-gradle" name="Java-Gradle">
@@ -29,6 +29,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="Gradle: sdk-java-19.08-sdk2-rc" level="project" />
     <orderEntry type="library" exported="" name="Gradle: core-19.08-sdk2-rc" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: json-20180813" level="project" />
+    <orderEntry type="library" exported="" scope="RUNTIME" name="Gradle: json-20180813" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="Gradle: json-20180813" level="project" />
   </component>
 </module>

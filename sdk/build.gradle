@@ -12,8 +12,8 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:0.9'
-        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.1'
+        classpath 'com.novoda:bintray-release:0.9.1'
+        classpath 'com.dicedmelon.gradle:jacoco-android:0.1.4'
     }
 }
 android {
