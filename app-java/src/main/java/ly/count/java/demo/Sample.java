@@ -8,8 +8,8 @@ import ly.count.sdk.java.Countly;
 public class Sample {
     public static void main(String[] args) throws Exception {
 
-        String COUNTLY_SERVER_URL = "http://localhost:3001";
-        String COUNTLY_APP_KEY = "8f3b5e1e8784eb0447236d2d1ab6211797e3ebb9";
+        String COUNTLY_SERVER_URL = "XXX";
+        String COUNTLY_APP_KEY = "XXX";
 
         Config config = new Config(COUNTLY_SERVER_URL, COUNTLY_APP_KEY)
                 .setLoggingLevel(Config.LoggingLevel.DEBUG)
