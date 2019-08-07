@@ -98,7 +98,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#DEBUG} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#DEBUG} level logging
      *
      * @param string string to log
      */
@@ -107,7 +107,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#DEBUG} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -123,7 +123,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#INFO} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#INFO} level logging
      *
      * @param string string to log
      */
@@ -132,7 +132,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#INFO} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#INFO} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -148,7 +148,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#WARN} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#WARN} level logging
      *
      * @param string string to log
      */
@@ -157,7 +157,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#WARN} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#WARN} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -173,7 +173,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#ERROR} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#ERROR} level logging
      *
      * @param string string to log
      */
@@ -182,7 +182,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#ERROR} level logging
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#ERROR} level logging
      *
      * @param string string to log
      * @param t exception to log along with {@code string}
@@ -198,7 +198,7 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#ERROR} (Android wtf) level logging which throws an
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#ERROR} (Android wtf) level logging which throws an
      * exception when {@link ConfigCore#testMode} is enabled.
      *
      * @param string string to log
@@ -209,8 +209,8 @@ public class Log extends ModuleBase {
     }
 
     /**
-     * {@link ConfigCore.LoggingLevel#ERROR} (Android wtf) level logging which throws an
-     * exception when {@link ConfigCore#testMode} is enabled.
+     * {@link ly.count.sdk.ConfigCore.LoggingLevel#ERROR} (Android wtf) level logging which throws an
+     * exception when {@link ly.count.sdk.ConfigCore#testMode} is enabled.
      *
      * @param string string to log
      * @param t exception to log along with {@code string}

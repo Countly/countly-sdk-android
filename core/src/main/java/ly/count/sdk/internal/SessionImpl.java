@@ -64,6 +64,12 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     protected boolean startView = true;
 
     /**
+     * Latest known consents for this {@link Session} instance.
+     * Affects how it's handled during recovery.
+     */
+    private int consents;
+
+    /**
      * Whether to push changes to storage on every change automatically (false only for testing)
      */
     private boolean pushOnChange = true;
@@ -82,6 +88,9 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     public SessionImpl(CtxCore ctx, Long id) {
         this.ctx = ctx;
         this.id = id == null ? DeviceCore.dev.uniformTimestamp() : id;
+        if (SDKCore.instance != null) {
+            this.consents = SDKCore.instance.consents;
+        }
     }
 
     @Override
@@ -103,6 +112,8 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
         } else {
             began = now == null ? System.nanoTime() : now;
         }
+
+        this.consents = SDKCore.instance.consents;
 
         if (pushOnChange) {
             Storage.pushAsync(ctx, this);
@@ -133,6 +144,8 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
             return null;
         }
 
+        this.consents = SDKCore.instance.consents;
+
         Long duration = updateDuration(now);
 
         if (pushOnChange) {
@@ -160,6 +173,8 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
         }
         ended = now == null ? System.nanoTime() : now;
 
+        this.consents = SDKCore.instance.consents;
+
 //        // TODO: check if needed
 //        for (Event event: timedEvents.values()) {
 //            event.endAndRecord();
@@ -177,7 +192,7 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
             @Override
             public void call(Boolean removed) throws Exception {
                 if (!removed) {
-                    L.wtf("Unable to record session end request");
+                    L.i("No data in session end request");
                 }
                 Storage.removeAsync(ctx, SessionImpl.this, callback);
             }
@@ -202,6 +217,10 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
             } else {
                 // began != null && ended != null
                 return Storage.remove(ctx, this);
+            }
+
+            if (future == null) {
+                return null;
             }
 
             try {
@@ -249,7 +268,10 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
     @Override
     public void recordEvent(Event event) {
-        // TODO: consents
+        if (!SDKCore.enabled(CoreFeature.Events)) {
+            L.i("Skipping event - feature is not enabled");
+            return;
+        }
         if (began == null) {
             begin();
         }
@@ -268,7 +290,6 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
     @Override
     public User user() {
-        // TODO: consents
         if (SDKCore.instance == null) {
             L.wtf("Countly is not initialized");
             return null;
@@ -284,19 +305,28 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
 
     @Override
     public Session addCrashReport(Throwable t, boolean fatal, String name, Map<String, String> segments, String... logs) {
-        // TODO: consents
+        if (!SDKCore.enabled(CoreFeature.CrashReporting)) {
+            L.i("Skipping event - feature is not enabled");
+            return this;
+        }
         SDKCore.instance.onCrash(ctx, t, fatal, name, segments, logs);
         return this;
     }
 
     @Override
     public Session addLocation(double latitude, double longitude) {
-        // TODO: consents
+        if (!SDKCore.enabled(CoreFeature.Location)) {
+            L.i("Skipping event - feature is not enabled");
+            return this;
+        }
         return addParam("location", latitude + "," + longitude);
     }
 
     public View view(String name, boolean start) {
-        // TODO: consents
+        if (!SDKCore.enabled(CoreFeature.Views)) {
+            L.i("Skipping event - feature is not enabled");
+            return null;
+        }
         if (currentView != null) {
             currentView.stop(false);
         }
@@ -378,6 +408,7 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
                 stream.writeUTF(event.toString());
             }
             stream.writeUTF(params.toString());
+            stream.writeInt(consents);
             stream.close();
             return bytes.toByteArray();
         } catch (IOException e) {
@@ -428,6 +459,7 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
             }
 
             params.add(stream.readUTF());
+            consents = stream.readInt();
 
             return true;
         } catch (IOException e) {
@@ -455,6 +487,19 @@ public class SessionImpl implements Session, Storable, EventImpl.EventRecorder {
     SessionImpl setPushOnChange(boolean pushOnChange) {
         this.pushOnChange = pushOnChange;
         return this;
+    }
+
+    boolean hasConsent(CoreFeature feature) {
+        return hasConsent(feature.getIndex());
+    }
+
+    boolean hasConsent(int feature) {
+        return (consents & feature) > 0;
+    }
+
+    void setConsents(CtxCore ctx, int features) {
+        consents = features;
+        Storage.pushAsync(ctx, this);
     }
 
     @Override

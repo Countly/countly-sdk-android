@@ -300,7 +300,7 @@ public class ModuleRating extends ModuleRatingCore {
 
         //prepare request
         L.d("Preparing rating widget availability check request");
-        final Request req = ModuleRequests.ratingWidgetAvailabilityCheck(ctx, widgetId, ctx.getConfig(), ModuleRating.class);
+        final Request req = ModuleRequests.ratingWidgetAvailabilityCheck(ctx, widgetId,ModuleRating.class);
         currentWidgetCheckRequest = req;
 
         //create a timeout in case nothing returns for a while

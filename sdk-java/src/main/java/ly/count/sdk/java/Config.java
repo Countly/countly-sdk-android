@@ -71,10 +71,10 @@ public class Config extends ly.count.sdk.ConfigCore {
         Views(CoreFeature.Views.getIndex()),
         CrashReporting(CoreFeature.CrashReporting.getIndex()),
         Location(CoreFeature.Location.getIndex()),
-        UserProfiles(CoreFeature.UserProfiles.getIndex()),
-        StarRating(1 << 12),
-        RemoteConfig(1 << 13),
-        PerformanceMonitoring(1 << 14);
+        UserProfiles(CoreFeature.UserProfiles.getIndex());
+//        StarRating(1 << 12),
+//        RemoteConfig(1 << 13),
+//        PerformanceMonitoring(1 << 14);
 
         private final int index;
 
@@ -99,12 +99,12 @@ public class Config extends ly.count.sdk.ConfigCore {
                 return Location;
             } else if (index == UserProfiles.index) {
                 return UserProfiles;
-            } else if (index == StarRating.index) {
-                return StarRating;
-            } else if (index == RemoteConfig.index) {
-                return RemoteConfig;
-            } else if (index == PerformanceMonitoring.index) {
-                return PerformanceMonitoring;
+//            } else if (index == StarRating.index) {
+//                return StarRating;
+//            } else if (index == RemoteConfig.index) {
+//                return RemoteConfig;
+//            } else if (index == PerformanceMonitoring.index) {
+//                return PerformanceMonitoring;
             } else {
                 return null;
             }
@@ -120,7 +120,6 @@ public class Config extends ly.count.sdk.ConfigCore {
     public Config(String serverURL, String serverAppKey) {
         super(serverURL, serverAppKey);
         setSdkName("java-native");
-        enableFeatures(Feature.Events, Feature.Sessions, Feature.CrashReporting, Feature.Location, Feature.UserProfiles);
     }
 
     /**
@@ -360,8 +359,8 @@ public class Config extends ly.count.sdk.ConfigCore {
      * trying to ignore them when testMode is off</li>
      * <li>Put Firebase token under {@code test} devices if {@code Feature.Push} is enabled.</li>
      * </ul>
-     * Note: this method automatically sets {@link #loggingLevel} to {@link LoggingLevel#INFO} in
-     * case it was {@link LoggingLevel#OFF} (default).
+     * Note: this method automatically sets {@link #loggingLevel} to {@link ly.count.sdk.ConfigCore.LoggingLevel#INFO} in
+     * case it was {@link ly.count.sdk.ConfigCore.LoggingLevel#OFF} (default).
      *
      * @return {@code this} instance for method chaining
      */
@@ -422,154 +421,23 @@ public class Config extends ly.count.sdk.ConfigCore {
     }
 
     /**
-     * Set minimal amount of time between sessions in seconds.
-     * For now used only when recovering from a crash as a session extension period.
+     * !!! Not available for Java SDK !!!
      *
-     * @param sessionCooldownPeriod min time interval between two sessions
-     * @return {@code this} instance for method chaining
-     */
-    public Config setSessionCooldownPeriod(int sessionCooldownPeriod) {
-        super.setSessionCooldownPeriod(sessionCooldownPeriod);
-        return this;
-    }
-
-    /**
-     * Change name of SDK used in HTTP requests
-     *
-     * @param sdkName new name of SDK
-     * @return {@code this} instance for method chaining
-     */
-    public Config setSdkName(String sdkName) {
-        super.setSdkName(sdkName);
-        return this;
-    }
-
-    /**
-     * Change version of SDK used in HTTP requests
-     *
-     * @param sdkVersion new version of SDK
-     * @return {@code this} instance for method chaining
-     */
-    public Config setSdkVersion(String sdkVersion) {
-        super.setSdkVersion(sdkVersion);
-        return this;
-    }
-
-    /**
-     * Change application name reported to Countly server
-     *
-     * @param name new name
-     * @return {@code this} instance for method chaining
-     */
-    public Config setApplicationName(String name) {
-        super.setApplicationName(name);
-        return this;
-    }
-
-    /**
-     * Change application version reported to Countly server
-     *
-     * @param version new version
-     * @return {@code this} instance for method chaining
-     */
-    public Config setApplicationVersion(String version) {
-        super.setApplicationVersion(version);
-        return this;
-    }
-
-    /**
-     * Set connection timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
-     *
-     * @param seconds network timeout in seconds
-     * @return {@code this} instance for method chaining
-     */
-    public Config setNetworkConnectTimeout(int seconds) {
-        super.setNetworkConnectTimeout(seconds);
-        return this;
-    }
-
-    /**
-     * Set read timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
-     *
-     * @param seconds read timeout in seconds
-     * @return {@code this} instance for method chaining
-     */
-    public Config setNetworkReadTimeout(int seconds) {
-        super.setNetworkReadTimeout(seconds);
-        return this;
-    }
-
-    /**
-     * Enable SSL public key pinning. Improves HTTPS security by not allowing MiM attacks
-     * based on SSL certificate replacing somewhere between Android device and Countly server.
-     * Here you can set one or more PEM-encoded public keys which Countly SDK verifies against
-     * public keys provided by Countly's web server for each HTTPS connection. At least one match
-     * results in connection being established, no matches result in request not being sent stored for next try.
-     * <p>
-     * NOTE: Public key pinning is preferred over certificate pinning due to the fact
-     * that public keys are usually not changed when certificate expires and you generate new one.
-     * This ensures pinning continues to work after certificate prolongation.
-     * Certificates ({@link #certificatePins}) on the other hand have specific expiry date.
-     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
-     * have both certificates (old & new) until expiry date.
-     * <p>
-     * NOTE: when {@link #serverURL} doesn't have {@code "https://"} public key pinning doesn't work
-     *
-     * @param pemEncodedPublicKey PEM-encoded SSL public key string to add
-     * @return {@code this} instance for method chaining
-     */
-    public Config addPublicKeyPin(String pemEncodedPublicKey) {
-        super.addPublicKeyPin(pemEncodedPublicKey);
-        return this;
-    }
-
-    /**
-     * Enable SSL certificate pinning. Improves HTTPS security by not allowing MiM attacks
-     * based on SSL certificate replacing somewhere between Android device and Countly server.
-     * Here you can set one or more PEM-encoded certificates which Countly SDK verifies against
-     * certificates provided by Countly's web server for each HTTPS connection. At least one match
-     * results in connection being established, no matches result in request not being sent stored for next try.
-     * <p>
-     * NOTE: Public key pinning ({@link #publicKeyPins}) is preferred over certificate pinning due to the fact
-     * that public keys are usually not changed when certificate expires and you generate new one.
-     * This ensures pinning continues to work after certificate prolongation.
-     * Certificates on the other hand have specific expiry date.
-     * In case you chose this way of pinning, you MUST ensure that ALL installs of your app
-     * have both certificates (old & new) until expiry date.
-     * <p>
-     * NOTE: when {@link #serverURL} doesn't have {@code "https://"} certificate pinning doesn't work
-     *
-     * @param pemEncodedCertificate PEM-encoded SSL certificate string to add
-     * @return {@code this} instance for method chaining
-     */
-    public Config addCertificatePin(String pemEncodedCertificate) {
-        super.addCertificatePin(pemEncodedCertificate);
-        return this;
-    }
-
-    /**
-     * Change period when a check for ANR is made. ANR reporting is enabled by default once you enable {@code Feature.CrashReporting}.
-     * Default period is 5 seconds. This is *NOT* a timeout for any possible time frame within app running time, it's a checking period.
-     * Meaning *SOME* ANRs will be recorded if main thread is blocked for slightly more than {@link #crashReportingANRCheckingPeriod}.
-     * *MORE* ANRs will be recorded if main thread is blocked for {@code 1.5 * crashReportingANRCheckingPeriod}. Almost all ANRs
-     * is going to be recorded once main thread is blocked for {@link #crashReportingANRCheckingPeriod} or more seconds.
-     *
-     * To disable ANR reporting, use {@link #disableANRCrashReporting()}.
-     *
-     * @param periodInSeconds how much time the SDK waits between individual ANR checks
-     * @return {@code this} instance for method chaining
+     * @see #autoViewsTracking
      */
     public Config setCrashReportingANRCheckingPeriod(int periodInSeconds) {
-        super.setCrashReportingANRCheckingPeriod(periodInSeconds);
+        Log.wtf("ANR tracking is not available for Java-native SDK");
+        super.setCrashReportingANRCheckingPeriod(0);
         return this;
     }
 
     /**
-     * Disable ANR detection and thus reporting to Countly server.
+     * !!! Not available for Java SDK !!!
      *
      * @return {@code this} instance for method chaining
      */
     public Config disableANRCrashReporting() {
+        Log.wtf("ANR tracking is not available for Java-native SDK");
         super.disableANRCrashReporting();
         return this;
     }
@@ -612,8 +480,6 @@ public class Config extends ly.count.sdk.ConfigCore {
 
     /**
      * !!! Not available for Java SDK !!!
-     *
-     * @see #autoViewsTracking
      */
     public Config setAutoViewsTracking(boolean autoViewsTracking) {
         if (autoViewsTracking) {
@@ -625,8 +491,6 @@ public class Config extends ly.count.sdk.ConfigCore {
 
     /**
      * !!! Not available for Java SDK !!!
-     *
-     * @see #autoSessionsTracking
      */
     public Config setAutoSessionsTracking(boolean autoSessionsTracking) {
         if (autoSessionsTracking) {
@@ -638,8 +502,6 @@ public class Config extends ly.count.sdk.ConfigCore {
 
     /**
      * !!! Not available for Java SDK !!!
-     *
-     * @see #sessionAutoCloseAfter
      */
     public Config setSessionAutoCloseAfter(int sessionAutoCloseAfter) {
         if (sessionAutoCloseAfter != 0) {

@@ -16,6 +16,7 @@ import java.util.Map;
 import ly.count.sdk.internal.Log;
 import ly.count.sdk.internal.Storable;
 import ly.count.sdk.internal.Storage;
+import ly.count.sdk.internal.Utils;
 
 abstract class SDKStorage extends SDKLifecycle {
     private static final Log.Module L = Log.module("SDK");
@@ -29,10 +30,11 @@ abstract class SDKStorage extends SDKLifecycle {
     @Override
     public void stop(ly.count.sdk.internal.CtxCore ctx, boolean clear) {
         super.stop(ctx, clear);
+        Storage.await();
         if (clear) {
-            Storage.await();
             storablePurge(ctx, null);
         }
+        Storage.stop();
     }
 
     private static String getName(Storable storable) {

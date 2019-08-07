@@ -58,6 +58,7 @@ public abstract class SDKCore extends SDKModules {
         L.i("Initializing Countly in " + (ctx.getConfig().isLimited() ? "limited" : "full") + " mode");
 
         config = prepareConfig(ctx);
+        Utils.reflectiveSetField(ctx, "config", config);
 
         super.init(ctx);
 
@@ -249,7 +250,8 @@ public abstract class SDKCore extends SDKModules {
     }
 
     public static boolean enabled(int feature) {
-        return instance.config.isFeatureEnabled(feature);
+        return (feature & instance.consents) == feature &&
+                (feature & instance.config().getFeatures()) == feature;
     }
 
     public static boolean enabled(CoreFeature feature) {
@@ -286,7 +288,7 @@ public abstract class SDKCore extends SDKModules {
      * that owns the request
      * @param request the request that was sent, used to identify the request
      */
-    public void propagateNetworkRequest(Request request, String response, int responseCode, Class<? extends Module> requestOwner){
+    public void onRequestCompleted(Request request, String response, int responseCode, Class<? extends Module> requestOwner){
         if (requestOwner != null) {
             Module module = module(requestOwner);
 

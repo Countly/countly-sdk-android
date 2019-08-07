@@ -133,7 +133,7 @@ public class Countly extends CountlyLifecycle {
 
     /**
      * Login function to set device (user) id on Countly server to the string specified here.
-     * Closes current session, then starts new one automatically if {@link Config#autoSessionsTracking} is on, acquires device id.
+     * Closes current session, then starts new one automatically if {@link Config#setAutoSessionsTracking(boolean)} is on, acquires device id.
      *
      * @param context Ctx to run in
      * @param id new user / device id string, cannot be empty
@@ -148,7 +148,7 @@ public class Countly extends CountlyLifecycle {
 
     /**
      * Logout function to make current user anonymous (that is with random id according to
-     * {@link Config#deviceIdStrategy} and such). Obviously makes sense only after a call to {@link #login(Context, String)},
+     * {@link Config#setDeviceIdStrategy(Config.DeviceIdStrategy)} and such). Obviously makes sense only after a call to {@link #login(Context, String)},
      * so it throws error or does nothing (depending on {@link Config#testMode}) if current id wasn't set using {@link #login(Context, String)}.
      *
      * Closes current session.
@@ -184,7 +184,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Consent function which enables corresponding features of SDK with respect to GDPR.
      * Activates corresponding SDK features.
-     * Works only when {@link Config#requiresConsent} is {@code true}.
+     * Works only when {@link Config#setRequiresConsent(boolean)} is {@code true}.
      *
      * @param context Ctx to run in
      * @param features features to turn on
@@ -204,7 +204,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Consent function which disables corresponding features of SDK with respect to GDPR.
      * Gracefully deactivates corresponding SDK features. Closes session if needed.
-     * Works only when {@link Config#requiresConsent} is {@code true}.
+     * Works only when {@link Config#setRequiresConsent(boolean)} is {@code true}.
      *
      * @param context Ctx to run in
      * @param features features to turn offf
@@ -225,7 +225,7 @@ public class Countly extends CountlyLifecycle {
      * Get the interface to Rating related features
      * @return
      */
-    public static ModuleRating.Ratings Ratings(){
+    public static ModuleRating.Ratings ratings(){
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
             return null;
@@ -246,7 +246,7 @@ public class Countly extends CountlyLifecycle {
      * Get the interface to remote config related features
      * @return
      */
-    public static ModuleRemoteConfig.RemoteConfig RemoteConfig(){
+    public static ModuleRemoteConfig.RemoteConfig remoteConfig(){
         if (!isInitialized()) {
             L.wtf("Countly SDK is not initialized yet.");
             return null;

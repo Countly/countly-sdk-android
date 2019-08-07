@@ -388,12 +388,20 @@ public class UserEditorImpl implements UserEditor {
 
     @Override
     public UserEditor setCountry(String country) {
-        return set(COUNTRY, country);
+        if (SDKCore.enabled(CoreFeature.Location)) {
+            return set(COUNTRY, country);
+        } else {
+            return this;
+        }
     }
 
     @Override
     public UserEditor setCity(String city) {
-        return set(CITY, city);
+        if (SDKCore.enabled(CoreFeature.Location)) {
+            return set(CITY, city);
+        } else {
+            return this;
+        }
     }
 
     @Override
@@ -418,7 +426,11 @@ public class UserEditorImpl implements UserEditor {
 
     @Override
     public UserEditor setLocation(double latitude, double longitude) {
-        return set(LOCATION, latitude + "," + longitude);
+        if (SDKCore.enabled(CoreFeature.Location)) {
+            return set(LOCATION, latitude + "," + longitude);
+        } else {
+            return this;
+        }
     }
 
     @Override

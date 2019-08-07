@@ -214,7 +214,7 @@ public class ModuleRatingTests extends BaseTestsAndroid {
         ModuleRatingCore.StarRatingPreferences srpValues = CreatePreferences();
         ModuleRatingCore.StarRatingPreferences srpLoaded;
 
-        ModuleRating.Ratings ratings = Countly.Ratings();
+        ModuleRating.Ratings ratings = Countly.ratings();
 
         String [] values = new String[]{"asd", "ert", "poi"};
         int[] numbers = new int[] {6489, 8564, 38376};

@@ -359,4 +359,8 @@ public class Storage {
             L.wtf("Interrupted while waiting", e);
         }
     }
+
+    public static void stop() {
+        tasks.shutdown();
+    }
 }

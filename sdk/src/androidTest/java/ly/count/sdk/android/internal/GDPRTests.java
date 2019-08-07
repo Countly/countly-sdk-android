@@ -157,9 +157,9 @@ public class GDPRTests extends BaseTestsAndroid {
     public void noConsentStarRating() throws Exception {
         setUpApplication(defaultConfig().setRequiresConsent(true), true);
 
-        Countly.Ratings().setStarRatingDialogTexts("dsds", "fdf", "re");
-        Countly.Ratings().showFeedbackPopup("df", "fdfd", null, null);
-        Countly.Ratings().clearAutomaticStarRatingSessionCount();
+        Countly.ratings().setStarRatingDialogTexts("dsds", "fdf", "re");
+        Countly.ratings().showFeedbackPopup("df", "fdfd", null, null);
+        Countly.ratings().clearAutomaticStarRatingSessionCount();
 
         //wait for storage to finish, there should be only one entry - config
         waitForStorage();

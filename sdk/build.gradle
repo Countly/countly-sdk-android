@@ -76,11 +76,9 @@ android {
     }
 }
 
-def powermockVersion = "1.7.1"
-
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
-    api project(':core')
+    implementation project(':core')
 
     androidTestImplementation project(':core')
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
@@ -90,43 +88,19 @@ dependencies {
 
     androidTestImplementation 'org.mockito:mockito-core:2.8.9'
 
-    androidTestImplementation "org.powermock:powermock-core:${powermockVersion}"
-    androidTestImplementation "org.powermock:powermock-module-junit4:${powermockVersion}"
+    androidTestImplementation "org.powermock:powermock-core:${POWERMOCK_VERSION}"
+    androidTestImplementation "org.powermock:powermock-module-junit4:${POWERMOCK_VERSION}"
 
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.2.0'
 
     androidTestImplementation 'com.squareup.okhttp3:mockwebserver:3.7.0'
-
-    //androidTestImplementation 'org.assertj:assertj-core:3.6.2'
-}
-
-/*
-This is needed to solve a problem similar to this:
-https://stackoverflow.com/questions/37250675/how-to-setup-dependencies-in-a-multi-module-android-gradle-project-with-interdep
- */
-afterEvaluate { project ->
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                // ... other config here ...
-
-                pom.whenConfigured { pom ->
-                    pom.dependencies.forEach { dep ->
-                        pom.version = "19.01-sdk2-pre-rc2"
-                        pom.artifactId = "core"
-                        pom.groupId = "ly.count.android"
-                    }
-                }
-            }
-        }
-    }
 }
 
 publish {
     userOrg = 'countly'
-    groupId = 'ly.count.android'
+    groupId = 'ly.count.sdk.android'
     artifactId = 'sdk'
-    publishVersion = '19.01-sdk2-pre-rc2'
+    publishVersion = CLY_VERSION
     desc = 'Android SDK for Countly mobile analytics'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

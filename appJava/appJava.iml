@@ -13,7 +13,7 @@
       </configuration>
     </facet>
   </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/build/classes/java/main" />
     <output-test url="file://$MODULE_DIR$/build/classes/java/test" />
     <exclude-output />
@@ -27,9 +27,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="sdk-java" exported="" />
-    <orderEntry type="module" module-name="core" exported="" />
-    <orderEntry type="library" exported="" scope="RUNTIME" name="Gradle: json-20180813" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="Gradle: json-20180813" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: sdk-java-19.08-sdk2-rc" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: core-19.08-sdk2-rc" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: json-20180813" level="project" />
   </component>
 </module>

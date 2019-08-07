@@ -36,7 +36,7 @@ public class EventImplTests extends BaseTestsCore {
         EventImpl event = new EventImpl(session, key);
 
         Assert.assertEquals(Whitebox.getInternalState(event, "key"), key);
-        Assert.assertEquals(Whitebox.getInternalState(event, "count"), 1);
+        Assert.assertEquals((int)Whitebox.getInternalState(event, "count"), 1);
         Assert.assertNull(Whitebox.getInternalState(event, "sum"));
         Assert.assertNull(Whitebox.getInternalState(event, "duration"));
         Assert.assertTrue((long)Whitebox.getInternalState(event, "timestamp") > 0);

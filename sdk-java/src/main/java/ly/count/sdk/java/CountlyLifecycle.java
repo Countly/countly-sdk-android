@@ -60,6 +60,7 @@ public abstract class CountlyLifecycle extends Cly {
      */
     public static void stop (boolean clearData) {
         if (cly != null) {
+            Log.i("Stopping SDK");
             ((Countly)cly).sdk.stop(((Countly) cly).ctx, clearData);
             cly = null;
         } else {

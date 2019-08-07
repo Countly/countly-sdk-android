@@ -143,7 +143,10 @@ public class Transport implements X509TrustManager {
      */
     HttpURLConnection connection(final Request request, final User user) throws IOException {
         String endpoint = request.params.remove(Request.ENDPOINT);
-        if(endpoint == null) { endpoint = "/i?"; }
+        if (endpoint == null) {
+            endpoint = "/i?";
+        }
+
         String path = config.getServerURL().toString() + endpoint;
         String picture = request.params.remove(UserEditorImpl.PICTURE_PATH);
         boolean usingGET = !config.isUsePOST() && request.isGettable(config.getServerURL()) && Utils.isEmpty(picture);
@@ -357,7 +360,7 @@ public class Transport implements X509TrustManager {
                     int code = connection.getResponseCode();
                     String response = response(connection);
 
-                    SDKCore.instance.propagateNetworkRequest(request, response, code, requestOwner);
+                    SDKCore.instance.onRequestCompleted(request, response, code, requestOwner);
 
                     return processResponse(code, response);
 

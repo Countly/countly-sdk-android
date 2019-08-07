@@ -60,7 +60,7 @@ public class ModuleRatingCore extends ModuleBase {
 
     /**
      * Returns a object with the loaded preferences
-     * @return
+     * @return StarRatingPreferences instance
      */
     protected StarRatingPreferences loadStarRatingPreferences() {
         StarRatingPreferences srp = new StarRatingPreferences();
@@ -137,7 +137,7 @@ public class ModuleRatingCore extends ModuleBase {
 
     /**
      * Returns how many sessions has star rating counted internally
-     * @return
+     * @return current session count
      */
     public int getCurrentVersionsSessionCount(){
         StarRatingPreferences srp = loadStarRatingPreferences();
@@ -192,8 +192,7 @@ public class ModuleRatingCore extends ModuleBase {
         private static final String KEY_DIALOG_TEXT_DISMISS = "sr_text_dismiss";
 
         /**
-         * Create a JSONObject from the current state
-         * @return
+         * @return Create a JSONObject from the current state
          */
         public JSONObject toJSON() {
             final JSONObject json = new JSONObject();
@@ -221,8 +220,7 @@ public class ModuleRatingCore extends ModuleBase {
 
         /**
          * Load the preference state from a JSONObject
-         * //@param json
-         * @return
+         * @param json object to parse
          */
         public void fromJSON(final JSONObject json) {
 

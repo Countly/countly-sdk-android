@@ -326,7 +326,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
      * @param ctx Ctx to run in
      * @param holder DID object which holds strategy and possibly other info for id generation
      * @param fallbackAllowed whether to automatically fallback to any available alternative or not
-     * @return {@link ConfigCore.DID} instance with an id
+     * @return {@link ly.count.sdk.ConfigCore.DID} instance with an id
      */
     protected ConfigCore.DID acquireIdSync(final CtxCore ctx, final ConfigCore.DID holder, final boolean fallbackAllowed) {
         if (testSleep > 0) {

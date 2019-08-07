@@ -2,8 +2,6 @@ apply plugin: 'java-library'
 apply plugin: 'bintray-release'
 apply plugin: 'maven'
 
-def powermockVersion = "1.7.1"
-
 buildscript {
     repositories {
         jcenter()
@@ -18,12 +16,9 @@ dependencies {
     implementation 'org.json:json:20180813'
 
     testImplementation 'junit:junit:4.12'
-
     testImplementation 'org.mockito:mockito-core:2.8.9'
-
-    testImplementation "org.powermock:powermock-core:${powermockVersion}"
-    testImplementation "org.powermock:powermock-module-junit4:${powermockVersion}"
-
+    testImplementation "org.powermock:powermock-core:${POWERMOCK_VERSION}"
+    testImplementation "org.powermock:powermock-module-junit4:${POWERMOCK_VERSION}"
     testImplementation 'com.squareup.okhttp3:mockwebserver:3.7.0'
 }
 
@@ -33,14 +28,11 @@ test {
     maxHeapSize = '1G'
 }
 
-sourceCompatibility = "1.7"
-targetCompatibility = "1.7"
-
 publish {
     userOrg = 'countly'
     groupId = 'ly.count.sdk'
     artifactId = 'core'
-    publishVersion = '19.01-sdk2-pre-rc3'
+    publishVersion = CLY_VERSION
     desc = 'SDK core for Countly Java/Android SDK'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

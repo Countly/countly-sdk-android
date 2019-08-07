@@ -25,11 +25,6 @@ public class Request implements Storable {
     public Params params;
 
     /**
-     * In cases where the request is not using /i
-     */
-    protected String customEndpoint = null;
-
-    /**
      * Create request from params with current time as id.
      */
     public Request(Object... params) {
@@ -62,10 +57,6 @@ public class Request implements Storable {
      */
     public Request(Long id) {
         this.id = id;
-    }
-
-    public void SetCustomEndpoint(String endpoint){
-        customEndpoint = endpoint;
     }
 
     boolean isEmpty() {

@@ -65,13 +65,14 @@ public class Utils {
      * contain $ in their name
      *
      * @param cls class to check
+     * @param goUp whether to return parent class fields as well
      * @return list of declared fields
      */
-    public static List<Field> reflectiveGetDeclaredFields(Class<?> cls) {
-        return reflectiveGetDeclaredFields(new ArrayList<Field>(), cls);
+    public static List<Field> reflectiveGetDeclaredFields(Class<?> cls, boolean goUp) {
+        return reflectiveGetDeclaredFields(new ArrayList<Field>(), cls, goUp);
     }
 
-    public static List<Field> reflectiveGetDeclaredFields(List<Field> list, Class<?> cls) {
+    public static List<Field> reflectiveGetDeclaredFields(List<Field> list, Class<?> cls, boolean goUp) {
         List<Field> curr = new ArrayList<>(Arrays.asList(cls.getDeclaredFields()));
         for (int i = 0; i < curr.size(); i++) {
             if (curr.get(i).getName().contains("$")) {
@@ -80,8 +81,8 @@ public class Utils {
             }
         }
         list.addAll(curr);
-        if (cls.getSuperclass() != null) {
-            reflectiveGetDeclaredFields(list, cls.getSuperclass());
+        if (goUp && cls.getSuperclass() != null) {
+            reflectiveGetDeclaredFields(list, cls.getSuperclass(), goUp);
         }
         return list;
     }

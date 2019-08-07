@@ -35,7 +35,7 @@ public class ActivityExampleOthers extends Activity {
 
     public void onClickStarRating(View v) {
         Toast.makeText(this, "onClickStarRating called", Toast.LENGTH_SHORT).show();
-        Countly.Ratings().showStarRating(activity, new ModuleRatingCore.RatingCallback() {
+        Countly.ratings().showStarRating(activity, new ModuleRatingCore.RatingCallback() {
             @Override
             public void onRate(int rating) {
                 Toast.makeText(activity, "onRate called with rating: " + rating, Toast.LENGTH_SHORT).show();
@@ -52,7 +52,7 @@ public class ActivityExampleOthers extends Activity {
         //Toast.makeText(this, "onClickRatingWidget called", Toast.LENGTH_SHORT).show();
         String widgetId = "5c4a041c8f5ec579bc794a49";
 
-        Countly.Ratings().showFeedbackPopup(widgetId, "close",this, new ModuleRating.FeedbackRatingCallback() {
+        Countly.ratings().showFeedbackPopup(widgetId, "close",this, new ModuleRating.FeedbackRatingCallback() {
             @Override
             public void callback(String error) {
                 if(error != null) {
@@ -64,7 +64,7 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickRequestRemoteConfigUpdate(View v){
-        Countly.RemoteConfig().updateRemoteConfig(new ModuleRemoteConfig.RemoteConfigCallback() {
+        Countly.remoteConfig().updateRemoteConfig(new ModuleRemoteConfig.RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 Toast.makeText(activity, "onClickRequestRemoteConfigUpdate callback", Toast.LENGTH_SHORT).show();
@@ -73,7 +73,7 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickCheckRemoteConfigValue(View v){
-        Object value = Countly.RemoteConfig().remoteConfigValueForKey("button_android");
+        Object value = Countly.remoteConfig().remoteConfigValueForKey("button_android");
         Toast.makeText(activity, "onClickCheckRemoteConfigValue result is [" + value + "]", Toast.LENGTH_LONG).show();
     }
 }

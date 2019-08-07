@@ -87,8 +87,8 @@ public class Config extends ConfigCore {
      * Enumeration of Countly SDK features
      */
     public enum Feature {
-        Events(CoreFeature.Events.getIndex()),
         Sessions(CoreFeature.Sessions.getIndex()),
+        Events(CoreFeature.Events.getIndex()),
         Views(CoreFeature.Views.getIndex()),
         CrashReporting(CoreFeature.CrashReporting.getIndex()),
         Location(CoreFeature.Location.getIndex()),
@@ -110,10 +110,10 @@ public class Config extends ConfigCore {
         }
 
         public static Feature byIndex(int index) {
-            if (index == Events.index) {
-                return Events;
-            } else if (index == Sessions.index) {
+            if (index == Sessions.index) {
                 return Sessions;
+            } else if (index == Events.index) {
+                return Events;
             } else if (index == Views.index) {
                 return Views;
             } else if (index == CrashReporting.index) {
@@ -148,7 +148,6 @@ public class Config extends ConfigCore {
         super(serverURL, serverAppKey);
         setSdkName("java-native-android");
         setSdkVersion(ly.count.sdk.android.sdk.BuildConfig.VERSION_NAME);
-        enableFeatures(Feature.Events, Feature.Sessions, Feature.CrashReporting, Feature.Location, Feature.UserProfiles);
     }
 
     /**

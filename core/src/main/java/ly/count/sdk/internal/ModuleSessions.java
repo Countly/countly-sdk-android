@@ -38,10 +38,6 @@ public class ModuleSessions extends ModuleBase {
         return CoreFeature.Sessions.getIndex();
     }
 
-    /**
-     * @throws IllegalArgumentException when {@link ConfigCore#autoSessionsTracking}
-     * is off since this module is for a case when it's on
-     */
     @Override
     public void init(InternalConfig config) throws IllegalStateException {
         super.init(config);
@@ -55,6 +51,19 @@ public class ModuleSessions extends ModuleBase {
             timedEvents = Storage.read(ctx, new TimedEvents());
             if (timedEvents == null) {
                 timedEvents = new TimedEvents();
+            }
+
+            if (ctx.getConfig().getSendUpdateEachSeconds() > 0 && executor == null) {
+                executor = Executors.newScheduledThreadPool(1);
+                executor.scheduleWithFixedDelay(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (isActive() && getSession() != null) {
+                            L.i("updating session");
+                            getSession().update();
+                        }
+                    }
+                }, ctx.getConfig().getSendUpdateEachSeconds(), ctx.getConfig().getSendUpdateEachSeconds(), TimeUnit.SECONDS);
             }
         } catch (Throwable e) {
             L.wtf("Cannot happen", e);
@@ -112,18 +121,6 @@ public class ModuleSessions extends ModuleBase {
                 L.i("starting new session");
                 session(ctx, null).begin();
             }
-        }
-        if (ctx.getConfig().getSendUpdateEachSeconds() > 0 && executor == null) {
-            executor = Executors.newScheduledThreadPool(1);
-            executor.scheduleWithFixedDelay(new Runnable() {
-                @Override
-                public void run() {
-                    if (isActive() && getSession() != null) {
-                        L.i("updating session");
-                        getSession().update();
-                    }
-                }
-            }, ctx.getConfig().getSendUpdateEachSeconds(), ctx.getConfig().getSendUpdateEachSeconds(), TimeUnit.SECONDS);
         }
         activityCount++;
     }

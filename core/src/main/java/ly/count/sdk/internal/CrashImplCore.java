@@ -230,7 +230,9 @@ public class CrashImplCore implements Crash, Storable {
     }
 
     public CrashImplCore putMetricsCore(CtxCore ctx, Long runningTime) {
+        String version = ctx.getConfig().getApplicationVersion();
         return add("_os", DeviceCore.dev.getOS())
+                .add("_app_version", Utils.isEmpty(version) ? "0.0" : version)
                 .add("_os_version", DeviceCore.dev.getOSVersion())
                 .add("_ram_current", DeviceCore.dev.getRAMAvailable())
                 .add("_ram_total", DeviceCore.dev.getRAMTotal())

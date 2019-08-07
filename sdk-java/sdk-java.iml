@@ -27,8 +27,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="core" exported="" />
-    <orderEntry type="library" exported="" scope="RUNTIME" name="Gradle: json-20180813" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: core-19.08-sdk2-rc" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: json-20180813" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: powermock-module-junit4-1.7.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: mockwebserver-3.7.0" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: powermock-module-junit4-common-1.7.1" level="project" />
@@ -44,16 +44,7 @@
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: okhttp-3.7.0" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: bcprov-jdk15on-1.50" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: okio-1.12.0" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="Gradle: json-20180813" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: _projects_countly_sdk_android_core_build_classes_java_test" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: _projects_countly_sdk_android_core_build_resources_test" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
-    <orderEntry type="library" exported="" name="sdk-java.sdk-java-19.07" level="project" />
   </component>
 </module>

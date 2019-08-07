@@ -40,9 +40,12 @@ public interface Usage {
      * Get current User Profile.
      * Note that data is not downloaded from server. Only properties set in current app
      * installation are returned in {@link User} object.
+     * Note that even when the {@link ly.count.sdk.internal.CoreFeature#UserProfiles} is disabled,
+     * this method still returns an object, yet any modifications to it won't result in any data stored
+     * or sent to the server/
      *
-     * @ee Feature is not available in Countly Community Edition
-     * @return this instance for method chaining.
+     * //@ee Feature is not available in Countly Community Edition
+     * @return current {@link User} instance
      */
     User user();
 

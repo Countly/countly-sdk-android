@@ -1,8 +1,8 @@
 package ly.count.sdk.internal;
 
 public enum CoreFeature {
-    Events(1 << 1),
-    Sessions(1 << 2),
+    Sessions(1 << 1),
+    Events(1 << 2),
     Views(1 << 3),
     CrashReporting(1 << 4),
     Location(1 << 5),

@@ -19,9 +19,8 @@ import ly.count.sdk.java.internal.SDK;
  * <ul>
  *     <li>Initialize Countly SDK using {@code #init(Application, Config)}.</li>
  *     <li>Stop Countly SDK with {@link #stop(boolean)} if needed.</li>
- *     <li>Call {@link #onActivityCreated(Activity, Bundle)}, {@link #onActivityStarted(Activity)} {@link #onActivityStopped(Activity)} if targeting API levels < 14.</li>
- *     <li>Use {@link #session(Context)} to get a {@link Session} instance.</li>
- *     <li>Use {@link #login(Context, String)} & {@link #logout(Context)} when user logs in & logs out.</li>
+ *     <li>Use {@link #session()} to get a {@link Session} instance.</li>
+ *     <li>Use {@link #login(String)} & {@link #logout()} when user logs in & logs out.</li>
  * </ul>
  */
 
@@ -55,7 +54,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Returns active {@link Session} if any or creates new {@link Session} instance.
      *
-     * NOTE: {@link Session} instances can expire, for example when {@link Config.DID} changes.
+     * NOTE: {@link Session} instances can expire, for example when {@link ly.count.sdk.ConfigCore.DID} changes.
      * {@link Session} also holds application context.
      * So either do not store {@link Session} instances in any static variables and use this method or {@link #getSession()} every time you need it,
      * or check {@link Session#isActive()} before using it.
@@ -72,7 +71,7 @@ public class Countly extends CountlyLifecycle {
     /**
      * Returns active {@link Session} if any or {@code null} otherwise.
      *
-     * NOTE: {@link Session} instances can expire, for example when {@link Config.DID} changes.
+     * NOTE: {@link Session} instances can expire, for example when {@link ly.count.sdk.ConfigCore.DID} changes.
      * {@link Session} also holds application context.
      * So either do not store {@link Session} instances in any static variables and use this method or {@link #session()} every time you need it,
      * or check {@link Session#isActive()} before using it.
@@ -84,6 +83,15 @@ public class Countly extends CountlyLifecycle {
             L.wtf("Countly SDK is not initialized yet.");
         }
         return Cly.getSession();
+    }
+
+    /**
+     * Alternative to {@link #getSession()} & {@link #session()} method for accessing Countly SDK API.
+     *
+     * @return {@link Usage} instance
+     */
+    public static Usage api() {
+        return cly;
     }
 
     @Override
@@ -103,4 +111,44 @@ public class Countly extends CountlyLifecycle {
         sdk.resetDeviceId(ctx, id);
         return this;
     }
+
+    /**
+     * Consent function which enables corresponding features of SDK with respect to GDPR.
+     * Activates corresponding SDK features.
+     * Works only when {@link Config#setRequiresConsent(boolean)} is {@code true}.
+     *
+     * @param features features to turn on
+     */
+    public static void onConsent(Config.Feature... features) {
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+        } else {
+            int ftrs = 0;
+            for (Config.Feature f : features) {
+                ftrs = ftrs | f.getIndex();
+            }
+            cly.sdk.onConsent(cly.ctx, ftrs);
+        }
+    }
+
+    /**
+     * Consent function which disables corresponding features of SDK with respect to GDPR.
+     * Gracefully deactivates corresponding SDK features. Closes session if needed.
+     * Works only when {@link Config#setRequiresConsent(boolean)} is {@code true}.
+     *
+     * @param features features to turn offf
+     */
+    public static void onConsentRemoval(Config.Feature... features) {
+        if (!isInitialized()) {
+            L.wtf("Countly SDK is not initialized yet.");
+        } else {
+            int ftrs = 0;
+            for (Config.Feature f : features) {
+                ftrs = ftrs | f.getIndex();
+            }
+            cly.sdk.onConsentRemoval(cly.ctx, ftrs);
+        }
+    }
+
+
 }

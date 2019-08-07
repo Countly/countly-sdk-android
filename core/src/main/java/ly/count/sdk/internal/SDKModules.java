@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import ly.count.sdk.ConfigCore;
+import ly.count.sdk.Session;
 
 /**
  * {@link Module}-related methods of {@link SDKInterface}
@@ -34,6 +35,11 @@ public abstract class SDKModules implements SDKInterface {
     public interface Modulator {
         void run(int feature, Module module);
     }
+
+    /**
+     * Currently enabled features with consents
+     */
+    protected int consents = 0;
 
     /**
      * Selected by config map of module mappings
@@ -81,14 +87,41 @@ public abstract class SDKModules implements SDKInterface {
         moduleMappings.clear();
     }
 
+    private boolean addingConsent(int adding, CoreFeature feature) {
+        return (consents & feature.getIndex()) == 0 && (adding & feature.getIndex()) > 0;
+    }
+
+    private boolean removingConsent(int removing, CoreFeature feature) {
+        return (consents & feature.getIndex()) == feature.getIndex() && (removing & feature.getIndex()) == feature.getIndex();
+    }
+
     /**
      * Callback to add consents to the list
      *
      * @param consent consents to add
      */
     public void onConsent(CtxCore ctx, int consent) {
+        if (!config().requiresConsent()) {
+            Log.wtf("onConsent() shouldn't be called when Config.requiresConsent() is false");
+            return;
+        }
+
+        if (addingConsent(consent, CoreFeature.Sessions)) {
+            SessionImpl session = module(ModuleSessions.class).getSession();
+            if (session != null) {
+                session.end();
+            }
+
+            consents = consents | (consent & ctx.getConfig().getFeatures());
+
+            module(ModuleSessions.class).session(ctx, null).begin();
+        }
+
+        consents = consents | (consent & ctx.getConfig().getFeatures());
+
         for (Integer feature : moduleMappings.keySet()) {
-            if (ctx.getConfig().isFeatureEnabled(feature) && (feature & consent) > 0 && !modules.containsKey(feature)) {
+            Module existing = module(moduleMappings.get(feature));
+            if (SDKCore.enabled(feature) && existing == null) {
                 Class<? extends Module> cls = moduleMappings.get(feature);
                 if (cls == null) {
                     Log.i("No module mapping for feature " + feature);
@@ -113,13 +146,29 @@ public abstract class SDKModules implements SDKInterface {
      * @param noConsent consents to remove
      */
     public void onConsentRemoval(CtxCore ctx, int noConsent) {
+        if (!config().requiresConsent()) {
+            Log.wtf("onConsentRemoval() shouldn't be called when Config.requiresConsent() is false");
+            return;
+        }
+
+        if (removingConsent(noConsent, CoreFeature.Sessions)) {
+            SessionImpl session = module(ModuleSessions.class).getSession();
+            if (session != null) {
+                session.end();
+            }
+        }
+
+        if (removingConsent(noConsent, CoreFeature.Location)) {
+            user().edit().optOutFromLocationServices();
+        }
+
+        consents = consents & ~noConsent;
+
         for (Integer feature : moduleMappings.keySet()) {
-            if ((feature & noConsent) > 0 && modules.containsKey(feature)) {
-                Module module = module(feature);
-                if (module != null) {
-                    module.stop(ctx, true);
-                    modules.remove(feature);
-                }
+            Module existing = module(moduleMappings.get(feature));
+            if (feature != CoreFeature.Sessions.getIndex() && existing != null) {
+                existing.stop(ctx, true);
+                modules.remove(feature);
             }
         }
     }
@@ -165,19 +214,32 @@ public abstract class SDKModules implements SDKInterface {
         }
 
         if (ctx.getConfig().getLoggingLevel() != ConfigCore.LoggingLevel.OFF) {
-            modules.put(CoreFeature.Logs.getIndex(), instantiateModule(moduleMappings.get(CoreFeature.Logs.getIndex())));
+            modules.put(-10, instantiateModule(moduleMappings.get(CoreFeature.Logs.getIndex())));
         }
 
         // standard required internal features
-        modules.put(-1, instantiateModule(moduleMappings.get(CoreFeature.Requests.getIndex())));
-        modules.put(-2, instantiateModule(moduleMappings.get(CoreFeature.DeviceId.getIndex())));
+        modules.put(-3, instantiateModule(moduleMappings.get(CoreFeature.DeviceId.getIndex())));
+        modules.put(-2, instantiateModule(moduleMappings.get(CoreFeature.Requests.getIndex())));
+        modules.put(CoreFeature.Sessions.getIndex(), instantiateModule(moduleMappings.get(CoreFeature.Sessions.getIndex())));
 
-        for (int feature : moduleMappings.keySet()) {
-            Class<? extends Module> cls = moduleMappings.get(feature);
-            if (cls != null && (features & feature) > 0) {
-                Module m = instantiateModule(cls);
-                if (m != null) {
-                    modules.put(feature, m);
+        if (ctx.getConfig().requiresConsent()) {
+            consents = 0;
+        } else {
+            consents = ctx.getConfig().getFeatures();
+        }
+
+        if (!ctx.getConfig().requiresConsent()) {
+            for (int feature : moduleMappings.keySet()) {
+                Class<? extends Module> cls = moduleMappings.get(feature);
+                if (cls == null) {
+                    continue;
+                }
+                Module existing = module(cls);
+                if ((features & feature) > 0 && existing == null) {
+                    Module m = instantiateModule(cls);
+                    if (m != null) {
+                        modules.put(feature, m);
+                    }
                 }
             }
         }

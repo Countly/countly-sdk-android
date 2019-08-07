@@ -36,7 +36,7 @@ public class ModuleRequests extends ModuleBase {
     private static Request sessionRequest(CtxCore ctx, SessionImpl session, String type, Long value) {
         Request request = Request.build();
 
-        if (SDKCore.enabled(CoreFeature.Sessions) && session != null) {
+        if (session != null && session.hasConsent(CoreFeature.Sessions)) {
             if (value != null && value > 0) {
                 request.params.add(type, value);
             }
@@ -49,18 +49,18 @@ public class ModuleRequests extends ModuleBase {
         }
 
         if (session != null) {
-            if (session.events.size() > 0 && SDKCore.enabled(CoreFeature.Events)) {
-                synchronized (session.storageId()) {
+            synchronized (session.storageId()) {
+                if (session.events.size() > 0 && session.hasConsent(CoreFeature.Events)) {
                     request.params.arr("events").put(session.events).add();
                     session.events.clear();
+                } else {
+                    session.events.clear();
                 }
-            } else {
-                session.events.clear();
-            }
 
-            if (session.params.length() > 0) {
-                request.params.add(session.params);
-                session.params.clear();
+                if (session.params.length() > 0) {
+                    request.params.add(session.params);
+                    session.params.clear();
+                }
             }
         }
 
@@ -68,7 +68,8 @@ public class ModuleRequests extends ModuleBase {
             request.params.add(Params.PARAM_DEVICE_ID, ctx.getConfig().getDeviceId().id);
         }
 
-        if (SDKCore.enabled(CoreFeature.Location) && request.params.has("begin_session")) {
+        if (((session != null && session.hasConsent(CoreFeature.Location)) || (session == null && SDKCore.enabled(CoreFeature.Location)))
+                && request.params.has("begin_session")) {
             User user = SDKCore.instance.user();
             if (user.country() != null) {
                 request.params.add("country_code", user.country());
@@ -148,13 +149,12 @@ public class ModuleRequests extends ModuleBase {
      * Expected format
      * https://the.server.com/o/feedback/widget?app_key=d899c0f6adb2e9&widget_id=5c48ehdgee96c
      *
-     * @param ctx
-     * @param widgetId
-     * @param config
-     * @return
+     * @param ctx {@link CtxCore} instannce
+     * @param widgetId widget id
+     * @return request instance
      */
-    public static Request ratingWidgetAvailabilityCheck(CtxCore ctx, String widgetId, InternalConfig config, Class<? extends Module> module){
-        Request req = Request.build("widget_id", widgetId, "app_key", config.getServerAppKey());
+    public static Request ratingWidgetAvailabilityCheck(CtxCore ctx, String widgetId, Class<? extends Module> module){
+        Request req = Request.build("widget_id", widgetId, "app_key", ctx.getConfig().getServerAppKey());
         req.own(module);
         req.endpoint("/o/feedback/widget?");
 

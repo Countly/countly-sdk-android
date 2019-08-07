@@ -107,7 +107,7 @@ public abstract class User {
 
     /**
      * Current user locale in "lang_COUNTRY", like en_US or de_DE if default device locale is overridden.
-     * If not set, Countly will use {@link Device#getLocale()}.
+     * If not set, Countly will use {@link ly.count.sdk.internal.DeviceCore#getLocale()}.
      *
      * @return current user locale
      */

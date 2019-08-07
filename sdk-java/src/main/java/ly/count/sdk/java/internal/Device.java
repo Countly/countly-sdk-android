@@ -6,7 +6,7 @@ import ly.count.sdk.internal.Params;
 
 /**
  * Class encapsulating most of device-specific logic: metrics, info, etc.
- * In Java we don't have access to the metrics, but the SDK leaves this up to developer to set these if needed.
+ * In Java we don't have access to the metrics, so the SDK leaves this up to developer to set these if needed.
  */
 public class Device extends DeviceCore {
     public static Device dev = new Device();

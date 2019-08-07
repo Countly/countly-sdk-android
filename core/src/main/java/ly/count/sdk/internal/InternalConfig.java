@@ -61,10 +61,14 @@ public final class InternalConfig extends ConfigCore implements Storable {
     }
 
     public void setFrom(ConfigCore config) {
-        List<Field> local = Utils.reflectiveGetDeclaredFields(getClass());
-        List<Field> remot = Utils.reflectiveGetDeclaredFields(config.getClass());
+        List<Field> priva = Utils.reflectiveGetDeclaredFields(getClass(), false);
+        List<Field> local = Utils.reflectiveGetDeclaredFields(getClass(), true);
+        List<Field> remot = Utils.reflectiveGetDeclaredFields(config.getClass(), true);
 
         for (Field r : remot) {
+            if (priva.contains(r)) {
+                continue;
+            }
             for (Field l : local) {
                 if (r.getName().equals(l.getName())) {
                     try {

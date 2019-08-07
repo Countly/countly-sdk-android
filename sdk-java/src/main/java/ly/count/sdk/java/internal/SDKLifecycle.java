@@ -12,7 +12,7 @@ import ly.count.sdk.internal.SDKCore;
 import ly.count.sdk.internal.Storage;
 
 /**
- * Application lifecycle-related methods of {@link ly.count.sdk.internal.SDK}
+ * Application lifecycle-related methods of {@link SDK}
  */
 
 public abstract class SDKLifecycle extends SDKCore {
@@ -26,11 +26,6 @@ public abstract class SDKLifecycle extends SDKCore {
     protected SDKLifecycle() {
         super();
     }
-
-    //todo, not sure if this is really needed (AK, 2019.07.25)
-//    CtxImpl ctx (File directory) {
-//        return new CtxImpl(this, config, directory);
-//    }
 
     @Override
     public void stop(ly.count.sdk.internal.CtxCore ctx, boolean clear) {
@@ -173,6 +168,7 @@ public abstract class SDKLifecycle extends SDKCore {
         ModuleCrash.putCrashIntoParams(crash, request.params);
         if (Storage.push(ctx, request)) {
             L.i("Added request " + request.storageId() + " instead of crash " + crash.storageId());
+            networking.check(ctx);
             Boolean success = Storage.remove(ctx, crash);
             return success == null ? false : success;
         } else {
