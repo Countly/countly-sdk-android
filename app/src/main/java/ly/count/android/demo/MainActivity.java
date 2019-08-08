@@ -17,48 +17,13 @@ import ly.count.android.sdk.RemoteConfig;
 @SuppressWarnings("UnusedParameters")
 public class MainActivity extends Activity {
     private String demoTag = "CountlyDemo";
-    Activity activity;
-
-    /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
-    final String COUNTLY_SERVER_URL = "YOUR_SERVER";
-    final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        activity = this;
-        Context appC = getApplicationContext();
-
-        HashMap<String, String> customHeaderValues = new HashMap<>();
-        customHeaderValues.put("foo", "bar");
-
         Countly.onCreate(this);
-        Countly.sharedInstance().setLoggingEnabled(true);
-        Countly.sharedInstance().enableCrashReporting();
-        Countly.sharedInstance().setViewTracking(true);
-        Countly.sharedInstance().setAutoTrackingUseShortName(true);
-        Countly.sharedInstance().setRequiresConsent(true);
-        Countly.sharedInstance().addCustomNetworkRequestHeaders(customHeaderValues);
-        Countly.sharedInstance().setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
-            @Override
-            public void callback(String error) {
-                if(error == null) {
-                    Toast.makeText(activity, "Automatic remote config download has completed", Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(activity, "Automatic remote config download encountered a problem, " + error, Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-        Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, true);
-        //Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, false);
-        //Countly.sharedInstance().setHttpPostForced(true);
-        //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
-        CountlyConfig config = new CountlyConfig();
-        config.setContext(appC).setServerURL(COUNTLY_SERVER_URL).setAppKey(COUNTLY_APP_KEY);
-        Countly.sharedInstance().init(config);
-        //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
     }
 
     public void onClickButtonCustomEvents(View v) {

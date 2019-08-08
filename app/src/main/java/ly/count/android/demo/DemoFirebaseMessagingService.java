@@ -7,6 +7,8 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import ly.count.android.sdk.messaging.CountlyPush;
+
 //import ly.count.android.sdk.messaging.CountlyPush;
 
 /**
@@ -25,7 +27,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
         super.onNewToken(token);
 
         Log.d("DemoFirebaseService", "got new token: " + token);
-        //CountlyPush.onTokenRefresh(token);
+        CountlyPush.onTokenRefresh(token);
     }
 
     @Override
@@ -33,7 +35,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
         super.onMessageReceived(remoteMessage);
 
         Log.d("DemoFirebaseService", "got new message: " + remoteMessage.getData());
-/*
+
         // decode message data and extract meaningful information from it: title, body, badge, etc.
         CountlyPush.Message message = CountlyPush.decodeMessage(remoteMessage.getData());
 
@@ -95,7 +97,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
         } else {
             Log.i(TAG, "Message wasn't handled by Countly SDK because API level is too low for Notification support or because currentActivity is null (not enough lifecycle method calls)");
         }
-        */
+
     }
 
     @Override
