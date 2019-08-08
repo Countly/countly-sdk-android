@@ -10,6 +10,7 @@ import android.widget.Toast;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.RemoteConfig;
 
 
@@ -54,7 +55,9 @@ public class MainActivity extends Activity {
         //Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, false);
         //Countly.sharedInstance().setHttpPostForced(true);
         //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
-        Countly.sharedInstance().init(appC, COUNTLY_SERVER_URL, COUNTLY_APP_KEY);
+        CountlyConfig config = new CountlyConfig();
+        config.setContext(appC).setServerURL(COUNTLY_SERVER_URL).setAppKey(COUNTLY_APP_KEY);
+        Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
     }
 
