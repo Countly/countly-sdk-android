@@ -2614,6 +2614,22 @@ public class Countly {
             Log.d(Countly.TAG, "flushRequestQueues removed [" + count + "] requests");
         }
     }
+
+    /**
+     * Countly will attempt to fulfill all stored requests on demand
+     */
+    public void doStoredRequests(){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling doStoredRequests");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before doStoredRequests");
+        }
+
+        connectionQueue_.tick();
+    }
+
 /*
     public Countly offlineModeEnable(){
         if (Countly.sharedInstance().isLoggingEnabled()) {
