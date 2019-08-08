@@ -8,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
 import java.util.Iterator;
 
@@ -130,6 +129,7 @@ public class RemoteConfig {
     protected static RemoteConfigValueStore loadConfig(Context context){
         CountlyStore cs = new CountlyStore(context);
         String rcvsString = cs.getRemoteConfigValues();
+        //noinspection UnnecessaryLocalVariable
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString);
         return rcvs;
     }

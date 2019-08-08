@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.text.method.SingleLineTransformationMethod;
 import android.util.Log;
 
 import java.io.BufferedWriter;

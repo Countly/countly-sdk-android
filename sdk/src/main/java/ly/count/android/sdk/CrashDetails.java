@@ -43,8 +43,6 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -420,7 +418,7 @@ class CrashDetails {
             //if is a native crash
             try {
                 json.put("_native_cpp", true);
-            } catch (JSONException e) { }
+            } catch (JSONException ignored) { }
         }
 
         try {

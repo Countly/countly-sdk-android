@@ -51,7 +51,7 @@ public class ReferrerReceiver extends BroadcastReceiver
                     // Log the referrer string.
                     Log.d(Countly.TAG, "Referrer: " + referrer);
 
-                    String parts[] = referrer.split("&");
+                    String[] parts = referrer.split("&");
                     String cid = null;
                     String uid = null;
                     for (String part : parts) {

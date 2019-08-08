@@ -305,6 +305,7 @@ public class CountlyStore {
      * @param collection events to join into a delimited string
      * @param delimiter delimiter to use, should not be something that can be found in URL-encoded JSON string
      */
+    @SuppressWarnings("SameParameterValue")
     static String joinEvents(final Collection<Event> collection, final String delimiter) {
         final List<String> strings = new ArrayList<>();
         for (Event e : collection) {

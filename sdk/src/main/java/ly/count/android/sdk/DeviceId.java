@@ -159,6 +159,7 @@ public class DeviceId {
         return id;
     }
 
+    @SuppressWarnings("SameParameterValue")
     protected void setId(Type type, String id) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.w(TAG, "Device ID is " + id + " (type " + type + ")");
@@ -167,6 +168,7 @@ public class DeviceId {
         this.id = id;
     }
 
+    @SuppressWarnings("SameParameterValue")
     protected void switchToIdType(Type type, Context context, CountlyStore store) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.w(TAG, "Switching to device ID generation strategy " + type + " from " + this.type);

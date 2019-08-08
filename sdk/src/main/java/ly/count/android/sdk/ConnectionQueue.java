@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -83,7 +81,7 @@ public class ConnectionQueue {
             sslContext_ = null;
         } else {
             try {
-                TrustManager tm[] = { new CertificateTrustManager(Countly.publicKeyPinCertificates, Countly.certificatePinCertificates) };
+                TrustManager[] tm = { new CertificateTrustManager(Countly.publicKeyPinCertificates, Countly.certificatePinCertificates) };
                 sslContext_ = SSLContext.getInstance("TLS");
                 sslContext_.init(null, tm, null);
             } catch (Throwable e) {

@@ -1256,7 +1256,7 @@ public class Countly {
 
     /**
      * Called during init to check if there are any crash dumps saved
-     * @param context
+     * @param context android context
      */
     protected synchronized void checkForNativeCrashDumps(Context context){
         Log.d(TAG, "Checking for native crash dumps");
@@ -1627,7 +1627,7 @@ public class Countly {
      */
     private void reportViewDuration(){
         if (sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + String.valueOf(Countly.currentTimestamp() - lastViewStart) + "]");
+            Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + (Countly.currentTimestamp() - lastViewStart) + "]");
         }
 
         if(lastView != null && lastViewStart <= 0) {
@@ -1775,6 +1775,7 @@ public class Countly {
     /**
      * Utility method for testing validity of a URL.
      */
+    @SuppressWarnings("ConstantConditions")
     static boolean isValidURL(final String urlStr) {
         boolean validURL = false;
         if (urlStr != null && urlStr.length() > 0) {
@@ -2343,7 +2344,7 @@ public class Countly {
      */
     public synchronized Countly giveConsent(String[] featureNames){
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Giving consent for features named: [" + featureNames.toString() + "]");
+            Log.d(Countly.TAG, "Giving consent for features named: [" + Arrays.toString(featureNames) + "]");
         }
         setConsent(featureNames, true);
 
@@ -2357,7 +2358,7 @@ public class Countly {
      */
     public synchronized Countly removeConsent(String[] featureNames){
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Removing consent for features named: [" + featureNames.toString() + "]");
+            Log.d(Countly.TAG, "Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
         }
 
         setConsent(featureNames, false);

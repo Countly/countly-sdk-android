@@ -1,9 +1,11 @@
 19.08
   * Adding feature to flush all requests in the queue
+  * Adding CountlyConfig object which is used during init
   * Fixing a potential 'null' bug for push
   * Fixing a consent bug which disabled features when consent was not enabled
   * Fixed a race condition bug when sending push token to server
   * Fixed remote config bug during init when no device ID was available
+  * Removing GCM push support
 
 19.02.3
   * Adding support for native crash handling and symbolication

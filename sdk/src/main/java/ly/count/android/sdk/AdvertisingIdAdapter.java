@@ -61,6 +61,7 @@ public class AdvertisingIdAdapter {
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private static boolean isLimitAdTrackingEnabled(final Context context) {
+        //noinspection CatchMayIgnoreException
         try {
             final Class<?> cls = Class.forName(ADVERTISING_ID_CLIENT_CLASS_NAME);
             final Method getAdvertisingIdInfo = cls.getMethod("getAdvertisingIdInfo", Context.class);

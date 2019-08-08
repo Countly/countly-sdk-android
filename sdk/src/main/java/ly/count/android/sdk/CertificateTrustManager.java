@@ -78,8 +78,8 @@ public final class CertificateTrustManager implements X509TrustManager {
             throw new CertificateException(e);
         }
 
-        byte serverPublicKey[] = chain[0].getPublicKey().getEncoded();
-        byte serverCertificate[] = chain[0].getEncoded();
+        byte[] serverPublicKey = chain[0].getPublicKey().getEncoded();
+        byte[] serverCertificate = chain[0].getEncoded();
 
 
         for (byte[] key : keys) {
