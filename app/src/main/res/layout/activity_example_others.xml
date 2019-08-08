@@ -57,4 +57,11 @@
         android:layout_height="wrap_content"
         android:onClick="onClickViewOther06"
         android:text="Disable location"/>
+
+    <Button
+        android:id="@+id/button53"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewOther08"
+        android:text="flush request queue" />
 </LinearLayout>

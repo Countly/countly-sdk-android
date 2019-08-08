@@ -1,4 +1,5 @@
 19.08
+  * Adding feature to flush all requests in the queue
   * Fixing a potential 'null' bug for push
   * Fixing a consent bug which disabled features when consent was not enabled
   * Fixed a race condition bug when sending push token to server

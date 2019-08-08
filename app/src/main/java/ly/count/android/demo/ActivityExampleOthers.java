@@ -80,6 +80,12 @@ public class ActivityExampleOthers extends Activity {
         Countly.sharedInstance().disableLocation();
     }
 
+    public void onClickViewOther08(View v) {
+        //Clearing request queue
+        Countly.sharedInstance().flushRequestQueues();
+    }
+
+
     @Override
     public void onStart()
     {

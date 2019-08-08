@@ -2559,6 +2559,41 @@ public class Countly {
         }
     }
 
+    /**
+     * Deletes all stored requests to server.
+     * This includes events, crashes, views, sessions, etc
+     * Call only if you don't need that information
+     */
+    public void flushRequestQueues(){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling flushRequestQueues");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before flushRequestQueues");
+        }
+
+        CountlyStore store = connectionQueue_.getCountlyStore();
+
+        int count = 0;
+
+        while (true) {
+            final String[] storedEvents = store.connections();
+            if (storedEvents == null || storedEvents.length == 0) {
+                // currently no data to send, we are done for now
+                break;
+            }
+            //remove stored data
+            store.removeConnection(storedEvents[0]);
+            count++;
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "flushRequestQueues removed [" + count + "] requests");
+        }
+    }
+
+
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }
     void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }
