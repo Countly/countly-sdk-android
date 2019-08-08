@@ -1,3 +1,9 @@
+19.08
+  * Fixing a potential 'null' bug for push
+  * Fixing a consent bug which disabled features when consent was not enabled
+  * Fixed a race condition bug when sending push token to server
+  * Fixed remote config bug during init when no device ID was available
+
 19.02.3
   * Adding support for native crash handling and symbolication
 

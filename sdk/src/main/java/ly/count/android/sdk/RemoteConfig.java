@@ -53,6 +53,19 @@ public class RemoteConfig {
             keysExclude = excludeArray.toString();
         }
 
+        if(connectionQueue_.getDeviceId().getId() == null){
+            //device ID is null, abort
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "RemoteConfig value update was aborted, deviceID is null");
+            }
+
+            if(callback != null){
+                callback.callback("Can't complete call, device ID is null");
+            }
+
+            return;
+        }
+
         ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
         URLConnection urlConnection;
         String requestData = connectionQueue_.prepareRemoteConfigRequest(keysInclude, keysExclude);
