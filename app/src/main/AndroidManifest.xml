@@ -32,6 +32,12 @@
             </intent-filter>
         </activity>
 
+        <service android:name=".DemoFirebaseMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".ActivityExampleAPM"
             android:label="@string/activity_name_apm" >
@@ -83,6 +89,16 @@
                 <action android:name="com.android.vending.INSTALL_REFERRER" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name=".AnotherActivity"
+            android:label="@string/title_activity_another"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ly.count.android.demo.MainActivity" />
+        </activity>
 
     </application>
 
