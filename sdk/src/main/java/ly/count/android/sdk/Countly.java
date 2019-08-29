@@ -341,22 +341,28 @@ public class Countly {
         if (config.appKey == null || config.appKey.length() == 0) {
             throw new IllegalArgumentException("valid appKey is required, but was provided either 'null' or empty String");
         }
+
         if (config.deviceID != null && config.deviceID.length() == 0) {
-            throw new IllegalArgumentException("valid deviceID is required, but was provided either 'null' or empty String");
+            //device ID is provided but it's a empty string
+            throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
         }
         if (config.deviceID == null && config.idMode == null) {
+            //device ID was not provided and no preferred mode specified. Choosing defaults
             if (OpenUDIDAdapter.isOpenUDIDAvailable()) config.idMode = DeviceId.Type.OPEN_UDID;
             else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) config.idMode = DeviceId.Type.ADVERTISING_ID;
         }
         if (config.deviceID == null && config.idMode == DeviceId.Type.OPEN_UDID && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
+            //choosing OPEN_UDID as ID type, but it's not available on this device
             throw new IllegalArgumentException("valid deviceID is required because OpenUDID is not available");
         }
         if (config.deviceID == null && config.idMode == DeviceId.Type.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
+            //choosing advertising ID as type, but it's available on this device
             throw new IllegalArgumentException("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
         }
         if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(config.serverURL) ||
                 !connectionQueue_.getAppKey().equals(config.appKey) ||
                 !DeviceId.deviceIDEqualsNullSafe(config.deviceID, config.idMode, connectionQueue_.getDeviceId()) )) {
+            //not sure if this needed
             throw new IllegalStateException("Countly cannot be reinitialized with different values");
         }
 
@@ -631,14 +637,14 @@ public class Countly {
      */
     public void changeDeviceId(DeviceId.Type type, String deviceId) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Changing device ID");
+            Log.d(Countly.TAG, "Changing device ID with type and ID");
         }
         if (eventQueue_ == null) {
             throw new IllegalStateException("init must be called before changeDeviceId");
         }
-        if (activityCount_ == 0) {
-            throw new IllegalStateException("must call onStart before changeDeviceId");
-        }
+        //if (activityCount_ == 0) {
+//            throw new IllegalStateException("must call onStart before changeDeviceId");
+//        }
         if (type == null) {
             throw new IllegalStateException("type cannot be null");
         }
@@ -668,14 +674,14 @@ public class Countly {
      */
     public void changeDeviceId(String deviceId) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Changing device ID");
+            Log.d(Countly.TAG, "Changing device ID with ID");
         }
         if (eventQueue_ == null) {
             throw new IllegalStateException("init must be called before changeDeviceId");
         }
-        if (activityCount_ == 0) {
-            throw new IllegalStateException("must call onStart before changeDeviceId");
-        }
+        //if (activityCount_ == 0) {
+//            throw new IllegalStateException("must call onStart before changeDeviceId");
+//        }
         if (deviceId == null || "".equals(deviceId)) {
             throw new IllegalStateException("deviceId cannot be null or empty");
         }
@@ -1517,7 +1523,7 @@ public class Countly {
      */
     private void reportViewDuration(){
         if (sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + (Countly.currentTimestamp() - lastViewStart) + "]");
+            Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + (Countly.currentTimestamp() - lastViewStart) + "], current timestamp: [" + Countly.currentTimestamp() + "], last views start: [" + lastViewStart + "]");
         }
 
         if(lastView != null && lastViewStart <= 0) {

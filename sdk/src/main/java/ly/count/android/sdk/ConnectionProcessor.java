@@ -198,7 +198,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             boolean deviceIdOverride = storedEvents[0].contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = storedEvents[0].contains("&device_id="); //if the sendable data contains a device_id tag
+            boolean deviceIdChange = storedEvents[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
             boolean pushTokenRequest = storedEvents[0].contains("&token_session="); //check if we are about to begin a push token_session
 
             boolean waitForSecondsBeforeRequest = false; //if we should wait for 10 seconds before continuing the current request
