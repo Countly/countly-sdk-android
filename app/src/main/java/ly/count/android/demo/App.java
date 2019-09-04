@@ -51,28 +51,21 @@ public class App extends Application {
         HashMap<String, String> customHeaderValues = new HashMap<>();
         customHeaderValues.put("foo", "bar");
 
-        Countly.sharedInstance().setLoggingEnabled(true);
-        Countly.sharedInstance().enableCrashReporting();
-        Countly.sharedInstance().setViewTracking(true);
-        Countly.sharedInstance().setAutoTrackingUseShortName(true);
-        Countly.sharedInstance().setRequiresConsent(true);
-        Countly.sharedInstance().addCustomNetworkRequestHeaders(customHeaderValues);
-        Countly.sharedInstance().setPushIntentAddMetadata(true);
-        Countly.sharedInstance().setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
-            @Override
-            public void callback(String error) {
-                if(error == null) {
-                    Log.d(Countly.TAG, "Automatic remote config download has completed");
-                } else {
-                    Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
-                }
-            }
-        });
-        Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, true);
         //Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, false);
-        //Countly.sharedInstance().setHttpPostForced(true);
         //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
-        CountlyConfig config = (new CountlyConfig()).setContext(appC).setServerURL(COUNTLY_SERVER_URL).setAppKey(COUNTLY_APP_KEY);
+        CountlyConfig config = (new CountlyConfig()).setContext(appC).setServerURL(COUNTLY_SERVER_URL).setAppKey(COUNTLY_APP_KEY).setIdMode(DeviceId.Type.OPEN_UDID)
+                .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
+                .setRequiresConsent(true).setConsentEnabled(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views})
+                .addCustomNetworkRequestHeaders(customHeaderValues).setPushIntentAddMetadata(true).setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
+                    @Override
+                    public void callback(String error) {
+                        if(error == null) {
+                            Log.d(Countly.TAG, "Automatic remote config download has completed");
+                        } else {
+                            Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
+                        }
+                    }
+                });
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 

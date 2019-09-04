@@ -331,6 +331,16 @@ public class Countly {
         if (!isValidURL(config.serverURL)) {
             throw new IllegalArgumentException("valid serverURL is required");
         }
+
+        if(config.loggingEnabled){
+            //enable logging before any potential logging calls
+            setLoggingEnabled(true);
+        }
+
+        if(config.enableUnhandledCrashReporting){
+            enableCrashReporting();
+        }
+
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.i(Countly.TAG, "Removing trailing '/' from provided server url");
@@ -389,6 +399,36 @@ public class Countly {
 
             Log.d(Countly.TAG, contextText);
 
+        }
+        //init view related things
+        if(config.enableViewTracking){
+            setViewTracking(true);
+        }
+
+        if(config.autoTrackingUseShortName){
+            setAutoTrackingUseShortName(true);
+        }
+
+        //init other things
+        if(config.customNetworkRequestHeaders != null){
+            addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
+        }
+
+        if(config.pushIntentAddMetadata){
+            setPushIntentAddMetadata(true);
+        }
+
+        if(config.enableRemoteConfigAutomaticDownload){
+            setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
+        }
+
+        if(config.shouldRequireConsent){
+            setRequiresConsent(true);
+            setConsent(config.enabledFeatureNames, true);
+        }
+
+        if(config.httpPostForced){
+            setHttpPostForced(true);
         }
 
         //set the star rating values
@@ -676,7 +716,7 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Changing device ID with ID");
         }
-        if (eventQueue_ == null) {
+        if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceId");
         }
         //if (activityCount_ == 0) {
@@ -861,6 +901,7 @@ public class Countly {
     /**
      * Enable or disable automatic view tracking
      * @param enable boolean for the state of automatic view tracking
+     * @deprecated use CountlyConfig during init to set this
      * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setViewTracking(boolean enable){
@@ -1278,6 +1319,7 @@ public class Countly {
 
     /**
      * Enable crash reporting to send unhandled crash reports to server
+     * @deprecated use CountlyConfig during init to set this
      * @return Returns link to Countly for call chaining
      */
     public synchronized Countly enableCrashReporting() {
@@ -1457,6 +1499,7 @@ public class Countly {
     /**
      * Sets whether debug logging is turned on or off. Logging is disabled by default.
      * @param enableLogging true to enable logging, false to disable logging
+     * @deprecated use CountlyConfig during init to set this
      * @return Countly instance for easy method chaining
      */
     public synchronized Countly setLoggingEnabled(final boolean enableLogging) {
@@ -1903,6 +1946,7 @@ public class Countly {
     /**
      * Set the override for forcing to use HTTP POST for all connections to the server
      * @param isItForced the flag for the new status, set "true" if you want it to be forced
+     * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setHttpPostForced(boolean isItForced) {
 
@@ -1996,6 +2040,11 @@ public class Countly {
         return connectionQueue_.getDeviceId().getType();
     }
 
+    /**
+     * @deprecated use CountlyConfig during init to set this
+     * @param shouldAddMetadata
+     * @return
+     */
     public synchronized Countly setPushIntentAddMetadata(boolean shouldAddMetadata) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting if adding metadata to push intents: [" + shouldAddMetadata + "]");
@@ -2006,6 +2055,7 @@ public class Countly {
 
     /**
      * Set if automatic activity tracking should use short names
+     * @deprecated use CountlyConfig during init to set this
      * @param shouldUseShortName set true if you want short names
      */
     public synchronized Countly setAutoTrackingUseShortName(boolean shouldUseShortName) {
@@ -2028,6 +2078,11 @@ public class Countly {
         return this;
     }
 
+    /**
+     * @deprecated use CountlyConfig during init to set this
+     * @param shouldRequireConsent
+     * @return
+     */
     public synchronized Countly setRequiresConsent(boolean shouldRequireConsent){
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting if consent should be required, [" + shouldRequireConsent + "]");
@@ -2146,6 +2201,7 @@ public class Countly {
      * Set the consent of a feature
      * @param featureNames feature names for which consent should be changed
      * @param isConsentGiven the consent value that should be set
+     * @deprecated use CountlyConfig during init to set this
      * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
@@ -2364,6 +2420,7 @@ public class Countly {
 
     /**
      * If enable, will automatically download newest remote config_ values on init.
+     * @deprecated use CountlyConfig during init to set this
      * @param enabled set true for enabling it
      * @param callback callback called after the update was done
      * @return
@@ -2466,6 +2523,7 @@ public class Countly {
 
     /**
      * Allows you to add custom header key/value pairs to each request
+     * @deprecated use CountlyConfig during init to set this
      */
     public void addCustomNetworkRequestHeaders(Map<String, String> headerValues){
         if (Countly.sharedInstance().isLoggingEnabled()) {
