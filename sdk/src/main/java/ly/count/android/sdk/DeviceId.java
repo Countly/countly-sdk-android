@@ -13,9 +13,9 @@ public class DeviceId {
      * Enum used throughout Countly which controls what kind of ID Countly should use.
      */
     public enum Type {
-        DEVELOPER_SUPPLIED,
-        OPEN_UDID,
-        ADVERTISING_ID,
+        DEVELOPER_SUPPLIED,//custom value provided by the developer
+        OPEN_UDID,//random UDID generated
+        ADVERTISING_ID,//id provided by the android OS
     }
 
     private static final String TAG = "DeviceId";
@@ -38,7 +38,6 @@ public class DeviceId {
             throw new IllegalStateException("Please use another DeviceId constructor for device IDs supplied by developer");
         }
         this.type = type;
-
         retrieveId(store);
     }
 

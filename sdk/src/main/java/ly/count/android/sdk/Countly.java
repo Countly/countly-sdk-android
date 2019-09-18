@@ -332,13 +332,21 @@ public class Countly {
             throw new IllegalArgumentException("valid serverURL is required");
         }
 
+        //enable logging
         if(config.loggingEnabled){
             //enable logging before any potential logging calls
             setLoggingEnabled(true);
         }
 
+        //enable unhandled crash reporting
         if(config.enableUnhandledCrashReporting){
             enableCrashReporting();
+        }
+
+        //react to given consent
+        if(config.shouldRequireConsent){
+            setRequiresConsent(true);
+            setConsent(config.enabledFeatureNames, true);
         }
 
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {
@@ -422,11 +430,6 @@ public class Countly {
             setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
         }
 
-        if(config.shouldRequireConsent){
-            setRequiresConsent(true);
-            setConsent(config.enabledFeatureNames, true);
-        }
-
         if(config.httpPostForced){
             setHttpPostForced(true);
         }
@@ -438,6 +441,9 @@ public class Countly {
         //app crawler check
         checkIfDeviceIsAppCrawler();
 
+        //set internal context, it's allowed to be changed on the second init call
+        context_ = config.context.getApplicationContext();
+
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
         if (eventQueue_ == null) {
@@ -446,11 +452,12 @@ public class Countly {
 
             DeviceId deviceIdInstance;
             if (config.deviceID != null) {
+                //if the developer provided a ID
                 deviceIdInstance = new DeviceId(countlyStore, config.deviceID);
             } else {
+                //the dev provided only a type, generate a appropriate ID
                 deviceIdInstance = new DeviceId(countlyStore, config.idMode);
             }
-
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
@@ -464,6 +471,7 @@ public class Countly {
             connectionQueue_.setCountlyStore(countlyStore);
             connectionQueue_.setDeviceId(deviceIdInstance);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
+            connectionQueue_.setContext(context_);
 
             eventQueue_ = new EventQueue(countlyStore);
 
@@ -472,12 +480,13 @@ public class Countly {
             if(getConsent(CountlyFeatureNames.starRating)) {
                 CountlyStarRating.registerAppSession(config.context, starRatingCallback_);
             }
+        } else {
+            //if this is not the first time we are calling init
+
+            // context is allowed to be changed on the second init call
+            connectionQueue_.setContext(context_);
         }
 
-        context_ = config.context.getApplicationContext();
-
-        // context is allowed to be changed on the second init call
-        connectionQueue_.setContext(context_);
 
         if(requiresConsent) {
             //do delayed push consent action, if needed
