@@ -200,6 +200,16 @@ public class ConnectionProcessor implements Runnable {
                 }
                 break;
             }
+
+            String temporaryIdTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
+            boolean containsTemporaryIdOverride = storedEvents[0].contains(temporaryIdTag);
+            if(containsTemporaryIdOverride || deviceId_.temporaryIdModeEnabled()){
+                //we are about to change ID to the temporary one or
+                //the internally set id is the temporary one
+
+                //abort and wait for exiting temporary mode
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], temp ID set:[" + deviceId_.temporaryIdModeEnabled() + "]");
                 }
                 break;
             }

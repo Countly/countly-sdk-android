@@ -458,6 +458,15 @@ public class Countly {
             config_ = config;
             final CountlyStore countlyStore = new CountlyStore(config.context);
 
+            boolean doingTemporaryIdMode = false;
+            boolean customIDWasProvided = (config.deviceID != null);
+            if(config.temporaryDeviceIdEnabled && !customIDWasProvided){
+                //if we want to use temporary ID mode and no developer custom ID is provided
+                //then we override that custom ID to set the temporary mode
+                config.deviceID = DeviceId.temporaryCountlyDeviceId;
+                doingTemporaryIdMode = true;
+            }
+
             DeviceId deviceIdInstance;
             if (config.deviceID != null) {
                 //if the developer provided a ID
@@ -474,6 +483,43 @@ public class Countly {
 
             deviceIdInstance.init(config.context, countlyStore, true);
 
+            boolean temporaryDeviceIdWasEnabled = deviceIdInstance.temporaryIdModeEnabled();
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Previously was enabled: [" + temporaryDeviceIdWasEnabled + "]");
+            }
+
+            if(temporaryDeviceIdWasEnabled){
+                //if we previously we're in temporary ID mode
+
+                if(!config.temporaryDeviceIdEnabled || customIDWasProvided){
+                    //if we don't set temporary device ID mode or
+                    //a custom device ID is explicitly provided
+                    //that means we have to exit temporary ID mode
+
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Decided we have to exit temporary device ID mode, mode enabled: [" + config.temporaryDeviceIdEnabled + "], custom Device ID Set: [" + customIDWasProvided + "]");
+                    }
+                } else {
+                    //we continue to stay in temporary ID mode
+                    //no changes need to happen
+
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Decided to stay in temporary ID mode");
+                    }
+                }
+            } else {
+                if(config.temporaryDeviceIdEnabled && config.deviceID == null){
+                    //temporary device ID mode is enabled and
+                    //no custom device ID is provided
+                    //we can safely enter temporary device ID mode
+
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Decided to enter temporary ID mode");
+                    }
+                }
+            }
+
+            //initialize networking queues
             connectionQueue_.setServerURL(config.serverURL);
             connectionQueue_.setAppKey(config.appKey);
             connectionQueue_.setCountlyStore(countlyStore);
@@ -483,8 +529,27 @@ public class Countly {
 
             eventQueue_ = new EventQueue(countlyStore);
 
-            //do star rating related things
+            if(doingTemporaryIdMode) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[Init] Trying to enter temporary ID mode");
+                }
+                //if we are doing temporary ID, make sure it is applied
+                //if it's not, change ID to it
+                if(!deviceIdInstance.temporaryIdModeEnabled()){
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[Init] Temporary ID mode was not enabled, entering it");
+                    }
+                    //temporary ID is not set
+                    changeDeviceId(DeviceId.temporaryCountlyDeviceId);
+                } else {
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[Init] Temporary ID mode was enabled previously, nothing to enter");
+                    }
+                }
 
+            }
+
+            //do star rating related things
             if(getConsent(CountlyFeatureNames.starRating)) {
                 CountlyStarRating.registerAppSession(config.context, starRatingCallback_);
             }
@@ -713,13 +778,36 @@ public class Countly {
             return;
         }
 
-        connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), connectionQueue_.getDeviceId().getId());
-        connectionQueue_.getDeviceId().changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
+        DeviceId currentDeviceId = connectionQueue_.getDeviceId();
+
+        if(currentDeviceId.temporaryIdModeEnabled() && deviceId.equals(DeviceId.temporaryCountlyDeviceId)){
+            // we already are in temporary mode and we want to set temporary mode
+            // in this case we just ignore the request since nothing has to be done
+            return;
+        }
+
+        if(currentDeviceId.temporaryIdModeEnabled()){
+            // we are about to exit temporary ID mode
+            // because of the previous check, we know that the new type is a different one
+            // we just call our method for exiting it
+            // we don't end the session, we just update the device ID and connection queue
+            exitTemporaryIdMode(type, deviceId);
+        }
+
+
+        // we are either making a simple ID change or entering temporary mode
+        // in both cases we act the same as the temporary ID requests will be updated with the final ID later
+
+        //force flush events so that they are associated correctly
+        sendEventsForced();
+
+        connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), currentDeviceId.getId());
+        currentDeviceId.changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
         connectionQueue_.beginSession();
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
-        if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven()){
+        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
             RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
     }
@@ -750,14 +838,58 @@ public class Countly {
             return;
         }
 
-        connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());
+        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled()){
+            //if we are in temporary ID mode
+
+            if(deviceId.equals(DeviceId.temporaryCountlyDeviceId)){
+                //if we want to enter temporary ID mode
+                //just exit, nothing to do
+
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[changeDeviceId] About to enter temporary ID mode when already in it");
+                }
+
+                return;
+            }
+
+            // if a developer supplied ID is provided
+            //we just exit this mode and set the id to the provided one
+            exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, deviceId);
+        } else {
+            //we are not in temporary mode, nothing special happens
+            connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());
+
+            //update remote config_ values if automatic update is enabled
+            remoteConfigClearValues();
+            if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+                //request should be delayed, because of the delayed server merge
+                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true, null);
+            }
+        }
+    }
+
+    private void exitTemporaryIdMode(DeviceId.Type type, String deviceId){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling exitTemporaryIdMode");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("init must be called before exitTemporaryIdMode");
+        }
+
+        //start by changing stored ID
+        connectionQueue_.getDeviceId().changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
+
+        //update stored request for ID change to use this new ID
+
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
-        if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven()){
-            //request should be delayed, because of the delayed server merge
-            RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true,null);
+        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+            RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
+
+        doStoredRequests();
     }
 
     /**

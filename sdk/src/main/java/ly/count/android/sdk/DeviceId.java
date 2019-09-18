@@ -24,6 +24,8 @@ public class DeviceId {
     private static final String PREFERENCE_KEY_ID_ROLLBACK_ID = "ly.count.android.api.DeviceId.rollback.id";
     private static final String PREFERENCE_KEY_ID_ROLLBACK_TYPE = "ly.count.android.api.DeviceId.rollback.type";
 
+    protected final static String temporaryCountlyDeviceId = "CLYTemporaryDeviceID";
+
     private String id;
     private Type type;
 
@@ -226,6 +228,15 @@ public class DeviceId {
 
     protected Type getType() {
         return type;
+    }
+
+    protected boolean temporaryIdModeEnabled(){
+        String id = getId();
+        if(id == null){
+            return false;
+        }
+
+        return id.equals(temporaryCountlyDeviceId);
     }
 
     /**

@@ -53,7 +53,7 @@ public class App extends Application {
 
         //Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, false);
         //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
-        CountlyConfig config = (new CountlyConfig()).setContext(appC).setServerURL(COUNTLY_SERVER_URL).setAppKey(COUNTLY_APP_KEY).setIdMode(DeviceId.Type.OPEN_UDID)
+        CountlyConfig config = (new CountlyConfig()).setContext(appC).setServerURL(COUNTLY_SERVER_URL).setAppKey(COUNTLY_APP_KEY).setIdMode(DeviceId.Type.OPEN_UDID).enableTemporaryDeviceIdMode()
                 .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
                 .setRequiresConsent(true).setConsentEnabled(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views})
                 .addCustomNetworkRequestHeaders(customHeaderValues).setPushIntentAddMetadata(true).setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {

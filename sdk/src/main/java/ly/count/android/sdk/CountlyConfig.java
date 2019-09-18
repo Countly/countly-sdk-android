@@ -78,6 +78,8 @@ public class CountlyConfig {
 
     boolean httpPostForced = false;
 
+    protected boolean temporaryDeviceIdEnabled = false;
+
     /**
      * Android context.
      * Mandatory field.
@@ -223,6 +225,11 @@ public class CountlyConfig {
 
     public CountlyConfig setHttpPostForced(boolean isForced){
         httpPostForced = isForced;
+        return this;
+    }
+
+    public CountlyConfig enableTemporaryDeviceIdMode(){
+        temporaryDeviceIdEnabled = true;
         return this;
     }
 }

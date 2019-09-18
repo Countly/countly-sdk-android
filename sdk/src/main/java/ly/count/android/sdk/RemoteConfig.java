@@ -65,6 +65,19 @@ public class RemoteConfig {
             return;
         }
 
+        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled()){
+            //temporary id mode enabled, abort
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "RemoteConfig value update was aborted, temporary device ID mode is set");
+            }
+
+            if(callback != null){
+                callback.callback("Can't complete call, temporary device ID is set");
+            }
+
+            return;
+        }
+
         ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
         URLConnection urlConnection;
         String requestData = connectionQueue_.prepareRemoteConfigRequest(keysInclude, keysExclude);
