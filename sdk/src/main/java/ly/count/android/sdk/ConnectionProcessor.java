@@ -187,12 +187,19 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Connection Processor] Starting run, there are [" + storedEvents.length + "] requests stored");
+            }
+
             // get first event from collection
             if (deviceId_.getId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "No Device ID available yet, skipping request " + storedEvents[0]);
+                    Log.i(Countly.TAG, "[Connection Processor] No Device ID available yet, skipping request " + storedEvents[0]);
+                }
+                break;
+            }
                 }
                 break;
             }
@@ -229,7 +236,7 @@ public class ConnectionProcessor implements Runnable {
                         deviceIdChange = false;
 
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "Provided device_id is the same as the previous one used, nothing will be merged");
+                            Log.d(Countly.TAG, "[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                         }
 
                     } else {
@@ -240,7 +247,7 @@ public class ConnectionProcessor implements Runnable {
                         // to give the server time to finish processing previous requests.
 
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "Waiting 10 seconds before sending device_id merge request");
+                            Log.d(Countly.TAG, "[Connection Processor] Waiting 10 seconds before sending device_id merge request");
                         }
 
                         waitForSecondsBeforeRequest = true;
@@ -261,19 +268,19 @@ public class ConnectionProcessor implements Runnable {
             if(waitForSecondsBeforeRequest) {
                 //giving server time to finish processing previous requests
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "Starting 10 second wait");
+                    Log.d(Countly.TAG, "[Connection Processor] Starting 10 second wait");
                 }
 
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "While waiting for 10 seconds, sleep was interrupted");
+                        Log.w(Countly.TAG, "[Connection Processor] While waiting for 10 seconds, sleep was interrupted");
                     }
                 }
 
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "Wait (for changing device_id / starting token session) finished, continuing processing request");
+                    Log.d(Countly.TAG, "[Connection Processor] Wait (for changing device_id / starting token session) finished, continuing processing request");
                 }
             }
 
@@ -294,7 +301,7 @@ public class ConnectionProcessor implements Runnable {
                         success = responseCode >= 200 && responseCode < 300;
 
                         if (!success && Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.w(Countly.TAG, "HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
+                            Log.w(Countly.TAG, "[Connection Processor] HTTP error response code was " + responseCode + " from submitting event data: " + eventData);
                         }
                     } else {
                         responseCode = 0;
@@ -303,7 +310,7 @@ public class ConnectionProcessor implements Runnable {
                     // HTTP response code was good, check response JSON contains {"result":"Success"}
                     if (success) {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "ok ->" + eventData);
+                            Log.d(Countly.TAG, "[Connection Processor] ok ->" + eventData);
                         }
 
                         // successfully submitted event data to Count.ly server, so remove
@@ -315,7 +322,7 @@ public class ConnectionProcessor implements Runnable {
                         }
                     } else if (responseCode >= 400 && responseCode < 500) {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "fail " + responseCode + " ->" + eventData);
+                            Log.d(Countly.TAG, "[Connection Processor] fail " + responseCode + " ->" + eventData);
                         }
                         store_.removeConnection(storedEvents[0]);
                     } else {
@@ -324,7 +331,7 @@ public class ConnectionProcessor implements Runnable {
                     }
                 } catch (Exception e) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
+                        Log.w(Countly.TAG, "[Connection Processor] Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
                     }
                     // if exception occurred, stop processing, let next tick take care of retrying
                     break;
@@ -342,7 +349,7 @@ public class ConnectionProcessor implements Runnable {
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "Device identified as a app crawler, skipping request " + storedEvents[0]);
+                    Log.i(Countly.TAG, "[Connection Processor] Device identified as a app crawler, skipping request " + storedEvents[0]);
                 }
 
                 //remove stored data

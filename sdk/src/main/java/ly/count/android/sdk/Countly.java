@@ -324,18 +324,22 @@ public class Countly {
      */
     public synchronized Countly init(CountlyConfig config){
 
+        //enable logging
+        if(config.loggingEnabled){
+            //enable logging before any potential logging calls
+            setLoggingEnabled(true);
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Init] Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
+        }
+
         if (config.context == null) {
             throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");
         }
 
         if (!isValidURL(config.serverURL)) {
             throw new IllegalArgumentException("valid serverURL is required");
-        }
-
-        //enable logging
-        if(config.loggingEnabled){
-            //enable logging before any potential logging calls
-            setLoggingEnabled(true);
         }
 
         //enable unhandled crash reporting
@@ -351,7 +355,7 @@ public class Countly {
 
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Removing trailing '/' from provided server url");
+                Log.i(Countly.TAG, "[Init] Removing trailing '/' from provided server url");
             }
             config.serverURL = config.serverURL.substring(0, config.serverURL.length() - 1);//removing trailing '/' from server url
         }
@@ -385,8 +389,8 @@ public class Countly {
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
-            Log.d(Countly.TAG, "Is consent required? [" + requiresConsent + "]");
+            Log.d(Countly.TAG, "[Init] Checking init parameters");
+            Log.d(Countly.TAG, "[Init] Is consent required? [" + requiresConsent + "]");
 
             // Context class hierarchy
             // Context
@@ -400,7 +404,7 @@ public class Countly {
             Class contextClass = config.context.getClass();
             Class contextSuperClass = contextClass.getSuperclass();
 
-            String contextText = "Provided Context [" + config.context.getClass().getSimpleName() + "]";
+            String contextText = "[Init] Provided Context [" + config.context.getClass().getSimpleName() + "]";
             if(contextSuperClass != null){
                 contextText += ", it's superclass: [" + contextSuperClass.getSimpleName() + "]";
             }
@@ -447,6 +451,10 @@ public class Countly {
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
         if (eventQueue_ == null) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Init] About to init internal systems");
+            }
+
             config_ = config;
             final CountlyStore countlyStore = new CountlyStore(config.context);
 
@@ -460,7 +468,7 @@ public class Countly {
             }
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
+                Log.d(Countly.TAG, "[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
             }
             AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
 
@@ -510,7 +518,7 @@ public class Countly {
             context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Countly is initialized with the current consent state:");
+                Log.d(Countly.TAG, "[Init] Countly is initialized with the current consent state:");
                 checkAllConsent();
             }
 
@@ -686,7 +694,7 @@ public class Countly {
      */
     public void changeDeviceId(DeviceId.Type type, String deviceId) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Changing device ID with type and ID");
+            Log.d(Countly.TAG, "Calling [changeDeviceId] with type and ID");
         }
         if (eventQueue_ == null) {
             throw new IllegalStateException("init must be called before changeDeviceId");
@@ -723,7 +731,7 @@ public class Countly {
      */
     public void changeDeviceId(String deviceId) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Changing device ID with ID");
+            Log.d(Countly.TAG, "Calling [changeDeviceId] only with ID");
         }
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceId");
@@ -2210,7 +2218,6 @@ public class Countly {
      * Set the consent of a feature
      * @param featureNames feature names for which consent should be changed
      * @param isConsentGiven the consent value that should be set
-     * @deprecated use CountlyConfig during init to set this
      * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
