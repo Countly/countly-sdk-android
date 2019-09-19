@@ -963,7 +963,7 @@ public class Countly {
      *                                  segmentation contains null or empty keys or values
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum, final double dur){
-        recordEvent(key, segmentation, null, null, count, sum, 0);
+        recordEvent(key, segmentation, null, null, count, sum, dur);
     }
 
     /**
