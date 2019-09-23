@@ -85,6 +85,16 @@ public class ActivityExampleOthers extends Activity {
         Countly.sharedInstance().flushRequestQueues();
     }
 
+    public void onClickViewOther09(View v) {
+        //Entering temporary id mode
+        Countly.sharedInstance().enableTemporaryIdMode();
+    }
+
+    public void onClickViewOther10(View v) {
+        //Doing internally stored requests
+        Countly.sharedInstance().doStoredRequests();
+    }
+
 
     @Override
     public void onStart()

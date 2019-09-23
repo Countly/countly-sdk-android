@@ -64,4 +64,17 @@
         android:layout_height="wrap_content"
         android:onClick="onClickViewOther08"
         android:text="flush request queue" />
+
+    <Button
+        android:id="@+id/button54"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enable Temporary Device ID" />
+
+    <Button
+        android:id="@+id/button60"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Do Stored Requests" />
+
 </LinearLayout>

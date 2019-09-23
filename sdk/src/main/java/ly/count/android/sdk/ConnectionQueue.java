@@ -22,6 +22,7 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -484,6 +485,10 @@ public class ConnectionQueue {
      * is already running.
      */
     void tick() {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] tick, [" + !store_.isEmptyConnections() + "] [" + (connectionProcessorFuture_ == null) + "] [" + (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone()) + "]");
+        }
+
         if (!store_.isEmptyConnections() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());

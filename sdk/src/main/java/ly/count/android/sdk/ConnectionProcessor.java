@@ -182,13 +182,15 @@ public class ConnectionProcessor implements Runnable {
     public void run() {
         while (true) {
             final String[] storedEvents = store_.connections();
-            if (storedEvents == null || storedEvents.length == 0) {
-                // currently no data to send, we are done for now
-                break;
-            }
+            int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Connection Processor] Starting run, there are [" + storedEvents.length + "] requests stored");
+                Log.i(Countly.TAG, "[Connection Processor] Starting to run, there are [" + storedEventCount + "] requests stored");
+            }
+
+            if (storedEvents == null || storedEventCount == 0) {
+                // currently no data to send, we are done for now
+                break;
             }
 
             // get first event from collection
@@ -201,15 +203,17 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
-            String temporaryIdTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
-            boolean containsTemporaryIdOverride = storedEvents[0].contains(temporaryIdTag);
-            if(containsTemporaryIdOverride || deviceId_.temporaryIdModeEnabled()){
+            String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
+            String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
+            boolean containsTemporaryIdOverride = storedEvents[0].contains(temporaryIdOverrideTag);
+            boolean containsTemporaryId = storedEvents[0].contains(temporaryIdTag);
+            if(containsTemporaryIdOverride || containsTemporaryId || deviceId_.temporaryIdModeEnabled()){
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
 
                 //abort and wait for exiting temporary mode
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], temp ID set:[" + deviceId_.temporaryIdModeEnabled() + "]");
+                    Log.i(Countly.TAG, "[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmep id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceId_.temporaryIdModeEnabled() + "]");
                 }
                 break;
             }

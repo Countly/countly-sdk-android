@@ -553,6 +553,14 @@ public class Countly {
             if(getConsent(CountlyFeatureNames.starRating)) {
                 CountlyStarRating.registerAppSession(config.context, starRatingCallback_);
             }
+
+            //update remote config_ values if automatic update is enabled and we are not in temporary id mode
+            if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven() && !doingTemporaryIdMode){
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[Init] Automatically updating remote config values");
+                }
+                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
+            }
         } else {
             //if this is not the first time we are calling init
 
@@ -585,11 +593,6 @@ public class Countly {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Init] Countly is initialized with the current consent state:");
                 checkAllConsent();
-            }
-
-            //update remote config_ values if automatic update is enabled
-            if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven()){
-                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
             }
         }
 
@@ -857,6 +860,9 @@ public class Countly {
             exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, deviceId);
         } else {
             //we are not in temporary mode, nothing special happens
+            // we are either making a simple ID change or entering temporary mode
+            // in both cases we act the same as the temporary ID requests will be updated with the final ID later
+
             connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());
 
             //update remote config_ values if automatic update is enabled
@@ -2732,19 +2738,16 @@ public class Countly {
         connectionQueue_.tick();
     }
 
-/*
-    public Countly offlineModeEnable(){
+    public Countly enableTemporaryIdMode(){
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling offlineModeEnable");
+            Log.d(Countly.TAG, "Calling enableTemporaryIdMode");
         }
+
+        changeDeviceId(DeviceId.temporaryCountlyDeviceId);
+
+        return this;
     }
 
-    public Countly offlineModeDisable(){
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling offlineModeDisable");
-        }
-    }
-*/
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }
     void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }
