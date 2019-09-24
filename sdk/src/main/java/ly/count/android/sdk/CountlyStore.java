@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.webkit.WebView;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -158,6 +159,13 @@ public class CountlyStore {
             if (connections.remove(str)) {
                 preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
             }
+        }
+    }
+
+    protected synchronized void replaceConnections(final String[] newConns){
+        if(newConns != null){
+            final List<String> connections = new ArrayList<>(Arrays.asList(newConns));
+            preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
         }
     }
 

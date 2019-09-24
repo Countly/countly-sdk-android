@@ -789,7 +789,7 @@ public class Countly {
             return;
         }
 
-        if(currentDeviceId.temporaryIdModeEnabled()){
+        if(currentDeviceId.temporaryIdModeEnabled() || storedRequestsContaintTemporaryId()){
             // we are about to exit temporary ID mode
             // because of the previous check, we know that the new type is a different one
             // we just call our method for exiting it
@@ -841,8 +841,9 @@ public class Countly {
             return;
         }
 
-        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled()){
-            //if we are in temporary ID mode
+        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled() || storedRequestsContaintTemporaryId()){
+            //if we are in temporary ID mode or
+            //at some moment have enabled temporary mode
 
             if(deviceId.equals(DeviceId.temporaryCountlyDeviceId)){
                 //if we want to enter temporary ID mode
@@ -874,6 +875,19 @@ public class Countly {
         }
     }
 
+    private boolean storedRequestsContaintTemporaryId(){
+        String[] storedRequests = connectionQueue_.getCountlyStore().connections();
+        String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
+
+        for(int a = 0 ; a < storedRequests.length ; a++){
+            if(storedRequests[a].contains(temporaryIdTag)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void exitTemporaryIdMode(DeviceId.Type type, String deviceId){
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling exitTemporaryIdMode");
@@ -887,7 +901,24 @@ public class Countly {
         connectionQueue_.getDeviceId().changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
 
         //update stored request for ID change to use this new ID
+        String[] storedRequests = connectionQueue_.getCountlyStore().connections();
+        String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
+        String newIdTag = "&device_id=" + deviceId;
 
+        boolean foundOne = false;
+        for(int a = 0 ; a < storedRequests.length ; a++){
+            if(storedRequests[a].contains(temporaryIdTag)){
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[exitTemporaryIdMode] Found a tag to replace in: [" + storedRequests[a] + "]");
+                }
+                storedRequests[a] = storedRequests[a].replace(temporaryIdTag, newIdTag);
+                foundOne = true;
+            }
+        }
+
+        if(foundOne){
+            connectionQueue_.getCountlyStore().replaceConnections(storedRequests);
+        }
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
