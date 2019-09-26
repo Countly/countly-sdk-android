@@ -18,7 +18,7 @@ android {
         minSdkVersion 15
         targetSdkVersion 28
         versionCode 1
-        versionName "19.08"
+        versionName "19.09"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -57,7 +57,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk-native'
-    publishVersion = '19.08'
+    publishVersion = '19.09'
     desc = 'Countly Android Native Crash Support'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

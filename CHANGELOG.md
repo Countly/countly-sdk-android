@@ -1,4 +1,4 @@
-19.08
+19.09
   * Adding feature to flush all requests in the queue
   * Adding CountlyConfig object which is used during init
   * Added call to try to complete stored requests
@@ -7,6 +7,7 @@
   * Fixing a consent bug which disabled features when consent was not enabled
   * Fixed a race condition bug when sending push token to server
   * Fixed remote config bug during init when no device ID was available
+  * Fixed bug with events not using the provided event duration.
   * Removing GCM push support
 
 19.02.3
