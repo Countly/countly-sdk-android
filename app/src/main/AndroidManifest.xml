@@ -78,6 +78,10 @@
             android:name=".ActivityExampleRemoteConfig"
             android:label="@string/activity_name_remote_config" >
         </activity>
+        <activity
+            android:name=".ActivityExampleDeviceId"
+            android:label="@string/activity_name_device_id" >
+        </activity>
 
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">
             <intent-filter>

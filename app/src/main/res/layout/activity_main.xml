@@ -67,6 +67,13 @@
             android:text="Remote Config" />
 
         <Button
+            android:id="@+id/button59"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClickButtonDeviceId"
+            android:text="Device ID" />
+
+        <Button
             android:text="@string/others"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -783,7 +783,7 @@ public class Countly {
 
         DeviceId currentDeviceId = connectionQueue_.getDeviceId();
 
-        if(currentDeviceId.temporaryIdModeEnabled() && deviceId.equals(DeviceId.temporaryCountlyDeviceId)){
+        if(currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(DeviceId.temporaryCountlyDeviceId))){
             // we already are in temporary mode and we want to set temporary mode
             // in this case we just ignore the request since nothing has to be done
             return;

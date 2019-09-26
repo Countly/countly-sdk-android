@@ -58,6 +58,10 @@ public class MainActivity extends Activity {
         startActivity(new Intent(this, ActivityExampleRemoteConfig.class));
     }
 
+    public void onClickButtonDeviceId(View v) {
+        startActivity(new Intent(this, ActivityExampleDeviceId.class));
+    }
+
 
     public void enableCrashTracking(){
         //add some custom segments, like dependency library versions

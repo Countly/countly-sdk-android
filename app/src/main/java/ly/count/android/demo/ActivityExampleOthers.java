@@ -56,14 +56,6 @@ public class ActivityExampleOthers extends Activity {
         });
     }
 
-    public void onClickViewOther03(View v) {
-        Countly.sharedInstance().changeDeviceId(DeviceId.Type.DEVELOPER_SUPPLIED, "New Device ID" + (new Random().nextInt()));
-    }
-
-    public void onClickViewOther04(View v) {
-        Countly.sharedInstance().changeDeviceId("New Device ID!" + (new Random().nextInt()));
-    }
-
     public void onClickViewOther05(View v) {
         //set user location
         String countryCode = "us";
@@ -83,11 +75,6 @@ public class ActivityExampleOthers extends Activity {
     public void onClickViewOther08(View v) {
         //Clearing request queue
         Countly.sharedInstance().flushRequestQueues();
-    }
-
-    public void onClickViewOther09(View v) {
-        //Entering temporary id mode
-        Countly.sharedInstance().enableTemporaryIdMode();
     }
 
     public void onClickViewOther10(View v) {

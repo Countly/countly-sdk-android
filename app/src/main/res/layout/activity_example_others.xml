@@ -31,20 +31,6 @@
         android:text="@string/ask_for_rating_widget"/>
 
     <Button
-        android:id="@+id/button43"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewOther03"
-        android:text="@string/set_new_device_id"/>
-
-    <Button
-        android:id="@+id/button44"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewOther04"
-        android:text="@string/set_new_device_id_with_server_merge"/>
-
-    <Button
         android:id="@+id/button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -64,13 +50,6 @@
         android:layout_height="wrap_content"
         android:onClick="onClickViewOther08"
         android:text="flush request queue" />
-
-    <Button
-        android:id="@+id/button54"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewOther09"
-        android:text="Enable Temporary Device ID" />
 
     <Button
         android:id="@+id/button60"
