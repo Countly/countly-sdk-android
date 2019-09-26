@@ -813,6 +813,9 @@ public class Countly {
         if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
             RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
+
+        //clear automated star rating session values because now we have a new user
+        CountlyStarRating.clearAutomaticStarRatingSessionCount(context_);
     }
 
     /**

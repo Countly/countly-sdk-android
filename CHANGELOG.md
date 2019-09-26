@@ -8,6 +8,7 @@
   * Fixed a race condition bug when sending push token to server
   * Fixed remote config bug during init when no device ID was available
   * Fixed bug with events not using the provided event duration.
+  * Fixing issue that automated star rating session count was not cleared when changing device ID
   * Removing GCM push support
 
 19.02.3
