@@ -789,7 +789,7 @@ public class Countly {
             return;
         }
 
-        if(currentDeviceId.temporaryIdModeEnabled() || storedRequestsContaintTemporaryId()){
+        if(currentDeviceId.temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()){
             // we are about to exit temporary ID mode
             // because of the previous check, we know that the new type is a different one
             // we just call our method for exiting it
@@ -841,7 +841,7 @@ public class Countly {
             return;
         }
 
-        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled() || storedRequestsContaintTemporaryId()){
+        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()){
             //if we are in temporary ID mode or
             //at some moment have enabled temporary mode
 
@@ -873,19 +873,6 @@ public class Countly {
                 RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true, null);
             }
         }
-    }
-
-    private boolean storedRequestsContaintTemporaryId(){
-        String[] storedRequests = connectionQueue_.getCountlyStore().connections();
-        String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-
-        for(int a = 0 ; a < storedRequests.length ; a++){
-            if(storedRequests[a].contains(temporaryIdTag)){
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private void exitTemporaryIdMode(DeviceId.Type type, String deviceId){

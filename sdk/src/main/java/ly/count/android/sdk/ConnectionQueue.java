@@ -137,6 +137,9 @@ public class ConnectionQueue {
      */
     void beginSession() {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] beginSession");
+        }
 
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
@@ -185,6 +188,10 @@ public class ConnectionQueue {
      */
     void updateSession(final int duration) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] updateSession");
+        }
+
         if (duration > 0) {
             boolean dataAvailable = false;//will only send data if there is something valuable to send
             String data = prepareCommonRequestData();
@@ -214,6 +221,9 @@ public class ConnectionQueue {
 
     public void changeDeviceId (String deviceId, final int duration) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] changeDeviceId");
+        }
 
         if(!Countly.sharedInstance().anyConsentGiven()){
             //no consent set, aborting
@@ -235,6 +245,9 @@ public class ConnectionQueue {
 
     public void tokenSession(String token, Countly.CountlyMessagingMode mode) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] tokenSession");
+        }
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)){
             return;
@@ -262,6 +275,9 @@ public class ConnectionQueue {
 
     void endSession(final int duration, String deviceIdOverride) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] endSession");
+        }
 
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
@@ -291,6 +307,9 @@ public class ConnectionQueue {
      */
     void sendLocation() {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendLocation");
+        }
 
         String data = prepareCommonRequestData();
 
@@ -308,6 +327,9 @@ public class ConnectionQueue {
      */
     void sendUserData() {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendUserData");
+        }
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)){
             return;
@@ -331,6 +353,9 @@ public class ConnectionQueue {
      */
     void sendReferrerData(String referrer) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] checkInternalState");
+        }
 
         if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
             return;
@@ -351,6 +376,9 @@ public class ConnectionQueue {
      */
     void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendCrashReport");
+        }
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.crashes)){
             return;
@@ -376,6 +404,9 @@ public class ConnectionQueue {
      */
     void recordEvents(final String events) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendConsentChanges");
+        }
 
         ////////////////////////////////////////////////////
         ///CONSENT FOR EVENTS IS CHECKED ON EVENT CREATION//
@@ -390,6 +421,9 @@ public class ConnectionQueue {
 
     void sendConsentChanges(String formattedConsentChanges) {
         checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendConsentChanges");
+        }
 
         final String data = prepareCommonRequestData()
                 + "&consent=" + ConnectionProcessor.urlEncodeString(formattedConsentChanges);
@@ -497,6 +531,19 @@ public class ConnectionQueue {
 
     public ConnectionProcessor createConnectionProcessor(){
         return new ConnectionProcessor(serverURL_, store_, deviceId_, sslContext_, requestHeaderCustomValues);
+    }
+
+    public boolean queueContainsTemporaryIdItems(){
+        String[] storedRequests = getCountlyStore().connections();
+        String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
+
+        for(int a = 0 ; a < storedRequests.length ; a++){
+            if(storedRequests[a].contains(temporaryIdTag)){
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // for unit testing

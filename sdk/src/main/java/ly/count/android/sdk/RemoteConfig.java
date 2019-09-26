@@ -65,7 +65,7 @@ public class RemoteConfig {
             return;
         }
 
-        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled()){
+        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()){
             //temporary id mode enabled, abort
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "RemoteConfig value update was aborted, temporary device ID mode is set");

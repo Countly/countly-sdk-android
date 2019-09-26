@@ -69,12 +69,14 @@
         android:id="@+id/button54"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:onClick="onClickViewOther09"
         android:text="Enable Temporary Device ID" />
 
     <Button
         android:id="@+id/button60"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:onClick="onClickViewOther10"
         android:text="Do Stored Requests" />
 
 </LinearLayout>
