@@ -224,7 +224,7 @@ public class Log extends ModuleBase {
                     logger.wtf(string, t);
                 }
             } else {
-                new SystemLogger("Countly").w(string, t);
+                new SystemLogger("Countly").wtf(string, t);
             }
         }
         if (instance != null && instance.testMode) {
