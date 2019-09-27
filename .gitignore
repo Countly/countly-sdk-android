@@ -36,3 +36,4 @@ app-native/.externalNativeBuild/cmake/debug/
 app-native/.externalNativeBuild/cmake/release/
 upload-plugin/build/pluginUnderTestMetadata/plugin-under-test-metadata.properties
 upload-plugin/build/
+app-native/.cxx/
