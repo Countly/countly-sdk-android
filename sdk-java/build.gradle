@@ -19,7 +19,8 @@ buildscript {
 }
 
 dependencies {
-    api "ly.count.sdk:core:${CLY_VERSION}"
+    api project(':core')
+    //api "ly.count.sdk:core:${CLY_VERSION}"
 
     testCompile project(':core').sourceSets.test.output
     testImplementation 'junit:junit:4.12'
