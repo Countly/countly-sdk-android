@@ -155,7 +155,14 @@ public class ModuleDeviceIdCore extends ModuleBase {
 
             // add device id change request
             Request request = ModuleRequests.nonSessionRequest(ctx);
-            request.params.add(Params.PARAM_DEVICE_ID, deviceId.id).add(Params.PARAM_OLD_DEVICE_ID, oldDeviceId.id);
+            
+            //if we are missing the device ID, add it
+            if(!request.params.has(Params.PARAM_DEVICE_ID)){
+                request.params.add(Params.PARAM_DEVICE_ID, deviceId.id);
+            }
+            //add the old device ID every time
+            request.params.add(Params.PARAM_OLD_DEVICE_ID, oldDeviceId.id);
+
             ModuleRequests.pushAsync(ctx, request);
 
             sendDIDSignal(ctx, deviceId, oldDeviceId);
