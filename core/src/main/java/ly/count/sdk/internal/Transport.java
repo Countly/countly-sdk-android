@@ -346,7 +346,7 @@ public class Transport implements X509TrustManager {
             }
 
             public RequestResult send() {
-                L.i("Sending request: " + request);
+                L.i("[send] Sending request: " + request);
 
                 HttpURLConnection connection = null;
                 try {
@@ -358,11 +358,12 @@ public class Transport implements X509TrustManager {
                     connection.connect();
 
                     int code = connection.getResponseCode();
+
                     String response = response(connection);
 
                     SDKCore.instance.onRequestCompleted(request, response, code, requestOwner);
 
-                    return processResponse(code, response);
+                    return processResponse(code, response, request.storageId());
 
                 } catch (IOException e) {
                     L.w("Error while sending request " + request, e);
@@ -376,13 +377,13 @@ public class Transport implements X509TrustManager {
         };
     }
 
-    RequestResult processResponse(int code, String response) {
-        L.i("Code " + code + " response " + response);
+    RequestResult processResponse(int code, String response, Long requestId) {
+        L.i("[processResponse] Code [" + code + "] response [" + response + "] for request[" + requestId + "]" );
 
         if (code >= 200 && code < 300) {
             if (Utils.isEmpty(response)) {
                 L.w("Success (null response)");
-                // null response but response code is ok, optimistically assuming request was sent
+                // Null response, but response code is ok. Optimistically assuming request was sent
                 return RequestResult.OK;
             } else if (response.contains("Success")) {
                 // response looks like {"result": "Success"}

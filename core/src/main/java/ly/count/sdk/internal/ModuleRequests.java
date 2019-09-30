@@ -188,6 +188,7 @@ public class ModuleRequests extends ModuleBase {
     }
 
     static Request addRequired(InternalConfig config, Request request) {
+
         if (request.isEmpty()) {
             //if nothing was in the request, no need to add these mandatory fields
             return request;

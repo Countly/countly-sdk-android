@@ -69,9 +69,9 @@ public class ModuleDeviceIdCore extends ModuleBase {
 
         DeviceIdGenerator generator = generators.get(config.getDeviceIdStrategy());
         if (generator == null) {
-            Log.wtf("Device id strategy " + config.getDeviceIdStrategy() + " is not supported by SDK.");
+            Log.wtf("Device id strategy [" + config.getDeviceIdStrategy() + "] is not supported by SDK.");
         } else if (!generator.isAvailable()) {
-            String str = "Device id strategy " + config.getDeviceIdStrategy() + " is not available. Make sure corresponding classes are in class path.";
+            String str = "Device id strategy [" + config.getDeviceIdStrategy() + "] is not available. Make sure corresponding classes are in class path.";
             if (config.isDeviceIdFallbackAllowed()) {
                 Log.w(str);
             } else {
@@ -84,7 +84,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
             while (--index > 0) {
                 generator = generators.get(index);
                 if (generator.isAvailable()) {
-                    Log.w("Will fall back to strategy " + index);
+                    Log.w("Will fall back to strategy [" + index + "]");
                     found = true;
                 }
             }
@@ -102,6 +102,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
      */
     @Override
     public void onContextAcquired(final CtxCore ctx) {
+        L.i("[onContextAcquired] Starting device ID acquisition");
         if (ctx.getConfig().getDeviceId() == null) {
             // either fresh install, or migration from legacy SDK
 
@@ -110,7 +111,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
             if (Utils.isNotEmpty(ctx.getConfig().getCustomDeviceId())) {
                 // developer specified id on SDK init
                 ConfigCore.DID did = new ConfigCore.DID(ConfigCore.DID.REALM_DID, ConfigCore.DID.STRATEGY_CUSTOM, ctx.getConfig().getCustomDeviceId());
-                L.d("Got developer id" + did);
+                L.d("Got developer id [" + did + "]");
                 SDKCore.instance.onDeviceId(ctx, did, null);
             } else {
                 // regular flow - acquire id using specified strategy
@@ -122,14 +123,16 @@ public class ModuleDeviceIdCore extends ModuleBase {
                             L.d("Got device id: " + id);
                             SDKCore.instance.onDeviceId(ctx, id, null);
                         } else {
-                            L.i("No device id of strategy " + ctx.getConfig().getDeviceIdStrategy() + " is available yet");
+                            L.i("No device id of strategy [" + ctx.getConfig().getDeviceIdStrategy() + "] is available yet");
                         }
                     }
                 });
             }
         } else {
             // second or next app launch, notify id is available
-            SDKCore.instance.onDeviceId(ctx, ctx.getConfig().getDeviceId(), ctx.getConfig().getDeviceId());
+            ConfigCore.DID loadedDid = ctx.getConfig().getDeviceId();
+            L.d("[onContextAcquired] Loading previously saved device id:[" + loadedDid.id + "] realm:[" + loadedDid.realm + "] strategy:[" + loadedDid.strategy + "]");
+            SDKCore.instance.onDeviceId(ctx, loadedDid, loadedDid);
         }
     }
 
@@ -138,7 +141,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
         if (ctx.getConfig().isLimited()) {
             return;
         }
-        L.d("onDeviceId " + deviceId);
+        L.d("onDeviceId [" + deviceId + "]");
 
         SessionImpl session = SDKCore.instance.getSession();
 
@@ -146,7 +149,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
             // device id changed
             if (session != null && session.isActive()) {
                 // end previous session
-                L.d("Ending session because device id was changed from " + oldDeviceId.id);
+                L.d("Ending session because device id was changed from [" + oldDeviceId.id + "]");
                 session.end(null, null, oldDeviceId.id);
             }
 
@@ -160,7 +163,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
         } else if (deviceId == null && oldDeviceId != null && oldDeviceId.realm == ConfigCore.DID.REALM_DID) {
             // device id is unset
             if (session != null) {
-                L.d("Ending session because device id was unset from " + oldDeviceId.id);
+                L.d("Ending session because device id was unset from [" + oldDeviceId.id + "]");
                 session.end(null, null, oldDeviceId.id);
             }
 
@@ -231,7 +234,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
      * @param old old {@link ConfigCore.DID} if any
      */
     private void sendDIDSignal(CtxCore ctx, ConfigCore.DID id, ConfigCore.DID old) {
-        L.d("Sending device id signal: " + id + ", was " + old);
+        L.d("Sending device id signal: [" + id + "], was [" + old + "]");
         SDKCore.instance.onSignal(ctx, SDKCore.Signal.DID.getIndex(), id, old);
     }
 
@@ -277,7 +280,7 @@ public class ModuleDeviceIdCore extends ModuleBase {
                     L.d("Got device id: " + id);
                     SDKCore.instance.onDeviceId(ctx, id, null);
                 } else {
-                    L.i("No device id of strategy " + ctx.getConfig().getDeviceIdStrategy() + " is available yet");
+                    L.i("No device id of strategy [" + ctx.getConfig().getDeviceIdStrategy() + "] is available yet");
                 }
             }
         });
@@ -347,11 +350,11 @@ public class ModuleDeviceIdCore extends ModuleBase {
             DeviceIdGenerator generator = generators.get(index);
             if (generator == null || !generator.isAvailable()) {
                 if (fallbackAllowed) {
-                    Log.w("Device id strategy " + index + " is not available. Falling back to next one.");
+                    Log.w("Device id strategy [" + index + "] is not available. Falling back to next one.");
                     index--;
                     continue;
                 } else {
-                    Log.wtf("Device id strategy " + index + " is not available, while fallback is not allowed. SDK won't function properly.");
+                    Log.wtf("Device id strategy [" + index + "] is not available, while fallback is not allowed. SDK won't function properly.");
                     return null;
                 }
             } else {
@@ -359,16 +362,16 @@ public class ModuleDeviceIdCore extends ModuleBase {
                 if (Utils.isNotEmpty(id)) {
                     return new ConfigCore.DID(holder.realm, index, id);
                 } else if (fallbackAllowed) {
-                    Log.w("Device id strategy " + index + " didn't return. Falling back to next one.");
+                    Log.w("Device id strategy [" + index + "] didn't return. Falling back to next one.");
                     index--;
                     continue;
                 } else {
-                    Log.wtf("Device id strategy " + index + " didn't return, while fallback is not allowed. SDK won't function properly.");
+                    Log.wtf("Device id strategy [" + index + "] didn't return, while fallback is not allowed. SDK won't function properly.");
                 }
             }
         }
 
-        Log.wtf("No device id strategies to fallback from " + ctx.getConfig().getDeviceIdStrategy() + " is available. SDK won't function properly.");
+        Log.wtf("No device id strategies to fallback from [" + ctx.getConfig().getDeviceIdStrategy() + "] is available. SDK won't function properly.");
 
         return null;
     }

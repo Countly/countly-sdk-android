@@ -22,7 +22,7 @@ public class DefaultNetworking implements Networking {
 
     @Override
     public boolean check(CtxCore ctx) {
-        L.d("state: shutdown " + shutdown + " / tasks running " + tasks.isRunning() + " / net running " + tasks.isRunning() + " / device id " + ctx.getConfig().getDeviceId());
+        L.d("[check] state: shutdown [" + shutdown + "], tasks running [" + tasks.isRunning() + "], net running [" + tasks.isRunning() + "], device id [" + ctx.getConfig().getDeviceId() + "]");
         if (!shutdown && !tasks.isRunning() && !tasks.isRunning() && ctx.getConfig().getDeviceId() != null) {
             tasks.run(submit(ctx));
         }
