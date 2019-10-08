@@ -357,7 +357,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] checkInternalState");
         }
 
-        if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+        if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
             return;
         }
 
