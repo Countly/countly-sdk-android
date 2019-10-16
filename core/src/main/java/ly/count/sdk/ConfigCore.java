@@ -230,6 +230,17 @@ public class ConfigCore {
     protected int networkReadTimeout = 30;
 
     /**
+     * How long to wait between requests in milliseconds. Used to decrease CPU & I/O load on the device.
+     */
+    protected int networkRequestCooldown = 1000;
+
+    /**
+     * How long to wait between Device ID change & push token requests, in milliseconds.
+     * Required by Countly server, don't change unless you know what you're doing!
+     */
+    protected int networkImportantRequestCooldown = 5000;
+
+    /**
      * Enable SSL public key pinning. Improves HTTPS security by not allowing MiM attacks
      * based on SSL certificate replacing somewhere between Android device and Countly server.
      * Here you can set one or more PEM-encoded public keys which Countly SDK verifies against
@@ -687,6 +698,38 @@ public class ConfigCore {
     }
 
     /**
+     * How long to wait between requests in seconds.
+     * Used to decrease CPU & I/O load on the device in case of batch requests.
+     *
+     * @param milliseconds cooldown period in seconds
+     * @return {@code this} instance for method chaining
+     */
+    public ConfigCore setNetworkRequestCooldown(int milliseconds) {
+        if (milliseconds < 0 || milliseconds > 30000) {
+            Log.wtf("Request cooldown must be between 0 and 30000");
+        } else {
+            networkRequestCooldown = milliseconds;
+        }
+        return this;
+    }
+
+    /**
+     * Set read timeout in seconds for HTTP requests SDK sends to Countly server. Defaults to 30.
+     * Used to decrease CPU & I/O load on the device in case of batch requests.
+     *
+     * @param milliseconds read timeout in milliseconds
+     * @return {@code this} instance for method chaining
+     */
+    public ConfigCore setNetworkImportantRequestCooldown(int milliseconds) {
+        if (milliseconds < 0 || milliseconds > 30) {
+            Log.wtf("Important request cooldown must be between 0 and 30");
+        } else {
+            networkImportantRequestCooldown = milliseconds;
+        }
+        return this;
+    }
+
+    /**
      * Enable SSL public key pinning. Improves HTTPS security by not allowing MiM attacks
      * based on SSL certificate replacing somewhere between Android device and Countly server.
      * Here you can set one or more PEM-encoded public keys which Countly SDK verifies against
@@ -1049,6 +1092,22 @@ public class ConfigCore {
      */
     public int getNetworkReadTimeout() {
         return networkReadTimeout;
+    }
+
+    /**
+     * Getter for {@link #networkRequestCooldown}
+     * @return {@link #networkRequestCooldown} value
+     */
+    public int getNetworkRequestCooldown() {
+        return networkRequestCooldown;
+    }
+
+    /**
+     * Getter for {@link #networkImportantRequestCooldown}
+     * @return {@link #networkImportantRequestCooldown} value
+     */
+    public int getNetworkImportantRequestCooldown() {
+        return networkImportantRequestCooldown;
     }
 
     /**

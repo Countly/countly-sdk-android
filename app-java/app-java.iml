@@ -4,8 +4,6 @@
     <facet type="android-gradle" name="Android-Gradle">
       <configuration>
         <option name="GRADLE_PROJECT_PATH" value=":app-java" />
-        <option name="LAST_SUCCESSFUL_SYNC_AGP_VERSION" />
-        <option name="LAST_KNOWN_AGP_VERSION" />
       </configuration>
     </facet>
     <facet type="java-gradle" name="Java-Gradle">
@@ -29,8 +27,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="Gradle: java-19.08-sdk2-rc" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: core-19.08-sdk2-rc" level="project" />
+    <orderEntry type="module" module-name="sdk-java" exported="" />
+    <orderEntry type="module" module-name="core" exported="" />
     <orderEntry type="library" exported="" scope="RUNTIME" name="Gradle: json-20180813" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="Gradle: json-20180813" level="project" />
   </component>

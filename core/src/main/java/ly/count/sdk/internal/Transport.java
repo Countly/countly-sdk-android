@@ -361,6 +361,20 @@ public class Transport implements X509TrustManager {
 
                     String response = response(connection);
 
+                    try {
+                        if (request.params.has(Params.PARAM_OLD_DEVICE_ID) || request.params.has("token_session")) {
+                            if (config.getNetworkImportantRequestCooldown() > 0) {
+                                Thread.sleep(config.getNetworkImportantRequestCooldown());
+                            }
+                        } else {
+                            if (config.getNetworkRequestCooldown() > 0) {
+                                Thread.sleep(config.getNetworkRequestCooldown());
+                            }
+                        }
+                    } catch (InterruptedException ie) {
+                        Log.w("Interrupted while waiting for did change request cooldown", ie);
+                    }
+
                     SDKCore.instance.onRequestCompleted(request, response, code, requestOwner);
 
                     return processResponse(code, response, request.storageId());
