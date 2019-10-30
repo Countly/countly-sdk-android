@@ -1421,10 +1421,13 @@ public class Countly {
                     Log.d(Countly.TAG, "Uncaught crash handler triggered");
                 }
                 if (getConsent(CountlyFeatureNames.crashes)) {
-
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
-                    e.printStackTrace(pw);
+                    if (e.getCause() != null) {
+                        e.getCause().printStackTrace(pw);
+                    } else {
+                         e.printStackTrace(pw);
+                    }
 
                     //add other threads
                     if (moduleCrash.recordAllThreads) {
