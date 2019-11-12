@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;

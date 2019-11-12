@@ -22,7 +22,7 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.net.Uri;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,7 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static android.support.test.InstrumentationRegistry.getContext;
+import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

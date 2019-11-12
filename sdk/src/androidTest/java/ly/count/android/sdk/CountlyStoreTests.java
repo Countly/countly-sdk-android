@@ -23,7 +23,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import static android.support.test.InstrumentationRegistry.getContext;
+import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
