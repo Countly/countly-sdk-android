@@ -22,14 +22,14 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
 import org.junit.Before;
 
 import java.util.HashMap;
 
-import static android.support.test.InstrumentationRegistry.getContext;
+import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 
