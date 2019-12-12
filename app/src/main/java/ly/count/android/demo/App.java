@@ -3,7 +3,10 @@ package ly.count.android.demo;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.media.AudioAttributes;
+import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import android.util.Log;
@@ -41,11 +44,18 @@ public class App extends Application {
                 // Create the NotificationChannel
                 NotificationChannel channel = new NotificationChannel(CountlyPush.CHANNEL_ID, getString(R.string.countly_hannel_name), NotificationManager.IMPORTANCE_DEFAULT);
                 channel.setDescription(getString(R.string.countly_channel_description));
+
+                AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .build();
+
+                Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://"+ getApplicationContext().getPackageName() + "/" + R.raw.notif_sample);
+
+                channel.setSound(soundUri, audioAttributes);
                 notificationManager.createNotificationChannel(channel);
             }
         }
-
-
 
         Context appC = getApplicationContext();
 
@@ -72,10 +82,7 @@ public class App extends Application {
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
 
-
         CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION);
-
-
 
 
 

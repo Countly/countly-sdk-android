@@ -20,3 +20,7 @@
 
 -renamesourcefileattribute SourceFile
 -keepattributes SourceFile,LineNumberTable
+
+# Rules to keep the FCM dependency optional
+-dontwarn com.google.firebase.messaging.RemoteMessage
+-keep class com.google.firebase.messaging.RemoteMessage
