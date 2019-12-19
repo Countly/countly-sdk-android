@@ -80,6 +80,8 @@ public class CountlyConfig {
 
     protected boolean temporaryDeviceIdEnabled = false;
 
+    protected String[] crashRegexFilters = null;
+
     /**
      * Android context.
      * Mandatory field.
@@ -230,6 +232,11 @@ public class CountlyConfig {
 
     public CountlyConfig enableTemporaryDeviceIdMode(){
         temporaryDeviceIdEnabled = true;
+        return this;
+    }
+
+    public CountlyConfig setCrashFilters(String [] regexFilters){
+        crashRegexFilters = regexFilters;
         return this;
     }
 }

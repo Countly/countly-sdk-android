@@ -82,6 +82,20 @@ public class ActivityExampleOthers extends Activity {
         Countly.sharedInstance().doStoredRequests();
     }
 
+    public void onClickTestcrashFilter(View v) {
+        String[] regexFilters = new String[]{"secretNumber\\d*", ".*1337"};
+        String[] crashes = new String[]{"secretNumber2331", "fdfd]1337", "nothing here"};
+
+        boolean[] res = Countly.sharedInstance().crashFilterTest(regexFilters, crashes);
+
+        String ret = "";
+        for(int a = 0 ; a < res.length ; a++){
+            ret += res[a] + ", ";
+        }
+
+        Toast.makeText(activity, "Testing crash filter: [" + ret + "]", Toast.LENGTH_LONG).show();
+    }
+
 
     @Override
     public void onStart()

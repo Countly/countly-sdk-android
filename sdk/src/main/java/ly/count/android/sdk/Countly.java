@@ -47,6 +47,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static ly.count.android.sdk.CountlyStarRating.STAR_RATING_EVENT_KEY;
 
@@ -167,6 +169,10 @@ public class Countly {
 
     //custom request header fields
     Map<String, String> requestHeaderCustomValues;
+
+    //crash filtering
+    String[] crashRegexFilters = null;
+    Pattern[] crashRegexFiltersCompiled = null;
 
     //native crash
     static final String countlyFolderName = "Countly";
@@ -436,6 +442,10 @@ public class Countly {
 
         if(config.httpPostForced){
             setHttpPostForced(true);
+        }
+
+        if(config.crashRegexFilters != null){
+            crashRegexFilters = config.crashRegexFilters;
         }
 
         //set the star rating values
@@ -2767,6 +2777,88 @@ public class Countly {
         changeDeviceId(DeviceId.temporaryCountlyDeviceId);
 
         return this;
+    }
+
+    /**
+     * Call to set regex filters that will be used for crash filtering
+     * Set null to disable it
+     */
+    public Countly setCrashFilters(String[] regexFilters){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling setCrashFilters");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before setCrashFilters");
+        }
+
+        setCrashFiltersInternal(regexFilters);
+
+        return this;
+    }
+
+    private void setCrashFiltersInternal(String[] regexFilters){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling setCrashFiltersInternal");
+
+            Log.d(Countly.TAG, "Setting the following crash regex filters:");
+            for(int a = 0 ; a < regexFilters.length; a++){
+                Log.d(Countly.TAG, (a + 1) + ") [" + regexFilters[a] + "]");
+            }
+        }
+
+        crashRegexFilters = regexFilters;
+
+        crashRegexFiltersCompiled = new Pattern[crashRegexFilters.length];
+
+        for(int a = 0 ; a < regexFilters.length ; a++){
+            crashRegexFiltersCompiled[a] = Pattern.compile(crashRegexFilters[a]);
+        }
+    }
+
+    /**
+     * A way to validate created filters
+     * @param regexFilters filters you want to validate
+     * @param sampleCrash sample crashes you are worrying about
+     * @return
+     */
+    public boolean[] crashFilterTest(String[] regexFilters, String[] sampleCrash){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling crashFilterTest");
+        }
+
+        Pattern[] filters = new Pattern[regexFilters.length];
+
+        for(int a = 0 ; a < regexFilters.length ; a++){
+            filters[a] = Pattern.compile(regexFilters[a]);
+        }
+
+        boolean[] res = new boolean[sampleCrash.length];
+
+        for(int a = 0 ; a < res.length ; a++){
+            res[a] = crashFilterCheck(filters, sampleCrash[a]);
+        }
+
+        return res;
+    }
+
+    /**
+     * Call to check if crash matches one of the filters
+     * If it does, the crash should be ignored
+     */
+    private boolean crashFilterCheck(Pattern[] regexFilters, String crash){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling crashFilterCheck");
+        }
+
+        for(int a = 0 ; a < regexFilters.length ; a++){
+            Matcher m = regexFilters[a].matcher(crash);
+            if(m.matches()){
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // for unit testing

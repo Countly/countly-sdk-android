@@ -58,4 +58,11 @@
         android:onClick="onClickViewOther10"
         android:text="Do Stored Requests" />
 
+    <Button
+        android:id="@+id/button63"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickTestcrashFilter"
+        android:text="Test crash Filter" />
+
 </LinearLayout>
