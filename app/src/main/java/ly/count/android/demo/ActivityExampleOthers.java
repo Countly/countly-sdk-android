@@ -83,8 +83,23 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickTestcrashFilter(View v) {
-        String[] regexFilters = new String[]{"secretNumber\\d*", ".*1337"};
-        String[] crashes = new String[]{"secretNumber2331", "fdfd]1337", "nothing here"};
+        String[] regexFilters = new String[]{"secretNumber\\d*", ".*1337", ".*secret.*"};
+        String[] crashes = new String[]{"secretNumber2331", "fdfd]1337", "nothing here",
+                "java.lang.Exception: A really secret exception\n" +
+                "\tat ly.count.android.demo.ActivityExampleOthers.onClickTestcrashFilterSample(ActivityExampleOthers.java:104)\n" +
+                "\tat java.lang.reflect.Method.invoke(Native Method)\n" +
+                "\tat android.view.View$DeclaredOnClickListener.onClick(View.java:5629)\n" +
+                "\tat android.view.View.performClick(View.java:6597)\n" +
+                "\tat android.view.View.performClickInternal(View.java:6574)\n" +
+                "\tat android.view.View.access$3100(View.java:778)\n" +
+                "\tat android.view.View$PerformClick.run(View.java:25885)\n" +
+                "\tat android.os.Handler.handleCallback(Handler.java:873)\n" +
+                "\tat android.os.Handler.dispatchMessage(Handler.java:99)\n" +
+                "\tat android.os.Looper.loop(Looper.java:193)\n" +
+                "\tat android.app.ActivityThread.main(ActivityThread.java:6718)\n" +
+                "\tat java.lang.reflect.Method.invoke(Native Method)\n" +
+                "\tat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:493)\n" +
+                "\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:858)\n"};
 
         boolean[] res = Countly.sharedInstance().crashFilterTest(regexFilters, crashes);
 
@@ -96,6 +111,9 @@ public class ActivityExampleOthers extends Activity {
         Toast.makeText(activity, "Testing crash filter: [" + ret + "]", Toast.LENGTH_LONG).show();
     }
 
+    public void onClickTestcrashFilterSample(View v) {
+        Countly.sharedInstance().recordUnhandledException(new Throwable("A really secret exception"));
+    }
 
     @Override
     public void onStart()

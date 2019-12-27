@@ -419,34 +419,22 @@ public class Countly {
 
         }
         //init view related things
-        if(config.enableViewTracking){
-            setViewTracking(true);
-        }
+        setViewTracking(config.enableViewTracking);
 
-        if(config.autoTrackingUseShortName){
-            setAutoTrackingUseShortName(true);
-        }
+        setAutoTrackingUseShortName(config.autoTrackingUseShortName);
 
         //init other things
-        if(config.customNetworkRequestHeaders != null){
-            addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
-        }
+        addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
 
-        if(config.pushIntentAddMetadata){
-            setPushIntentAddMetadata(true);
-        }
+        setPushIntentAddMetadata(config.pushIntentAddMetadata);
 
-        if(config.enableRemoteConfigAutomaticDownload){
-            setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
-        }
+        setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
 
-        if(config.httpPostForced){
-            setHttpPostForced(true);
-        }
+        setHttpPostForced(config.httpPostForced);
 
-        if(config.crashRegexFilters != null){
-            crashRegexFilters = config.crashRegexFilters;
-        }
+        setCrashFiltersInternal(config.crashRegexFilters);
+
+        enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
 
         //set the star rating values
         starRatingCallback_ = config.starRatingCallback;
@@ -1499,7 +1487,15 @@ public class Countly {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
-        connectionQueue_.sendCrashReport(sw.toString(), itIsHandled, false);
+        String exceptionString = sw.toString();
+
+        if(crashFilterCheck(crashRegexFiltersCompiled, exceptionString)){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
+            }
+        } else {
+            connectionQueue_.sendCrashReport(exceptionString, itIsHandled, false);
+        }
         return this;
     }
 
@@ -1700,12 +1696,28 @@ public class Countly {
         return enableLogging_;
     }
 
+    /**
+     *
+     * @param salt
+     * @deprecated use CountlyConfig (setParameterTamperingProtectionSalt) during init to set this
+     * @return
+     */
     public synchronized Countly enableParameterTamperingProtection(String salt) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Enabling tamper protection");
         }
-        ConnectionProcessor.salt = salt;
+
+        enableParameterTamperingProtectionInternal(salt);
+
         return this;
+    }
+
+    /**
+     * Use by both the external call and config call
+     * @param salt
+     */
+    private synchronized void enableParameterTamperingProtectionInternal(String salt){
+        ConnectionProcessor.salt = salt;
     }
 
     /**
@@ -2801,18 +2813,26 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling setCrashFiltersInternal");
 
-            Log.d(Countly.TAG, "Setting the following crash regex filters:");
-            for(int a = 0 ; a < regexFilters.length; a++){
-                Log.d(Countly.TAG, (a + 1) + ") [" + regexFilters[a] + "]");
+            if(regexFilters == null){
+                Log.d(Countly.TAG, "Provided crash regex filter is null");
+            } else {
+                Log.d(Countly.TAG, "Setting the following crash regex filters:");
+                for (int a = 0; a < regexFilters.length; a++) {
+                    Log.d(Countly.TAG, (a + 1) + ") [" + regexFilters[a] + "]");
+                }
             }
         }
 
         crashRegexFilters = regexFilters;
 
-        crashRegexFiltersCompiled = new Pattern[crashRegexFilters.length];
+        if(regexFilters == null){
+            crashRegexFiltersCompiled = null;
+        } else {
+            crashRegexFiltersCompiled = new Pattern[crashRegexFilters.length];
 
-        for(int a = 0 ; a < regexFilters.length ; a++){
-            crashRegexFiltersCompiled[a] = Pattern.compile(crashRegexFilters[a]);
+            for (int a = 0; a < regexFilters.length; a++) {
+                crashRegexFiltersCompiled[a] = Pattern.compile(crashRegexFilters[a], Pattern.DOTALL);
+            }
         }
     }
 
@@ -2830,7 +2850,7 @@ public class Countly {
         Pattern[] filters = new Pattern[regexFilters.length];
 
         for(int a = 0 ; a < regexFilters.length ; a++){
-            filters[a] = Pattern.compile(regexFilters[a]);
+            filters[a] = Pattern.compile(regexFilters[a], Pattern.DOTALL);
         }
 
         boolean[] res = new boolean[sampleCrash.length];
@@ -2845,6 +2865,9 @@ public class Countly {
     /**
      * Call to check if crash matches one of the filters
      * If it does, the crash should be ignored
+     * @param regexFilters
+     * @param crash
+     * @return true if a match was found
      */
     private boolean crashFilterCheck(Pattern[] regexFilters, String crash){
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -2857,7 +2880,6 @@ public class Countly {
                 return true;
             }
         }
-
         return false;
     }
 

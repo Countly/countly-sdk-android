@@ -77,7 +77,10 @@ public class App extends Application {
                             Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
                         }
                     }
-                });
+                })
+                .setCrashFilters(new String[]{".*secret.*"})
+                .setParameterTamperingProtectionSalt("SampleSalt")
+                ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 

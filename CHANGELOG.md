@@ -1,3 +1,9 @@
+20.01
+  * Adding functionality for filtering crashes
+  * Adding option to set tamper protection salt in config object
+  * Migrated to AndroidX
+
+
 19.09
   * Adding feature to flush all requests in the queue
   * Adding CountlyConfig object which is used during init

@@ -82,6 +82,8 @@ public class CountlyConfig {
 
     protected String[] crashRegexFilters = null;
 
+    protected String tamperingProtectionSalt = null;
+
     /**
      * Android context.
      * Mandatory field.
@@ -237,6 +239,11 @@ public class CountlyConfig {
 
     public CountlyConfig setCrashFilters(String [] regexFilters){
         crashRegexFilters = regexFilters;
+        return this;
+    }
+
+    public CountlyConfig setParameterTamperingProtectionSalt(String salt){
+        tamperingProtectionSalt = salt;
         return this;
     }
 }
