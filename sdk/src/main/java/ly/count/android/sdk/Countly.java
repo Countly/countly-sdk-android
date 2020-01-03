@@ -1812,6 +1812,10 @@ public class Countly {
      * is not an active application session.
      */
     synchronized void onTimer() {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.v(Countly.TAG, "[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
+        }
+
         final boolean hasActiveSession = activityCount_ > 0;
         if (hasActiveSession) {
             if (!disableUpdateSessionRequests_) {
@@ -2501,6 +2505,20 @@ public class Countly {
     }
 
     /**
+     * Gives consent for all features
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly giveConsentAll(){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Giving consent for all features");
+        }
+
+        giveConsent(validFeatureNames);
+
+        return this;
+    }
+
+    /**
      * Remove the consent of a feature
      * @param featureNames the names of features for which consent should be removed
      * @return Returns link to Countly for call chaining
@@ -2514,6 +2532,21 @@ public class Countly {
 
         return this;
     }
+
+    /**
+     * Remove consent for all features
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly removeConsentAll(){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Removing consent for all features");
+        }
+
+        removeConsent(validFeatureNames);
+
+        return this;
+    }
+
 
     /**
      * Get the current consent state of a feature

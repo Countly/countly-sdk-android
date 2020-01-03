@@ -115,6 +115,14 @@ public class ActivityExampleOthers extends Activity {
         Countly.sharedInstance().recordUnhandledException(new Throwable("A really secret exception"));
     }
 
+    public void onClickRemoveAllConsent(View v){
+        Countly.sharedInstance().removeConsentAll();
+    }
+
+    public void onClickGiveAllConsent(View v){
+        Countly.sharedInstance().giveConsentAll();
+    }
+
     @Override
     public void onStart()
     {

@@ -72,4 +72,18 @@
         android:onClick="onClickTestcrashFilterSample"
         android:text="Test Crash Filter Sample" />
 
+    <Button
+        android:id="@+id/button65"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickRemoveAllConsent"
+        android:text="Remove All Consent" />
+
+    <Button
+        android:id="@+id/button66"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickGiveAllConsent"
+        android:text="Give All Consent" />
+
 </LinearLayout>

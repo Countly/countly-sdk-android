@@ -1,6 +1,7 @@
 20.01
   * Adding functionality for filtering crashes
   * Adding option to set tamper protection salt in config object
+  * Adding calls to give and remove consent to all features
   * Migrated to AndroidX
 
 
