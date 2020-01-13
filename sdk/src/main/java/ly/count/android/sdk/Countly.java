@@ -2904,7 +2904,16 @@ public class Countly {
      */
     private boolean crashFilterCheck(Pattern[] regexFilters, String crash){
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling crashFilterCheck");
+            int filterCount = 0;
+            if(regexFilters != null){
+                filterCount = regexFilters.length;
+            }
+            Log.d(Countly.TAG, "Calling crashFilterCheck, filter count:[" + filterCount + "]");
+        }
+
+        if(regexFilters == null){
+            //no filter set, nothing to compare against
+            return false;
         }
 
         for(int a = 0 ; a < regexFilters.length ; a++){
