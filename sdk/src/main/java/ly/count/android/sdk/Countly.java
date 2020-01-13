@@ -1663,6 +1663,28 @@ public class Countly {
     }
 
     /**
+     * Cancel timed event with a specified key
+     * @return true if event with this key has been previously started, false otherwise
+     **/
+    public synchronized boolean cancelEvent(final String key) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling cancelEvent");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before cancelEvent");
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Canceling event: [" + key + "]");
+        }
+
+        Event event = timedEvents.remove(key);
+
+        return event != null;
+    }
+
+    /**
      * Disable periodic session time updates.
      * By default, Countly will send a request to the server each 30 seconds with a small update
      * containing session duration time. This method allows you to disable such behavior.

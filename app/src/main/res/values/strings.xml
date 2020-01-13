@@ -43,8 +43,8 @@
     <string name="record_event_with_segm_count">record event with segm., count</string>
     <string name="record_event_with_segm_count_sum">record event with segm., count, sum</string>
     <string name="record_event_with_segm_count_sum_dur">record event with segm., count, sum, dur.</string>
-    <string name="start_event">start event</string>
-    <string name="end_event">end event</string>
+    <string name="start_event">start timed event</string>
+    <string name="end_event">end timed event</string>
     <string name="end_event_with_segm_count_sum">end event with segm., count, sum</string>
     <string name="set_custom_header_field_value">set custom header field value</string>
     <string name="ask_for_star_rating">ask for star-rating</string>

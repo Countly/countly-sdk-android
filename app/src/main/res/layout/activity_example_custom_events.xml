@@ -94,6 +94,13 @@
                 android:onClick="onClickRecordEvent10"/>
 
             <Button
+                android:id="@+id/button67"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="onClickRecordEvent12"
+                android:text="Cancel Timed Event" />
+
+            <Button
                 android:text="@string/end_event_with_segm_count_sum"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
