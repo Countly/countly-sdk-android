@@ -38,7 +38,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -1008,69 +1007,119 @@ public class Countly {
      *                                  segmentation contains null or empty keys or values
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur) {
+        Event.Builder builder = new Event.Builder(key);
+        Event event = builder.setSegmentation(segmentation)
+                .setSegmentationInt(segmentationInt)
+                .setSegmentationDouble(segmentationDouble)
+                .setCount(count)
+                .setSum(sum)
+                .setDur(dur)
+                .build();
+        recordEventImpl(event, false);
+    }
+
+    /**
+     * Records a custom event that occurred in the past. The {@link Event#timestamp},
+     * {@link Event#hour}, and {@link Event#dow} fields of the passed Event will not be modified
+     * before they are sent to the Countly server.
+     * @param event The past event to be recorded
+     */
+    public synchronized void recordPastEvent(final Event event) {
+        recordEventImpl(event, true);
+    }
+
+    private void recordEventImpl(final Event event, boolean past) {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
-        if (key == null || key.length() == 0) {
+
+        if (event == null) {
+            throw new IllegalArgumentException("event cannot be null");
+        }
+
+        if (event.key == null || event.key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
         }
-        if (count < 1) {
+        if (event.count < 1) {
             throw new IllegalArgumentException("Countly event count should be greater than zero");
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Recording event with key: [" + key + "]");
+            Log.d(Countly.TAG, "Recording event with key: [" + event.key + "]");
         }
 
-        if (segmentation != null) {
-            for (String k : segmentation.keySet()) {
+        if (event.segmentation != null) {
+            for (String k : event.segmentation.keySet()) {
                 if (k == null || k.length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
                 }
-                if (segmentation.get(k) == null || segmentation.get(k).length() == 0) {
+                if (event.segmentation.get(k) == null || event.segmentation.get(k).length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
                 }
             }
         }
 
-        if (segmentationInt != null) {
-            for (String k : segmentationInt.keySet()) {
+        if (event.segmentationInt != null) {
+            for (String k : event.segmentationInt.keySet()) {
                 if (k == null || k.length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
                 }
-                if (segmentationInt.get(k) == null) {
+                if (event.segmentationInt.get(k) == null) {
                     throw new IllegalArgumentException("Countly event segmentation value cannot be null");
                 }
             }
         }
 
-        if (segmentationDouble != null) {
-            for (String k : segmentationDouble.keySet()) {
+        if (event.segmentationDouble != null) {
+            for (String k : event.segmentationDouble.keySet()) {
                 if (k == null || k.length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
                 }
-                if (segmentationDouble.get(k) == null) {
+                if (event.segmentationDouble.get(k) == null) {
                     throw new IllegalArgumentException("Countly event segmentation value cannot be null");
                 }
             }
         }
 
-        switch (key) {
+        if (isLoggingEnabled() && past && event.timestamp == 0L) {
+            Log.w(Countly.TAG, "Recording past event with unset timestamp. " +
+                    "Did you mean to record this event at the epoch?");
+        }
+
+        switch (event.key) {
             case STAR_RATING_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)) {
-                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
+                    if (!past) {
+                        eventQueue_.recordEvent(event.key, event.segmentation,
+                                event.segmentationInt, event.segmentationDouble, event.count,
+                                event.sum, event.dur);
+                    } else {
+                        eventQueue_.recordPastEvent(event);
+                    }
                     sendEventsForced();
                 }
                 break;
             case VIEW_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.views)) {
-                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
+                    if (!past) {
+                        eventQueue_.recordEvent(event.key, event.segmentation,
+                                event.segmentationInt, event.segmentationDouble, event.count,
+                                event.sum, event.dur);
+                    } else {
+                        eventQueue_.recordPastEvent(event);
+                    }
                     sendEventsForced();
                 }
                 break;
             default:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
-                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
+                    if (!past) {
+                        eventQueue_.recordEvent(event.key, event.segmentation,
+                                event.segmentationInt, event.segmentationDouble, event.count,
+                                event.sum, event.dur);
+                    } else {
+                        eventQueue_.recordPastEvent(event);
+                    }
                     sendEventsIfNeeded();
                 }
                 break;
@@ -1586,7 +1635,12 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Starting event: [" + key + "]");
         }
-        timedEvents.put(key, new Event(key));
+        Event.Builder eventBuilder = new Event.Builder(key);
+        final Event.Instant instant = Countly.currentInstant();
+        Event event = eventBuilder
+                .setInstant(instant)
+                .build();
+        timedEvents.put(key, event);
         return true;
     }
 
@@ -1678,7 +1732,7 @@ public class Countly {
                 }
             }
 
-            long currentTimestamp = Countly.currentTimestampMs();
+            long currentTimestamp = Countly.currentInstant().timestamp;
 
             event.segmentation = segmentation;
             event.segmentationDouble = segmentationDouble;
@@ -1687,7 +1741,7 @@ public class Countly {
             event.count = count;
             event.sum = sum;
 
-            eventQueue_.recordEvent(event);
+            eventQueue_.recordTimedEvent(event);
             sendEventsIfNeeded();
             return true;
         } else {
@@ -1936,36 +1990,8 @@ public class Countly {
     }
     private static final TimeUniquesEnsurer timeGenerator = new TimeUniquesEnsurer();
 
-    static synchronized long currentTimestampMs() {
-        return timeGenerator.uniqueTimestamp();
-    }
-
-    /**
-     * Utility method to return a current hour of the day that can be used in the Count.ly API.
-     */
-    static int currentHour(){return Calendar.getInstance().get(Calendar.HOUR_OF_DAY); }
-
-    /**
-     * Utility method to return a current day of the week that can be used in the Count.ly API.
-     */
-    @SuppressLint("SwitchIntDef")
-    static int currentDayOfWeek(){
-        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
-        switch (day) {
-            case Calendar.MONDAY:
-                return 1;
-            case Calendar.TUESDAY:
-                return 2;
-            case Calendar.WEDNESDAY:
-                return 3;
-            case Calendar.THURSDAY:
-                return 4;
-            case Calendar.FRIDAY:
-                return 5;
-            case Calendar.SATURDAY:
-                return 6;
-        }
-        return 0;
+    public static synchronized Event.Instant currentInstant() {
+        return Event.Instant.get(timeGenerator.uniqueTimestamp());
     }
 
     /**

@@ -52,7 +52,7 @@ public class EventQueue {
      * Returns the number of events in the local event queue.
      * @return the number of events in the local event queue
      */
-    int size() {
+    protected int size() {
         return countlyStore_.events().length;
    }
 
@@ -94,18 +94,20 @@ public class EventQueue {
      * @throws IllegalArgumentException if key is null or empty
      */
     void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur) {
-        final long timestamp = Countly.currentTimestampMs();
-        final int hour = Countly.currentHour();
-        final int dow = Countly.currentDayOfWeek();
-        countlyStore_.addEvent(key, segmentation, segmentationInt, segmentationDouble, timestamp, hour, dow, count, sum, dur);
+        final Event.Instant instant = Countly.currentInstant();
+        countlyStore_.addEvent(key, segmentation, segmentationInt, segmentationDouble, instant.timestamp, instant.hour, instant.dow, count, sum, dur);
     }
 
-    void recordEvent(final Event event) {
-        event.hour = Countly.currentHour();
-        event.dow = Countly.currentDayOfWeek();
+    void recordTimedEvent(final Event event) {
+        Event.Instant instant = Countly.currentInstant();
+        event.hour = instant.hour;
+        event.dow = instant.dow;
         countlyStore_.addEvent(event);
     }
 
+    protected void recordPastEvent(final Event event) {
+        countlyStore_.addEvent(event);
+    }
 
         // for unit tests
     CountlyStore getCountlyStore() {

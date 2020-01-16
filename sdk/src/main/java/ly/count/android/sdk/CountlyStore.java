@@ -173,7 +173,7 @@ public class CountlyStore {
      * Adds a custom event to the local store.
      * @param event event to be added to the local store, must not be null
      */
-    void addEvent(final Event event) {
+    public void addEvent(final Event event) {
         final List<Event> events = eventsList();
         if (events.size() < MAX_EVENTS) {
             events.add(event);

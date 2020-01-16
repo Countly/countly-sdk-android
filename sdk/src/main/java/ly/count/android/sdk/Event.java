@@ -26,6 +26,7 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,7 +37,143 @@ import java.util.Map;
  * See the following link for more info:
  * https://count.ly/resources/reference/custom-events
  */
-class Event {
+public class Event {
+
+    public static class Instant {
+        public final long timestamp;
+        public final int hour;
+        public final int dow;
+
+        private Instant(long timestampInMillis, int hour, int dow) {
+            this.timestamp = timestampInMillis;
+            this.hour = hour;
+            this.dow = dow;
+        }
+
+        public static Instant get(long timestampInMillis) {
+            if (timestampInMillis < 0L) {
+                throw new IllegalArgumentException(
+                        "timestampInMillis must be greater than or equal to zero");
+            }
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(timestampInMillis);
+            final int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            // Calendar days are 1-based, Countly days are 0-based
+            final int dow = calendar.get(Calendar.DAY_OF_WEEK) - 1;
+            return new Event.Instant(timestampInMillis, hour, dow);
+        }
+    }
+
+    public static class Builder {
+
+        private Event event_;
+
+        public Builder(String key) {
+            reset(key);
+        }
+
+        public void reset(String key) {
+            if (key == null) {
+                throw new IllegalArgumentException("event key cannot be null");
+            }
+            event_ = new Event();
+            event_.count = 1;
+            event_.key = key;
+        }
+
+        public Builder putSegmentationEntry(String key, String value) {
+            if (key == null || value == null) {
+                throw new IllegalArgumentException("key and value must be non-null");
+            }
+            if (event_.segmentation == null) {
+                event_.segmentation = new HashMap<>();
+            }
+            event_.segmentation.put(key, value);
+            return this;
+        }
+
+        public Builder setSegmentation(Map<String, String> segmentation) {
+            event_.segmentation = segmentation;
+            return this;
+        }
+
+        public Builder putSegmentationIntEntry(String key, Integer value) {
+            if (key == null || value == null) {
+                throw new IllegalArgumentException("key and value must be non-null");
+            }
+            if (event_.segmentationInt == null) {
+                event_.segmentationInt = new HashMap<>();
+            }
+            event_.segmentationInt.put(key, value);
+            return this;
+        }
+
+        public Builder setSegmentationInt(Map<String, Integer> segmentationInt) {
+            event_.segmentationInt = segmentationInt;
+            return this;
+        }
+
+        public Builder putSegmentationDoubleEntry(String key, Double value) {
+            if (key == null || value == null) {
+                throw new IllegalArgumentException("key and value must be non-null");
+            }
+            if (event_.segmentationDouble == null) {
+                event_.segmentationDouble = new HashMap<>();
+            }
+            event_.segmentationDouble.put(key, value);
+            return this;
+        }
+
+        public Builder setSegmentationDouble(Map<String, Double> segmentationDouble) {
+            event_.segmentationDouble = segmentationDouble;
+            return this;
+        }
+
+        public Builder setCount(int count) {
+            if (count < 1) {
+                throw new IllegalArgumentException("count must be greater than or equal to 1");
+            }
+            event_.count = count;
+            return this;
+        }
+
+        public Builder setSum(double sum) {
+            event_.sum = sum;
+            return this;
+        }
+
+        public Builder setDur(double dur) {
+            if (dur < 0d) {
+                throw new IllegalArgumentException(
+                        "duration must be greater than or equal to zero");
+            }
+            event_.dur = dur;
+            return this;
+        }
+
+        public Builder setInstant(Instant instant) {
+            if (instant.timestamp < 0L) {
+                throw new IllegalArgumentException(
+                        "timestamp must be greater than or equal to zero");
+            }
+            if (instant.hour < 0 || instant.hour > 23) {
+                throw new IllegalArgumentException("hour must be in range [0, 23]");
+            }
+            if (instant.dow < 0 || instant.dow > 6) {
+                throw new IllegalArgumentException("dow must be in range [0, 6]");
+            }
+            event_.timestamp = instant.timestamp;
+            event_.hour = instant.hour;
+            event_.dow = instant.dow;
+            return this;
+        }
+
+        public Event build() {
+            return this.event_;
+        }
+
+    }
+
     private static final String SEGMENTATION_KEY = "segmentation";
     private static final String KEY_KEY = "key";
     private static final String COUNT_KEY = "count";
@@ -59,18 +196,11 @@ class Event {
 
     Event () {}
 
-    public Event (String key) {
-        this.key = key;
-        this.timestamp = Countly.currentTimestampMs();
-        this.hour = Countly.currentHour();
-        this.dow = Countly.currentDayOfWeek();
-    }
-
     /**
      * Creates and returns a JSONObject containing the event data from this object.
      * @return a JSONObject containing the event data from this object
      */
-    JSONObject toJSON() {
+    public JSONObject toJSON() {
         final JSONObject json = new JSONObject();
 
         try {
@@ -128,7 +258,7 @@ class Event {
      *         present or the empty string, or if a JSON exception occurs
      * @throws NullPointerException if JSONObject is null
      */
-    static Event fromJSON(final JSONObject json) {
+    public static Event fromJSON(final JSONObject json) {
         Event event = new Event();
 
         try {
