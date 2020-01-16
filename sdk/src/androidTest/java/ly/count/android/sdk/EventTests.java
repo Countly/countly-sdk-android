@@ -351,4 +351,36 @@ public class EventTests {
         assertEquals(expected.count, actual.count);
         assertEquals(expected.sum, actual.sum, 0.0000001);
     }
+
+    @Test
+    public void testSegmentationSorter() {
+        String[] keys = new String[]{"a", "b", "c", "d", "e", "f"};
+
+        Map<String, Object> automaticViewSegmentation = new HashMap<>();
+
+        automaticViewSegmentation.put(keys[0], 2);
+        automaticViewSegmentation.put(keys[1], 12);
+        automaticViewSegmentation.put(keys[2], 123);
+        automaticViewSegmentation.put(keys[3], 4.44d);
+        automaticViewSegmentation.put(keys[4], "Six");
+        automaticViewSegmentation.put(keys[5], "asdSix");
+
+        HashMap<String, String> segmentsString = new HashMap<>();
+        HashMap<String, Integer> segmentsInt = new HashMap<>();
+        HashMap<String, Double> segmentsDouble = new HashMap<>();
+
+        Countly.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble);
+
+        assertEquals(automaticViewSegmentation.size(), keys.length);
+        assertEquals(segmentsString.size(), 2);
+        assertEquals(segmentsInt.size(), 3);
+        assertEquals(segmentsDouble.size(), 1);
+
+        assertEquals(segmentsInt.get(keys[0]).intValue(), 2);
+        assertEquals(segmentsInt.get(keys[1]).intValue(), 12);
+        assertEquals(segmentsInt.get(keys[2]).intValue(), 123);
+        assertEquals(segmentsDouble.get(keys[3]).doubleValue(), 4.44d, 0.00001);
+        assertEquals(segmentsString.get(keys[4]), "Six");
+        assertEquals(segmentsString.get(keys[5]), "asdSix");
+    }
 }

@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class CountlyConfig {
     /**
@@ -83,6 +84,8 @@ public class CountlyConfig {
     protected String[] crashRegexFilters = null;
 
     protected String tamperingProtectionSalt = null;
+
+    protected Map<String, Object> automaticViewSegmentation = null;
 
     /**
      * Android context.
@@ -246,4 +249,10 @@ public class CountlyConfig {
         tamperingProtectionSalt = salt;
         return this;
     }
+
+    public CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation){
+        automaticViewSegmentation = segmentation;
+        return this;
+    }
+
 }

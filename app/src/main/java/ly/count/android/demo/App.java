@@ -17,6 +17,7 @@ import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
@@ -62,6 +63,12 @@ public class App extends Application {
         HashMap<String, String> customHeaderValues = new HashMap<>();
         customHeaderValues.put("foo", "bar");
 
+        Map<String, Object> automaticViewSegmentation = new HashMap<>();
+
+        automaticViewSegmentation.put("One", 2);
+        automaticViewSegmentation.put("Three", 4.44d);
+        automaticViewSegmentation.put("Five", "Six");
+
         //Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, false);
         //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
         CountlyConfig config = (new CountlyConfig()).setContext(appC).setServerURL(COUNTLY_SERVER_URL).setAppKey(COUNTLY_APP_KEY).setIdMode(DeviceId.Type.OPEN_UDID)
@@ -80,6 +87,7 @@ public class App extends Application {
                 })
                 .setCrashFilters(new String[]{".*secret.*"})
                 .setParameterTamperingProtectionSalt("SampleSalt")
+                .setAutomaticViewSegmentation(automaticViewSegmentation)
                 ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

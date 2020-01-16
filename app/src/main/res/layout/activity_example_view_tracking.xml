@@ -10,16 +10,18 @@
               android:paddingBottom="@dimen/activity_vertical_margin" >
 
     <Button
-        android:text="@string/turn_off_auto"
+        android:id="@+id/button34"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button34"/>
+        android:onClick="onClickViewTrackingDisableAuto"
+        android:text="turn off automatic view reporting" />
 
     <Button
-        android:text="@string/turn_on_auto"
+        android:id="@+id/button35"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button35"/>
+        android:onClick="onClickViewTrackingEnableAuto"
+        android:text="turn on automatic view reporting" />
 
     <Button
         android:text="@string/present_modal"
@@ -50,8 +52,23 @@
         android:enabled="false"/>
 
     <Button
-        android:text="@string/manual_report"
+        android:id="@+id/button40"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/button40"/>
+        android:onClick="onClickViewTrackingRecordView"
+        android:text="record view" />
+
+    <Button
+        android:id="@+id/button68"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewTrackingRecordViewWithSegmentation"
+        android:text="record view with custom segmentation" />
+
+    <Button
+        android:id="@+id/button69"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewSetAutomaticSegmentation"
+        android:text="Set automatic view segmentation" />
 </LinearLayout>

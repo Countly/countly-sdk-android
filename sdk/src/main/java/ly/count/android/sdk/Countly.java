@@ -178,6 +178,9 @@ public class Countly {
     static final String countlyFolderName = "Countly";
     static final String countlyNativeCrashFolderName = "CrashDumps";
 
+    //automatic view segmentation
+    protected Map<String, Object> automaticViewSegmentation = null;
+
     //GDPR
     protected boolean requiresConsent = false;
 
@@ -422,6 +425,8 @@ public class Countly {
         setViewTracking(config.enableViewTracking);
 
         setAutoTrackingUseShortName(config.autoTrackingUseShortName);
+
+        setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
 
         //init other things
         addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -675,7 +680,7 @@ public class Countly {
             } else {
                 usedActivityName = activity.getClass().getName();
             }
-            recordView(usedActivityName);
+            recordView(usedActivityName, automaticViewSegmentation);
         }
 
         calledAtLeastOnceOnStart = true;
@@ -1100,24 +1105,52 @@ public class Countly {
      * like fragment, Message box or transparent Activity
      * @param viewName String - name of the view
      * @return Returns link to Countly for call chaining
+     * @deprecated
      */
-    public synchronized Countly recordView(String viewName){
+    public synchronized Countly recordView(String viewName) {
+        return recordView(viewName, null);
+    }
+
+    /**
+     *  Record a view manually, without automatic tracking
+     * or track view that is not automatically tracked
+     * like fragment, Message box or transparent Activity
+     * @param viewName String - name of the view
+     * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
+     * @return Returns link to Countly for call chaining
+     */
+    public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Recording view with name: [" + viewName + "]");
+            int segmCount = 0;
+            if (viewSegmentation != null) {
+                segmCount = viewSegmentation.size();
+            }
+            Log.d(Countly.TAG, "Recording view with name: [" + viewName + "], previous view:[" + lastView + "] view segment count:[" + segmCount + "]");
         }
 
         reportViewDuration();
         lastView = viewName;
         lastViewStart = Countly.currentTimestamp();
-        HashMap<String, String> segments = new HashMap<>();
-        segments.put("name", viewName);
-        segments.put("visit", "1");
-        segments.put("segment", "Android");
+        HashMap<String, String> segmentsString = new HashMap<>();
+        segmentsString.put("name", viewName);
+        segmentsString.put("visit", "1");
+        segmentsString.put("segment", "Android");
         if(firstView) {
             firstView = false;
-            segments.put("start", "1");
+            segmentsString.put("start", "1");
         }
-        recordEvent(VIEW_EVENT_KEY, segments, 1);
+
+        HashMap<String, Integer> segmentsInt = null;
+        HashMap<String, Double> segmentsDouble = null;
+
+        if(viewSegmentation != null){
+            segmentsInt = new HashMap<>();
+            segmentsDouble = new HashMap<>();
+
+            fillInSegmentation(viewSegmentation, segmentsString, segmentsInt, segmentsDouble);
+        }
+
+        recordEvent(VIEW_EVENT_KEY, segmentsString, segmentsInt, segmentsDouble, 1, 0, 0);
         return this;
     }
 
@@ -2945,6 +2978,111 @@ public class Countly {
             }
         }
         return false;
+    }
+
+    public Countly setAutomaticViewSegmentation(Map<String, Object> segmentation){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling setAutomaticViewSegmentation");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before setAutomaticViewSegmentation");
+        }
+
+        setAutomaticViewSegmentationInternal(segmentation);
+
+        return this;
+    }
+
+    private void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling setAutomaticViewSegmentationInternal");
+        }
+
+        if(segmentation != null){
+            if(!Countly.checkSegmentationTypes(segmentation)){
+                //found a unsupported type, throw exception
+
+                throw new IllegalStateException("Provided a unsupported type for automatic View Segmentation");
+            }
+        }
+
+        automaticViewSegmentation = segmentation;
+    }
+
+    protected static boolean checkSegmentationTypes(Map<String, Object> segmentation){
+        if (segmentation == null) {
+            throw new IllegalStateException("[checkSegmentationTypes] provided segmentations can't be null!");
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[checkSegmentationTypes] Calling checkSegmentationTypes, size:[" + segmentation.size() + "]");
+        }
+
+        for (Map.Entry<String, Object> pair : segmentation.entrySet()) {
+            String key = pair.getKey();
+
+            if(key == null || key.isEmpty()){
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[checkSegmentationTypes], provided segment with either 'null' or empty string key");
+                }
+                throw new IllegalStateException("provided segment with either 'null' or empty string key");
+            }
+
+            Object value = pair.getValue();
+
+            if(value instanceof Integer){
+                //expected
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.v(Countly.TAG, "[checkSegmentationTypes] found INTEGER with key:[" + key + "], value:[" + value + "]");
+                }
+            } else if(value instanceof Double) {
+                //expected
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.v(Countly.TAG, "[checkSegmentationTypes] found DOUBLE with key:[" + key + "], value:[" + value + "]");
+                }
+            } else if(value instanceof String) {
+                //expected
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.v(Countly.TAG, "[checkSegmentationTypes] found STRING with key:[" + key + "], value:[" + value + "]");
+                }
+            } else {
+                //should not get here, it means that the user provided a unsupported type
+
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.e(Countly.TAG, "[checkSegmentationTypes] provided unsupported segmentation type:[" + value.getClass().getCanonicalName() + "] with key:[" + key + "], returning [false]");
+                }
+
+                return false;
+            }
+        }
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[checkSegmentationTypes] returning [true]");
+        }
+        return true;
+    }
+
+    /**
+     * Used for quickly sorting segments into their respective data type
+     * @param allSegm
+     * @param segmStr
+     * @param segmInt
+     * @param segmDouble
+     */
+    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, HashMap<String, String> segmStr, HashMap<String, Integer> segmInt, HashMap<String, Double> segmDouble) {
+        for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
+            String key = pair.getKey();
+            Object value = pair.getValue();
+
+            if (value instanceof Integer) {
+                segmInt.put(key, (Integer) value);
+            } else if (value instanceof Double) {
+                segmDouble.put(key, (Double) value);
+            } else if (value instanceof String) {
+                segmStr.put(key, (String) value);
+            }
+        }
     }
 
     // for unit testing

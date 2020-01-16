@@ -1,7 +1,8 @@
 20.01
   * Adding functionality for filtering crashes
+  * Adding functionality to set segmentation for automatic and manual views
   * Adding option to set tamper protection salt in config object
-  * Adding calls to give and remove consent to all features
+  * Adding calls to give and remove consent to all features at the same time
   * Migrated to AndroidX
 
 

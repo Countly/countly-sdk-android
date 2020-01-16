@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import ly.count.android.sdk.Countly;
 
 @SuppressWarnings({"UnusedParameters", "unused"})
@@ -17,11 +20,11 @@ public class ActivityExampleViewTracking extends Activity {
 
     }
 
-    public void onClickViewTracking01(View v) {
+    public void onClickViewTrackingDisableAuto(View v) {
         Countly.sharedInstance().setViewTracking(false);
     }
 
-    public void onClickViewTracking02(View v) {
+    public void onClickViewTrackingEnableAuto(View v) {
         Countly.sharedInstance().setViewTracking(true);
     }
 
@@ -41,8 +44,28 @@ public class ActivityExampleViewTracking extends Activity {
 
     }
 
-    public void onClickViewTracking07(View v) {
-        Countly.sharedInstance().recordView("Awesome view");
+    public void onClickViewTrackingRecordView(View v) {
+        Countly.sharedInstance().recordView("Awesome view", null);
+    }
+
+    public void onClickViewTrackingRecordViewWithSegmentation(View v) {
+        Map<String, Object> viewSegmentation = new HashMap<>();
+
+        viewSegmentation.put("Cats", 123);
+        viewSegmentation.put("Moons", 9.98d);
+        viewSegmentation.put("Moose", "Deer");
+
+        Countly.sharedInstance().recordView("Better view", viewSegmentation);
+    }
+
+    public void onClickViewSetAutomaticSegmentation(View v) {
+        Map<String, Object> viewSegmentation = new HashMap<>();
+
+        viewSegmentation.put("Early", 987);
+        viewSegmentation.put("Bird", 11.77d);
+        viewSegmentation.put("Catches", "Bush");
+
+        Countly.sharedInstance().setAutomaticViewSegmentation(viewSegmentation);
     }
 
     @Override
