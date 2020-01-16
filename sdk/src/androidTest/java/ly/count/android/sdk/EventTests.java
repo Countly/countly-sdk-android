@@ -51,6 +51,116 @@ public class EventTests {
     }
 
     @Test
+    public void testBuilder_minimum() {
+        String key = "foo";
+        Event event = new Event.Builder(key).build();
+        assertEquals(key, event.key);
+        assertEquals(1, event.count);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilder_nullKey() {
+        new Event.Builder(null);
+    }
+
+    @Test
+    public void testBuilder_reset() {
+        Event.Builder builder = new Event.Builder("foo").setCount(1);
+        Event beforeReset = builder.build();
+        builder.reset("bar");
+        Event afterReset = builder.setCount(2).build();
+        assertEquals(beforeReset.key, "foo");
+        assertEquals(beforeReset.count, 1);
+        assertEquals(afterReset.key, "bar");
+        assertEquals(afterReset.count, 2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilder_segmentation() {
+        assertNull(new Event.Builder("foo").build().segmentation);
+        Event event = new Event.Builder("foo").putSegmentationEntry("key", "value").build();
+        assertNotNull(event.segmentation);
+        assertEquals(event.segmentation.get("key"), "value");
+        assertEquals(event.segmentation.size(), 1);
+
+        Map<String, String> segs = new HashMap<String, String>() {{ put("key", "value"); }};
+        event = new Event.Builder("foo").setSegmentation(segs).build();
+        assertNotNull(event.segmentation);
+        assertEquals(event.segmentation.get("key"), "value");
+        assertEquals(event.segmentation.size(), 1);
+
+        new Event.Builder("foo").putSegmentationEntry(null, null).build();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilder_segmentationInt() {
+        assertNull(new Event.Builder("foo").build().segmentationInt);
+        Event event = new Event.Builder("foo").putSegmentationIntEntry("key", 1).build();
+        assertNotNull(event.segmentationInt);
+        assertEquals(event.segmentationInt.get("key").intValue(), 1);
+        assertEquals(event.segmentationInt.size(), 1);
+
+        Map<String, Integer> segs = new HashMap<String, Integer>() {{ put("key", 1); }};
+        event = new Event.Builder("foo").setSegmentationInt(segs).build();
+        assertNotNull(event.segmentationInt);
+        assertEquals(event.segmentationInt.get("key").intValue(), 1);
+        assertEquals(event.segmentationInt.size(), 1);
+
+        new Event.Builder("foo").putSegmentationEntry(null, null).build();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilder_segmentationDouble() {
+        assertNull(new Event.Builder("foo").build().segmentationDouble);
+        Event event = new Event.Builder("foo").putSegmentationDoubleEntry("key", 1d).build();
+        assertNotNull(event.segmentationDouble);
+        assertEquals(event.segmentationDouble.get("key"), 1d, 0.001);
+        assertEquals(event.segmentationDouble.size(), 1);
+
+        Map<String, Double> segs = new HashMap<String, Double>() {{ put("key", 1d); }};
+        event = new Event.Builder("foo").setSegmentationDouble(segs).build();
+        assertNotNull(event.segmentationDouble);
+        assertEquals(event.segmentationDouble.get("key"), 1d, 0.001);
+        assertEquals(event.segmentationDouble.size(), 1);
+
+        new Event.Builder("foo").putSegmentationEntry(null, null).build();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilder_count() {
+        Event event = new Event.Builder("foo").setCount(500).build();
+        assertEquals(event.count, 500);
+        new Event.Builder("foo").setCount(0);
+    }
+
+    @Test
+    public void testBuilder_sum() {
+        Event event = new Event.Builder("foo").setSum(500d).build();
+        assertEquals(event.sum, 500d, 0.0001);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilder_dur() {
+        Event event = new Event.Builder("foo").setDur(500d).build();
+        assertEquals(event.dur, 500d, 0.001);
+        new Event.Builder("foo").setDur(-1d);
+    }
+
+    @Test
+    public void testBuilder_instant() {
+        Event.Instant instant = Countly.currentInstant();
+        Event event = new Event.Builder("foo").setInstant(instant).build();
+        assertEquals(event.timestamp, instant.timestamp);
+        assertEquals(event.dow, instant.dow);
+        assertEquals(event.hour, instant.hour);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInstant_invalidGet() {
+        Event.Instant.get(-1L);
+    }
+
+    @Test
     public void testEqualsAndHashCode() {
         final Event event1 = new Event();
         final Event event2 = new Event();

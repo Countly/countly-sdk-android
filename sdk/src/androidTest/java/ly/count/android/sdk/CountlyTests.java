@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
@@ -30,13 +29,10 @@ import org.junit.Before;
 import java.util.HashMap;
 
 import static androidx.test.InstrumentationRegistry.getContext;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -616,6 +612,22 @@ public class CountlyTests {
         } catch (IllegalArgumentException ignored) {
             // success
         }
+    }
+
+    @Test
+    public void testRecordPastEvent() {
+        Event event = new Event.Builder("foo").setInstant(Countly.currentInstant()).build();
+        EventQueue eventQueueMock = mock(EventQueue.class);
+        doNothing().when(eventQueueMock).recordPastEvent(event);
+        when(eventQueueMock.size()).thenReturn(1);
+        mCountly.setEventQueue(eventQueueMock);
+        mCountly.recordPastEvent(event);
+        verify(eventQueueMock).recordPastEvent(event);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRecordPastEvent_nullInput() {
+        mCountly.recordPastEvent(null);
     }
 
     //todo fix test, problem while mocking

@@ -36,7 +36,6 @@ import java.util.Map;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -66,14 +65,28 @@ public class EventQueueTests {
         final Map<String, String> segmentation = new HashMap<>(1);
         final Map<String, Integer> segmentationInt = null;
         final Map<String, Double> segmentationDouble = null;
-        final long timestamp = Countly.currentTimestampMs();
-        final int hour = Countly.currentHour();
-        final int dow = Countly.currentDayOfWeek();
+        Event.Instant instant = Countly.currentInstant();
+        final long timestamp = instant.timestamp;
+        final int hour = instant.hour;
+        final int dow = instant.dow;
         final ArgumentCaptor<Long> arg = ArgumentCaptor.forClass(Long.class);
 
         mEventQueue.recordEvent(eventKey, segmentation, null, null, count, sum, dur);
         verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
         assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
+    }
+
+    @Test
+    public void testRecordPastEvent() {
+        Event.Instant instant = Countly.currentInstant();
+        Event event = new Event.Builder("foo")
+                .setInstant(instant)
+                .build();
+        doNothing().when(mMockCountlyStore).addEvent(event);
+        mEventQueue.recordPastEvent(event);
+        verify(mMockCountlyStore).addEvent(event);
+        // Ensure timestamp didn't get changed
+        assertEquals(instant.timestamp, event.timestamp);
     }
 
     @Test
