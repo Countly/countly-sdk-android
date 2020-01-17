@@ -366,14 +366,18 @@ class CrashDetails {
      * Checks if device is muted.
      */
     static String isMuted(Context context) {
-        AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        switch( audio.getRingerMode() ){
-            case AudioManager.RINGER_MODE_SILENT:
-                return "true";
-            case AudioManager.RINGER_MODE_VIBRATE:
-                return "true";
-            default:
-                return "false";
+        try {
+            AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+            switch (audio.getRingerMode()){
+                case AudioManager.RINGER_MODE_SILENT:
+                    // Fall-through
+                case AudioManager.RINGER_MODE_VIBRATE:
+                    return "true";
+                default:
+                    return "false";
+            }
+        } catch (Throwable thr) {
+            return "false";
         }
     }
 
