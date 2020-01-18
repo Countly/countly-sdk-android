@@ -58,7 +58,7 @@ class CrashDetails {
     private static final int maxBreadcrumbLimit = 1000;//the limit of how many breadcrumbs can be saved
     private static final int maxBreadcrumbSize = 1000;//maximum allowed length of a breadcrumb in characters
     private static final LinkedList<String> logs = new LinkedList<>();
-    private static final int startTime = Countly.currentTimestamp();
+    private static final int startTime = UtilsTime.currentTimestampSeconds();
     private static Map<String,String> customSegments = null;
     private static boolean inBackground = true;
     private static long totalMemory = 0;
@@ -305,7 +305,7 @@ class CrashDetails {
      * Get app's running time before crashing.
      */
     static String getRunningTime() {
-        return Integer.toString(Countly.currentTimestamp() - startTime);
+        return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
     }
 
     /**

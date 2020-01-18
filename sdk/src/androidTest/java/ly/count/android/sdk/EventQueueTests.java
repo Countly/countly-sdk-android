@@ -66,9 +66,10 @@ public class EventQueueTests {
         final Map<String, String> segmentation = new HashMap<>(1);
         final Map<String, Integer> segmentationInt = null;
         final Map<String, Double> segmentationDouble = null;
-        final long timestamp = Countly.currentTimestampMs();
-        final int hour = Countly.currentHour();
-        final int dow = Countly.currentDayOfWeek();
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        final long timestamp = instant.timestampMs;
+        final int hour = instant.hour;
+        final int dow = instant.dow;
         final ArgumentCaptor<Long> arg = ArgumentCaptor.forClass(Long.class);
 
         mEventQueue.recordEvent(eventKey, segmentation, null, null, count, sum, dur);

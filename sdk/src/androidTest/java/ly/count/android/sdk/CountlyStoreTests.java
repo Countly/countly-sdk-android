@@ -115,7 +115,8 @@ public class CountlyStoreTests {
     @Test
     public void testEvents_prefIsEmptyString() {
         // the following two calls will result in the pref being an empty string
-        store.addEvent("eventKey", null, null, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        store.addEvent("eventKey", null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         store.removeEvents(store.eventsList());
         assertTrue(Arrays.equals(new String[0], store.events()));
     }
@@ -123,7 +124,8 @@ public class CountlyStoreTests {
     @Test
     public void testEvents_prefHasSingleValue() throws JSONException {
         final String eventKey = "eventKey";
-        store.addEvent(eventKey, null, null, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        store.addEvent(eventKey, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         final String[] eventJSONStrings = store.events();
         final JSONObject eventJSONObj = new JSONObject(eventJSONStrings[0]);
         assertEquals(eventKey, eventJSONObj.getString("key"));
@@ -134,8 +136,11 @@ public class CountlyStoreTests {
     public void testEvents_prefHasTwoValues() throws JSONException {
         final String eventKey1 = "eventKey1";
         final String eventKey2 = "eventKey2";
-        store.addEvent(eventKey1, null, null, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
-        store.addEvent(eventKey2, null, null, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        store.addEvent(eventKey1, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
+
+        instant = UtilsTime.getCurrentInstant();
+        store.addEvent(eventKey2, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         final String[] eventJSONStrs = store.events();
         final JSONObject eventJSONObj1 = new JSONObject(eventJSONStrs[0]);
         assertEquals(eventKey1, eventJSONObj1.getString("key"));
@@ -153,7 +158,7 @@ public class CountlyStoreTests {
     public void testEventsList_singleEvent() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
-        event1.timestamp = Countly.currentTimestampMs();
+        event1.timestamp = UtilsTime.currentTimestampMs();
         event1.count = 1;
         event1.dur = 10.0d;
         store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
@@ -167,17 +172,17 @@ public class CountlyStoreTests {
     public void testEventsList_sortingOfMultipleEvents() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
-        event1.timestamp = Countly.currentTimestampMs();
+        event1.timestamp = UtilsTime.currentTimestampMs();
         event1.count = 1;
         event1.dur = 10.0d;
         final Event event2 = new Event();
         event2.key = "eventKey2";
-        event2.timestamp = Countly.currentTimestampMs() - 60000;
+        event2.timestamp = UtilsTime.currentTimestampMs() - 60000;
         event2.count = 1;
         event2.dur = 10.0d;
         final Event event3 = new Event();
         event3.key = "eventKey3";
-        event3.timestamp = Countly.currentTimestampMs() - 30000;
+        event3.timestamp = UtilsTime.currentTimestampMs() - 30000;
         event3.count = 1;
         event3.dur = 10.0d;
         store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
@@ -194,16 +199,18 @@ public class CountlyStoreTests {
     @Test
     public void testEventsList_badJSON() {
         final Event event1 = new Event();
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         event1.key = "eventKey1";
-        event1.timestamp = Countly.currentTimestampMs() - 60000;
-        event1.hour = Countly.currentHour();
-        event1.dow = Countly.currentDayOfWeek();
+        event1.timestamp = instant.timestampMs - 60000;
+        event1.hour = instant.hour;
+        event1.dow = instant.dow;
         event1.count = 1;
         final Event event2 = new Event();
+        instant = UtilsTime.getCurrentInstant();
         event2.key = "eventKey2";
-        event2.timestamp = Countly.currentTimestampMs();
-        event2.hour = Countly.currentHour();
-        event2.dow = Countly.currentDayOfWeek();
+        event2.timestamp = instant.timestampMs;
+        event2.hour = instant.hour;
+        event2.dow = instant.dow;
         event2.count = 1;
 
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::blah:::" + event2.toJSON().toString();
@@ -220,16 +227,18 @@ public class CountlyStoreTests {
     @Test
     public void testEventsList_EventFromJSONReturnsNull() {
         final Event event1 = new Event();
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         event1.key = "eventKey1";
-        event1.timestamp = Countly.currentTimestampMs() - 60000;
-        event1.hour = Countly.currentHour();
-        event1.dow = Countly.currentDayOfWeek();
+        event1.timestamp = instant.timestampMs - 60000;
+        event1.hour = instant.hour;
+        event1.dow = instant.dow;
         event1.count = 1;
         final Event event2 = new Event();
+        instant = UtilsTime.getCurrentInstant();
         event2.key = "eventKey2";
-        event2.timestamp = Countly.currentTimestampMs();
-        event2.hour = Countly.currentHour();
-        event2.dow = Countly.currentDayOfWeek();
+        event2.timestamp = instant.timestampMs;
+        event2.hour = instant.hour;
+        event2.dow = instant.dow;
         event2.count = 1;
 
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::{\"key\":null}:::" + event2.toJSON().toString();
@@ -322,7 +331,7 @@ public class CountlyStoreTests {
     public void testAddEvent() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
-        event1.timestamp = Countly.currentTimestampMs() - 60000;
+        event1.timestamp = UtilsTime.currentTimestampMs() - 60000;
         event1.count = 42;
         event1.sum = 3.2;
         event1.dur = 10.0d;
@@ -344,17 +353,17 @@ public class CountlyStoreTests {
     public void testRemoveEvents() {
         final Event event1 = new Event();
         event1.key = "eventKey1";
-        event1.timestamp = Countly.currentTimestampMs() - 60000;
+        event1.timestamp = UtilsTime.currentTimestampMs() - 60000;
         event1.count = 1;
         event1.dur = 10.0d;
         final Event event2 = new Event();
         event2.key = "eventKey2";
-        event2.timestamp = Countly.currentTimestampMs() - 30000;
+        event2.timestamp = UtilsTime.currentTimestampMs() - 30000;
         event2.count = 1;
         event2.dur = 10.0d;
         final Event event3 = new Event();
         event3.key = "eventKey2";
-        event3.timestamp = Countly.currentTimestampMs();
+        event3.timestamp = UtilsTime.currentTimestampMs();
         event3.count = 1;
         event3.dur = 10.0d;
 
@@ -378,7 +387,8 @@ public class CountlyStoreTests {
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
         store.addConnection("blah");
-        store.addEvent("eventKey", null, null, null, Countly.currentTimestampMs(), Countly.currentHour(), Countly.currentDayOfWeek(), 1, 0.0d, 10.0d);
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        store.addEvent("eventKey", null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         assertTrue(prefs.contains("EVENTS"));
         assertTrue(prefs.contains("CONNECTIONS"));
         store.clear();

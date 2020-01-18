@@ -60,10 +60,12 @@ class Event {
     Event () {}
 
     public Event (String key) {
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+
         this.key = key;
-        this.timestamp = Countly.currentTimestampMs();
-        this.hour = Countly.currentHour();
-        this.dow = Countly.currentDayOfWeek();
+        this.timestamp = instant.timestampMs;
+        this.hour = instant.hour;
+        this.dow = instant.dow;
     }
 
     /**

@@ -823,7 +823,7 @@ public class CountlyTests {
     @Test
     public void testCurrentTimestamp() {
         final int testTimestamp = (int) (System.currentTimeMillis() / 1000L);
-        final int actualTimestamp = Countly.currentTimestamp();
+        final int actualTimestamp = UtilsTime.currentTimestampSeconds();
         assertTrue(((testTimestamp - 1) <= actualTimestamp) && ((testTimestamp + 1) >= actualTimestamp));
     }
 

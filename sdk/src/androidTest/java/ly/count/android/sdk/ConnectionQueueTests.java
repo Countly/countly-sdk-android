@@ -296,7 +296,7 @@ public class ConnectionQueueTests {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestampMs();
+        final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
         final long curTimestampAbove = curTimestamp + timestampAllowance;
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
@@ -318,7 +318,7 @@ public class ConnectionQueueTests {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestampMs();
+        final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
         final long curTimestampAbove = curTimestamp + timestampAllowance;
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
@@ -340,7 +340,7 @@ public class ConnectionQueueTests {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestampMs();
+        final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
         final long curTimestampAbove = curTimestamp + timestampAllowance;
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
@@ -373,7 +373,7 @@ public class ConnectionQueueTests {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestampMs();
+        final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
         final long curTimestampAbove = curTimestamp + timestampAllowance;
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));

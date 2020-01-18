@@ -1130,7 +1130,7 @@ public class Countly {
 
         reportViewDuration();
         lastView = viewName;
-        lastViewStart = Countly.currentTimestamp();
+        lastViewStart = UtilsTime.currentTimestampSeconds();
         HashMap<String, String> segmentsString = new HashMap<>();
         segmentsString.put("name", viewName);
         segmentsString.put("visit", "1");
@@ -1678,7 +1678,7 @@ public class Countly {
                 }
             }
 
-            long currentTimestamp = Countly.currentTimestampMs();
+            long currentTimestamp = UtilsTime.currentTimestampMs();
 
             event.segmentation = segmentation;
             event.segmentationDouble = segmentationDouble;
@@ -1817,30 +1817,30 @@ public class Countly {
     /**
      * Reports duration of last view
      */
-    private void reportViewDuration(){
+    private void reportViewDuration() {
         if (sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + (Countly.currentTimestamp() - lastViewStart) + "], current timestamp: [" + Countly.currentTimestamp() + "], last views start: [" + lastViewStart + "]");
+            Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "], current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
         }
 
-        if(lastView != null && lastViewStart <= 0) {
+        if (lastView != null && lastViewStart <= 0) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Last view start value is not normal: [" + lastViewStart + "]");
             }
         }
 
-        if(!getConsent(CountlyFeatureNames.views)) {
+        if (!getConsent(CountlyFeatureNames.views)) {
             return;
         }
 
         //only record view if the view name is not null and if it has a reasonable duration
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
-        if(lastView != null && lastViewStart > 0){
+        if (lastView != null && lastViewStart > 0) {
             HashMap<String, String> segments = new HashMap<>();
             segments.put("name", lastView);
-            segments.put("dur", String.valueOf(Countly.currentTimestamp()-lastViewStart));
+            segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
-            recordEvent(VIEW_EVENT_KEY,segments,1);
+            recordEvent(VIEW_EVENT_KEY, segments, 1);
             lastView = null;
             lastViewStart = 0;
         }
@@ -1894,78 +1894,6 @@ public class Countly {
         final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
         prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
         return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
-    }
-
-    /**
-     * Utility method to return a current timestamp that can be used in the Count.ly API.
-     */
-    static int currentTimestamp() {
-        return ((int)(System.currentTimeMillis() / 1000L));
-    }
-
-    static class TimeUniquesEnsurer {
-        final List<Long> lastTsMs = new ArrayList<>(10);
-        final long addition = 0;
-
-        long currentTimeMillis() {
-            return System.currentTimeMillis() + addition;
-        }
-
-        synchronized long uniqueTimestamp() {
-            long ms = currentTimeMillis();
-
-            // change time back case
-            if (lastTsMs.size() > 2) {
-                long min = Collections.min(lastTsMs);
-                if (ms < min) {
-                    lastTsMs.clear();
-                    lastTsMs.add(ms);
-                    return ms;
-                }
-            }
-            // usual case
-            while (lastTsMs.contains(ms)) {
-                ms += 1;
-            }
-            while (lastTsMs.size() >= 10) {
-                lastTsMs.remove(0);
-            }
-            lastTsMs.add(ms);
-            return ms;
-        }
-    }
-    private static final TimeUniquesEnsurer timeGenerator = new TimeUniquesEnsurer();
-
-    static synchronized long currentTimestampMs() {
-        return timeGenerator.uniqueTimestamp();
-    }
-
-    /**
-     * Utility method to return a current hour of the day that can be used in the Count.ly API.
-     */
-    static int currentHour(){return Calendar.getInstance().get(Calendar.HOUR_OF_DAY); }
-
-    /**
-     * Utility method to return a current day of the week that can be used in the Count.ly API.
-     */
-    @SuppressLint("SwitchIntDef")
-    static int currentDayOfWeek(){
-        int day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
-        switch (day) {
-            case Calendar.MONDAY:
-                return 1;
-            case Calendar.TUESDAY:
-                return 2;
-            case Calendar.WEDNESDAY:
-                return 3;
-            case Calendar.THURSDAY:
-                return 4;
-            case Calendar.FRIDAY:
-                return 5;
-            case Calendar.SATURDAY:
-                return 6;
-        }
-        return 0;
     }
 
     /**

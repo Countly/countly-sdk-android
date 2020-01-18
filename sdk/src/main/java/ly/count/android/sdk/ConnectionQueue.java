@@ -434,10 +434,12 @@ public class ConnectionQueue {
     }
 
     private String prepareCommonRequestData(){
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+
         return "app_key=" + appKey_
-                + "&timestamp=" + Countly.currentTimestampMs()
-                + "&hour=" + Countly.currentHour()
-                + "&dow=" + Countly.currentDayOfWeek()
+                + "&timestamp=" + instant.timestampMs
+                + "&hour=" + instant.hour
+                + "&dow=" + instant.dow
                 + "&tz=" + DeviceInfo.getTimezoneOffset()
                 + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
                 + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
