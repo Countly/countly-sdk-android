@@ -31,11 +31,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.MessageDigest;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -75,9 +73,9 @@ public class ConnectionProcessor implements Runnable {
         String urlStr = serverURL_ + urlEndpoint;
         if(!requestData.contains("&crash=") && requestData.length() < 2048) {
             urlStr += requestData;
-            urlStr += "&checksum=" + sha1Hash(requestData + salt);
+            urlStr += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
         } else {
-            urlStr += "checksum=" + sha1Hash(requestData + salt);
+            urlStr += "checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
         }
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
@@ -240,7 +238,7 @@ public class ConnectionProcessor implements Runnable {
                     // and a device_id merge on server has to be performed
 
                     final int endOfDeviceIdTag = storedEvents[0].indexOf("&device_id=") + "&device_id=".length();
-                    newId = ConnectionProcessor.urlDecodeString(storedEvents[0].substring(endOfDeviceIdTag));
+                    newId = UtilsNetworking.urlDecodeString(storedEvents[0].substring(endOfDeviceIdTag));
 
                     if (newId.equals(deviceId_.getId())) {
                         // If the new device_id is the same as previous,
@@ -271,7 +269,7 @@ public class ConnectionProcessor implements Runnable {
                     // This just adds the device_id to them
 
                     newId = null;
-                    eventData = storedEvents[0] + "&device_id=" + ConnectionProcessor.urlEncodeString(deviceId_.getId());
+                    eventData = storedEvents[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
                 }
             }
 
@@ -370,61 +368,6 @@ public class ConnectionProcessor implements Runnable {
                 store_.removeConnection(storedEvents[0]);
             }
         }
-    }
-
-    protected static String urlEncodeString(String givenValue){
-        String result = "";
-
-        try {
-            result = java.net.URLEncoder.encode(givenValue, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-            // should never happen because Android guarantees UTF-8 support
-        }
-
-        return result;
-    }
-
-    protected static String urlDecodeString(String givenValue){
-        String decodedResult = "";
-
-        try {
-            decodedResult = java.net.URLDecoder.decode(givenValue, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
-            // should never happen because Android guarantees UTF-8 support
-        }
-
-        return decodedResult;
-    }
-
-    protected static String sha1Hash (String toHash) {
-        String hash = null;
-        try {
-            MessageDigest digest = MessageDigest.getInstance( "SHA-1" );
-            byte[] bytes = toHash.getBytes("UTF-8");
-            digest.update(bytes, 0, bytes.length);
-            bytes = digest.digest();
-
-            // This is ~55x faster than looping and String.formating()
-            hash = bytesToHex( bytes );
-        }
-        catch( Throwable e ) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Cannot tamper-protect params", e);
-            }
-        }
-        return hash;
-    }
-
-    // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
-    final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
-    public static String bytesToHex( byte[] bytes ) {
-        char[] hexChars = new char[ bytes.length * 2 ];
-        for( int j = 0; j < bytes.length; j++ ) {
-            int v = bytes[ j ] & 0xFF;
-            hexChars[ j * 2 ] = hexArray[ v >>> 4 ];
-            hexChars[ j * 2 + 1 ] = hexArray[ v & 0x0F ];
-        }
-        return new String( hexChars ).toLowerCase();
     }
 
     // for unit testing

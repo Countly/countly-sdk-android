@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
@@ -30,13 +29,10 @@ import org.junit.Before;
 import java.util.HashMap;
 
 import static androidx.test.InstrumentationRegistry.getContext;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -809,15 +805,15 @@ public class CountlyTests {
 
     @Test
     public void testIsValidURL_badURLs() {
-        assertFalse(Countly.isValidURL(null));
-        assertFalse(Countly.isValidURL(""));
-        assertFalse(Countly.isValidURL(" "));
-        assertFalse(Countly.isValidURL("blahblahblah.com"));
+        assertFalse(UtilsNetworking.isValidURL(null));
+        assertFalse(UtilsNetworking.isValidURL(""));
+        assertFalse(UtilsNetworking.isValidURL(" "));
+        assertFalse(UtilsNetworking.isValidURL("blahblahblah.com"));
     }
 
     @Test
     public void testIsValidURL_goodURL() {
-        assertTrue(Countly.isValidURL("http://test.count.ly"));
+        assertTrue(UtilsNetworking.isValidURL("http://test.count.ly"));
     }
 
     @Test

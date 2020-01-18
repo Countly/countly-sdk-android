@@ -123,7 +123,7 @@ public class ConnectionQueue {
         if (store_ == null) {
             throw new IllegalStateException("countly store has not been set");
         }
-        if (serverURL_ == null || !Countly.isValidURL(serverURL_)) {
+        if (serverURL_ == null || !UtilsNetworking.isValidURL(serverURL_)) {
             throw new IllegalStateException("server URL is not valid");
         }
         if (Countly.publicKeyPinCertificates != null && !serverURL_.startsWith("https")) {
@@ -165,7 +165,7 @@ public class ConnectionQueue {
                 String cachedAdId = store_.getCachedAdvertisingId();
 
                 if (!cachedAdId.isEmpty()) {
-                    data += "&aid=" + ConnectionProcessor.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
+                    data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
 
                     dataAvailable = true;
                 }
@@ -206,7 +206,7 @@ public class ConnectionQueue {
                     String cachedAdId = store_.getCachedAdvertisingId();
 
                     if (!cachedAdId.isEmpty()) {
-                        data += "&aid=" + ConnectionProcessor.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
+                        data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
                         dataAvailable = true;
                     }
                 }
@@ -237,7 +237,7 @@ public class ConnectionQueue {
         }
 
         // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGING BREAKS !!!!!
-        data += "&device_id=" + ConnectionProcessor.urlEncodeString(deviceId);
+        data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceId);
 
         store_.addConnection(data);
         tick();
@@ -292,7 +292,7 @@ public class ConnectionQueue {
 
         if (deviceIdOverride != null && Countly.sharedInstance().anyConsentGiven()) {
             //if no consent is given, device ID override is not sent
-            data += "&override_id=" + ConnectionProcessor.urlEncodeString(deviceIdOverride);
+            data += "&override_id=" + UtilsNetworking.urlEncodeString(deviceIdOverride);
             dataAvailable = true;
         }
 
@@ -390,7 +390,7 @@ public class ConnectionQueue {
         }
 
         final String data = prepareCommonRequestData()
-                          + "&crash=" + ConnectionProcessor.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash));
+                          + "&crash=" + UtilsNetworking.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash));
 
         store_.addConnection(data);
 
@@ -426,7 +426,7 @@ public class ConnectionQueue {
         }
 
         final String data = prepareCommonRequestData()
-                + "&consent=" + ConnectionProcessor.urlEncodeString(formattedConsentChanges);
+                + "&consent=" + UtilsNetworking.urlEncodeString(formattedConsentChanges);
 
         store_.addConnection(data);
 
@@ -462,7 +462,7 @@ public class ConnectionQueue {
                 String ip = cs.getLocationIpAddress();
 
                 if(location != null && !location.isEmpty()){
-                    data += "&location=" + ConnectionProcessor.urlEncodeString(location);
+                    data += "&location=" + UtilsNetworking.urlEncodeString(location);
                 }
 
                 if(city != null && !city.isEmpty()){
@@ -484,7 +484,7 @@ public class ConnectionQueue {
     protected String prepareRemoteConfigRequest(String keysInclude, String keysExclude){
         String data = prepareCommonRequestData()
                 + "&method=fetch_remote_config"
-                + "&device_id=" + ConnectionProcessor.urlEncodeString(deviceId_.getId());
+                + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
 
         if(Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
@@ -497,9 +497,9 @@ public class ConnectionQueue {
 
         //add key filters
         if(keysInclude != null){
-            data += "&keys=" +  ConnectionProcessor.urlEncodeString(keysInclude);
+            data += "&keys=" +  UtilsNetworking.urlEncodeString(keysInclude);
         } else if(keysExclude != null) {
-            data += "&omit_keys=" + ConnectionProcessor.urlEncodeString(keysExclude);
+            data += "&omit_keys=" + UtilsNetworking.urlEncodeString(keysExclude);
         }
 
         return data;

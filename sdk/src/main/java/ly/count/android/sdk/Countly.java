@@ -34,12 +34,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -347,7 +344,7 @@ public class Countly {
             throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");
         }
 
-        if (!isValidURL(config.serverURL)) {
+        if (!UtilsNetworking.isValidURL(config.serverURL)) {
             throw new IllegalArgumentException("valid serverURL is required");
         }
 
@@ -1894,24 +1891,6 @@ public class Countly {
         final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
         prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
         return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
-    }
-
-    /**
-     * Utility method for testing validity of a URL.
-     */
-    @SuppressWarnings("ConstantConditions")
-    static boolean isValidURL(final String urlStr) {
-        boolean validURL = false;
-        if (urlStr != null && urlStr.length() > 0) {
-            try {
-                new URL(urlStr);
-                validURL = true;
-            }
-            catch (MalformedURLException e) {
-                validURL = false;
-            }
-        }
-        return validURL;
     }
 
     /**

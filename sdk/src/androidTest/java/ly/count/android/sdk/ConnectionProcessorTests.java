@@ -29,9 +29,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLConnection;
-import junit.framework.Assert;
 
-import static ly.count.android.sdk.ConnectionProcessor.sha1Hash;
+import static ly.count.android.sdk.UtilsNetworking.sha1Hash;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

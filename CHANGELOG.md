@@ -4,6 +4,7 @@
   * Adding option to set tamper protection salt in config object
   * Adding calls to give and remove consent to all features at the same time
   * Migrated to AndroidX
+  * Improved internal time management which fixes inconsistencies that could arrise on day changes
 
 
 19.09
