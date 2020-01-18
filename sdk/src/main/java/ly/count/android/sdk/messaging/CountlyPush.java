@@ -294,8 +294,8 @@ public class CountlyPush {
      */
     private static String getToken() {
         try {
-            Object instance = Utils.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
-            return (String) Utils.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
+            Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
+            return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
         } catch (Throwable logged) {
             Log.e(Countly.TAG, "Couldn't get token for Countly FCM", logged);
             return null;
@@ -593,8 +593,8 @@ public class CountlyPush {
      */
     @SuppressWarnings("unchecked")
     public static void init(Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
-        if (!Utils.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
-            throw new IllegalStateException("No FirebaseMessaging library in class path. Please either add it to your gradle config or don't use CountlyPush.");
+        if (!UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+            //throw new IllegalStateException("No FirebaseMessaging library in class path. Please either add it to your gradle config or don't use CountlyPush.");
         }
 
         if(Countly.sharedInstance().isLoggingEnabled()){
