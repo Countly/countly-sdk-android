@@ -1034,6 +1034,24 @@ public class Countly {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
+
+        recordEventInternal(key, count, sum, dur, segmentation, null);
+    }
+
+    public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordPastEvent");
+        }
+
+        if(timestamp == 0){
+            throw new IllegalStateException("Provided timestamp has to be greater that zero");
+        }
+
+        UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
+        recordEventInternal(key, count, sum, dur, segmentation, instant);
+    }
+
+    private synchronized void recordEventInternal(final String key, final int count, final double sum, final double dur, final Map<String, Object> segmentation, UtilsTime.Instant instant) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
         }
@@ -1103,19 +1121,19 @@ public class Countly {
         switch (key) {
             case STAR_RATING_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)) {
-                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
                     sendEventsForced();
                 }
                 break;
             case VIEW_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.views)) {
-                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
                     sendEventsForced();
                 }
                 break;
             default:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
-                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
                     sendEventsIfNeeded();
                 }
                 break;

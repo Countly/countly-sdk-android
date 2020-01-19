@@ -93,8 +93,10 @@ public class EventQueue {
      *            NaN and infinity values will be quietly ignored.
      * @throws IllegalArgumentException if key is null or empty
      */
-    void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur) {
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+    void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
+        if(instant == null){
+            instant = UtilsTime.getCurrentInstant();
+        }
 
         final long timestamp = instant.timestampMs;
         final int hour = instant.hour;

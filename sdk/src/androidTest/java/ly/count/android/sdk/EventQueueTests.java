@@ -72,7 +72,7 @@ public class EventQueueTests {
         final int dow = instant.dow;
         final ArgumentCaptor<Long> arg = ArgumentCaptor.forClass(Long.class);
 
-        mEventQueue.recordEvent(eventKey, segmentation, null, null, count, sum, dur);
+        mEventQueue.recordEvent(eventKey, segmentation, null, null, count, sum, dur, null);
         verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
         assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
     }
