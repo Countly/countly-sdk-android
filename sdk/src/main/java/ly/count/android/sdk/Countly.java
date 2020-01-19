@@ -998,11 +998,39 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @param dur duration of an event
+     * @deprecated
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur) {
+        Map<String, Object> segmentationGroup = new HashMap<>();
+        if(segmentation != null) {
+            segmentationGroup.putAll(segmentation);
+        }
+
+        if(segmentationInt != null) {
+            segmentationGroup.putAll(segmentationInt);
+        }
+
+        if(segmentationDouble != null) {
+            segmentationGroup.putAll(segmentationDouble);
+        }
+
+        recordEvent(key, count, sum, dur, segmentationGroup);
+    }
+    /**
+     * Records a custom event with the specified values.
+     * @param key name of the custom event, required, must not be the empty string
+     * @param segmentation segmentation dictionary to associate with the event, can be null
+     * @param count count to associate with the event, should be more than zero
+     * @param sum sum to associate with the event
+     * @param dur duration of an event
+     * @throws IllegalStateException if Countly SDK has not been initialized
+     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
+     *                                  segmentation contains null or empty keys or values
+     */
+    public synchronized void recordEvent(final String key, final int count, final double sum, final double dur, final Map<String, Object> segmentation) {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
@@ -1017,18 +1045,42 @@ public class Countly {
             Log.d(Countly.TAG, "Recording event with key: [" + key + "]");
         }
 
-        if (segmentation != null) {
-            for (String k : segmentation.keySet()) {
+        Map<String, String> segmentationString = null;
+        Map<String, Integer> segmentationInt = null;
+        Map<String, Double> segmentationDouble = null;
+
+        if(segmentation != null) {
+            segmentationString = new HashMap<>();
+            segmentationInt = new HashMap<>();
+            segmentationDouble = new HashMap<>();
+            Map<String, Object> segmentationReminder = new HashMap<>();
+
+            fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationReminder);
+
+            if (segmentationReminder.size() > 0) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "Event contains events segments with unsupported types:");
+
+                    for (String k : segmentationReminder.keySet()) {
+                        if (k != null) {
+                            Object obj = segmentationReminder.get(k);
+                            if (obj != null){
+                                Log.w(Countly.TAG, "Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (String k : segmentationString.keySet()) {
                 if (k == null || k.length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
                 }
-                if (segmentation.get(k) == null || segmentation.get(k).length() == 0) {
+                if (segmentationString.get(k) == null || segmentationString.get(k).length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
                 }
             }
-        }
 
-        if (segmentationInt != null) {
             for (String k : segmentationInt.keySet()) {
                 if (k == null || k.length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
@@ -1037,9 +1089,7 @@ public class Countly {
                     throw new IllegalArgumentException("Countly event segmentation value cannot be null");
                 }
             }
-        }
 
-        if (segmentationDouble != null) {
             for (String k : segmentationDouble.keySet()) {
                 if (k == null || k.length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
@@ -1053,19 +1103,19 @@ public class Countly {
         switch (key) {
             case STAR_RATING_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)) {
-                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur);
                     sendEventsForced();
                 }
                 break;
             case VIEW_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.views)) {
-                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur);
                     sendEventsForced();
                 }
                 break;
             default:
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
-                    eventQueue_.recordEvent(key, segmentation, segmentationInt, segmentationDouble, count, sum, dur);
+                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur);
                     sendEventsIfNeeded();
                 }
                 break;
@@ -1135,14 +1185,14 @@ public class Countly {
             segmentsString.put("start", "1");
         }
 
-        HashMap<String, Integer> segmentsInt = null;
-        HashMap<String, Double> segmentsDouble = null;
+        Map<String, Integer> segmentsInt = null;
+        Map<String, Double> segmentsDouble = null;
 
         if(viewSegmentation != null){
             segmentsInt = new HashMap<>();
             segmentsDouble = new HashMap<>();
 
-            fillInSegmentation(viewSegmentation, segmentsString, segmentsInt, segmentsDouble);
+            fillInSegmentation(viewSegmentation, segmentsString, segmentsInt, segmentsDouble, null);
         }
 
         recordEvent(VIEW_EVENT_KEY, segmentsString, segmentsInt, segmentsDouble, 1, 0, 0);
@@ -2974,7 +3024,7 @@ public class Countly {
      * @param segmInt
      * @param segmDouble
      */
-    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, HashMap<String, String> segmStr, HashMap<String, Integer> segmInt, HashMap<String, Double> segmDouble) {
+    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Object> reminder) {
         for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
             String key = pair.getKey();
             Object value = pair.getValue();
@@ -2985,6 +3035,10 @@ public class Countly {
                 segmDouble.put(key, (Double) value);
             } else if (value instanceof String) {
                 segmStr.put(key, (String) value);
+            } else {
+                if(reminder != null) {
+                    reminder.put(key, value);
+                }
             }
         }
     }

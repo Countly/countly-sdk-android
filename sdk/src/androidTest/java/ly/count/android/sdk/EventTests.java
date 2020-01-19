@@ -369,7 +369,7 @@ public class EventTests {
         HashMap<String, Integer> segmentsInt = new HashMap<>();
         HashMap<String, Double> segmentsDouble = new HashMap<>();
 
-        Countly.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble);
+        Countly.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, null);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsString.size(), 2);
