@@ -42,7 +42,7 @@ public class UtilsTime {
     }
 
     /**
-     * Get current timestamp in miliseconds
+     * Get current timestamp in milliseconds
      * @return
      */
     public static synchronized long currentTimestampMs() {

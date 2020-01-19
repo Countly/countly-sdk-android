@@ -681,7 +681,7 @@ public class CountlyPush {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                final Bitmap bitmap[] = new Bitmap[]{null};
+                final Bitmap [] bitmap = new Bitmap[]{null};
 
                 if (msg.media() != null) {
                     HttpURLConnection connection = null;

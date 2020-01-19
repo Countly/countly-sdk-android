@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.MessageDigest;
 
 /**
  * Utility class
@@ -16,16 +15,12 @@ import java.security.MessageDigest;
 public class UtilsMessaging {
     private static final UtilsMessaging utils = new UtilsMessaging();
 
-    static final String UTF8 = "UTF-8";
-    static final String CRLF = "\r\n";
-    static final char[] BASE_16 = "0123456789ABCDEF".toCharArray();
-
     static boolean reflectiveClassExists(String cls) {
         return utils._reflectiveClassExists(cls);
     }
 
     /**
-     * Check wether class exists in default class loader.
+     * Check whether class exists in default class loader.
      *
      * @param cls Class name to check
      * @return true if class exists, false otherwise
@@ -58,7 +53,7 @@ public class UtilsMessaging {
             Log.d("Countly", "cls " + className + ", inst " + instance);
             className = className == null && instance != null ? instance.getClass().getName() : className;
             Class<?> cls = instance == null ? Class.forName(className) : instance.getClass();
-            Class<?> types[] = null;
+            Class<?> [] types = null;
 
             if (args != null && args.length > 0) {
                 types = new Class[args.length];

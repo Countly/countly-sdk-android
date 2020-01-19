@@ -103,7 +103,7 @@ public class RemoteConfig {
             @Override
             public void callback(JSONObject checkResponse) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "Processing remote config received response, receved response is null:[" + (checkResponse == null) + "]");
+                    Log.d(Countly.TAG, "Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
                 }
                 if(checkResponse == null) {
                     if(callback != null){

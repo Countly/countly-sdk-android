@@ -23,7 +23,6 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.webkit.WebView;
 
 import org.json.JSONException;
 import org.json.JSONObject;

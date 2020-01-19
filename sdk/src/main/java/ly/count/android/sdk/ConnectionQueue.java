@@ -539,8 +539,8 @@ public class ConnectionQueue {
         String[] storedRequests = getCountlyStore().connections();
         String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
 
-        for(int a = 0 ; a < storedRequests.length ; a++){
-            if(storedRequests[a].contains(temporaryIdTag)){
+        for (String storedRequest : storedRequests) {
+            if (storedRequest.contains(temporaryIdTag)) {
                 return true;
             }
         }

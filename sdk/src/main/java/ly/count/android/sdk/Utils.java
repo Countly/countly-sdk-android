@@ -2,8 +2,6 @@ package ly.count.android.sdk;
 
 import android.os.Build;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -47,26 +45,12 @@ public class Utils {
         return !isEmpty(str);
     }
 
+    /**
+     * Returns true if the version you are checking is at or below the build version
+     * @param version
+     * @return
+     */
     public static boolean API(int version) {
         return Build.VERSION.SDK_INT >= version;
-    }
-
-    public static boolean isNotEqual(Object a, Object b) {
-        return !isEqual(a, b);
-    }
-
-    public static boolean isEqual(Object a, Object b) {
-        if (a == null || b == null || a == b) {
-            return a == b;
-        }
-        return a.equals(b);
-    }
-
-    public static boolean contains(String string, String part) {
-        if (string == null || part == null) {
-            return false;
-        } else {
-            return string.contains(part);
-        }
     }
 }

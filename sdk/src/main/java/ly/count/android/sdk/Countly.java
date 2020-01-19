@@ -36,7 +36,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -112,7 +111,6 @@ public class Countly {
     }
 
     private ConnectionQueue connectionQueue_;
-    @SuppressWarnings("FieldCanBeLocal")
     private final ScheduledExecutorService timerService_;
     private EventQueue eventQueue_;
     private long prevSessionDurationStartTime_;
@@ -1329,7 +1327,7 @@ public class Countly {
 
 
         if(isBeginSessionSent || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)){
-            //send as a seperate request if either begin session was already send and we missed our first opportunity
+            //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
             connectionQueue_.sendLocation();
         } else {
@@ -1411,13 +1409,12 @@ public class Countly {
 
             File[] dumpFiles = folder.listFiles();
             Log.d(TAG,"Crash dump folder contains [" + dumpFiles.length + "] files");
-            for (int i = 0; i < dumpFiles.length; i++)
-            {
+            for (File dumpFile : dumpFiles) {
                 //record crash
-                recordNativeException(dumpFiles[i]);
+                recordNativeException(dumpFile);
 
                 //delete dump file
-                dumpFiles[i].delete();
+                dumpFile.delete();
             }
         } else {
             Log.d(TAG, "Native crash folder does not exist");
@@ -1978,7 +1975,7 @@ public class Countly {
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting to show star rating automaticaly: [" + IsShownAutomatically + "]");
+            Log.d(Countly.TAG, "Setting to show star rating automatically: [" + IsShownAutomatically + "]");
         }
 
         CountlyStarRating.setShowDialogAutomatically(context_, IsShownAutomatically);
@@ -2878,9 +2875,9 @@ public class Countly {
             return false;
         }
 
-        for(int a = 0 ; a < regexFilters.length ; a++){
-            Matcher m = regexFilters[a].matcher(crash);
-            if(m.matches()){
+        for (Pattern regexFilter : regexFilters) {
+            Matcher m = regexFilter.matcher(crash);
+            if (m.matches()) {
                 return true;
             }
         }

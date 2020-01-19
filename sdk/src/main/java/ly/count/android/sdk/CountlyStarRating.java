@@ -521,7 +521,7 @@ public class CountlyStarRating {
     }
 
     /**
-     * Ascync task for making immediate server requests
+     * Async task for making immediate server requests
      */
     protected static class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
         InternalFeedbackRatingCallback callback;
@@ -629,8 +629,7 @@ public class CountlyStarRating {
      * Used for detecting if current device is a tablet of phone
      */
     protected static boolean isDeviceTablet(Activity activity) {
-        Context activityContext = activity;
-        boolean device_large = ((activityContext.getResources().getConfiguration().screenLayout &
+        boolean device_large = ((activity.getResources().getConfiguration().screenLayout &
                 Configuration.SCREENLAYOUT_SIZE_MASK) ==
                 Configuration.SCREENLAYOUT_SIZE_LARGE);
 
