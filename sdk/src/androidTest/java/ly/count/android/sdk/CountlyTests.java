@@ -49,7 +49,7 @@ public class CountlyTests {
         mUninitedCountly = new Countly();
 
         mCountly = new Countly();
-        mCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234"));
     }
 
     @After
@@ -81,8 +81,9 @@ public class CountlyTests {
     @Test
     public void testInitWithNoDeviceID() {
         mUninitedCountly = spy(mUninitedCountly);
-        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
-        verify(mUninitedCountly).init(getContext(), "http://test.count.ly", "appkey", null);
+        CountlyConfig cc = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly"));
+        mUninitedCountly.init(cc);
+        verify(mUninitedCountly).init(cc);
     }
 
     @Test
@@ -98,7 +99,7 @@ public class CountlyTests {
     @Test
     public void testInit_nullServerURL() {
         try {
-            mUninitedCountly.init(getContext(), null, "appkey", "1234");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", null)).setDeviceId("1234"));
             fail("expected null server URL to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -108,7 +109,7 @@ public class CountlyTests {
     @Test
     public void testInit_emptyServerURL() {
         try {
-            mUninitedCountly.init(getContext(), "", "appkey", "1234");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "")).setDeviceId("1234"));
             fail("expected empty server URL to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -118,7 +119,7 @@ public class CountlyTests {
     @Test
     public void testInit_invalidServerURL() {
         try {
-            mUninitedCountly.init(getContext(), "not-a-valid-server-url", "appkey", "1234");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "not-a-valid-server-url")).setDeviceId("1234"));
             fail("expected invalid server URL to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -128,7 +129,7 @@ public class CountlyTests {
     @Test
     public void testInit_nullAppKey() {
         try {
-            mUninitedCountly.init(getContext(), "http://test.count.ly", null, "1234");
+            mUninitedCountly.init((new CountlyConfig(getContext(), null, "http://test.count.ly")).setDeviceId("1234"));
             fail("expected null app key to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -138,7 +139,7 @@ public class CountlyTests {
     @Test
     public void testInit_emptyAppKey() {
         try {
-            mUninitedCountly.init(getContext(), "http://test.count.ly", "", "1234");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "", "http://test.count.ly")).setDeviceId("1234"));
             fail("expected empty app key to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -148,13 +149,13 @@ public class CountlyTests {
     @Test
     public void testInit_nullDeviceID() {
         // null device ID is okay because it tells Countly to use OpenUDID
-       mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", null);
+       mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId(null));
     }
 
     @Test
     public void testInit_emptyDeviceID() {
         try {
-            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId(""));
             fail("expected empty device ID to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -167,7 +168,7 @@ public class CountlyTests {
         final String appKey = "appkey";
         final String serverURL = "http://test.count.ly";
 
-        mUninitedCountly.init(getContext(), serverURL, appKey, deviceID);
+        mUninitedCountly.init((new CountlyConfig(getContext(), appKey, serverURL)).setDeviceId(deviceID));
         final EventQueue expectedEventQueue = mUninitedCountly.getEventQueue();
         final ConnectionQueue expectedConnectionQueue = mUninitedCountly.getConnectionQueue();
         final CountlyStore expectedCountlyStore = expectedConnectionQueue.getCountlyStore();
@@ -176,7 +177,7 @@ public class CountlyTests {
         assertNotNull(expectedCountlyStore);
 
         // second call with same params should succeed, no exception thrown
-        mUninitedCountly.init(getContext(), serverURL, appKey, deviceID);
+        mUninitedCountly.init((new CountlyConfig(getContext(), appKey, serverURL)).setDeviceId(deviceID));
 
         assertSame(expectedEventQueue, mUninitedCountly.getEventQueue());
         assertSame(expectedConnectionQueue, mUninitedCountly.getConnectionQueue());
@@ -198,9 +199,9 @@ public class CountlyTests {
 
     @Test
     public void testInit_twiceWithDifferentServerURL() {
-        mUninitedCountly.init(getContext(), "http://test1.count.ly", "appkey", "1234");
+        mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test1.count.ly")).setDeviceId("1234"));
         try {
-            mUninitedCountly.init(getContext(), "http://test2.count.ly", "appkey", "1234");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test2.count.ly")).setDeviceId("1234"));
             fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
         }
         catch (IllegalStateException ignored) {
@@ -210,10 +211,10 @@ public class CountlyTests {
 
     @Test
     public void testInit_twiceWithDifferentAppKey() {
-        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey1", "1234");
+        mUninitedCountly.init((new CountlyConfig(getContext(), "appkey1", "http://test.count.ly")).setDeviceId("1234"));
         try {
-            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey2", "1234");
-            fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey2", "http://test.count.ly")).setDeviceId("1234"));
+            fail("expected IllegalStateException to be thrown when calling init a second time with different app key");
         }
         catch (IllegalStateException ignored) {
             // success!
@@ -222,10 +223,10 @@ public class CountlyTests {
 
     @Test
     public void testInit_twiceWithDifferentDeviceID() {
-        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
+        mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234"));
         try {
-            mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "4321");
-            fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
+            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("4321"));
+            fail("expected IllegalStateException to be thrown when calling init a second time with different device ID");
         }
         catch (IllegalStateException ignored) {
             // success!
@@ -238,7 +239,7 @@ public class CountlyTests {
         final String appKey = "appkey";
         final String serverURL = "http://test.count.ly";
 
-        mUninitedCountly.init(getContext(), serverURL, appKey, deviceID);
+        mUninitedCountly.init((new CountlyConfig(getContext(), appKey, serverURL)).setDeviceId(deviceID));
 
         assertSame(getContext().getApplicationContext(), mUninitedCountly.getConnectionQueue().getContext());
         assertEquals(serverURL, mUninitedCountly.getConnectionQueue().getServerURL());
