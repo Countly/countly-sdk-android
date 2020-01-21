@@ -59,7 +59,7 @@ class Event {
 
     Event () {}
 
-    public Event (String key) {
+    Event(String key) {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
         this.key = key;

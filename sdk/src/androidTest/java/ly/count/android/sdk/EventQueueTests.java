@@ -64,15 +64,35 @@ public class EventQueueTests {
         final double sum = 3.0d;
         final double dur = 10.0d;
         final Map<String, String> segmentation = new HashMap<>(1);
-        final Map<String, Integer> segmentationInt = null;
-        final Map<String, Double> segmentationDouble = null;
+        final Map<String, Integer> segmentationInt = new HashMap<>(2);
+        final Map<String, Double> segmentationDouble = new HashMap<>(3);
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         final long timestamp = instant.timestampMs;
         final int hour = instant.hour;
         final int dow = instant.dow;
         final ArgumentCaptor<Long> arg = ArgumentCaptor.forClass(Long.class);
 
-        mEventQueue.recordEvent(eventKey, segmentation, null, null, count, sum, dur, null);
+        mEventQueue.recordEvent(eventKey, segmentation, segmentationInt, segmentationDouble, count, sum, dur, null);
+        verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
+        assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
+    }
+
+    @Test
+    public void testRecordPastEvent() {
+        final String eventKey = "eventKey";
+        final int count = 42;
+        final double sum = 3.0d;
+        final double dur = 10.0d;
+        final Map<String, String> segmentation = new HashMap<>(1);
+        final Map<String, Integer> segmentationInt = new HashMap<>(2);
+        final Map<String, Double> segmentationDouble = new HashMap<>(3);
+        UtilsTime.Instant instant = UtilsTime.Instant.get(123456789);
+        final long timestamp = instant.timestampMs;
+        final int hour = instant.hour;
+        final int dow = instant.dow;
+        final ArgumentCaptor<Long> arg = ArgumentCaptor.forClass(Long.class);
+
+        mEventQueue.recordEvent(eventKey, segmentation, segmentationInt, segmentationDouble, count, sum, dur, instant);
         verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
         assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
     }

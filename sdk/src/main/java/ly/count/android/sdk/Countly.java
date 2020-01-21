@@ -642,7 +642,7 @@ public class Countly {
      */
     public synchronized void onStart(Activity activity) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Countly onStart called, [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
+            Log.d(Countly.TAG, "Countly onStart called, name:[" + activity.getClass().getSimpleName() + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
         }
 
         appLaunchDeepLink = false;
