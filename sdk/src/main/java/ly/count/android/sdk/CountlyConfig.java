@@ -87,6 +87,14 @@ public class CountlyConfig {
 
     protected Map<String, Object> automaticViewSegmentation = null;
 
+    public CountlyConfig(){ }
+
+    public CountlyConfig(Context context, String appKey, String serverURL){
+        setContext(context);
+        setAppKey(appKey);
+        setServerURL(serverURL);
+    }
+
     /**
      * Android context.
      * Mandatory field.
