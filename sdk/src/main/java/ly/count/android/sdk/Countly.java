@@ -438,7 +438,7 @@ public class Countly {
 
         //set the star rating values
         starRatingCallback_ = config.starRatingCallback;
-        CountlyStarRating.setStarRatingInitConfig(config.context, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
+        CountlyStarRating.setStarRatingInitConfig(new CountlyStore(config.context), config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
 
         //app crawler check
         checkIfDeviceIsAppCrawler();
@@ -549,7 +549,7 @@ public class Countly {
 
             //do star rating related things
             if(getConsent(CountlyFeatureNames.starRating)) {
-                CountlyStarRating.registerAppSession(config.context, starRatingCallback_);
+                CountlyStarRating.registerAppSession(config.context, countlyStore, starRatingCallback_);
             }
 
             //update remote config_ values if automatic update is enabled and we are not in temporary id mode
@@ -813,7 +813,7 @@ public class Countly {
         }
 
         //clear automated star rating session values because now we have a new user
-        CountlyStarRating.clearAutomaticStarRatingSessionCount(context_);
+        CountlyStarRating.clearAutomaticStarRatingSessionCount(connectionQueue_.getCountlyStore());
     }
 
     /**
@@ -2004,7 +2004,7 @@ public class Countly {
             return;
         }
 
-        CountlyStarRating.showStarRating(activity, callback);
+        CountlyStarRating.showStarRating(activity, connectionQueue_.getCountlyStore(), callback);
     }
 
     /**
@@ -2025,7 +2025,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting star rating texts");
         }
 
-        CountlyStarRating.setStarRatingInitConfig(context_, -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+        CountlyStarRating.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
 
         return this;
     }
@@ -2046,7 +2046,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting to show star rating automatically: [" + IsShownAutomatically + "]");
         }
 
-        CountlyStarRating.setShowDialogAutomatically(context_, IsShownAutomatically);
+        CountlyStarRating.setShowDialogAutomatically(connectionQueue_.getCountlyStore(), IsShownAutomatically);
 
         return this;
     }
@@ -2067,7 +2067,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting to disable showing of star rating for each app version:[" + disableAsking + "]");
         }
 
-        CountlyStarRating.setStarRatingDisableAskingForEachAppVersion(context_, disableAsking);
+        CountlyStarRating.setStarRatingDisableAskingForEachAppVersion(connectionQueue_.getCountlyStore(), disableAsking);
 
         return this;
     }
@@ -2088,7 +2088,7 @@ public class Countly {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting automatic star rating session limit: [" + limit + "]");
         }
-        CountlyStarRating.setStarRatingInitConfig(context_, limit, null, null, null);
+        CountlyStarRating.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), limit, null, null, null);
 
         return this;
     }
@@ -2104,7 +2104,7 @@ public class Countly {
             }
         }
 
-        int sessionLimit = CountlyStarRating.getAutomaticStarRatingSessionLimit(context_);
+        int sessionLimit = CountlyStarRating.getAutomaticStarRatingSessionLimit(connectionQueue_.getCountlyStore());
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Getting automatic star rating session limit: [" + sessionLimit + "]");
@@ -2124,7 +2124,7 @@ public class Countly {
             }
         }
 
-        int sessionCount = CountlyStarRating.getCurrentVersionsSessionCount(context_);
+        int sessionCount = CountlyStarRating.getCurrentVersionsSessionCount(connectionQueue_.getCountlyStore());
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Getting star rating current version session count: [" + sessionCount + "]");
@@ -2148,7 +2148,7 @@ public class Countly {
             Log.d(Countly.TAG, "Clearing star rating session count");
         }
 
-        CountlyStarRating.clearAutomaticStarRatingSessionCount(context_);
+        CountlyStarRating.clearAutomaticStarRatingSessionCount(connectionQueue_.getCountlyStore());
     }
 
     /**
@@ -2167,7 +2167,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting if star rating is cancellable: [" + isCancellable + "]");
         }
 
-        CountlyStarRating.setIfRatingDialogIsCancellable(context_, isCancellable);
+        CountlyStarRating.setIfRatingDialogIsCancellable(connectionQueue_.getCountlyStore(), isCancellable);
 
         return this;
     }

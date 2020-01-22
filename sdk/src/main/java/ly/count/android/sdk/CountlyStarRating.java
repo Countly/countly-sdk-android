@@ -46,8 +46,8 @@ public class CountlyStarRating {
      * @param context android context
      * @param callback
      */
-    public static void showStarRating(Context context, final CountlyStarRating.RatingCallback callback){
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static void showStarRating(final Context context, final CountlyStore cs, final CountlyStarRating.RatingCallback callback){
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
         showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
 
@@ -236,8 +236,8 @@ public class CountlyStarRating {
      * @param starRatingTextMessage provided message
      * @param starRatingTextDismiss provided dismiss text
      */
-    public static void setStarRatingInitConfig(Context context, int limit, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static void setStarRatingInitConfig(final CountlyStore cs, final int limit, final String starRatingTextTitle, final String starRatingTextMessage, final String starRatingTextDismiss) {
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
 
         if(limit >= 0) {
             srp.sessionLimit = limit;
@@ -255,7 +255,7 @@ public class CountlyStarRating {
             srp.dialogTextDismiss = starRatingTextDismiss;
         }
 
-        saveStarRatingPreferences(context, srp);
+        saveStarRatingPreferences(cs, srp);
     }
 
     /**
@@ -263,8 +263,7 @@ public class CountlyStarRating {
      * @param context android context
      * @return
      */
-    private static StarRatingPreferences loadStarRatingPreferences(Context context) {
-        CountlyStore cs = new CountlyStore(context);
+    private static StarRatingPreferences loadStarRatingPreferences(final CountlyStore cs) {
         String srpString = cs.getStarRatingPreferences();
         StarRatingPreferences srp;
 
@@ -288,8 +287,7 @@ public class CountlyStarRating {
      * @param context android context
      * @param srp
      */
-    private static void saveStarRatingPreferences(Context context, StarRatingPreferences srp) {
-        CountlyStore cs = new CountlyStore(context);
+    private static void saveStarRatingPreferences(final CountlyStore cs, final StarRatingPreferences srp) {
         cs.setStarRatingPreferences(srp.toJSON().toString());
     }
 
@@ -298,10 +296,10 @@ public class CountlyStarRating {
      * @param context android context
      * @param shouldShow
      */
-    public static void setShowDialogAutomatically(Context context, boolean shouldShow) {
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static void setShowDialogAutomatically(final CountlyStore cs, final boolean shouldShow) {
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
         srp.automaticRatingShouldBeShown = shouldShow;
-        saveStarRatingPreferences(context, srp);
+        saveStarRatingPreferences(cs, srp);
     }
 
     /**
@@ -311,10 +309,10 @@ public class CountlyStarRating {
      * @param context android context
      * @param disableAsking if set true, will not show star rating for every new app version
      */
-    public static void setStarRatingDisableAskingForEachAppVersion(Context context, boolean disableAsking) {
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static void setStarRatingDisableAskingForEachAppVersion(final CountlyStore cs, final boolean disableAsking) {
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
         srp.disabledAutomaticForNewVersions = disableAsking;
-        saveStarRatingPreferences(context, srp);
+        saveStarRatingPreferences(cs, srp);
     }
 
     /**
@@ -322,8 +320,8 @@ public class CountlyStarRating {
      * @param context android context
      * @param starRatingCallback
      */
-    public static void registerAppSession(Context context, RatingCallback starRatingCallback) {
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static void registerAppSession(final Context context, final CountlyStore cs, final RatingCallback starRatingCallback) {
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
 
         String currentAppVersion = DeviceInfo.getAppVersion(context);
 
@@ -337,19 +335,19 @@ public class CountlyStarRating {
 
         srp.sessionAmount++;
         if(srp.sessionAmount >= srp.sessionLimit && !srp.isShownForCurrentVersion && srp.automaticRatingShouldBeShown && !(srp.disabledAutomaticForNewVersions && srp.automaticHasBeenShown)) {
-            showStarRating(context, starRatingCallback);
+            showStarRating(context, cs, starRatingCallback);
             srp.isShownForCurrentVersion = true;
             srp.automaticHasBeenShown = true;
         }
 
-        saveStarRatingPreferences(context, srp);
+        saveStarRatingPreferences(cs, srp);
     }
 
     /**
      * Returns the session limit set for automatic star rating
      */
-    public static int getAutomaticStarRatingSessionLimit(Context context){
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static int getAutomaticStarRatingSessionLimit(final CountlyStore cs){
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
         return srp.sessionLimit;
     }
 
@@ -358,8 +356,8 @@ public class CountlyStarRating {
      * @param context android context
      * @return
      */
-    public static int getCurrentVersionsSessionCount(Context context){
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static int getCurrentVersionsSessionCount(final CountlyStore cs){
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
         return srp.sessionAmount;
     }
 
@@ -367,10 +365,10 @@ public class CountlyStarRating {
      * Set the automatic star rating session count back to 0
      * @param context android context
      */
-    public static void clearAutomaticStarRatingSessionCount(Context context){
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static void clearAutomaticStarRatingSessionCount(final CountlyStore cs){
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
         srp.sessionAmount = 0;
-        saveStarRatingPreferences(context, srp);
+        saveStarRatingPreferences(cs, srp);
     }
 
     /**
@@ -378,10 +376,10 @@ public class CountlyStarRating {
      * @param context android context
      * @param isCancellable
      */
-    public static void setIfRatingDialogIsCancellable(Context context, boolean isCancellable){
-        StarRatingPreferences srp = loadStarRatingPreferences(context);
+    public static void setIfRatingDialogIsCancellable(final CountlyStore cs, final boolean isCancellable){
+        StarRatingPreferences srp = loadStarRatingPreferences(cs);
         srp.isDialogCancellable = isCancellable;
-        saveStarRatingPreferences(context, srp);
+        saveStarRatingPreferences(cs, srp);
     }
 
     /// Countly webDialog user rating
