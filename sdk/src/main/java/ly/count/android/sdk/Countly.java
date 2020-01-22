@@ -416,32 +416,6 @@ public class Countly {
             Log.d(Countly.TAG, contextText);
 
         }
-        //init view related things
-        setViewTracking(config.enableViewTracking);
-
-        setAutoTrackingUseShortName(config.autoTrackingUseShortName);
-
-        setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
-
-        //init other things
-        addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
-
-        setPushIntentAddMetadata(config.pushIntentAddMetadata);
-
-        setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
-
-        setHttpPostForced(config.httpPostForced);
-
-        setCrashFiltersInternal(config.crashRegexFilters);
-
-        enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
-
-        //set the star rating values
-        starRatingCallback_ = config.starRatingCallback;
-        CountlyStarRating.setStarRatingInitConfig(new CountlyStore(config.context), config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
-
-        //app crawler check
-        checkIfDeviceIsAppCrawler();
 
         //set internal context, it's allowed to be changed on the second init call
         context_ = config.context.getApplicationContext();
@@ -454,7 +428,41 @@ public class Countly {
             }
 
             config_ = config;
-            final CountlyStore countlyStore = new CountlyStore(config.context);
+
+            final CountlyStore countlyStore;
+            if(config.countlyStore != null){
+                //we are running a test and using a mock object
+                countlyStore = config.countlyStore;
+            } else {
+                countlyStore = new CountlyStore(config.context);
+            }
+
+            //init view related things
+            setViewTracking(config.enableViewTracking);
+
+            setAutoTrackingUseShortName(config.autoTrackingUseShortName);
+
+            setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
+
+            //init other things
+            addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
+
+            setPushIntentAddMetadata(config.pushIntentAddMetadata);
+
+            setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
+
+            setHttpPostForced(config.httpPostForced);
+
+            setCrashFiltersInternal(config.crashRegexFilters);
+
+            enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
+
+            //set the star rating values
+            starRatingCallback_ = config.starRatingCallback;
+            CountlyStarRating.setStarRatingInitConfig(countlyStore, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
+
+            //app crawler check
+            checkIfDeviceIsAppCrawler();
 
             boolean doingTemporaryIdMode = false;
             boolean customIDWasProvided = (config.deviceID != null);
@@ -595,7 +603,11 @@ public class Countly {
         }
 
         //check for previous native crash dumps
-        checkForNativeCrashDumps(config.context);
+        if(config.checkForNativeCrashDumps){
+            //flag so that this can be turned off during testing
+            checkForNativeCrashDumps(config.context);
+        }
+
 
         return this;
     }

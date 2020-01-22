@@ -6,6 +6,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CountlyConfig {
+
+    /**
+     * Internal fields for testing
+     */
+
+    protected CountlyStore countlyStore;
+
+    protected boolean checkForNativeCrashDumps = true;
+
     /**
      * Android context.
      * Mandatory field.
@@ -263,4 +272,9 @@ public class CountlyConfig {
         return this;
     }
 
+
+    protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps){
+        checkForNativeCrashDumps = checkForDumps;
+        return this;
+    }
 }
