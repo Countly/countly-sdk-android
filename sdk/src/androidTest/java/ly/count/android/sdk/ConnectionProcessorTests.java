@@ -76,27 +76,23 @@ public class ConnectionProcessorTests {
         assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum=" + sha1Hash(eventData + null)), urlConnection.getURL());
     }
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testRun_storeReturnsNullConnections() throws IOException {
         connectionProcessor = spy(connectionProcessor);
         when(mockStore.connections()).thenReturn(null);
         connectionProcessor.run();
         verify(mockStore).connections();
-        verify(connectionProcessor, times(0)).urlConnectionForEventData(anyString());
+        verify(connectionProcessor, times(0)).urlConnectionForServerRequest(anyString(), isNull(String.class));
     }
-    */
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testRun_storeReturnsEmptyConnections() throws IOException {
         connectionProcessor = spy(connectionProcessor);
         when(mockStore.connections()).thenReturn(new String[0]);
         connectionProcessor.run();
         verify(mockStore).connections();
-        verify(connectionProcessor, times(0)).urlConnectionForEventData(anyString());
+        verify(connectionProcessor, times(0)).urlConnectionForServerRequest(anyString(), isNull(String.class));
     }
-    */
 
     private static class TestInputStream extends InputStream {
         int readCount = 0;
@@ -130,7 +126,6 @@ public class ConnectionProcessorTests {
             closed = true;
         }
     }
-
     //todo fix test, problem while mocking
     /*
     public void testRun_storeHasSingleConnection() throws IOException {

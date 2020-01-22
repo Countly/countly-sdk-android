@@ -201,6 +201,7 @@ public class ConnectionQueueTests {
 
     //todo fix test, problem while mocking
     /*
+    @Test
     public void testBeginSession() throws JSONException, UnsupportedEncodingException {
         connQ.beginSession();
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
@@ -212,7 +213,7 @@ public class ConnectionQueueTests {
         final Map<String, String> queryParams = parseQueryParams(queryStr);
         assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
-        final long curTimestamp = Countly.currentTimestampMs();
+        final long curTimestamp = UtilsTime.currentTimestampMs();
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
         assertTrue(((curTimestamp-1) <= actualTimestamp) && ((curTimestamp+1) >= actualTimestamp));
@@ -229,7 +230,7 @@ public class ConnectionQueueTests {
             assertEquals(expectedMetrics.get(key), actualMetrics.get(key));
         }
     }
-    */
+*/
 
     @Test
     public void testUpdateSession_checkInternalState() {

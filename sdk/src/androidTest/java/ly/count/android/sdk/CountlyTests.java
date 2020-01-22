@@ -37,6 +37,9 @@ import static org.mockito.Mockito.*;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.AdditionalMatchers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 
 @RunWith(AndroidJUnit4.class)
 public class CountlyTests {
@@ -322,8 +325,7 @@ public class CountlyTests {
         verify(mockConnectionQueue).beginSession();
     }
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testOnStart_subsequentCall() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -336,7 +338,6 @@ public class CountlyTests {
         assertEquals(prevSessionDurationStartTime, mCountly.getPrevSessionDurationStartTime());
         verify(mockConnectionQueue).beginSession();
     }
-    */
 
     @Test
     public void testOnStop_initNotCalled() {
@@ -358,8 +359,7 @@ public class CountlyTests {
         }
     }
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testOnStop_reallyStopping_emptyEventQueue() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -372,10 +372,8 @@ public class CountlyTests {
         verify(mockConnectionQueue).endSession(0);
         verify(mockConnectionQueue, times(0)).recordEvents(anyString());
     }
-    */
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testOnStop_reallyStopping_nonEmptyEventQueue() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -395,10 +393,8 @@ public class CountlyTests {
         verify(mockConnectionQueue).endSession(0);
         verify(mockConnectionQueue).recordEvents(eventStr);
     }
-    */
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testOnStop_notStopping() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -413,7 +409,6 @@ public class CountlyTests {
         verify(mockConnectionQueue, times(0)).endSession(anyInt());
         verify(mockConnectionQueue, times(0)).recordEvents(anyString());
     }
-    */
 
     @Test
     public void testRecordEvent_keyOnly() {
@@ -430,24 +425,9 @@ public class CountlyTests {
         final int count = 42;
         final Countly countly = spy(mCountly);
 
-
         doNothing().when(countly).recordEvent(eventKey, null, count, 0.0d);
-        //doReturn(true).when(countly).recordEvent(eventKey, null, count, 0.0d);
-        countly.recordEvent(eventKey, count);
+        countly.recordEvent(eventKey, null, count, 0.0d);
         verify(countly).recordEvent(eventKey, null, count, 0.0d);
-
-        //doNothing().when(countly).recordEvent(eventKey, null, count, 0.0d);
-        //doNothing().when(countly).recordEvent(eventKey, count);
-        //countly.recordEvent(eventKey, count);
-        //verify(countly).recordEvent(eventKey, null, count, 0.0d);
-
-        //doNothing().when(countly).recordEvent(eventKey, count);
-        //countly.recordEvent(eventKey, count);
-        //verify(countly).recordEvent(eventKey, count);
-
-        //doNothing().when(countly).recordEvent(eventKey, null, count, 0.0d);
-        //countly.recordEvent(eventKey, null, count, 0.0d);
-        //verify(countly).recordEvent(eventKey, null, count, 0.0d);
     }
 
     @Test
@@ -618,25 +598,25 @@ public class CountlyTests {
         }
     }
 
-    //todo fix test, problem while mocking
-    /*
     @Test
     public void testRecordEvent() {
         final String eventKey = "eventKey";
         final int count = 42;
         final double sum = 3.0d;
         final double dur = 10.0d;
-        final HashMap<String, String> segmentation = new HashMap<String, String>(1);
+        final HashMap<String, String> segmentation = new HashMap<>(1);
         segmentation.put("segkey1", "segvalue1");
+        final HashMap<String, Double> segmD = new HashMap<>();
+        final HashMap<String, Integer> segmI = new HashMap<>();
 
         final EventQueue mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
 
         final Countly countly = spy(mCountly);
         doNothing().when(countly).sendEventsIfNeeded();
-        countly.recordEvent(eventKey, segmentation, count, sum);
+        countly.recordEvent(eventKey, segmentation, count, sum, dur);
 
-        verify(mockEventQueue).recordEvent(eventKey, segmentation, null, null, count, sum, dur);
+        verify(mockEventQueue).recordEvent(eventKey, segmentation, segmI, segmD, count, sum, dur, null);
         verify(countly).sendEventsIfNeeded();
     }
 
@@ -714,7 +694,8 @@ public class CountlyTests {
 
         mCountly.onTimer();
 
-        verifyZeroInteractions(mockConnectionQueue, mockEventQueue);
+        verifyZeroInteractions(mockEventQueue);
+        verify(mockConnectionQueue).tick();
     }
 
     @Test
@@ -786,7 +767,6 @@ public class CountlyTests {
         verify(mockConnectionQueue, times(0)).updateSession(anyInt());
         verify(mockConnectionQueue).recordEvents(eventData);
     }
-    */
 
     @Test
     public void testRoundedSecondsSinceLastSessionDurationUpdate() {
