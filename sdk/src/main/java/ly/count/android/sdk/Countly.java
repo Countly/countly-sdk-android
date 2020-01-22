@@ -653,8 +653,12 @@ public class Countly {
      * @throws IllegalStateException if Countly SDK has not been initialized
      */
     public synchronized void onStart(Activity activity) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Countly onStart called, name:[" + activity.getClass().getSimpleName() + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
+        if (isLoggingEnabled()) {
+            String activityName = "NULL ACTIVITY PROVIDED";
+            if(activity != null){
+                activityName = activity.getClass().getSimpleName();
+            }
+            Log.d(Countly.TAG, "Countly onStart called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
         }
 
         appLaunchDeepLink = false;
@@ -680,13 +684,16 @@ public class Countly {
         CrashDetails.inForeground();
 
         if(autoViewTracker){
-            String usedActivityName;
+            String usedActivityName = "NULL ACTIVITY";
 
-            if(automaticTrackingShouldUseShortName){
-                usedActivityName = activity.getClass().getSimpleName();
-            } else {
-                usedActivityName = activity.getClass().getName();
+            if(activity != null) {
+                if (automaticTrackingShouldUseShortName) {
+                    usedActivityName = activity.getClass().getSimpleName();
+                } else {
+                    usedActivityName = activity.getClass().getName();
+                }
             }
+
             recordView(usedActivityName, automaticViewSegmentation);
         }
 

@@ -21,6 +21,8 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.content.Context;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
@@ -49,7 +51,7 @@ public class CountlyTests {
         mUninitedCountly = new Countly();
 
         mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234"));
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true));
     }
 
     @After
@@ -188,14 +190,16 @@ public class CountlyTests {
         assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.getEventQueue().getCountlyStore());
     }
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testInit_twiceWithDifferentContext() {
         mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
         // changing context is okay since SharedPrefs are global singletons
-        mUninitedCountly.init(mock(Context.class), "http://test.count.ly", "appkey", "1234");
+
+        Context mContext = mock(Context.class);
+        when(mContext.getCacheDir()).thenReturn(getContext().getCacheDir());
+
+        mUninitedCountly.init(mContext, "http://test.count.ly", "appkey", "1234");
     }
-    */
 
     @Test
     public void testInit_twiceWithDifferentServerURL() {
@@ -263,11 +267,13 @@ public class CountlyTests {
         assertEquals(0, mUninitedCountly.getPrevSessionDurationStartTime());
     }
 
-
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testHalt() {
-        final CountlyStore mockCountlyStore = mock(CountlyStore.class);
+        CountlyStore mockCountlyStore = mock(CountlyStore.class);
+
+        when(mockCountlyStore.getLocationDisabled()).thenReturn(true);
+        when(mockCountlyStore.getCachedAdvertisingId()).thenReturn("");
+
         mCountly.getConnectionQueue().setCountlyStore(mockCountlyStore);
         mCountly.onStart(null);
         assertTrue(0 != mCountly.getPrevSessionDurationStartTime());
@@ -290,8 +296,7 @@ public class CountlyTests {
         assertNull(mCountly.getEventQueue());
         assertEquals(0, mCountly.getActivityCount());
         assertEquals(0, mCountly.getPrevSessionDurationStartTime());
-    }*/
-
+    }
 
     @Test
     public void testOnStart_initNotCalled() {
@@ -303,8 +308,7 @@ public class CountlyTests {
         }
     }
 
-    //todo fix test, problem while mocking
-    /*
+    @Test
     public void testOnStart_firstCall() {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
@@ -317,7 +321,6 @@ public class CountlyTests {
         assertTrue(prevSessionDurationStartTime <= System.nanoTime());
         verify(mockConnectionQueue).beginSession();
     }
-    */
 
     //todo fix test, problem while mocking
     /*
