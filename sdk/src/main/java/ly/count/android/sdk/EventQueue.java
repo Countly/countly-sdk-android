@@ -112,7 +112,6 @@ public class EventQueue {
         countlyStore_.addEvent(event);
     }
 
-
         // for unit tests
     CountlyStore getCountlyStore() {
         return countlyStore_;

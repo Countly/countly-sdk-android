@@ -79,34 +79,4 @@ public class UtilsMessaging {
         }
     }
 
-    /**
-     * Read stream into a byte array
-     *
-     * @param stream input to read
-     * @return stream contents or {@code null} in case of error
-     */
-    public static byte[] readStream(InputStream stream) {
-        if (stream == null) {
-            return null;
-        }
-
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try {
-            byte[] buffer = new byte[1024];
-            int len = 0;
-            while ((len = stream.read(buffer)) != -1) {
-                bytes.write(buffer, 0, len);
-            }
-            return bytes.toByteArray();
-        } catch (IOException e) {
-            Log.e("Countly", "Couldn't read stream: " + e);
-            return null;
-        } finally {
-            try {
-                bytes.close();
-                stream.close();
-            } catch (Throwable ignored) {
-            }
-        }
-    }
 }

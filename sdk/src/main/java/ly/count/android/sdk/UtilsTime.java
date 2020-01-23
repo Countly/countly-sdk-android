@@ -20,8 +20,7 @@ public class UtilsTime {
 
         public static Instant get(long timestampInMillis) {
             if (timestampInMillis < 0L) {
-                throw new IllegalArgumentException(
-                        "timestampInMillis must be greater than or equal to zero");
+                throw new IllegalArgumentException("timestampInMillis must be greater than or equal to zero");
             }
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(timestampInMillis);
