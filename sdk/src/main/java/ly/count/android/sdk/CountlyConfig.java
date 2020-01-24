@@ -11,7 +11,7 @@ public class CountlyConfig {
      * Internal fields for testing
      */
 
-    protected CountlyStore countlyStore;
+    protected CountlyStore countlyStore = null;
 
     protected boolean checkForNativeCrashDumps = true;
 
@@ -19,54 +19,54 @@ public class CountlyConfig {
      * Android context.
      * Mandatory field.
      */
-    protected Context context;
+    protected Context context = null;
 
     /**
      * URL of the Countly server to submit data to.
      * Mandatory field.
      */
-    protected String serverURL;
+    protected String serverURL = null;
 
     /**
      * app key for the application being tracked; find in the Countly Dashboard under Management &gt; Applications.
      * Mandatory field.
      */
-    protected String appKey;
+    protected String appKey = null;
 
     /**
      * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
      */
-    protected String deviceID;
+    protected String deviceID = null;
 
     /**
      * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
      */
-    protected DeviceId.Type idMode;
+    protected DeviceId.Type idMode = null;
 
     /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
      */
-    protected int starRatingLimit;
+    protected int starRatingLimit = 5;
 
     /**
      * the callback function that will be called from the automatic star rating dialog.
      */
-    protected CountlyStarRating.RatingCallback starRatingCallback;
+    protected CountlyStarRating.RatingCallback starRatingCallback = null;
 
     /**
      * the shown title text for the star rating dialogs.
      */
-    protected String starRatingTextTitle;
+    protected String starRatingTextTitle = null;
 
     /**
      * the shown message text for the star rating dialogs.
      */
-    protected String starRatingTextMessage;
+    protected String starRatingTextMessage = null;
 
     /**
      * the shown dismiss button text for the shown star rating dialogs.
      */
-    protected String starRatingTextDismiss;
+    protected String starRatingTextDismiss = null;
 
     protected boolean loggingEnabled = false;
 
@@ -76,7 +76,7 @@ public class CountlyConfig {
 
     protected boolean autoTrackingUseShortName = false;
 
-    protected HashMap<String, String> customNetworkRequestHeaders = null;
+    protected Map<String, String> customNetworkRequestHeaders = null;
 
     protected boolean pushIntentAddMetadata = false;
 
@@ -211,7 +211,7 @@ public class CountlyConfig {
         return this;
     }
 
-    public CountlyConfig addCustomNetworkRequestHeaders(HashMap<String, String> customHeaderValues){
+    public CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues){
         this.customNetworkRequestHeaders = customHeaderValues;
         return this;
     }
@@ -275,6 +275,11 @@ public class CountlyConfig {
 
     protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps){
         checkForNativeCrashDumps = checkForDumps;
+        return this;
+    }
+
+    protected CountlyConfig setCountlyStore(CountlyStore store){
+        countlyStore = store;
         return this;
     }
 }
