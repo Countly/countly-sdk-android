@@ -2,16 +2,15 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(AndroidJUnit4.class)
 public class CrashDetailsTests {
@@ -54,6 +53,62 @@ public class CrashDetailsTests {
         String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
+    }
+
+    @Test
+    public void testAddLogs(){
+        String errorText = "fsdfdsfFFFDD";
+        boolean nonfatal = false;
+        boolean isNativeCrash = false;
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash);
+        assertCrashData(cData, errorText, nonfatal, isNativeCrash);
+        Assert.assertFalse(cData.contains("\"logs\":"));
+
+        String [] sArr = TestUtils.createStringArray(8);
+        for (String s : sArr) {
+            CrashDetails.addLog(s);
+        }
+
+        String allLogs = CrashDetails.getLogs();
+        for (String s : sArr) {
+            allLogs.contains(s);
+        }
+
+
+        for (String s : sArr) {
+            CrashDetails.addLog(s);
+        }
+
+        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash);
+        assertCrashData(cData2, errorText, nonfatal, isNativeCrash);
+        Assert.assertTrue(cData2.contains("\"_logs\":"));
+    }
+
+    @Test
+    public void testCustomSegments(){
+        String errorText = "SomeError!@##";
+        boolean nonfatal = true;
+        boolean isNativeCrash = false;
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash);
+
+        assertCrashData(cData, errorText, nonfatal, isNativeCrash);
+
+        Map<String, String> cSeg = TestUtils.createMapString(5);
+
+        CrashDetails.setCustomSegments(cSeg);
+
+        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash);
+        assertCrashData(cData, errorText, nonfatal, isNativeCrash);
+
+        Assert.assertTrue(cData2.contains("_custom"));
+
+        for(Map.Entry<String, String> entry : cSeg.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            Assert.assertTrue(cData2.contains(key));
+            Assert.assertTrue(cData2.contains(value));
+        }
     }
 
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash){

@@ -119,7 +119,16 @@ public class RemoteConfig {
                     rcvs.values = new JSONObject();
                 }
                 rcvs.mergeValues(checkResponse);
+
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Finished remote config processing, starting saving");
+                }
+
                 saveConfig(context, rcvs);
+
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Finished remote config saving");
+                }
 
                 if(callback != null){
                     callback.callback(null);

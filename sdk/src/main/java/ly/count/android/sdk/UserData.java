@@ -32,12 +32,12 @@ public class UserData {
     protected static String org;
     protected static String phone;
     protected static String picture;
-    private static String picturePath;
+    protected static String picturePath;//protected only for testing
     protected static String gender;
     protected static Map<String, String> custom;
     protected static Map<String, JSONObject> customMods;
     protected static int byear = 0;
-    private static boolean isSynced = true;
+    protected static boolean isSynced = true;//protected only for testing
 
     final ConnectionQueue connectionQueue_;
 
@@ -512,12 +512,16 @@ public class UserData {
                 JSONObject customJson;
                 try {
                     customJson = json.getJSONObject(CUSTOM_KEY);
-                    custom = new HashMap<>(customJson.length());
-                    Iterator<String> nameItr = customJson.keys();
-                    while (nameItr.hasNext()) {
-                        final String key = nameItr.next();
-                        if (!customJson.isNull(key)) {
-                            custom.put(key, customJson.getString(key));
+                    if(customJson.length() == 0){
+                        custom = null;
+                    } else {
+                        custom = new HashMap<>(customJson.length());
+                        Iterator<String> nameItr = customJson.keys();
+                        while (nameItr.hasNext()) {
+                            final String key = nameItr.next();
+                            if (!customJson.isNull(key)) {
+                                custom.put(key, customJson.getString(key));
+                            }
                         }
                     }
                 } catch (JSONException e) {
