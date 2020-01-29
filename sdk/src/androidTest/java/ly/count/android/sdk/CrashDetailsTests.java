@@ -74,7 +74,6 @@ public class CrashDetailsTests {
             allLogs.contains(s);
         }
 
-
         for (String s : sArr) {
             CrashDetails.addLog(s);
         }

@@ -76,6 +76,10 @@ public class CountlyConfig {
 
     protected boolean autoTrackingUseShortName = false;
 
+    protected Class[] autoTrackingExceptions = null;
+
+    protected Map<String, Object> automaticViewSegmentation = null;
+
     protected Map<String, String> customNetworkRequestHeaders = null;
 
     protected boolean pushIntentAddMetadata = false;
@@ -93,8 +97,6 @@ public class CountlyConfig {
     protected String[] crashRegexFilters = null;
 
     protected String tamperingProtectionSalt = null;
-
-    protected Map<String, Object> automaticViewSegmentation = null;
 
     public CountlyConfig(){ }
 
@@ -211,6 +213,29 @@ public class CountlyConfig {
         return this;
     }
 
+    public CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation){
+        automaticViewSegmentation = segmentation;
+        return this;
+    }
+
+    /**
+     * Set which activities should be excluded from automatic view tracking
+     * @param exceptions activities which should be ignored
+     * @return
+     */
+    public CountlyConfig setAutoTrackingExceptions(Class[] exceptions){
+        if(exceptions != null){
+            for(int a = 0 ; a< exceptions.length ; a++){
+                if(exceptions[a] == null){
+                    throw new IllegalArgumentException("setAutoTrackingExceptions() does not accept 'null' activities");
+                }
+            }
+        }
+
+        autoTrackingExceptions = exceptions;
+        return this;
+    }
+
     public CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues){
         this.customNetworkRequestHeaders = customHeaderValues;
         return this;
@@ -266,12 +291,6 @@ public class CountlyConfig {
         tamperingProtectionSalt = salt;
         return this;
     }
-
-    public CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation){
-        automaticViewSegmentation = segmentation;
-        return this;
-    }
-
 
     protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps){
         checkForNativeCrashDumps = checkForDumps;

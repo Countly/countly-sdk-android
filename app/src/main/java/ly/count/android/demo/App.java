@@ -88,6 +88,7 @@ public class App extends Application {
                 .setCrashFilters(new String[]{".*secret.*"})
                 .setParameterTamperingProtectionSalt("SampleSalt")
                 .setAutomaticViewSegmentation(automaticViewSegmentation)
+                .setAutoTrackingExceptions(new Class[]{ActivityExampleCustomEvents.class})
                 ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

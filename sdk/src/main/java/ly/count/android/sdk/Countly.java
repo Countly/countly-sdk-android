@@ -129,6 +129,8 @@ public class Countly {
     private boolean firstView = true;
     private boolean autoViewTracker = false;
     private final static String VIEW_EVENT_KEY = "[CLY]_view";
+    protected Map<String, Object> automaticViewSegmentation = null;//automatic view segmentation
+    Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
 
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
@@ -172,9 +174,6 @@ public class Countly {
     //native crash
     static final String countlyFolderName = "Countly";
     static final String countlyNativeCrashFolderName = "CrashDumps";
-
-    //automatic view segmentation
-    protected Map<String, Object> automaticViewSegmentation = null;
 
     //GDPR
     protected boolean requiresConsent = false;
@@ -444,6 +443,8 @@ public class Countly {
 
             setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
 
+            autoTrackingActivityExceptions = config.autoTrackingExceptions;
+
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
 
@@ -684,20 +685,40 @@ public class Countly {
         CrashDetails.inForeground();
 
         if(autoViewTracker){
-            String usedActivityName = "NULL ACTIVITY";
+            if(!isActivityInExceptionList(activity)) {
+                String usedActivityName = "NULL ACTIVITY";
 
-            if(activity != null) {
-                if (automaticTrackingShouldUseShortName) {
-                    usedActivityName = activity.getClass().getSimpleName();
-                } else {
-                    usedActivityName = activity.getClass().getName();
+                if (activity != null) {
+                    if (automaticTrackingShouldUseShortName) {
+                        usedActivityName = activity.getClass().getSimpleName();
+                    } else {
+                        usedActivityName = activity.getClass().getName();
+                    }
+                }
+
+                recordView(usedActivityName, automaticViewSegmentation);
+            } else {
+                if (isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[onStart] Ignoring activity because it's in the exception list");
                 }
             }
-
-            recordView(usedActivityName, automaticViewSegmentation);
         }
 
         calledAtLeastOnceOnStart = true;
+    }
+
+    boolean isActivityInExceptionList(Activity act){
+        if (autoTrackingActivityExceptions == null){
+            return false;
+        }
+
+        for (Class autoTrackingActivityException : autoTrackingActivityExceptions) {
+            if (act.getClass().equals(autoTrackingActivityException)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

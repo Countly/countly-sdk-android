@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.content.Context;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
 public class CountlyConfigTests {
@@ -66,6 +68,9 @@ public class CountlyConfigTests {
         vs.put("s22s", 2323);
         vs.put("s44s", 33434.33d);
 
+        Activity [] act = new Activity[]{(mock(Activity.class))};
+
+
         assertDefaultValues(config, true);
 
 
@@ -95,6 +100,7 @@ public class CountlyConfigTests {
         config.setCrashFilters(rf);
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
+        config.setAutoTrackingExceptions(act);
 
 
         Assert.assertEquals(s[0], config.serverURL);
@@ -124,6 +130,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(rf, config.crashRegexFilters);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.automaticViewSegmentation);
+        Assert.assertEquals(act, config.autoTrackingExceptions);
     }
 
     @Test
@@ -131,6 +138,12 @@ public class CountlyConfigTests {
         CountlyConfig config = new CountlyConfig();
 
         assertDefaultValues(config, true);
+    }
+
+    @Test (expected = IllegalArgumentException.class)
+    public void autoTrackingExceptionNull() {
+        CountlyConfig config = new CountlyConfig();
+        config.setAutoTrackingExceptions(new Activity[]{null});
     }
 
     void assertDefaultValues(CountlyConfig config, boolean includeConstructorValues){
