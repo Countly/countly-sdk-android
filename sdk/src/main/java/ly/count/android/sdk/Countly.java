@@ -663,7 +663,7 @@ public class Countly {
         }
 
         appLaunchDeepLink = false;
-        if (eventQueue_ == null) {
+        if (!isInitialized()) {
             throw new IllegalStateException("init must be called before onStart");
         }
 
@@ -743,7 +743,7 @@ public class Countly {
             Log.d(Countly.TAG, "Countly onStop called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
         }
 
-        if (eventQueue_ == null) {
+        if (!isInitialized()) {
             throw new IllegalStateException("init must be called before onStop");
         }
         if (activityCount_ == 0) {
@@ -802,7 +802,7 @@ public class Countly {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling [changeDeviceId] with type and ID");
         }
-        if (eventQueue_ == null) {
+        if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceId");
         }
         //if (activityCount_ == 0) {
