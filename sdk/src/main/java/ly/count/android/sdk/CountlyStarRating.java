@@ -230,7 +230,6 @@ public class CountlyStarRating {
 
     /**
      * Setting things that would be provided during initial config
-     * @param context android context
      * @param limit limit for automatic rating
      * @param starRatingTextTitle provided title
      * @param starRatingTextMessage provided message
@@ -260,7 +259,6 @@ public class CountlyStarRating {
 
     /**
      * Returns a object with the loaded preferences
-     * @param context android context
      * @return
      */
     private static StarRatingPreferences loadStarRatingPreferences(final CountlyStore cs) {
@@ -284,7 +282,6 @@ public class CountlyStarRating {
 
     /**
      * Save the star rating preferences object
-     * @param context android context
      * @param srp
      */
     private static void saveStarRatingPreferences(final CountlyStore cs, final StarRatingPreferences srp) {
@@ -293,7 +290,6 @@ public class CountlyStarRating {
 
     /**
      * Set if the star rating dialog should be shown automatically
-     * @param context android context
      * @param shouldShow
      */
     public static void setShowDialogAutomatically(final CountlyStore cs, final boolean shouldShow) {
@@ -306,7 +302,6 @@ public class CountlyStarRating {
      * Set if automatic star rating should be disabled for each new version.
      * By default automatic star rating will be shown for every new app version.
      * If this is set to true, star rating will be shown only once over apps lifetime
-     * @param context android context
      * @param disableAsking if set true, will not show star rating for every new app version
      */
     public static void setStarRatingDisableAskingForEachAppVersion(final CountlyStore cs, final boolean disableAsking) {
@@ -353,7 +348,6 @@ public class CountlyStarRating {
 
     /**
      * Returns how many sessions has star rating counted internally
-     * @param context android context
      * @return
      */
     public static int getCurrentVersionsSessionCount(final CountlyStore cs){
@@ -363,7 +357,6 @@ public class CountlyStarRating {
 
     /**
      * Set the automatic star rating session count back to 0
-     * @param context android context
      */
     public static void clearAutomaticStarRatingSessionCount(final CountlyStore cs){
         StarRatingPreferences srp = loadStarRatingPreferences(cs);
@@ -373,7 +366,6 @@ public class CountlyStarRating {
 
     /**
      * Set if the star rating dialog is cancellable
-     * @param context android context
      * @param isCancellable
      */
     public static void setIfRatingDialogIsCancellable(final CountlyStore cs, final boolean isCancellable){
