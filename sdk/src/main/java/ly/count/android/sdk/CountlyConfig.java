@@ -98,6 +98,8 @@ public class CountlyConfig {
 
     protected String tamperingProtectionSalt = null;
 
+    protected boolean trackOrientationChange = false;
+
     public CountlyConfig(){ }
 
     public CountlyConfig(Context context, String appKey, String serverURL){
@@ -292,6 +294,10 @@ public class CountlyConfig {
         return this;
     }
 
+    public CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation){
+        trackOrientationChange = shouldTrackOrientation;
+        return this;
+    }
     protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps){
         checkForNativeCrashDumps = checkForDumps;
         return this;

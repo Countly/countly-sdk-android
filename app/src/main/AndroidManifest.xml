@@ -13,7 +13,8 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:configChanges="orientation|screenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -41,46 +42,55 @@
 
         <activity
             android:name=".ActivityExampleAPM"
-            android:label="@string/activity_name_apm" >
+            android:label="@string/activity_name_apm"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <activity
             android:name=".ActivityExampleCrashReporting"
-            android:label="@string/activity_name_crash_reporting" >
+            android:label="@string/activity_name_crash_reporting"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <activity
             android:name=".ActivityExampleCustomEvents"
-            android:label="@string/activity_name_custom_events" >
+            android:label="@string/activity_name_custom_events"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <activity
             android:name=".ActivityExampleMultiThreading"
-            android:label="@string/activity_name_multithreading" >
+            android:label="@string/activity_name_multithreading"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <activity
             android:name=".ActivityExampleOthers"
-            android:label="@string/activity_name_others" >
+            android:label="@string/activity_name_others"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <activity
             android:name=".ActivityExampleUserDetails"
-            android:label="@string/activity_name_user_detail" >
+            android:label="@string/activity_name_user_detail"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <activity
             android:name=".ActivityExampleViewTracking"
-            android:label="@string/activity_name_view_tracking" >
+            android:label="@string/activity_name_view_tracking"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <activity
             android:name=".ActivityExampleRemoteConfig"
-            android:label="@string/activity_name_remote_config" >
+            android:label="@string/activity_name_remote_config"
+            android:configChanges="orientation|screenSize">
         </activity>
         <activity
             android:name=".ActivityExampleDeviceId"
-            android:label="@string/activity_name_device_id" >
+            android:label="@string/activity_name_device_id"
+            android:configChanges="orientation|screenSize">
         </activity>
 
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">
@@ -99,7 +109,8 @@
             android:name=".AnotherActivity"
             android:label="@string/title_activity_another"
             android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="orientation|screenSize">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="ly.count.android.demo.MainActivity" />

@@ -89,6 +89,7 @@ public class App extends Application {
                 .setParameterTamperingProtectionSalt("SampleSalt")
                 .setAutomaticViewSegmentation(automaticViewSegmentation)
                 .setAutoTrackingExceptions(new Class[]{ActivityExampleCustomEvents.class})
+                .setTrackOrientationChanges(true)
                 ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

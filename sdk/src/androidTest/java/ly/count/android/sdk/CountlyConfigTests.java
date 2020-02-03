@@ -30,8 +30,8 @@ public class CountlyConfigTests {
     }
 
     @Test
-    public void settingAllValues(){
-        String[] s = new String[]{ "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd"};
+    public void settingAllValues() {
+        String[] s = new String[]{"4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd"};
         Context c = getContext();
         CountlyConfig config = new CountlyConfig();
         CountlyStore cs = new CountlyStore(c);
@@ -55,20 +55,20 @@ public class CountlyConfigTests {
             }
         };
 
-        Map<String,String> hv = new HashMap<>();
+        Map<String, String> hv = new HashMap<>();
         hv.put("11", "22");
         hv.put("1331", "2332");
 
-        String [] fn = new String[] {"ds dsd", "434f", "ngfhg"};
+        String[] fn = new String[]{"ds dsd", "434f", "ngfhg"};
 
-        String [] rf = new String[] {"d dsd", "454gf"};
+        String[] rf = new String[]{"d dsd", "454gf"};
 
         Map<String, Object> vs = new HashMap<>();
         vs.put("ss", "fdf");
         vs.put("s22s", 2323);
         vs.put("s44s", 33434.33d);
 
-        Activity [] act = new Activity[]{(mock(Activity.class))};
+        Class[] act = new Class[]{Activity.class};
 
 
         assertDefaultValues(config, true);
@@ -101,6 +101,7 @@ public class CountlyConfigTests {
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
         config.setAutoTrackingExceptions(act);
+        config.setTrackOrientationChanges(true);
 
 
         Assert.assertEquals(s[0], config.serverURL);
@@ -131,6 +132,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.automaticViewSegmentation);
         Assert.assertEquals(act, config.autoTrackingExceptions);
+        Assert.assertTrue(config.trackOrientationChange);
     }
 
     @Test
@@ -143,7 +145,7 @@ public class CountlyConfigTests {
     @Test (expected = IllegalArgumentException.class)
     public void autoTrackingExceptionNull() {
         CountlyConfig config = new CountlyConfig();
-        config.setAutoTrackingExceptions(new Activity[]{null});
+        config.setAutoTrackingExceptions(new Class[]{null});
     }
 
     void assertDefaultValues(CountlyConfig config, boolean includeConstructorValues){
@@ -178,5 +180,6 @@ public class CountlyConfigTests {
         Assert.assertEquals(null, config.tamperingProtectionSalt);
         Assert.assertEquals(null, config.automaticViewSegmentation);
         Assert.assertEquals(null, config.eventSendThreshold);
+        Assert.assertEquals(false, config.trackOrientationChange);
     }
 }

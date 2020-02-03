@@ -25,6 +25,8 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.util.Base64;
 import android.util.Log;
@@ -131,6 +133,11 @@ public class Countly {
     private final static String VIEW_EVENT_KEY = "[CLY]_view";
     protected Map<String, Object> automaticViewSegmentation = null;//automatic view segmentation
     Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
+
+    //track orientation changes
+    protected boolean trackOrientationChanges = false;
+    protected int currentOrientation = -1;
+    private final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
 
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
@@ -458,6 +465,8 @@ public class Countly {
 
             enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
 
+            trackOrientationChanges = config.trackOrientationChange;
+
             //set the star rating values
             starRatingCallback_ = config.starRatingCallback;
             CountlyStarRating.setStarRatingInitConfig(countlyStore, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
@@ -704,7 +713,40 @@ public class Countly {
             }
         }
 
+        //orientation tracking
+        if(trackOrientationChanges){
+            Resources resources = activity.getResources();
+            if(resources != null) {
+                updateOrientation(resources.getConfiguration().orientation);
+            }
+        }
+
         calledAtLeastOnceOnStart = true;
+    }
+
+    void updateOrientation(int newOrientation){
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling [updateOrientation], new orientation:[" + newOrientation + "]");
+        }
+
+        if(!getConsent(CountlyFeatureNames.events)){
+            //we don't have consent, just leave
+            return;
+        }
+
+        if(currentOrientation != newOrientation){
+            currentOrientation = newOrientation;
+
+            Map<String, String> segm = new HashMap<>();
+
+            if(currentOrientation == Configuration.ORIENTATION_PORTRAIT){
+                segm.put("mode", "portrait");
+            } else {
+                segm.put("mode", "landscape");
+            }
+
+            recordEvent(ORIENTATION_EVENT_KEY, segm, 1);
+        }
     }
 
     boolean isActivityInExceptionList(Activity act){
@@ -771,6 +813,19 @@ public class Countly {
 
         if (eventQueue_.size() > 0) {
             connectionQueue_.recordEvents(eventQueue_.events());
+        }
+    }
+
+    public synchronized void onConfigurationChanged(Configuration newConfig){
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling [onConfigurationChanged]");
+        }
+        if (!isInitialized()) {
+            throw new IllegalStateException("init must be called before onConfigurationChanged");
+        }
+
+        if(trackOrientationChanges){
+            updateOrientation(newConfig.orientation);
         }
     }
 
@@ -1169,6 +1224,12 @@ public class Countly {
                 if (Countly.sharedInstance().getConsent(CountlyFeatureNames.views)) {
                     eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
                     sendEventsForced();
+                }
+                break;
+            case ORIENTATION_EVENT_KEY:
+                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
+                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
+                    sendEventsIfNeeded();
                 }
                 break;
             default:
