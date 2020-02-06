@@ -1,3 +1,6 @@
+19.09.1
+  * Applying null pointer exception mitigations to immediate request maker.
+
 19.09
   * Adding feature to flush all requests in the queue
   * Adding CountlyConfig object which is used during init

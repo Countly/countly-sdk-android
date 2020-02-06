@@ -574,6 +574,13 @@ public class CountlyStarRating {
                     wasSuccess = false;
                 }
 
+                if(stream == null){
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.e(Countly.TAG, "Encountered problem while making a immediate server request, received stream was null");
+                    }
+                    return null;
+                }
+
                 reader = new BufferedReader(new InputStreamReader(stream));
 
                 StringBuilder buffer = new StringBuilder();
@@ -591,12 +598,11 @@ public class CountlyStarRating {
                     }
                     return null;
                 }
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.e(Countly.TAG, "Received exception while making a immediate server request");
+                    e.printStackTrace();
+                }
             } finally {
                 if (connection != null) {
                     connection.disconnect();
@@ -606,7 +612,9 @@ public class CountlyStarRating {
                         reader.close();
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        e.printStackTrace();
+                    }
                 }
             }
             return null;
