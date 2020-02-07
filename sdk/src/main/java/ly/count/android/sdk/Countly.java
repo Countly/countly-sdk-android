@@ -112,9 +112,9 @@ public class Countly {
         static final Countly instance = new Countly();
     }
 
-    protected ConnectionQueue connectionQueue_;
+    ConnectionQueue connectionQueue_;
     private final ScheduledExecutorService timerService_;
-    private EventQueue eventQueue_;
+    EventQueue eventQueue_;
     private long prevSessionDurationStartTime_;
     private int activityCount_;
     private boolean disableUpdateSessionRequests_;
@@ -124,23 +124,19 @@ public class Countly {
 
     //Internal modules for functionality grouping
     protected ModuleCrash moduleCrash = null;
+    ModuleViews moduleViews = null;
 
     //user data access
     public static UserData userData;
 
-    //track views
-    private String lastView = null;
-    private int lastViewStart = 0;
-    private boolean firstView = true;
-    private boolean autoViewTracker = false;
-    private final static String VIEW_EVENT_KEY = "[CLY]_view";
-    protected Map<String, Object> automaticViewSegmentation = null;//automatic view segmentation
-    Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
+    //view related things
+    boolean autoViewTracker = false;//todo, move to module after "setViewTracking" is removed
+    boolean automaticTrackingShouldUseShortName = false;//flag for using short names | todo, move to module after setter is removed
 
     //track orientation changes
-    protected boolean trackOrientationChanges = false;
-    protected int currentOrientation = -1;
-    private final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
+    boolean trackOrientationChanges = false;
+    int currentOrientation = -1;
+    final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
 
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
@@ -160,9 +156,6 @@ public class Countly {
 
     //internal flags
     private boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
-
-    //activity tracking
-    boolean automaticTrackingShouldUseShortName = false;//flag for using short names
 
     //attribution
     protected boolean isAttributionEnabled = true;
@@ -443,17 +436,19 @@ public class Countly {
                 countlyStore = new CountlyStore(config.context);
             }
 
+            moduleViews = new ModuleViews(this, config);
+
             //init view related things
             setViewTracking(config.enableViewTracking);
 
             setAutoTrackingUseShortName(config.autoTrackingUseShortName);
 
-            setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
+            moduleViews.setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
 
-            autoTrackingActivityExceptions = config.autoTrackingExceptions;
 
             //init crash related things
             moduleCrash.setCrashFiltersInternal(config.crashRegexFilters);
+            moduleViews.autoTrackingActivityExceptions = config.autoTrackingExceptions;
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -654,6 +649,11 @@ public class Countly {
         connectionQueue_.setCountlyStore(null);
         prevSessionDurationStartTime_ = 0;
         activityCount_ = 0;
+        if(moduleViews != null) {
+            moduleViews.halt();
+            moduleViews = null;
+        }
+
     }
 
     /**
@@ -694,25 +694,8 @@ public class Countly {
 
         CrashDetails.inForeground();
 
-        if(autoViewTracker){
-            if(!isActivityInExceptionList(activity)) {
-                String usedActivityName = "NULL ACTIVITY";
-
-                if (activity != null) {
-                    if (automaticTrackingShouldUseShortName) {
-                        usedActivityName = activity.getClass().getSimpleName();
-                    } else {
-                        usedActivityName = activity.getClass().getName();
-                    }
-                }
-
-                recordView(usedActivityName, automaticViewSegmentation);
-            } else {
-                if (isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[onStart] Ignoring activity because it's in the exception list");
-                }
-            }
-        }
+        //automatic view tracking
+        moduleViews.automaticViewTracker(activity);
 
         //orientation tracking
         if(trackOrientationChanges){
@@ -748,20 +731,6 @@ public class Countly {
 
             recordEvent(ORIENTATION_EVENT_KEY, segm, 1);
         }
-    }
-
-    boolean isActivityInExceptionList(Activity act){
-        if (autoTrackingActivityExceptions == null){
-            return false;
-        }
-
-        for (Class autoTrackingActivityException : autoTrackingActivityExceptions) {
-            if (act.getClass().equals(autoTrackingActivityException)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -801,7 +770,7 @@ public class Countly {
         CrashDetails.inBackground();
 
         //report current view duration
-        reportViewDuration();
+        moduleViews.reportViewDuration();
     }
 
     /**
@@ -1259,6 +1228,7 @@ public class Countly {
     /**
      * Check state of automatic view tracking
      * @return boolean - true if enabled, false if disabled
+     * @deprecated use views().isViewTrackingEnabled()
      */
     public synchronized boolean isViewTrackingEnabled(){
         return autoViewTracker;
@@ -1273,6 +1243,10 @@ public class Countly {
      * @deprecated
      */
     public synchronized Countly recordView(String viewName) {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+        }
+
         return recordView(viewName, null);
     }
 
@@ -1283,40 +1257,14 @@ public class Countly {
      * @param viewName String - name of the view
      * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
      * @return Returns link to Countly for call chaining
+     * @deprecated use views().recordView
      */
     public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
-        if (isLoggingEnabled()) {
-            int segmCount = 0;
-            if (viewSegmentation != null) {
-                segmCount = viewSegmentation.size();
-            }
-            Log.d(Countly.TAG, "Recording view with name: [" + viewName + "], previous view:[" + lastView + "] view segment count:[" + segmCount + "]");
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
         }
 
-        reportViewDuration();
-        lastView = viewName;
-        lastViewStart = UtilsTime.currentTimestampSeconds();
-        HashMap<String, String> segmentsString = new HashMap<>();
-        segmentsString.put("name", viewName);
-        segmentsString.put("visit", "1");
-        segmentsString.put("segment", "Android");
-        if(firstView) {
-            firstView = false;
-            segmentsString.put("start", "1");
-        }
-
-        Map<String, Integer> segmentsInt = null;
-        Map<String, Double> segmentsDouble = null;
-
-        if(viewSegmentation != null){
-            segmentsInt = new HashMap<>();
-            segmentsDouble = new HashMap<>();
-
-            fillInSegmentation(viewSegmentation, segmentsString, segmentsInt, segmentsDouble, null);
-        }
-
-        recordEvent(VIEW_EVENT_KEY, segmentsString, segmentsInt, segmentsDouble, 1, 0, 0);
-        return this;
+        return moduleViews.recordViewInternal(viewName, viewSegmentation);
     }
 
     /**
@@ -1845,38 +1793,6 @@ public class Countly {
                     DeviceInfo.deepLink = data.toString();
                 }
             }
-        }
-    }
-
-    /**
-     * Reports duration of last view
-     */
-    private void reportViewDuration() {
-        if (sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "], current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
-        }
-
-        if (lastView != null && lastViewStart <= 0) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Last view start value is not normal: [" + lastViewStart + "]");
-            }
-        }
-
-        if (!getConsent(CountlyFeatureNames.views)) {
-            return;
-        }
-
-        //only record view if the view name is not null and if it has a reasonable duration
-        //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
-        //and therefore will be ignored
-        if (lastView != null && lastViewStart > 0) {
-            HashMap<String, String> segments = new HashMap<>();
-            segments.put("name", lastView);
-            segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
-            segments.put("segment", "Android");
-            recordEvent(VIEW_EVENT_KEY, segments, 1);
-            lastView = null;
-            lastViewStart = 0;
         }
     }
 
@@ -2823,34 +2739,12 @@ public class Countly {
         return this;
     }
 
-    public Countly setAutomaticViewSegmentation(Map<String, Object> segmentation){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling setAutomaticViewSegmentation");
-        }
-
+    public ModuleCrash.Crashes crashes(){
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before setAutomaticViewSegmentation");
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing crashes");
         }
 
-        setAutomaticViewSegmentationInternal(segmentation);
-
-        return this;
-    }
-
-    private void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling setAutomaticViewSegmentationInternal");
-        }
-
-        if(segmentation != null){
-            if(!Countly.checkSegmentationTypes(segmentation)){
-                //found a unsupported type, throw exception
-
-                throw new IllegalStateException("Provided a unsupported type for automatic View Segmentation");
-            }
-        }
-
-        automaticViewSegmentation = segmentation;
+        return moduleCrash.crashesInterface;
     }
 
     protected static boolean checkSegmentationTypes(Map<String, Object> segmentation){
@@ -2932,12 +2826,12 @@ public class Countly {
         }
     }
 
-    public ModuleCrash.Crashes crashes(){
+    public ModuleViews.Views views(){
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing crashes");
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing views");
         }
 
-        return moduleCrash.crashesInterface;
+        return moduleViews.viewsInterface;
     }
 
     // for unit testing
