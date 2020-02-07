@@ -112,7 +112,7 @@ public class Countly {
         static final Countly instance = new Countly();
     }
 
-    private ConnectionQueue connectionQueue_;
+    protected ConnectionQueue connectionQueue_;
     private final ScheduledExecutorService timerService_;
     private EventQueue eventQueue_;
     private long prevSessionDurationStartTime_;
@@ -121,6 +121,9 @@ public class Countly {
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
     private Context context_;
+
+    //Internal modules for functionality grouping
+    protected ModuleCrash moduleCrash = null;
 
     //user data access
     public static UserData userData;
@@ -174,14 +177,6 @@ public class Countly {
     //custom request header fields
     Map<String, String> requestHeaderCustomValues;
 
-    //crash filtering
-    String[] crashRegexFilters = null;
-    Pattern[] crashRegexFiltersCompiled = null;
-
-    //native crash
-    static final String countlyFolderName = "Countly";
-    static final String countlyNativeCrashFolderName = "CrashDumps";
-
     //GDPR
     protected boolean requiresConsent = false;
 
@@ -191,6 +186,8 @@ public class Countly {
 
     Boolean delayedPushConsent = null;//if this is set, consent for push has to be set before finishing init and sending push changes
     boolean delayedLocationErasure = false;//if location needs to be cleared at the end of init
+
+    private boolean appLaunchDeepLink = true;
 
     CountlyConfig config_ = null;
 
@@ -435,6 +432,9 @@ public class Countly {
 
             config_ = config;
 
+            //initialise modules
+            moduleCrash = new ModuleCrash(this);
+
             final CountlyStore countlyStore;
             if(config.countlyStore != null){
                 //we are running a test and using a mock object
@@ -452,6 +452,9 @@ public class Countly {
 
             autoTrackingActivityExceptions = config.autoTrackingExceptions;
 
+            //init crash related things
+            moduleCrash.setCrashFiltersInternal(config.crashRegexFilters);
+
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
 
@@ -460,8 +463,6 @@ public class Countly {
             setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
 
             setHttpPostForced(config.httpPostForced);
-
-            setCrashFiltersInternal(config.crashRegexFilters);
 
             enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
 
@@ -615,7 +616,7 @@ public class Countly {
         //check for previous native crash dumps
         if(config.checkForNativeCrashDumps){
             //flag so that this can be turned off during testing
-            checkForNativeCrashDumps(config.context);
+            moduleCrash.checkForNativeCrashDumps(config.context);
         }
 
 
@@ -1511,188 +1512,60 @@ public class Countly {
      * In custom segments you can provide any string key values to segments crashes by
      * @param segments Map&lt;String, String&gt; key segments and their values
      * @return Returns link to Countly for call chaining
+     * @deprecated use crashes().setCustomCrashSegments
      */
     public synchronized Countly setCustomCrashSegments(Map<String, String> segments) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting custom crash segments");
-        }
-
-        if(!getConsent(CountlyFeatureNames.crashes)){
-            return this;
-        }
-
-        if(segments != null) {
-            CrashDetails.setCustomSegments(segments);
-        }
-        return this;
+        return crashes().setCustomCrashSegments(segments);
     }
 
     /**
      * Add crash breadcrumb like log record to the log that will be send together with crash report
      * @param record String a bread crumb for the crash report
      * @return Returns link to Countly for call chaining
-     * @deprecated use `addCrashBreadcrumb`
-     */
-    public synchronized Countly addCrashLog(String record) {
-        return addCrashBreadcrumb(record);
-    }
-
-    /**
-     * Add crash breadcrumb like log record to the log that will be send together with crash report
-     * @param record String a bread crumb for the crash report
-     * @return Returns link to Countly for call chaining
+     * @deprecated use crashes().addCrashBreadcrumb
      */
     public synchronized Countly addCrashBreadcrumb(String record) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Adding crash breadcrumb");
-        }
-
-        if(!getConsent(CountlyFeatureNames.crashes)){
-            return this;
-        }
-
-        if(record == null || record.isEmpty()) {
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Can't add a null or empty crash breadcrumb");
-            }
-            return this;
-        }
-
-        CrashDetails.addLog(record);
-        return this;
-    }
-
-    /**
-     * Called during init to check if there are any crash dumps saved
-     * @param context android context
-     */
-    protected synchronized void checkForNativeCrashDumps(Context context){
-        Log.d(TAG, "Checking for native crash dumps");
-
-        String basePath = context.getCacheDir().getAbsolutePath();
-        String finalPath = basePath + File.separator + countlyFolderName + File.separator + countlyNativeCrashFolderName;
-
-        File folder = new File(finalPath);
-        if (folder.exists()) {
-            Log.d(TAG, "Native crash folder exists, checking for dumps");
-
-            File[] dumpFiles = folder.listFiles();
-            Log.d(TAG,"Crash dump folder contains [" + dumpFiles.length + "] files");
-            for (File dumpFile : dumpFiles) {
-                //record crash
-                recordNativeException(dumpFile);
-
-                //delete dump file
-                dumpFile.delete();
-            }
-        } else {
-            Log.d(TAG, "Native crash folder does not exist");
-        }
-    }
-
-    protected synchronized void recordNativeException(File dumpFile){
-        Log.d(TAG, "Recording native crash dump: [" + dumpFile.getName() + "]");
-
-        //check for consent
-        if(!getConsent(CountlyFeatureNames.crashes)){
-            return;
-        }
-
-        //read bytes
-        int size = (int)dumpFile.length();
-        byte[] bytes = new byte[size];
-
-        try {
-            BufferedInputStream buf = new BufferedInputStream(new FileInputStream(dumpFile));
-            buf.read(bytes, 0, bytes.length);
-            buf.close();
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to read dump file bytes");
-            e.printStackTrace();
-            return;
-        }
-
-        //convert to base64
-        String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
-
-        //record crash
-        connectionQueue_.sendCrashReport(dumpString, false, true);
-    }
-
-    /**
-     * Log handled exception to report it to server as non fatal crash
-     * @param exception Exception to log
-     * @deprecated Use recordHandledException
-     * @return Returns link to Countly for call chaining
-     */
-    public synchronized Countly logException(Exception exception) {
-        return recordException(exception, true);
+        return crashes().addCrashBreadcrumb(record);
     }
 
     /**
      * Log handled exception to report it to server as non fatal crash
      * @param exception Exception to log
      * @return Returns link to Countly for call chaining
+     * @deprecated use crashes().recordHandledException
      */
     public synchronized Countly recordHandledException(Exception exception) {
-        return recordException(exception, true);
+        return moduleCrash.recordException(exception, true);
     }
 
     /**
      * Log handled exception to report it to server as non fatal crash
      * @param exception Throwable to log
      * @return Returns link to Countly for call chaining
+     * @deprecated use crashes().recordHandledException
      */
     public synchronized Countly recordHandledException(Throwable exception) {
-        return recordException(exception, true);
+        return moduleCrash.recordException(exception, true);
     }
 
     /**
      * Log unhandled exception to report it to server as fatal crash
      * @param exception Exception to log
      * @return Returns link to Countly for call chaining
+     * @deprecated use crashes().recordUnhandledException
      */
     public synchronized Countly recordUnhandledException(Exception exception) {
-        return recordException(exception, false);
+        return moduleCrash.recordException(exception, false);
     }
 
     /**
      * Log unhandled exception to report it to server as fatal crash
      * @param exception Throwable to log
      * @return Returns link to Countly for call chaining
+     * @deprecated use crashes().recordUnhandledException
      */
     public synchronized Countly recordUnhandledException(Throwable exception) {
-        return recordException(exception, false);
-    }
-
-    /**
-     * Common call for handling exceptions
-     * @param exception Exception to log
-     * @param itIsHandled If the exception is handled or not (fatal)
-     * @return Returns link to Countly for call chaining
-     */
-    private synchronized Countly recordException(Throwable exception, boolean itIsHandled) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Logging exception, handled:[" + itIsHandled + "]");
-        }
-
-        if(!getConsent(CountlyFeatureNames.crashes)){
-            return this;
-        }
-
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        exception.printStackTrace(pw);
-        String exceptionString = sw.toString();
-
-        if(crashFilterCheck(crashRegexFiltersCompiled, exceptionString)){
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
-            }
-        } else {
-            connectionQueue_.sendCrashReport(exceptionString, itIsHandled, false);
-        }
-        return this;
+        return moduleCrash.recordException(exception, false);
     }
 
     /**
@@ -1953,8 +1826,6 @@ public class Countly {
         EVENT_QUEUE_SIZE_THRESHOLD = size;
         return this;
     }
-
-    private boolean appLaunchDeepLink = true;
 
     public static void onCreate(Activity activity) {
         Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
@@ -2952,107 +2823,6 @@ public class Countly {
         return this;
     }
 
-    /**
-     * Call to set regex filters that will be used for crash filtering
-     * Set null to disable it
-     */
-    public Countly setCrashFilters(String[] regexFilters){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling setCrashFilters");
-        }
-
-        if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before setCrashFilters");
-        }
-
-        setCrashFiltersInternal(regexFilters);
-
-        return this;
-    }
-
-    private void setCrashFiltersInternal(String[] regexFilters){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling setCrashFiltersInternal");
-
-            if(regexFilters == null){
-                Log.d(Countly.TAG, "Provided crash regex filter is null");
-            } else {
-                Log.d(Countly.TAG, "Setting the following crash regex filters:");
-                for (int a = 0; a < regexFilters.length; a++) {
-                    Log.d(Countly.TAG, (a + 1) + ") [" + regexFilters[a] + "]");
-                }
-            }
-        }
-
-        crashRegexFilters = regexFilters;
-
-        if(regexFilters == null){
-            crashRegexFiltersCompiled = null;
-        } else {
-            crashRegexFiltersCompiled = new Pattern[crashRegexFilters.length];
-
-            for (int a = 0; a < regexFilters.length; a++) {
-                crashRegexFiltersCompiled[a] = Pattern.compile(crashRegexFilters[a], Pattern.DOTALL);
-            }
-        }
-    }
-
-    /**
-     * A way to validate created filters
-     * @param regexFilters filters you want to validate
-     * @param sampleCrash sample crashes you are worrying about
-     * @return
-     */
-    public boolean[] crashFilterTest(String[] regexFilters, String[] sampleCrash){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling crashFilterTest");
-        }
-
-        Pattern[] filters = new Pattern[regexFilters.length];
-
-        for(int a = 0 ; a < regexFilters.length ; a++){
-            filters[a] = Pattern.compile(regexFilters[a], Pattern.DOTALL);
-        }
-
-        boolean[] res = new boolean[sampleCrash.length];
-
-        for(int a = 0 ; a < res.length ; a++){
-            res[a] = crashFilterCheck(filters, sampleCrash[a]);
-        }
-
-        return res;
-    }
-
-    /**
-     * Call to check if crash matches one of the filters
-     * If it does, the crash should be ignored
-     * @param regexFilters
-     * @param crash
-     * @return true if a match was found
-     */
-    private boolean crashFilterCheck(Pattern[] regexFilters, String crash){
-        if (isLoggingEnabled()) {
-            int filterCount = 0;
-            if(regexFilters != null){
-                filterCount = regexFilters.length;
-            }
-            Log.d(Countly.TAG, "Calling crashFilterCheck, filter count:[" + filterCount + "]");
-        }
-
-        if(regexFilters == null){
-            //no filter set, nothing to compare against
-            return false;
-        }
-
-        for (Pattern regexFilter : regexFilters) {
-            Matcher m = regexFilter.matcher(crash);
-            if (m.matches()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public Countly setAutomaticViewSegmentation(Map<String, Object> segmentation){
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling setAutomaticViewSegmentation");
@@ -3162,6 +2932,14 @@ public class Countly {
         }
     }
 
+    public ModuleCrash.Crashes crashes(){
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing crashes");
+        }
+
+        return moduleCrash.crashesInterface;
+    }
+
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }
     void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }
@@ -3172,59 +2950,4 @@ public class Countly {
     void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
     int getActivityCount() { return activityCount_; }
     synchronized boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
-
-    @SuppressWarnings("InfiniteRecursion")
-    public void stackOverflow() {
-        this.stackOverflow();
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    public synchronized Countly crashTest(int crashNumber) {
-
-        if (crashNumber == 1){
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 1");
-            }
-
-            stackOverflow();
-
-        }else if (crashNumber == 2){
-
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 2");
-            }
-
-            //noinspection UnusedAssignment,divzero
-            @SuppressWarnings("NumericOverflow") int test = 10/0;
-
-        }else if (crashNumber == 3){
-
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 3");
-            }
-
-            Object[] o = null;
-            //noinspection InfiniteLoopStatement
-            while (true) { o = new Object[] { o }; }
-
-
-        }else if (crashNumber == 4){
-
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 4");
-            }
-
-            throw new RuntimeException("This is a crash");
-        }
-        else{
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 5");
-            }
-
-            String test = null;
-            //noinspection ResultOfMethodCallIgnored
-            test.charAt(1);
-        }
-        return Countly.sharedInstance();
-    }
 }

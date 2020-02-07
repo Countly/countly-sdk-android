@@ -6,6 +6,9 @@
   * Adding call to record a event with a given timestamp
   * Adding option to set tamper protection salt in config object
   * Adding calls to give and remove consent to all features at the same time
+  * Moving crash related calls to a seperate module
+  * Removing "addCrashLog" call
+  * Removing "logException" call
   * Migrated to AndroidX
   * Improved internal time management which fixes inconsistencies that could arrise on day changes
 
