@@ -370,7 +370,7 @@ public class EventTests {
         HashMap<String, Double> segmentsDouble = new HashMap<>();
         HashMap<String, Object> segmentsReminder = new HashMap<>();
 
-        Countly.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsReminder);
+        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsReminder);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsInt.size(), 3);
@@ -407,7 +407,7 @@ public class EventTests {
         HashMap<String, Double> segmentsDouble = new HashMap<>();
         HashMap<String, Object> segmentsReminder = new HashMap<>();
 
-        Countly.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsReminder);
+        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsReminder);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsInt.size(), 1);

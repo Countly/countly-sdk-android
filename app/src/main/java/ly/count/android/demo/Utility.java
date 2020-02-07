@@ -42,7 +42,7 @@ public class Utility {
         if(amount > 0){
             AnotherRecursiveCall(amount - 1);
         } else {
-            Countly.sharedInstance().logException(new Exception("A handled recursive exception"));
+            Countly.sharedInstance().recordHandledException(new Exception("A handled recursive exception"));
         }
     }
 }

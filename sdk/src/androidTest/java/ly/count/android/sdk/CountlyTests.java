@@ -613,7 +613,11 @@ public class CountlyTests {
         mCountly.setEventQueue(mockEventQueue);
 
         final Countly countly = spy(mCountly);
+        countly.moduleEvents._cly = countly;
+
         doNothing().when(countly).sendEventsIfNeeded();
+        doReturn(true).when(countly).isInitialized();
+
         countly.recordEvent(eventKey, segmentation, count, sum, dur);
 
         verify(mockEventQueue).recordEvent(eventKey, segmentation, segmI, segmD, count, sum, dur, null);

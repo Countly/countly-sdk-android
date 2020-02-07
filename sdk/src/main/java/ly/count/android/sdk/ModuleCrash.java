@@ -13,9 +13,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ModuleCrash {
-    final Countly _cly;
-
+public class ModuleCrash extends ModuleBase{
     //native crash
     private static final String countlyFolderName = "Countly";
     private static final String countlyNativeCrashFolderName = "CrashDumps";
@@ -24,14 +22,17 @@ public class ModuleCrash {
     String[] crashRegexFilters = null;
     Pattern[] crashRegexFiltersCompiled = null;
 
-    //interface user SDK users
-    Crashes crashesInterface = null;
+    //interface for SDK users
+    final Crashes crashesInterface;
 
-    ModuleCrash(Countly cly){
-        _cly = cly;
+    ModuleCrash(Countly cly, CountlyConfig config){
+        super(cly);
+
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Initialising");
         }
+
+        setCrashFiltersInternal(config.crashRegexFilters);
 
         crashesInterface = new Crashes();
     }
@@ -259,6 +260,12 @@ public class ModuleCrash {
             test.charAt(1);
         }
         return Countly.sharedInstance();
+    }
+
+    @Override
+    void halt(){
+        crashRegexFilters = null;
+        crashRegexFiltersCompiled = null;
     }
 
     public class Crashes {

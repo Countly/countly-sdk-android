@@ -102,7 +102,7 @@ public class ActivityExampleOthers extends Activity {
                 "\tat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:493)\n" +
                 "\tat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:858)\n"};
 
-        boolean[] res = Countly.sharedInstance().crashFilterTest(regexFilters, crashes);
+        boolean[] res = Countly.sharedInstance().crashes().crashFilterTest(regexFilters, crashes);
 
         String ret = "";
         for(int a = 0 ; a < res.length ; a++){

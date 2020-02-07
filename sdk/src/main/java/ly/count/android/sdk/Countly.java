@@ -123,7 +123,8 @@ public class Countly {
     private Context context_;
 
     //Internal modules for functionality grouping
-    protected ModuleCrash moduleCrash = null;
+    ModuleCrash moduleCrash = null;
+    ModuleEvents moduleEvents = null;
     ModuleViews moduleViews = null;
 
     //user data access
@@ -425,9 +426,6 @@ public class Countly {
 
             config_ = config;
 
-            //initialise modules
-            moduleCrash = new ModuleCrash(this);
-
             final CountlyStore countlyStore;
             if(config.countlyStore != null){
                 //we are running a test and using a mock object
@@ -436,6 +434,9 @@ public class Countly {
                 countlyStore = new CountlyStore(config.context);
             }
 
+            //initialise modules
+            moduleCrash = new ModuleCrash(this, config);
+            moduleEvents = new ModuleEvents(this, config);
             moduleViews = new ModuleViews(this, config);
 
             //init view related things
@@ -445,9 +446,6 @@ public class Countly {
 
             moduleViews.setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
 
-
-            //init crash related things
-            moduleCrash.setCrashFiltersInternal(config.crashRegexFilters);
             moduleViews.autoTrackingActivityExceptions = config.autoTrackingExceptions;
 
             //init other things
@@ -649,11 +647,21 @@ public class Countly {
         connectionQueue_.setCountlyStore(null);
         prevSessionDurationStartTime_ = 0;
         activityCount_ = 0;
+
+        if(moduleCrash != null) {
+            moduleCrash.halt();
+            moduleCrash = null;
+        }
+
         if(moduleViews != null) {
             moduleViews.halt();
             moduleViews = null;
         }
 
+        if(moduleEvents != null) {
+            moduleEvents.halt();
+            moduleEvents = null;
+        }
     }
 
     /**
@@ -1100,115 +1108,7 @@ public class Countly {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
 
-        recordEventInternal(key, count, sum, dur, segmentation, null);
-    }
-
-    public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
-        if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordPastEvent");
-        }
-
-        if(timestamp == 0){
-            throw new IllegalStateException("Provided timestamp has to be greater that zero");
-        }
-
-        UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
-        recordEventInternal(key, count, sum, dur, segmentation, instant);
-    }
-
-    private synchronized void recordEventInternal(final String key, final int count, final double sum, final double dur, final Map<String, Object> segmentation, UtilsTime.Instant instant) {
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Valid Countly event key is required");
-        }
-        if (count < 1) {
-            throw new IllegalArgumentException("Countly event count should be greater than zero");
-        }
-
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Recording event with key: [" + key + "]");
-        }
-
-        Map<String, String> segmentationString = null;
-        Map<String, Integer> segmentationInt = null;
-        Map<String, Double> segmentationDouble = null;
-
-        if(segmentation != null) {
-            segmentationString = new HashMap<>();
-            segmentationInt = new HashMap<>();
-            segmentationDouble = new HashMap<>();
-            Map<String, Object> segmentationReminder = new HashMap<>();
-
-            fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationReminder);
-
-            if (segmentationReminder.size() > 0) {
-                if (isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Event contains events segments with unsupported types:");
-
-                    for (String k : segmentationReminder.keySet()) {
-                        if (k != null) {
-                            Object obj = segmentationReminder.get(k);
-                            if (obj != null){
-                                Log.w(Countly.TAG, "Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (String k : segmentationString.keySet()) {
-                if (k == null || k.length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                }
-                if (segmentationString.get(k) == null || segmentationString.get(k).length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
-                }
-            }
-
-            for (String k : segmentationInt.keySet()) {
-                if (k == null || k.length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                }
-                if (segmentationInt.get(k) == null) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
-                }
-            }
-
-            for (String k : segmentationDouble.keySet()) {
-                if (k == null || k.length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                }
-                if (segmentationDouble.get(k) == null) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
-                }
-            }
-        }
-
-        switch (key) {
-            case STAR_RATING_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.starRating)) {
-                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
-                    sendEventsForced();
-                }
-                break;
-            case VIEW_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.views)) {
-                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
-                    sendEventsForced();
-                }
-                break;
-            case ORIENTATION_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
-                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
-                    sendEventsIfNeeded();
-                }
-                break;
-            default:
-                if (Countly.sharedInstance().getConsent(CountlyFeatureNames.events)) {
-                    eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
-                    sendEventsIfNeeded();
-                }
-                break;
-        }
+        moduleEvents.recordEventInternal(key, count, sum, dur, segmentation, null);
     }
 
     /**
@@ -2747,83 +2647,12 @@ public class Countly {
         return moduleCrash.crashesInterface;
     }
 
-    protected static boolean checkSegmentationTypes(Map<String, Object> segmentation){
-        if (segmentation == null) {
-            throw new IllegalStateException("[checkSegmentationTypes] provided segmentations can't be null!");
+    public ModuleEvents.Events events(){
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing events");
         }
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[checkSegmentationTypes] Calling checkSegmentationTypes, size:[" + segmentation.size() + "]");
-        }
-
-        for (Map.Entry<String, Object> pair : segmentation.entrySet()) {
-            String key = pair.getKey();
-
-            if(key == null || key.isEmpty()){
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[checkSegmentationTypes], provided segment with either 'null' or empty string key");
-                }
-                throw new IllegalStateException("provided segment with either 'null' or empty string key");
-            }
-
-            Object value = pair.getValue();
-
-            if(value instanceof Integer){
-                //expected
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[checkSegmentationTypes] found INTEGER with key:[" + key + "], value:[" + value + "]");
-                }
-            } else if(value instanceof Double) {
-                //expected
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[checkSegmentationTypes] found DOUBLE with key:[" + key + "], value:[" + value + "]");
-                }
-            } else if(value instanceof String) {
-                //expected
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[checkSegmentationTypes] found STRING with key:[" + key + "], value:[" + value + "]");
-                }
-            } else {
-                //should not get here, it means that the user provided a unsupported type
-
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[checkSegmentationTypes] provided unsupported segmentation type:[" + value.getClass().getCanonicalName() + "] with key:[" + key + "], returning [false]");
-                }
-
-                return false;
-            }
-        }
-
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[checkSegmentationTypes] returning [true]");
-        }
-        return true;
-    }
-
-    /**
-     * Used for quickly sorting segments into their respective data type
-     * @param allSegm
-     * @param segmStr
-     * @param segmInt
-     * @param segmDouble
-     */
-    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Object> reminder) {
-        for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
-            String key = pair.getKey();
-            Object value = pair.getValue();
-
-            if (value instanceof Integer) {
-                segmInt.put(key, (Integer) value);
-            } else if (value instanceof Double) {
-                segmDouble.put(key, (Double) value);
-            } else if (value instanceof String) {
-                segmStr.put(key, (String) value);
-            } else {
-                if(reminder != null) {
-                    reminder.put(key, value);
-                }
-            }
-        }
+        return moduleEvents.eventsInterface;
     }
 
     public ModuleViews.Views views(){
