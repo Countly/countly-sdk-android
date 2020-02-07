@@ -48,6 +48,7 @@ public class ConnectionProcessorTests {
 
     @Before
     public void setUp() {
+        Countly.sharedInstance().setLoggingEnabled(true);
         mockStore = mock(CountlyStore.class);
         mockDeviceId = mock(DeviceId.class);
         connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, null);

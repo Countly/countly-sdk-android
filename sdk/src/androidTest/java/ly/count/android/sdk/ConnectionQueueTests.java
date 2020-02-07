@@ -59,6 +59,7 @@ public class ConnectionQueueTests {
 
     @Before
     public void setUp() {
+        Countly.sharedInstance().setLoggingEnabled(true);
         freshConnQ = new ConnectionQueue();
         connQ = new ConnectionQueue();
         connQ.setAppKey("abcDeFgHiJkLmNoPQRstuVWxyz");

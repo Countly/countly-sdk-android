@@ -22,6 +22,11 @@ import static org.mockito.Mockito.mock;
 @RunWith(AndroidJUnit4.class)
 public class CountlyConfigTests {
 
+    @Before
+    public void setUp(){
+        Countly.sharedInstance().setLoggingEnabled(true);
+    }
+
     @Test
     public void constructor(){
         CountlyConfig config = new CountlyConfig(getContext(), "Som345345", "fsdf7349374");

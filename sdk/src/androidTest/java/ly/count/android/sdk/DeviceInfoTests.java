@@ -48,6 +48,11 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class DeviceInfoTests {
 
+    @Before
+    public void setUp(){
+        Countly.sharedInstance().setLoggingEnabled(true);
+    }
+
     @Test
     public void testGetOS() {
         assertEquals("Android", DeviceInfo.getOS());

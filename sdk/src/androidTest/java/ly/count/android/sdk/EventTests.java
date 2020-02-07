@@ -40,6 +40,11 @@ import org.junit.runner.RunWith;
 @SuppressWarnings("ConstantConditions")
 public class EventTests {
 
+    @Before
+    public void setUp(){
+        Countly.sharedInstance().setLoggingEnabled(true);
+    }
+
     @Test
     public void testConstructor() {
         final Event event = new Event();

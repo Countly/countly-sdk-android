@@ -47,7 +47,7 @@ public class EventQueueTests {
 
     @Before
     public void setUp() {
-
+        Countly.sharedInstance().setLoggingEnabled(true);
         mMockCountlyStore = mock(CountlyStore.class);
         mEventQueue = new EventQueue(mMockCountlyStore);
     }

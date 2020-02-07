@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit;
 public class UtilsTimeTests {
 
     @Before
-    public void setUp() {
-
+    public void setUp(){
+        Countly.sharedInstance().setLoggingEnabled(true);
     }
 
     @After

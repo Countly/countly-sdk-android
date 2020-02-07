@@ -13,9 +13,10 @@ import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 public class UtilsNetworkingTest {
-    @Before
-    public void setUp() {
 
+    @Before
+    public void setUp(){
+        Countly.sharedInstance().setLoggingEnabled(true);
     }
 
     @After

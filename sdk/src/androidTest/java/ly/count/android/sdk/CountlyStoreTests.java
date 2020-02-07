@@ -49,6 +49,7 @@ public class CountlyStoreTests {
 
     @Before
     public void setUp() {
+        Countly.sharedInstance().setLoggingEnabled(true);
         store = new CountlyStore(getContext());
         store.clear();
     }
