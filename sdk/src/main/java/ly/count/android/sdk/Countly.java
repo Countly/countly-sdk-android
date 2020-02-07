@@ -26,14 +26,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.net.Uri;
-import android.util.Base64;
 import android.util.Log;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -45,8 +40,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static ly.count.android.sdk.CountlyStarRating.STAR_RATING_EVENT_KEY;
 
@@ -123,6 +116,7 @@ public class Countly {
     private Context context_;
 
     //Internal modules for functionality grouping
+    List<ModuleBase> modules = new ArrayList<>();
     ModuleCrash moduleCrash = null;
     ModuleEvents moduleEvents = null;
     ModuleViews moduleViews = null;
@@ -133,11 +127,6 @@ public class Countly {
     //view related things
     boolean autoViewTracker = false;//todo, move to module after "setViewTracking" is removed
     boolean automaticTrackingShouldUseShortName = false;//flag for using short names | todo, move to module after setter is removed
-
-    //track orientation changes
-    boolean trackOrientationChanges = false;
-    int currentOrientation = -1;
-    final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
 
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
@@ -439,14 +428,15 @@ public class Countly {
             moduleEvents = new ModuleEvents(this, config);
             moduleViews = new ModuleViews(this, config);
 
+            modules.clear();
+            modules.add(moduleCrash);
+            modules.add(moduleEvents);
+            modules.add(moduleViews);
+
             //init view related things
             setViewTracking(config.enableViewTracking);
 
             setAutoTrackingUseShortName(config.autoTrackingUseShortName);
-
-            moduleViews.setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
-
-            moduleViews.autoTrackingActivityExceptions = config.autoTrackingExceptions;
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -458,8 +448,6 @@ public class Countly {
             setHttpPostForced(config.httpPostForced);
 
             enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
-
-            trackOrientationChanges = config.trackOrientationChange;
 
             //set the star rating values
             starRatingCallback_ = config.starRatingCallback;
@@ -648,20 +636,14 @@ public class Countly {
         prevSessionDurationStartTime_ = 0;
         activityCount_ = 0;
 
-        if(moduleCrash != null) {
-            moduleCrash.halt();
-            moduleCrash = null;
+        for (ModuleBase module:modules) {
+            module.halt();
         }
+        modules.clear();
 
-        if(moduleViews != null) {
-            moduleViews.halt();
-            moduleViews = null;
-        }
-
-        if(moduleEvents != null) {
-            moduleEvents.halt();
-            moduleEvents = null;
-        }
+        moduleCrash = null;
+        moduleViews = null;
+        moduleEvents = null;
     }
 
     /**
@@ -702,43 +684,11 @@ public class Countly {
 
         CrashDetails.inForeground();
 
-        //automatic view tracking
-        moduleViews.automaticViewTracker(activity);
-
-        //orientation tracking
-        if(trackOrientationChanges){
-            Resources resources = activity.getResources();
-            if(resources != null) {
-                updateOrientation(resources.getConfiguration().orientation);
-            }
+        for (ModuleBase module:modules) {
+            module.onActivityStarted(activity);
         }
 
         calledAtLeastOnceOnStart = true;
-    }
-
-    void updateOrientation(int newOrientation){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [updateOrientation], new orientation:[" + newOrientation + "]");
-        }
-
-        if(!getConsent(CountlyFeatureNames.events)){
-            //we don't have consent, just leave
-            return;
-        }
-
-        if(currentOrientation != newOrientation){
-            currentOrientation = newOrientation;
-
-            Map<String, String> segm = new HashMap<>();
-
-            if(currentOrientation == Configuration.ORIENTATION_PORTRAIT){
-                segm.put("mode", "portrait");
-            } else {
-                segm.put("mode", "landscape");
-            }
-
-            recordEvent(ORIENTATION_EVENT_KEY, segm, 1);
-        }
     }
 
     /**
@@ -777,8 +727,9 @@ public class Countly {
 
         CrashDetails.inBackground();
 
-        //report current view duration
-        moduleViews.reportViewDuration();
+        for (ModuleBase module:modules) {
+            module.onActivityStopped();
+        }
     }
 
     /**
@@ -802,8 +753,8 @@ public class Countly {
             throw new IllegalStateException("init must be called before onConfigurationChanged");
         }
 
-        if(trackOrientationChanges){
-            updateOrientation(newConfig.orientation);
+        for (ModuleBase module:modules) {
+            module.onConfigurationChanged(newConfig);
         }
     }
 

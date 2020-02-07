@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -16,6 +18,11 @@ public class ModuleViews extends ModuleBase{
 
     protected Map<String, Object> automaticViewSegmentation = null;//automatic view segmentation
 
+    //track orientation changes
+    boolean trackOrientationChanges = false;
+    int currentOrientation = -1;
+    final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
+
     //interface for SDK users
     final Views viewsInterface;
     public ModuleViews(Countly cly, CountlyConfig config){
@@ -24,6 +31,10 @@ public class ModuleViews extends ModuleBase{
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleEvents] Initialising");
         }
+
+        setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
+        autoTrackingActivityExceptions = config.autoTrackingExceptions;
+        trackOrientationChanges = config.trackOrientationChange;
 
         viewsInterface = new Views();
     }
@@ -42,28 +53,6 @@ public class ModuleViews extends ModuleBase{
         }
 
         automaticViewSegmentation = segmentation;
-    }
-
-    void automaticViewTracker(Activity activity){
-        if(_cly.autoViewTracker){
-            if(!isActivityInExceptionList(activity)) {
-                String usedActivityName = "NULL ACTIVITY";
-
-                if (activity != null) {
-                    if (_cly.automaticTrackingShouldUseShortName) {
-                        usedActivityName = activity.getClass().getSimpleName();
-                    } else {
-                        usedActivityName = activity.getClass().getName();
-                    }
-                }
-
-                _cly.recordView(usedActivityName, automaticViewSegmentation);
-            } else {
-                if (_cly.isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[onStart] Ignoring activity because it's in the exception list");
-                }
-            }
-        }
     }
 
     /**
@@ -157,6 +146,75 @@ public class ModuleViews extends ModuleBase{
 
         _cly.recordEvent(VIEW_EVENT_KEY, segmentsString, segmentsInt, segmentsDouble, 1, 0, 0);
         return _cly;
+    }
+
+    void updateOrientation(int newOrientation){
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling [updateOrientation], new orientation:[" + newOrientation + "]");
+        }
+
+        if(!_cly.getConsent(Countly.CountlyFeatureNames.events)){
+            //we don't have consent, just leave
+            return;
+        }
+
+        if(currentOrientation != newOrientation){
+            currentOrientation = newOrientation;
+
+            Map<String, String> segm = new HashMap<>();
+
+            if(currentOrientation == Configuration.ORIENTATION_PORTRAIT){
+                segm.put("mode", "portrait");
+            } else {
+                segm.put("mode", "landscape");
+            }
+
+            _cly.recordEvent(ORIENTATION_EVENT_KEY, segm, 1);
+        }
+    }
+
+    @Override
+    void onConfigurationChanged(Configuration newConfig){
+        if(trackOrientationChanges){
+            updateOrientation(newConfig.orientation);
+        }
+    }
+
+    @Override
+    void onActivityStopped() {
+        //report current view duration
+        reportViewDuration();
+    }
+
+    void onActivityStarted(Activity activity) {
+        //automatic view tracking
+        if (_cly.autoViewTracker) {
+            if (!isActivityInExceptionList(activity)) {
+                String usedActivityName = "NULL ACTIVITY";
+
+                if (activity != null) {
+                    if (_cly.automaticTrackingShouldUseShortName) {
+                        usedActivityName = activity.getClass().getSimpleName();
+                    } else {
+                        usedActivityName = activity.getClass().getName();
+                    }
+                }
+
+                _cly.recordView(usedActivityName, automaticViewSegmentation);
+            } else {
+                if (_cly.isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[onStart] Ignoring activity because it's in the exception list");
+                }
+            }
+        }
+
+        //orientation tracking
+        if (trackOrientationChanges) {
+            Resources resources = activity.getResources();
+            if (resources != null) {
+                updateOrientation(resources.getConfiguration().orientation);
+            }
+        }
     }
 
     @Override
