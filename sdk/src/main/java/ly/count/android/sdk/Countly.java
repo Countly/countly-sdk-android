@@ -433,11 +433,6 @@ public class Countly {
             modules.add(moduleEvents);
             modules.add(moduleViews);
 
-            //init view related things
-            setViewTracking(config.enableViewTracking);
-
-            setAutoTrackingUseShortName(config.autoTrackingUseShortName);
-
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
 
@@ -448,6 +443,10 @@ public class Countly {
             setHttpPostForced(config.httpPostForced);
 
             enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
+
+            if(config.eventQueueSizeThreshold != null){
+                setEventQueueSizeToSend(config.eventQueueSizeThreshold);
+            }
 
             //set the star rating values
             starRatingCallback_ = config.starRatingCallback;
@@ -1618,10 +1617,24 @@ public class Countly {
         return calledAtLeastOnceOnStart;
     }
 
+    /**
+     *
+     * @param size
+     * @return
+     * @deprecated use countly config to set this
+     */
     public synchronized Countly setEventQueueSizeToSend(int size) {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting event queue size: [" + size + "]");
         }
+
+        if(size < 1){
+            if (isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[setEventQueueSizeToSend] queue size can't be less than zero");
+            }
+            size = 1;
+        }
+
         EVENT_QUEUE_SIZE_THRESHOLD = size;
         return this;
     }

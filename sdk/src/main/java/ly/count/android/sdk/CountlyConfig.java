@@ -98,6 +98,8 @@ public class CountlyConfig {
 
     protected String tamperingProtectionSalt = null;
 
+    protected Integer eventQueueSizeThreshold = null;
+
     protected boolean trackOrientationChange = false;
 
     public CountlyConfig(){ }
@@ -298,6 +300,14 @@ public class CountlyConfig {
         trackOrientationChange = shouldTrackOrientation;
         return this;
     }
+
+
+    public CountlyConfig setEventQueueSizeToSend(int threshold){
+        eventQueueSizeThreshold = threshold;
+        return this;
+    }
+
+
     protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps){
         checkForNativeCrashDumps = checkForDumps;
         return this;

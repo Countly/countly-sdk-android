@@ -107,6 +107,7 @@ public class CountlyConfigTests {
         config.setAutomaticViewSegmentation(vs);
         config.setAutoTrackingExceptions(act);
         config.setTrackOrientationChanges(true);
+        config.setEventQueueSizeToSend(1337);
 
 
         Assert.assertEquals(s[0], config.serverURL);
@@ -138,6 +139,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(vs, config.automaticViewSegmentation);
         Assert.assertEquals(act, config.autoTrackingExceptions);
         Assert.assertTrue(config.trackOrientationChange);
+        Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
     }
 
     @Test
@@ -184,7 +186,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(null, config.crashRegexFilters);
         Assert.assertEquals(null, config.tamperingProtectionSalt);
         Assert.assertEquals(null, config.automaticViewSegmentation);
-        Assert.assertEquals(null, config.eventSendThreshold);
+        Assert.assertEquals(null, config.eventQueueSizeThreshold);
         Assert.assertEquals(false, config.trackOrientationChange);
     }
 }

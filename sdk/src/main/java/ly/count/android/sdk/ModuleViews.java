@@ -32,6 +32,9 @@ public class ModuleViews extends ModuleBase{
             Log.d(Countly.TAG, "[ModuleEvents] Initialising");
         }
 
+        _cly.setViewTracking(config.enableViewTracking);
+        _cly.setAutoTrackingUseShortName(config.autoTrackingUseShortName);
+
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
         autoTrackingActivityExceptions = config.autoTrackingExceptions;
         trackOrientationChanges = config.trackOrientationChange;
