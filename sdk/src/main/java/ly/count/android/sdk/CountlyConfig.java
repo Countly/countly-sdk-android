@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class CountlyConfig {
 
@@ -94,7 +95,7 @@ public class CountlyConfig {
 
     protected boolean temporaryDeviceIdEnabled = false;
 
-    protected String[] crashRegexFilters = null;
+    protected Pattern[] crashRegexFilters = null;
 
     protected String tamperingProtectionSalt = null;
 
@@ -102,9 +103,10 @@ public class CountlyConfig {
 
     protected boolean trackOrientationChange = false;
 
-    public CountlyConfig(){ }
+    public CountlyConfig() {
+    }
 
-    public CountlyConfig(Context context, String appKey, String serverURL){
+    public CountlyConfig(Context context, String appKey, String serverURL) {
         setContext(context);
         setAppKey(appKey);
         setServerURL(serverURL);
@@ -114,7 +116,7 @@ public class CountlyConfig {
      * Android context.
      * Mandatory field.
      */
-    public CountlyConfig setContext(Context context){
+    public CountlyConfig setContext(Context context) {
         this.context = context;
         return this;
     }
@@ -123,7 +125,7 @@ public class CountlyConfig {
      * URL of the Countly server to submit data to.
      * Mandatory field.
      */
-    public CountlyConfig setServerURL(String serverURL){
+    public CountlyConfig setServerURL(String serverURL) {
         this.serverURL = serverURL;
         return this;
     }
@@ -132,7 +134,7 @@ public class CountlyConfig {
      * app key for the application being tracked; find in the Countly Dashboard under Management &gt; Applications.
      * Mandatory field.
      */
-    public CountlyConfig setAppKey(String appKey){
+    public CountlyConfig setAppKey(String appKey) {
         this.appKey = appKey;
         return this;
     }
@@ -140,7 +142,7 @@ public class CountlyConfig {
     /**
      * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
      */
-    public CountlyConfig setDeviceId(String deviceID){
+    public CountlyConfig setDeviceId(String deviceID) {
         this.deviceID = deviceID;
         return this;
     }
@@ -148,7 +150,7 @@ public class CountlyConfig {
     /**
      * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
      */
-    public CountlyConfig setIdMode(DeviceId.Type idMode){
+    public CountlyConfig setIdMode(DeviceId.Type idMode) {
         this.idMode = idMode;
         return this;
     }
@@ -156,7 +158,7 @@ public class CountlyConfig {
     /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
      */
-    public CountlyConfig setStarRatingLimit(int starRatingLimit){
+    public CountlyConfig setStarRatingLimit(int starRatingLimit) {
         this.starRatingLimit = starRatingLimit;
         return this;
     }
@@ -164,7 +166,7 @@ public class CountlyConfig {
     /**
      * the callback function that will be called from the automatic star rating dialog.
      */
-    public CountlyConfig setStarRatingCallback(CountlyStarRating.RatingCallback starRatingCallback){
+    public CountlyConfig setStarRatingCallback(CountlyStarRating.RatingCallback starRatingCallback) {
         this.starRatingCallback = starRatingCallback;
         return this;
     }
@@ -172,7 +174,7 @@ public class CountlyConfig {
     /**
      * the shown title text for the star rating dialogs.
      */
-    public CountlyConfig setStarRatingTextTitle(String starRatingTextTitle){
+    public CountlyConfig setStarRatingTextTitle(String starRatingTextTitle) {
         this.starRatingTextTitle = starRatingTextTitle;
         return this;
     }
@@ -180,7 +182,7 @@ public class CountlyConfig {
     /**
      * the shown message text for the star rating dialogs.
      */
-    public CountlyConfig setStarRatingTextMessage(String starRatingTextMessage){
+    public CountlyConfig setStarRatingTextMessage(String starRatingTextMessage) {
         this.starRatingTextMessage = starRatingTextMessage;
         return this;
     }
@@ -188,49 +190,51 @@ public class CountlyConfig {
     /**
      * the shown dismiss button text for the shown star rating dialogs.
      */
-    public CountlyConfig setStarRatingTextDismiss(String starRatingTextDismiss){
+    public CountlyConfig setStarRatingTextDismiss(String starRatingTextDismiss) {
         this.starRatingTextDismiss = starRatingTextDismiss;
         return this;
     }
 
     /**
      * Set to true of you want to enable countly internal debugging logs
+     *
      * @param enabled
      */
-    public CountlyConfig setLoggingEnabled(boolean enabled){
+    public CountlyConfig setLoggingEnabled(boolean enabled) {
         this.loggingEnabled = enabled;
         return this;
     }
 
-    public CountlyConfig enableCrashReporting(){
+    public CountlyConfig enableCrashReporting() {
         this.enableUnhandledCrashReporting = true;
         return this;
     }
 
-    public CountlyConfig setViewTracking(boolean enable){
+    public CountlyConfig setViewTracking(boolean enable) {
         this.enableViewTracking = enable;
         return this;
     }
 
-    public CountlyConfig setAutoTrackingUseShortName(boolean enable){
+    public CountlyConfig setAutoTrackingUseShortName(boolean enable) {
         this.autoTrackingUseShortName = enable;
         return this;
     }
 
-    public CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation){
+    public CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation) {
         automaticViewSegmentation = segmentation;
         return this;
     }
 
     /**
      * Set which activities should be excluded from automatic view tracking
+     *
      * @param exceptions activities which should be ignored
      * @return
      */
-    public CountlyConfig setAutoTrackingExceptions(Class[] exceptions){
-        if(exceptions != null){
-            for(int a = 0 ; a< exceptions.length ; a++){
-                if(exceptions[a] == null){
+    public CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
+        if (exceptions != null) {
+            for (int a = 0; a < exceptions.length; a++) {
+                if (exceptions[a] == null) {
                     throw new IllegalArgumentException("setAutoTrackingExceptions() does not accept 'null' activities");
                 }
             }
@@ -240,17 +244,17 @@ public class CountlyConfig {
         return this;
     }
 
-    public CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues){
+    public CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
         this.customNetworkRequestHeaders = customHeaderValues;
         return this;
     }
 
-    public CountlyConfig setPushIntentAddMetadata(boolean enable){
+    public CountlyConfig setPushIntentAddMetadata(boolean enable) {
         pushIntentAddMetadata = enable;
         return this;
     }
 
-    public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback){
+    public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownload = enabled;
         remoteConfigCallback = callback;
         return this;
@@ -258,62 +262,64 @@ public class CountlyConfig {
 
     /**
      * Set if consent should be required
+     *
      * @param shouldRequireConsent
      * @return
      */
-    public CountlyConfig setRequiresConsent(boolean shouldRequireConsent){
+    public CountlyConfig setRequiresConsent(boolean shouldRequireConsent) {
         this.shouldRequireConsent = shouldRequireConsent;
         return this;
     }
 
     /**
      * Sets which features are enabled in case consent is required
+     *
      * @param featureNames
      * @return
      */
-    public CountlyConfig setConsentEnabled(String[] featureNames){
+    public CountlyConfig setConsentEnabled(String[] featureNames) {
         enabledFeatureNames = featureNames;
         return this;
     }
 
-    public CountlyConfig setHttpPostForced(boolean isForced){
+    public CountlyConfig setHttpPostForced(boolean isForced) {
         httpPostForced = isForced;
         return this;
     }
 
-    public CountlyConfig enableTemporaryDeviceIdMode(){
+    public CountlyConfig enableTemporaryDeviceIdMode() {
         temporaryDeviceIdEnabled = true;
         return this;
     }
 
-    public CountlyConfig setCrashFilters(String [] regexFilters){
+    public CountlyConfig setCrashFilters(Pattern[] regexFilters) {
         crashRegexFilters = regexFilters;
         return this;
     }
 
-    public CountlyConfig setParameterTamperingProtectionSalt(String salt){
+    public CountlyConfig setParameterTamperingProtectionSalt(String salt) {
         tamperingProtectionSalt = salt;
         return this;
     }
 
-    public CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation){
+    public CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation) {
         trackOrientationChange = shouldTrackOrientation;
         return this;
     }
 
 
-    public CountlyConfig setEventQueueSizeToSend(int threshold){
+    public CountlyConfig setEventQueueSizeToSend(int threshold) {
         eventQueueSizeThreshold = threshold;
         return this;
     }
 
 
-    protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps){
+    protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
         checkForNativeCrashDumps = checkForDumps;
         return this;
     }
 
-    protected CountlyConfig setCountlyStore(CountlyStore store){
+    protected CountlyConfig setCountlyStore(CountlyStore store) {
         countlyStore = store;
         return this;
     }

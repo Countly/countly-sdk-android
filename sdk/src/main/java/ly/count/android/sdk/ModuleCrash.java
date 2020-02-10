@@ -19,8 +19,7 @@ public class ModuleCrash extends ModuleBase{
     private static final String countlyNativeCrashFolderName = "CrashDumps";
 
     //crash filtering
-    String[] crashRegexFilters = null;
-    Pattern[] crashRegexFiltersCompiled = null;
+    Pattern[] crashRegexFilters = null;
 
     //interface for SDK users
     final Crashes crashesInterface;
@@ -100,17 +99,11 @@ public class ModuleCrash extends ModuleBase{
      * @param sampleCrash sample crashes you are worrying about
      * @return
      */
-    boolean[] crashFilterTestInternal(String[] regexFilters, String[] sampleCrash){
-        Pattern[] filters = new Pattern[regexFilters.length];
-
-        for(int a = 0 ; a < regexFilters.length ; a++){
-            filters[a] = Pattern.compile(regexFilters[a], Pattern.DOTALL);
-        }
-
+    boolean[] crashFilterTestInternal(Pattern[] regexFilters, String[] sampleCrash){
         boolean[] res = new boolean[sampleCrash.length];
 
         for(int a = 0 ; a < res.length ; a++){
-            res[a] = crashFilterCheck(filters, sampleCrash[a]);
+            res[a] = crashFilterCheck(regexFilters, sampleCrash[a]);
         }
 
         return res;
@@ -146,31 +139,19 @@ public class ModuleCrash extends ModuleBase{
         return false;
     }
 
-    void setCrashFiltersInternal(String[] regexFilters){
+    void setCrashFiltersInternal(Pattern[] regexFilters){
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Calling setCrashFiltersInternal");
 
-            if(regexFilters == null){
-                Log.d(Countly.TAG, "[ModuleCrash] Provided crash regex filter is null");
-            } else {
+            if(regexFilters != null){
                 Log.d(Countly.TAG, "[ModuleCrash] Setting the following crash regex filters:");
                 for (int a = 0; a < regexFilters.length; a++) {
-                    Log.d(Countly.TAG, (a + 1) + ") [" + regexFilters[a] + "]");
+                    Log.d(Countly.TAG, (a + 1) + ") [" + regexFilters[a].toString() + "]");
                 }
             }
         }
 
         crashRegexFilters = regexFilters;
-
-        if(regexFilters == null){
-            crashRegexFiltersCompiled = null;
-        } else {
-            crashRegexFiltersCompiled = new Pattern[crashRegexFilters.length];
-
-            for (int a = 0; a < regexFilters.length; a++) {
-                crashRegexFiltersCompiled[a] = Pattern.compile(crashRegexFilters[a], Pattern.DOTALL);
-            }
-        }
     }
 
     /**
@@ -197,7 +178,7 @@ public class ModuleCrash extends ModuleBase{
         exception.printStackTrace(pw);
         String exceptionString = sw.toString();
 
-        if(crashFilterCheck(crashRegexFiltersCompiled, exceptionString)){
+        if(crashFilterCheck(crashRegexFilters, exceptionString)){
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
             }
@@ -265,7 +246,6 @@ public class ModuleCrash extends ModuleBase{
     @Override
     void halt(){
         crashRegexFilters = null;
-        crashRegexFiltersCompiled = null;
     }
 
     public class Crashes {
@@ -273,7 +253,7 @@ public class ModuleCrash extends ModuleBase{
          * Call to set regex filters that will be used for crash filtering
          * Set null to disable it
          */
-        public Countly setCrashFilters(String[] regexFilters){
+        public Countly setCrashFilters(Pattern[] regexFilters){
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Crashes] Calling setCrashFilters");
             }
@@ -293,7 +273,7 @@ public class ModuleCrash extends ModuleBase{
          * @param sampleCrash sample crashes you are worrying about
          * @return
          */
-        public boolean[] crashFilterTest(String[] regexFilters, String[] sampleCrash){
+        public boolean[] crashFilterTest(Pattern[] regexFilters, String[] sampleCrash){
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Crashes] Calling crashFilterTest");
             }

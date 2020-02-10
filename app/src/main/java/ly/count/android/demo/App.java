@@ -1,5 +1,6 @@
 package ly.count.android.demo;
 
+import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -9,20 +10,25 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
+
+import android.util.EventLog;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.internal.ContextUtils;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.DeviceId;
 import ly.count.android.sdk.RemoteConfig;
+import ly.count.android.sdk.UtilsTime;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 import static ly.count.android.sdk.Countly.TAG;
@@ -85,7 +91,8 @@ public class App extends Application {
                         }
                     }
                 })
-                .setCrashFilters(new String[]{".*secret.*"})
+                .setCrashFilters(new Pattern[]{Pattern.compile(".*secret.*", Pattern.DOTALL)})
+                .setRemoteConfigAutomaticDownload(true, null)
                 .setParameterTamperingProtectionSalt("SampleSalt")
                 .setAutomaticViewSegmentation(automaticViewSegmentation)
                 .setAutoTrackingExceptions(new Class[]{ActivityExampleCustomEvents.class})
@@ -94,9 +101,7 @@ public class App extends Application {
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
-
         CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION);
-
 
 
         FirebaseInstanceId.getInstance().getInstanceId()

@@ -3,10 +3,12 @@ package ly.count.android.demo;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStarRating;
@@ -84,7 +86,9 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickTestcrashFilter(View v) {
-        String[] regexFilters = new String[]{"secretNumber\\d*", ".*1337", ".*secret.*"};
+        Log.d(Countly.TAG, "Testing crash filter");
+
+        Pattern[] regexFilters = new Pattern[]{Pattern.compile("secretNumber\\d*"), Pattern.compile(".*1337"), Pattern.compile(".*secret.*", Pattern.DOTALL)};
         String[] crashes = new String[]{"secretNumber2331", "fdfd]1337", "nothing here",
                 "java.lang.Exception: A really secret exception\n" +
                 "\tat ly.count.android.demo.ActivityExampleOthers.onClickTestcrashFilterSample(ActivityExampleOthers.java:104)\n" +
@@ -109,7 +113,9 @@ public class ActivityExampleOthers extends Activity {
             ret += res[a] + ", ";
         }
 
-        Toast.makeText(activity, "Testing crash filter: [" + ret + "]", Toast.LENGTH_LONG).show();
+        Log.d(Countly.TAG, "Received crash filter results: " + ret);
+
+        Toast.makeText(getBaseContext(), "Testing crash filter: [" + ret + "]", Toast.LENGTH_LONG).show();
     }
 
     public void onClickTestcrashFilterSample(View v) {

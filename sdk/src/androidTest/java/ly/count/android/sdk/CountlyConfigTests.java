@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
@@ -66,7 +67,7 @@ public class CountlyConfigTests {
 
         String[] fn = new String[]{"ds dsd", "434f", "ngfhg"};
 
-        String[] rf = new String[]{"d dsd", "454gf"};
+        Pattern[] rf = new Pattern[]{Pattern.compile("d dsd"), Pattern.compile("454gf")};
 
         Map<String, Object> vs = new HashMap<>();
         vs.put("ss", "fdf");
