@@ -5,9 +5,7 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ly.count.android.sdk.CountlyStarRating.STAR_RATING_EVENT_KEY;
-
-public class ModuleEvents extends ModuleBase{
+class ModuleEvents extends ModuleBase{
     //interface for SDK users
     final Events eventsInterface;
 
@@ -173,7 +171,7 @@ public class ModuleEvents extends ModuleBase{
         }
 
         switch (key) {
-            case STAR_RATING_EVENT_KEY:
+            case ModuleRatings.STAR_RATING_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
                     _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
                     _cly.sendEventsForced();

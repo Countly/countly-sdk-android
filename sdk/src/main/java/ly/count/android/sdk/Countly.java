@@ -41,8 +41,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static ly.count.android.sdk.CountlyStarRating.STAR_RATING_EVENT_KEY;
-
 /**
  * This class is the public API for the Countly Android SDK.
  * Get more details <a href="https://github.com/Countly/countly-sdk-android">here</a>.
@@ -113,13 +111,14 @@ public class Countly {
     private boolean disableUpdateSessionRequests_;
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
-    private Context context_;
+    Context context_;
 
     //Internal modules for functionality grouping
     List<ModuleBase> modules = new ArrayList<>();
     ModuleCrash moduleCrash = null;
     ModuleEvents moduleEvents = null;
     ModuleViews moduleViews = null;
+    ModuleRatings moduleRatings = null;
 
     //user data access
     public static UserData userData;
@@ -427,11 +426,13 @@ public class Countly {
             moduleCrash = new ModuleCrash(this, config);
             moduleEvents = new ModuleEvents(this, config);
             moduleViews = new ModuleViews(this, config);
+            moduleRatings = new ModuleRatings(this, config);
 
             modules.clear();
             modules.add(moduleCrash);
             modules.add(moduleEvents);
             modules.add(moduleViews);
+            modules.add(moduleRatings);
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -643,6 +644,7 @@ public class Countly {
         moduleCrash = null;
         moduleViews = null;
         moduleEvents = null;
+        moduleRatings = null;
     }
 
     /**
@@ -2581,7 +2583,7 @@ public class Countly {
     /**
      * Countly will attempt to fulfill all stored requests on demand
      */
-    public void doStoredRequests(){
+    public void doStoredRequests() {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling doStoredRequests");
         }
@@ -2593,7 +2595,7 @@ public class Countly {
         connectionQueue_.tick();
     }
 
-    public Countly enableTemporaryIdMode(){
+    public Countly enableTemporaryIdMode() {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling enableTemporaryIdMode");
         }
@@ -2603,7 +2605,7 @@ public class Countly {
         return this;
     }
 
-    public ModuleCrash.Crashes crashes(){
+    public ModuleCrash.Crashes crashes() {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing crashes");
         }
@@ -2611,7 +2613,7 @@ public class Countly {
         return moduleCrash.crashesInterface;
     }
 
-    public ModuleEvents.Events events(){
+    public ModuleEvents.Events events() {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing events");
         }
@@ -2619,12 +2621,20 @@ public class Countly {
         return moduleEvents.eventsInterface;
     }
 
-    public ModuleViews.Views views(){
+    public ModuleViews.Views views() {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing views");
         }
 
         return moduleViews.viewsInterface;
+    }
+
+    public ModuleRatings.Ratings ratings(){
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing ratings");
+        }
+
+        return moduleRatings.ratingsInterface;
     }
 
     // for unit testing

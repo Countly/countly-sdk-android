@@ -31,8 +31,6 @@ import static android.content.Context.UI_MODE_SERVICE;
 
 public class CountlyStarRating {
 
-    protected static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
-
     /**
      * Callbacks for star rating dialog
      */
@@ -116,7 +114,7 @@ public class CountlyStarRating {
                     segm.put("app_version", DeviceInfo.getAppVersion(context));
                     segm.put("rating", "" + rating);
 
-                    Countly.sharedInstance().recordEvent(STAR_RATING_EVENT_KEY, segm, 1);
+                    Countly.sharedInstance().recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1);
                 }
 
                 dialog.dismiss();

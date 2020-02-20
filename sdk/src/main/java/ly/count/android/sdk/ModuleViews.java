@@ -8,7 +8,7 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ModuleViews extends ModuleBase{
+class ModuleViews extends ModuleBase{
     private String lastView = null;
     private int lastViewStart = 0;
     private boolean firstView = true;

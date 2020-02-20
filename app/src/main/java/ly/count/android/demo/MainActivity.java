@@ -63,6 +63,10 @@ public class MainActivity extends Activity {
         startActivity(new Intent(this, ActivityExampleDeviceId.class));
     }
 
+    public void onClickButtonRatings(View v) {
+        startActivity(new Intent(this, ActivityExampleRatings.class));
+    }
+
 
     public void enableCrashTracking(){
         //add some custom segments, like dependency library versions

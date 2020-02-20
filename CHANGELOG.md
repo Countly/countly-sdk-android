@@ -3,6 +3,7 @@
   * Adding functionality to set segmentation for automatic and manual views
   * Adding functionality to ignore activities for automatic view tracking
   * Adding functinality to track orientation changes
+  * Adding call to manually record user rating without showing any UI
   * Adding call to record a event with a given timestamp
   * Adding option to set tamper protection salt in config object
   * Adding calls to give and remove consent to all features at the same time

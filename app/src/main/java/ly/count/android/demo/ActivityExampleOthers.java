@@ -26,39 +26,6 @@ public class ActivityExampleOthers extends Activity {
         Countly.onCreate(this);
     }
 
-    @SuppressWarnings("unused")
-    public void onClickViewOther01(View v) {
-
-    }
-
-    public void onClickViewOther02(View v) {
-        //show star rating
-        Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
-            @Override
-            public void onRate(int rating) {
-                Toast.makeText(activity, "onRate called with rating: " + rating, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onDismiss() {
-                Toast.makeText(activity, "onDismiss called", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    public void onClickViewOther07(View v) {
-        //show rating widget
-        String widgetId = "xxxxx";
-        Countly.sharedInstance().showFeedbackPopup(widgetId, "Close", activity, new CountlyStarRating.FeedbackRatingCallback() {
-            @Override
-            public void callback(String error) {
-                if(error != null){
-                    Toast.makeText(activity, "Encountered error while showing feedback dialog: [" + error + "]", Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-    }
-
     public void onClickViewOther05(View v) {
         //set user location
         String countryCode = "us";

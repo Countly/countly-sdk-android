@@ -74,6 +74,13 @@
             android:text="Device ID" />
 
         <Button
+            android:id="@+id/button70"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClickButtonRatings"
+            android:text="Ratings" />
+
+        <Button
             android:text="@string/others"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -93,6 +93,12 @@
             android:configChanges="orientation|screenSize">
         </activity>
 
+        <activity
+            android:name=".ActivityExampleRatings"
+            android:label="@string/activity_name_device_id"
+            android:configChanges="orientation|screenSize">
+        </activity>
+
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">
             <intent-filter>
                 <action android:name="org.OpenUDID.GETUDID" />
