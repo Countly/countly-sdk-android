@@ -97,6 +97,7 @@ public class App extends Application {
                 .setAutomaticViewSegmentation(automaticViewSegmentation)
                 .setAutoTrackingExceptions(new Class[]{ActivityExampleCustomEvents.class})
                 .setTrackOrientationChanges(true)
+                .setRecordAllThreadsWithCrash()
                 ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

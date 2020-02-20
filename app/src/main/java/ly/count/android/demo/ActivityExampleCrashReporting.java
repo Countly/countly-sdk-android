@@ -48,8 +48,7 @@ public class ActivityExampleCrashReporting extends Activity {
         Countly.sharedInstance().addCrashBreadcrumb("Null pointer crash");
 
         Object[] o = null;
-        //noinspection InfiniteLoopStatement
-        while (true) { o = new Object[] { o }; }
+        o[0].getClass();
     }
 
     public void onClickCrashReporting04(View v) {

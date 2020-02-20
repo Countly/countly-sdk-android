@@ -103,6 +103,8 @@ public class CountlyConfig {
 
     protected boolean trackOrientationChange = false;
 
+    boolean recordAllThreadsWithCrash = false;
+
     public CountlyConfig() {
     }
 
@@ -304,6 +306,11 @@ public class CountlyConfig {
 
     public CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation) {
         trackOrientationChange = shouldTrackOrientation;
+        return this;
+    }
+
+    public CountlyConfig setRecordAllThreadsWithCrash(){
+        recordAllThreadsWithCrash = true;
         return this;
     }
 

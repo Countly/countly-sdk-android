@@ -21,6 +21,8 @@ class ModuleCrash extends ModuleBase{
     //crash filtering
     Pattern[] crashRegexFilters = null;
 
+    boolean recordAllThreads = false;
+
     //interface for SDK users
     final Crashes crashesInterface;
 
@@ -32,6 +34,8 @@ class ModuleCrash extends ModuleBase{
         }
 
         setCrashFiltersInternal(config.crashRegexFilters);
+
+        recordAllThreads = config.recordAllThreadsWithCrash;
 
         crashesInterface = new Crashes();
     }
@@ -116,7 +120,7 @@ class ModuleCrash extends ModuleBase{
      * @param crash
      * @return true if a match was found
      */
-    private boolean crashFilterCheck(Pattern[] regexFilters, String crash){
+    boolean crashFilterCheck(Pattern[] regexFilters, String crash){
         if (_cly.isLoggingEnabled()) {
             int filterCount = 0;
             if(regexFilters != null){
@@ -154,6 +158,25 @@ class ModuleCrash extends ModuleBase{
         crashRegexFilters = regexFilters;
     }
 
+    void addAllThreadInformationToCrash(PrintWriter pw){
+        Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
+
+        for (Map.Entry<Thread, StackTraceElement[]> entry : allThreads.entrySet()) {
+            StackTraceElement[] val = entry.getValue();
+            Thread thread = entry.getKey();
+
+            if(val == null || thread == null) {
+                continue;
+            }
+
+            pw.println();
+            pw.println("Thread " + thread.getName());
+            for(int a = 0 ; a < val.length ; a++) {
+                pw.println(val[a].toString());
+            }
+        }
+    }
+
     /**
      * Common call for handling exceptions
      * @param exception Exception to log
@@ -173,9 +196,22 @@ class ModuleCrash extends ModuleBase{
             return _cly;
         }
 
+        if(exception == null){
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[ModuleCrash] recordException, provided exception was null, returning");
+            }
+
+            return _cly;
+        }
+
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
+
+        if(recordAllThreads) {
+            addAllThreadInformationToCrash(pw);
+        }
+
         String exceptionString = sw.toString();
 
         if(crashFilterCheck(crashRegexFilters, exceptionString)){
@@ -299,6 +335,7 @@ class ModuleCrash extends ModuleBase{
             if(segments != null) {
                 CrashDetails.setCustomSegments(segments);
             }
+
             return _cly;
         }
 

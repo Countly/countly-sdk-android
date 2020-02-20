@@ -5,15 +5,12 @@ import android.content.Context;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -109,6 +106,7 @@ public class CountlyConfigTests {
         config.setAutoTrackingExceptions(act);
         config.setTrackOrientationChanges(true);
         config.setEventQueueSizeToSend(1337);
+        config.setRecordAllThreadsWithCrash();
 
 
         Assert.assertEquals(s[0], config.serverURL);
@@ -141,6 +139,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(act, config.autoTrackingExceptions);
         Assert.assertTrue(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
+        Assert.assertTrue(config.recordAllThreadsWithCrash);
     }
 
     @Test
@@ -189,5 +188,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(null, config.automaticViewSegmentation);
         Assert.assertEquals(null, config.eventQueueSizeThreshold);
         Assert.assertEquals(false, config.trackOrientationChange);
+        Assert.assertNull(config.eventQueueSizeThreshold);
+        Assert.assertFalse(config.recordAllThreadsWithCrash);
     }
 }

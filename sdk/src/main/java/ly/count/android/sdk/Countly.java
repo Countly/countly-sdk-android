@@ -1385,11 +1385,22 @@ public class Countly {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 if(getConsent(CountlyFeatureNames.crashes)){
+
                     StringWriter sw = new StringWriter();
                     PrintWriter pw = new PrintWriter(sw);
                     e.printStackTrace(pw);
 
-                    Countly.sharedInstance().connectionQueue_.sendCrashReport(sw.toString(), false, false);
+                    //add other threads
+                    if(moduleCrash.recordAllThreads) {
+                        moduleCrash.addAllThreadInformationToCrash(pw);
+                    }
+
+                    String exceptionString = sw.toString();
+
+                    //check if it passes the crash filter
+                    if(!moduleCrash.crashFilterCheck(moduleCrash.crashRegexFilters, exceptionString)) {
+                        Countly.sharedInstance().connectionQueue_.sendCrashReport(exceptionString, false, false);
+                    }
                 }
 
                 //if there was another handler before
