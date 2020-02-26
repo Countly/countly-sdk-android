@@ -149,9 +149,9 @@ class ModulePush {
                         JSONObject btn = array.getJSONObject(i);
                         if (btn.has(KEY_BUTTONS_TITLE) && btn.has(KEY_BUTTONS_LINK)) {
                             uri = null;
-                            if (data.get(KEY_BUTTONS_LINK) != null) {
+                            if (btn.getString(KEY_BUTTONS_LINK) != null) {
                                 try {
-                                    uri = Uri.parse(data.get(KEY_BUTTONS_LINK));
+                                    uri = Uri.parse(btn.getString(KEY_BUTTONS_LINK));
                                 } catch (Throwable e) {
                                     Log.w("Countly", "Cannot parse message link", e);
                                 }

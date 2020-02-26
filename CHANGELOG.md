@@ -13,6 +13,11 @@
   * Migrated to AndroidX
   * Improved internal time management which fixes inconsistencies that could arrise on day changes
 
+19.09.2
+  * Fixed a bug which did not add links to push buttons.
+
+19.09.1
+  * Applying null pointer exception mitigations to immediate request maker.
 
 19.09
   * Adding feature to flush all requests in the queue
