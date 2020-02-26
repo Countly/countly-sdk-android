@@ -1,3 +1,6 @@
+19.09.2
+  * Fixed a bug which did not add links to push buttons.
+
 19.09.1
   * Applying null pointer exception mitigations to immediate request maker.
 
