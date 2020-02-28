@@ -86,8 +86,6 @@ public class Countly {
     protected static List<String> publicKeyPinCertificates;
     protected static List<String> certificatePinCertificates;
 
-    protected static final Map<String, Event> timedEvents = new HashMap<>();
-
     /**
      * Enum used in Countly.initMessaging() method which controls what kind of
      * app installation it is. Later (in Countly Dashboard or when calling Countly API method),
@@ -110,7 +108,7 @@ public class Countly {
     EventQueue eventQueue_;
     private long prevSessionDurationStartTime_;
     private int activityCount_;
-    private boolean disableUpdateSessionRequests_;
+    boolean disableUpdateSessionRequests_ = false;
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
     Context context_;
@@ -769,7 +767,10 @@ public class Countly {
         }
     }
 
-    protected void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
+    /**
+     * DON'T USE THIS!!!!
+     */
+    public void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
         if(!getConsent(CountlyFeatureNames.push)) {
             return;
         }
@@ -1411,28 +1412,21 @@ public class Countly {
      * Start timed event with a specified key
      * @param key name of the custom event, required, must not be the empty string or null
      * @return true if no event with this key existed before and event is started, false otherwise
+     * @deprecated use events().startEvent
      */
     public synchronized boolean startEvent(final String key) {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
-        if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Valid Countly event key is required");
-        }
-        if (timedEvents.containsKey(key)) {
-            return false;
-        }
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Starting event: [" + key + "]");
-        }
-        timedEvents.put(key, new Event(key));
-        return true;
+
+        return events().startEvent(key);
     }
 
     /**
      * End timed event with a specified key
      * @param key name of the custom event, required, must not be the empty string or null
      * @return true if event with this key has been previously started, false otherwise
+     * @deprecated use events().endEvent
      */
     public synchronized boolean endEvent(final String key) {
         return endEvent(key, null, 1, 0);
@@ -1448,6 +1442,7 @@ public class Countly {
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
      * @return true if event with this key has been previously started, false otherwise
+     * @deprecated use events().endEvent
      */
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
         return endEvent(key, segmentation, null, null, count, sum);
@@ -1462,76 +1457,27 @@ public class Countly {
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
      * @return true if event with this key has been previously started, false otherwise
+     * @deprecated use events().endEvent
      */
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum) {
-        Event event = timedEvents.remove(key);
-
-        if (event != null) {
-            if(!getConsent(CountlyFeatureNames.events)) {
-                return true;
-            }
-
-            if (!isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
-            }
-            if (key == null || key.length() == 0) {
-                throw new IllegalArgumentException("Valid Countly event key is required");
-            }
-            if (count < 1) {
-                throw new IllegalArgumentException("Countly event count should be greater than zero");
-            }
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Ending event: [" + key + "]");
-            }
-
-            if (segmentation != null) {
-                for (String k : segmentation.keySet()) {
-                    if (k == null || k.length() == 0) {
-                        throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                    }
-                    if (segmentation.get(k) == null || segmentation.get(k).length() == 0) {
-                        throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
-                    }
-                }
-            }
-
-            if (segmentationInt != null) {
-                for (String k : segmentationInt.keySet()) {
-                    if (k == null || k.length() == 0) {
-                        throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                    }
-                    if (segmentationInt.get(k) == null) {
-                        throw new IllegalArgumentException("Countly event segmentation value cannot be null");
-                    }
-                }
-            }
-
-            if (segmentationDouble != null) {
-                for (String k : segmentationDouble.keySet()) {
-                    if (k == null || k.length() == 0) {
-                        throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                    }
-                    if (segmentationDouble.get(k) == null) {
-                        throw new IllegalArgumentException("Countly event segmentation value cannot be null");
-                    }
-                }
-            }
-
-            long currentTimestamp = UtilsTime.currentTimestampMs();
-
-            event.segmentation = segmentation;
-            event.segmentationDouble = segmentationDouble;
-            event.segmentationInt = segmentationInt;
-            event.dur = (currentTimestamp - event.timestamp) / 1000.0;
-            event.count = count;
-            event.sum = sum;
-
-            eventQueue_.recordEvent(event);
-            sendEventsIfNeeded();
-            return true;
-        } else {
-            return false;
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
+
+        Map<String, Object> segmentationGroup = new HashMap<>();
+        if(segmentation != null) {
+            segmentationGroup.putAll(segmentation);
+        }
+
+        if(segmentationInt != null) {
+            segmentationGroup.putAll(segmentationInt);
+        }
+
+        if(segmentationDouble != null) {
+            segmentationGroup.putAll(segmentationDouble);
+        }
+
+        return events().endEvent(key, segmentationGroup, count, sum);
     }
 
     /**
@@ -2630,7 +2576,7 @@ public class Countly {
         return moduleViews.viewsInterface;
     }
 
-    public ModuleRatings.Ratings ratings(){
+    public ModuleRatings.Ratings ratings() {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing ratings");
         }

@@ -12,7 +12,7 @@ public class UtilsTime {
         public final int hour;
         public final int dow; //0-Sunday, 1-Monday, 2-Tuesday, 3-Wednesday, 4-Thursday, 5-Friday, 6-Saturday
 
-        private Instant(long timestampInMillis, int hour, int dow) {
+        protected Instant(long timestampInMillis, int hour, int dow) {
             this.timestampMs = timestampInMillis;
             this.hour = hour;
             this.dow = dow;

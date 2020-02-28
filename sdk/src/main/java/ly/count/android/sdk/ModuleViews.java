@@ -122,32 +122,27 @@ class ModuleViews extends ModuleBase{
             if (viewSegmentation != null) {
                 segmCount = viewSegmentation.size();
             }
-            Log.d(Countly.TAG, "Recording view with name: [" + viewName + "], previous view:[" + lastView + "] view segment count:[" + segmCount + "]");
+            Log.d(Countly.TAG, "Recording view with name: [" + viewName + "], previous view:[" + lastView + "] custom view segment count:[" + segmCount + "]");
         }
 
         reportViewDuration();
         lastView = viewName;
         lastViewStart = UtilsTime.currentTimestampSeconds();
-        HashMap<String, String> segmentsString = new HashMap<>();
-        segmentsString.put("name", viewName);
-        segmentsString.put("visit", "1");
-        segmentsString.put("segment", "Android");
+
+        if(viewSegmentation == null){
+            viewSegmentation = new HashMap<>();
+        }
+
+        viewSegmentation.put("name", viewName);
+        viewSegmentation.put("visit", "1");
+        viewSegmentation.put("segment", "Android");
         if(firstView) {
             firstView = false;
-            segmentsString.put("start", "1");
+            viewSegmentation.put("start", "1");
         }
 
-        Map<String, Integer> segmentsInt = null;
-        Map<String, Double> segmentsDouble = null;
+        _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null);
 
-        if(viewSegmentation != null){
-            segmentsInt = new HashMap<>();
-            segmentsDouble = new HashMap<>();
-
-            ModuleEvents.fillInSegmentation(viewSegmentation, segmentsString, segmentsInt, segmentsDouble, null);
-        }
-
-        _cly.recordEvent(VIEW_EVENT_KEY, segmentsString, segmentsInt, segmentsDouble, 1, 0, 0);
         return _cly;
     }
 
@@ -253,9 +248,9 @@ class ModuleViews extends ModuleBase{
          * Check state of automatic view tracking
          * @return boolean - true if enabled, false if disabled
          */
-        public synchronized boolean isViewTrackingEnabled(){
+        public synchronized boolean isAutomaticViewTrackingEnabled(){
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Views] Calling isViewTrackingEnabled");
+                Log.d(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
             }
 
             return _cly.autoViewTracker;

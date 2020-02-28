@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 class ModuleEvents extends ModuleBase{
+    protected static final Map<String, Event> timedEvents = new HashMap<>();
+
     //interface for SDK users
     final Events eventsInterface;
 
@@ -198,8 +200,55 @@ class ModuleEvents extends ModuleBase{
         }
     }
 
+    synchronized boolean startEventInternal(final String key){
+        if (key == null || key.length() == 0) {
+            throw new IllegalArgumentException("Valid Countly event key is required");
+        }
+        if (timedEvents.containsKey(key)) {
+            return false;
+        }
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleEvents] Starting event: [" + key + "]");
+        }
+        timedEvents.put(key, new Event(key));
+        return true;
+    }
+
+    synchronized boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum){
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleEvents] Ending event: [" + key + "]");
+        }
+
+        Event event = timedEvents.remove(key);
+
+        if (event != null) {
+            if(!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
+                return true;
+            }
+
+            if (key == null || key.length() == 0) {
+                throw new IllegalArgumentException("Valid Countly event key is required");
+            }
+            if (count < 1) {
+                throw new IllegalArgumentException("Countly event count should be greater than zero");
+            }
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Ending event: [" + key + "]");
+            }
+
+            long currentTimestamp = UtilsTime.currentTimestampMs();
+            double duration = (currentTimestamp - event.timestamp) / 1000.0;
+            UtilsTime.Instant instant = new UtilsTime.Instant(event.timestamp, event.hour, event.dow);
+
+            recordEventInternal(key, segmentation, count, sum, duration, instant);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     synchronized boolean cancelEventInternal(final String key) {
-        Event event = _cly.timedEvents.remove(key);
+        Event event = timedEvents.remove(key);
 
         return event != null;
     }
@@ -217,6 +266,46 @@ class ModuleEvents extends ModuleBase{
 
             UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
             recordEventInternal(key, segmentation, count, sum, dur, instant);
+        }
+
+        /**
+         * Start timed event with a specified key
+         * @param key name of the custom event, required, must not be the empty string or null
+         * @return true if no event with this key existed before and event is started, false otherwise
+         */
+        public synchronized boolean startEvent(final String key) {
+            if (!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+            }
+
+            return startEventInternal(key);
+        }
+
+        /**
+         * End timed event with a specified key
+         * @param key name of the custom event, required, must not be the empty string or null
+         * @return true if event with this key has been previously started, false otherwise
+         */
+        public synchronized boolean endEvent(final String key) {
+            return endEvent(key, null, 1, 0);
+        }
+
+        /**
+         * End timed event with a specified key
+         * @param key name of the custom event, required, must not be the empty string
+         * @param segmentation segmentation dictionary to associate with the event, can be null
+         * @param count count to associate with the event, should be more than zero
+         * @param sum sum to associate with the event
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
+         * @return true if event with this key has been previously started, false otherwise
+         */
+        public synchronized boolean endEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
+            if (!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+            }
+
+            return endEventInternal(key, segmentation, count, sum);
         }
 
         /**
