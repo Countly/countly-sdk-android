@@ -359,7 +359,7 @@ public class EventTests {
 
     @Test
     public void testSegmentationSorter() {
-        String[] keys = new String[]{"a", "b", "c", "d", "e", "f"};
+        String[] keys = new String[]{"a", "b", "c", "d", "e", "f", "l", "r"};
 
         Map<String, Object> automaticViewSegmentation = new HashMap<>();
 
@@ -369,18 +369,22 @@ public class EventTests {
         automaticViewSegmentation.put(keys[3], 4.44d);
         automaticViewSegmentation.put(keys[4], "Six");
         automaticViewSegmentation.put(keys[5], "asdSix");
+        automaticViewSegmentation.put(keys[6], false);
+        automaticViewSegmentation.put(keys[7], true);
 
         HashMap<String, String> segmentsString = new HashMap<>();
         HashMap<String, Integer> segmentsInt = new HashMap<>();
         HashMap<String, Double> segmentsDouble = new HashMap<>();
+        HashMap<String, Boolean> segmentsBoolean = new HashMap<>();
         HashMap<String, Object> segmentsReminder = new HashMap<>();
 
-        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsReminder);
+        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsInt.size(), 3);
         assertEquals(segmentsDouble.size(), 1);
         assertEquals(segmentsString.size(), 2);
+        assertEquals(segmentsBoolean.size(), 2);
         assertEquals(segmentsReminder.size(), 0);
 
         assertEquals(segmentsInt.get(keys[0]).intValue(), 2);
@@ -389,11 +393,13 @@ public class EventTests {
         assertEquals(segmentsDouble.get(keys[3]).doubleValue(), 4.44d, 0.00001);
         assertEquals(segmentsString.get(keys[4]), "Six");
         assertEquals(segmentsString.get(keys[5]), "asdSix");
+        assertEquals(segmentsBoolean.get(keys[6]), false);
+        assertEquals(segmentsBoolean.get(keys[7]), true);
     }
 
     @Test
     public void testSegmentationSorterReminder() {
-        String[] keys = new String[]{"a", "b", "c", "d", "e", "f"};
+        String[] keys = new String[]{"a", "b", "c", "d", "e", "f", "l", "r"};
 
         Map<String, Object> automaticViewSegmentation = new HashMap<>();
 
@@ -406,13 +412,16 @@ public class EventTests {
         automaticViewSegmentation.put(keys[3], "Six");
         automaticViewSegmentation.put(keys[4], obj);
         automaticViewSegmentation.put(keys[5], arr);
+        automaticViewSegmentation.put(keys[6], false);
+        automaticViewSegmentation.put(keys[7], true);
 
         HashMap<String, String> segmentsString = new HashMap<>();
         HashMap<String, Integer> segmentsInt = new HashMap<>();
         HashMap<String, Double> segmentsDouble = new HashMap<>();
+        HashMap<String, Boolean> segmentsBoolean = new HashMap<>();
         HashMap<String, Object> segmentsReminder = new HashMap<>();
 
-        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsReminder);
+        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsInt.size(), 1);
@@ -427,5 +436,7 @@ public class EventTests {
         assertEquals(segmentsReminder.get(keys[1]), 12.2f);
         assertEquals(segmentsReminder.get(keys[4]), obj);
         assertEquals(segmentsReminder.get(keys[5]), arr);
+        assertEquals(segmentsBoolean.get(keys[6]), false);
+        assertEquals(segmentsBoolean.get(keys[7]), true);
     }
 }

@@ -117,7 +117,7 @@ public class CountlyStoreTests {
     public void testEvents_prefIsEmptyString() {
         // the following two calls will result in the pref being an empty string
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.addEvent("eventKey", null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
+        store.addEvent("eventKey", null, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         store.removeEvents(store.eventsList());
         assertTrue(Arrays.equals(new String[0], store.events()));
     }
@@ -126,7 +126,7 @@ public class CountlyStoreTests {
     public void testEvents_prefHasSingleValue() throws JSONException {
         final String eventKey = "eventKey";
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.addEvent(eventKey, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
+        store.addEvent(eventKey, null, null, null, null,instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         final String[] eventJSONStrings = store.events();
         final JSONObject eventJSONObj = new JSONObject(eventJSONStrings[0]);
         assertEquals(eventKey, eventJSONObj.getString("key"));
@@ -138,10 +138,10 @@ public class CountlyStoreTests {
         final String eventKey1 = "eventKey1";
         final String eventKey2 = "eventKey2";
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.addEvent(eventKey1, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
+        store.addEvent(eventKey1, null, null, null, null,instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
 
         instant = UtilsTime.getCurrentInstant();
-        store.addEvent(eventKey2, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
+        store.addEvent(eventKey2, null, null, null, null,instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         final String[] eventJSONStrs = store.events();
         final JSONObject eventJSONObj1 = new JSONObject(eventJSONStrs[0]);
         assertEquals(eventKey1, eventJSONObj1.getString("key"));
@@ -162,7 +162,7 @@ public class CountlyStoreTests {
         event1.timestamp = UtilsTime.currentTimestampMs();
         event1.count = 1;
         event1.dur = 10.0d;
-        store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
+        store.addEvent(event1.key, event1.segmentation, null, null, null,event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
         final List<Event> expected = new ArrayList<>(1);
         expected.add(event1);
         final List<Event> actual = store.eventsList();
@@ -186,9 +186,9 @@ public class CountlyStoreTests {
         event3.timestamp = UtilsTime.currentTimestampMs() - 30000;
         event3.count = 1;
         event3.dur = 10.0d;
-        store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
-        store.addEvent(event2.key, event2.segmentation, null, null, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
-        store.addEvent(event3.key, event3.segmentation, null, null, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
+        store.addEvent(event1.key, event1.segmentation, null, null, null,event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
+        store.addEvent(event2.key, event2.segmentation, null, null, null,event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
+        store.addEvent(event3.key, event3.segmentation, null, null, null,event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
         final List<Event> expected = new ArrayList<>(3);
         expected.add(event2);
         expected.add(event3);
@@ -340,7 +340,7 @@ public class CountlyStoreTests {
         event1.segmentation.put("segKey1", "segValue1");
         event1.segmentation.put("segKey2", "segValue2");
 
-        store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
+        store.addEvent(event1.key, event1.segmentation, null, null, null,event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
 
         final List<Event> addedEvents = store.eventsList();
         assertEquals(1, addedEvents.size());
@@ -368,12 +368,12 @@ public class CountlyStoreTests {
         event3.count = 1;
         event3.dur = 10.0d;
 
-        store.addEvent(event1.key, event1.segmentation, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
-        store.addEvent(event2.key, event2.segmentation, null, null, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
+        store.addEvent(event1.key, event1.segmentation, null, null, null,event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
+        store.addEvent(event2.key, event2.segmentation, null, null, null,event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
 
         final List<Event> eventsToRemove = store.eventsList();
 
-        store.addEvent(event3.key, event3.segmentation, null, null, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
+        store.addEvent(event3.key, event3.segmentation, null, null, null,event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
 
         store.removeEvents(eventsToRemove);
 
@@ -389,7 +389,7 @@ public class CountlyStoreTests {
         assertFalse(prefs.contains("CONNECTIONS"));
         store.addConnection("blah");
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.addEvent("eventKey", null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
+        store.addEvent("eventKey", null, null, null, null,instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         assertTrue(prefs.contains("EVENTS"));
         assertTrue(prefs.contains("CONNECTIONS"));
         store.clear();

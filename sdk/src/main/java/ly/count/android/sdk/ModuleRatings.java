@@ -63,7 +63,7 @@ class ModuleRatings extends ModuleBase {
             segm.put("comment", comment);
         }
 
-        _cly.moduleEvents.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, 1, 0, 0, segm, null);
+        _cly.moduleEvents.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null);
     }
 
     @Override

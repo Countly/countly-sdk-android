@@ -608,6 +608,7 @@ public class CountlyTests {
         segmentation.put("segkey1", "segvalue1");
         final HashMap<String, Double> segmD = new HashMap<>();
         final HashMap<String, Integer> segmI = new HashMap<>();
+        final HashMap<String, Boolean> segmB = new HashMap<>();
 
         final EventQueue mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
@@ -620,7 +621,7 @@ public class CountlyTests {
 
         countly.recordEvent(eventKey, segmentation, count, sum, dur);
 
-        verify(mockEventQueue).recordEvent(eventKey, segmentation, segmI, segmD, count, sum, dur, null);
+        verify(mockEventQueue).recordEvent(eventKey, segmentation, segmI, segmD, segmB, count, sum, dur, null);
         verify(countly).sendEventsIfNeeded();
     }
 
