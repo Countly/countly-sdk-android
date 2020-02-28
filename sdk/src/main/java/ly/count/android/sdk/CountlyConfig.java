@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -86,12 +85,12 @@ public class CountlyConfig {
     protected boolean pushIntentAddMetadata = false;
 
     protected boolean enableRemoteConfigAutomaticDownload = false;
-    RemoteConfig.RemoteConfigCallback remoteConfigCallback = null;
+    protected RemoteConfig.RemoteConfigCallback remoteConfigCallback = null;
 
     protected boolean shouldRequireConsent = false;
     protected String[] enabledFeatureNames = null;
 
-    boolean httpPostForced = false;
+    protected boolean httpPostForced = false;
 
     protected boolean temporaryDeviceIdEnabled = false;
 
@@ -104,6 +103,10 @@ public class CountlyConfig {
     protected boolean trackOrientationChange = false;
 
     boolean recordAllThreadsWithCrash = false;
+
+    protected boolean shouldIgnoreAppCrawlers = false;
+
+    protected String[] appCrawlerNames = null;
 
     public CountlyConfig() {
     }
@@ -314,6 +317,15 @@ public class CountlyConfig {
         return this;
     }
 
+    public CountlyConfig setShouldIgnoreAppCrawlers(boolean shouldIgnore){
+        shouldIgnoreAppCrawlers = shouldIgnore;
+        return this;
+    }
+
+    public CountlyConfig setAppCrawlerNames(String[] appCrawlerNames){
+        this.appCrawlerNames = appCrawlerNames;
+        return this;
+    }
 
     public CountlyConfig setEventQueueSizeToSend(int threshold) {
         eventQueueSizeThreshold = threshold;

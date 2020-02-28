@@ -31,8 +31,10 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -454,6 +456,11 @@ public class Countly {
             CountlyStarRating.setStarRatingInitConfig(countlyStore, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
 
             //app crawler check
+            shouldIgnoreCrawlers = config.shouldIgnoreAppCrawlers;
+            if(config.appCrawlerNames != null){
+                Collections.addAll(Arrays.asList(config.appCrawlerNames));
+            }
+
             checkIfDeviceIsAppCrawler();
 
             boolean doingTemporaryIdMode = false;
@@ -1934,6 +1941,7 @@ public class Countly {
     /**
      * Set if Countly SDK should ignore app crawlers
      * @param shouldIgnore if crawlers should be ignored
+     * @deprecated use CountlyConfig to set this
      */
     public synchronized Countly setShouldIgnoreCrawlers(boolean shouldIgnore){
         if (isLoggingEnabled()) {
@@ -1946,6 +1954,7 @@ public class Countly {
     /**
      * Add app crawler device name to the list of names that should be ignored
      * @param crawlerName the name to be ignored
+     * @deprecated use CountlyConfig to set this
      */
     public void addAppCrawlerName(String crawlerName) {
         if (isLoggingEnabled()) {
