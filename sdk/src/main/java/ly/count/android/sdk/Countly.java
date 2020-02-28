@@ -937,6 +937,7 @@ public class Countly {
      * @param key name of the custom event, required, must not be the empty string
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key) {
         recordEvent(key, null, 1, 0);
@@ -948,6 +949,7 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key, final int count) {
         recordEvent(key, null, count, 0);
@@ -960,6 +962,7 @@ public class Countly {
      * @param sum sum to associate with the event
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key, final int count, final double sum) {
         recordEvent(key, null, count, sum);
@@ -972,6 +975,7 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty
+     * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key, final Map<String, String> segmentation, final int count) {
         recordEvent(key, segmentation, count, 0);
@@ -986,6 +990,7 @@ public class Countly {
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
+     * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
         recordEvent(key, segmentation, count, sum, 0);
@@ -1001,6 +1006,7 @@ public class Countly {
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
+     * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final int count, final double sum, final double dur){
         recordEvent(key, segmentation, null, null, count, sum, dur);
@@ -1013,12 +1019,16 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @param dur duration of an event
-     * @deprecated
      * @throws IllegalStateException if Countly SDK has not been initialized
      * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      *                                  segmentation contains null or empty keys or values
+     * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur) {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+        }
+
         Map<String, Object> segmentationGroup = new HashMap<>();
         if(segmentation != null) {
             segmentationGroup.putAll(segmentation);
@@ -1032,25 +1042,7 @@ public class Countly {
             segmentationGroup.putAll(segmentationDouble);
         }
 
-        recordEvent(key, count, sum, dur, segmentationGroup);
-    }
-    /**
-     * Records a custom event with the specified values.
-     * @param key name of the custom event, required, must not be the empty string
-     * @param segmentation segmentation dictionary to associate with the event, can be null
-     * @param count count to associate with the event, should be more than zero
-     * @param sum sum to associate with the event
-     * @param dur duration of an event
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
-     *                                  segmentation contains null or empty keys or values
-     */
-    public synchronized void recordEvent(final String key, final int count, final double sum, final double dur, final Map<String, Object> segmentation) {
-        if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
-        }
-
-        moduleEvents.recordEventInternal(key, count, sum, dur, segmentation, null);
+        events().recordEvent(key, segmentationGroup, count, sum, dur);
     }
 
     /**
@@ -1530,28 +1522,6 @@ public class Countly {
         } else {
             return false;
         }
-    }
-
-    /**
-     * Cancel timed event with a specified key
-     * @return true if event with this key has been previously started, false otherwise
-     **/
-    public synchronized boolean cancelEvent(final String key) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling cancelEvent");
-        }
-
-        if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before cancelEvent");
-        }
-
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Canceling event: [" + key + "]");
-        }
-
-        Event event = timedEvents.remove(key);
-
-        return event != null;
     }
 
     /**

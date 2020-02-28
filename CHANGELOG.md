@@ -5,6 +5,7 @@
   * Adding functinality to track orientation changes
   * Adding call to manually record user rating without showing any UI
   * Adding call to record a event with a given timestamp
+  * Adding call to cancel a timed event
   * Adding option to set tamper protection salt in config object
   * Adding calls to give and remove consent to all features at the same time
   * Moving crash related calls to a seperate module

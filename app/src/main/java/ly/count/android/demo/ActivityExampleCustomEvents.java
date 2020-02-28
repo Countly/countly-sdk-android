@@ -85,7 +85,7 @@ public class ActivityExampleCustomEvents extends Activity {
 
     public void onClickRecordEvent12(View v) {
         //cancel timed event
-        Countly.sharedInstance().cancelEvent("Custom event 9");
+        Countly.sharedInstance().events().cancelEvent("Custom event 9");
     }
 
     public void onClickRecordEvent11(View v) {

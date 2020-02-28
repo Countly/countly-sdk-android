@@ -98,7 +98,7 @@ class ModuleEvents extends ModuleBase{
         }
     }
 
-    synchronized void recordEventInternal(final String key, final int count, final double sum, final double dur, final Map<String, Object> segmentation, UtilsTime.Instant instant) {
+    synchronized void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
         }
@@ -198,6 +198,12 @@ class ModuleEvents extends ModuleBase{
         }
     }
 
+    synchronized boolean cancelEventInternal(final String key) {
+        Event event = _cly.timedEvents.remove(key);
+
+        return event != null;
+    }
+
     @Override
     void halt(){
 
@@ -205,16 +211,115 @@ class ModuleEvents extends ModuleBase{
 
     public class Events{
         public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
-            if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordPastEvent");
-            }
-
             if(timestamp == 0){
                 throw new IllegalStateException("Provided timestamp has to be greater that zero");
             }
 
             UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
-            recordEventInternal(key, count, sum, dur, segmentation, instant);
+            recordEventInternal(key, segmentation, count, sum, dur, instant);
+        }
+
+        /**
+         * Cancel timed event with a specified key
+         * @return true if event with this key has been previously started, false otherwise
+         **/
+        public synchronized boolean cancelEvent(final String key) {
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Events] Calling cancelEvent: [" + key + "]");
+            }
+
+            return cancelEventInternal(key);
+        }
+
+        /**
+         * Records a custom event with no segmentation values, a count of one and a sum of zero.
+         * @param key name of the custom event, required, must not be the empty string
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty
+         */
+        public void recordEvent(final String key) {
+            recordEvent(key, null, 1, 0);
+        }
+
+        /**
+         * Records a custom event with no segmentation values, the specified count, and a sum of zero.
+         * @param key name of the custom event, required, must not be the empty string
+         * @param count count to associate with the event, should be more than zero
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty
+         */
+        public void recordEvent(final String key, final int count) {
+            recordEvent(key, null, count, 0);
+        }
+
+        /**
+         * Records a custom event with no segmentation values, and the specified count and sum.
+         * @param key name of the custom event, required, must not be the empty string
+         * @param count count to associate with the event, should be more than zero
+         * @param sum sum to associate with the event
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty
+         */
+        public void recordEvent(final String key, final int count, final double sum) {
+            recordEvent(key, null, count, sum);
+        }
+
+        /**
+         * Records a custom event with the specified segmentation values and count, and a sum of zero.
+         * @param key name of the custom event, required, must not be the empty string
+         * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty
+         */
+        public void recordEvent(final String key, final Map<String, Object> segmentation) {
+            recordEvent(key, segmentation, 1, 0);
+        }
+
+        /**
+         * Records a custom event with the specified segmentation values and count, and a sum of zero.
+         * @param key name of the custom event, required, must not be the empty string
+         * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
+         * @param count count to associate with the event, should be more than zero
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty
+         */
+        public void recordEvent(final String key, final Map<String, Object> segmentation, final int count) {
+            recordEvent(key, segmentation, count, 0);
+        }
+
+        /**
+         * Records a custom event with the specified values.
+         * @param key name of the custom event, required, must not be the empty string
+         * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
+         * @param count count to associate with the event, should be more than zero
+         * @param sum sum to associate with the event
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
+         */
+        public synchronized void recordEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
+            recordEvent(key, segmentation, count, sum, 0);
+        }
+
+        /**
+         * Records a custom event with the specified values.
+         * @param key name of the custom event, required, must not be the empty string
+         * @param segmentation segmentation dictionary to associate with the event, can be null
+         * @param count count to associate with the event, should be more than zero
+         * @param sum sum to associate with the event
+         * @param dur duration of an event
+         * @throws IllegalStateException if Countly SDK has not been initialized
+         * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
+         */
+        public synchronized void recordEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur) {
+            if (!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+            }
+
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Events] Calling recordEvent: [" + key + "]");
+            }
+
+            recordEventInternal(key, segmentation, count, sum, dur, null);
         }
     }
 }
