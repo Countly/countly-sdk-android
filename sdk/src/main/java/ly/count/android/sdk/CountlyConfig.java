@@ -108,6 +108,12 @@ public class CountlyConfig {
 
     protected String[] appCrawlerNames = null;
 
+    protected String[] publicKeyPinningCertificates = null;
+
+    protected String[] certificatePinningCertificates = null;
+
+    protected Boolean enableAttribution = null;
+
     public CountlyConfig() {
     }
 
@@ -314,6 +320,21 @@ public class CountlyConfig {
 
     public CountlyConfig setRecordAllThreadsWithCrash(){
         recordAllThreadsWithCrash = true;
+        return this;
+    }
+
+    public CountlyConfig setEnableAttribution(boolean enableAttribution) {
+        this.enableAttribution = enableAttribution;
+        return this;
+    }
+
+    public CountlyConfig enablePublicKeyPinning(String[] certificates) {
+        publicKeyPinningCertificates = certificates;
+        return this;
+    }
+
+    public CountlyConfig enableCertificatePinning(String[] certificates){
+        certificatePinningCertificates = certificates;
         return this;
     }
 

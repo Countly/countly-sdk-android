@@ -8,7 +8,8 @@
   * Adding call to cancel a timed event
   * Adding option to set tamper protection salt in config object
   * Adding calls to give and remove consent to all features at the same time
-  * Moving crash related calls to a seperate module
+  * Moving crash, event, view, rating related calls to a seperate modules
+  * Deprecating functions that are being put into modules
   * Removing "addCrashLog" call
   * Removing "logException" call
   * Migrated to AndroidX

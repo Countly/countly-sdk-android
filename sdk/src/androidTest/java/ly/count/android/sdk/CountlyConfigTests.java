@@ -75,6 +75,9 @@ public class CountlyConfigTests {
 
         String[] appCrawlerNames = new String[] {"Some", "Crazy", "name"};
 
+        String[] publicKeyCerts = new String[] { "ddd", "111", "ffd" };
+        String[] certificateCerts = new String[] { "ddsd", "vvcv", "mbnb" };
+
 
         assertDefaultValues(config, true);
 
@@ -111,6 +114,9 @@ public class CountlyConfigTests {
         config.setRecordAllThreadsWithCrash();
         config.setShouldIgnoreAppCrawlers(true);
         config.setAppCrawlerNames(appCrawlerNames);
+        config.enableCertificatePinning(certificateCerts);
+        config.enablePublicKeyPinning(publicKeyCerts);
+        config.setEnableAttribution(true);
 
 
 
@@ -147,6 +153,9 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.recordAllThreadsWithCrash);
         Assert.assertTrue(config.shouldIgnoreAppCrawlers);
         Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
+        Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
+        Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
+        Assert.assertTrue(config.enableAttribution);
     }
 
     @Test
@@ -198,5 +207,8 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.recordAllThreadsWithCrash);
         Assert.assertFalse(config.shouldIgnoreAppCrawlers);
         Assert.assertNull(config.appCrawlerNames);
+        Assert.assertNull(config.publicKeyPinningCertificates);
+        Assert.assertNull(config.certificatePinningCertificates);
+        Assert.assertNull(config.enableAttribution);
     }
 }

@@ -451,6 +451,18 @@ public class Countly {
                 setEventQueueSizeToSend(config.eventQueueSizeThreshold);
             }
 
+            if(config.publicKeyPinningCertificates != null){
+                enablePublicKeyPinning(Arrays.asList(config.publicKeyPinningCertificates));
+            }
+
+            if(config.certificatePinningCertificates != null){
+                enableCertificatePinning(Arrays.asList(config.certificatePinningCertificates));
+            }
+
+            if(config.enableAttribution != null){
+                setEnableAttribution(config.enableAttribution);
+            }
+
             //set the star rating values
             starRatingCallback_ = config.starRatingCallback;
             CountlyStarRating.setStarRatingInitConfig(countlyStore, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
@@ -1703,6 +1715,7 @@ public class Countly {
      * if public key of SSL certificate provided by the server matches one provided to this method or by {@link #enableCertificatePinning(List)}.
      * @param certificates List of SSL public keys
      * @return Countly instance
+     * @deprecated set this through CountlyConfig
      */
     public static Countly enablePublicKeyPinning(List<String> certificates) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -1719,6 +1732,7 @@ public class Countly {
      * if certificate provided by the server matches one provided to this method or by {@link #enablePublicKeyPinning(List)}.
      * @param certificates List of SSL certificates
      * @return Countly instance
+     * @deprecated set this through CountlyConfig
      */
     public static Countly enableCertificatePinning(List<String> certificates) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -2038,6 +2052,7 @@ public class Countly {
     /**
      * Set if attribution should be enabled
      * @param shouldEnableAttribution set true if you want to enable it, set false if you want to disable it
+     * @deprecated use CountlyConfig to set this
      */
     public synchronized Countly setEnableAttribution(boolean shouldEnableAttribution) {
         if (isLoggingEnabled()) {
