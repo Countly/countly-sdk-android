@@ -78,8 +78,9 @@ class ModuleEvents extends ModuleBase{
      * @param segmStr
      * @param segmInt
      * @param segmDouble
+     * @param segmBoolean
      */
-    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Object> reminder) {
+    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Boolean> segmBoolean,Map<String, Object> reminder) {
         for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
             String key = pair.getKey();
             Object value = pair.getValue();
@@ -90,6 +91,8 @@ class ModuleEvents extends ModuleBase{
                 segmDouble.put(key, (Double) value);
             } else if (value instanceof String) {
                 segmStr.put(key, (String) value);
+            } else if (value instanceof Boolean) {
+                segmBoolean.put(key, (Boolean) value);
             } else {
                 if(reminder != null) {
                     reminder.put(key, value);
@@ -118,14 +121,16 @@ class ModuleEvents extends ModuleBase{
         Map<String, String> segmentationString = null;
         Map<String, Integer> segmentationInt = null;
         Map<String, Double> segmentationDouble = null;
+        Map<String, Boolean> segmentationBoolean = null;
 
         if(segmentation != null) {
             segmentationString = new HashMap<>();
             segmentationInt = new HashMap<>();
             segmentationDouble = new HashMap<>();
+            segmentationBoolean = new HashMap<>();
             Map<String, Object> segmentationReminder = new HashMap<>();
 
-            fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationReminder);
+            fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
 
             if (segmentationReminder.size() > 0) {
                 if (_cly.isLoggingEnabled()) {
@@ -151,21 +156,16 @@ class ModuleEvents extends ModuleBase{
                 }
             }
 
-            for (String k : segmentationInt.keySet()) {
-                if (k == null || k.length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                }
-                if (segmentationInt.get(k) == null) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
-                }
-            }
+            Map[] maps = new Map[] {segmentationInt, segmentationDouble, segmentationBoolean};
 
-            for (String k : segmentationDouble.keySet()) {
-                if (k == null || k.length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                }
-                if (segmentationDouble.get(k) == null) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
+            for(int a = 0 ; a < maps.length ; a++){
+                for (Object k : maps[a].keySet()) {
+                    if (k == null || ((String)k).length() == 0) {
+                        throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                    }
+                    if (maps[a].get(k) == null) {
+                        throw new IllegalArgumentException("Countly event segmentation value cannot be null");
+                    }
                 }
             }
         }
@@ -173,25 +173,25 @@ class ModuleEvents extends ModuleBase{
         switch (key) {
             case ModuleRatings.STAR_RATING_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
+                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsForced();
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.views)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
+                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsForced();
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.events)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
+                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsIfNeeded();
                 }
                 break;
             default:
                 if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.events)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, count, sum, dur, instant);
+                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsIfNeeded();
                 }
                 break;

@@ -50,6 +50,7 @@ class Event {
     public Map<String, String> segmentation;
     public Map<String, Integer> segmentationInt;
     public Map<String, Double> segmentationDouble;
+    public Map<String, Boolean> segmentationBoolean;
     public int count;
     public double sum;
     public double dur;
@@ -101,7 +102,13 @@ class Event {
                 }
             }
 
-            if(segmentation != null || segmentationInt != null || segmentationDouble != null) {
+            if(segmentationBoolean != null){
+                for (Map.Entry<String, Boolean> pair : segmentationBoolean.entrySet()) {
+                    jobj.put(pair.getKey(), pair.getValue());
+                }
+            }
+
+            if(segmentation != null || segmentationInt != null || segmentationDouble != null || segmentationBoolean != null) {
                 json.put(SEGMENTATION_KEY, jobj);
             }
 
@@ -150,6 +157,7 @@ class Event {
                 final HashMap<String, String> segmentation = new HashMap<>();
                 final HashMap<String, Integer> segmentationInt = new HashMap<>();
                 final HashMap<String, Double> segmentationDouble = new HashMap<>();
+                final HashMap<String, Boolean> segmentationBoolean = new HashMap<>();
 
                 final Iterator nameItr = segm.keys();
                 while (nameItr.hasNext()) {
@@ -160,9 +168,12 @@ class Event {
                         if(obj instanceof Double){
                             //in case it's a double
                             segmentationDouble.put(key, segm.getDouble(key));
-                        } else if(obj instanceof Integer){
+                        } else if(obj instanceof Integer) {
                             //in case it's a integer
                             segmentationInt.put(key, segm.getInt(key));
+                        } else if(obj instanceof Boolean){
+                            //in case it's a boolean
+                            segmentationBoolean.put(key, segm.getBoolean(key));
                         } else {
                             //assume it's String
                             segmentation.put(key, segm.getString(key));
@@ -172,6 +183,7 @@ class Event {
                 event.segmentation = segmentation;
                 event.segmentationDouble = segmentationDouble;
                 event.segmentationInt = segmentationInt;
+                event.segmentationBoolean = segmentationBoolean;
             }
         }
         catch (JSONException e) {

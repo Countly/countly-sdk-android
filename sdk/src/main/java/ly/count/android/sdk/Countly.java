@@ -1072,7 +1072,7 @@ public class Countly {
     /**
      * Check state of automatic view tracking
      * @return boolean - true if enabled, false if disabled
-     * @deprecated use 'Countly.sharedInstance().views().isViewTrackingEnabled()'
+     * @deprecated use 'Countly.sharedInstance().views().isAutomaticViewTrackingEnabled()'
      */
     public synchronized boolean isViewTrackingEnabled(){
         return autoViewTracker;
@@ -1652,7 +1652,7 @@ public class Countly {
     /**
      * Send events if any of them are stored
      */
-    void sendEventsIfExist() {
+    protected void sendEventsIfExist() {
         if (eventQueue_.size() > 0) {
             connectionQueue_.recordEvents(eventQueue_.events());
         }

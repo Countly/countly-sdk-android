@@ -93,7 +93,7 @@ public class EventQueue {
      *            NaN and infinity values will be quietly ignored.
      * @throws IllegalArgumentException if key is null or empty
      */
-    void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
+    void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
         if(instant == null){
             instant = UtilsTime.getCurrentInstant();
         }
@@ -101,7 +101,7 @@ public class EventQueue {
         final long timestamp = instant.timestampMs;
         final int hour = instant.hour;
         final int dow = instant.dow;
-        countlyStore_.addEvent(key, segmentation, segmentationInt, segmentationDouble, timestamp, hour, dow, count, sum, dur);
+        countlyStore_.addEvent(key, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, timestamp, hour, dow, count, sum, dur);
     }
 
     void recordEvent(final Event event) {
