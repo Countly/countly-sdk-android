@@ -759,17 +759,7 @@ public class Countly {
         }
     }
 
-    /**
-     * Called when GCM Registration ID is received. Sends a token session event to the server.
-     */
-    public void onRegistrationId(String registrationId) {
-        onRegistrationId(registrationId, messagingMode_);
-    }
-
-    /**
-     * DON'T USE THIS!!!!
-     */
-    public void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
+    protected void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
         if(!getConsent(CountlyFeatureNames.push)) {
             return;
         }
