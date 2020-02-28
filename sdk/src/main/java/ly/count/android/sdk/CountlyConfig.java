@@ -102,7 +102,11 @@ public class CountlyConfig {
 
     protected boolean trackOrientationChange = false;
 
-    boolean recordAllThreadsWithCrash = false;
+    protected boolean manualSessionControlEnabled = false;
+
+    protected boolean recordAllThreadsWithCrash = false;
+
+    protected boolean disableUpdateSessionRequests = false;
 
     protected boolean shouldIgnoreAppCrawlers = false;
 
@@ -353,6 +357,10 @@ public class CountlyConfig {
         return this;
     }
 
+    public CountlyConfig enableManualSessionControl(){
+        manualSessionControlEnabled = true;
+        return this;
+    }
 
     protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
         checkForNativeCrashDumps = checkForDumps;
@@ -361,6 +369,11 @@ public class CountlyConfig {
 
     protected CountlyConfig setCountlyStore(CountlyStore store) {
         countlyStore = store;
+        return this;
+    }
+
+    protected CountlyConfig setDisableUpdateSessionRequests(boolean disable){
+        disableUpdateSessionRequests = disable;
         return this;
     }
 }

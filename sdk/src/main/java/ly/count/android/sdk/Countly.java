@@ -119,6 +119,7 @@ public class Countly {
     ModuleEvents moduleEvents = null;
     ModuleViews moduleViews = null;
     ModuleRatings moduleRatings = null;
+    ModuleSessions moduleSessions = null;
 
     //user data access
     public static UserData userData;
@@ -427,12 +428,14 @@ public class Countly {
             moduleEvents = new ModuleEvents(this, config);
             moduleViews = new ModuleViews(this, config);
             moduleRatings = new ModuleRatings(this, config);
+            moduleSessions = new ModuleSessions(this, config);
 
             modules.clear();
             modules.add(moduleCrash);
             modules.add(moduleEvents);
             modules.add(moduleViews);
             modules.add(moduleRatings);
+            modules.add(moduleSessions);
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -662,6 +665,7 @@ public class Countly {
         moduleViews = null;
         moduleEvents = null;
         moduleRatings = null;
+        moduleSessions = null;
     }
 
     /**
@@ -1487,6 +1491,7 @@ public class Countly {
      * Note that event updates will still be sent every 10 events or 30 seconds after event recording.
      * @param disable whether or not to disable session time updates
      * @return Countly instance for easy method chaining
+     * @deprecated set through countlyConfig
      */
     public synchronized Countly setDisableUpdateSessionRequests(final boolean disable) {
         if (isLoggingEnabled()) {
@@ -1629,17 +1634,17 @@ public class Countly {
             Log.v(Countly.TAG, "[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
         }
 
-        final boolean hasActiveSession = activityCount_ > 0;
-        if (hasActiveSession) {
-            if (!disableUpdateSessionRequests_) {
-                connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+        if (isInitialized()) {
+            final boolean hasActiveSession = activityCount_ > 0;
+            if (hasActiveSession) {
+                if (!disableUpdateSessionRequests_) {
+                    connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+                }
+                if (eventQueue_.size() > 0) {
+                    connectionQueue_.recordEvents(eventQueue_.events());
+                }
             }
-            if (eventQueue_.size() > 0) {
-                connectionQueue_.recordEvents(eventQueue_.events());
-            }
-        }
 
-        if(isInitialized()){
             connectionQueue_.tick();
         }
     }
@@ -2582,6 +2587,14 @@ public class Countly {
         }
 
         return moduleRatings.ratingsInterface;
+    }
+
+    public ModuleSessions.Sessions sessions(){
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing sessions");
+        }
+
+        return moduleSessions.sessionInterface;
     }
 
     // for unit testing

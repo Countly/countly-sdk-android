@@ -111,7 +111,9 @@ public class CountlyConfigTests {
         config.setAutoTrackingExceptions(act);
         config.setTrackOrientationChanges(true);
         config.setEventQueueSizeToSend(1337);
+        config.enableManualSessionControl();
         config.setRecordAllThreadsWithCrash();
+        config.setDisableUpdateSessionRequests(true);
         config.setShouldIgnoreAppCrawlers(true);
         config.setAppCrawlerNames(appCrawlerNames);
         config.enableCertificatePinning(certificateCerts);
@@ -150,7 +152,9 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(act, config.autoTrackingExceptions);
         Assert.assertTrue(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
+        Assert.assertTrue(config.manualSessionControlEnabled);
         Assert.assertTrue(config.recordAllThreadsWithCrash);
+        Assert.assertTrue(config.disableUpdateSessionRequests);
         Assert.assertTrue(config.shouldIgnoreAppCrawlers);
         Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
@@ -204,7 +208,9 @@ public class CountlyConfigTests {
         Assert.assertNull(config.automaticViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);
         Assert.assertFalse(config.trackOrientationChange);
+        Assert.assertFalse(config.manualSessionControlEnabled);
         Assert.assertFalse(config.recordAllThreadsWithCrash);
+        Assert.assertFalse(config.disableUpdateSessionRequests);
         Assert.assertFalse(config.shouldIgnoreAppCrawlers);
         Assert.assertNull(config.appCrawlerNames);
         Assert.assertNull(config.publicKeyPinningCertificates);
