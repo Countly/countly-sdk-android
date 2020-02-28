@@ -262,6 +262,17 @@ class ModuleViews extends ModuleBase{
         }
 
         /**
+         *  Record a view manually, without automatic tracking
+         * or track view that is not automatically tracked
+         * like fragment, Message box or transparent Activity
+         * @param viewName String - name of the view
+         * @return Returns link to Countly for call chaining
+         */
+        public synchronized Countly recordView(String viewName) {
+            return recordView(viewName, null);
+        }
+
+        /**
          * Record a view manually, without automatic tracking
          * or track view that is not automatically tracked
          * like fragment, Message box or transparent Activity

@@ -730,26 +730,17 @@ public class Countly {
 
         --activityCount_;
         if (activityCount_ == 0) {
-            onStopHelper();
+            // Called when final Activity is stopped. Sends an end session event to the server, also sends any unsent custom events.
+            connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate());
+            prevSessionDurationStartTime_ = 0;
+
+            sendEventsIfExist();
         }
 
         CrashDetails.inBackground();
 
         for (ModuleBase module:modules) {
             module.onActivityStopped();
-        }
-    }
-
-    /**
-     * Called when final Activity is stopped. Sends an end session event to the server,
-     * also sends any unsent custom events.
-     */
-    private void onStopHelper() {
-        connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate());
-        prevSessionDurationStartTime_ = 0;
-
-        if (eventQueue_.size() > 0) {
-            connectionQueue_.recordEvents(eventQueue_.events());
         }
     }
 
@@ -1069,7 +1060,7 @@ public class Countly {
     /**
      * Check state of automatic view tracking
      * @return boolean - true if enabled, false if disabled
-     * @deprecated use views().isViewTrackingEnabled()
+     * @deprecated use 'Countly.sharedInstance().views().isViewTrackingEnabled()'
      */
     public synchronized boolean isViewTrackingEnabled(){
         return autoViewTracker;
@@ -1081,7 +1072,7 @@ public class Countly {
      * like fragment, Message box or transparent Activity
      * @param viewName String - name of the view
      * @return Returns link to Countly for call chaining
-     * @deprecated
+     * @deprecated use 'Countly.sharedInstance().views().recordView()'
      */
     public synchronized Countly recordView(String viewName) {
         if (!isInitialized()) {
@@ -1098,7 +1089,7 @@ public class Countly {
      * @param viewName String - name of the view
      * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
      * @return Returns link to Countly for call chaining
-     * @deprecated use views().recordView
+     * @deprecated use 'Countly.sharedInstance().views().recordView()'
      */
     public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
         if (!isInitialized()) {
@@ -1623,7 +1614,13 @@ public class Countly {
         Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
 
         if (sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Activity created: " + activity.getClass().getName() + " ( main is " + launchIntent.getComponent().getClassName() + ")");
+
+            String mainClassName = "[VALUE NULL]";
+            if(launchIntent != null && launchIntent.getComponent() != null){
+                mainClassName = launchIntent.getComponent().getClassName();
+            }
+
+            Log.d(Countly.TAG, "Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
         }
 
         Intent intent = activity.getIntent();
@@ -1637,6 +1634,15 @@ public class Countly {
                     DeviceInfo.deepLink = data.toString();
                 }
             }
+        }
+    }
+
+    /**
+     * Send events if any of them are stored
+     */
+    void sendEventsIfExist() {
+        if (eventQueue_.size() > 0) {
+            connectionQueue_.recordEvents(eventQueue_.events());
         }
     }
 

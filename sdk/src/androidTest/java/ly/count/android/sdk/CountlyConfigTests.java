@@ -73,6 +73,8 @@ public class CountlyConfigTests {
 
         Class[] act = new Class[]{Activity.class};
 
+        String[] appCrawlerNames = new String[] {"Some", "Crazy", "name"};
+
 
         assertDefaultValues(config, true);
 
@@ -107,13 +109,16 @@ public class CountlyConfigTests {
         config.setTrackOrientationChanges(true);
         config.setEventQueueSizeToSend(1337);
         config.setRecordAllThreadsWithCrash();
+        config.setShouldIgnoreAppCrawlers(true);
+        config.setAppCrawlerNames(appCrawlerNames);
+
 
 
         Assert.assertEquals(s[0], config.serverURL);
         Assert.assertEquals(c, config.context);
         Assert.assertEquals(s[1], config.appKey);
         Assert.assertEquals(cs, config.countlyStore);
-        Assert.assertEquals(false, config.checkForNativeCrashDumps);
+        Assert.assertFalse(config.checkForNativeCrashDumps);
         Assert.assertEquals(s[2], config.deviceID);
         Assert.assertEquals(DeviceId.Type.ADVERTISING_ID, config.idMode);
         Assert.assertEquals(1335, config.starRatingLimit);
@@ -121,25 +126,27 @@ public class CountlyConfigTests {
         Assert.assertEquals(s[3], config.starRatingTextDismiss);
         Assert.assertEquals(s[4], config.starRatingTextMessage);
         Assert.assertEquals(s[5], config.starRatingTextTitle);
-        Assert.assertEquals(true, config.loggingEnabled);
-        Assert.assertEquals(true, config.enableUnhandledCrashReporting);
-        Assert.assertEquals(true, config.enableViewTracking);
-        Assert.assertEquals(true, config.autoTrackingUseShortName);
+        Assert.assertTrue(config.loggingEnabled);
+        Assert.assertTrue(config.enableUnhandledCrashReporting);
+        Assert.assertTrue(config.enableViewTracking);
+        Assert.assertTrue(config.autoTrackingUseShortName);
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
-        Assert.assertEquals(true, config.pushIntentAddMetadata);
-        Assert.assertEquals(true, config.enableRemoteConfigAutomaticDownload);
+        Assert.assertTrue(config.pushIntentAddMetadata);
+        Assert.assertTrue(config.enableRemoteConfigAutomaticDownload);
         Assert.assertEquals(rcc, config.remoteConfigCallback);
-        Assert.assertEquals(true, config.shouldRequireConsent);
-        Assert.assertEquals(fn, config.enabledFeatureNames);
-        Assert.assertEquals(true, config.httpPostForced);
-        Assert.assertEquals(true, config.temporaryDeviceIdEnabled);
-        Assert.assertEquals(rf, config.crashRegexFilters);
+        Assert.assertTrue(config.shouldRequireConsent);
+        Assert.assertArrayEquals(fn, config.enabledFeatureNames);
+        Assert.assertTrue(config.httpPostForced);
+        Assert.assertTrue(config.temporaryDeviceIdEnabled);
+        Assert.assertArrayEquals(rf, config.crashRegexFilters);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.automaticViewSegmentation);
-        Assert.assertEquals(act, config.autoTrackingExceptions);
+        Assert.assertArrayEquals(act, config.autoTrackingExceptions);
         Assert.assertTrue(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
         Assert.assertTrue(config.recordAllThreadsWithCrash);
+        Assert.assertTrue(config.shouldIgnoreAppCrawlers);
+        Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
     }
 
     @Test
@@ -157,38 +164,39 @@ public class CountlyConfigTests {
 
     void assertDefaultValues(CountlyConfig config, boolean includeConstructorValues){
         if(includeConstructorValues){
-            Assert.assertEquals(null, config.context);
-            Assert.assertEquals(null, config.serverURL);
-            Assert.assertEquals(null, config.appKey);
+            Assert.assertNull(config.context);
+            Assert.assertNull(config.serverURL);
+            Assert.assertNull(config.appKey);
         }
 
-        Assert.assertEquals(null, config.countlyStore);
-        Assert.assertEquals(true, config.checkForNativeCrashDumps);
-        Assert.assertEquals(null, config.deviceID);
-        Assert.assertEquals(null, config.idMode);
+        Assert.assertNull(config.countlyStore);
+        Assert.assertTrue(config.checkForNativeCrashDumps);
+        Assert.assertNull(config.deviceID);
+        Assert.assertNull(config.idMode);
         Assert.assertEquals(5, config.starRatingLimit);
-        Assert.assertEquals(null, config.starRatingCallback);
-        Assert.assertEquals(null, config.starRatingTextDismiss);
-        Assert.assertEquals(null, config.starRatingTextMessage);
-        Assert.assertEquals(null, config.starRatingTextTitle);
-        Assert.assertEquals(false, config.loggingEnabled);
-        Assert.assertEquals(false, config.enableUnhandledCrashReporting);
-        Assert.assertEquals(false, config.enableViewTracking);
-        Assert.assertEquals(false, config.autoTrackingUseShortName);
-        Assert.assertEquals(null, config.customNetworkRequestHeaders);
-        Assert.assertEquals(false, config.pushIntentAddMetadata);
-        Assert.assertEquals(false, config.enableRemoteConfigAutomaticDownload);
-        Assert.assertEquals(null, config.remoteConfigCallback);
-        Assert.assertEquals(false, config.shouldRequireConsent);
-        Assert.assertEquals(null, config.enabledFeatureNames);
-        Assert.assertEquals(false, config.httpPostForced);
-        Assert.assertEquals(false, config.temporaryDeviceIdEnabled);
-        Assert.assertEquals(null, config.crashRegexFilters);
-        Assert.assertEquals(null, config.tamperingProtectionSalt);
-        Assert.assertEquals(null, config.automaticViewSegmentation);
-        Assert.assertEquals(null, config.eventQueueSizeThreshold);
-        Assert.assertEquals(false, config.trackOrientationChange);
+        Assert.assertNull(config.starRatingCallback);
+        Assert.assertNull(config.starRatingTextDismiss);
+        Assert.assertNull(config.starRatingTextMessage);
+        Assert.assertNull(config.starRatingTextTitle);
+        Assert.assertFalse(config.loggingEnabled);
+        Assert.assertFalse(config.enableUnhandledCrashReporting);
+        Assert.assertFalse(config.enableViewTracking);
+        Assert.assertFalse(config.autoTrackingUseShortName);
+        Assert.assertNull(config.customNetworkRequestHeaders);
+        Assert.assertFalse(config.pushIntentAddMetadata);
+        Assert.assertFalse(config.enableRemoteConfigAutomaticDownload);
+        Assert.assertNull(config.remoteConfigCallback);
+        Assert.assertFalse(config.shouldRequireConsent);
+        Assert.assertNull(config.enabledFeatureNames);
+        Assert.assertFalse(config.httpPostForced);
+        Assert.assertFalse(config.temporaryDeviceIdEnabled);
+        Assert.assertNull(config.crashRegexFilters);
+        Assert.assertNull(config.tamperingProtectionSalt);
+        Assert.assertNull(config.automaticViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);
+        Assert.assertFalse(config.trackOrientationChange);
         Assert.assertFalse(config.recordAllThreadsWithCrash);
+        Assert.assertFalse(config.shouldIgnoreAppCrawlers);
+        Assert.assertNull(config.appCrawlerNames);
     }
 }
