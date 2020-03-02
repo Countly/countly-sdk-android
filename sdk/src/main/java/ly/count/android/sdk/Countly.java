@@ -106,9 +106,8 @@ public class Countly {
     ConnectionQueue connectionQueue_;
     private final ScheduledExecutorService timerService_;
     EventQueue eventQueue_;
-    private long prevSessionDurationStartTime_;
     private int activityCount_;
-    boolean disableUpdateSessionRequests_ = false;
+    boolean disableUpdateSessionRequests_ = false;//todo, move to module after 'setDisableUpdateSessionRequests' is removed
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
     Context context_;
@@ -653,7 +652,6 @@ public class Countly {
         connectionQueue_.setServerURL(null);
         connectionQueue_.setAppKey(null);
         connectionQueue_.setCountlyStore(null);
-        prevSessionDurationStartTime_ = 0;
         activityCount_ = 0;
 
         for (ModuleBase module:modules) {
@@ -691,7 +689,8 @@ public class Countly {
 
         ++activityCount_;
         if (activityCount_ == 1) {
-            onStartHelper();
+            //if we open the first activity, begin a session
+            moduleSessions.beginSessionInternal();
         }
 
         //check if there is an install referrer data
@@ -711,15 +710,6 @@ public class Countly {
         }
 
         calledAtLeastOnceOnStart = true;
-    }
-
-    /**
-     * Called when the first Activity is started. Sends a begin session event to the server
-     * and initializes application session tracking.
-     */
-    private void onStartHelper() {
-        prevSessionDurationStartTime_ = System.nanoTime();
-        connectionQueue_.beginSession();
     }
 
     /**
@@ -745,10 +735,7 @@ public class Countly {
         --activityCount_;
         if (activityCount_ == 0) {
             // Called when final Activity is stopped. Sends an end session event to the server, also sends any unsent custom events.
-            connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate());
-            prevSessionDurationStartTime_ = 0;
-
-            sendEventsIfExist();
+            moduleSessions.endSessionInternal(null);
         }
 
         CrashDetails.inBackground();
@@ -832,9 +819,9 @@ public class Countly {
         //force flush events so that they are associated correctly
         sendEventsForced();
 
-        connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), currentDeviceId.getId());
+        moduleSessions.endSessionInternal(currentDeviceId.getId());
         currentDeviceId.changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
-        connectionQueue_.beginSession();
+        moduleSessions.beginSessionInternal();
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
@@ -895,7 +882,7 @@ public class Countly {
             // we are either making a simple ID change or entering temporary mode
             // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
-            connectionQueue_.changeDeviceId(deviceId, roundedSecondsSinceLastSessionDurationUpdate());
+            connectionQueue_.changeDeviceId(deviceId, moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
             //update remote config_ values if automatic update is enabled
             remoteConfigClearValues();
@@ -1637,9 +1624,8 @@ public class Countly {
         if (isInitialized()) {
             final boolean hasActiveSession = activityCount_ > 0;
             if (hasActiveSession) {
-                if (!disableUpdateSessionRequests_) {
-                    connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
-                }
+                moduleSessions.updateSessionInternal();
+
                 if (eventQueue_.size() > 0) {
                     connectionQueue_.recordEvents(eventQueue_.events());
                 }
@@ -1647,16 +1633,6 @@ public class Countly {
 
             connectionQueue_.tick();
         }
-    }
-
-    /**
-     * Calculates the unsent session duration in seconds, rounded to the nearest int.
-     */
-    int roundedSecondsSinceLastSessionDurationUpdate() {
-        final long currentTimestampInNanoseconds = System.nanoTime();
-        final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
-        prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
     }
 
     /**
@@ -2223,7 +2199,9 @@ public class Countly {
                 //if consent was given, we need to begin the session
                 if(isBeginSessionSent){
                     //if the first timing for a beginSession call was missed, send it again
-                    onStartHelper();
+                    if(!moduleSessions.manualSessionControlEnabled){
+                        moduleSessions.beginSessionInternal();
+                    }
                 }
             }
         } else {
@@ -2632,8 +2610,8 @@ public class Countly {
     ExecutorService getTimerService() { return timerService_; }
     EventQueue getEventQueue() { return eventQueue_; }
     void setEventQueue(final EventQueue eventQueue) { eventQueue_ = eventQueue; }
-    long getPrevSessionDurationStartTime() { return prevSessionDurationStartTime_; }
-    void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
+    long getPrevSessionDurationStartTime() { return moduleSessions.prevSessionDurationStartTime_; }
+    void setPrevSessionDurationStartTime(final long prevSessionDurationStartTime) { moduleSessions.prevSessionDurationStartTime_ = prevSessionDurationStartTime; }
     int getActivityCount() { return activityCount_; }
     synchronized boolean getDisableUpdateSessionRequests() { return disableUpdateSessionRequests_; }
 }

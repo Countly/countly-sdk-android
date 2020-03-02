@@ -33,6 +33,7 @@ import java.util.HashMap;
 import static androidx.test.InstrumentationRegistry.getContext;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 import org.junit.Test;
@@ -71,7 +72,7 @@ public class CountlyTests {
         assertNotNull(mUninitedCountly.getTimerService());
         assertNull(mUninitedCountly.getEventQueue());
         assertEquals(0, mUninitedCountly.getActivityCount());
-        assertEquals(0, mUninitedCountly.getPrevSessionDurationStartTime());
+        assertNull(mUninitedCountly.moduleSessions);
         assertFalse(mUninitedCountly.getDisableUpdateSessionRequests());
         assertFalse(mUninitedCountly.isLoggingEnabled());
     }
@@ -267,7 +268,7 @@ public class CountlyTests {
         assertNotNull(mUninitedCountly.getTimerService());
         assertNull(mUninitedCountly.getEventQueue());
         assertEquals(0, mUninitedCountly.getActivityCount());
-        assertEquals(0, mUninitedCountly.getPrevSessionDurationStartTime());
+        assertNull(mUninitedCountly.moduleSessions);
     }
 
     @Test
@@ -287,6 +288,18 @@ public class CountlyTests {
         assertNotNull(mCountly.getConnectionQueue().getAppKey());
         assertNotNull(mCountly.getConnectionQueue().getContext());
 
+        assertNotEquals(0, mCountly.modules.size());
+
+        assertNotNull(mCountly.moduleSessions);
+        assertNotNull(mCountly.moduleCrash);
+        assertNotNull(mCountly.moduleEvents);
+        assertNotNull(mCountly.moduleRatings);
+        assertNotNull(mCountly.moduleViews);
+
+        for(ModuleBase module:mCountly.modules){
+            assertNotNull(module);
+        }
+
         mCountly.halt();
 
         verify(mockCountlyStore).clear();
@@ -298,7 +311,13 @@ public class CountlyTests {
         assertNotNull(mCountly.getTimerService());
         assertNull(mCountly.getEventQueue());
         assertEquals(0, mCountly.getActivityCount());
-        assertEquals(0, mCountly.getPrevSessionDurationStartTime());
+
+        assertNull(mCountly.moduleSessions);
+        assertNull(mCountly.moduleCrash);
+        assertNull(mCountly.moduleEvents);
+        assertNull(mCountly.moduleRatings);
+        assertNull(mCountly.moduleViews);
+        assertEquals(0, mCountly.modules.size());
     }
 
     @Test
@@ -369,7 +388,7 @@ public class CountlyTests {
 
         assertEquals(0, mCountly.getActivityCount());
         assertEquals(0, mCountly.getPrevSessionDurationStartTime());
-        verify(mockConnectionQueue).endSession(0);
+        verify(mockConnectionQueue).endSession(0, null);
         verify(mockConnectionQueue, times(0)).recordEvents(anyString());
     }
 
@@ -390,7 +409,7 @@ public class CountlyTests {
 
         assertEquals(0, mCountly.getActivityCount());
         assertEquals(0, mCountly.getPrevSessionDurationStartTime());
-        verify(mockConnectionQueue).endSession(0);
+        verify(mockConnectionQueue).endSession(0, null);
         verify(mockConnectionQueue).recordEvents(eventStr);
     }
 
@@ -777,19 +796,19 @@ public class CountlyTests {
     public void testRoundedSecondsSinceLastSessionDurationUpdate() {
         long prevSessionDurationStartTime = System.nanoTime() - 1000000000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
-        assertEquals(1, mCountly.roundedSecondsSinceLastSessionDurationUpdate());
+        assertEquals(1, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
         prevSessionDurationStartTime = System.nanoTime() - 2000000000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
-        assertEquals(2, mCountly.roundedSecondsSinceLastSessionDurationUpdate());
+        assertEquals(2, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
         prevSessionDurationStartTime = System.nanoTime() - 1600000000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
-        assertEquals(2, mCountly.roundedSecondsSinceLastSessionDurationUpdate());
+        assertEquals(2, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
         prevSessionDurationStartTime = System.nanoTime() - 1200000000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
-        assertEquals(1, mCountly.roundedSecondsSinceLastSessionDurationUpdate());
+        assertEquals(1, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
     }
 
     @Test
