@@ -2104,6 +2104,10 @@ public class Countly {
             Log.d(Countly.TAG, "Creating a feature group with the name: [" + groupName + "]");
         }
 
+        if(isLoggingEnabled() && !isInitialized()){
+            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
+        }
+
         groupedFeatures.put(groupName, features);
         return this;
     }
@@ -2117,6 +2121,10 @@ public class Countly {
     public synchronized Countly setConsentFeatureGroup(String groupName, boolean isConsentGiven){
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting consent for feature group named: [" + groupName + "] with value: [" + isConsentGiven + "]");
+        }
+
+        if(isLoggingEnabled() && !isInitialized()){
+            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
         }
 
         if(!groupedFeatures.containsKey(groupName)){
@@ -2139,6 +2147,10 @@ public class Countly {
      * @return Returns link to Countly for call chaining
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
+        if(isLoggingEnabled() && !isInitialized()){
+            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
+        }
+
         final boolean isInit = isInitialized();//is the SDK initialized
 
         if(!requiresConsent){
@@ -2232,6 +2244,11 @@ public class Countly {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Giving consent for features named: [" + Arrays.toString(featureNames) + "]");
         }
+
+        if(isLoggingEnabled() && !isInitialized()){
+            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
+        }
+
         setConsent(featureNames, true);
 
         return this;
@@ -2244,6 +2261,10 @@ public class Countly {
     public synchronized Countly giveConsentAll(){
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Giving consent for all features");
+        }
+
+        if(isLoggingEnabled() && !isInitialized()){
+            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
         }
 
         giveConsent(validFeatureNames);
@@ -2261,6 +2282,10 @@ public class Countly {
             Log.d(Countly.TAG, "Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
         }
 
+        if(isLoggingEnabled() && !isInitialized()){
+            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
+        }
+
         setConsent(featureNames, false);
 
         return this;
@@ -2273,6 +2298,10 @@ public class Countly {
     public synchronized Countly removeConsentAll(){
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Removing consent for all features");
+        }
+
+        if(isLoggingEnabled() && !isInitialized()){
+            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
         }
 
         removeConsent(validFeatureNames);
