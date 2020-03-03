@@ -49,9 +49,11 @@ class ModuleViews extends ModuleBase{
 
         if(segmentation != null){
             if(!ModuleEvents.checkSegmentationTypes(segmentation)){
-                //found a unsupported type, throw exception
+                //found a unsupported type, print warning
 
-                throw new IllegalStateException("Provided a unsupported type for automatic View Segmentation");
+                if (_cly.isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "You have provided a unsupported type for automatic View Segmentation");
+                }
             }
         }
 
@@ -184,6 +186,7 @@ class ModuleViews extends ModuleBase{
         reportViewDuration();
     }
 
+    @Override
     void onActivityStarted(Activity activity) {
         //automatic view tracking
         if (_cly.autoViewTracker) {

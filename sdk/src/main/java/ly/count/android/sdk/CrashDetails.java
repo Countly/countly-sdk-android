@@ -59,7 +59,7 @@ class CrashDetails {
     private static final int maxBreadcrumbSize = 1000;//maximum allowed length of a breadcrumb in characters
     private static final LinkedList<String> logs = new LinkedList<>();
     private static final int startTime = UtilsTime.currentTimestampSeconds();
-    private static Map<String,String> customSegments = null;
+    private static Map<String,Object> customSegments = null;
     private static boolean inBackground = true;
     private static long totalMemory = 0;
 
@@ -167,8 +167,28 @@ class CrashDetails {
      * Adds developer provided custom segments for crash,
      * like versions of dependency libraries.
      */
-    static void setCustomSegments(Map<String,String> segments) {
+    static void setCustomSegments(Map<String,Object> segments) {
         customSegments = new HashMap<>();
+
+        for (Map.Entry<String, Object> pair : segments.entrySet()) {
+            String key = pair.getKey();
+            Object value = pair.getValue();
+
+            if (value instanceof Integer) {
+                customSegments.put(key, (Integer) value);
+            } else if (value instanceof Double) {
+                customSegments.put(key, (Double) value);
+            } else if (value instanceof String) {
+                customSegments.put(key, (String) value);
+            } else if (value instanceof Boolean) {
+                customSegments.put(key, (Boolean) value);
+            } else {
+                if(Countly.sharedInstance().isLoggingEnabled()){
+                    Log.w(Countly.TAG, "Unsupported data type added as custom crash segment");
+                }
+            }
+        }
+
         customSegments.putAll(segments);
     }
 

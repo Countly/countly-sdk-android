@@ -37,6 +37,8 @@ class ModuleCrash extends ModuleBase{
 
         recordAllThreads = config.recordAllThreadsWithCrash;
 
+        _cly.setCustomCrashSegmentsInternal(config.customCrashSegment);
+
         crashesInterface = new Crashes();
     }
 
@@ -315,28 +317,6 @@ class ModuleCrash extends ModuleBase{
             }
 
             return crashFilterTestInternal(regexFilters, sampleCrash);
-        }
-
-        /**
-         * Sets custom segments to be reported with crash reports
-         * In custom segments you can provide any string key values to segments crashes by
-         * @param segments Map&lt;String, String&gt; key segments and their values
-         * @return Returns link to Countly for call chaining
-         */
-        public synchronized Countly setCustomCrashSegments(Map<String, String> segments) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Crashes] Setting custom crash segments");
-            }
-
-            if(!_cly.getConsent(Countly.CountlyFeatureNames.crashes)){
-                return _cly;
-            }
-
-            if(segments != null) {
-                CrashDetails.setCustomSegments(segments);
-            }
-
-            return _cly;
         }
 
         /**

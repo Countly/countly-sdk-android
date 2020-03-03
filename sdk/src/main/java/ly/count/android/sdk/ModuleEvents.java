@@ -259,6 +259,33 @@ class ModuleEvents extends ModuleBase{
     }
 
     public class Events{
+        /**
+         * Record a event with a custom timestamp.
+         * Use this in case you want to record events that you have tracked
+         * and stored internally
+         * @param key event key
+         * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
+         * @param timestamp unix timestamp in miliseconds of when the event occurred
+         */
+        public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, long timestamp) {
+            if(timestamp == 0){
+                throw new IllegalStateException("Provided timestamp has to be greater that zero");
+            }
+
+            recordPastEvent(key, segmentation, 1, 0, 0, timestamp);
+        }
+
+        /**
+         * Record a event with a custom timestamp.
+         * Use this in case you want to record events that you have tracked
+         * and stored internally
+         * @param key event key
+         * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
+         * @param count how many of these events have occured, default value is "1"
+         * @param sum set sum if needed, default value is "0"
+         * @param dur duration of the event, default value is "0"
+         * @param timestamp unix timestamp in miliseconds of when the event occurred
+         */
         public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
             if(timestamp == 0){
                 throw new IllegalStateException("Provided timestamp has to be greater that zero");

@@ -17,8 +17,8 @@ public class TestUtils {
         return sArr;
     }
 
-    public static Map<String, String> createMapString(int count){
-        Map<String, String> mRes = new HashMap<>(count);
+    public static Map<String, Object> createMapString(int count){
+        Map<String, Object> mRes = new HashMap<>(count);
         Random rnd = new Random();
 
         for (int a = 0 ; a < count ; a++){

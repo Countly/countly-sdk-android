@@ -70,6 +70,7 @@ public class CountlyConfigTests {
         vs.put("ss", "fdf");
         vs.put("s22s", 2323);
         vs.put("s44s", 33434.33d);
+        vs.put("dds44s", true);
 
         Class[] act = new Class[]{Activity.class};
 
@@ -77,6 +78,12 @@ public class CountlyConfigTests {
 
         String[] publicKeyCerts = new String[] { "ddd", "111", "ffd" };
         String[] certificateCerts = new String[] { "ddsd", "vvcv", "mbnb" };
+
+        Map<String, Object> crashSegments = new HashMap<>();
+        crashSegments.put("s2s", "fdf");
+        crashSegments.put("s224s", 2323);
+        crashSegments.put("s434s", 33434.33d);
+        crashSegments.put("ddsa44s", true);
 
 
         assertDefaultValues(config, true);
@@ -119,6 +126,7 @@ public class CountlyConfigTests {
         config.enableCertificatePinning(certificateCerts);
         config.enablePublicKeyPinning(publicKeyCerts);
         config.setEnableAttribution(true);
+        config.setCustomCrashSegment(crashSegments);
 
 
 
@@ -160,6 +168,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
         Assert.assertTrue(config.enableAttribution);
+        Assert.assertEquals(crashSegments, config.customCrashSegment);
     }
 
     @Test
@@ -216,5 +225,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.publicKeyPinningCertificates);
         Assert.assertNull(config.certificatePinningCertificates);
         Assert.assertNull(config.enableAttribution);
+        Assert.assertNull(config.customCrashSegment);
     }
 }

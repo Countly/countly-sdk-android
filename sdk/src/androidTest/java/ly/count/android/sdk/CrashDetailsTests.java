@@ -98,7 +98,7 @@ public class CrashDetailsTests {
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
-        Map<String, String> cSeg = TestUtils.createMapString(5);
+        Map<String, Object> cSeg = TestUtils.createMapString(5);
 
         CrashDetails.setCustomSegments(cSeg);
 
@@ -107,9 +107,9 @@ public class CrashDetailsTests {
 
         Assert.assertTrue(cData2.contains("_custom"));
 
-        for(Map.Entry<String, String> entry : cSeg.entrySet()) {
+        for(Map.Entry<String, Object> entry : cSeg.entrySet()) {
             String key = entry.getKey();
-            String value = entry.getValue();
+            String value = (String) entry.getValue();
 
             Assert.assertTrue(cData2.contains(key));
             Assert.assertTrue(cData2.contains(value));

@@ -118,6 +118,8 @@ public class CountlyConfig {
 
     protected Boolean enableAttribution = null;
 
+    protected Map<String, Object> customCrashSegment = null;
+
     public CountlyConfig() {
     }
 
@@ -359,6 +361,11 @@ public class CountlyConfig {
 
     public CountlyConfig enableManualSessionControl(){
         manualSessionControlEnabled = true;
+        return this;
+    }
+
+    public CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
+        customCrashSegment = crashSegment;
         return this;
     }
 

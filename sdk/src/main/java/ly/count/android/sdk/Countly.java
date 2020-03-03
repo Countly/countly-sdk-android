@@ -1296,10 +1296,43 @@ public class Countly {
      * In custom segments you can provide any string key values to segments crashes by
      * @param segments Map&lt;String, String&gt; key segments and their values
      * @return Returns link to Countly for call chaining
-     * @deprecated use crashes().setCustomCrashSegments
+     * @deprecated set this through CountlyConfig during init
      */
     public synchronized Countly setCustomCrashSegments(Map<String, String> segments) {
-        return crashes().setCustomCrashSegments(segments);
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling setCustomCrashSegments");
+        }
+
+        if(segments == null) {
+            return this;
+        }
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.putAll(segments);
+
+        setCustomCrashSegmentsInternal(segm);
+
+        return this;
+    }
+
+    /**
+     * Sets custom segments to be reported with crash reports
+     * In custom segments you can provide any string key values to segments crashes by
+     * @param segments Map&lt;String, Object&gt; key segments and their values
+     * todo move to module after 'setCustomCrashSegments' is removed
+     */
+    public synchronized void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleCrash] Calling setCustomCrashSegmentsInternal");
+        }
+
+        if(!getConsent(Countly.CountlyFeatureNames.crashes)){
+            return;
+        }
+
+        if(segments != null) {
+            CrashDetails.setCustomSegments(segments);
+        }
     }
 
     /**
