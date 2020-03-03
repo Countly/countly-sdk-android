@@ -185,7 +185,10 @@ class DeviceInfo {
     static String getAppVersion(final Context context) {
         String result = Countly.DEFAULT_APP_VERSION;
         try {
-            result = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+            String tmpVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+            if(tmpVersion != null){
+                result = tmpVersion;
+            }
         }
         catch (PackageManager.NameNotFoundException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {

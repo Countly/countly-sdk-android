@@ -16,7 +16,7 @@ class ModuleViews extends ModuleBase{
 
     Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
 
-    protected Map<String, Object> automaticViewSegmentation = null;//automatic view segmentation
+    protected Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
     //track orientation changes
     boolean trackOrientationChanges = false;
@@ -47,6 +47,8 @@ class ModuleViews extends ModuleBase{
             Log.d(Countly.TAG, "Calling setAutomaticViewSegmentationInternal");
         }
 
+        automaticViewSegmentation.clear();
+
         if(segmentation != null){
             if(!ModuleEvents.checkSegmentationTypes(segmentation)){
                 //found a unsupported type, print warning
@@ -55,9 +57,8 @@ class ModuleViews extends ModuleBase{
                     Log.w(Countly.TAG, "You have provided a unsupported type for automatic View Segmentation");
                 }
             }
+            automaticViewSegmentation.putAll(segmentation);
         }
-
-        automaticViewSegmentation = segmentation;
     }
 
     /**
@@ -82,11 +83,15 @@ class ModuleViews extends ModuleBase{
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (lastView != null && lastViewStart > 0) {
-            HashMap<String, String> segments = new HashMap<>();
+            HashMap<String, Object> segments = new HashMap<>();;
+            if(automaticViewSegmentation != null) {
+                segments.putAll(automaticViewSegmentation);
+            }
+
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
-            _cly.recordEvent(VIEW_EVENT_KEY, segments, 1);
+            _cly.events().recordEvent(VIEW_EVENT_KEY, segments, 1);
             lastView = null;
             lastViewStart = 0;
         }
@@ -111,18 +116,18 @@ class ModuleViews extends ModuleBase{
      * or track view that is not automatically tracked
      * like fragment, Message box or transparent Activity
      * @param viewName String - name of the view
-     * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
+     * @param customViewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
      * @return Returns link to Countly for call chaining
      */
-    synchronized Countly recordViewInternal(String viewName, Map<String, Object> viewSegmentation) {
+    synchronized Countly recordViewInternal(String viewName, Map<String, Object> customViewSegmentation) {
         if (!_cly.isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
         }
 
         if (_cly.isLoggingEnabled()) {
             int segmCount = 0;
-            if (viewSegmentation != null) {
-                segmCount = viewSegmentation.size();
+            if (customViewSegmentation != null) {
+                segmCount = customViewSegmentation.size();
             }
             Log.d(Countly.TAG, "Recording view with name: [" + viewName + "], previous view:[" + lastView + "] custom view segment count:[" + segmCount + "]");
         }
@@ -131,8 +136,9 @@ class ModuleViews extends ModuleBase{
         lastView = viewName;
         lastViewStart = UtilsTime.currentTimestampSeconds();
 
-        if(viewSegmentation == null){
-            viewSegmentation = new HashMap<>();
+        Map<String, Object> viewSegmentation = new HashMap<>();
+        if(customViewSegmentation != null){
+            viewSegmentation.putAll(customViewSegmentation);
         }
 
         viewSegmentation.put("name", viewName);

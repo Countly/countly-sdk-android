@@ -52,6 +52,11 @@ class ModuleEvents extends ModuleBase{
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.v(Countly.TAG, "[checkSegmentationTypes] found DOUBLE with key:[" + key + "], value:[" + value + "]");
                 }
+            } else if(value instanceof Boolean) {
+                //expected
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.v(Countly.TAG, "[checkSegmentationTypes] found Boolean with key:[" + key + "], value:[" + value + "]");
+                }
             } else if(value instanceof String) {
                 //expected
                 if (Countly.sharedInstance().isLoggingEnabled()) {
