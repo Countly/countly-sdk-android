@@ -182,7 +182,10 @@ class ModuleViews extends ModuleBase{
     @Override
     void onConfigurationChanged(Configuration newConfig){
         if(trackOrientationChanges){
-            updateOrientation(newConfig.orientation);
+            Integer orient = getOrientationFromConfiguration(newConfig);
+            if(orient != null){
+                updateOrientation(orient);
+            }
         }
     }
 
@@ -217,10 +220,41 @@ class ModuleViews extends ModuleBase{
 
         //orientation tracking
         if (trackOrientationChanges) {
-            Resources resources = activity.getResources();
-            if (resources != null) {
-                updateOrientation(resources.getConfiguration().orientation);
+            Integer orient = getOrientationFromActivity(activity);
+            if(orient != null) {
+                updateOrientation(orient);
             }
+        }
+    }
+
+    /**
+     * Needed for mocking test result
+     * @param conf
+     * @return
+     */
+    Integer getOrientationFromConfiguration(Configuration conf){
+        if(conf == null){
+            return null;
+        }
+
+        return conf.orientation;
+    }
+
+    /**
+     * Needed for mocking test result
+     * @param act
+     * @return
+     */
+    Integer getOrientationFromActivity(Activity act){
+        if(act == null) {
+            return null;
+        }
+
+        Resources resources = act.getResources();
+        if (resources != null) {
+            return resources.getConfiguration().orientation;
+        } else {
+            return null;
         }
     }
 
