@@ -2,6 +2,8 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.view.KeyEvent;
+import android.view.View;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
@@ -85,6 +87,52 @@ public class ModuleViewsTests {
             segmS.put("name", act.getClass().getSimpleName());
         } else {
             segmS.put("name", act.getClass().getName());
+        }
+
+        verify(evQ).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+    }
+
+    @Test
+    public void onActivityStartedViewTrackingLongNamesException(){
+        activityStartedViewTrackingException(false);
+    }
+
+    @Test
+    public void onActivityStartedViewTrackingShortNamesException(){
+        activityStartedViewTrackingException(true);
+    }
+
+    class Activity2 extends Activity {}
+
+    void activityStartedViewTrackingException(boolean shortNames){
+        Activity act1 = mock(Activity.class);
+        Activity act2 = mock(Activity2.class);
+
+        Countly mCountly = new Countly();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames).setAutoTrackingExceptions(new Class[]{act1.getClass()});
+        mCountly.init(config);
+        EventQueue evQ = mock(EventQueue.class);
+        mCountly.setEventQueue(evQ);
+
+        mCountly.moduleViews.onActivityStarted(act1);
+
+        verify(evQ, never()).recordEvent(anyString(), any(Map.class), any(Map.class), any(Map.class), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
+
+        mCountly.moduleViews.onActivityStarted(act2);
+
+        final Map<String, String> segmS = new HashMap<>(4);
+        final Map<String, Integer> segmI = new HashMap<>();
+        final Map<String, Double> segmD = new HashMap<>();
+        final Map<String, Boolean> segmB = new HashMap<>();
+
+        segmS.put("segment", "Android");
+        segmS.put("start", "1");
+        segmS.put("visit", "1");
+
+        if(shortNames) {
+            segmS.put("name", act2.getClass().getSimpleName());
+        } else {
+            segmS.put("name", act2.getClass().getName());
         }
 
         verify(evQ).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
@@ -258,23 +306,163 @@ public class ModuleViewsTests {
         segmS.put("dur", dur);
         segmS.put("segment", "Android");
         segmS.put("name", act.getClass().getSimpleName());
-        segmS.put("aa", "11");
-        segmS.put("aagfg", "1133");
-
-        segmI.put("1", 123);
-        segmD.put("2", 234.0d);
-        segmB.put("3", true);
 
         verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
     }
 
     @Test
-    public void recordViewNoSegm(){
+    public void recordViewNoSegm() throws InterruptedException {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
         EventQueue evQ = mock(EventQueue.class);
         mCountly.setEventQueue(evQ);
 
-        //mCountly.views().recordView()
+        String[] viewNames = new String[] {"DSD", "32", "DSD"};
+
+        final Map<String, String> segmS = new HashMap<>(4);
+        final Map<String, Integer> segmI = new HashMap<>();
+        final Map<String, Double> segmD = new HashMap<>();
+        final Map<String, Boolean> segmB = new HashMap<>();
+
+        segmS.put("segment", "Android");
+        segmS.put("start", "1");
+        segmS.put("visit", "1");
+        segmS.put("name", viewNames[0]);
+
+        mCountly.views().recordView(viewNames[0]);
+
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        Thread.sleep(1000);
+
+        mCountly.views().recordView(viewNames[1]);
+        segmS.clear();
+        segmS.put("dur", "1");
+        segmS.put("segment", "Android");
+        segmS.put("name", viewNames[0]);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+
+        segmS.clear();
+        segmS.put("segment", "Android");
+        segmS.put("visit", "1");
+        segmS.put("name", viewNames[1]);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+
+        Thread.sleep(1000);
+        mCountly.views().recordView(viewNames[2]);
+        segmS.clear();
+        segmS.put("dur", "1");
+        segmS.put("segment", "Android");
+        segmS.put("name", viewNames[1]);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+
+        segmS.clear();
+        segmS.put("segment", "Android");
+        segmS.put("visit", "1");
+        segmS.put("name", viewNames[2]);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+    }
+
+    @Test
+    public void recordViewWithSegm() throws InterruptedException {
+        Countly mCountly = new Countly();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true);
+
+        Map<String, Object> segms = new HashMap<>();
+        segms.put("aa", "11");
+        segms.put("aagfg", "1133");
+        segms.put("1", 123);
+        segms.put("2", 234.0d);
+        segms.put("3", true);
+
+//{"name", "segment", "visit", "start", "bounce", "exit", "view", "domain", "dur"};
+        Map<String, Object> cSegm1 = new HashMap<>();
+        Map<String, Object> cSegm2 = new HashMap<>();
+        cSegm2.put("name", "33");
+        cSegm2.put("segment", "33");
+        cSegm2.put("visit", "33");
+        cSegm2.put("start", "33");
+        cSegm2.put("donker", "mag");
+        cSegm2.put("big", 1337);
+        cSegm2.put("candy", 954.33d);
+        cSegm2.put("calling", false);
+
+        Map<String, Object> cSegm3 = new HashMap<>();
+        cSegm3.put("bounce", "33");
+        cSegm3.put("exit", "33");
+        cSegm3.put("view", "33");
+        cSegm3.put("domain", "33");
+        cSegm3.put("dur", "33");
+        cSegm3.put("doddnker", "m123ag");
+        cSegm3.put("biffg", 132137);
+        cSegm3.put("cannndy", 9534.33d);
+        cSegm3.put("calaaling", true);
+
+        config.setAutomaticViewSegmentation(segms);
+        mCountly.init(config);
+        EventQueue evQ = mock(EventQueue.class);
+        mCountly.setEventQueue(evQ);
+
+        String[] viewNames = new String[] {"DSD", "32", "DSD"};
+
+        final Map<String, String> segmS = new HashMap<>(4);
+        final Map<String, Integer> segmI = new HashMap<>();
+        final Map<String, Double> segmD = new HashMap<>();
+        final Map<String, Boolean> segmB = new HashMap<>();
+
+        mCountly.views().recordView(viewNames[0], cSegm1);
+
+        segmS.put("segment", "Android");
+        segmS.put("start", "1");
+        segmS.put("visit", "1");
+        segmS.put("name", viewNames[0]);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        Thread.sleep(1000);
+
+        mCountly.views().recordView(viewNames[1], cSegm2);
+        segmS.clear();
+        segmI.clear();
+        segmD.clear();
+        segmB.clear();
+        segmS.put("dur", "1");
+        segmS.put("segment", "Android");
+        segmS.put("name", viewNames[0]);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+
+        segmS.clear();
+        segmI.clear();
+        segmD.clear();
+        segmB.clear();
+        segmS.put("segment", "Android");
+        segmS.put("visit", "1");
+        segmS.put("name", viewNames[1]);
+        segmS.put("donker", "mag");
+        segmI.put("big", 1337);
+        segmD.put("candy", 954.33d);
+        segmB.put("calling", false);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+
+        Thread.sleep(1000);
+        mCountly.views().recordView(viewNames[2], cSegm3);
+        segmS.clear();
+        segmI.clear();
+        segmD.clear();
+        segmB.clear();
+        segmS.put("dur", "1");
+        segmS.put("segment", "Android");
+        segmS.put("name", viewNames[1]);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+
+        segmS.clear();
+        segmI.clear();
+        segmD.clear();
+        segmB.clear();
+        segmS.put("segment", "Android");
+        segmS.put("visit", "1");
+        segmS.put("name", viewNames[2]);
+        segmS.put("doddnker", "m123ag");
+        segmI.put("biffg", 132137);
+        segmD.put("cannndy", 9534.33d);
+        segmB.put("calaaling", true);
+        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
     }
 }

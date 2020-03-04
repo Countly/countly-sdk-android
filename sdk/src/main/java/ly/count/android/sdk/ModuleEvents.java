@@ -7,6 +7,7 @@ import java.util.Map;
 
 class ModuleEvents extends ModuleBase{
     protected static final Map<String, Event> timedEvents = new HashMap<>();
+    static final String[] reservedSegmentationKeys = new String[] {"name", "segment", "visit", "start", "bounce", "exit", "view", "domain", "dur"};
 
     //interface for SDK users
     final Events eventsInterface;
@@ -260,7 +261,7 @@ class ModuleEvents extends ModuleBase{
 
     @Override
     void halt(){
-
+        timedEvents.clear();
     }
 
     public class Events{
@@ -335,6 +336,10 @@ class ModuleEvents extends ModuleBase{
         public synchronized boolean endEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
             if (!_cly.isInitialized()) {
                 throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+            }
+
+            if(segmentation != null){
+                Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
             }
 
             return endEventInternal(key, segmentation, count, sum);
@@ -438,6 +443,10 @@ class ModuleEvents extends ModuleBase{
 
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Events] Calling recordEvent: [" + key + "]");
+            }
+
+            if(segmentation != null){
+                Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
             }
 
             recordEventInternal(key, segmentation, count, sum, dur, null);

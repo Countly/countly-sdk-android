@@ -57,6 +57,9 @@ class ModuleViews extends ModuleBase{
                     Log.w(Countly.TAG, "You have provided a unsupported type for automatic View Segmentation");
                 }
             }
+
+            Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
+
             automaticViewSegmentation.putAll(segmentation);
         }
     }
@@ -83,15 +86,12 @@ class ModuleViews extends ModuleBase{
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (lastView != null && lastViewStart > 0) {
-            HashMap<String, Object> segments = new HashMap<>();;
-            if(automaticViewSegmentation != null) {
-                segments.putAll(automaticViewSegmentation);
-            }
+            HashMap<String, Object> segments = new HashMap<>();
 
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
-            _cly.events().recordEvent(VIEW_EVENT_KEY, segments, 1);
+            _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
             lastView = null;
             lastViewStart = 0;
         }
@@ -138,6 +138,7 @@ class ModuleViews extends ModuleBase{
 
         Map<String, Object> viewSegmentation = new HashMap<>();
         if(customViewSegmentation != null){
+            Utils.removeKeysFromMap(customViewSegmentation, ModuleEvents.reservedSegmentationKeys);
             viewSegmentation.putAll(customViewSegmentation);
         }
 

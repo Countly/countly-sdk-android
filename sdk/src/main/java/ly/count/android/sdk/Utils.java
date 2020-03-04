@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 
 public class Utils {
     /**
@@ -122,5 +123,17 @@ public class Utils {
         }
 
         return sbRes.toString();
+    }
+
+    public static Map<String, Object> removeKeysFromMap(Map<String,Object> data, String[] keys) {
+        if(data == null || keys == null) {
+            return data;
+        }
+
+        for(String key : keys){
+            data.remove(key);
+        }
+
+        return data;
     }
 }
