@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -105,6 +106,7 @@ public class Countly {
 
     ConnectionQueue connectionQueue_;
     private final ScheduledExecutorService timerService_;
+    private ScheduledFuture<?> timerFuture = null;
     EventQueue eventQueue_;
     private int activityCount_;
     boolean disableUpdateSessionRequests_ = false;//todo, move to module after 'setDisableUpdateSessionRequests' is removed
@@ -216,14 +218,30 @@ public class Countly {
         connectionQueue_ = new ConnectionQueue();
         Countly.userData = new UserData(connectionQueue_);
         timerService_ = Executors.newSingleThreadScheduledExecutor();
-        timerService_.scheduleWithFixedDelay(new Runnable() {
+        startTimerService(timerService_, timerFuture, TIMER_DELAY_IN_SECONDS);
+
+        initConsent();
+    }
+
+    private void startTimerService(ScheduledExecutorService service, ScheduledFuture<?> previousTimer, long timerDelay) {
+        if(previousTimer != null && !previousTimer.isCancelled()){
+            previousTimer.cancel(false);
+        }
+
+        //minimum delay of 1 second
+        //maximum delay if 10 minutes
+        if(timerDelay < 1){
+            timerDelay = 1;
+        } else if(timerDelay > 600) {
+            timerDelay = 600;
+        }
+
+        timerFuture = service.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
                 onTimer();
             }
-        }, TIMER_DELAY_IN_SECONDS, TIMER_DELAY_IN_SECONDS, TimeUnit.SECONDS);
-
-        initConsent();
+        }, timerDelay, timerDelay, TimeUnit.SECONDS);
     }
 
 
@@ -413,6 +431,11 @@ public class Countly {
             }
 
             config_ = config;
+
+            if(config.sessionUpdateTimerDelay != null) {
+                //if we need to change the timer delay, do that first
+                startTimerService(timerService_, timerFuture, config.sessionUpdateTimerDelay);
+            }
 
             final CountlyStore countlyStore;
             if(config.countlyStore != null){
@@ -688,8 +711,11 @@ public class Countly {
         }
 
         ++activityCount_;
-        if (activityCount_ == 1) {
-            //if we open the first activity, begin a session
+        if (activityCount_ == 1 && !moduleSessions.manualSessionControlEnabled) {
+            //if we open the first activity
+            //and we are not using manual session control,
+            //begin a session
+
             moduleSessions.beginSessionInternal();
         }
 
@@ -733,8 +759,10 @@ public class Countly {
         }
 
         --activityCount_;
-        if (activityCount_ == 0) {
-            // Called when final Activity is stopped. Sends an end session event to the server, also sends any unsent custom events.
+        if (activityCount_ == 0 && !moduleSessions.manualSessionControlEnabled) {
+            // if we don't use manual session control
+            // Called when final Activity is stopped.
+            // Sends an end session event to the server, also sends any unsent custom events.
             moduleSessions.endSessionInternal(null);
         }
 
@@ -1658,7 +1686,9 @@ public class Countly {
         if (isInitialized()) {
             final boolean hasActiveSession = activityCount_ > 0;
             if (hasActiveSession) {
-                moduleSessions.updateSessionInternal();
+                if(!moduleSessions.manualSessionControlEnabled) {
+                    moduleSessions.updateSessionInternal();
+                }
 
                 if (eventQueue_.size() > 0) {
                     connectionQueue_.recordEvents(eventQueue_.events());

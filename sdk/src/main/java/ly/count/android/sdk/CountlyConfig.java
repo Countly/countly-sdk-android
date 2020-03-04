@@ -120,6 +120,8 @@ public class CountlyConfig {
 
     protected Map<String, Object> customCrashSegment = null;
 
+    protected Integer sessionUpdateTimerDelay = null;
+
     public CountlyConfig() {
     }
 
@@ -371,6 +373,18 @@ public class CountlyConfig {
 
     protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
         checkForNativeCrashDumps = checkForDumps;
+        return this;
+    }
+
+    /**
+     * Sets the interval for the automatic update calls
+     * min value 1 (1 second),
+     * max value 600 (10 minutes)
+     * @param delay in seconds
+     * @return
+     */
+    public CountlyConfig setUpdateSessionTimerDelay(int delay){
+        sessionUpdateTimerDelay = delay;
         return this;
     }
 

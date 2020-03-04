@@ -127,6 +127,7 @@ public class CountlyConfigTests {
         config.enablePublicKeyPinning(publicKeyCerts);
         config.setEnableAttribution(true);
         config.setCustomCrashSegment(crashSegments);
+        config.setUpdateSessionTimerDelay(137);
 
 
 
@@ -169,6 +170,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
         Assert.assertTrue(config.enableAttribution);
         Assert.assertEquals(crashSegments, config.customCrashSegment);
+        Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
     }
 
     @Test
@@ -226,5 +228,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.certificatePinningCertificates);
         Assert.assertNull(config.enableAttribution);
         Assert.assertNull(config.customCrashSegment);
+        Assert.assertNull(config.sessionUpdateTimerDelay);
     }
 }
