@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class ModuleEvents extends ModuleBase{
-    protected static final Map<String, Event> timedEvents = new HashMap<>();
+    static final Map<String, Event> timedEvents = new HashMap<>();
     static final String[] reservedSegmentationKeys = new String[] {"name", "segment", "visit", "start", "bounce", "exit", "view", "domain", "dur"};
 
     //interface for SDK users
