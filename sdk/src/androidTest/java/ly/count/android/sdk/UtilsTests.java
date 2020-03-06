@@ -9,7 +9,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RunWith(AndroidJUnit4.class)
 public class UtilsTests {
@@ -59,5 +61,45 @@ public class UtilsTests {
         Assert.assertTrue(Utils.API(15));
 
         Assert.assertFalse(Utils.API(32));
+    }
+
+    @Test
+    public void removeKeysFromMapNullBoth(){
+        Map<String, Object> res = Utils.removeKeysFromMap(null, null);
+        Assert.assertNull(res);
+    }
+
+    @Test
+    public void removeKeysFromMapNullKeys(){
+        Map<String, Object> res = Utils.removeKeysFromMap(null, new String[]{"1", "2"});
+        Assert.assertNull(res);
+    }
+
+    @Test
+    public void removeKeysFromMapNullData(){
+        Map<String, Object> map = new HashMap<>();
+        map.put("1", "ff");
+        map.put("2", "ee");
+        map.put("3", "kk");
+        map.put("4", "fer");
+
+        Map<String, Object> res = Utils.removeKeysFromMap(map, null);
+        Assert.assertEquals(map, res);
+    }
+
+    @Test
+    public void removeKeysFromMap(){
+        Map<String, Object> map = new HashMap<>();
+        map.put("1", "ff");
+        map.put("2", "ee");
+        map.put("3", "kk");
+        map.put("4", "fer");
+
+        String[] keys = new String[] {"1", "3"};
+
+        Map<String, Object> res = Utils.removeKeysFromMap(map, keys);
+        Assert.assertEquals(2, res.size());
+        Assert.assertTrue(res.containsKey("2"));
+        Assert.assertTrue(res.containsKey("4"));
     }
 }

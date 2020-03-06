@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.content.Context;
 
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class CountlyConfig {
 
@@ -94,8 +93,6 @@ public class CountlyConfig {
 
     protected boolean temporaryDeviceIdEnabled = false;
 
-    protected Pattern[] crashRegexFilters = null;
-
     protected String tamperingProtectionSalt = null;
 
     protected Integer eventQueueSizeThreshold = null;
@@ -121,6 +118,8 @@ public class CountlyConfig {
     protected Map<String, Object> customCrashSegment = null;
 
     protected Integer sessionUpdateTimerDelay = null;
+
+    protected ModuleCrash.CrashFilterCallback crashFilterCallback;
 
     public CountlyConfig() {
     }
@@ -311,8 +310,8 @@ public class CountlyConfig {
         return this;
     }
 
-    public CountlyConfig setCrashFilters(Pattern[] regexFilters) {
-        crashRegexFilters = regexFilters;
+    public CountlyConfig setCrashFilterCallback(ModuleCrash.CrashFilterCallback callback) {
+        crashFilterCallback = callback;
         return this;
     }
 

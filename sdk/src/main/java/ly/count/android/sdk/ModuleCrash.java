@@ -19,12 +19,19 @@ class ModuleCrash extends ModuleBase{
     private static final String countlyNativeCrashFolderName = "CrashDumps";
 
     //crash filtering
-    Pattern[] crashRegexFilters = null;
+    ModuleCrash.CrashFilterCallback crashFilterCallback;
 
     boolean recordAllThreads = false;
 
     //interface for SDK users
     final Crashes crashesInterface;
+
+    /**
+     * callback for filtering crashes
+     */
+    public interface CrashFilterCallback {
+        boolean filterCrash(String crash);
+    }
 
     ModuleCrash(Countly cly, CountlyConfig config){
         super(cly);
@@ -33,7 +40,7 @@ class ModuleCrash extends ModuleBase{
             Log.d(Countly.TAG, "[ModuleCrash] Initialising");
         }
 
-        setCrashFiltersInternal(config.crashRegexFilters);
+        setCrashFilterCallback(config.crashFilterCallback);
 
         recordAllThreads = config.recordAllThreadsWithCrash;
 
@@ -99,65 +106,27 @@ class ModuleCrash extends ModuleBase{
         _cly.connectionQueue_.sendCrashReport(dumpString, false, true);
     }
 
-    /**
-     * A way to validate created filters
-     * @param regexFilters filters you want to validate
-     * @param sampleCrash sample crashes you are worrying about
-     * @return
-     */
-    boolean[] crashFilterTestInternal(Pattern[] regexFilters, String[] sampleCrash){
-        boolean[] res = new boolean[sampleCrash.length];
-
-        for(int a = 0 ; a < res.length ; a++){
-            res[a] = crashFilterCheck(regexFilters, sampleCrash[a]);
-        }
-
-        return res;
+    void setCrashFilterCallback(ModuleCrash.CrashFilterCallback callback) {
+        crashFilterCallback = callback;
     }
 
     /**
      * Call to check if crash matches one of the filters
      * If it does, the crash should be ignored
-     * @param regexFilters
      * @param crash
      * @return true if a match was found
      */
-    boolean crashFilterCheck(Pattern[] regexFilters, String crash){
+    boolean crashFilterCheck(String crash){
         if (_cly.isLoggingEnabled()) {
-            int filterCount = 0;
-            if(regexFilters != null){
-                filterCount = regexFilters.length;
-            }
-            Log.d(Countly.TAG, "[ModuleCrash] Calling crashFilterCheck, filter count:[" + filterCount + "]");
+            Log.d(Countly.TAG, "[ModuleCrash] Calling crashFilterCheck");
         }
 
-        if(regexFilters == null){
-            //no filter set, nothing to compare against
+        if(crashFilterCallback == null){
+            //no filter callback set, nothing to compare against
             return false;
         }
 
-        for (Pattern regexFilter : regexFilters) {
-            Matcher m = regexFilter.matcher(crash);
-            if (m.matches()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    void setCrashFiltersInternal(Pattern[] regexFilters){
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleCrash] Calling setCrashFiltersInternal");
-
-            if(regexFilters != null){
-                Log.d(Countly.TAG, "[ModuleCrash] Setting the following crash regex filters:");
-                for (int a = 0; a < regexFilters.length; a++) {
-                    Log.d(Countly.TAG, (a + 1) + ") [" + regexFilters[a].toString() + "]");
-                }
-            }
-        }
-
-        crashRegexFilters = regexFilters;
+        return crashFilterCallback.filterCrash(crash);
     }
 
     void addAllThreadInformationToCrash(PrintWriter pw){
@@ -185,7 +154,7 @@ class ModuleCrash extends ModuleBase{
      * @param itIsHandled If the exception is handled or not (fatal)
      * @return Returns link to Countly for call chaining
      */
-    synchronized Countly recordException(Throwable exception, boolean itIsHandled) {
+    synchronized Countly recordExceptionInternal(Throwable exception, boolean itIsHandled) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
         }
@@ -216,7 +185,7 @@ class ModuleCrash extends ModuleBase{
 
         String exceptionString = sw.toString();
 
-        if(crashFilterCheck(crashRegexFilters, exceptionString)){
+        if(crashFilterCheck(exceptionString)){
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
             }
@@ -283,42 +252,10 @@ class ModuleCrash extends ModuleBase{
 
     @Override
     void halt(){
-        crashRegexFilters = null;
+
     }
 
     public class Crashes {
-        /**
-         * Call to set regex filters that will be used for crash filtering
-         * Set null to disable it
-         */
-        public Countly setCrashFilters(Pattern[] regexFilters){
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Crashes] Calling setCrashFilters");
-            }
-
-            if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before setCrashFilters");
-            }
-
-            setCrashFiltersInternal(regexFilters);
-
-            return _cly;
-        }
-
-        /**
-         * A way to validate created filters
-         * @param regexFilters filters you want to validate
-         * @param sampleCrash sample crashes you are worrying about
-         * @return
-         */
-        public boolean[] crashFilterTest(Pattern[] regexFilters, String[] sampleCrash){
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Crashes] Calling crashFilterTest");
-            }
-
-            return crashFilterTestInternal(regexFilters, sampleCrash);
-        }
-
         /**
          * Add crash breadcrumb like log record to the log that will be send together with crash report
          * @param record String a bread crumb for the crash report
@@ -350,7 +287,7 @@ class ModuleCrash extends ModuleBase{
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordHandledException(Exception exception) {
-            return recordException(exception, true);
+            return recordExceptionInternal(exception, true);
         }
 
         /**
@@ -359,7 +296,7 @@ class ModuleCrash extends ModuleBase{
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordHandledException(Throwable exception) {
-            return recordException(exception, true);
+            return recordExceptionInternal(exception, true);
         }
 
         /**
@@ -368,7 +305,7 @@ class ModuleCrash extends ModuleBase{
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordUnhandledException(Exception exception) {
-            return recordException(exception, false);
+            return recordExceptionInternal(exception, false);
         }
 
         /**
@@ -377,7 +314,7 @@ class ModuleCrash extends ModuleBase{
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordUnhandledException(Throwable exception) {
-            return recordException(exception, false);
+            return recordExceptionInternal(exception, false);
         }
     }
 }

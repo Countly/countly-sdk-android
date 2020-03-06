@@ -64,7 +64,12 @@ public class CountlyConfigTests {
 
         String[] fn = new String[]{"ds dsd", "434f", "ngfhg"};
 
-        Pattern[] rf = new Pattern[]{Pattern.compile("d dsd"), Pattern.compile("454gf")};
+        ModuleCrash.CrashFilterCallback callback = new ModuleCrash.CrashFilterCallback() {
+            @Override
+            public boolean filterCrash(String crash) {
+                return false;
+            }
+        };
 
         Map<String, Object> vs = new HashMap<>();
         vs.put("ss", "fdf");
@@ -112,7 +117,7 @@ public class CountlyConfigTests {
         config.setConsentEnabled(fn);
         config.setHttpPostForced(true);
         config.enableTemporaryDeviceIdMode();
-        config.setCrashFilters(rf);
+        config.setCrashFilterCallback(callback);
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
         config.setAutoTrackingExceptions(act);
@@ -155,7 +160,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
         Assert.assertTrue(config.temporaryDeviceIdEnabled);
-        Assert.assertArrayEquals(rf, config.crashRegexFilters);
+        Assert.assertEquals(callback, config.crashFilterCallback);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.automaticViewSegmentation);
         Assert.assertArrayEquals(act, config.autoTrackingExceptions);
@@ -214,7 +219,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);
         Assert.assertFalse(config.temporaryDeviceIdEnabled);
-        Assert.assertNull(config.crashRegexFilters);
+        Assert.assertNull(config.crashFilterCallback);
         Assert.assertNull(config.tamperingProtectionSalt);
         Assert.assertNull(config.automaticViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);

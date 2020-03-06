@@ -31,7 +31,6 @@ import android.util.Log;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1381,7 +1380,7 @@ public class Countly {
      * @deprecated use crashes().recordHandledException
      */
     public synchronized Countly recordHandledException(Exception exception) {
-        return moduleCrash.recordException(exception, true);
+        return moduleCrash.recordExceptionInternal(exception, true);
     }
 
     /**
@@ -1391,7 +1390,7 @@ public class Countly {
      * @deprecated use crashes().recordHandledException
      */
     public synchronized Countly recordHandledException(Throwable exception) {
-        return moduleCrash.recordException(exception, true);
+        return moduleCrash.recordExceptionInternal(exception, true);
     }
 
     /**
@@ -1401,7 +1400,7 @@ public class Countly {
      * @deprecated use crashes().recordUnhandledException
      */
     public synchronized Countly recordUnhandledException(Exception exception) {
-        return moduleCrash.recordException(exception, false);
+        return moduleCrash.recordExceptionInternal(exception, false);
     }
 
     /**
@@ -1411,7 +1410,7 @@ public class Countly {
      * @deprecated use crashes().recordUnhandledException
      */
     public synchronized Countly recordUnhandledException(Throwable exception) {
-        return moduleCrash.recordException(exception, false);
+        return moduleCrash.recordExceptionInternal(exception, false);
     }
 
     /**
@@ -1444,7 +1443,7 @@ public class Countly {
                     String exceptionString = sw.toString();
 
                     //check if it passes the crash filter
-                    if(!moduleCrash.crashFilterCheck(moduleCrash.crashRegexFilters, exceptionString)) {
+                    if(!moduleCrash.crashFilterCheck(exceptionString)) {
                         Countly.sharedInstance().connectionQueue_.sendCrashReport(exceptionString, false, false);
                     }
                 }
