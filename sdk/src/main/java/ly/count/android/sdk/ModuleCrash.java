@@ -19,19 +19,12 @@ class ModuleCrash extends ModuleBase{
     private static final String countlyNativeCrashFolderName = "CrashDumps";
 
     //crash filtering
-    ModuleCrash.CrashFilterCallback crashFilterCallback;
+    CrashFilterCallback crashFilterCallback;
 
     boolean recordAllThreads = false;
 
     //interface for SDK users
     final Crashes crashesInterface;
-
-    /**
-     * callback for filtering crashes
-     */
-    public interface CrashFilterCallback {
-        boolean filterCrash(String crash);
-    }
 
     ModuleCrash(Countly cly, CountlyConfig config){
         super(cly);
@@ -106,7 +99,7 @@ class ModuleCrash extends ModuleBase{
         _cly.connectionQueue_.sendCrashReport(dumpString, false, true);
     }
 
-    void setCrashFilterCallback(ModuleCrash.CrashFilterCallback callback) {
+    void setCrashFilterCallback(CrashFilterCallback callback) {
         crashFilterCallback = callback;
     }
 

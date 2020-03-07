@@ -119,7 +119,7 @@ public class CountlyConfig {
 
     protected Integer sessionUpdateTimerDelay = null;
 
-    protected ModuleCrash.CrashFilterCallback crashFilterCallback;
+    protected CrashFilterCallback crashFilterCallback;
 
     public CountlyConfig() {
     }
@@ -310,7 +310,7 @@ public class CountlyConfig {
         return this;
     }
 
-    public CountlyConfig setCrashFilterCallback(ModuleCrash.CrashFilterCallback callback) {
+    public CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
         crashFilterCallback = callback;
         return this;
     }

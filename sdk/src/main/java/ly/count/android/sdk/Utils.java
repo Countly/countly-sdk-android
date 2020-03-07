@@ -94,7 +94,7 @@ public class Utils {
         }
     }
 
-    public static String inputStreamToString(InputStream stream){
+     static String inputStreamToString(InputStream stream){
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
 
         StringBuilder sbRes = new StringBuilder();
@@ -125,7 +125,7 @@ public class Utils {
         return sbRes.toString();
     }
 
-    public static Map<String, Object> removeKeysFromMap(Map<String,Object> data, String[] keys) {
+    static Map<String, Object> removeKeysFromMap(Map<String,Object> data, String[] keys) {
         if(data == null || keys == null) {
             return data;
         }

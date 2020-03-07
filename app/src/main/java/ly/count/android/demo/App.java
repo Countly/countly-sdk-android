@@ -91,13 +91,18 @@ public class App extends Application {
                         }
                     }
                 })
-                .setCrashFilters(new Pattern[]{Pattern.compile(".*secret.*", Pattern.DOTALL)})
                 .setRemoteConfigAutomaticDownload(true, null)
                 .setParameterTamperingProtectionSalt("SampleSalt")
                 .setAutomaticViewSegmentation(automaticViewSegmentation)
                 .setAutoTrackingExceptions(new Class[]{ActivityExampleCustomEvents.class})
                 .setTrackOrientationChanges(true)
                 .setRecordAllThreadsWithCrash()
+                .setCrashFilterCallback(new CrashFilterCallback() {
+                    @Override
+                    public boolean filterCrash(String crash) {
+                        return crash.contains("crash");
+                    }
+                })
                 ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

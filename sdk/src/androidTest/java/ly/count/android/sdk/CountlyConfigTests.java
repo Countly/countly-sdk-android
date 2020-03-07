@@ -64,7 +64,7 @@ public class CountlyConfigTests {
 
         String[] fn = new String[]{"ds dsd", "434f", "ngfhg"};
 
-        ModuleCrash.CrashFilterCallback callback = new ModuleCrash.CrashFilterCallback() {
+        CrashFilterCallback callback = new CrashFilterCallback() {
             @Override
             public boolean filterCrash(String crash) {
                 return false;
