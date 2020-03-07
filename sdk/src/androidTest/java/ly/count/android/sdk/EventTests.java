@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -378,7 +377,7 @@ public class EventTests {
         HashMap<String, Boolean> segmentsBoolean = new HashMap<>();
         HashMap<String, Object> segmentsReminder = new HashMap<>();
 
-        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
+        Utils.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsInt.size(), 3);
@@ -421,7 +420,7 @@ public class EventTests {
         HashMap<String, Boolean> segmentsBoolean = new HashMap<>();
         HashMap<String, Object> segmentsReminder = new HashMap<>();
 
-        ModuleEvents.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
+        Utils.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsInt.size(), 1);

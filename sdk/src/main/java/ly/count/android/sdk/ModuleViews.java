@@ -50,7 +50,7 @@ class ModuleViews extends ModuleBase{
         automaticViewSegmentation.clear();
 
         if(segmentation != null){
-            if(!ModuleEvents.checkSegmentationTypes(segmentation)){
+            if(Utils.removeUnsupportedDataTypes(segmentation)){
                 //found a unsupported type, print warning
 
                 if (_cly.isLoggingEnabled()) {
@@ -91,7 +91,7 @@ class ModuleViews extends ModuleBase{
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
-            _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
+            _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, true);
             lastView = null;
             lastViewStart = 0;
         }
@@ -138,6 +138,7 @@ class ModuleViews extends ModuleBase{
 
         Map<String, Object> viewSegmentation = new HashMap<>();
         if(customViewSegmentation != null){
+            Utils.removeUnsupportedDataTypes(customViewSegmentation);
             Utils.removeKeysFromMap(customViewSegmentation, ModuleEvents.reservedSegmentationKeys);
             viewSegmentation.putAll(customViewSegmentation);
         }
@@ -150,7 +151,7 @@ class ModuleViews extends ModuleBase{
             viewSegmentation.put("start", "1");
         }
 
-        _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null);
+        _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, true);
 
         return _cly;
     }

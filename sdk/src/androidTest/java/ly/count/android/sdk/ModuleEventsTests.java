@@ -8,20 +8,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockingDetails;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.booleanThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,46 +49,17 @@ public class ModuleEventsTests {
     }
 
     @Test
-    public void checkSegmentationTypes() {
-        Map<String, Object> segm1 = new HashMap<>();
-
-        Assert.assertTrue(ModuleEvents.checkSegmentationTypes(segm1));
-
-        segm1.put("aa", "dd");
-        segm1.put("aa1", "dda");
-        Assert.assertTrue(ModuleEvents.checkSegmentationTypes(segm1));
-
-        segm1.put("1", 1234);
-        Assert.assertTrue(ModuleEvents.checkSegmentationTypes(segm1));
-
-        segm1.put("2", 1234.55d);
-        Assert.assertTrue(ModuleEvents.checkSegmentationTypes(segm1));
-
-        segm1.put("3", true);
-        Assert.assertTrue(ModuleEvents.checkSegmentationTypes(segm1));
-
-        segm1.put("4", 45.4f);
-        Assert.assertFalse(ModuleEvents.checkSegmentationTypes(segm1));
-
-        segm1.put("4", new Object());
-        Assert.assertFalse(ModuleEvents.checkSegmentationTypes(segm1));
-
-        segm1.put("4", new int[]{1, 2});
-        Assert.assertFalse(ModuleEvents.checkSegmentationTypes(segm1));
-    }
-
-    @Test
     public void fillInSegmentation(){
-        Map<String, Object> segm1 = new HashMap<>();
+        Map<String, Object> segm = new HashMap<>();
 
-        segm1.put("aa", "dd");
-        segm1.put("aa1", "dda");
-        segm1.put("1", 1234);
-        segm1.put("2", 1234.55d);
-        segm1.put("3", true);
-        segm1.put("4", 45.4f);
-        segm1.put("41", new Object());
-        segm1.put("42", new int[]{1, 2});
+        segm.put("aa", "dd");
+        segm.put("aa1", "dda");
+        segm.put("1", 1234);
+        segm.put("2", 1234.55d);
+        segm.put("3", true);
+        segm.put("4", 45.4f);
+        segm.put("41", new Object());
+        segm.put("42", new int[]{1, 2});
 
         Map<String, String> mS = new HashMap<>();
         Map<String, Integer> mI = new HashMap<>();
@@ -101,22 +67,22 @@ public class ModuleEventsTests {
         Map<String, Boolean> mB = new HashMap<>();
         Map<String, Object> mR = new HashMap<>();
 
-        ModuleEvents.fillInSegmentation(segm1, mS, mI, mD, mB, mR);
+        Utils.fillInSegmentation(segm, mS, mI, mD, mB, mR);
 
         Assert.assertEquals(2, mS.size());
         Assert.assertEquals(1, mI.size());
         Assert.assertEquals(1, mD.size());
         Assert.assertEquals(1, mB.size());
         Assert.assertEquals(3, mR.size());
-        Assert.assertEquals(segm1.get("aa"), mS.get("aa"));
-        Assert.assertEquals(segm1.get("aa1"), mS.get("aa1"));
+        Assert.assertEquals(segm.get("aa"), mS.get("aa"));
+        Assert.assertEquals(segm.get("aa1"), mS.get("aa1"));
 
-        Assert.assertEquals(segm1.get("1"), mI.get("1"));
-        Assert.assertEquals(segm1.get("2"), mD.get("2"));
-        Assert.assertEquals(segm1.get("3"), mB.get("3"));
-        Assert.assertEquals(segm1.get("4"), mR.get("4"));
-        Assert.assertEquals(segm1.get("41"), mR.get("41"));
-        Assert.assertEquals(segm1.get("42"), mR.get("42"));
+        Assert.assertEquals(segm.get("1"), mI.get("1"));
+        Assert.assertEquals(segm.get("2"), mD.get("2"));
+        Assert.assertEquals(segm.get("3"), mB.get("3"));
+        Assert.assertEquals(segm.get("4"), mR.get("4"));
+        Assert.assertEquals(segm.get("41"), mR.get("41"));
+        Assert.assertEquals(segm.get("42"), mR.get("42"));
     }
 
     @Test
@@ -385,5 +351,47 @@ public class ModuleEventsTests {
 
         Double captD = argD.getValue();
         Assert.assertEquals(1, captD, 0.1d);
+    }
+
+    @Test
+    public void recordEventInternalProcessedTest() {
+        Map<String, Object> segm1 = new HashMap<>();
+
+        final Map<String, String> segmS = new HashMap<>();
+        final Map<String, Integer> segmI = new HashMap<>();
+        final Map<String, Double> segmD = new HashMap<>();
+        final Map<String, Boolean> segmB = new HashMap<>();
+
+        for(String it : ModuleEvents.reservedSegmentationKeys) {
+            segm1.put(it, it);
+        }
+
+        segm1.put("4", 45.4f);
+        segm1.put("41", new Object());
+        segm1.put("42", new int[] {1, 2});
+        segm1.put("asd", "123");
+        segm1.put("1", 1234);
+        segm1.put("2", 1234.55d);
+        segm1.put("3", true);
+
+        segmS.put("asd", "123");
+        segmI.put("1", 1234);
+        segmD.put("2", 1234.55d);
+        segmB.put("3", true);
+
+        Map<String, Object> segm2 = new HashMap<>(segm1);
+        mEvents.recordEventInternal(eventKey, segm2, 123, 321.22d, 342.32d, null, false);
+
+        verify(eventQueue).recordEvent(eventKey, segmS, segmI, segmD, segmB, 123, 321.22d, 342.32d, null);
+
+        segm2.clear();
+        segm2.putAll(segm1);
+
+        for(String it : ModuleEvents.reservedSegmentationKeys) {
+            segmS.put(it, it);
+        }
+
+        mEvents.recordEventInternal(eventKey, segm2, 123, 321.22d, 342.32d, null, true);
+        verify(eventQueue).recordEvent(eventKey, segmS, segmI, segmD, segmB, 123, 321.22d, 342.32d, null);
     }
 }

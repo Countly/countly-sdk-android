@@ -22,94 +22,17 @@ class ModuleEvents extends ModuleBase{
         eventsInterface = new Events();
     }
 
-    protected static boolean checkSegmentationTypes(Map<String, Object> segmentation){
-        if (segmentation == null) {
-            throw new IllegalStateException("[checkSegmentationTypes] provided segmentations can't be null!");
-        }
-
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[checkSegmentationTypes] Calling checkSegmentationTypes, size:[" + segmentation.size() + "]");
-        }
-
-        for (Map.Entry<String, Object> pair : segmentation.entrySet()) {
-            String key = pair.getKey();
-
-            if(key == null || key.isEmpty()){
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[checkSegmentationTypes], provided segment with either 'null' or empty string key");
-                }
-                throw new IllegalStateException("provided segment with either 'null' or empty string key");
-            }
-
-            Object value = pair.getValue();
-
-            if(value instanceof Integer){
-                //expected
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[checkSegmentationTypes] found INTEGER with key:[" + key + "], value:[" + value + "]");
-                }
-            } else if(value instanceof Double) {
-                //expected
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[checkSegmentationTypes] found DOUBLE with key:[" + key + "], value:[" + value + "]");
-                }
-            } else if(value instanceof Boolean) {
-                //expected
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[checkSegmentationTypes] found Boolean with key:[" + key + "], value:[" + value + "]");
-                }
-            } else if(value instanceof String) {
-                //expected
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[checkSegmentationTypes] found STRING with key:[" + key + "], value:[" + value + "]");
-                }
-            } else {
-                //should not get here, it means that the user provided a unsupported type
-
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[checkSegmentationTypes] provided unsupported segmentation type:[" + value.getClass().getCanonicalName() + "] with key:[" + key + "], returning [false]");
-                }
-
-                return false;
-            }
-        }
-
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[checkSegmentationTypes] returning [true]");
-        }
-        return true;
-    }
-
     /**
-     * Used for quickly sorting segments into their respective data type
-     * @param allSegm
-     * @param segmStr
-     * @param segmInt
-     * @param segmDouble
-     * @param segmBoolean
+     *
+     * @param key
+     * @param segmentation
+     * @param count
+     * @param sum
+     * @param dur
+     * @param instant
+     * @param processedSegmentation if segmentation has been processed and reserved keywords should not be removed
      */
-    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Boolean> segmBoolean,Map<String, Object> reminder) {
-        for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
-            String key = pair.getKey();
-            Object value = pair.getValue();
-
-            if (value instanceof Integer) {
-                segmInt.put(key, (Integer) value);
-            } else if (value instanceof Double) {
-                segmDouble.put(key, (Double) value);
-            } else if (value instanceof String) {
-                segmStr.put(key, (String) value);
-            } else if (value instanceof Boolean) {
-                segmBoolean.put(key, (Boolean) value);
-            } else {
-                if(reminder != null) {
-                    reminder.put(key, value);
-                }
-            }
-        }
-    }
-
-    synchronized void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
+    synchronized void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, boolean processedSegmentation) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
         }
@@ -138,7 +61,11 @@ class ModuleEvents extends ModuleBase{
             segmentationBoolean = new HashMap<>();
             Map<String, Object> segmentationReminder = new HashMap<>();
 
-            fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
+            Utils.removeUnsupportedDataTypes(segmentation);
+            if(!processedSegmentation) {
+                Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
+            }
+            Utils.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
 
             if (segmentationReminder.size() > 0) {
                 if (_cly.isLoggingEnabled()) {
@@ -161,19 +88,6 @@ class ModuleEvents extends ModuleBase{
                 }
                 if (segmentationString.get(k) == null || segmentationString.get(k).length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
-                }
-            }
-
-            Map[] maps = new Map[] {segmentationInt, segmentationDouble, segmentationBoolean};
-
-            for(int a = 0 ; a < maps.length ; a++){
-                for (Object k : maps[a].keySet()) {
-                    if (k == null || ((String)k).length() == 0) {
-                        throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
-                    }
-                    if (maps[a].get(k) == null) {
-                        throw new IllegalArgumentException("Countly event segmentation value cannot be null");
-                    }
                 }
             }
         }
@@ -246,7 +160,7 @@ class ModuleEvents extends ModuleBase{
             double duration = (currentTimestamp - event.timestamp) / 1000.0;
             UtilsTime.Instant instant = new UtilsTime.Instant(event.timestamp, event.hour, event.dow);
 
-            recordEventInternal(key, segmentation, count, sum, duration, instant);
+            recordEventInternal(key, segmentation, count, sum, duration, instant, false);
             return true;
         } else {
             return false;
@@ -298,7 +212,7 @@ class ModuleEvents extends ModuleBase{
             }
 
             UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
-            recordEventInternal(key, segmentation, count, sum, dur, instant);
+            recordEventInternal(key, segmentation, count, sum, dur, instant, false);
         }
 
         /**
@@ -445,11 +359,7 @@ class ModuleEvents extends ModuleBase{
                 Log.d(Countly.TAG, "[Events] Calling recordEvent: [" + key + "]");
             }
 
-            if(segmentation != null){
-                Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
-            }
-
-            recordEventInternal(key, segmentation, count, sum, dur, null);
+            recordEventInternal(key, segmentation, count, sum, dur, null, false);
         }
     }
 }

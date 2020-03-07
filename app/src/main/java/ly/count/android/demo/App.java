@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
+import ly.count.android.sdk.CrashFilterCallback;
 import ly.count.android.sdk.DeviceId;
 import ly.count.android.sdk.RemoteConfig;
 import ly.count.android.sdk.UtilsTime;

@@ -1359,6 +1359,7 @@ public class Countly {
 
         if(segments != null) {
             Utils.removeKeysFromMap(segments, ModuleEvents.reservedSegmentationKeys);
+            Utils.removeUnsupportedDataTypes(segments);
             CrashDetails.setCustomSegments(segments);
         }
     }

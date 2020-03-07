@@ -195,11 +195,15 @@ class CrashDetails {
     /**
      * Get custom segments json string
      */
-    static JSONObject getCustomSegments() {
+    static JSONObject getCustomSegmentsJson() {
         if(customSegments != null && !customSegments.isEmpty())
             return new JSONObject(customSegments);
         else
             return null;
+    }
+
+    static Map<String, Object> getCustomSegmentsInternal() {
+        return customSegments;
     }
 
 
@@ -446,7 +450,7 @@ class CrashDetails {
         }
 
         try {
-            json.put("_custom", getCustomSegments());
+            json.put("_custom", getCustomSegmentsJson());
         } catch (JSONException e) {
             //no custom segments
         }
