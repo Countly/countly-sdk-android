@@ -120,6 +120,7 @@ public class Countly {
     ModuleViews moduleViews = null;
     ModuleRatings moduleRatings = null;
     ModuleSessions moduleSessions = null;
+    ModuleRemoteConfig moduleRemoteConfig = null;
 
     //user data access
     public static UserData userData;
@@ -137,10 +138,6 @@ public class Countly {
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
     private final List<String> appCrawlerNames = new ArrayList<>(Arrays.asList("Calypso AppCrawler"));//List against which device name is checked to determine if device is app crawler
 
-    //star rating
-    @SuppressWarnings("FieldCanBeLocal")
-    private CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
-
     //push related
     private boolean addMetadataToPushIntents = false;// a flag that indicates if metadata should be added to push notification intents
 
@@ -151,11 +148,6 @@ public class Countly {
     protected boolean isAttributionEnabled = true;
 
     protected boolean isBeginSessionSent = false;
-
-    //remote config_
-    //if set to true, it will automatically download remote configs on module startup
-    boolean remoteConfigAutomaticUpdateEnabled = false;
-    RemoteConfig.RemoteConfigCallback remoteConfigInitCallback = null;
 
     //custom request header fields
     Map<String, String> requestHeaderCustomValues;
@@ -442,6 +434,7 @@ public class Countly {
                 countlyStore = config.countlyStore;
             } else {
                 countlyStore = new CountlyStore(config.context);
+                config.setCountlyStore(countlyStore);
             }
 
             //initialise modules
@@ -450,6 +443,7 @@ public class Countly {
             moduleViews = new ModuleViews(this, config);
             moduleRatings = new ModuleRatings(this, config);
             moduleSessions = new ModuleSessions(this, config);
+            moduleRemoteConfig = new ModuleRemoteConfig(this, config);
 
             modules.clear();
             modules.add(moduleCrash);
@@ -457,6 +451,7 @@ public class Countly {
             modules.add(moduleViews);
             modules.add(moduleRatings);
             modules.add(moduleSessions);
+            modules.add(moduleRemoteConfig);
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -484,10 +479,6 @@ public class Countly {
             if(config.enableAttribution != null){
                 setEnableAttribution(config.enableAttribution);
             }
-
-            //set the star rating values
-            starRatingCallback_ = config.starRatingCallback;
-            CountlyStarRating.setStarRatingInitConfig(countlyStore, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
 
             //app crawler check
             shouldIgnoreCrawlers = config.shouldIgnoreAppCrawlers;
@@ -590,15 +581,15 @@ public class Countly {
 
             //do star rating related things
             if(getConsent(CountlyFeatureNames.starRating)) {
-                CountlyStarRating.registerAppSession(config.context, countlyStore, starRatingCallback_);
+                CountlyStarRating.registerAppSession(config.context, countlyStore, moduleRatings.starRatingCallback_);
             }
 
             //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-            if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven() && !doingTemporaryIdMode){
+            if(moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven() && !doingTemporaryIdMode){
                 if (isLoggingEnabled()) {
                     Log.d(Countly.TAG, "[Init] Automatically updating remote config values");
                 }
-                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
+                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, moduleRemoteConfig.remoteConfigInitCallback);
             }
         } else {
             //if this is not the first time we are calling init
@@ -686,6 +677,7 @@ public class Countly {
         moduleEvents = null;
         moduleRatings = null;
         moduleSessions = null;
+        moduleRemoteConfig = null;
     }
 
     /**
@@ -852,7 +844,7 @@ public class Countly {
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
-        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+        if (moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
             RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
 
@@ -913,7 +905,7 @@ public class Countly {
 
             //update remote config_ values if automatic update is enabled
             remoteConfigClearValues();
-            if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+            if (moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
                 //request should be delayed, because of the delayed server merge
                 RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true, null);
             }
@@ -954,7 +946,7 @@ public class Countly {
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
-        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+        if (moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
             RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
 
@@ -2464,8 +2456,8 @@ public class Countly {
             Log.d(Countly.TAG, "Setting if remote config_ Automatic download will be enabled, " + enabled);
         }
 
-        remoteConfigAutomaticUpdateEnabled = enabled;
-        remoteConfigInitCallback = callback;
+        moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled = enabled;
+        moduleRemoteConfig.remoteConfigInitCallback = callback;
         return this;
     }
 

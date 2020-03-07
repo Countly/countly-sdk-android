@@ -8,10 +8,16 @@ import java.util.Map;
 class ModuleRatings extends ModuleBase {
     static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
 
+    //star rating
+    CountlyStarRating.RatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
+
     final Ratings ratingsInterface;
 
     ModuleRatings(Countly cly, CountlyConfig config) {
         super(cly);
+
+        starRatingCallback_ = config.starRatingCallback;
+        CountlyStarRating.setStarRatingInitConfig(config.countlyStore, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
 
         ratingsInterface = new Ratings();
     }
