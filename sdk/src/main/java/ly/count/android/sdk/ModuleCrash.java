@@ -218,22 +218,11 @@ class ModuleCrash extends ModuleBase{
                 Log.d(Countly.TAG, "Running crashTest 3");
             }
 
-            Object[] o = null;
-            //noinspection InfiniteLoopStatement
-            while (true) { o = new Object[] { o }; }
-
-
-        }else if (crashNumber == 4){
-
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 4");
-            }
-
             throw new RuntimeException("This is a crash");
         }
         else{
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 5");
+                Log.d(Countly.TAG, "Running crashTest 4");
             }
 
             String test = null;

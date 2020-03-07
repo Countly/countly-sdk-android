@@ -59,7 +59,7 @@ class CrashDetails {
     private static final int maxBreadcrumbSize = 1000;//maximum allowed length of a breadcrumb in characters
     private static final LinkedList<String> logs = new LinkedList<>();
     private static final int startTime = UtilsTime.currentTimestampSeconds();
-    private static Map<String,Object> customSegments = null;
+    static Map<String,Object> customSegments = null;
     private static boolean inBackground = true;
     private static long totalMemory = 0;
 
@@ -201,11 +201,6 @@ class CrashDetails {
         else
             return null;
     }
-
-    static Map<String, Object> getCustomSegmentsInternal() {
-        return customSegments;
-    }
-
 
     /**
      * Returns the current device manufacturer.

@@ -47,7 +47,23 @@ public class ModuleCrashTests {
 
     @Test
     public void setCrashFilters() {
+        CrashFilterCallback callback = new CrashFilterCallback() {
+            @Override
+            public boolean filterCrash(String crash) {
+                if(crash.contains("Secret")){
+                    return true;
+                }
+                return false;
+            }
+        };
 
+        Countly countly = new Countly();
+        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        cConfig.setCrashFilterCallback(callback);
+
+        countly.init(cConfig);
+
+        Assert.assertEquals(callback, countly.moduleCrash.crashFilterCallback);
     }
 
     @Test
@@ -92,10 +108,12 @@ public class ModuleCrashTests {
 
     @Test
     public void setCustomCrashSegment() {
+        CrashDetails.customSegments = null;
         Countly countly = new Countly();
         CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
 
-        //Assert.assertEquals(CrashDetails.setCustomSegments(););
+        Map<String, Object> segmIn = CrashDetails.customSegments;
+        Assert.assertTrue(segmIn == null || segmIn.size() == 0);
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
@@ -107,11 +125,22 @@ public class ModuleCrashTests {
         segm.put("41", new Object());
         segm.put("42", new int[]{1, 2});
 
+        for(String it : ModuleEvents.reservedSegmentationKeys) {
+            segm.put(it, it);
+        }
+
         cConfig.setCustomCrashSegment(segm);
 
         countly.init(cConfig);
 
+        Map<String, Object> segm2 = new HashMap<>();
+        segm2.put("aa", "dd");
+        segm2.put("aa1", "dda");
+        segm2.put("1", 1234);
+        segm2.put("2", 1234.55d);
+        segm2.put("3", true);
 
+        Assert.assertEquals(segm2, CrashDetails.customSegments);
     }
 
     @Test
@@ -183,7 +212,23 @@ public class ModuleCrashTests {
                 "\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
     }
 
-    //setCrashFiltersInternal
+    @Test(expected = StackOverflowError.class)
+    public void crashTest_1() {
+        mCountly.moduleCrash.crashTest(1);
+    }
 
-    //creash test 1-5
+    @Test(expected = ArithmeticException.class)
+    public void crashTest_2() {
+        mCountly.moduleCrash.crashTest(2);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void crashTest_4() {
+        mCountly.moduleCrash.crashTest(3);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void crashTest_5() {
+        mCountly.moduleCrash.crashTest(4);
+    }
 }
