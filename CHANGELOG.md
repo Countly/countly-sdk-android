@@ -12,8 +12,10 @@
   * Adding way to change the session update timer interval
   * Moving crash, event, view, rating related calls to a seperate modules
   * Deprecating functions that are being put into modules
-  * Removing "addCrashLog" call
-  * Removing "logException" call
+  * Removing depracated "addCrashLog" call
+  * Removing depracated "logException" call
+  * Removing depracated "setCustomUserData" call
+  * Removing depracated "setUserData" call
   * Migrated to AndroidX
   * Improved internal time management which fixes inconsistencies that could arrise on day changes
 
