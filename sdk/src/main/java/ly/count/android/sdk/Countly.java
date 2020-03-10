@@ -129,6 +129,10 @@ public class Countly {
     boolean autoViewTracker = false;//todo, move to module after "setViewTracking" is removed
     boolean automaticTrackingShouldUseShortName = false;//flag for using short names | todo, move to module after setter is removed
 
+    //if set to true, it will automatically download remote configs on module startup
+    boolean remoteConfigAutomaticUpdateEnabled = false;//todo, move to module after setter is removed
+    RemoteConfigCallback remoteConfigInitCallback = null;//todo, move to module after setter is removed
+
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
 
@@ -599,11 +603,11 @@ public class Countly {
             }
 
             //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-            if(moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven() && !doingTemporaryIdMode){
+            if(remoteConfigAutomaticUpdateEnabled && anyConsentGiven() && !doingTemporaryIdMode){
                 if (isLoggingEnabled()) {
                     Log.d(Countly.TAG, "[Init] Automatically updating remote config values");
                 }
-                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, moduleRemoteConfig.remoteConfigInitCallback);
+                moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
             }
         } else {
             //if this is not the first time we are calling init
@@ -858,8 +862,8 @@ public class Countly {
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
-        if (moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
-            RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
+        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+            moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
 
         //clear automated star rating session values because now we have a new user
@@ -919,9 +923,9 @@ public class Countly {
 
             //update remote config_ values if automatic update is enabled
             remoteConfigClearValues();
-            if (moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+            if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
                 //request should be delayed, because of the delayed server merge
-                RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true, null);
+                moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true, null);
             }
         }
     }
@@ -960,8 +964,8 @@ public class Countly {
 
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
-        if (moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
-            RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
+        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
+            moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
         }
 
         doStoredRequests();
@@ -2382,78 +2386,109 @@ public class Countly {
      * If enable, will automatically download newest remote config_ values on init.
      * @deprecated use CountlyConfig during init to set this
      * @param enabled set true for enabling it
-     * @param callback callback called after the update was done
+     * @param feedbackCallback callback called after the update was done
      * @return
      */
-    public synchronized Countly setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback){
+    public synchronized Countly setRemoteConfigAutomaticDownload(boolean enabled, final RemoteConfig.RemoteConfigCallback feedbackCallback){
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting if remote config_ Automatic download will be enabled, " + enabled);
         }
 
-        moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled = enabled;
-        moduleRemoteConfig.remoteConfigInitCallback = callback;
+        remoteConfigAutomaticUpdateEnabled = enabled;
+
+        if(feedbackCallback != null) {
+            remoteConfigInitCallback = new RemoteConfigCallback() {
+                @Override
+                public void callback(String error) {
+                    feedbackCallback.callback(error);
+                }
+            };
+        }
         return this;
     }
 
     /**
      * Manually update remote config_ values
-     * @param callback
+     * @param providedCallback
+     * @deprecated use 'Countly.sharedInstance().remoteConfig().update(callback)'
      */
-    public void remoteConfigUpdate(RemoteConfig.RemoteConfigCallback callback){
+    public void remoteConfigUpdate(final RemoteConfig.RemoteConfigCallback providedCallback) {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Manually calling to updateRemoteConfig");
         }
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigUpdate");
         }
-        if(!anyConsentGiven()){ return; }
-        RemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, callback);
+
+        if(providedCallback == null) {
+            remoteConfig().update(null);
+        } else {
+            remoteConfig().update(new RemoteConfigCallback() {
+                @Override
+                public void callback(String error) {
+                    providedCallback.callback(error);
+                }
+            });
+        }
     }
 
     /**
      * Manual remote config_ update call. Will only update the keys provided.
      * @param keysToInclude
-     * @param callback
+     * @param providedCallback
+     * @deprecated use 'Countly.sharedInstance().remoteConfig().updateForKeysOnly(keys, callback)'
      */
-    public void updateRemoteConfigForKeysOnly(String[] keysToInclude, RemoteConfig.RemoteConfigCallback callback){
+    public void updateRemoteConfigForKeysOnly(String[] keysToInclude, final RemoteConfig.RemoteConfigCallback providedCallback){
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Manually calling to updateRemoteConfig with include keys");
         }
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before updateRemoteConfigForKeysOnly");
         }
-        if(!anyConsentGiven()){
-            if(callback != null){ callback.callback("No consent given"); }
-            return;
+
+        if(providedCallback == null) {
+            remoteConfig().updateForKeysOnly(keysToInclude, null);
+        } else {
+            remoteConfig().updateForKeysOnly(keysToInclude, new RemoteConfigCallback() {
+                @Override
+                public void callback(String error) {
+                    providedCallback.callback(error);
+                }
+            });
         }
-        if (keysToInclude == null && isLoggingEnabled()) { Log.w(Countly.TAG,"updateRemoteConfigExceptKeys passed 'keys to include' array is null"); }
-        RemoteConfig.updateRemoteConfigValues(context_, keysToInclude, null, connectionQueue_, false, callback);
     }
 
     /**
      * Manual remote config_ update call. Will update all keys except the ones provided
      * @param keysToExclude
-     * @param callback
+     * @param providedCallback
+     * @deprecated use 'Countly.sharedInstance().remoteConfig().updateExceptKeys(keys, callback)'
      */
-    public void updateRemoteConfigExceptKeys(String[] keysToExclude, RemoteConfig.RemoteConfigCallback callback) {
+    public void updateRemoteConfigExceptKeys(String[] keysToExclude, final RemoteConfig.RemoteConfigCallback providedCallback) {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Manually calling to updateRemoteConfig with exclude keys");
         }
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before updateRemoteConfigExceptKeys");
         }
-        if(!anyConsentGiven()){
-            if(callback != null){ callback.callback("No consent given"); }
-            return;
+
+        if(providedCallback == null) {
+            remoteConfig().updateExceptKeys(keysToExclude, null);
+        } else {
+            remoteConfig().updateExceptKeys(keysToExclude, new RemoteConfigCallback() {
+                @Override
+                public void callback(String error) {
+                    providedCallback.callback(error);
+                }
+            });
         }
-        if (keysToExclude == null && isLoggingEnabled()) { Log.w(Countly.TAG,"updateRemoteConfigExceptKeys passed 'keys to ignore' array is null"); }
-        RemoteConfig.updateRemoteConfigValues(context_, null, keysToExclude, connectionQueue_, false, callback);
     }
 
     /**
      * Get the stored value for the provided remote config_ key
      * @param key
      * @return
+     * @deprecated use 'Countly.sharedInstance().remoteConfig().getValueForKey(key)'
      */
     public Object getRemoteConfigValueForKey(String key){
         if (isLoggingEnabled()) {
@@ -2478,7 +2513,7 @@ public class Countly {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigClearValues");
         }
 
-        RemoteConfig.clearValueStore(context_);
+        remoteConfig().clearStoredValues();
     }
 
     /**
@@ -2594,6 +2629,13 @@ public class Countly {
         return moduleSessions.sessionInterface;
     }
 
+    public ModuleRemoteConfig.RemoteConfig remoteConfig() {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing remote config");
+        }
+
+        return moduleRemoteConfig.remoteConfigInterface;
+    }
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }
     void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }

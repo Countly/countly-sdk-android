@@ -17,12 +17,12 @@ public class RemoteConfigTests {
 
     @Test
     public void testSerializeDeserialize() throws JSONException {
-        RemoteConfig.RemoteConfigValueStore remoteConfigValueStore = RemoteConfig.RemoteConfigValueStore.dataFromString(null);
+        ModuleRemoteConfig.RemoteConfigValueStore remoteConfigValueStore = ModuleRemoteConfig.RemoteConfigValueStore.dataFromString(null);
 
         remoteConfigValueStore.values.put("fd", 12);
         remoteConfigValueStore.values.put("2fd", 142);
         remoteConfigValueStore.values.put("f3d", 123);
 
-        RemoteConfig.RemoteConfigValueStore.dataFromString(remoteConfigValueStore.dataToString());
+        ModuleRemoteConfig.RemoteConfigValueStore.dataFromString(remoteConfigValueStore.dataToString());
     }
 }
