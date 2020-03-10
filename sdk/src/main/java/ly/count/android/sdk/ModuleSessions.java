@@ -12,6 +12,10 @@ public class ModuleSessions extends ModuleBase {
     ModuleSessions(Countly cly, CountlyConfig config) {
         super(cly);
 
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleSessions] Initialising");
+        }
+
         manualSessionControlEnabled = config.manualSessionControlEnabled;
         _cly.disableUpdateSessionRequests_ = config.disableUpdateSessionRequests;
 
@@ -20,7 +24,7 @@ public class ModuleSessions extends ModuleBase {
 
     void beginSessionInternal() {
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleBase] 'beginSessionInternal'");
+            Log.d(Countly.TAG, "[ModuleSessions] 'beginSessionInternal'");
         }
 
         prevSessionDurationStartTime_ = System.nanoTime();
@@ -29,7 +33,7 @@ public class ModuleSessions extends ModuleBase {
 
     void updateSessionInternal() {
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleBase] 'updateSessionInternal'");
+            Log.d(Countly.TAG, "[ModuleSessions] 'updateSessionInternal'");
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
@@ -43,7 +47,7 @@ public class ModuleSessions extends ModuleBase {
      */
     void endSessionInternal(String deviceIdOverride) {
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleBase] 'endSessionInternal'");
+            Log.d(Countly.TAG, "[ModuleSessions] 'endSessionInternal'");
         }
 
         _cly.connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);

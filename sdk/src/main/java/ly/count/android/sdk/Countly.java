@@ -121,6 +121,7 @@ public class Countly {
     ModuleRatings moduleRatings = null;
     ModuleSessions moduleSessions = null;
     ModuleRemoteConfig moduleRemoteConfig = null;
+    ModuleAPM moduleAPM = null;
     ModuleConsent moduleConsent = null;
 
     //user data access
@@ -188,7 +189,7 @@ public class Countly {
     }
 
     //a list of valid feature names that are used for checking
-    private final String[] validFeatureNames = new String[]{
+    protected final String[] validFeatureNames = new String[]{
             CountlyFeatureNames.sessions,
             CountlyFeatureNames.events,
             CountlyFeatureNames.views,
@@ -464,6 +465,7 @@ public class Countly {
             moduleSessions = new ModuleSessions(this, config);
             moduleRemoteConfig = new ModuleRemoteConfig(this, config);
             moduleConsent = new ModuleConsent(this, config);
+            moduleAPM = new ModuleAPM(this, config);
 
             modules.clear();
             modules.add(moduleCrash);
@@ -473,6 +475,7 @@ public class Countly {
             modules.add(moduleSessions);
             modules.add(moduleRemoteConfig);
             modules.add(moduleConsent);
+            modules.add(moduleAPM);
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -700,6 +703,7 @@ public class Countly {
         moduleSessions = null;
         moduleRemoteConfig = null;
         moduleConsent = null;
+        moduleAPM = null;
     }
 
     /**
@@ -1258,7 +1262,7 @@ public class Countly {
      * @param segments Map&lt;String, Object&gt; key segments and their values
      * todo move to module after 'setCustomCrashSegments' is removed
      */
-    public synchronized void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
+    synchronized void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Calling setCustomCrashSegmentsInternal");
         }
@@ -1474,6 +1478,10 @@ public class Countly {
         return this;
     }
 
+    /**
+     * Check if logging has been enabled internally in the SDK
+     * @return true means "yes"
+     */
     public synchronized boolean isLoggingEnabled() {
         return enableLogging_;
     }
@@ -2630,6 +2638,23 @@ public class Countly {
 
         return moduleRemoteConfig.remoteConfigInterface;
     }
+
+    public ModuleAPM.Apm apm() {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing apm");
+        }
+
+        return moduleAPM.apmInterface;
+    }
+
+    public ModuleConsent.Consent consent() {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing consent");
+        }
+
+        return moduleConsent.consentInterface;
+    }
+
     // for unit testing
     ConnectionQueue getConnectionQueue() { return connectionQueue_; }
     void setConnectionQueue(final ConnectionQueue connectionQueue) { connectionQueue_ = connectionQueue; }

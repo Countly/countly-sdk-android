@@ -29,7 +29,7 @@ class ModuleViews extends ModuleBase{
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleEvents] Initialising");
+            Log.d(Countly.TAG, "[ModuleViews] Initialising");
         }
 
         _cly.setViewTracking(config.enableViewTracking);
