@@ -61,7 +61,7 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickGiveAllConsent(View v){
-        Countly.sharedInstance().giveConsentAll();
+        Countly.sharedInstance().consent().giveConsentAll();
     }
 
     @Override

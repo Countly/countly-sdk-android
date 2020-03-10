@@ -121,6 +121,7 @@ public class Countly {
     ModuleRatings moduleRatings = null;
     ModuleSessions moduleSessions = null;
     ModuleRemoteConfig moduleRemoteConfig = null;
+    ModuleConsent moduleConsent = null;
 
     //user data access
     public static UserData userData;
@@ -462,6 +463,7 @@ public class Countly {
             moduleRatings = new ModuleRatings(this, config);
             moduleSessions = new ModuleSessions(this, config);
             moduleRemoteConfig = new ModuleRemoteConfig(this, config);
+            moduleConsent = new ModuleConsent(this, config);
 
             modules.clear();
             modules.add(moduleCrash);
@@ -470,6 +472,7 @@ public class Countly {
             modules.add(moduleRatings);
             modules.add(moduleSessions);
             modules.add(moduleRemoteConfig);
+            modules.add(moduleConsent);
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -696,6 +699,7 @@ public class Countly {
         moduleRatings = null;
         moduleSessions = null;
         moduleRemoteConfig = null;
+        moduleConsent = null;
     }
 
     /**
@@ -1841,7 +1845,6 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setHttpPostForced(boolean isItForced) {
-
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting if HTTP POST is forced: [" + isItForced + "]");
         }
@@ -2058,6 +2061,7 @@ public class Countly {
      * @param groupName name of the consent group
      * @param features array of feature to be added to the consent group
      * @return Returns link to Countly for call chaining
+     * @deprecated use 'Countly.sharedInstance().consent().createFeatureGroup'
      */
     public synchronized Countly createFeatureGroup(String groupName, String[] features){
         if (isLoggingEnabled()) {
@@ -2077,6 +2081,7 @@ public class Countly {
      * @param groupName name of the consent group
      * @param isConsentGiven the value that should be set for this consent group
      * @return Returns link to Countly for call chaining
+     * @deprecated use 'Countly.sharedInstance().consent().setConsent'
      */
     public synchronized Countly setConsentFeatureGroup(String groupName, boolean isConsentGiven){
         if (isLoggingEnabled()) {
@@ -2105,6 +2110,7 @@ public class Countly {
      * @param featureNames feature names for which consent should be changed
      * @param isConsentGiven the consent value that should be set
      * @return Returns link to Countly for call chaining
+     * @deprecated use 'Countly.sharedInstance().consent().setConsent' or set consent through CountlyConfig
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven){
         if(isLoggingEnabled() && !isInitialized()){
@@ -2201,6 +2207,7 @@ public class Countly {
      * Give the consent to a feature
      * @param featureNames the names of features for which consent should be given
      * @return Returns link to Countly for call chaining
+     * @deprecated use 'Countly.sharedInstance().consent().giveConsent(featureNames)' or set consent through CountlyConfig
      */
     public synchronized Countly giveConsent(String[] featureNames){
         if (isLoggingEnabled()) {
@@ -2217,27 +2224,10 @@ public class Countly {
     }
 
     /**
-     * Gives consent for all features
-     * @return Returns link to Countly for call chaining
-     */
-    public synchronized Countly giveConsentAll(){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Giving consent for all features");
-        }
-
-        if(isLoggingEnabled() && !isInitialized()){
-            Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
-        }
-
-        giveConsent(validFeatureNames);
-
-        return this;
-    }
-
-    /**
      * Remove the consent of a feature
      * @param featureNames the names of features for which consent should be removed
      * @return Returns link to Countly for call chaining
+     * @deprecated use 'Countly.sharedInstance().consent().removeConsent(featureNames)'
      */
     public synchronized Countly removeConsent(String[] featureNames){
         if (isLoggingEnabled()) {
@@ -2256,6 +2246,7 @@ public class Countly {
     /**
      * Remove consent for all features
      * @return Returns link to Countly for call chaining
+     * @deprecated use 'Countly.sharedInstance().consent().removeConsentAll()'
      */
     public synchronized Countly removeConsentAll(){
         if (isLoggingEnabled()) {
@@ -2276,6 +2267,7 @@ public class Countly {
      * Get the current consent state of a feature
      * @param featureName the name of a feature for which consent should be checked
      * @return the consent value
+     * @deprecated use 'Countly.sharedInstance().consent().getConsent(featureName)'
      */
     public synchronized boolean getConsent(String featureName){
         if(!requiresConsent){
@@ -2313,8 +2305,9 @@ public class Countly {
     /**
      * Print the consent values of all features
      * @return Returns link to Countly for call chaining
+     * @deprecated use 'Countly.sharedInstance().consent().checkAllConsent()'
      */
-    public synchronized Countly checkAllConsent(){
+    public synchronized Countly checkAllConsent() {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Checking and printing consent for All features");
         }
@@ -2342,6 +2335,7 @@ public class Countly {
     /**
      * Returns true if any consent has been given
      * @return true - any consent has been given, false - no consent has been given
+     * todo move to module
      */
     protected boolean anyConsentGiven(){
         if (!requiresConsent){
@@ -2497,13 +2491,13 @@ public class Countly {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigValueForKey");
         }
-        if(!anyConsentGiven()) { return null; }
 
-        return RemoteConfig.getValue(key, context_);
+        return remoteConfig().getValueForKey(key);
     }
 
     /**
      * Clear all stored remote config_ values
+     * @deprecated use 'Countly.sharedInstance().remoteConfig().clearStoredValues();'
      */
     public void remoteConfigClearValues(){
         if (isLoggingEnabled()) {
