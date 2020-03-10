@@ -306,12 +306,26 @@ public class Countly {
      * @deprecated use {@link CountlyConfig} to pass data to init.
      */
     public synchronized Countly init(final Context context, String serverURL, final String appKey, final String deviceID, DeviceId.Type idMode,
-                                     int starRatingLimit, CountlyStarRating.RatingCallback starRatingCallback, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
+                                     int starRatingLimit, final CountlyStarRating.RatingCallback starRatingCallback, String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
         CountlyConfig config = new CountlyConfig();
         config.setContext(context).setServerURL(serverURL).setAppKey(appKey).setDeviceId(deviceID)
-                .setIdMode(idMode).setStarRatingLimit(starRatingLimit).setStarRatingCallback(starRatingCallback)
                 .setStarRatingTextTitle(starRatingTextTitle).setStarRatingTextMessage(starRatingTextMessage)
-                .setStarRatingTextDismiss(starRatingTextDismiss);
+                .setStarRatingTextDismiss(starRatingTextDismiss)
+                .setIdMode(idMode).setStarRatingLimit(starRatingLimit).setStarRatingCallback(new StarRatingCallback() {
+            @Override
+            public void onRate(int rating) {
+                if(starRatingCallback != null) {
+                    starRatingCallback.onRate(rating);
+                }
+            }
+
+            @Override
+            public void onDismiss() {
+                if(starRatingCallback != null) {
+                    starRatingCallback.onDismiss();
+                }
+            }
+        });
         return init(config);
     }
 
@@ -581,7 +595,7 @@ public class Countly {
 
             //do star rating related things
             if(getConsent(CountlyFeatureNames.starRating)) {
-                CountlyStarRating.registerAppSession(config.context, countlyStore, moduleRatings.starRatingCallback_);
+                moduleRatings.registerAppSession(config.context, countlyStore, moduleRatings.starRatingCallback_);
             }
 
             //update remote config_ values if automatic update is enabled and we are not in temporary id mode
@@ -849,7 +863,7 @@ public class Countly {
         }
 
         //clear automated star rating session values because now we have a new user
-        CountlyStarRating.clearAutomaticStarRatingSessionCount(connectionQueue_.getCountlyStore());
+        moduleRatings.clearAutomaticStarRatingSessionCountInternal(connectionQueue_.getCountlyStore());
     }
 
     /**
@@ -1625,17 +1639,33 @@ public class Countly {
      * Shows the star rating dialog
      * @param activity the activity that will own the dialog
      * @param callback callback for the star rating dialog "rate" and "dismiss" events
+     * @deprecated call this trough 'Countly.sharedInstance().remoteConfig()'
      */
-    public void showStarRating(Activity activity, CountlyStarRating.RatingCallback callback){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Showing star rating");
+    public void showStarRating(Activity activity, final CountlyStarRating.RatingCallback callback){
+        if(!isInitialized()) {
+            if (isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't call this function before init has been called");
+                return;
+            }
         }
 
-        if(!getConsent(CountlyFeatureNames.starRating)) {
-            return;
+        if(callback == null) {
+            ratings().showStarRating(activity, null);
+        } else {
+            ratings().showStarRating(activity, new StarRatingCallback() {
+                @Override
+                public void onRate(int rating) {
+                    callback.onRate(rating);
+                }
+
+                @Override
+                public void onDismiss() {
+                    callback.onDismiss();
+                }
+            });
         }
 
-        CountlyStarRating.showStarRating(activity, connectionQueue_.getCountlyStore(), callback);
+
     }
 
     /**
@@ -1643,9 +1673,10 @@ public class Countly {
      * @param starRatingTextTitle dialog's title text
      * @param starRatingTextMessage dialog's message text
      * @param starRatingTextDismiss dialog's dismiss buttons text
+     * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return this;
@@ -1656,7 +1687,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting star rating texts");
         }
 
-        CountlyStarRating.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
+        moduleRatings.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
 
         return this;
     }
@@ -1664,9 +1695,10 @@ public class Countly {
     /**
      * Set if the star rating should be shown automatically
      * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
+     * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return this;
@@ -1677,7 +1709,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting to show star rating automatically: [" + IsShownAutomatically + "]");
         }
 
-        CountlyStarRating.setShowDialogAutomatically(connectionQueue_.getCountlyStore(), IsShownAutomatically);
+        moduleRatings.setShowDialogAutomatically(connectionQueue_.getCountlyStore(), IsShownAutomatically);
 
         return this;
     }
@@ -1685,9 +1717,10 @@ public class Countly {
     /**
      * Set if the star rating is shown only once per app lifetime
      * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
+     * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return this;
@@ -1698,7 +1731,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting to disable showing of star rating for each app version:[" + disableAsking + "]");
         }
 
-        CountlyStarRating.setStarRatingDisableAskingForEachAppVersion(connectionQueue_.getCountlyStore(), disableAsking);
+        moduleRatings.setStarRatingDisableAskingForEachAppVersion(connectionQueue_.getCountlyStore(), disableAsking);
 
         return this;
     }
@@ -1707,9 +1740,10 @@ public class Countly {
      * Set after how many sessions the automatic star rating will be shown for each app version
      * @param limit app session amount for the limit
      * @return Returns link to Countly for call chaining
+     * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setAutomaticStarRatingSessionLimit(int limit) {
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return this;
@@ -1719,23 +1753,24 @@ public class Countly {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting automatic star rating session limit: [" + limit + "]");
         }
-        CountlyStarRating.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), limit, null, null, null);
+        moduleRatings.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), limit, null, null, null);
 
         return this;
     }
 
     /**
      * Returns the session limit set for automatic star rating
+     * @deprecated use 'Countly.sharedInstance().ratings().getAutomaticStarRatingSessionLimit()'
      */
     public int getAutomaticStarRatingSessionLimit(){
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return -1;
             }
         }
 
-        int sessionLimit = CountlyStarRating.getAutomaticStarRatingSessionLimit(connectionQueue_.getCountlyStore());
+        int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(connectionQueue_.getCountlyStore());
 
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Getting automatic star rating session limit: [" + sessionLimit + "]");
@@ -1746,48 +1781,41 @@ public class Countly {
 
     /**
      * Returns how many sessions has star rating counted internally for the current apps version
+     * @deprecated use 'Countly.sharedInstance().ratings().getCurrentVersionsSessionCount()'
      */
     public int getStarRatingsCurrentVersionsSessionCount(){
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return -1;
             }
         }
 
-        int sessionCount = CountlyStarRating.getCurrentVersionsSessionCount(connectionQueue_.getCountlyStore());
-
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Getting star rating current version session count: [" + sessionCount + "]");
-        }
-
-        return sessionCount;
+        return ratings().getCurrentVersionsSessionCount();
     }
 
     /**
      * Set the automatic star rating session count back to 0
+     * @deprecated use 'Countly.sharedInstance().ratings().getCurrentVersionsSessionCount()' to get achieve this
      */
     public void clearAutomaticStarRatingSessionCount(){
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return;
             }
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Clearing star rating session count");
-        }
-
-        CountlyStarRating.clearAutomaticStarRatingSessionCount(connectionQueue_.getCountlyStore());
+        ratings().clearAutomaticStarRatingSessionCount();
     }
 
     /**
      * Set if the star rating dialog is cancellable
      * @param isCancellable set this true if it should be cancellable
+     * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setIfStarRatingDialogIsCancellable(boolean isCancellable){
-        if(context_ == null) {
+        if(!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
                 return this;
@@ -1798,7 +1826,7 @@ public class Countly {
             Log.d(Countly.TAG, "Setting if star rating is cancellable: [" + isCancellable + "]");
         }
 
-        CountlyStarRating.setIfRatingDialogIsCancellable(connectionQueue_.getCountlyStore(), isCancellable);
+        moduleRatings.setIfRatingDialogIsCancellableInternal(connectionQueue_.getCountlyStore(), isCancellable);
 
         return this;
     }
@@ -2329,13 +2357,23 @@ public class Countly {
      * Show the rating dialog to the user
      * @param widgetId ID that identifies this dialog
      * @return
+     * @deprecated use 'Countly.sharedInstance().remoteConfig().showFeedbackPopup'
      */
-    public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final CountlyStarRating.FeedbackRatingCallback callback){
+    public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final CountlyStarRating.FeedbackRatingCallback feedbackCallback){
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before showFeedbackPopup");
         }
 
-        CountlyStarRating.showFeedbackPopup(widgetId, closeButtonText, activity, this, connectionQueue_, callback);
+        if(feedbackCallback == null) {
+            ratings().showFeedbackPopup(widgetId, closeButtonText, activity, null);
+        } else {
+            ratings().showFeedbackPopup(widgetId, closeButtonText, activity, new FeedbackRatingCallback() {
+                @Override
+                public void callback(String error) {
+                    feedbackCallback.callback(error);
+                }
+            });
+        }
 
         return this;
     }

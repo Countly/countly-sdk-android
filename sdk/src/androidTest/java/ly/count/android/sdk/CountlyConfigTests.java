@@ -39,7 +39,7 @@ public class CountlyConfigTests {
         CountlyConfig config = new CountlyConfig();
         CountlyStore cs = new CountlyStore(c);
 
-        CountlyStarRating.RatingCallback rc = new CountlyStarRating.RatingCallback() {
+        StarRatingCallback rc = new StarRatingCallback() {
             @Override
             public void onRate(int rating) {
 
@@ -133,6 +133,9 @@ public class CountlyConfigTests {
         config.setEnableAttribution(true);
         config.setCustomCrashSegment(crashSegments);
         config.setUpdateSessionTimerDelay(137);
+        config.setIfStarRatingDialogIsCancellable(true);
+        config.setIfStarRatingShownAutomatically(true);
+        config.setStarRatingDisableAskingForEachAppVersion(true);
 
 
 
@@ -176,6 +179,10 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.enableAttribution);
         Assert.assertEquals(crashSegments, config.customCrashSegment);
         Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
+        Assert.assertTrue(config.starRatingDialogIsCancellable);
+        Assert.assertTrue(config.starRatingShownAutomatically);
+        Assert.assertTrue(config.starRatingDisableAskingForEachAppVersion);
+
     }
 
     @Test
@@ -234,5 +241,8 @@ public class CountlyConfigTests {
         Assert.assertNull(config.enableAttribution);
         Assert.assertNull(config.customCrashSegment);
         Assert.assertNull(config.sessionUpdateTimerDelay);
+        Assert.assertFalse(config.starRatingDialogIsCancellable);
+        Assert.assertFalse(config.starRatingShownAutomatically);
+        Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
     }
 }

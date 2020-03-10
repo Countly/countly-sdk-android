@@ -50,7 +50,7 @@ public class CountlyConfig {
     /**
      * the callback function that will be called from the automatic star rating dialog.
      */
-    protected CountlyStarRating.RatingCallback starRatingCallback = null;
+    protected StarRatingCallback starRatingCallback = null;
 
     /**
      * the shown title text for the star rating dialogs.
@@ -121,6 +121,12 @@ public class CountlyConfig {
 
     protected CrashFilterCallback crashFilterCallback;
 
+    protected boolean starRatingDialogIsCancellable = false;
+
+    protected boolean starRatingShownAutomatically = false;
+
+    protected boolean starRatingDisableAskingForEachAppVersion = false;
+
     public CountlyConfig() {
     }
 
@@ -184,7 +190,7 @@ public class CountlyConfig {
     /**
      * the callback function that will be called from the automatic star rating dialog.
      */
-    public CountlyConfig setStarRatingCallback(CountlyStarRating.RatingCallback starRatingCallback) {
+    public CountlyConfig setStarRatingCallback(StarRatingCallback starRatingCallback) {
         this.starRatingCallback = starRatingCallback;
         return this;
     }
@@ -394,6 +400,33 @@ public class CountlyConfig {
 
     protected CountlyConfig setDisableUpdateSessionRequests(boolean disable){
         disableUpdateSessionRequests = disable;
+        return this;
+    }
+
+    /**
+     * Set if the star rating dialog is cancellable
+     * @param isCancellable set this true if it should be cancellable
+     */
+    public synchronized CountlyConfig setIfStarRatingDialogIsCancellable(boolean isCancellable){
+        starRatingDialogIsCancellable = isCancellable;
+        return this;
+    }
+
+    /**
+     * Set if the star rating should be shown automatically
+     * @param isShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
+     */
+    public synchronized CountlyConfig setIfStarRatingShownAutomatically(boolean isShownAutomatically) {
+        starRatingShownAutomatically = isShownAutomatically;
+        return this;
+    }
+
+    /**
+     * Set if the star rating is shown only once per app lifetime
+     * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
+     */
+    public synchronized CountlyConfig setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
+        starRatingDisableAskingForEachAppVersion = disableAsking;
         return this;
     }
 }
