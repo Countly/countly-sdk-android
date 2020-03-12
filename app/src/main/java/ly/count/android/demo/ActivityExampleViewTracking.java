@@ -59,15 +59,6 @@ public class ActivityExampleViewTracking extends Activity {
         Countly.sharedInstance().recordView("Better view", viewSegmentation);
     }
 
-    public void onClickViewSetAutomaticSegmentation(View v) {
-        Map<String, Object> viewSegmentation = new HashMap<>();
-
-        viewSegmentation.put("Early", 987);
-        viewSegmentation.put("Bird", 11.77d);
-        viewSegmentation.put("Catches", "Bush");
-
-        Countly.sharedInstance().views().setAutomaticViewSegmentation(viewSegmentation);
-    }
 
     @Override
     public void onStart()

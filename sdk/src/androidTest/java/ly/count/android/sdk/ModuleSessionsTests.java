@@ -73,6 +73,27 @@ public class ModuleSessionsTests {
     }
 
     @Test
+    public void manualSessionBeginUpdateEndManualDisabled() throws InterruptedException {
+        Countly mCountly = new Countly();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+
+        mCountly.init(config);
+        ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
+        mCountly.setConnectionQueue(connectionQueue);
+
+        mCountly.sessions().beginSession();
+        verify(connectionQueue, never()).beginSession();
+
+        Thread.sleep(1000);
+        mCountly.sessions().updateSession();
+
+        verify(connectionQueue, never()).updateSession(1);
+        Thread.sleep(2000);
+        mCountly.sessions().endSession();
+        verify(connectionQueue, never()).endSession(2, null);
+    }
+
+    @Test
     public void automaticSessionBeginEndWithManualEnabled() throws InterruptedException {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();

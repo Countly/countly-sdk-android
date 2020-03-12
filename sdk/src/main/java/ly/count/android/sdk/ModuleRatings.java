@@ -45,7 +45,7 @@ class ModuleRatings extends ModuleBase {
         ratingsInterface = new Ratings();
     }
 
-    private void recordManualRatingInternal(String widgetId, int rating, String email, String comment, boolean userCanBeContacted){
+    void recordManualRatingInternal(String widgetId, int rating, String email, String comment, boolean userCanBeContacted){
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleRatings] Calling recordManualRatingInternal");
         }
@@ -57,6 +57,13 @@ class ModuleRatings extends ModuleBase {
         if(widgetId == null){
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
+            }
+            return;
+        }
+
+        if(widgetId.isEmpty()){
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
             }
             return;
         }

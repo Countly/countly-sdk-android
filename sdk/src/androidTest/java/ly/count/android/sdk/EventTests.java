@@ -134,6 +134,9 @@ public class EventTests {
         event.count = 42;
         event.sum = 3.2;
         event.segmentation = new HashMap<>();
+        event.segmentationInt = new HashMap<>();
+        event.segmentationDouble = new HashMap<>();
+        event.segmentationBoolean = new HashMap<>();
         final JSONObject jsonObj = event.toJSON();
         assertEquals(7, jsonObj.length());
         assertEquals(event.key, jsonObj.getString("key"));
@@ -151,15 +154,24 @@ public class EventTests {
         event.count = 42;
         event.sum = 3.2;
         event.segmentation = new HashMap<>();
+        event.segmentationInt = new HashMap<>();
+        event.segmentationDouble = new HashMap<>();
+        event.segmentationBoolean = new HashMap<>();
         event.segmentation.put("segkey", "segvalue");
+        event.segmentationInt.put("segkey1", 123);
+        event.segmentationDouble.put("segkey2", 544.43d);
+        event.segmentationBoolean.put("segkey3", true);
         final JSONObject jsonObj = event.toJSON();
         assertEquals(7, jsonObj.length());
         assertEquals(event.key, jsonObj.getString("key"));
         assertEquals(event.timestamp, jsonObj.getInt("timestamp"));
         assertEquals(event.count, jsonObj.getInt("count"));
         assertEquals(event.sum, jsonObj.getDouble("sum"), 0.0000001);
-        assertEquals(1, jsonObj.getJSONObject("segmentation").length());
+        assertEquals(4, jsonObj.getJSONObject("segmentation").length());
         assertEquals(event.segmentation.get("segkey"), jsonObj.getJSONObject("segmentation").getString("segkey"));
+        assertEquals(event.segmentationInt.get("segkey1").intValue(), jsonObj.getJSONObject("segmentation").getInt("segkey1"));
+        assertEquals(event.segmentationDouble.get("segkey2").doubleValue(), jsonObj.getJSONObject("segmentation").getDouble("segkey2"), 0.0001d);
+        assertEquals(event.segmentationBoolean.get("segkey3").booleanValue(), jsonObj.getJSONObject("segmentation").getBoolean("segkey3"));
     }
 
     @Test
@@ -332,24 +344,32 @@ public class EventTests {
     }
 
     @Test
-    public void testFromJSON_withSegmentation_nonStringValue() throws JSONException {
+    public void testFromJSON_withSegmentation_nonStringValues() throws JSONException {
         final Event expected = new Event();
         expected.key = "eventKey";
         expected.timestamp = 1234;
         expected.count = 42;
         expected.sum = 3.2;
         expected.segmentation = new HashMap<>();
+        expected.segmentation.put("sk1", "vall");
         expected.segmentationDouble = new HashMap<>();
+        expected.segmentationDouble.put("sk2", 334.33d);
         expected.segmentationInt = new HashMap<>();
         expected.segmentationInt.put("segkey", 1234);
-        final Map<Object, Object> badMap = new HashMap<>();
-        badMap.put("segkey", 1234); // this should be put into int segments
+        expected.segmentationBoolean = new HashMap<>();
+        expected.segmentationBoolean.put("sk3", true);
+
+        final Map<Object, Object> valueMap = new HashMap<>();
+        valueMap.put("segkey", 1234);
+        valueMap.put("sk1", "vall");
+        valueMap.put("sk2", 334.33d);
+        valueMap.put("sk3", true);
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put("key", expected.key);
         jsonObj.put("timestamp", expected.timestamp);
         jsonObj.put("count", expected.count);
         jsonObj.put("sum", expected.sum);
-        jsonObj.put("segmentation", new JSONObject(badMap));
+        jsonObj.put("segmentation", new JSONObject(valueMap));
         final Event actual = Event.fromJSON(jsonObj);
         assertEquals(expected, actual);
         assertEquals(expected.count, actual.count);

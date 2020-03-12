@@ -271,25 +271,6 @@ class ModuleViews extends ModuleBase{
 
     public class Views {
         /**
-         * Set custom segmentation which will be added to all automatically recorded views
-         * @param segmentation
-         * @return
-         */
-        public Countly setAutomaticViewSegmentation(Map<String, Object> segmentation){
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Views] Calling setAutomaticViewSegmentation");
-            }
-
-            if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before setAutomaticViewSegmentation");
-            }
-
-            setAutomaticViewSegmentationInternal(segmentation);
-
-            return _cly;
-        }
-
-        /**
          * Check state of automatic view tracking
          * @return boolean - true if enabled, false if disabled
          */

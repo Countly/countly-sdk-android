@@ -65,10 +65,4 @@
         android:onClick="onClickViewTrackingRecordViewWithSegmentation"
         android:text="record view with custom segmentation" />
 
-    <Button
-        android:id="@+id/button69"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewSetAutomaticSegmentation"
-        android:text="Set automatic view segmentation" />
 </LinearLayout>
