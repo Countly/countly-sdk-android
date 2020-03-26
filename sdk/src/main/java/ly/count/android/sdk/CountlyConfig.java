@@ -45,7 +45,7 @@ public class CountlyConfig {
     /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
      */
-    protected int starRatingLimit = 5;
+    protected int starRatingSessionLimit = 5;
 
     /**
      * the callback function that will be called from the automatic star rating dialog.
@@ -182,8 +182,8 @@ public class CountlyConfig {
     /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
      */
-    public CountlyConfig setStarRatingLimit(int starRatingLimit) {
-        this.starRatingLimit = starRatingLimit;
+    public CountlyConfig setStarRatingSessionLimit(int starRatingLimit) {
+        this.starRatingSessionLimit = starRatingLimit;
         return this;
     }
 

@@ -12,7 +12,6 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
@@ -101,7 +100,7 @@ public class CountlyConfigTests {
         config.checkForNativeCrashDumps(false);
         config.setDeviceId(s[2]);
         config.setIdMode(DeviceId.Type.ADVERTISING_ID);
-        config.setStarRatingLimit(1335);
+        config.setStarRatingSessionLimit(1335);
         config.setStarRatingCallback(rc);
         config.setStarRatingTextDismiss(s[3]);
         config.setStarRatingTextMessage(s[4]);
@@ -146,7 +145,7 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.checkForNativeCrashDumps);
         Assert.assertEquals(s[2], config.deviceID);
         Assert.assertEquals(DeviceId.Type.ADVERTISING_ID, config.idMode);
-        Assert.assertEquals(1335, config.starRatingLimit);
+        Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
         Assert.assertEquals(s[3], config.starRatingTextDismiss);
         Assert.assertEquals(s[4], config.starRatingTextMessage);
@@ -209,7 +208,7 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.checkForNativeCrashDumps);
         Assert.assertNull(config.deviceID);
         Assert.assertNull(config.idMode);
-        Assert.assertEquals(5, config.starRatingLimit);
+        Assert.assertEquals(5, config.starRatingSessionLimit);
         Assert.assertNull(config.starRatingCallback);
         Assert.assertNull(config.starRatingTextDismiss);
         Assert.assertNull(config.starRatingTextMessage);

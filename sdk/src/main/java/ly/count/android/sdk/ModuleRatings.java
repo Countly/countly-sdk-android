@@ -39,8 +39,10 @@ class ModuleRatings extends ModuleBase {
         }
 
         starRatingCallback_ = config.starRatingCallback;
-        setStarRatingInitConfig(config.countlyStore, config.starRatingLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
+        setStarRatingInitConfig(config.countlyStore, config.starRatingSessionLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
         setIfRatingDialogIsCancellableInternal(config.countlyStore, config.starRatingDialogIsCancellable);
+        setShowDialogAutomatically(config.countlyStore, config.starRatingShownAutomatically);
+        setStarRatingDisableAskingForEachAppVersion(config.countlyStore, config.starRatingDisableAskingForEachAppVersion);
 
         ratingsInterface = new Ratings();
     }
@@ -147,6 +149,11 @@ class ModuleRatings extends ModuleBase {
         StarRatingPreferences srp = loadStarRatingPreferences(cs);
         srp.automaticRatingShouldBeShown = shouldShow;
         saveStarRatingPreferences(cs, srp);
+    }
+
+    boolean getIfStarRatingShouldBeShownAutomatically() {
+        StarRatingPreferences srp = loadStarRatingPreferences(_cly.eventQueue_.getCountlyStore());
+        return srp.automaticRatingShouldBeShown;
     }
 
     /**
@@ -340,7 +347,7 @@ class ModuleRatings extends ModuleBase {
      * Returns a object with the loaded preferences
      * @return
      */
-    static private StarRatingPreferences loadStarRatingPreferences(final CountlyStore cs) {
+    static StarRatingPreferences loadStarRatingPreferences(final CountlyStore cs) {
         String srpString = cs.getStarRatingPreferences();
         StarRatingPreferences srp;
 

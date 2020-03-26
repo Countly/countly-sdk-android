@@ -317,7 +317,7 @@ public class Countly {
         config.setContext(context).setServerURL(serverURL).setAppKey(appKey).setDeviceId(deviceID)
                 .setStarRatingTextTitle(starRatingTextTitle).setStarRatingTextMessage(starRatingTextMessage)
                 .setStarRatingTextDismiss(starRatingTextDismiss)
-                .setIdMode(idMode).setStarRatingLimit(starRatingLimit).setStarRatingCallback(new StarRatingCallback() {
+                .setIdMode(idMode).setStarRatingSessionLimit(starRatingLimit).setStarRatingCallback(new StarRatingCallback() {
             @Override
             public void onRate(int rating) {
                 if(starRatingCallback != null) {
