@@ -47,17 +47,25 @@ class ModuleCrash extends ModuleBase{
      * @param context android context
      */
     protected synchronized void checkForNativeCrashDumps(Context context){
-        Log.d(_cly.TAG, "[ModuleCrash] Checking for native crash dumps");
+        if (_cly.isLoggingEnabled()) {
+            Log.d(_cly.TAG, "[ModuleCrash] Checking for native crash dumps");
+        }
 
         String basePath = context.getCacheDir().getAbsolutePath();
         String finalPath = basePath + File.separator + countlyFolderName + File.separator + countlyNativeCrashFolderName;
 
         File folder = new File(finalPath);
         if (folder.exists()) {
-            Log.d(_cly.TAG, "[ModuleCrash] Native crash folder exists, checking for dumps");
+            if (_cly.isLoggingEnabled()) {
+                Log.d(_cly.TAG, "[ModuleCrash] Native crash folder exists, checking for dumps");
+            }
 
             File[] dumpFiles = folder.listFiles();
-            Log.d(_cly.TAG,"[ModuleCrash] Crash dump folder contains [" + dumpFiles.length + "] files");
+
+            if (_cly.isLoggingEnabled()) {
+                Log.d(_cly.TAG, "[ModuleCrash] Crash dump folder contains [" + dumpFiles.length + "] files");
+            }
+
             for (File dumpFile : dumpFiles) {
                 //record crash
                 recordNativeException(dumpFile);
@@ -66,12 +74,16 @@ class ModuleCrash extends ModuleBase{
                 dumpFile.delete();
             }
         } else {
-            Log.d(_cly.TAG, "[ModuleCrash] Native crash folder does not exist");
+            if (_cly.isLoggingEnabled()) {
+                Log.d(_cly.TAG, "[ModuleCrash] Native crash folder does not exist");
+            }
         }
     }
 
     private synchronized void recordNativeException(File dumpFile){
-        Log.d(_cly.TAG, "[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
+        if (_cly.isLoggingEnabled()) {
+            Log.d(_cly.TAG, "[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
+        }
 
         //check for consent
         if(!_cly.getConsent(Countly.CountlyFeatureNames.crashes)){
@@ -87,7 +99,9 @@ class ModuleCrash extends ModuleBase{
             buf.read(bytes, 0, bytes.length);
             buf.close();
         } catch (Exception e) {
-            Log.e(_cly.TAG, "[ModuleCrash] Failed to read dump file bytes");
+            if (_cly.isLoggingEnabled()) {
+                Log.e(_cly.TAG, "[ModuleCrash] Failed to read dump file bytes");
+            }
             e.printStackTrace();
             return;
         }
