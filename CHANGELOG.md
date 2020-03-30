@@ -9,7 +9,8 @@
   * Adding manual session control
   * Adding option to set tamper protection salt in config object
   * Adding calls to give and remove consent to all features at the same time
-  * Adding way to change the session update timer interval
+  * Adding a way to change the session update timer interval
+  * Adding call to set notification accent color
   * Moving crash, event, view, rating related calls to a seperate modules
   * Deprecating functions that are being put into modules
   * Removing depracated "addCrashLog" call
