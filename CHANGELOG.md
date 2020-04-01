@@ -20,6 +20,9 @@
   * Migrated to AndroidX
   * Improved internal time management which fixes inconsistencies that could arrise on day changes
 
+19.09.3
+  * Fixed a bug which did not add the link to the push dialog button.
+  
 19.09.2
   * Fixed a bug which did not add links to push buttons.
 
