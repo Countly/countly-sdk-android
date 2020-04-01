@@ -507,6 +507,11 @@ public class CountlyPush {
                             public void onClick(DialogInterface dialog, int which) {
                                 msg.recordAction(activity, 0);
                                 dialog.dismiss();
+
+                                Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
+                                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                i.putExtra(EXTRA_ACTION_INDEX, 0);// put zero because non 'button' action
+                                activity.startActivity(i);
                             }
                         });
                     }
