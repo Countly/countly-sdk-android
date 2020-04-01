@@ -40,7 +40,7 @@ public class MainActivity extends Activity {
     }
 
     public void onClickButtonAPM(View v) {
-        //
+        startActivity(new Intent(this, ActivityExampleAPM.class));
     }
 
     public void onClickButtonViewTracking(View v) {

@@ -433,6 +433,27 @@ public class ConnectionQueue {
         tick();
     }
 
+    void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs) {
+        checkInternalState();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendAPMCustomTrace");
+        }
+
+        // https://abc.count.ly/i?app_key=xyz&device_id=pts911
+        // &apm={"type":"device","name":"forLoopProfiling_1","apm_metrics":{"duration": 10, “memory”: 200}, "stz": 1584698900, "etz": 1584699900}
+        // &timestamp=1584698900&count=1
+
+        String apmData = "{\"type\":\"device\",\"name\":\"" + key + "\", \"apm_metrics\":{\"duration\": " + durationMs + "}, \"stz\": " + startMs + ", \"etz\": " + endMs + "}";
+
+        final String data = prepareCommonRequestData()
+                + "&count=1"
+                + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
+
+        store_.addConnection(data);
+
+        tick();
+    }
+
     private String prepareCommonRequestData(){
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
