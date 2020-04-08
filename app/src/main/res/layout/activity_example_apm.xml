@@ -20,32 +20,61 @@
             android:layout_gravity="center_vertical">
 
             <Button
-                android:text="Start trace #1"
+                android:text="Start custom trace #1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button1"
                 android:onClick="onClickStartTrace_1"/>
 
             <Button
-                android:text="End trace #1"
+                android:text="End custom trace #1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button2"
                 android:onClick="onClickEndTrace_1"/>
 
             <Button
-                android:text="Start trace #2"
+                android:text="Start custom trace #2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button3"
                 android:onClick="onClickStartTrace_2"/>
 
             <Button
-                android:text="End trace #2"
+                android:text="End custom trace #2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:id="@+id/button4"
                 android:onClick="onClickEndTrace_2"/>
+
+            <Button
+                android:id="@+id/button5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:onClick="onClickStartNetworkTrace_1"
+                android:text="Start network trace #1" />
+
+            <Button
+                android:id="@+id/button6"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="onClickEndNetworkTrace_1"
+                android:text="End network trace #1" />
+
+            <Button
+                android:id="@+id/button7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="onClickStartNetworkTrace_2"
+                android:text="Start network trace #2" />
+
+            <Button
+                android:id="@+id/button8"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="onClickEndNetworkTrace_2"
+                android:text="End network trace #2" />
         </LinearLayout>
     </ScrollView>
 

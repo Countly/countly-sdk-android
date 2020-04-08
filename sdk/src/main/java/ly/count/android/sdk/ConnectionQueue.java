@@ -226,6 +226,9 @@ public class ConnectionQueue {
         }
 
         if(!Countly.sharedInstance().anyConsentGiven()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
             //no consent set, aborting
             return;
         }
@@ -250,6 +253,9 @@ public class ConnectionQueue {
         }
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
             return;
         }
 
@@ -332,6 +338,9 @@ public class ConnectionQueue {
         }
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
             return;
         }
 
@@ -358,6 +367,9 @@ public class ConnectionQueue {
         }
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
             return;
         }
 
@@ -381,6 +393,9 @@ public class ConnectionQueue {
         }
 
         if(!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.crashes)){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
             return;
         }
 
@@ -435,8 +450,16 @@ public class ConnectionQueue {
 
     void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs) {
         checkInternalState();
+
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Connection Queue] sendAPMCustomTrace");
+        }
+
+        if(!Countly.sharedInstance().anyConsentGiven()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
+            return;
         }
 
         // https://abc.count.ly/i?app_key=xyz&device_id=pts911
@@ -444,6 +467,36 @@ public class ConnectionQueue {
         // &timestamp=1584698900&count=1
 
         String apmData = "{\"type\":\"device\",\"name\":\"" + key + "\", \"apm_metrics\":{\"duration\": " + durationMs + "}, \"stz\": " + startMs + ", \"etz\": " + endMs + "}";
+
+        final String data = prepareCommonRequestData()
+                + "&count=1"
+                + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
+
+        store_.addConnection(data);
+
+        tick();
+    }
+
+    void sendAPMNetworkTrace(String networkTraceKey, Long responseTimeMs, int responseCode, int requestPayloadSize, int responsePayloadSize, Long startMs, Long endMs) {
+        checkInternalState();
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendAPMNetworkTrace");
+        }
+
+        if(!Countly.sharedInstance().anyConsentGiven()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
+            return;
+        }
+
+        // https://abc.count.ly/i?app_key=xyz&device_id=pts911
+        // &apm={"type":"network","name":"/count.ly/about","apm_metrics":{"response_time":1330,"response_payload_size":120, "response_code": 300, "request_payload_size": 70}, "stz": 1584698900, "etz": 1584699900}
+        // &timestamp=1584698900&count=1
+
+        String apmMetrics = "{\"response_time\": " + responseTimeMs + ", \"response_payload_size\":" + responsePayloadSize + ", \"response_code\":" + responseCode + ", \"request_payload_size\":" + requestPayloadSize + "}";
+        String apmData = "{\"type\":\"network\",\"name\":\"" + networkTraceKey + "\", \"apm_metrics\":" + apmMetrics + ", \"stz\": " + startMs + ", \"etz\": " + endMs + "}";
 
         final String data = prepareCommonRequestData()
                 + "&count=1"
