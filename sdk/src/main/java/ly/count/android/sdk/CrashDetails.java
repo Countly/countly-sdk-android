@@ -313,7 +313,7 @@ class CrashDetails {
         }
         catch(Exception e){
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Can't get batter level");
+                Log.i(Countly.TAG, "Can't get battery level");
             }
         }
 
