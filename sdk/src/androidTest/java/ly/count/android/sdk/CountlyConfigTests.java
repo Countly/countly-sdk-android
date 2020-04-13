@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -89,6 +90,8 @@ public class CountlyConfigTests {
         crashSegments.put("s434s", 33434.33d);
         crashSegments.put("ddsa44s", true);
 
+        Application app = new Application();
+
 
         assertDefaultValues(config, true);
 
@@ -135,6 +138,7 @@ public class CountlyConfigTests {
         config.setIfStarRatingDialogIsCancellable(true);
         config.setIfStarRatingShownAutomatically(true);
         config.setStarRatingDisableAskingForEachAppVersion(true);
+        config.setApplication(app);
 
 
 
@@ -181,6 +185,7 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.starRatingDialogIsCancellable);
         Assert.assertTrue(config.starRatingShownAutomatically);
         Assert.assertTrue(config.starRatingDisableAskingForEachAppVersion);
+        Assert.assertEquals(app, config.application);
 
     }
 
@@ -243,5 +248,6 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.starRatingDialogIsCancellable);
         Assert.assertFalse(config.starRatingShownAutomatically);
         Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
+        Assert.assertNull(config.application);
     }
 }

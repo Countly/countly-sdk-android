@@ -104,6 +104,7 @@ public class App extends Application {
                         return crash.contains("crash");
                     }
                 })
+                .setApplication(this)
                 ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Application;
 import android.content.Context;
 
 import java.util.Map;
@@ -126,6 +127,8 @@ public class CountlyConfig {
     protected boolean starRatingShownAutomatically = false;
 
     protected boolean starRatingDisableAskingForEachAppVersion = false;
+
+    protected Application application = null;
 
     public CountlyConfig() {
     }
@@ -427,6 +430,11 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
         starRatingDisableAskingForEachAppVersion = disableAsking;
+        return this;
+    }
+
+    public synchronized CountlyConfig setApplication(Application application) {
+        this.application = application;
         return this;
     }
 }

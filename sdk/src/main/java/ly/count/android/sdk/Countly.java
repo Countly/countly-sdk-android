@@ -23,10 +23,13 @@ package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Application;
+import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 
 import java.io.PrintWriter;
@@ -615,6 +618,74 @@ public class Countly {
                 }
                 moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
             }
+
+            //set global application listeners
+            if(config.application != null) {
+                config.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+                    @Override
+                    public void onActivityCreated(Activity activity, Bundle bundle) {
+                        for (ModuleBase module:modules) {
+                            module.callbackOnActivityCreated(activity);
+                        }
+                    }
+
+                    @Override
+                    public void onActivityStarted(Activity activity) {
+                        for (ModuleBase module:modules) {
+                            module.callbackOnActivityStarted(activity);
+                        }
+                    }
+
+                    @Override
+                    public void onActivityResumed(Activity activity) {
+                        for (ModuleBase module:modules) {
+                            module.callbackOnActivityResumed(activity);
+                        }
+                    }
+
+                    @Override
+                    public void onActivityPaused(Activity activity) {
+                        for (ModuleBase module:modules) {
+                            module.callbackOnActivityPaused(activity);
+                        }
+                    }
+
+                    @Override
+                    public void onActivityStopped(Activity activity) {
+                        for (ModuleBase module:modules) {
+                            module.callbackOnActivityStopped(activity);
+                        }
+                    }
+
+                    @Override
+                    public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+                        for (ModuleBase module:modules) {
+                            module.callbackOnActivitySaveInstanceState(activity);
+                        }
+                    }
+
+                    @Override
+                    public void onActivityDestroyed(Activity activity) {
+                        for (ModuleBase module:modules) {
+                            module.callbackOnActivityDestroyed(activity);
+                        }
+                    }
+                });
+/*
+                config.application.registerComponentCallbacks(new ComponentCallbacks() {
+                    @Override
+                    public void onConfigurationChanged(Configuration configuration) {
+
+                    }
+
+                    @Override
+                    public void onLowMemory() {
+
+                    }
+                });
+ */
+            }
+
         } else {
             //if this is not the first time we are calling init
 
