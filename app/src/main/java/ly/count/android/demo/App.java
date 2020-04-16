@@ -1,35 +1,35 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
 
-import android.util.EventLog;
+import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.internal.ContextUtils;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
 import ly.count.android.sdk.DeviceId;
 import ly.count.android.sdk.RemoteConfig;
-import ly.count.android.sdk.UtilsTime;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 import static ly.count.android.sdk.Countly.TAG;
@@ -127,5 +127,34 @@ public class App extends Application {
                     }
                 });
 
+        /* Register for broadcast action if you need to be notified when Countly message received */
+        messageReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                Intent sentIntent = intent.getParcelableExtra(CountlyPush.EXTRA_INTENT);
+                sentIntent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
+
+                Bundle bun = sentIntent.getParcelableExtra(CountlyPush.EXTRA_MESSAGE);
+                CountlyPush.Message message;
+
+                int actionIndex = sentIntent.getIntExtra(CountlyPush.EXTRA_ACTION_INDEX, -100);
+
+                String msg = "NULL";
+
+                if (bun != null) {
+                    message = bun.getParcelable(CountlyPush.EXTRA_MESSAGE);
+                    if (message != null) {
+                        msg = message.message();
+                    }
+                }
+
+                Log.i("Countly", "[CountlyActivity] Got a message, :[" + msg + "]");
+
+            }
+        };
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(CountlyPush.NOTIFICATION_BROADCAST);
+        registerReceiver(messageReceiver, filter);
     }
 }

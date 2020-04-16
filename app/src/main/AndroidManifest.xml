@@ -20,18 +20,6 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
-            <intent-filter android:label="@string/deep_link">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <!-- Accepts URIs that begin with "countly://test” -->
-                <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
-                <data android:scheme="countly"
-                      android:host="test" />
-
-            </intent-filter>
         </activity>
 
         <service android:name=".DemoFirebaseMessagingService">
@@ -97,6 +85,40 @@
             android:name=".ActivityExampleRatings"
             android:label="@string/activity_name_device_id"
             android:configChanges="orientation|screenSize">
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleDeepLinkA"
+            android:label="Deep link A"
+            android:configChanges="orientation|screenSize">
+
+            <intent-filter android:label="@string/deep_link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Accepts URIs that begin with "countly://sample_a” -->
+                <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
+                <data android:scheme="countly"
+                    android:host="sample_a" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ActivityExampleDeepLinkB"
+            android:label="Deep link B"
+            android:configChanges="orientation|screenSize">
+
+            <intent-filter android:label="@string/deep_link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Accepts URIs that begin with "countly://sample_b” -->
+                <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
+                <data android:scheme="countly"
+                    android:host="sample_b" />
+            </intent-filter>
         </activity>
 
         <service android:name="org.openudid.OpenUDID_service" android:exported="false">

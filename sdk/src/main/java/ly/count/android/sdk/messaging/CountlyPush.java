@@ -221,7 +221,7 @@ public class CountlyPush {
         @Override
         public void onReceive(Context context, Intent broadcast) {
             if(Countly.sharedInstance().isLoggingEnabled()){
-                Log.d(Countly.TAG, "Push broadcast receiver receiving message");
+                Log.d(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Push broadcast receiver receiving message");
             }
 
             broadcast.setExtrasClassLoader(CountlyPush.class.getClassLoader());
@@ -231,8 +231,11 @@ public class CountlyPush {
 
             int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
             Bundle bundle = intent.getParcelableExtra(EXTRA_MESSAGE);
-            Message message = bundle.getParcelable(EXTRA_MESSAGE);
+            if(bundle == null) {
+                return;
+            }
 
+            Message message = bundle.getParcelable(EXTRA_MESSAGE);
             if (message == null) {
                 return;
             }
@@ -251,7 +254,7 @@ public class CountlyPush {
                 if (message.link() != null) {
                     Intent i = new Intent(Intent.ACTION_VIEW, message.link());
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                    i.putExtra(EXTRA_MESSAGE, message);
+                    i.putExtra(EXTRA_MESSAGE, bundle);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
                     context.startActivity(i);
                 } else {
@@ -261,7 +264,7 @@ public class CountlyPush {
             } else {
                 Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                i.putExtra(EXTRA_MESSAGE, message);
+                i.putExtra(EXTRA_MESSAGE, bundle);
                 i.putExtra(EXTRA_ACTION_INDEX, index);
                 context.startActivity(i);
             }
