@@ -24,4 +24,23 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleAPMTests {
+    Countly mCountly;
+
+    @Before
+    public void setUp() {
+        final CountlyStore countlyStore = new CountlyStore(getContext());
+        countlyStore.clear();
+
+        mCountly = new Countly();
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+    }
+
+    @After
+    public void tearDown() {
+    }
+
+    @Test
+    public void boop() {
+
+    }
 }

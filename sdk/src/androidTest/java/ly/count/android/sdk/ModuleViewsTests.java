@@ -387,7 +387,7 @@ public class ModuleViewsTests {
         cSegm2.put("calling", false);
 
         Map<String, Object> cSegm3 = new HashMap<>();
-        cSegm3.put("bounce", "33");
+        cSegm3.put("aaaaaaaaaaaaaaaaaaaaCountly", "33");
         cSegm3.put("exit", "33");
         cSegm3.put("view", "33");
         cSegm3.put("domain", "33");
@@ -435,6 +435,7 @@ public class ModuleViewsTests {
         segmS.put("segment", "Android");
         segmS.put("visit", "1");
         segmS.put("name", viewNames[1]);
+        segmS.put("start", "33");
         segmS.put("donker", "mag");
         segmI.put("big", 1337);
         segmD.put("candy", 954.33d);
@@ -460,6 +461,10 @@ public class ModuleViewsTests {
         segmS.put("visit", "1");
         segmS.put("name", viewNames[2]);
         segmS.put("doddnker", "m123ag");
+        segmS.put("exit", "33");
+        segmS.put("view", "33");
+        segmS.put("domain", "33");
+        segmS.put("dur", "33");
         segmI.put("biffg", 132137);
         segmD.put("cannndy", 9534.33d);
         segmB.put("calaaling", true);

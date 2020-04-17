@@ -7,7 +7,7 @@ import java.util.Map;
 
 class ModuleEvents extends ModuleBase{
     static final Map<String, Event> timedEvents = new HashMap<>();
-    static final String[] reservedSegmentationKeys = new String[] { };
+    static final String[] reservedSegmentationKeys = new String[] {"aaaaaaaaaaaaaaaaaaaaCountly"};//just a test key that no one should realistically use
 
     //interface for SDK users
     final Events eventsInterface;
