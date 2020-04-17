@@ -139,6 +139,7 @@ public class CountlyConfigTests {
         config.setIfStarRatingShownAutomatically(true);
         config.setStarRatingDisableAskingForEachAppVersion(true);
         config.setApplication(app);
+        config.setRecordAppStartTime(true);
 
 
 
@@ -186,6 +187,7 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.starRatingShownAutomatically);
         Assert.assertTrue(config.starRatingDisableAskingForEachAppVersion);
         Assert.assertEquals(app, config.application);
+        Assert.assertTrue(config.recordAppStartTime);
 
     }
 
@@ -249,5 +251,6 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.starRatingShownAutomatically);
         Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
         Assert.assertNull(config.application);
+        Assert.assertFalse(config.recordAppStartTime);
     }
 }

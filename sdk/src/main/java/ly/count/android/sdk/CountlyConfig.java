@@ -130,6 +130,8 @@ public class CountlyConfig {
 
     protected Application application = null;
 
+    protected boolean recordAppStartTime = false;
+
     public CountlyConfig() {
     }
 
@@ -435,6 +437,11 @@ public class CountlyConfig {
 
     public synchronized CountlyConfig setApplication(Application application) {
         this.application = application;
+        return this;
+    }
+
+    public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime){
+        this.recordAppStartTime = recordAppStartTime;
         return this;
     }
 }

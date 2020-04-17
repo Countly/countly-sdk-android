@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.util.Log;
 
 import java.util.HashMap;
@@ -13,6 +14,14 @@ public class ModuleAPM extends ModuleBase {
 
     Map<String, Long> networkTraces;
 
+    //used to determine app start time
+    boolean hasFirstOnResumeHappened = false;
+
+    long firstOnResumeTimeMs = -1;// used for determining app start duration
+    long lastScreenSwitchTime = -1;// timestamp of when the app last changed from foreground to background
+
+    int activitiesOpen = -1;
+
     ModuleAPM(Countly cly, CountlyConfig config) {
         super(cly);
 
@@ -22,6 +31,8 @@ public class ModuleAPM extends ModuleBase {
 
         codeTraces = new HashMap<>();
         networkTraces = new HashMap<>();
+
+        activitiesOpen = 0;
 
         apmInterface = new Apm();
     }
@@ -177,10 +188,87 @@ public class ModuleAPM extends ModuleBase {
         }
     }
 
+    void recordAppStart() {
+        if(_cly.config_.recordAppStartTime) {
+            if(Countly.applicationStart == -1){
+                if (_cly.isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[ModuleAPM] Application onCreate start time is not recorded. Don't forget to call 'applicationOnCreate'");
+                    return;
+                }
+            }
+
+            long durationMs = firstOnResumeTimeMs - Countly.applicationStart;
+
+            _cly.connectionQueue_.sendAPMAppStart(durationMs, Countly.applicationStart, firstOnResumeTimeMs);
+        }
+    }
+
+    void calculateAppRunningTimes(int previousCount, int newCount) {
+        boolean goingToBackground = (previousCount == 1 && newCount == 0);
+        boolean goingToForeground = (previousCount == 0 && newCount == 1);
+
+        if(goingToBackground || goingToForeground) {
+            long currentTimeMs = UtilsTime.currentTimestampMs();
+
+            if(lastScreenSwitchTime != -1) {
+                // if it was '-1' then it just started, todo might be a issue with halt where it is only reset on first screen change
+                long durationMs = currentTimeMs - lastScreenSwitchTime;
+
+                if (goingToForeground) {
+                    // coming from a background mode to the foreground
+                    _cly.connectionQueue_.sendAPMScreenTime(false, durationMs, lastScreenSwitchTime, currentTimeMs);
+                } else if (goingToBackground) {
+                    // going form the foreground to the background
+                    _cly.connectionQueue_.sendAPMScreenTime(true, durationMs, lastScreenSwitchTime, currentTimeMs);
+                }
+            }
+
+            lastScreenSwitchTime = currentTimeMs;
+        } else {
+            // changing screens normally
+        }
+    }
+
     @Override
     public void halt() {
         codeTraces = null;
         networkTraces = null;
+    }
+
+    /**
+     * used for background / foreground time recording
+     * @param activity
+     */
+    @Override
+    public void callbackOnActivityResumed(Activity activity) {
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Apm] Calling 'callbackOnActivityResumed', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
+        }
+
+        calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
+        activitiesOpen++;
+
+        if(!hasFirstOnResumeHappened) {
+            hasFirstOnResumeHappened = true;
+
+            firstOnResumeTimeMs = UtilsTime.currentTimestampMs();
+
+            recordAppStart();
+        }
+    }
+
+    /**
+     * used for background / foreground time recording
+     * @param activity
+     */
+    @Override
+    void callbackOnActivityStopped(Activity activity) {
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
+        }
+
+        calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
+        activitiesOpen--;
     }
 
     public class Apm {

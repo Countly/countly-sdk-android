@@ -39,9 +39,12 @@ public class App extends Application {
     final String COUNTLY_SERVER_URL = "YOUR_SERVER";
     final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
 
+    private BroadcastReceiver messageReceiver;
+
     @Override
     public void onCreate() {
         super.onCreate();
+        Countly.applicationOnCreate();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
@@ -105,6 +108,7 @@ public class App extends Application {
                     }
                 })
                 .setApplication(this)
+                .setRecordAppStartTime(true)
                 ;
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

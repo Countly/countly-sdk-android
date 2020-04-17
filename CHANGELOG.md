@@ -11,6 +11,10 @@
   * Adding calls to give and remove consent to all features at the same time
   * Adding a way to change the session update timer interval
   * Adding call to set notification accent color
+  * Adding APM functinality to record app start time
+  * Adding APM functinality to record custom traces
+  * Adding APM functinality to record network request traces
+  * Adding APM functinality to record app time spent in foreground and background
   * Moving crash, event, view, rating related calls to a seperate modules
   * Deprecating functions that are being put into modules
   * Removing depracated "addCrashLog" call

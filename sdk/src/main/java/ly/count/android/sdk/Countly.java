@@ -161,6 +161,8 @@ public class Countly {
     //custom request header fields
     Map<String, String> requestHeaderCustomValues;
 
+    static long applicationStart = -1;
+
     //GDPR
     protected boolean requiresConsent = false;
 
@@ -624,6 +626,10 @@ public class Countly {
                 config.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                     @Override
                     public void onActivityCreated(Activity activity, Bundle bundle) {
+                        if (isLoggingEnabled()) {
+                            String actName = activity.getClass().getSimpleName();
+                            Log.d(Countly.TAG, "[Countly] onActivityCreated, " + actName);
+                        }
                         for (ModuleBase module:modules) {
                             module.callbackOnActivityCreated(activity);
                         }
@@ -631,6 +637,10 @@ public class Countly {
 
                     @Override
                     public void onActivityStarted(Activity activity) {
+                        if (isLoggingEnabled()) {
+                            String actName = activity.getClass().getSimpleName();
+                            Log.d(Countly.TAG, "[Countly] onActivityStarted, " + actName);
+                        }
                         for (ModuleBase module:modules) {
                             module.callbackOnActivityStarted(activity);
                         }
@@ -638,6 +648,10 @@ public class Countly {
 
                     @Override
                     public void onActivityResumed(Activity activity) {
+                        if (isLoggingEnabled()) {
+                            String actName = activity.getClass().getSimpleName();
+                            Log.d(Countly.TAG, "[Countly] onActivityResumed, " + actName);
+                        }
                         for (ModuleBase module:modules) {
                             module.callbackOnActivityResumed(activity);
                         }
@@ -645,6 +659,10 @@ public class Countly {
 
                     @Override
                     public void onActivityPaused(Activity activity) {
+                        if (isLoggingEnabled()) {
+                            String actName = activity.getClass().getSimpleName();
+                            Log.d(Countly.TAG, "[Countly] onActivityPaused, " + actName);
+                        }
                         for (ModuleBase module:modules) {
                             module.callbackOnActivityPaused(activity);
                         }
@@ -652,6 +670,10 @@ public class Countly {
 
                     @Override
                     public void onActivityStopped(Activity activity) {
+                        if (isLoggingEnabled()) {
+                            String actName = activity.getClass().getSimpleName();
+                            Log.d(Countly.TAG, "[Countly] onActivityStopped, " + actName);
+                        }
                         for (ModuleBase module:modules) {
                             module.callbackOnActivityStopped(activity);
                         }
@@ -659,6 +681,10 @@ public class Countly {
 
                     @Override
                     public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+                        if (isLoggingEnabled()) {
+                            String actName = activity.getClass().getSimpleName();
+                            Log.d(Countly.TAG, "[Countly] onActivitySaveInstanceState, " + actName);
+                        }
                         for (ModuleBase module:modules) {
                             module.callbackOnActivitySaveInstanceState(activity);
                         }
@@ -666,6 +692,10 @@ public class Countly {
 
                     @Override
                     public void onActivityDestroyed(Activity activity) {
+                        if (isLoggingEnabled()) {
+                            String actName = activity.getClass().getSimpleName();
+                            Log.d(Countly.TAG, "[Countly] onActivityDestroyed, " + actName);
+                        }
                         for (ModuleBase module:modules) {
                             module.callbackOnActivityDestroyed(activity);
                         }
@@ -685,7 +715,6 @@ public class Countly {
                 });
  */
             }
-
         } else {
             //if this is not the first time we are calling init
 
@@ -1415,6 +1444,9 @@ public class Countly {
 
             @Override
             public void uncaughtException(Thread t, Throwable e) {
+                if (isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "Uncaught crash handler triggered");
+                }
                 if(getConsent(CountlyFeatureNames.crashes)){
 
                     StringWriter sw = new StringWriter();
@@ -2724,6 +2756,10 @@ public class Countly {
         }
 
         return moduleConsent.consentInterface;
+    }
+
+    public static void applicationOnCreate() {
+        applicationStart = UtilsTime.currentTimestampMs();
     }
 
     // for unit testing

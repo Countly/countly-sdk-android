@@ -507,6 +507,60 @@ public class ConnectionQueue {
         tick();
     }
 
+    void sendAPMAppStart(long durationMs, Long startMs, Long endMs) {
+        checkInternalState();
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendAPMAppStart");
+        }
+
+        if(!Countly.sharedInstance().anyConsentGiven()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
+            return;
+        }
+        //https://abc.count.ly/i?app_key=xyz&device_id=pts911&apm={"type":"device","name":"app_start","apm_metrics":{"duration": 15000}, "stz": 1584698900, "etz": 1584699900}
+        // &timestamp=1584698900&count=1
+
+        String apmData = "{\"type\":\"device\",\"name\":\"app_start\", \"apm_metrics\":{\"duration\": " + durationMs + "}, \"stz\": " + startMs + ", \"etz\": " + endMs + "}";
+
+        final String data = prepareCommonRequestData()
+                + "&count=1"
+                + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
+
+        store_.addConnection(data);
+
+        tick();
+    }
+
+    void sendAPMScreenTime(boolean recordForegroundTime, long durationMs, Long startMs, Long endMs) {
+        checkInternalState();
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
+        }
+
+        if(!Countly.sharedInstance().anyConsentGiven()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
+            }
+            return;
+        }
+
+        final String eventName = recordForegroundTime ? "app_in_foreground" : "app_in_background";
+
+        String apmData = "{\"type\":\"device\",\"name\":\"" + eventName + "\", \"apm_metrics\":{\"duration\": " + durationMs + "}, \"stz\": " + startMs + ", \"etz\": " + endMs + "}";
+
+        final String data = prepareCommonRequestData()
+                + "&count=1"
+                + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
+
+        store_.addConnection(data);
+
+        tick();
+    }
+
     private String prepareCommonRequestData(){
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
