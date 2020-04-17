@@ -1,4 +1,4 @@
-20.02
+20.04
   * Adding functionality for filtering crashes
   * Adding functionality to set segmentation for automatic and manual views
   * Adding functionality to ignore activities for automatic view tracking
@@ -19,6 +19,7 @@
   * Removing depracated "setUserData" call
   * Migrated to AndroidX
   * Improved internal time management which fixes inconsistencies that could arrise on day changes
+  * Fixed a bug where deep links from notifications did not include the sent message as part of the intent
 
 19.09.3
   * Fixed a bug which did not add the link to the push dialog button.
