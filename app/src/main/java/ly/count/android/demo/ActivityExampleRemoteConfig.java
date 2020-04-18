@@ -3,14 +3,17 @@ package ly.count.android.demo;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Map;
+
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.RemoteConfig;
+import ly.count.android.sdk.RemoteConfigCallback;
 
 public class ActivityExampleRemoteConfig extends Activity {
     Activity activity;
@@ -24,64 +27,70 @@ public class ActivityExampleRemoteConfig extends Activity {
     }
 
     public void onClickRemoteConfigUpdate(View v) {
-        Countly.sharedInstance().remoteConfigUpdate(new RemoteConfig.RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().update(new RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 if(error == null) {
-                    Toast.makeText(activity, "Update finished", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Update finished", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(activity, "Error: " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
     public void onClickRemoteConfigGetValue(View v) {
-        Object value = Countly.sharedInstance().getRemoteConfigValueForKey("aa");
+        Object value = Countly.sharedInstance().remoteConfig().getValueForKey("aa");
         if(value != null){
-            Toast.makeText(activity, "Stored Remote Config Value with key 'a': [" + (int)value+ "]", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Stored Remote Config Value with key 'a': [" + (int)value+ "]", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(activity, "No value stored for this key", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "No value stored for this key", Toast.LENGTH_SHORT).show();
         }
     }
 
     public void onClickRemoteConfigGetValueInclusion(View v) {
-        Countly.sharedInstance().updateRemoteConfigForKeysOnly(new String[]{"aa", "dd"}, new RemoteConfig.RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().updateForKeysOnly(new String[]{"aa", "dd"}, new RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 if(error == null) {
-                    Toast.makeText(activity, "Update with inclusion finished", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Update with inclusion finished", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(activity, "Error: " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
     public void onClickRemoteConfigGetValueExclusion(View v) {
-        Countly.sharedInstance().updateRemoteConfigExceptKeys(new String[]{"aa", "dd"}, new RemoteConfig.RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().updateExceptKeys(new String[]{"aa", "dd"}, new RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 if (error == null) {
-                    Toast.makeText(activity, "Update with exclusion finished", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Update with exclusion finished", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(activity, "Error: " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
 
     public void onClickRemoteConfigClearValues(View v) {
-        Countly.sharedInstance().remoteConfigClearValues();
+        Countly.sharedInstance().remoteConfig().clearStoredValues();
     }
 
     public void onClickRemoteConfigPrintValues(View v) {
         //this sample assumes that there are 4 keys available on the server
 
-        Object value_1 = Countly.sharedInstance().getRemoteConfigValueForKey("aa");
-        Object value_2 = Countly.sharedInstance().getRemoteConfigValueForKey("bb");
-        Object value_3 = Countly.sharedInstance().getRemoteConfigValueForKey("cc");
-        Object value_4 = Countly.sharedInstance().getRemoteConfigValueForKey("dd");
+        Map<String, Object> values = Countly.sharedInstance().remoteConfig().getAllValues();
+
+        //access way #1
+        Object value_1 = values.get("aa");
+        Object value_2 = values.get("bb");
+        Object value_3 = values.get("cc");
+
+        //access way #2
+        Object value_4 = Countly.sharedInstance().remoteConfig().getValueForKey("dd");
+        Object value_5 = Countly.sharedInstance().remoteConfig().getValueForKey("ee");
 
         String printValues = "";
 
@@ -95,19 +104,26 @@ public class ActivityExampleRemoteConfig extends Activity {
             printValues += "| " + (double)value_2;
         }
 
-        if(value_3 != null) {
-            //array
-            JSONArray jArray = (JSONArray) value_3;
-            printValues += "| " + value_3.toString();
+        if(value_3!= null){
+            //String value
+            printValues += "| " + (String)value_3;
         }
 
         if(value_4 != null) {
-            //json object
-            JSONObject jobj = (JSONObject) value_4;
-            printValues += "| " + value_4.toString();
+            //array
+            JSONArray jArray = (JSONArray) value_4;
+            printValues += "| " + jArray.toString();
         }
 
-        Toast.makeText(activity, "Stored Remote Config Values: [" + printValues + "]", Toast.LENGTH_LONG).show();
+        if(value_5 != null) {
+            //json object
+            JSONObject jobj = (JSONObject) value_5;
+            printValues += "| " + jobj.toString();
+        }
+
+        Toast t = Toast.makeText(getApplicationContext(), "Stored Remote Config Values: [" + printValues + "]", Toast.LENGTH_LONG);
+        t.setGravity(Gravity.BOTTOM, 0,0);
+        t.show();
     }
 
     @Override

@@ -618,7 +618,7 @@ public class Countly {
                 if (isLoggingEnabled()) {
                     Log.d(Countly.TAG, "[Init] Automatically updating remote config values");
                 }
-                moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, remoteConfigInitCallback);
+                moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, false, remoteConfigInitCallback);
             }
 
             //set global application listeners
@@ -971,7 +971,7 @@ public class Countly {
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
         if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
-            moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
+            moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, false, null);
         }
 
         //clear automated star rating session values because now we have a new user
@@ -1033,7 +1033,7 @@ public class Countly {
             remoteConfigClearValues();
             if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
                 //request should be delayed, because of the delayed server merge
-                moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, true, null);
+                moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, true, null);
             }
         }
     }
@@ -1073,7 +1073,7 @@ public class Countly {
         //update remote config_ values if automatic update is enabled
         remoteConfigClearValues();
         if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
-            moduleRemoteConfig.updateRemoteConfigValues(context_, null, null, connectionQueue_, false, null);
+            moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, false, null);
         }
 
         doStoredRequests();

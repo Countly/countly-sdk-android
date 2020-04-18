@@ -2,7 +2,7 @@
   * Adding functionality for filtering crashes
   * Adding functionality to set segmentation for automatic and manual views
   * Adding functionality to ignore activities for automatic view tracking
-  * Adding functinality to track orientation changes
+  * Adding functionality to track orientation changes
   * Adding call to manually record user rating without showing any UI
   * Adding call to record a event with a given timestamp
   * Adding call to cancel a timed event
@@ -15,15 +15,16 @@
   * Adding APM functinality to record custom traces
   * Adding APM functinality to record network request traces
   * Adding APM functinality to record app time spent in foreground and background
+  * Adding remote config call to get all saved values
   * Moving crash, event, view, rating related calls to a seperate modules
   * Deprecating functions that are being put into modules
+  * Migrated to AndroidX
+  * Improved internal time management which fixes inconsistencies that could arrise on day changes
+  * Fixed a bug where deep links from notifications did not include the sent message as part of the intent
   * Removing depracated "addCrashLog" call
   * Removing depracated "logException" call
   * Removing depracated "setCustomUserData" call
   * Removing depracated "setUserData" call
-  * Migrated to AndroidX
-  * Improved internal time management which fixes inconsistencies that could arrise on day changes
-  * Fixed a bug where deep links from notifications did not include the sent message as part of the intent
 
 19.09.3
   * Fixed a bug which did not add the link to the push dialog button.
