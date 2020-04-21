@@ -132,6 +132,16 @@ public class CountlyConfig {
 
     protected boolean recordAppStartTime = false;
 
+    boolean disableLocation = false;
+
+    String locationCountyCode = null;
+
+    String locationCity = null;
+
+    String locationLocation = null;
+
+    String locationIpAddress = null;
+
     public CountlyConfig() {
     }
 
@@ -442,6 +452,26 @@ public class CountlyConfig {
 
     public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime){
         this.recordAppStartTime = recordAppStartTime;
+        return this;
+    }
+
+    public synchronized CountlyConfig setDisableLocation() {
+        disableLocation = true;
+        return this;
+    }
+
+    /**
+     * Set location parameters.
+     * This will be ignored if set together with `setDisableLocation`
+     * @param country_code ISO Country code for the user's country
+     * @param city Name of the user's city
+     * @param gpsCoordinates comma separate lat and lng values. For example, "56.42345,123.45325"
+     */
+    public synchronized CountlyConfig setLocation(String country_code, String city, String gpsCoordinates, String ipAddress) {
+        locationCountyCode = country_code;
+        locationCity = city;
+        locationLocation = gpsCoordinates;
+        locationIpAddress = ipAddress;
         return this;
     }
 }

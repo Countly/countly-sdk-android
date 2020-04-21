@@ -140,6 +140,8 @@ public class CountlyConfigTests {
         config.setStarRatingDisableAskingForEachAppVersion(true);
         config.setApplication(app);
         config.setRecordAppStartTime(true);
+        config.setDisableLocation();
+        config.setLocation("CC", "city", "loc", "ip");
 
 
 
@@ -188,6 +190,14 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.starRatingDisableAskingForEachAppVersion);
         Assert.assertEquals(app, config.application);
         Assert.assertTrue(config.recordAppStartTime);
+        Assert.assertTrue(config.disableLocation);
+        Assert.assertEquals("CC", config.locationCountyCode);
+        Assert.assertEquals("city", config.locationCity);
+        Assert.assertEquals("loc", config.locationLocation);
+        Assert.assertEquals("ip", config.locationIpAddress);
+
+
+        config.setLocation("CC", "city", "loc", "ip");
 
     }
 
@@ -252,5 +262,10 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
         Assert.assertNull(config.application);
         Assert.assertFalse(config.recordAppStartTime);
+        Assert.assertFalse(config.disableLocation);
+        Assert.assertNull(config.locationCountyCode);
+        Assert.assertNull(config.locationCity);
+        Assert.assertNull(config.locationLocation);
+        Assert.assertNull(config.locationIpAddress);
     }
 }

@@ -57,7 +57,7 @@ public class CountlyStore {
     private static final String LOCATION_CITY_PREFERENCE = "LOCATION_CITY";
     private static final String LOCATION_COUNTRY_CODE_PREFERENCE = "LOCATION_COUNTRY_CODE";
     private static final String LOCATION_IP_ADDRESS_PREFERENCE = "LOCATION_IP_ADDRESS";
-    private static final String LOCATION_PREFERENCE = "LOCATION";
+    private static final String LOCATION_GPS_PREFERENCE = "LOCATION";
     private static final String LOCATION_DISABLED_PREFERENCE = "LOCATION_DISABLED";
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
@@ -183,8 +183,8 @@ public class CountlyStore {
     /**
      * Sets location of user and sends it with next request
      */
-    void setLocation(final String latLonCoordinates) {
-        preferences_.edit().putString(LOCATION_PREFERENCE, latLonCoordinates).apply();
+    void setLocationGpsCoordinates(final String latLonCoordinates) {
+        preferences_.edit().putString(LOCATION_GPS_PREFERENCE, latLonCoordinates).apply();
     }
 
     void setLocationCity(final String city) {
@@ -207,7 +207,7 @@ public class CountlyStore {
      * Get location or empty string in case if no location is specified
      */
     String getLocation() {
-        return preferences_.getString(LOCATION_PREFERENCE, "");
+        return preferences_.getString(LOCATION_GPS_PREFERENCE, "");
     }
 
     String getLocationCity() {

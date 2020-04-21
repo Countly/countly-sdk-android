@@ -24,7 +24,6 @@ package ly.count.android.sdk;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
-import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -611,6 +610,16 @@ public class Countly {
             //do star rating related things
             if(getConsent(CountlyFeatureNames.starRating)) {
                 moduleRatings.registerAppSession(config.context, countlyStore, moduleRatings.starRatingCallback_);
+            }
+
+            //do location related things
+            if(config.disableLocation) {
+                disableLocation();
+            } else {
+                //if we are not disabling location, check for other set values
+                if(config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
+                    setLocation(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
+                }
             }
 
             //update remote config_ values if automatic update is enabled and we are not in temporary id mode
@@ -1257,6 +1266,12 @@ public class Countly {
             Log.d(Countly.TAG, "Disabling location");
         }
 
+        if (!isInitialized()) {
+            if (isLoggingEnabled()) {
+                Log.w(Countly.TAG, "The use of this before init is deprecated, use CountlyConfig instead of this");
+            }
+        }
+
         if(!getConsent(CountlyFeatureNames.location)){
             //can't send disable location request if no consent given
             return this;
@@ -1272,7 +1287,7 @@ public class Countly {
     private synchronized void resetLocationValues(){
         connectionQueue_.getCountlyStore().setLocationCountryCode("");
         connectionQueue_.getCountlyStore().setLocationCity("");
-        connectionQueue_.getCountlyStore().setLocation("");
+        connectionQueue_.getCountlyStore().setLocationGpsCoordinates("");
         connectionQueue_.getCountlyStore().setLocationIpAddress("");
     }
 
@@ -1282,12 +1297,18 @@ public class Countly {
      * If this is called after disabling location, it will enable it.
      * @param country_code ISO Country code for the user's country
      * @param city Name of the user's city
-     * @param location comma separate lat and lng values. For example, "56.42345,123.45325"
+     * @param gpsCoordinates comma separate lat and lng values. For example, "56.42345,123.45325"
      * @return Returns link to Countly for call chaining
      */
-    public synchronized Countly setLocation(String country_code, String city, String location, String ipAddress){
+    public synchronized Countly setLocation(String country_code, String city, String gpsCoordinates, String ipAddress){
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Setting location parameters");
+        }
+
+        if (!isInitialized()) {
+            if (isLoggingEnabled()) {
+                Log.w(Countly.TAG, "The use of this before init is deprecated, use CountlyConfig instead of this");
+            }
         }
 
         if(!getConsent(CountlyFeatureNames.location)){
@@ -1302,8 +1323,8 @@ public class Countly {
             connectionQueue_.getCountlyStore().setLocationCity(city);
         }
 
-        if(location != null){
-            connectionQueue_.getCountlyStore().setLocation(location);
+        if(gpsCoordinates != null){
+            connectionQueue_.getCountlyStore().setLocationGpsCoordinates(gpsCoordinates);
         }
 
         if(ipAddress != null){
@@ -1316,7 +1337,7 @@ public class Countly {
             }
         }
 
-        if(country_code != null || city != null || location != null || ipAddress != null){
+        if(country_code != null || city != null || gpsCoordinates != null || ipAddress != null){
             connectionQueue_.getCountlyStore().setLocationDisabled(false);
         }
 
@@ -2022,6 +2043,9 @@ public class Countly {
      * Return if the countly sdk should ignore app crawlers
      */
     public boolean ifShouldIgnoreCrawlers(){
+        if(!isInitialized()) {
+            throw new IllegalStateException("init must be called before ifShouldIgnoreCrawlers");
+        }
         return shouldIgnoreCrawlers;
     }
 
@@ -2687,6 +2711,10 @@ public class Countly {
     public Countly enableTemporaryIdMode() {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling enableTemporaryIdMode");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before enableTemporaryIdMode");
         }
 
         changeDeviceId(DeviceId.temporaryCountlyDeviceId);
