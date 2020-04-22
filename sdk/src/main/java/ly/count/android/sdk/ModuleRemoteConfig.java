@@ -104,7 +104,7 @@ class ModuleRemoteConfig extends ModuleBase {
             return;
         }
 
-        (new ModuleRatings.ImmediateRequestMaker()).execute(urlConnection, requestShouldBeDelayed, new ModuleRatings.InternalFeedbackRatingCallback() {
+        (new ImmediateRequestMaker()).execute(urlConnection, requestShouldBeDelayed, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
             @Override
             public void callback(JSONObject checkResponse) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {

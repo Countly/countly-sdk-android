@@ -444,13 +444,6 @@ class ModuleRatings extends ModuleBase {
 
     /// Countly webDialog user rating
 
-    /**
-     * Used for callback from async task
-     */
-    protected interface InternalFeedbackRatingCallback {
-        void callback(JSONObject checkResponse);
-    }
-
     protected static synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final Countly countly, final ConnectionQueue connectionQueue_, final FeedbackRatingCallback devCallback){
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Showing Feedback popup for widget id: [" + widgetId + "]");
@@ -498,7 +491,7 @@ class ModuleRatings extends ModuleBase {
                 Log.d(Countly.TAG, "rating widget url :[" + ratingWidgetUrl + "]");
             }
 
-            (new ImmediateRequestMaker()).execute(urlConnection, false, new InternalFeedbackRatingCallback() {
+            (new ImmediateRequestMaker()).execute(urlConnection, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     if(checkResponse == null){
@@ -564,117 +557,6 @@ class ModuleRatings extends ModuleBase {
         @Override
         public boolean onCheckIsTextEditor() {
             return true;
-        }
-    }
-
-    /**
-     * Async task for making immediate server requests
-     */
-    protected static class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
-        InternalFeedbackRatingCallback callback;
-
-        /**
-         * params fields:
-         * 0 - urlConnection
-         * 1 - requestShouldBeDelayed
-         * 2 - callback         *
-         */
-        protected JSONObject doInBackground(Object... params) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.v(Countly.TAG, "Starting ImmediateRequestMaker request");
-            }
-            callback = (InternalFeedbackRatingCallback)params[2];
-            boolean requestShouldBeDelayed = (boolean)params[1];
-
-            HttpURLConnection connection = null;
-            BufferedReader reader = null;
-            boolean wasSuccess = true;
-
-            try {
-                if(requestShouldBeDelayed){
-                    //used in cases after something has to be done after a device id change
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.v(Countly.TAG, "ImmediateRequestMaker request should be delayed, waiting for 10.5 seconds");
-                    }
-
-                    try {
-                        Thread.sleep(10500);
-                    } catch (InterruptedException e) {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.w(Countly.TAG, "While waiting for 10 seconds in ImmediateRequestMaker, sleep was interrupted");
-                        }
-                    }
-                }
-
-                connection = (HttpURLConnection)params[0];
-                connection.connect();
-
-                InputStream stream;
-
-                try{
-                    //assume there will be no error
-                    stream = connection.getInputStream();
-                } catch (Exception ex){
-                    //in case of exception, assume there was a error in the request
-                    //and change streams
-                    stream = connection.getErrorStream();
-                    wasSuccess = false;
-                }
-
-                if(stream == null){
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "Encountered problem while making a immediate server request, received stream was null");
-                    }
-                    return null;
-                }
-
-                reader = new BufferedReader(new InputStreamReader(stream));
-
-                StringBuilder buffer = new StringBuilder();
-                String line = "";
-
-                while ((line = reader.readLine()) != null) {
-                    buffer.append(line).append("\n");
-                }
-
-                if(wasSuccess) {
-                    return new JSONObject(buffer.toString());
-                } else {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "Encountered problem while making a immediate server request, :[" + buffer.toString() + "]");
-                    }
-                    return null;
-                }
-            } catch (Exception e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "Received exception while making a immediate server request");
-                    e.printStackTrace();
-                }
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
-                try {
-                    if (reader != null) {
-                        reader.close();
-                    }
-                } catch (IOException e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject result) {
-            super.onPostExecute(result);
-            //Log.d(TAG, "Post exec: [" + result + "]");
-
-            if(callback != null){
-                callback.callback(result);
-            }
         }
     }
 

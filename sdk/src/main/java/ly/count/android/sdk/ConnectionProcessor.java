@@ -267,8 +267,6 @@ public class ConnectionProcessor implements Runnable {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
                             Log.d(Countly.TAG, "[Connection Processor] Waiting 10 seconds before sending device_id merge request");
                         }
-
-                        waitForSecondsBeforeRequest = true;
                     }
                 } else {
                     // this branch will be used in almost all requests.
