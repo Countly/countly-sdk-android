@@ -15,7 +15,6 @@ import androidx.annotation.NonNull;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -109,7 +108,11 @@ public class App extends Application {
                 })
                 .setApplication(this)
                 .setRecordAppStartTime(true)
+                //.setDisableLocation()
+                //.setLocation("us", "Boston", "27.634933,-85.220255", null)
+                .setEnableAttribution(true);
                 ;
+
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 

@@ -125,6 +125,7 @@ public class Countly {
     ModuleRemoteConfig moduleRemoteConfig = null;
     ModuleAPM moduleAPM = null;
     ModuleConsent moduleConsent = null;
+    ModuleDeviceId moduleDeviceId = null;
 
     //user data access
     public static UserData userData;
@@ -462,6 +463,7 @@ public class Countly {
             }
 
             //initialise modules
+            moduleDeviceId = new ModuleDeviceId(this, config);
             moduleCrash = new ModuleCrash(this, config);
             moduleEvents = new ModuleEvents(this, config);
             moduleViews = new ModuleViews(this, config);
@@ -480,6 +482,7 @@ public class Countly {
             modules.add(moduleRemoteConfig);
             modules.add(moduleConsent);
             modules.add(moduleAPM);
+            modules.add(moduleDeviceId);
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -813,6 +816,7 @@ public class Countly {
         moduleRemoteConfig = null;
         moduleConsent = null;
         moduleAPM = null;
+        moduleDeviceId = null;
     }
 
     /**
@@ -929,68 +933,58 @@ public class Countly {
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
      */
-    public void changeDeviceId(DeviceId.Type type, String deviceId) {
+    public void changeDeviceIdWithoutMerge(DeviceId.Type type, String deviceId) {
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [changeDeviceId] with type and ID");
+            Log.d(Countly.TAG, "Calling [changeDeviceIdWithoutMerge] with type and ID");
         }
+
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before changeDeviceId");
-        }
-        //if (activityCount_ == 0) {
-//            throw new IllegalStateException("must call onStart before changeDeviceId");
-//        }
-        if (type == null) {
-            throw new IllegalStateException("type cannot be null");
+            throw new IllegalStateException("init must be called before changeDeviceIdWithoutMerge");
         }
 
-        if(!anyConsentGiven()){
-            if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
-            }
-            return;
-        }
-
-        DeviceId currentDeviceId = connectionQueue_.getDeviceId();
-
-        if(currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(DeviceId.temporaryCountlyDeviceId))){
-            // we already are in temporary mode and we want to set temporary mode
-            // in this case we just ignore the request since nothing has to be done
-            return;
-        }
-
-        if(currentDeviceId.temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()){
-            // we are about to exit temporary ID mode
-            // because of the previous check, we know that the new type is a different one
-            // we just call our method for exiting it
-            // we don't end the session, we just update the device ID and connection queue
-            exitTemporaryIdMode(type, deviceId);
-        }
-
-
-        // we are either making a simple ID change or entering temporary mode
-        // in both cases we act the same as the temporary ID requests will be updated with the final ID later
-
-        //force flush events so that they are associated correctly
-        sendEventsForced();
-
-        moduleSessions.endSessionInternal(currentDeviceId.getId());
-        currentDeviceId.changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
-        moduleSessions.beginSessionInternal();
-
-        //update remote config_ values if automatic update is enabled
-        remoteConfigClearValues();
-        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
-            moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, false, null);
-        }
-
-        //clear automated star rating session values because now we have a new user
-        moduleRatings.clearAutomaticStarRatingSessionCountInternal(connectionQueue_.getCountlyStore());
+        moduleDeviceId.changeDeviceIdWithoutMerge(type, deviceId);
     }
 
     /**
      * Changes current device id to the one specified in parameter. Merges user profile with new id
      * (if any) with old profile.
      * @param deviceId new device id
+     */
+    public void changeDeviceIdWithMerge(String deviceId) {
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling [changeDeviceIdWithMerge] only with ID");
+        }
+        if (!isInitialized()) {
+            throw new IllegalStateException("init must be called before changeDeviceIdWithMerge");
+        }
+
+        moduleDeviceId.changeDeviceIdWithMerge(deviceId);
+    }
+
+    /**
+     * Changes current device id type to the one specified in parameter. Closes current session and
+     * reopens new one with new id. Doesn't merge user profiles on the server
+     * @param type Device ID type to change to
+     * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
+     * @deprecated use 'changeDeviceIdWithoutMerge'
+     */
+    public void changeDeviceId(DeviceId.Type type, String deviceId) {
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Calling [changeDeviceId] with type and ID");
+        }
+
+        if (!isInitialized()) {
+            throw new IllegalStateException("init must be called before changeDeviceId");
+        }
+
+        moduleDeviceId.changeDeviceIdWithoutMerge(type, deviceId);
+    }
+
+    /**
+     * Changes current device id to the one specified in parameter. Merges user profile with new id
+     * (if any) with old profile.
+     * @param deviceId new device id
+     * @deprecated use 'changeDeviceIdWithMerge'
      */
     public void changeDeviceId(String deviceId) {
         if (isLoggingEnabled()) {
@@ -999,93 +993,8 @@ public class Countly {
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceId");
         }
-        //if (activityCount_ == 0) {
-//            throw new IllegalStateException("must call onStart before changeDeviceId");
-//        }
-        if (deviceId == null || "".equals(deviceId)) {
-            throw new IllegalStateException("deviceId cannot be null or empty");
-        }
 
-        if(!anyConsentGiven()){
-            if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
-            }
-            return;
-        }
-
-        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()){
-            //if we are in temporary ID mode or
-            //at some moment have enabled temporary mode
-
-            if(deviceId.equals(DeviceId.temporaryCountlyDeviceId)){
-                //if we want to enter temporary ID mode
-                //just exit, nothing to do
-
-                if (isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[changeDeviceId] About to enter temporary ID mode when already in it");
-                }
-
-                return;
-            }
-
-            // if a developer supplied ID is provided
-            //we just exit this mode and set the id to the provided one
-            exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, deviceId);
-        } else {
-            //we are not in temporary mode, nothing special happens
-            // we are either making a simple ID change or entering temporary mode
-            // in both cases we act the same as the temporary ID requests will be updated with the final ID later
-
-            connectionQueue_.changeDeviceId(deviceId, moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
-
-            //update remote config_ values if automatic update is enabled
-            remoteConfigClearValues();
-            if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
-                //request should be delayed, because of the delayed server merge
-                moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, true, null);
-            }
-        }
-    }
-
-    private void exitTemporaryIdMode(DeviceId.Type type, String deviceId){
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling exitTemporaryIdMode");
-        }
-
-        if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before exitTemporaryIdMode");
-        }
-
-        //start by changing stored ID
-        connectionQueue_.getDeviceId().changeToId(context_, connectionQueue_.getCountlyStore(), type, deviceId);
-
-        //update stored request for ID change to use this new ID
-        String[] storedRequests = connectionQueue_.getCountlyStore().connections();
-        String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-        String newIdTag = "&device_id=" + deviceId;
-
-        boolean foundOne = false;
-        for(int a = 0 ; a < storedRequests.length ; a++){
-            if(storedRequests[a].contains(temporaryIdTag)){
-                if (isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[exitTemporaryIdMode] Found a tag to replace in: [" + storedRequests[a] + "]");
-                }
-                storedRequests[a] = storedRequests[a].replace(temporaryIdTag, newIdTag);
-                foundOne = true;
-            }
-        }
-
-        if(foundOne){
-            connectionQueue_.getCountlyStore().replaceConnections(storedRequests);
-        }
-
-        //update remote config_ values if automatic update is enabled
-        remoteConfigClearValues();
-        if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven()) {
-            moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, false, null);
-        }
-
-        doStoredRequests();
+        moduleDeviceId.changeDeviceIdWithMerge(deviceId);
     }
 
     /**

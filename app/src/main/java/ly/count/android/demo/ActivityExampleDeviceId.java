@@ -22,7 +22,7 @@ public class ActivityExampleDeviceId extends Activity {
 
     public void onClickDeviceId01(View v) {
         //set device id without merge
-        Countly.sharedInstance().changeDeviceId(DeviceId.Type.DEVELOPER_SUPPLIED, "New Device ID" + (new Random().nextInt()));
+        Countly.sharedInstance().changeDeviceIdWithoutMerge(DeviceId.Type.DEVELOPER_SUPPLIED, "New Device ID" + (new Random().nextInt()));
     }
 
     public void onClickDeviceId02(View v) {
