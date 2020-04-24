@@ -207,13 +207,13 @@ class DeviceInfo {
             result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
         } catch (Exception e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Can't get Installer package [getStore]");
+                Log.d(Countly.TAG, "[DeviceInfo, getStore] Can't get Installer package ");
             }
         }
         if (result == null || result.length() == 0) {
             result = "";
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "No store found [getStore]");
+                Log.d(Countly.TAG, "[DeviceInfo, getStore] No store found");
             }
         }
         return result;

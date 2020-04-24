@@ -8,7 +8,7 @@ class ModuleDeviceId extends ModuleBase {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleDeviceId] Initialising");
+            Log.v(Countly.TAG, "[ModuleDeviceId] Initialising");
         }
     }
 

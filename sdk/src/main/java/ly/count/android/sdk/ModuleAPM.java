@@ -26,7 +26,7 @@ public class ModuleAPM extends ModuleBase {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleAPM] Initialising");
+            Log.v(Countly.TAG, "[ModuleAPM] Initialising");
         }
 
         codeTraces = new HashMap<>();

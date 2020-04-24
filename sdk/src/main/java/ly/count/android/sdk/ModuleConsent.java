@@ -10,7 +10,7 @@ public class ModuleConsent extends ModuleBase {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleConsent] Initialising");
+            Log.v(Countly.TAG, "[ModuleConsent] Initialising");
         }
 
         consentInterface = new Consent();

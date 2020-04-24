@@ -35,7 +35,7 @@ class ModuleRatings extends ModuleBase {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleRatings] Initialising");
+            Log.v(Countly.TAG, "[ModuleRatings] Initialising");
         }
 
         starRatingCallback_ = config.starRatingCallback;

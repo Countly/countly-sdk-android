@@ -116,7 +116,7 @@ public class ConnectionProcessor implements Runnable {
 
         String picturePath = UserData.getPicturePathFromQuery(url);
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Got picturePath: " + picturePath);
+            Log.v(Countly.TAG, "Got picturePath: " + picturePath);
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.v(Countly.TAG, "Is the HTTP POST forced: " + Countly.sharedInstance().isHttpPostForced());
@@ -161,7 +161,7 @@ public class ConnectionProcessor implements Runnable {
         else {
             if(requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "Using HTTP POST");
+                    Log.v(Countly.TAG, "Using HTTP POST");
                 }
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
@@ -174,7 +174,7 @@ public class ConnectionProcessor implements Runnable {
             }
             else{
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "Using HTTP GET");
+                    Log.v(Countly.TAG, "Using HTTP GET");
                 }
                 conn.setDoOutput(false);
             }
@@ -189,7 +189,13 @@ public class ConnectionProcessor implements Runnable {
             int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Connection Processor] Starting to run, there are [" + storedEventCount + "] requests stored");
+                String msg = "[Connection Processor] Starting to run, there are [" + storedEventCount + "] requests stored";
+                if(storedEventCount == 0) {
+                    Log.v(Countly.TAG, msg);
+                } else {
+                    Log.i(Countly.TAG, msg);
+                }
+
             }
 
             if (storedEvents == null || storedEventCount == 0) {
@@ -352,23 +358,23 @@ public class ConnectionProcessor implements Runnable {
                     } else if (responseCode >= 300 && responseCode < 400){
                         //assume redirect
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.v(Countly.TAG, "[Connection Processor] Encountered redirect, will retry");
+                            Log.d(Countly.TAG, "[Connection Processor] Encountered redirect, will retry");
                         }
                         rRes = RequestResult.RETRY;
                     } else if(responseCode == 400 || responseCode == 404){
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.v(Countly.TAG, "[Connection Processor] Bad request, will be dropped");
+                            Log.w(Countly.TAG, "[Connection Processor] Bad request, will be dropped");
                         }
                         rRes = RequestResult.REMOVE;
                     } else if(responseCode > 400){
                         //server down, try again later
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.v(Countly.TAG, "[Connection Processor] Server is down, will retry");
+                            Log.d(Countly.TAG, "[Connection Processor] Server is down, will retry");
                         }
                         rRes = RequestResult.RETRY;
                     } else {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.v(Countly.TAG, "[Connection Processor] Bad response code, will retry");
+                            Log.d(Countly.TAG, "[Connection Processor] Bad response code, will retry");
                         }
                         rRes = RequestResult.RETRY;
                     }

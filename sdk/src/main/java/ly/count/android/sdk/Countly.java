@@ -378,7 +378,7 @@ public class Countly {
 
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {
             if (isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Init] Removing trailing '/' from provided server url");
+                Log.v(Countly.TAG, "[Init] Removing trailing '/' from provided server url");
             }
             config.serverURL = config.serverURL.substring(0, config.serverURL.length() - 1);//removing trailing '/' from server url
         }
@@ -412,8 +412,8 @@ public class Countly {
         }
 
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Init] Checking init parameters");
-            Log.d(Countly.TAG, "[Init] Is consent required? [" + requiresConsent + "]");
+            Log.i(Countly.TAG, "[Init] Checking init parameters");
+            Log.i(Countly.TAG, "[Init] Is consent required? [" + requiresConsent + "]");
 
             // Context class hierarchy
             // Context
@@ -432,7 +432,7 @@ public class Countly {
                 contextText += ", it's superclass: [" + contextSuperClass.getSimpleName() + "]";
             }
 
-            Log.d(Countly.TAG, contextText);
+            Log.i(Countly.TAG, contextText);
 
         }
 
@@ -483,6 +483,10 @@ public class Countly {
             modules.add(moduleConsent);
             modules.add(moduleAPM);
             modules.add(moduleDeviceId);
+
+            if (isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Init] Finished initialising modules");
+            }
 
             //init other things
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -2129,7 +2133,7 @@ public class Countly {
      */
     public synchronized Countly setConsentFeatureGroup(String groupName, boolean isConsentGiven){
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting consent for feature group named: [" + groupName + "] with value: [" + isConsentGiven + "]");
+            Log.v(Countly.TAG, "Setting consent for feature group: [" + groupName + "] with value: [" + isConsentGiven + "]");
         }
 
         if(isLoggingEnabled() && !isInitialized()){
@@ -2182,7 +2186,7 @@ public class Countly {
 
         for(String featureName:featureNames) {
             if (Countly.sharedInstance() != null && isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Setting consent for feature named: [" + featureName + "] with value: [" + isConsentGiven + "]");
+                Log.d(Countly.TAG, "Setting consent for feature: [" + featureName + "] with value: [" + isConsentGiven + "]");
             }
 
             if (!isValidFeatureName(featureName)) {
@@ -2340,7 +2344,7 @@ public class Countly {
         }
 
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
+            Log.v(Countly.TAG, "Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
         }
 
         return returnValue;

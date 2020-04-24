@@ -116,6 +116,9 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
                 }
             }
         }
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.v(Countly.TAG, "Finished ImmediateRequestMaker request");
+        }
         return null;
     }
 

@@ -13,7 +13,7 @@ public class ModuleSessions extends ModuleBase {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleSessions] Initialising");
+            Log.v(Countly.TAG, "[ModuleSessions] Initialising");
         }
 
         manualSessionControlEnabled = config.manualSessionControlEnabled;

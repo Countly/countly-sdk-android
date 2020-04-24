@@ -650,7 +650,7 @@ public class ConnectionQueue {
      */
     void tick() {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] tick, [" + !store_.isEmptyConnections() + "] [" + (connectionProcessorFuture_ == null) + "] [" + (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone()) + "]");
+            Log.v(Countly.TAG, "[Connection Queue] tick, Not empty:[" + !store_.isEmptyConnections() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone()) + "]");
         }
 
         if (!store_.isEmptyConnections() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {

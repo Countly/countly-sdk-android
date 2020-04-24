@@ -30,7 +30,7 @@ class ModuleCrash extends ModuleBase{
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleCrash] Initialising");
+            Log.v(Countly.TAG, "[ModuleCrash] Initialising");
         }
 
         setCrashFilterCallback(config.crashFilterCallback);

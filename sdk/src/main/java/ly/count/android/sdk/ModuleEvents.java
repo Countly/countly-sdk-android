@@ -16,7 +16,7 @@ class ModuleEvents extends ModuleBase{
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleEvents] Initialising");
+            Log.v(Countly.TAG, "[ModuleEvents] Initialising");
         }
 
         eventsInterface = new Events();

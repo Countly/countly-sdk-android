@@ -20,7 +20,7 @@ class ModuleRemoteConfig extends ModuleBase {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleRemoteConfig] Initialising");
+            Log.v(Countly.TAG, "[ModuleRemoteConfig] Initialising");
         }
 
         remoteConfigInterface = new RemoteConfig();
