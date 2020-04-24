@@ -14,6 +14,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 class ModuleRemoteConfig extends ModuleBase {
+    boolean updateRemoteConfigAfterIdChange = false;
+
     RemoteConfig remoteConfigInterface = null;
 
     ModuleRemoteConfig(Countly cly, CountlyConfig config) {
@@ -239,6 +241,29 @@ class ModuleRemoteConfig extends ModuleBase {
 
         public String dataToString(){
             return values.toString();
+        }
+    }
+
+    void clearAndDownloadAfterIdChange() {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.v(Countly.TAG, "[RemoteConfig] Clearing remote config values and preparing to download after ID update");
+        }
+
+        _cly.remoteConfig().clearStoredValues();
+        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.anyConsentGiven()) {
+            updateRemoteConfigAfterIdChange = true;
+        }
+    }
+
+    @Override
+    void deviceIdChanged() {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.v(Countly.TAG, "[RemoteConfig] Device ID changed will update values: [" + updateRemoteConfigAfterIdChange + "]");
+        }
+
+        if(updateRemoteConfigAfterIdChange) {
+            updateRemoteConfigAfterIdChange = false;
+            updateRemoteConfigValues(null, null, _cly.connectionQueue_, true, null);
         }
     }
 

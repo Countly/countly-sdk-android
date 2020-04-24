@@ -53,4 +53,7 @@ abstract class ModuleBase {
 
     void callbackOnActivityDestroyed(Activity activity) {
     }
+
+    void deviceIdChanged() {
+    }
 }

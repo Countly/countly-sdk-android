@@ -362,6 +362,10 @@ public class ConnectionProcessor implements Runnable {
                             if (deviceIdChange) {
                                 deviceId_.changeToDeveloperProvidedId(store_, newId);
                             }
+
+                            if (deviceIdChange || deviceIdOverride) {
+                                Countly.sharedInstance().notifyDeviceIdChange();
+                            }
                             break;
                         case REMOVE:
                             //bad request, will be removed

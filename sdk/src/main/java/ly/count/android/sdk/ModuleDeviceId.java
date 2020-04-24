@@ -94,15 +94,12 @@ class ModuleDeviceId extends ModuleBase {
         //force flush events so that they are associated correctly
         _cly.sendEventsForced();
 
+        //update remote config_ values after id change if automatic update is enabled
+        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
+
         _cly.moduleSessions.endSessionInternal(currentDeviceId.getId());
         currentDeviceId.changeToId(_cly.context_, _cly.connectionQueue_.getCountlyStore(), type, deviceId);
         _cly.moduleSessions.beginSessionInternal();
-
-        //update remote config_ values if automatic update is enabled
-        _cly.remoteConfigClearValues();
-        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.anyConsentGiven()) {
-            _cly.moduleRemoteConfig.updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, null);
-        }
 
         //clear automated star rating session values because now we have a new user
         _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
@@ -148,14 +145,10 @@ class ModuleDeviceId extends ModuleBase {
             // we are either making a simple ID change or entering temporary mode
             // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
-            _cly.connectionQueue_.changeDeviceId(deviceId, _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
+            //update remote config_ values after id change if automatic update is enabled
+            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
-            //update remote config_ values if automatic update is enabled
-            _cly.remoteConfigClearValues();
-            if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.anyConsentGiven()) {
-                //request should be delayed, because of the delayed server merge
-                _cly.moduleRemoteConfig.updateRemoteConfigValues(null, null, _cly.connectionQueue_, true, null);
-            }
+            _cly.connectionQueue_.changeDeviceId(deviceId, _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
         }
     }
 

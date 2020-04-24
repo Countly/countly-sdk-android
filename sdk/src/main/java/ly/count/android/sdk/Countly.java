@@ -823,6 +823,16 @@ public class Countly {
         moduleDeviceId = null;
     }
 
+    synchronized void notifyDeviceIdChange() {
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "Notifying modules that device ID changed");
+        }
+
+        for (ModuleBase module:modules) {
+            module.deviceIdChanged();
+        }
+    }
+
     /**
      * Tells the Countly SDK that an Activity has started. Since Android does not have an
      * easy way to determine when an application instance starts and stops, you must call this
