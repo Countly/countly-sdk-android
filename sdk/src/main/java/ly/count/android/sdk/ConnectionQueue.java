@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -265,8 +267,22 @@ public class ConnectionQueue {
                 + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
                 + "&locale=" + DeviceInfo.getLocale();
 
-        store_.addConnection(data);
-        tick();
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Connection Queue] Waiting for 10 seconds before adding token request to queue");
+        }
+
+        // To ensure begin_session will be fully processed by the server before token_session
+        final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
+        worker.schedule(new Runnable() {
+            @Override
+            public void run() {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[Connection Queue] Finished waiting 10 seconds adding token request");
+                }
+                store_.addConnection(data);
+                tick();
+            }
+        }, 10, TimeUnit.SECONDS);
     }
 
     /**

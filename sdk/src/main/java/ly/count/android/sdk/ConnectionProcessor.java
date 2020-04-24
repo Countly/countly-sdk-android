@@ -230,9 +230,6 @@ public class ConnectionProcessor implements Runnable {
 
             boolean deviceIdOverride = storedEvents[0].contains("&override_id="); //if the sendable data contains a override tag
             boolean deviceIdChange = storedEvents[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
-            boolean pushTokenRequest = storedEvents[0].contains("&token_session="); //check if we are about to begin a push token_session
-
-            boolean waitForSecondsBeforeRequest = false; //if we should wait for 10 seconds before continuing the current request
 
             //add the device_id to the created request
             final String eventData, newId;
@@ -280,29 +277,6 @@ public class ConnectionProcessor implements Runnable {
 
                     newId = null;
                     eventData = storedEvents[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
-                }
-            }
-
-            if(pushTokenRequest){
-                waitForSecondsBeforeRequest = true;
-            }
-
-            if(waitForSecondsBeforeRequest) {
-                //giving server time to finish processing previous requests
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[Connection Processor] Starting 10 second wait");
-                }
-
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[Connection Processor] While waiting for 10 seconds, sleep was interrupted");
-                    }
-                }
-
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[Connection Processor] Wait (for changing device_id / starting token session) finished, continuing processing request");
                 }
             }
 
