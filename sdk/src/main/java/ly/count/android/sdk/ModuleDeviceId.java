@@ -64,6 +64,10 @@ class ModuleDeviceId extends ModuleBase {
             throw new IllegalStateException("type cannot be null");
         }
 
+        if (type == DeviceId.Type.DEVELOPER_SUPPLIED && deviceId == null) {
+            throw new IllegalStateException("WHen type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
+        }
+
         if(!_cly.anyConsentGiven()){
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
