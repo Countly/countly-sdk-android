@@ -207,19 +207,19 @@ public class CountlyStore {
      * Get location or empty string in case if no location is specified
      */
     String getLocation() {
-        return preferences_.getString(LOCATION_GPS_PREFERENCE, "");
+        return preferences_.getString(LOCATION_GPS_PREFERENCE, null);
     }
 
     String getLocationCity() {
-        return preferences_.getString(LOCATION_CITY_PREFERENCE, "");
+        return preferences_.getString(LOCATION_CITY_PREFERENCE, null);
     }
 
     String getLocationCountryCode() {
-        return preferences_.getString(LOCATION_COUNTRY_CODE_PREFERENCE, "");
+        return preferences_.getString(LOCATION_COUNTRY_CODE_PREFERENCE, null);
     }
 
     String getLocationIpAddress() {
-        return preferences_.getString(LOCATION_IP_ADDRESS_PREFERENCE, "");
+        return preferences_.getString(LOCATION_IP_ADDRESS_PREFERENCE, null);
     }
 
     boolean getLocationDisabled() {

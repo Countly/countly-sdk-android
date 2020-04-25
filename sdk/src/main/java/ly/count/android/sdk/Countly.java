@@ -1208,10 +1208,10 @@ public class Countly {
     }
 
     private synchronized void resetLocationValues(){
-        connectionQueue_.getCountlyStore().setLocationCountryCode("");
-        connectionQueue_.getCountlyStore().setLocationCity("");
-        connectionQueue_.getCountlyStore().setLocationGpsCoordinates("");
-        connectionQueue_.getCountlyStore().setLocationIpAddress("");
+        connectionQueue_.getCountlyStore().setLocationCountryCode(null);
+        connectionQueue_.getCountlyStore().setLocationCity(null);
+        connectionQueue_.getCountlyStore().setLocationGpsCoordinates(null);
+        connectionQueue_.getCountlyStore().setLocationIpAddress(null);
     }
 
     /**
