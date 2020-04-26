@@ -133,17 +133,6 @@
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name=".AnotherActivity"
-            android:label="@string/title_activity_another"
-            android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|screenSize">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="ly.count.android.demo.MainActivity" />
-        </activity>
-
     </application>
 
 </manifest>

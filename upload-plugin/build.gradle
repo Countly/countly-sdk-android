@@ -29,10 +29,10 @@ repositories {
 }
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
+    implementation gradleApi()
+    implementation localGroovy()
     // implementation 'com.squareup.okhttp3:okhttp:3.14.1'
-    compile 'com.squareup.okhttp3:okhttp:3.14.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.1'
     // classpath 'com.squareup.okhttp3:okhttp:3.14.1'
     // classpath group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.14.1'
 }

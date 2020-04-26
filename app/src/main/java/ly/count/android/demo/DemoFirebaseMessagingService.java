@@ -90,7 +90,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
 
         Intent intent = null;
         if (message.has("another")) {
-            intent = new Intent(getApplicationContext(), AnotherActivity.class);
+            intent = new Intent(getApplicationContext(), ActivityExampleOthers.class);
         }
         Boolean result = CountlyPush.displayMessage(getApplicationContext(), message, R.drawable.ic_message, intent);
         if (result == null) {
