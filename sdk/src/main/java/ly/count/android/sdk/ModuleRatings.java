@@ -592,7 +592,7 @@ class ModuleRatings extends ModuleBase {
          * @param widgetId ID that identifies this dialog
          * @return
          */
-        synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback){
+        public synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback){
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Ratings] Calling showFeedbackPopup");
             }

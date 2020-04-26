@@ -8,6 +8,8 @@ import android.widget.Toast;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStarRating;
+import ly.count.android.sdk.FeedbackRatingCallback;
+import ly.count.android.sdk.StarRatingCallback;
 
 public class ActivityExampleRatings extends Activity {
     Activity activity;
@@ -36,7 +38,7 @@ public class ActivityExampleRatings extends Activity {
 
     public void onClickViewOther02(View v) {
         //show star rating
-        Countly.sharedInstance().showStarRating(activity, new CountlyStarRating.RatingCallback() {
+        Countly.sharedInstance().ratings().showStarRating(activity, new StarRatingCallback() {
             @Override
             public void onRate(int rating) {
                 Toast.makeText(activity, "onRate called with rating: " + rating, Toast.LENGTH_SHORT).show();
@@ -52,7 +54,7 @@ public class ActivityExampleRatings extends Activity {
     public void onClickViewOther07(View v) {
         //show rating widget
         String widgetId = "xxxxx";
-        Countly.sharedInstance().showFeedbackPopup(widgetId, "Close", activity, new CountlyStarRating.FeedbackRatingCallback() {
+        Countly.sharedInstance().ratings().showFeedbackPopup(widgetId, "Close", activity, new FeedbackRatingCallback() {
             @Override
             public void callback(String error) {
                 if(error != null){

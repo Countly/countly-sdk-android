@@ -58,4 +58,12 @@
         android:onClick="onClickGiveAllConsent"
         android:text="Give All Consent" />
 
+    <Button
+        android:id="@+id/button41"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:onClick="onClickHaltAndInit"
+        android:text="Halt and ReInit" />
+
 </LinearLayout>

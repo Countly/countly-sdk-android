@@ -676,7 +676,7 @@ public class ConnectionQueue {
     }
 
     public ConnectionProcessor createConnectionProcessor(){
-        return new ConnectionProcessor(serverURL_, store_, deviceId_, sslContext_, requestHeaderCustomValues);
+        return new ConnectionProcessor(getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues);
     }
 
     public boolean queueContainsTemporaryIdItems(){

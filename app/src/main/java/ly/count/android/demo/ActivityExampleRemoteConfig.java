@@ -84,9 +84,15 @@ public class ActivityExampleRemoteConfig extends Activity {
         Map<String, Object> values = Countly.sharedInstance().remoteConfig().getAllValues();
 
         //access way #1
-        Object value_1 = values.get("aa");
-        Object value_2 = values.get("bb");
-        Object value_3 = values.get("cc");
+        Object value_1 = null;
+        Object value_2 = null;
+        Object value_3 = null;
+
+        if(values != null) {
+            value_1 = values.get("aa");
+            value_2 = values.get("bb");
+            value_3 = values.get("cc");
+        }
 
         //access way #2
         Object value_4 = Countly.sharedInstance().remoteConfig().getValueForKey("dd");

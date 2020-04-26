@@ -11,8 +11,11 @@ import java.util.Random;
 import java.util.regex.Pattern;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CountlyStarRating;
+import ly.count.android.sdk.CrashFilterCallback;
 import ly.count.android.sdk.DeviceId;
+import ly.count.android.sdk.RemoteConfig;
 
 @SuppressWarnings("UnusedParameters")
 public class ActivityExampleOthers extends Activity {
@@ -53,15 +56,28 @@ public class ActivityExampleOthers extends Activity {
     }
 
     public void onClickTestcrashFilterSample(View v) {
-        Countly.sharedInstance().recordUnhandledException(new Throwable("A really secret exception"));
+        Countly.sharedInstance().crashes().recordUnhandledException(new Throwable("A really secret exception"));
     }
 
     public void onClickRemoveAllConsent(View v){
-        Countly.sharedInstance().removeConsentAll();
+        Countly.sharedInstance().consent().removeConsentAll();
     }
 
     public void onClickGiveAllConsent(View v){
         Countly.sharedInstance().consent().giveConsentAll();
+    }
+
+    public void onClickHaltAndInit(View v) {
+        Countly.sharedInstance().halt();
+
+        final String COUNTLY_SERVER_URL = "YOUR_SERVER";
+        final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+
+        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
+                .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
+                .setRequiresConsent(false);
+
+        Countly.sharedInstance().init(config);
     }
 
     @Override
