@@ -28,6 +28,7 @@ class ModuleRatings extends ModuleBase {
 
     //star rating
     StarRatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
+    boolean showStarRatingDialogOnFirstActivity = false;
 
     final Ratings ratingsInterface;
 
@@ -188,9 +189,7 @@ class ModuleRatings extends ModuleBase {
 
         srp.sessionAmount++;
         if(srp.sessionAmount >= srp.sessionLimit && !srp.isShownForCurrentVersion && srp.automaticRatingShouldBeShown && !(srp.disabledAutomaticForNewVersions && srp.automaticHasBeenShown)) {
-            showStarRatingInternal(context, cs, starRatingCallback);
-            srp.isShownForCurrentVersion = true;
-            srp.automaticHasBeenShown = true;
+            showStarRatingDialogOnFirstActivity = true;
         }
 
         saveStarRatingPreferences(cs, srp);
@@ -387,6 +386,7 @@ class ModuleRatings extends ModuleBase {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't show star rating dialog, the provided context is not based off a activity");
             }
+
             return;
         }
 
@@ -557,6 +557,21 @@ class ModuleRatings extends ModuleBase {
         @Override
         public boolean onCheckIsTextEditor() {
             return true;
+        }
+    }
+
+    @Override
+    void callbackOnActivityResumed(Activity activity) {
+        if(showStarRatingDialogOnFirstActivity){
+            CountlyStore cs = _cly.connectionQueue_.getCountlyStore();
+            StarRatingPreferences srp = loadStarRatingPreferences(cs);
+            srp.isShownForCurrentVersion = true;
+            srp.automaticHasBeenShown = true;
+
+            showStarRatingInternal(activity, cs, starRatingCallback_);
+
+            saveStarRatingPreferences(cs, srp);
+            showStarRatingDialogOnFirstActivity = false;
         }
     }
 
