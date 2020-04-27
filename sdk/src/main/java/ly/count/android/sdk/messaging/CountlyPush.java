@@ -333,6 +333,9 @@ public class CountlyPush {
 
         if (msg == null) {
             return null;
+        } else if (msg.message() == null) {
+            // nothing to display
+            return null;
         } else if (isAppRunningInForeground(context)) {
             if (activity != null) {
                 return displayDialog(activity, msg);

@@ -94,7 +94,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
         }
         Boolean result = CountlyPush.displayMessage(getApplicationContext(), message, R.drawable.ic_message, intent);
         if (result == null) {
-            Log.i(TAG, "Message wasn't sent from Countly server, so it cannot be handled by Countly SDK");
+            Log.i(TAG, "Message doesn't have anything to display or wasn't sent from Countly server, so it cannot be handled by Countly SDK");
         } else if (result) {
             Log.i(TAG, "Message was handled by Countly SDK");
         } else {
