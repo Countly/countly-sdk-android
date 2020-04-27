@@ -114,7 +114,8 @@ countly {
 
     // directory of .so files relative to project build directory.
     // you can check the tar.gz file created under intermediates/countly
-    nativeObjectFilesDir "intermediates/cmake/release/obj"
+    // BUILD_TYPE could be debug or release
+    nativeObjectFilesDir "intermediates/merged_native_libs/BUILD_TYPE"
 
     // path for breakpad tool dump_syms executable
     dumpSymsPath "/usr/bin"
