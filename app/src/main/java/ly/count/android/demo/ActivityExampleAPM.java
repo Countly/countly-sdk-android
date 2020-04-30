@@ -5,6 +5,8 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import ly.count.android.sdk.Countly;
@@ -52,11 +54,15 @@ public class ActivityExampleAPM extends Activity {
     }
 
     public void onClickEndTrace_1(View v) {
-        Countly.sharedInstance().apm().endTrace("Some_trace_key_1");
+        Map<String, Integer> customMetric = new HashMap();
+        customMetric.put("ABC", 1233);
+        customMetric.put("C44C", 1337);
+
+        Countly.sharedInstance().apm().endTrace("Some_trace_key_1", customMetric);
     }
 
     public void onClickEndTrace_2(View v) {
-        Countly.sharedInstance().apm().endTrace("another key_1");
+        Countly.sharedInstance().apm().endTrace("another key_1", null);
     }
 
     public void onClickStartNetworkTrace_1(View v) {

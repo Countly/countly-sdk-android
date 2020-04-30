@@ -241,8 +241,8 @@ class ModuleEvents extends ModuleBase{
          * End timed event with a specified key
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null
-         * @param count count to associate with the event, should be more than zero
-         * @param sum sum to associate with the event
+         * @param count count to associate with the event, should be more than zero, default value is 1
+         * @param sum sum to associate with the event, default value is 0
          * @throws IllegalStateException if Countly SDK has not been initialized
          * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
          * @return true if event with this key has been previously started, false otherwise

@@ -6,7 +6,4 @@
         <uses-library android:name="android.test.runner"/>
     </application>
 
-    <!--<instrumentation android:name="ly.count.android.sdk.test.InstrumentationTestRunner"-->
-        <!--android:targetPackage="ly.count.android.sdk"/>-->
-
 </manifest>

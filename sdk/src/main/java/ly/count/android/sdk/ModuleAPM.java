@@ -4,9 +4,15 @@ import android.app.Activity;
 import android.util.Log;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ModuleAPM extends ModuleBase {
+
+    final static String[] reservedKeys = new String[] {"response_time", "response_payload_size", "response_code", "request_payload_size", "duration", "slow_rendering_frames", "frozen_frames"};
 
     Apm apmInterface = null;
 
@@ -53,7 +59,7 @@ public class ModuleAPM extends ModuleBase {
         codeTraces.put(traceKey, currentTimestamp);
     }
 
-    void endTraceInternal(String traceKey) {
+    void endTraceInternal(String traceKey, Map<String, Integer> customMetrics) {
         //end time counting as fast as possible
         Long currentTimestamp = UtilsTime.currentTimestampMs();
 
@@ -78,11 +84,110 @@ public class ModuleAPM extends ModuleBase {
             } else {
                 Long durationMs = currentTimestamp - startTimestamp;
 
-                _cly.connectionQueue_.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp);
+                if(customMetrics != null) {
+                    //custom metrics provided
+                    //remove reserved keys
+                    removeReservedInvalidKeys(customMetrics);
+                }
+
+                String metricString = customMetricsToString(customMetrics);
+
+                _cly.connectionQueue_.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp, metricString);
             }
         } else {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[ModuleAPM] endTraceInternal, trying to end trace which was not started");
+            }
+        }
+    }
+
+    static String customMetricsToString(Map<String, Integer> customMetrics) {
+        StringBuilder ret = new StringBuilder();
+
+        if(customMetrics == null) {
+            return ret.toString();
+        }
+
+        for(Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, Integer> entry = it.next();
+            String key = entry.getKey();
+            Integer value = entry.getValue();
+
+            ret.append(",\"");
+            ret.append(key);
+            ret.append("\":");
+            ret.append(value);
+        }
+
+        return ret.toString();
+    }
+
+    static void removeReservedInvalidKeys(Map<String, Integer> customMetrics) {
+        if(customMetrics == null) {
+            return;
+        }
+
+        //remove reserved keys
+        for(String rKey:ModuleAPM.reservedKeys) {
+            customMetrics.remove(rKey);
+        }
+
+        Pattern p = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
+        Matcher m = p.matcher("aaaaab");
+
+        for(Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, Integer> entry = it.next();
+            String key = entry.getKey();
+            Integer value = entry.getValue();
+
+            //remove invalid values
+            if(key == null || key.isEmpty() || value == null) {
+                it.remove();
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metrics can't contain null or empty key/value");
+                }
+                continue;
+            }
+
+            //remove invalid keys
+            //regex for valid keys serverside
+            // /^[a-zA-Z][a-zA-Z0-9_]*$/
+            int keyLength = key.length();
+
+            if(keyLength > 32) {
+                //remove key longer than 32 characters
+                it.remove();
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, it can't be longer than 32 characters, [" + key + "]");
+                }
+                continue;
+            }
+
+            if(key.charAt(0) == '_') {
+                //remove key that starts with underscore
+                it.remove();
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, it can't start with underscore, [" + key + "]");
+                }
+                continue;
+            }
+
+            if(key.charAt(0) == ' ' || key.charAt(keyLength - 1) == ' ') {
+                //remove key that starts with whitespace
+                it.remove();
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, it can't start or end with whitespace, [" + key + "]");
+                }
+                continue;
+            }
+
+            if(!p.matcher(key).matches()) {
+                //validate against regex
+                it.remove();
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, did not correspond to the allowed regex '/^[a-zA-Z][a-zA-Z0-9_]*$/'");
+                }
+                continue;
             }
         }
     }
@@ -288,12 +393,12 @@ public class ModuleAPM extends ModuleBase {
          * End a trace of a action you want to track
          * @param traceKey key by which this action is identified
          */
-        public void endTrace(String traceKey) {
+        public void endTrace(String traceKey, Map<String, Integer> customMetrics) {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
             }
 
-            endTraceInternal(traceKey);
+            endTraceInternal(traceKey, customMetrics);
         }
 
         /**

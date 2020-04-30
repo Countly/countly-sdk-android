@@ -34,59 +34,59 @@ public class ActivityExampleCrashReporting extends Activity {
 
 
     public void onClickCrashReporting01(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Unrecognized selector crash");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Unrecognized selector crash");
     }
 
     public void onClickCrashReporting02(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Out of bounds crash");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Out of bounds crash");
         //noinspection MismatchedReadAndWriteOfArray
         int[] data = new int[]{};
         data[0] = 9;
     }
 
     public void onClickCrashReporting03(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Null pointer crash");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Null pointer crash");
 
         Object[] o = null;
         o[0].getClass();
     }
 
     public void onClickCrashReporting04(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Invalid Geometry crash");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Invalid Geometry crash");
     }
 
     public void onClickCrashReporting05(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Assert fail crash");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Assert fail crash");
         //Assert.assertEquals(1, 0);
     }
 
     public void onClickCrashReporting06(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Kill process crash");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Kill process crash");
         android.os.Process.killProcess(android.os.Process.myPid());
     }
 
     public void onClickCrashReporting07(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Custom crash log crash");
-        Countly.sharedInstance().addCrashBreadcrumb("Adding some custom crash log");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Custom crash log crash");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Adding some custom crash log");
 
         //noinspection UnusedAssignment,divzero
         @SuppressWarnings("NumericOverflow") int test = 10/0;
     }
 
     public void onClickCrashReporting08(View v) {
-        Countly.sharedInstance().addCrashBreadcrumb("Recording handled exception 1");
-        Countly.sharedInstance().recordHandledException(new Exception("A custom error text"));
-        Countly.sharedInstance().addCrashBreadcrumb("Recording handled exception 3");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Recording handled exception 1");
+        Countly.sharedInstance().crashes().recordHandledException(new Exception("A custom error text"));
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Recording handled exception 3");
     }
 
     public void onClickCrashReporting09(View v) throws Exception {
-        Countly.sharedInstance().addCrashBreadcrumb("Unhandled exception info");
+        Countly.sharedInstance().crashes().addCrashBreadcrumb("Unhandled exception info");
         throw new Exception("A unhandled exception");
     }
 
     public void onClickCrashReporting13(View v){
         String largeCrumb = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-        Countly.sharedInstance().addCrashBreadcrumb(largeCrumb);
+        Countly.sharedInstance().crashes().addCrashBreadcrumb(largeCrumb);
     }
 
     public void onClickCrashReporting10(View v) throws Exception {
