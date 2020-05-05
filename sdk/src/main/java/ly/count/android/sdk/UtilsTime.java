@@ -33,15 +33,17 @@ public class UtilsTime {
 
     /**
      * Get's a instant for the current moment
+     *
      * @return
      */
-    public static synchronized Instant getCurrentInstant(){
+    public static synchronized Instant getCurrentInstant() {
         long timestamp = currentTimestampMs();
         return Instant.get(timestamp);
     }
 
     /**
      * Get current timestamp in milliseconds
+     *
      * @return
      */
     public static synchronized long currentTimestampMs() {
@@ -52,7 +54,7 @@ public class UtilsTime {
      * Utility method to return a current timestamp in seconds.
      */
     public static int currentTimestampSeconds() {
-        return ((int)(System.currentTimeMillis() / 1000L));
+        return ((int) (System.currentTimeMillis() / 1000L));
     }
 
     private static class TimeUniquesEnsurer {
@@ -86,7 +88,6 @@ public class UtilsTime {
             return ms;
         }
     }
+
     private static final TimeUniquesEnsurer timeGenerator = new TimeUniquesEnsurer();
-
-
 }

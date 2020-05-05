@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class ModuleCrash extends ModuleBase{
+class ModuleCrash extends ModuleBase {
     //native crash
     private static final String countlyFolderName = "Countly";
     private static final String countlyNativeCrashFolderName = "CrashDumps";
@@ -26,7 +26,7 @@ class ModuleCrash extends ModuleBase{
     //interface for SDK users
     final Crashes crashesInterface;
 
-    ModuleCrash(Countly cly, CountlyConfig config){
+    ModuleCrash(Countly cly, CountlyConfig config) {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
@@ -44,9 +44,10 @@ class ModuleCrash extends ModuleBase{
 
     /**
      * Called during init to check if there are any crash dumps saved
+     *
      * @param context android context
      */
-    protected synchronized void checkForNativeCrashDumps(Context context){
+    protected synchronized void checkForNativeCrashDumps(Context context) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Checking for native crash dumps");
         }
@@ -64,7 +65,7 @@ class ModuleCrash extends ModuleBase{
 
             int dumpFileCount = -1;
 
-            if(dumpFiles != null) {
+            if (dumpFiles != null) {
                 dumpFileCount = dumpFiles.length;
             }
 
@@ -72,7 +73,7 @@ class ModuleCrash extends ModuleBase{
                 Log.d(Countly.TAG, "[ModuleCrash] Crash dump folder contains [" + dumpFileCount + "] files");
             }
 
-            if(dumpFiles != null) {
+            if (dumpFiles != null) {
                 for (File dumpFile : dumpFiles) {
                     //record crash
                     recordNativeException(dumpFile);
@@ -88,18 +89,18 @@ class ModuleCrash extends ModuleBase{
         }
     }
 
-    private synchronized void recordNativeException(File dumpFile){
+    private synchronized void recordNativeException(File dumpFile) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
         }
 
         //check for consent
-        if(!_cly.getConsent(Countly.CountlyFeatureNames.crashes)){
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return;
         }
 
         //read bytes
-        int size = (int)dumpFile.length();
+        int size = (int) dumpFile.length();
         byte[] bytes = new byte[size];
 
         try {
@@ -128,15 +129,16 @@ class ModuleCrash extends ModuleBase{
     /**
      * Call to check if crash matches one of the filters
      * If it does, the crash should be ignored
+     *
      * @param crash
      * @return true if a match was found
      */
-    boolean crashFilterCheck(String crash){
+    boolean crashFilterCheck(String crash) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Calling crashFilterCheck");
         }
 
-        if(crashFilterCallback == null){
+        if (crashFilterCallback == null) {
             //no filter callback set, nothing to compare against
             return false;
         }
@@ -144,20 +146,20 @@ class ModuleCrash extends ModuleBase{
         return crashFilterCallback.filterCrash(crash);
     }
 
-    void addAllThreadInformationToCrash(PrintWriter pw){
+    void addAllThreadInformationToCrash(PrintWriter pw) {
         Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
 
         for (Map.Entry<Thread, StackTraceElement[]> entry : allThreads.entrySet()) {
             StackTraceElement[] val = entry.getValue();
             Thread thread = entry.getKey();
 
-            if(val == null || thread == null) {
+            if (val == null || thread == null) {
                 continue;
             }
 
             pw.println();
             pw.println("Thread " + thread.getName());
-            for(int a = 0 ; a < val.length ; a++) {
+            for (int a = 0; a < val.length; a++) {
                 pw.println(val[a].toString());
             }
         }
@@ -165,6 +167,7 @@ class ModuleCrash extends ModuleBase{
 
     /**
      * Common call for handling exceptions
+     *
      * @param exception Exception to log
      * @param itIsHandled If the exception is handled or not (fatal)
      * @return Returns link to Countly for call chaining
@@ -178,11 +181,11 @@ class ModuleCrash extends ModuleBase{
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recording exceptions");
         }
 
-        if(!_cly.getConsent(Countly.CountlyFeatureNames.crashes)){
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return _cly;
         }
 
-        if(exception == null){
+        if (exception == null) {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleCrash] recordException, provided exception was null, returning");
             }
@@ -194,13 +197,13 @@ class ModuleCrash extends ModuleBase{
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
 
-        if(recordAllThreads) {
+        if (recordAllThreads) {
             addAllThreadInformationToCrash(pw);
         }
 
         String exceptionString = sw.toString();
 
-        if(crashFilterCheck(exceptionString)){
+        if (crashFilterCheck(exceptionString)) {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
             }
@@ -218,31 +221,28 @@ class ModuleCrash extends ModuleBase{
     @SuppressWarnings("ConstantConditions")
     public synchronized Countly crashTest(int crashNumber) {
 
-        if (crashNumber == 1){
+        if (crashNumber == 1) {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Running crashTest 1");
             }
 
             stackOverflow();
-
-        }else if (crashNumber == 2){
+        } else if (crashNumber == 2) {
 
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Running crashTest 2");
             }
 
             //noinspection UnusedAssignment,divzero
-            @SuppressWarnings("NumericOverflow") int test = 10/0;
-
-        }else if (crashNumber == 3){
+            @SuppressWarnings("NumericOverflow") int test = 10 / 0;
+        } else if (crashNumber == 3) {
 
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Running crashTest 3");
             }
 
             throw new RuntimeException("This is a crash");
-        }
-        else{
+        } else {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Running crashTest 4");
             }
@@ -255,13 +255,14 @@ class ModuleCrash extends ModuleBase{
     }
 
     @Override
-    void halt(){
+    void halt() {
 
     }
 
     public class Crashes {
         /**
          * Add crash breadcrumb like log record to the log that will be send together with crash report
+         *
          * @param record String a bread crumb for the crash report
          * @return Returns link to Countly for call chaining
          */
@@ -270,11 +271,11 @@ class ModuleCrash extends ModuleBase{
                 Log.d(Countly.TAG, "[Crashes] Adding crash breadcrumb");
             }
 
-            if(!_cly.getConsent(Countly.CountlyFeatureNames.crashes)){
+            if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
                 return _cly;
             }
 
-            if(record == null || record.isEmpty()) {
+            if (record == null || record.isEmpty()) {
                 if (_cly.isLoggingEnabled()) {
                     Log.d(Countly.TAG, "[Crashes] Can't add a null or empty crash breadcrumb");
                 }
@@ -287,6 +288,7 @@ class ModuleCrash extends ModuleBase{
 
         /**
          * Log handled exception to report it to server as non fatal crash
+         *
          * @param exception Exception to log
          * @return Returns link to Countly for call chaining
          */
@@ -296,6 +298,7 @@ class ModuleCrash extends ModuleBase{
 
         /**
          * Log handled exception to report it to server as non fatal crash
+         *
          * @param exception Throwable to log
          * @return Returns link to Countly for call chaining
          */
@@ -305,6 +308,7 @@ class ModuleCrash extends ModuleBase{
 
         /**
          * Log unhandled exception to report it to server as fatal crash
+         *
          * @param exception Exception to log
          * @return Returns link to Countly for call chaining
          */
@@ -314,6 +318,7 @@ class ModuleCrash extends ModuleBase{
 
         /**
          * Log unhandled exception to report it to server as fatal crash
+         *
          * @param exception Throwable to log
          * @return Returns link to Countly for call chaining
          */

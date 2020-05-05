@@ -8,7 +8,7 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-class ModuleViews extends ModuleBase{
+class ModuleViews extends ModuleBase {
     private String lastView = null;
     private int lastViewStart = 0;
     private boolean firstView = true;
@@ -25,7 +25,8 @@ class ModuleViews extends ModuleBase{
 
     //interface for SDK users
     final Views viewsInterface;
-    public ModuleViews(Countly cly, CountlyConfig config){
+
+    public ModuleViews(Countly cly, CountlyConfig config) {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
@@ -42,15 +43,15 @@ class ModuleViews extends ModuleBase{
         viewsInterface = new Views();
     }
 
-    void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation){
+    void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleViews] Calling setAutomaticViewSegmentationInternal");
         }
 
         automaticViewSegmentation.clear();
 
-        if(segmentation != null){
-            if(Utils.removeUnsupportedDataTypes(segmentation)){
+        if (segmentation != null) {
+            if (Utils.removeUnsupportedDataTypes(segmentation)) {
                 //found a unsupported type, print warning
 
                 if (_cly.isLoggingEnabled()) {
@@ -97,8 +98,8 @@ class ModuleViews extends ModuleBase{
         }
     }
 
-    boolean isActivityInExceptionList(Activity act){
-        if (autoTrackingActivityExceptions == null){
+    boolean isActivityInExceptionList(Activity act) {
+        if (autoTrackingActivityExceptions == null) {
             return false;
         }
 
@@ -112,9 +113,10 @@ class ModuleViews extends ModuleBase{
     }
 
     /**
-     *  Record a view manually, without automatic tracking
+     * Record a view manually, without automatic tracking
      * or track view that is not automatically tracked
      * like fragment, Message box or transparent Activity
+     *
      * @param viewName String - name of the view
      * @param customViewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
      * @return Returns link to Countly for call chaining
@@ -137,7 +139,7 @@ class ModuleViews extends ModuleBase{
         lastViewStart = UtilsTime.currentTimestampSeconds();
 
         Map<String, Object> viewSegmentation = new HashMap<>();
-        if(customViewSegmentation != null){
+        if (customViewSegmentation != null) {
             Utils.removeUnsupportedDataTypes(customViewSegmentation);
             Utils.removeKeysFromMap(customViewSegmentation, ModuleEvents.reservedSegmentationKeys);
             viewSegmentation.putAll(customViewSegmentation);
@@ -146,7 +148,7 @@ class ModuleViews extends ModuleBase{
         viewSegmentation.put("name", viewName);
         viewSegmentation.put("visit", "1");
         viewSegmentation.put("segment", "Android");
-        if(firstView) {
+        if (firstView) {
             firstView = false;
             viewSegmentation.put("start", "1");
         }
@@ -156,22 +158,22 @@ class ModuleViews extends ModuleBase{
         return _cly;
     }
 
-    void updateOrientation(int newOrientation){
+    void updateOrientation(int newOrientation) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleViews] Calling [updateOrientation], new orientation:[" + newOrientation + "]");
         }
 
-        if(!_cly.getConsent(Countly.CountlyFeatureNames.events)){
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
             //we don't have consent, just leave
             return;
         }
 
-        if(currentOrientation != newOrientation){
+        if (currentOrientation != newOrientation) {
             currentOrientation = newOrientation;
 
             Map<String, String> segm = new HashMap<>();
 
-            if(currentOrientation == Configuration.ORIENTATION_PORTRAIT){
+            if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
                 segm.put("mode", "portrait");
             } else {
                 segm.put("mode", "landscape");
@@ -182,10 +184,10 @@ class ModuleViews extends ModuleBase{
     }
 
     @Override
-    void onConfigurationChanged(Configuration newConfig){
-        if(trackOrientationChanges){
+    void onConfigurationChanged(Configuration newConfig) {
+        if (trackOrientationChanges) {
             Integer orient = getOrientationFromConfiguration(newConfig);
-            if(orient != null){
+            if (orient != null) {
                 updateOrientation(orient);
             }
         }
@@ -223,7 +225,7 @@ class ModuleViews extends ModuleBase{
         //orientation tracking
         if (trackOrientationChanges) {
             Integer orient = getOrientationFromActivity(activity);
-            if(orient != null) {
+            if (orient != null) {
                 updateOrientation(orient);
             }
         }
@@ -231,11 +233,12 @@ class ModuleViews extends ModuleBase{
 
     /**
      * Needed for mocking test result
+     *
      * @param conf
      * @return
      */
-    Integer getOrientationFromConfiguration(Configuration conf){
-        if(conf == null){
+    Integer getOrientationFromConfiguration(Configuration conf) {
+        if (conf == null) {
             return null;
         }
 
@@ -244,11 +247,12 @@ class ModuleViews extends ModuleBase{
 
     /**
      * Needed for mocking test result
+     *
      * @param act
      * @return
      */
-    Integer getOrientationFromActivity(Activity act){
-        if(act == null) {
+    Integer getOrientationFromActivity(Activity act) {
+        if (act == null) {
             return null;
         }
 
@@ -261,8 +265,8 @@ class ModuleViews extends ModuleBase{
     }
 
     @Override
-    void halt(){
-        if(automaticViewSegmentation != null) {
+    void halt() {
+        if (automaticViewSegmentation != null) {
             automaticViewSegmentation.clear();
             automaticViewSegmentation = null;
         }
@@ -272,9 +276,10 @@ class ModuleViews extends ModuleBase{
     public class Views {
         /**
          * Check state of automatic view tracking
+         *
          * @return boolean - true if enabled, false if disabled
          */
-        public synchronized boolean isAutomaticViewTrackingEnabled(){
+        public synchronized boolean isAutomaticViewTrackingEnabled() {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
             }
@@ -283,9 +288,10 @@ class ModuleViews extends ModuleBase{
         }
 
         /**
-         *  Record a view manually, without automatic tracking
+         * Record a view manually, without automatic tracking
          * or track view that is not automatically tracked
          * like fragment, Message box or transparent Activity
+         *
          * @param viewName String - name of the view
          * @return Returns link to Countly for call chaining
          */
@@ -297,6 +303,7 @@ class ModuleViews extends ModuleBase{
          * Record a view manually, without automatic tracking
          * or track view that is not automatically tracked
          * like fragment, Message box or transparent Activity
+         *
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
          * @return Returns link to Countly for call chaining

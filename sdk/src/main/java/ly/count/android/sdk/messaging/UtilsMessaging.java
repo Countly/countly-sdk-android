@@ -38,10 +38,10 @@ public class UtilsMessaging {
     /**
      * Reflective method call encapsulation.
      *
-     * @param className  class to call method in
-     * @param instance   instance to call on, null for static methods
+     * @param className class to call method in
+     * @param instance instance to call on, null for static methods
      * @param methodName method name
-     * @param args       optional arguments to pass to that method
+     * @param args optional arguments to pass to that method
      * @return false in case of failure, method result otherwise
      */
     static Object reflectiveCall(String className, Object instance, String methodName, Object... args) {
@@ -53,7 +53,7 @@ public class UtilsMessaging {
             Log.d("Countly", "cls " + className + ", inst " + instance);
             className = className == null && instance != null ? instance.getClass().getName() : className;
             Class<?> cls = instance == null ? Class.forName(className) : instance.getClass();
-            Class<?> [] types = null;
+            Class<?>[] types = null;
 
             if (args != null && args.length > 0) {
                 types = new Class[args.length];
@@ -78,5 +78,4 @@ public class UtilsMessaging {
             return false;
         }
     }
-
 }

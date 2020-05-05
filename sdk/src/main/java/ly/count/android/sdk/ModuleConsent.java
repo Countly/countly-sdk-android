@@ -6,7 +6,7 @@ public class ModuleConsent extends ModuleBase {
 
     Consent consentInterface = null;
 
-    ModuleConsent(Countly cly, CountlyConfig config){
+    ModuleConsent(Countly cly, CountlyConfig config) {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
@@ -14,7 +14,6 @@ public class ModuleConsent extends ModuleBase {
         }
 
         consentInterface = new Consent();
-
     }
 
     @Override
@@ -25,6 +24,7 @@ public class ModuleConsent extends ModuleBase {
     public class Consent {
         /**
          * Print the consent values of all features
+         *
          * @return Returns link to Countly for call chaining
          */
         public synchronized void checkAllConsent() {
@@ -37,6 +37,7 @@ public class ModuleConsent extends ModuleBase {
 
         /**
          * Get the current consent state of a feature
+         *
          * @param featureName the name of a feature for which consent should be checked
          * @return the consent value
          */
@@ -46,6 +47,7 @@ public class ModuleConsent extends ModuleBase {
 
         /**
          * Remove consent for all features
+         *
          * @return Returns link to Countly for call chaining
          */
         public synchronized void removeConsentAll() {
@@ -54,6 +56,7 @@ public class ModuleConsent extends ModuleBase {
 
         /**
          * Remove the consent of a feature
+         *
          * @param featureNames the names of features for which consent should be removed
          * @return Returns link to Countly for call chaining
          */
@@ -63,14 +66,15 @@ public class ModuleConsent extends ModuleBase {
 
         /**
          * Gives consent for all features
+         *
          * @return Returns link to Countly for call chaining
          */
-        public synchronized void giveConsentAll(){
+        public synchronized void giveConsentAll() {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Giving consent for all features");
             }
 
-            if(_cly.isLoggingEnabled() && !_cly.isInitialized()){
+            if (_cly.isLoggingEnabled() && !_cly.isInitialized()) {
                 Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
             }
 
@@ -79,6 +83,7 @@ public class ModuleConsent extends ModuleBase {
 
         /**
          * Give the consent to a feature
+         *
          * @param featureNames the names of features for which consent should be given
          * @return Returns link to Countly for call chaining
          */
@@ -88,6 +93,7 @@ public class ModuleConsent extends ModuleBase {
 
         /**
          * Set the consent of a feature
+         *
          * @param featureNames feature names for which consent should be changed
          * @param isConsentGiven the consent value that should be set
          * @return Returns link to Countly for call chaining
@@ -98,16 +104,18 @@ public class ModuleConsent extends ModuleBase {
 
         /**
          * Set the consent of a feature group
+         *
          * @param groupName name of the consent group
          * @param isConsentGiven the value that should be set for this consent group
          * @return Returns link to Countly for call chaining
          */
-        public synchronized void setConsentFeatureGroup(String groupName, boolean isConsentGiven){
+        public synchronized void setConsentFeatureGroup(String groupName, boolean isConsentGiven) {
             _cly.setConsentFeatureGroup(groupName, isConsentGiven);
         }
 
         /**
          * Group multiple features into a feature group
+         *
          * @param groupName name of the consent group
          * @param features array of feature to be added to the consent group
          * @return Returns link to Countly for call chaining

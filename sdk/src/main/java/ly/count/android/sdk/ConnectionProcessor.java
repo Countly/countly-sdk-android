@@ -44,7 +44,7 @@ import javax.net.ssl.SSLContext;
  * thread to submit session &amp; event data to a Count.ly server.
  *
  * NOTE: This class is only public to facilitate unit testing, because
- *       of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
+ * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
@@ -75,9 +75,11 @@ public class ConnectionProcessor implements Runnable {
 
     public URLConnection urlConnectionForServerRequest(final String requestData, final String customEndpoint) throws IOException {
         String urlEndpoint = "/i?";
-        if(customEndpoint != null) {urlEndpoint = customEndpoint;}
+        if (customEndpoint != null) {
+            urlEndpoint = customEndpoint;
+        }
         String urlStr = serverURL_ + urlEndpoint;
-        if(!requestData.contains("&crash=") && requestData.length() < 2048) {
+        if (!requestData.contains("&crash=") && requestData.length() < 2048) {
             urlStr += requestData;
             urlStr += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
         } else {
@@ -86,9 +88,9 @@ public class ConnectionProcessor implements Runnable {
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
-            conn = (HttpURLConnection)url.openConnection();
+            conn = (HttpURLConnection) url.openConnection();
         } else {
-            HttpsURLConnection c = (HttpsURLConnection)url.openConnection();
+            HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
             c.setSSLSocketFactory(sslContext_.getSocketFactory());
             conn = c;
         }
@@ -98,21 +100,19 @@ public class ConnectionProcessor implements Runnable {
         conn.setDoInput(true);
         conn.setRequestMethod("GET");
 
-        if(requestHeaderCustomValues_ != null){
+        if (requestHeaderCustomValues_ != null) {
             //if there are custom header values, add them
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.v(Countly.TAG, "Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
             }
-            for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet())
-            {
+            for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
-                if(key != null && value != null && !key.isEmpty()){
+                if (key != null && value != null && !key.isEmpty()) {
                     conn.addRequestProperty(key, value);
                 }
             }
         }
-
 
         String picturePath = UserData.getPicturePathFromQuery(url);
         if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -121,7 +121,7 @@ public class ConnectionProcessor implements Runnable {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.v(Countly.TAG, "Is the HTTP POST forced: " + Countly.sharedInstance().isHttpPostForced());
         }
-        if(!picturePath.equals("")){
+        if (!picturePath.equals("")) {
             //Uploading files:
             //http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
 
@@ -148,7 +148,7 @@ public class ConnectionProcessor implements Runnable {
                 while ((len = fileInputStream.read(buffer)) != -1) {
                     output.write(buffer, 0, len);
                 }
-            }catch(IOException ex){
+            } catch (IOException ex) {
                 ex.printStackTrace();
             }
             output.flush(); // Important before continuing with writer!
@@ -157,9 +157,8 @@ public class ConnectionProcessor implements Runnable {
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
-        }
-        else {
-            if(requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()){
+        } else {
+            if (requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.v(Countly.TAG, "Using HTTP POST");
                 }
@@ -171,8 +170,7 @@ public class ConnectionProcessor implements Runnable {
                 writer.flush();
                 writer.close();
                 os.close();
-            }
-            else{
+            } else {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.v(Countly.TAG, "Using HTTP GET");
                 }
@@ -190,12 +188,11 @@ public class ConnectionProcessor implements Runnable {
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 String msg = "[Connection Processor] Starting to run, there are [" + storedEventCount + "] requests stored";
-                if(storedEventCount == 0) {
+                if (storedEventCount == 0) {
                     Log.v(Countly.TAG, msg);
                 } else {
                     Log.i(Countly.TAG, msg);
                 }
-
             }
 
             if (storedEvents == null || storedEventCount == 0) {
@@ -217,7 +214,7 @@ public class ConnectionProcessor implements Runnable {
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
             boolean containsTemporaryIdOverride = storedEvents[0].contains(temporaryIdOverrideTag);
             boolean containsTemporaryId = storedEvents[0].contains(temporaryIdTag);
-            if(containsTemporaryIdOverride || containsTemporaryId || deviceId_.temporaryIdModeEnabled()){
+            if (containsTemporaryIdOverride || containsTemporaryId || deviceId_.temporaryIdModeEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
 
@@ -259,7 +256,6 @@ public class ConnectionProcessor implements Runnable {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
                             Log.d(Countly.TAG, "[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                         }
-
                     } else {
                         //new device_id provided, make sure it will be merged
                         eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
@@ -280,7 +276,7 @@ public class ConnectionProcessor implements Runnable {
                 }
             }
 
-            if(!(Countly.sharedInstance().isDeviceAppCrawler() && Countly.sharedInstance().ifShouldIgnoreCrawlers())) {
+            if (!(Countly.sharedInstance().isDeviceAppCrawler() && Countly.sharedInstance().ifShouldIgnoreCrawlers())) {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 InputStream connInputStream = null;
@@ -297,7 +293,7 @@ public class ConnectionProcessor implements Runnable {
                         try {
                             //assume there will be no error
                             connInputStream = httpConn.getInputStream();
-                        } catch (Exception ex){
+                        } catch (Exception ex) {
                             //in case of exception, assume there was a error in the request and change streams
                             connInputStream = httpConn.getErrorStream();
                         }
@@ -329,18 +325,18 @@ public class ConnectionProcessor implements Runnable {
                             }
                             rRes = RequestResult.RETRY;
                         }
-                    } else if (responseCode >= 300 && responseCode < 400){
+                    } else if (responseCode >= 300 && responseCode < 400) {
                         //assume redirect
                         if (Countly.sharedInstance().isLoggingEnabled()) {
                             Log.d(Countly.TAG, "[Connection Processor] Encountered redirect, will retry");
                         }
                         rRes = RequestResult.RETRY;
-                    } else if(responseCode == 400 || responseCode == 404){
+                    } else if (responseCode == 400 || responseCode == 404) {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
                             Log.w(Countly.TAG, "[Connection Processor] Bad request, will be dropped");
                         }
                         rRes = RequestResult.REMOVE;
-                    } else if(responseCode > 400){
+                    } else if (responseCode > 400) {
                         //server down, try again later
                         if (Countly.sharedInstance().isLoggingEnabled()) {
                             Log.d(Countly.TAG, "[Connection Processor] Server is down, will retry");
@@ -353,7 +349,7 @@ public class ConnectionProcessor implements Runnable {
                         rRes = RequestResult.RETRY;
                     }
 
-                    switch (rRes){
+                    switch (rRes) {
                         case OK:
                             // successfully submitted event data to Count.ly server, so remove
                             // this one from the stored events collection
@@ -375,7 +371,6 @@ public class ConnectionProcessor implements Runnable {
                             // warning was logged above, stop processing, let next tick take care of retrying
                             break;
                     }
-
                 } catch (Exception e) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
                         Log.w(Countly.TAG, "[Connection Processor] Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
@@ -386,10 +381,11 @@ public class ConnectionProcessor implements Runnable {
                     // free connection resources
                     if (conn instanceof HttpURLConnection) {
                         try {
-                            if(connInputStream != null) {
-                                connInputStream .close();
+                            if (connInputStream != null) {
+                                connInputStream.close();
                             }
-                        } catch (Throwable ignored){}
+                        } catch (Throwable ignored) {
+                        }
 
                         ((HttpURLConnection) conn).disconnect();
                     }
@@ -407,7 +403,15 @@ public class ConnectionProcessor implements Runnable {
     }
 
     // for unit testing
-    String getServerURL() { return serverURL_; }
-    CountlyStore getCountlyStore() { return store_; }
-    DeviceId getDeviceId() { return deviceId_; }
+    String getServerURL() {
+        return serverURL_;
+    }
+
+    CountlyStore getCountlyStore() {
+        return store_;
+    }
+
+    DeviceId getDeviceId() {
+        return deviceId_;
+    }
 }

@@ -42,7 +42,6 @@ public class ModuleSessions extends ModuleBase {
     }
 
     /**
-     *
      * @param deviceIdOverride used when switching deviceID to a different one and ending the previous session
      */
     void endSessionInternal(String deviceIdOverride) {

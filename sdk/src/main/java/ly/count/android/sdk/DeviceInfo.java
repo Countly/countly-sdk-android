@@ -74,6 +74,7 @@ class DeviceInfo {
     /**
      * Returns the non-scaled pixel resolution of the current default display being used by the
      * WindowManager in the specified context.
+     *
      * @param context context to use to retrieve the current WindowManager
      * @return a string in the format "WxH", or the empty string "" if resolution cannot be determined
      */
@@ -88,8 +89,7 @@ class DeviceInfo {
             final DisplayMetrics metrics = new DisplayMetrics();
             display.getMetrics(metrics);
             resolution = metrics.widthPixels + "x" + metrics.heightPixels;
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.i(Countly.TAG, "Device resolution cannot be determined");
             }
@@ -99,9 +99,10 @@ class DeviceInfo {
 
     /**
      * Maps the current display density to a string constant.
+     *
      * @param context context to use to retrieve the current display metrics
      * @return a string constant representing the current display density, or the
-     *         empty string if the density is unknown
+     * empty string if the density is unknown
      */
     static String getDensity(final Context context) {
         String densityStr;
@@ -146,9 +147,10 @@ class DeviceInfo {
     /**
      * Returns the display name of the current network operator from the
      * TelephonyManager from the specified context.
+     *
      * @param context context to use to retrieve the TelephonyManager from
      * @return the display name of the current network operator, or the empty
-     *         string if it cannot be accessed or determined
+     * string if it cannot be accessed or determined
      */
     static String getCarrier(final Context context) {
         String carrier = "";
@@ -186,11 +188,10 @@ class DeviceInfo {
         String result = Countly.DEFAULT_APP_VERSION;
         try {
             String tmpVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-            if(tmpVersion != null){
+            if (tmpVersion != null) {
                 result = tmpVersion;
             }
-        }
-        catch (PackageManager.NameNotFoundException e) {
+        } catch (PackageManager.NameNotFoundException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.i(Countly.TAG, "No app version found");
             }
@@ -229,16 +230,16 @@ class DeviceInfo {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
-                "_device", getDevice(),
-                "_os", getOS(),
-                "_os_version", getOSVersion(),
-                "_carrier", getCarrier(context),
-                "_resolution", getResolution(context),
-                "_density", getDensity(context),
-                "_locale", getLocale(),
-                "_app_version", getAppVersion(context),
-                "_store", getStore(context),
-                "_deep_link", deepLink);
+            "_device", getDevice(),
+            "_os", getOS(),
+            "_os_version", getOSVersion(),
+            "_carrier", getCarrier(context),
+            "_resolution", getResolution(context),
+            "_density", getDensity(context),
+            "_locale", getLocale(),
+            "_app_version", getAppVersion(context),
+            "_store", getStore(context),
+            "_deep_link", deepLink);
 
         String result = json.toString();
 
@@ -254,10 +255,11 @@ class DeviceInfo {
     /**
      * Utility method to fill JSONObject with supplied objects for supplied keys.
      * Fills json only with non-null and non-empty key/value pairs.
+     *
      * @param json JSONObject to fill
      * @param objects varargs of this kind: key1, value1, key2, value2, ...
      */
-    static void fillJSONIfValuesNotEmpty(final JSONObject json, final String ... objects) {
+    static void fillJSONIfValuesNotEmpty(final JSONObject json, final String... objects) {
         try {
             if (objects.length > 0 && objects.length % 2 == 0) {
                 for (int i = 0; i < objects.length; i += 2) {

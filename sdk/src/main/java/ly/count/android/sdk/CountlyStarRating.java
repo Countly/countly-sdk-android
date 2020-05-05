@@ -37,6 +37,7 @@ public class CountlyStarRating {
     //@Deprecated use StarRatingCallback
     public interface RatingCallback {
         void onRate(int rating);
+
         void onDismiss();
     }
 
@@ -47,6 +48,7 @@ public class CountlyStarRating {
     public interface FeedbackRatingCallback {
         /**
          * Called after trying to show a rating dialog popup
+         *
          * @param error if is null, it means that no errors were encountered
          */
         void callback(String error);

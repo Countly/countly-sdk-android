@@ -12,7 +12,7 @@ class ModuleDeviceId extends ModuleBase {
         }
     }
 
-    private void exitTemporaryIdMode(DeviceId.Type type, String deviceId){
+    private void exitTemporaryIdMode(DeviceId.Type type, String deviceId) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "Calling exitTemporaryIdMode");
         }
@@ -30,8 +30,8 @@ class ModuleDeviceId extends ModuleBase {
         String newIdTag = "&device_id=" + deviceId;
 
         boolean foundOne = false;
-        for(int a = 0 ; a < storedRequests.length ; a++){
-            if(storedRequests[a].contains(temporaryIdTag)){
+        for (int a = 0; a < storedRequests.length; a++) {
+            if (storedRequests[a].contains(temporaryIdTag)) {
                 if (_cly.isLoggingEnabled()) {
                     Log.d(Countly.TAG, "[exitTemporaryIdMode] Found a tag to replace in: [" + storedRequests[a] + "]");
                 }
@@ -40,7 +40,7 @@ class ModuleDeviceId extends ModuleBase {
             }
         }
 
-        if(foundOne){
+        if (foundOne) {
             _cly.connectionQueue_.getCountlyStore().replaceConnections(storedRequests);
         }
 
@@ -56,6 +56,7 @@ class ModuleDeviceId extends ModuleBase {
     /**
      * Changes current device id type to the one specified in parameter. Closes current session and
      * reopens new one with new id. Doesn't merge user profiles on the server
+     *
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
      */
@@ -68,7 +69,7 @@ class ModuleDeviceId extends ModuleBase {
             throw new IllegalStateException("WHen type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
         }
 
-        if(!_cly.anyConsentGiven()){
+        if (!_cly.anyConsentGiven()) {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
             }
@@ -77,20 +78,19 @@ class ModuleDeviceId extends ModuleBase {
 
         DeviceId currentDeviceId = _cly.connectionQueue_.getDeviceId();
 
-        if(currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(DeviceId.temporaryCountlyDeviceId))){
+        if (currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(DeviceId.temporaryCountlyDeviceId))) {
             // we already are in temporary mode and we want to set temporary mode
             // in this case we just ignore the request since nothing has to be done
             return;
         }
 
-        if(currentDeviceId.temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()){
+        if (currentDeviceId.temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {
             // we are about to exit temporary ID mode
             // because of the previous check, we know that the new type is a different one
             // we just call our method for exiting it
             // we don't end the session, we just update the device ID and connection queue
             exitTemporaryIdMode(type, deviceId);
         }
-
 
         // we are either making a simple ID change or entering temporary mode
         // in both cases we act the same as the temporary ID requests will be updated with the final ID later
@@ -112,6 +112,7 @@ class ModuleDeviceId extends ModuleBase {
     /**
      * Changes current device id to the one specified in parameter. Merges user profile with new id
      * (if any) with old profile.
+     *
      * @param deviceId new device id
      */
     void changeDeviceIdWithMerge(String deviceId) {
@@ -119,18 +120,18 @@ class ModuleDeviceId extends ModuleBase {
             throw new IllegalStateException("deviceId cannot be null or empty");
         }
 
-        if(!_cly.anyConsentGiven()){
+        if (!_cly.anyConsentGiven()) {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
             }
             return;
         }
 
-        if(_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()){
+        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {
             //if we are in temporary ID mode or
             //at some moment have enabled temporary mode
 
-            if(deviceId.equals(DeviceId.temporaryCountlyDeviceId)){
+            if (deviceId.equals(DeviceId.temporaryCountlyDeviceId)) {
                 //if we want to enter temporary ID mode
                 //just exit, nothing to do
 

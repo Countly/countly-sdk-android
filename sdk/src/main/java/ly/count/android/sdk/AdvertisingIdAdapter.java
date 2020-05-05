@@ -14,8 +14,8 @@ public class AdvertisingIdAdapter {
         try {
             Class.forName(ADVERTISING_ID_CLIENT_CLASS_NAME);
             advertisingIdAvailable = true;
+        } catch (ClassNotFoundException ignored) {
         }
-        catch (ClassNotFoundException ignored) {}
         return advertisingIdAvailable;
     }
 
@@ -47,14 +47,14 @@ public class AdvertisingIdAdapter {
         }).start();
     }
 
-    private static String getAdvertisingId(final Context context) throws Throwable{
+    private static String getAdvertisingId(final Context context) throws Throwable {
         final Class<?> cls = Class.forName(ADVERTISING_ID_CLIENT_CLASS_NAME);
         final Method getAdvertisingIdInfo = cls.getMethod("getAdvertisingIdInfo", Context.class);
         Object info = getAdvertisingIdInfo.invoke(null, context);
         if (info != null) {
             final Method getId = info.getClass().getMethod("getId");
             Object id = getId.invoke(info);
-            return (String)id;
+            return (String) id;
         }
         return null;
     }
@@ -73,7 +73,7 @@ public class AdvertisingIdAdapter {
             }
         } catch (Throwable t) {
             if (t.getCause() != null && t.getCause().getClass().toString().contains("java.lang.ClassNotFoundException") &&
-                    t.getCause().getMessage().contains("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
+                t.getCause().getMessage().contains("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.w(TAG, "Play Services are not available, while checking if limited ad tracking enabled");
                 }
@@ -90,7 +90,7 @@ public class AdvertisingIdAdapter {
             @Override
             public void run() {
                 try {
-                    if(!isLimitAdTrackingEnabled(context)){
+                    if (!isLimitAdTrackingEnabled(context)) {
                         String adId = getAdvertisingId(context);
                         store.setCachedAdvertisingId(adId);
                     } else {
@@ -106,7 +106,7 @@ public class AdvertisingIdAdapter {
                             Log.w(TAG, "Advertising ID cannot be determined because Play Services are not available, while caching");
                         }
                     } else if (t.getCause() != null && t.getCause().getClass().toString().contains("java.lang.ClassNotFoundException") &&
-                            t.getCause().getMessage().contains("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
+                        t.getCause().getMessage().contains("com.google.android.gms.ads.identifier.AdvertisingIdClient")) {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
                             Log.w(TAG, "Play Services are not available, while caching advertising id");
                         }

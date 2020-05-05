@@ -37,17 +37,21 @@ public final class CertificateTrustManager implements X509TrustManager {
         }
 
         this.keys = new ArrayList<>();
-        if (keys != null) for (String key : keys) {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(key, Base64.DEFAULT)));
-            this.keys.add(cert.getPublicKey().getEncoded());
+        if (keys != null) {
+            for (String key : keys) {
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                Certificate cert = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(key, Base64.DEFAULT)));
+                this.keys.add(cert.getPublicKey().getEncoded());
+            }
         }
 
         this.certificates = new ArrayList<>();
-        if (certs != null) for (String cert : certs) {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(cert, Base64.DEFAULT)));
-            this.certificates.add(certificate.getEncoded());
+        if (certs != null) {
+            for (String cert : certs) {
+                CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                Certificate certificate = cf.generateCertificate(new ByteArrayInputStream(Base64.decode(cert, Base64.DEFAULT)));
+                this.certificates.add(certificate.getEncoded());
+            }
         }
     }
 
@@ -73,14 +77,12 @@ public final class CertificateTrustManager implements X509TrustManager {
             for (TrustManager trustManager : tmf.getTrustManagers()) {
                 ((X509TrustManager) trustManager).checkServerTrusted(chain, authType);
             }
-
         } catch (Exception e) {
             throw new CertificateException(e);
         }
 
         byte[] serverPublicKey = chain[0].getPublicKey().getEncoded();
         byte[] serverCertificate = chain[0].getEncoded();
-
 
         for (byte[] key : keys) {
             if (Arrays.equals(key, serverPublicKey)) {

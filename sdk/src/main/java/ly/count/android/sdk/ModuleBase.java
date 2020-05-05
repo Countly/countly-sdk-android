@@ -6,16 +6,17 @@ import android.content.res.Configuration;
 abstract class ModuleBase {
     Countly _cly;
 
-    ModuleBase(Countly cly){
+    ModuleBase(Countly cly) {
         _cly = cly;
     }
 
-    void halt(){
+    void halt() {
         throw new UnsupportedOperationException();
     }
 
     /**
      * Called manually by a countly call from the developer
+     *
      * @param newConfig
      */
     void onConfigurationChanged(Configuration newConfig) {

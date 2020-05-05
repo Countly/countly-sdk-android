@@ -35,13 +35,14 @@ import java.util.Map;
  * controlled by the Countly singleton, which is synchronized.
  *
  * NOTE: This class is only public to facilitate unit testing, because
- *       of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
+ * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class EventQueue {
     private final CountlyStore countlyStore_;
 
     /**
      * Constructs an EventQueue.
+     *
      * @param countlyStore backing store to be used for local event queue persistence
      */
     EventQueue(final CountlyStore countlyStore) {
@@ -50,15 +51,17 @@ public class EventQueue {
 
     /**
      * Returns the number of events in the local event queue.
+     *
      * @return the number of events in the local event queue
      */
     int size() {
         return countlyStore_.events().length;
-   }
+    }
 
     /**
      * Removes all current events from the local queue and returns them as a
      * URL-encoded JSON string that can be submitted to a ConnectionQueue.
+     *
      * @return URL-encoded JSON string of event data from the local event queue
      */
     String events() {
@@ -86,15 +89,17 @@ public class EventQueue {
 
     /**
      * Records a custom Count.ly event to the local event queue.
+     *
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation values for the custom event, may be null
      * @param count count associated with the custom event, should be more than zero
      * @param sum sum associated with the custom event, if not used, pass zero.
-     *            NaN and infinity values will be quietly ignored.
+     * NaN and infinity values will be quietly ignored.
      * @throws IllegalArgumentException if key is null or empty
      */
-    void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
-        if(instant == null){
+    void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean, final int count,
+        final double sum, final double dur, UtilsTime.Instant instant) {
+        if (instant == null) {
             instant = UtilsTime.getCurrentInstant();
         }
 
@@ -112,7 +117,7 @@ public class EventQueue {
         countlyStore_.addEvent(event);
     }
 
-        // for unit tests
+    // for unit tests
     CountlyStore getCountlyStore() {
         return countlyStore_;
     }

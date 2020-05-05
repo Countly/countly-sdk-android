@@ -346,7 +346,7 @@ public class CountlyConfig {
         return this;
     }
 
-    public CountlyConfig setRecordAllThreadsWithCrash(){
+    public CountlyConfig setRecordAllThreadsWithCrash() {
         recordAllThreadsWithCrash = true;
         return this;
     }
@@ -361,17 +361,17 @@ public class CountlyConfig {
         return this;
     }
 
-    public CountlyConfig enableCertificatePinning(String[] certificates){
+    public CountlyConfig enableCertificatePinning(String[] certificates) {
         certificatePinningCertificates = certificates;
         return this;
     }
 
-    public CountlyConfig setShouldIgnoreAppCrawlers(boolean shouldIgnore){
+    public CountlyConfig setShouldIgnoreAppCrawlers(boolean shouldIgnore) {
         shouldIgnoreAppCrawlers = shouldIgnore;
         return this;
     }
 
-    public CountlyConfig setAppCrawlerNames(String[] appCrawlerNames){
+    public CountlyConfig setAppCrawlerNames(String[] appCrawlerNames) {
         this.appCrawlerNames = appCrawlerNames;
         return this;
     }
@@ -381,7 +381,7 @@ public class CountlyConfig {
         return this;
     }
 
-    public CountlyConfig enableManualSessionControl(){
+    public CountlyConfig enableManualSessionControl() {
         manualSessionControlEnabled = true;
         return this;
     }
@@ -400,10 +400,11 @@ public class CountlyConfig {
      * Sets the interval for the automatic update calls
      * min value 1 (1 second),
      * max value 600 (10 minutes)
+     *
      * @param delay in seconds
      * @return
      */
-    public CountlyConfig setUpdateSessionTimerDelay(int delay){
+    public CountlyConfig setUpdateSessionTimerDelay(int delay) {
         sessionUpdateTimerDelay = delay;
         return this;
     }
@@ -413,22 +414,24 @@ public class CountlyConfig {
         return this;
     }
 
-    protected CountlyConfig setDisableUpdateSessionRequests(boolean disable){
+    protected CountlyConfig setDisableUpdateSessionRequests(boolean disable) {
         disableUpdateSessionRequests = disable;
         return this;
     }
 
     /**
      * Set if the star rating dialog is cancellable
+     *
      * @param isCancellable set this true if it should be cancellable
      */
-    public synchronized CountlyConfig setIfStarRatingDialogIsCancellable(boolean isCancellable){
+    public synchronized CountlyConfig setIfStarRatingDialogIsCancellable(boolean isCancellable) {
         starRatingDialogIsCancellable = isCancellable;
         return this;
     }
 
     /**
      * Set if the star rating should be shown automatically
+     *
      * @param isShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
      */
     public synchronized CountlyConfig setIfStarRatingShownAutomatically(boolean isShownAutomatically) {
@@ -438,6 +441,7 @@ public class CountlyConfig {
 
     /**
      * Set if the star rating is shown only once per app lifetime
+     *
      * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
      */
     public synchronized CountlyConfig setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
@@ -450,7 +454,7 @@ public class CountlyConfig {
         return this;
     }
 
-    public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime){
+    public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime) {
         this.recordAppStartTime = recordAppStartTime;
         return this;
     }
@@ -463,6 +467,7 @@ public class CountlyConfig {
     /**
      * Set location parameters.
      * This will be ignored if set together with `setDisableLocation`
+     *
      * @param country_code ISO Country code for the user's country
      * @param city Name of the user's city
      * @param gpsCoordinates comma separate lat and lng values. For example, "56.42345,123.45325"

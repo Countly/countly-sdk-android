@@ -162,7 +162,6 @@ public class CountlyPush {
          *
          * @param context Context to record action in
          * @param buttonIndex index of button to record Action on: first button has index 1, second one is 2 (0 is reserved for notification-wide action)
-         *
          * @see Button#index()
          * @see Button#recordAction(Context);
          */
@@ -213,14 +212,14 @@ public class CountlyPush {
     /**
      * Notification action (or contentIntent) receiver. Responsible for recording action event.
      * Starts:
-     *  - activity specified in last parameter of {@link #displayNotification(Context, Message, int, Intent)} if it's not {@code null};
-     *  - currently active activity if there is one, see {@link #callbacks};
-     *  - main activity otherwise.
+     * - activity specified in last parameter of {@link #displayNotification(Context, Message, int, Intent)} if it's not {@code null};
+     * - currently active activity if there is one, see {@link #callbacks};
+     * - main activity otherwise.
      */
     public static class NotificationBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent broadcast) {
-            if(Countly.sharedInstance().isLoggingEnabled()){
+            if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Push broadcast receiver receiving message");
             }
 
@@ -231,7 +230,7 @@ public class CountlyPush {
 
             int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
             Bundle bundle = intent.getParcelableExtra(EXTRA_MESSAGE);
-            if(bundle == null) {
+            if (bundle == null) {
                 return;
             }
 
@@ -269,11 +268,11 @@ public class CountlyPush {
                 context.startActivity(i);
             }
 
-//            final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-//            if (manager != null) {
-//                Log.d("cly", message.id() + ", code: " + message.hashCode());
-//                manager.cancel(message.hashCode());
-//            }
+            //            final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            //            if (manager != null) {
+            //                Log.d("cly", message.id() + ", code: " + message.hashCode());
+            //                manager.cancel(message.hashCode());
+            //            }
         }
     }
 
@@ -307,7 +306,6 @@ public class CountlyPush {
         }
     }
 
-
     /**
      * Standard Countly logic for displaying a {@link Message}
      *
@@ -327,7 +325,7 @@ public class CountlyPush {
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if no Countly message is found in {@code data}
      */
     public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
-        if(Countly.sharedInstance().isLoggingEnabled()){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Displaying push message");
         }
 
@@ -367,7 +365,7 @@ public class CountlyPush {
             return null;
         }
 
-        if(Countly.sharedInstance().isLoggingEnabled()){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Displaying push notification");
         }
 
@@ -387,8 +385,8 @@ public class CountlyPush {
             .setContentTitle(msg.title())
             .setContentText(msg.message());
 
-        if(android.os.Build.VERSION.SDK_INT > 21) {
-            if(notificationAccentColor != null) {
+        if (android.os.Build.VERSION.SDK_INT > 21) {
+            if (notificationAccentColor != null) {
                 builder.setColor(notificationAccentColor);
             }
         }
@@ -396,7 +394,7 @@ public class CountlyPush {
         builder.setAutoCancel(true)
             .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, 0));
 
-        if(android.os.Build.VERSION.SDK_INT > 16) {
+        if (android.os.Build.VERSION.SDK_INT > 16) {
             builder.setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
         }
 
@@ -406,7 +404,7 @@ public class CountlyPush {
             broadcast = new Intent(NOTIFICATION_BROADCAST);
             broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
-            if(android.os.Build.VERSION.SDK_INT > 16) {
+            if (android.os.Build.VERSION.SDK_INT > 16) {
                 builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, 0));
             }
         }
@@ -423,19 +421,19 @@ public class CountlyPush {
             loadImage(context, msg, new BitmapCallback() {
                 @Override
                 public void call(Bitmap bitmap) {
-                    if(android.os.Build.VERSION.SDK_INT > 16) {
+                    if (android.os.Build.VERSION.SDK_INT > 16) {
                         if (bitmap != null) {
                             builder.setStyle(new Notification.BigPictureStyle()
-                                    .bigPicture(bitmap)
-                                    .setBigContentTitle(msg.title())
-                                    .setSummaryText(msg.message()));
+                                .bigPicture(bitmap)
+                                .setBigContentTitle(msg.title())
+                                .setSummaryText(msg.message()));
                         }
                         manager.notify(msg.hashCode(), builder.build());
                     }
                 }
             });
         } else {
-            if(android.os.Build.VERSION.SDK_INT > 16) {
+            if (android.os.Build.VERSION.SDK_INT > 16) {
                 manager.notify(msg.hashCode(), builder.build());
             }
         }
@@ -469,7 +467,7 @@ public class CountlyPush {
             return null;
         }
 
-        if(Countly.sharedInstance().isLoggingEnabled()){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Displaying push dialog");
         }
 
@@ -517,10 +515,10 @@ public class CountlyPush {
 
                     builder.setView(layout);
                 } else if (msg.link() != null) {
-                    if (msg.title() != null){
+                    if (msg.title() != null) {
                         builder.setTitle(msg.title());
                     }
-                    if (msg.message() != null){
+                    if (msg.message() != null) {
                         builder.setMessage(msg.message());
                     }
                     if (msg.buttons().size() > 0) {
@@ -606,7 +604,7 @@ public class CountlyPush {
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
             return;
         }
-        if(Countly.sharedInstance().isLoggingEnabled()){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Refreshing FCM push token");
         }
         Countly.sharedInstance().onRegistrationId(token, mode);
@@ -617,6 +615,7 @@ public class CountlyPush {
 
     /**
      * Set an activity to start when user taps on a notification
+     *
      * @param application application instance
      * @throws IllegalStateException
      */
@@ -626,7 +625,7 @@ public class CountlyPush {
             throw new IllegalStateException("No FirebaseMessaging library in class path. Please either add it to your gradle config or don't use CountlyPush.");
         }
 
-        if(Countly.sharedInstance().isLoggingEnabled()){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Initializing Countly FCM push");
         }
 
@@ -687,7 +686,7 @@ public class CountlyPush {
         green = Math.min(255, Math.max(0, green));
         blue = Math.min(255, Math.max(0, blue));
 
-        if(Countly.sharedInstance().isLoggingEnabled()){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[CountlyPush] Calling [setNotificationAccentColor], [" + alpha + "][" + red + "][" + green + "][" + blue + "]");
         }
 
@@ -723,7 +722,7 @@ public class CountlyPush {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                final Bitmap [] bitmap = new Bitmap[]{null};
+                final Bitmap[] bitmap = new Bitmap[] { null };
 
                 if (msg.media() != null) {
                     HttpURLConnection connection = null;
@@ -745,7 +744,6 @@ public class CountlyPush {
 
                         byte[] data = bytes.toByteArray();
                         bitmap[0] = BitmapFactory.decodeByteArray(data, 0, data.length);
-
                     } catch (Exception e) {
                         System.out.println("Cannot download message media " + e);
                         bitmap[0] = null;
@@ -753,12 +751,14 @@ public class CountlyPush {
                         if (input != null) {
                             try {
                                 input.close();
-                            } catch (IOException ignored) {}
+                            } catch (IOException ignored) {
+                            }
                         }
                         if (connection != null) {
                             try {
                                 connection.disconnect();
-                            } catch (Throwable ignored) {}
+                            } catch (Throwable ignored) {
+                            }
                         }
                     }
                 }
@@ -774,6 +774,5 @@ public class CountlyPush {
             }
         }.doInBackground();
     }
-
 }
 

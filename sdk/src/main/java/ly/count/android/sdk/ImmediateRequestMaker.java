@@ -35,15 +35,15 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.v(Countly.TAG, "Starting ImmediateRequestMaker request");
         }
-        callback = (InternalFeedbackRatingCallback)params[2];
-        boolean requestShouldBeDelayed = (boolean)params[1];
+        callback = (InternalFeedbackRatingCallback) params[2];
+        boolean requestShouldBeDelayed = (boolean) params[1];
 
         HttpURLConnection connection = null;
         BufferedReader reader = null;
         boolean wasSuccess = true;
 
         try {
-            if(requestShouldBeDelayed){
+            if (requestShouldBeDelayed) {
                 //used in cases after something has to be done after a device id change
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.v(Countly.TAG, "ImmediateRequestMaker request should be delayed, waiting for 0.5 seconds");
@@ -58,22 +58,22 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
                 }
             }
 
-            connection = (HttpURLConnection)params[0];
+            connection = (HttpURLConnection) params[0];
             connection.connect();
 
             InputStream stream;
 
-            try{
+            try {
                 //assume there will be no error
                 stream = connection.getInputStream();
-            } catch (Exception ex){
+            } catch (Exception ex) {
                 //in case of exception, assume there was a error in the request
                 //and change streams
                 stream = connection.getErrorStream();
                 wasSuccess = false;
             }
 
-            if(stream == null){
+            if (stream == null) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.e(Countly.TAG, "Encountered problem while making a immediate server request, received stream was null");
                 }
@@ -89,7 +89,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
                 buffer.append(line).append("\n");
             }
 
-            if(wasSuccess) {
+            if (wasSuccess) {
                 return new JSONObject(buffer.toString());
             } else {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -127,7 +127,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
         super.onPostExecute(result);
         //Log.d(TAG, "Post exec: [" + result + "]");
 
-        if(callback != null){
+        if (callback != null) {
             callback.callback(result);
         }
     }

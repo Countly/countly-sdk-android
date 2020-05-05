@@ -25,9 +25,9 @@ import ly.count.android.sdk.Countly;
 
 class ModulePush {
 
-    static final String PUSH_EVENT_ACTION  = "[CLY]_push_action";
-    static final String PUSH_EVENT_ACTION_ID_KEY  = "i";
-    static final String PUSH_EVENT_ACTION_INDEX_KEY  = "b";
+    static final String PUSH_EVENT_ACTION = "[CLY]_push_action";
+    static final String PUSH_EVENT_ACTION_ID_KEY = "i";
+    static final String PUSH_EVENT_ACTION_INDEX_KEY = "b";
     static final String KEY_ID = "c.i";
     static final String KEY_TITLE = "title";
     static final String KEY_MESSAGE = "message";
@@ -164,7 +164,6 @@ class ModulePush {
                     Log.w("Countly", "Failed to parse buttons JSON", e);
                 }
             }
-
         }
 
         @Override

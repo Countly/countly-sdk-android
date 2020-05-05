@@ -46,7 +46,7 @@ import java.util.Map;
  * submits data to a Countly server, and it writes to this store as well.
  *
  * NOTE: This class is only public to facilitate unit testing, because
- *       of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
+ * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class CountlyStore {
     private static final String PREFERENCES = "COUNTLY_STORE";
@@ -72,6 +72,7 @@ public class CountlyStore {
 
     /**
      * Constructs a CountlyStore object.
+     *
      * @param context used to retrieve storage meta data, must not be null.
      * @throws IllegalArgumentException if context is null
      */
@@ -120,7 +121,7 @@ public class CountlyStore {
         Collections.sort(events, new Comparator<Event>() {
             @Override
             public int compare(final Event e1, final Event e2) {
-                return (int)(e1.timestamp - e2.timestamp);
+                return (int) (e1.timestamp - e2.timestamp);
             }
         });
         return events;
@@ -135,6 +136,7 @@ public class CountlyStore {
 
     /**
      * Adds a connection to the local store.
+     *
      * @param str the connection to be added, ignored if null or empty
      */
     public synchronized void addConnection(final String str) {
@@ -149,8 +151,9 @@ public class CountlyStore {
 
     /**
      * Removes a connection from the local store.
+     *
      * @param str the connection to be removed, ignored if null or empty,
-     *            or if a matching connection cannot be found
+     * or if a matching connection cannot be found
      */
     public synchronized void removeConnection(final String str) {
         if (str != null && str.length() > 0) {
@@ -161,8 +164,8 @@ public class CountlyStore {
         }
     }
 
-    protected synchronized void replaceConnections(final String[] newConns){
-        if(newConns != null){
+    protected synchronized void replaceConnections(final String[] newConns) {
+        if (newConns != null) {
             final List<String> connections = new ArrayList<>(Arrays.asList(newConns));
             preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
         }
@@ -170,6 +173,7 @@ public class CountlyStore {
 
     /**
      * Adds a custom event to the local store.
+     *
      * @param event event to be added to the local store, must not be null
      */
     void addEvent(final Event event) {
@@ -240,14 +244,13 @@ public class CountlyStore {
         return preferences_.getString(STAR_RATING_PREFERENCE, "");
     }
 
-    void setRemoteConfigValues(String values){
+    void setRemoteConfigValues(String values) {
         preferences_.edit().putString(REMOTE_CONFIG_VALUES, values).apply();
     }
 
-    String getRemoteConfigValues(){
+    String getRemoteConfigValues() {
         return preferences_.getString(REMOTE_CONFIG_VALUES, "");
     }
-
 
     void setCachedAdvertisingId(String advertisingId) {
         preferences_.edit().putString(CACHED_ADVERTISING_ID, advertisingId).apply();
@@ -257,16 +260,17 @@ public class CountlyStore {
         return preferences_.getString(CACHED_ADVERTISING_ID, "");
     }
 
-    void setConsentPush(boolean consentValue){
+    void setConsentPush(boolean consentValue) {
         preferencesGCM_.edit().putBoolean(CONSENT_GCM_PREFERENCES, consentValue).apply();
     }
 
-    Boolean getConsentPush(){
+    Boolean getConsentPush() {
         return preferencesGCM_.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
     /**
      * Adds a custom event to the local store.
+     *
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation values for the custom event, may be null
      * @param timestamp timestamp (seconds since 1970) in GMT when the event occurred
@@ -274,9 +278,10 @@ public class CountlyStore {
      * @param dow current day of the week on device
      * @param count count associated with the custom event, should be more than zero
      * @param sum sum associated with the custom event, if not used, pass zero.
-     *            NaN and infinity values will be quietly ignored.
+     * NaN and infinity values will be quietly ignored.
      */
-    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean, final long timestamp, final int hour, final int dow, final int count, final double sum, final double dur) {
+    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean,
+        final long timestamp, final int hour, final int dow, final int count, final double sum, final double dur) {
         final Event event = new Event();
         event.key = key;
         event.segmentation = segmentation;
@@ -296,6 +301,7 @@ public class CountlyStore {
     /**
      * Removes the specified events from the local store. Does nothing if the event collection
      * is null or empty.
+     *
      * @param eventsToRemove collection containing the events to remove from the local store
      */
     public synchronized void removeEvents(final Collection<Event> eventsToRemove) {
@@ -310,6 +316,7 @@ public class CountlyStore {
     /**
      * Converts a collection of Event objects to URL-encoded JSON to a string, with each
      * event JSON string delimited by the specified delimiter.
+     *
      * @param collection events to join into a delimited string
      * @param delimiter delimiter to use, should not be something that can be found in URL-encoded JSON string
      */
@@ -341,6 +348,7 @@ public class CountlyStore {
 
     /**
      * Retrieves a preference from local store.
+     *
      * @param key the preference key
      */
     public synchronized String getPreference(final String key) {
@@ -349,6 +357,7 @@ public class CountlyStore {
 
     /**
      * Adds a preference to local store.
+     *
      * @param key the preference key
      * @param value the preference value, supply null value to remove preference
      */

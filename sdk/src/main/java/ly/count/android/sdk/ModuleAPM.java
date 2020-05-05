@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class ModuleAPM extends ModuleBase {
 
-    final static String[] reservedKeys = new String[] {"response_time", "response_payload_size", "response_code", "request_payload_size", "duration", "slow_rendering_frames", "frozen_frames"};
+    final static String[] reservedKeys = new String[] { "response_time", "response_payload_size", "response_code", "request_payload_size", "duration", "slow_rendering_frames", "frozen_frames" };
 
     Apm apmInterface = null;
 
@@ -74,17 +74,17 @@ public class ModuleAPM extends ModuleBase {
             return;
         }
 
-        if(codeTraces.containsKey(traceKey)) {
+        if (codeTraces.containsKey(traceKey)) {
             Long startTimestamp = codeTraces.remove(traceKey);
 
-            if(startTimestamp == null){
+            if (startTimestamp == null) {
                 if (_cly.isLoggingEnabled()) {
                     Log.e(Countly.TAG, "[ModuleAPM] endTraceInternal, retrieved 'startTimestamp' is null");
                 }
             } else {
                 Long durationMs = currentTimestamp - startTimestamp;
 
-                if(customMetrics != null) {
+                if (customMetrics != null) {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
@@ -104,11 +104,11 @@ public class ModuleAPM extends ModuleBase {
     static String customMetricsToString(Map<String, Integer> customMetrics) {
         StringBuilder ret = new StringBuilder();
 
-        if(customMetrics == null) {
+        if (customMetrics == null) {
             return ret.toString();
         }
 
-        for(Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
+        for (Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Integer> entry = it.next();
             String key = entry.getKey();
             Integer value = entry.getValue();
@@ -123,25 +123,25 @@ public class ModuleAPM extends ModuleBase {
     }
 
     static void removeReservedInvalidKeys(Map<String, Integer> customMetrics) {
-        if(customMetrics == null) {
+        if (customMetrics == null) {
             return;
         }
 
         //remove reserved keys
-        for(String rKey:ModuleAPM.reservedKeys) {
+        for (String rKey : ModuleAPM.reservedKeys) {
             customMetrics.remove(rKey);
         }
 
         Pattern p = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
         Matcher m = p.matcher("aaaaab");
 
-        for(Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
+        for (Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Integer> entry = it.next();
             String key = entry.getKey();
             Integer value = entry.getValue();
 
             //remove invalid values
-            if(key == null || key.isEmpty() || value == null) {
+            if (key == null || key.isEmpty() || value == null) {
                 it.remove();
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.w(Countly.TAG, "[ModuleAPM] custom metrics can't contain null or empty key/value");
@@ -154,7 +154,7 @@ public class ModuleAPM extends ModuleBase {
             // /^[a-zA-Z][a-zA-Z0-9_]*$/
             int keyLength = key.length();
 
-            if(keyLength > 32) {
+            if (keyLength > 32) {
                 //remove key longer than 32 characters
                 it.remove();
                 if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -163,7 +163,7 @@ public class ModuleAPM extends ModuleBase {
                 continue;
             }
 
-            if(key.charAt(0) == '_') {
+            if (key.charAt(0) == '_') {
                 //remove key that starts with underscore
                 it.remove();
                 if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -172,7 +172,7 @@ public class ModuleAPM extends ModuleBase {
                 continue;
             }
 
-            if(key.charAt(0) == ' ' || key.charAt(keyLength - 1) == ' ') {
+            if (key.charAt(0) == ' ' || key.charAt(keyLength - 1) == ' ') {
                 //remove key that starts with whitespace
                 it.remove();
                 if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -181,7 +181,7 @@ public class ModuleAPM extends ModuleBase {
                 continue;
             }
 
-            if(!p.matcher(key).matches()) {
+            if (!p.matcher(key).matches()) {
                 //validate against regex
                 it.remove();
                 if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -194,9 +194,10 @@ public class ModuleAPM extends ModuleBase {
 
     /**
      * Begin the tracking of a network request
+     *
      * @param networkTraceKey key that identifies the network trace
      * @param uniqueId this is important in cases where multiple requests in parallel are done
-     *                 for the same trace. This helps to distinguish them
+     * for the same trace. This helps to distinguish them
      */
     void startNetworkRequestInternal(String networkTraceKey, String uniqueId) {
         if (_cly.isLoggingEnabled()) {
@@ -224,9 +225,10 @@ public class ModuleAPM extends ModuleBase {
 
     /**
      * Mark that a network request has ended
+     *
      * @param networkTraceKey key that identifies the network trace
      * @param uniqueId this is important in cases where multiple requests in parallel are done
-     *                 for the same trace. This helps to distinguish them.
+     * for the same trace. This helps to distinguish them.
      * @param responseCode returned response code
      * @param requestPayloadSize sent request payload size in bytes
      * @param responsePayloadSize received response payload size in bytes
@@ -253,20 +255,20 @@ public class ModuleAPM extends ModuleBase {
             return;
         }
 
-        if(!(responseCode >= 100 && responseCode < 600)) {
+        if (!(responseCode >= 100 && responseCode < 600)) {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[ModuleAPM] Invalid response code was provided");
             }
             responseCode = -1;
         }
 
-        if(requestPayloadSize < 0) {
+        if (requestPayloadSize < 0) {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[ModuleAPM] Invalid request payload size was provided");
             }
         }
 
-        if(responsePayloadSize < 0) {
+        if (responsePayloadSize < 0) {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[ModuleAPM] Invalid response payload size was provided");
             }
@@ -274,10 +276,10 @@ public class ModuleAPM extends ModuleBase {
 
         String internalTraceKey = networkTraceKey + "|" + uniqueId;
 
-        if(networkTraces.containsKey(internalTraceKey)) {
+        if (networkTraces.containsKey(internalTraceKey)) {
             Long startTimestamp = networkTraces.remove(internalTraceKey);
 
-            if(startTimestamp == null){
+            if (startTimestamp == null) {
                 if (_cly.isLoggingEnabled()) {
                     Log.e(Countly.TAG, "[ModuleAPM] endNetworkRequestInternal, retrieved 'startTimestamp' is null");
                 }
@@ -294,8 +296,8 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void recordAppStart() {
-        if(_cly.config_.recordAppStartTime) {
-            if(Countly.applicationStart == -1){
+        if (_cly.config_.recordAppStartTime) {
+            if (Countly.applicationStart == -1) {
                 if (_cly.isLoggingEnabled()) {
                     Log.w(Countly.TAG, "[ModuleAPM] Application onCreate start time is not recorded. Don't forget to call 'applicationOnCreate'");
                     return;
@@ -312,10 +314,10 @@ public class ModuleAPM extends ModuleBase {
         boolean goingToBackground = (previousCount == 1 && newCount == 0);
         boolean goingToForeground = (previousCount == 0 && newCount == 1);
 
-        if(goingToBackground || goingToForeground) {
+        if (goingToBackground || goingToForeground) {
             long currentTimeMs = UtilsTime.currentTimestampMs();
 
-            if(lastScreenSwitchTime != -1) {
+            if (lastScreenSwitchTime != -1) {
                 // if it was '-1' then it just started, todo might be a issue with halt where it is only reset on first screen change
                 long durationMs = currentTimeMs - lastScreenSwitchTime;
 
@@ -342,6 +344,7 @@ public class ModuleAPM extends ModuleBase {
 
     /**
      * used for background / foreground time recording
+     *
      * @param activity
      */
     @Override
@@ -353,7 +356,7 @@ public class ModuleAPM extends ModuleBase {
         calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
         activitiesOpen++;
 
-        if(!hasFirstOnResumeHappened) {
+        if (!hasFirstOnResumeHappened) {
             hasFirstOnResumeHappened = true;
 
             firstOnResumeTimeMs = UtilsTime.currentTimestampMs();
@@ -364,6 +367,7 @@ public class ModuleAPM extends ModuleBase {
 
     /**
      * used for background / foreground time recording
+     *
      * @param activity
      */
     @Override
@@ -379,6 +383,7 @@ public class ModuleAPM extends ModuleBase {
     public class Apm {
         /**
          * Start a trace of a action you want to track
+         *
          * @param traceKey key by which this action is identified
          */
         public void startTrace(String traceKey) {
@@ -391,6 +396,7 @@ public class ModuleAPM extends ModuleBase {
 
         /**
          * End a trace of a action you want to track
+         *
          * @param traceKey key by which this action is identified
          */
         public void endTrace(String traceKey, Map<String, Integer> customMetrics) {
@@ -403,9 +409,10 @@ public class ModuleAPM extends ModuleBase {
 
         /**
          * Begin the tracking of a network request
+         *
          * @param networkTraceKey key that identifies the network trace
          * @param uniqueId this is important in cases where multiple requests in parallel are done
-         *                 for the same trace. This helps to distinguish them.
+         * for the same trace. This helps to distinguish them.
          */
         public void startNetworkRequest(String networkTraceKey, String uniqueId) {
             if (_cly.isLoggingEnabled()) {
@@ -417,9 +424,10 @@ public class ModuleAPM extends ModuleBase {
 
         /**
          * Mark that a network request has ended
+         *
          * @param networkTraceKey key that identifies the network trace
          * @param uniqueId this is important in cases where multiple requests in parallel are done
-         *                 for the same trace. This helps to distinguish them.
+         * for the same trace. This helps to distinguish them.
          * @param responseCode returned response code
          * @param requestPayloadSize sent request payload size in bytes
          * @param responsePayloadSize received response payload size in bytes

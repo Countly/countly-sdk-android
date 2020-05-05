@@ -6,6 +6,7 @@ package ly.count.android.sdk;
 public interface CrashFilterCallback {
     /**
      * Callback for filtering the crash
+     *
      * @param crash
      * @return return true if the crash should not be sent to the server
      */

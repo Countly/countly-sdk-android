@@ -30,55 +30,56 @@ class ModuleRemoteConfig extends ModuleBase {
 
     /**
      * Internal call for updating remote config keys
+     *
      * @param keysOnly set if these are the only keys to update
      * @param keysExcept set if these keys should be ignored from the update
      * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
      * @param callback called after the update is done
      */
-    protected void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback){
+    protected void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
         }
         String keysInclude = null;
         String keysExclude = null;
 
-        if(keysOnly != null && keysOnly.length > 0){
+        if (keysOnly != null && keysOnly.length > 0) {
             //include list takes precedence
             //if there is at least one item, use it
             JSONArray includeArray = new JSONArray();
-            for (String key:keysOnly) {
+            for (String key : keysOnly) {
                 includeArray.put(key);
             }
             keysInclude = includeArray.toString();
-        } else if(keysExcept != null && keysExcept.length > 0){
+        } else if (keysExcept != null && keysExcept.length > 0) {
             //include list was not used, use the exclude list
             JSONArray excludeArray = new JSONArray();
-            for(String key:keysExcept){
+            for (String key : keysExcept) {
                 excludeArray.put(key);
             }
             keysExclude = excludeArray.toString();
         }
 
-        if(connectionQueue_.getDeviceId().getId() == null){
+        if (connectionQueue_.getDeviceId().getId() == null) {
             //device ID is null, abort
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
             }
 
-            if(callback != null){
+            if (callback != null) {
                 callback.callback("Can't complete call, device ID is null");
             }
 
             return;
         }
 
-        if(connectionQueue_.getDeviceId().temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()){
+        if (connectionQueue_.getDeviceId().temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()) {
             //temporary id mode enabled, abort
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
             }
 
-            if(callback != null){
+            if (callback != null) {
                 callback.callback("Can't complete call, temporary device ID is set");
             }
 
@@ -99,7 +100,7 @@ class ModuleRemoteConfig extends ModuleBase {
                 Log.e(Countly.TAG, "[ModuleRemoteConfig] IOException while preparing remote config update request :[" + e.toString() + "]");
             }
 
-            if(callback != null){
+            if (callback != null) {
                 callback.callback("Encountered problem while trying to reach the server");
             }
 
@@ -112,8 +113,8 @@ class ModuleRemoteConfig extends ModuleBase {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
                     Log.d(Countly.TAG, "[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
                 }
-                if(checkResponse == null) {
-                    if(callback != null){
+                if (checkResponse == null) {
+                    if (callback != null) {
                         callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
                     }
                     return;
@@ -121,7 +122,7 @@ class ModuleRemoteConfig extends ModuleBase {
 
                 //merge the new values into the current ones
                 RemoteConfigValueStore rcvs = loadConfig();
-                if(keysExcept == null && keysOnly == null){
+                if (keysExcept == null && keysOnly == null) {
                     //in case of full updates, clear old values
                     rcvs.values = new JSONObject();
                 }
@@ -137,25 +138,24 @@ class ModuleRemoteConfig extends ModuleBase {
                     Log.d(Countly.TAG, "[ModuleRemoteConfig] Finished remote config saving");
                 }
 
-                if(callback != null){
+                if (callback != null) {
                     callback.callback(null);
                 }
             }
         });
     }
 
-    protected Object getValue(String key){
+    protected Object getValue(String key) {
         RemoteConfigValueStore rcvs = loadConfig();
         return rcvs.getValue(key);
     }
 
-
-    protected void saveConfig(RemoteConfigValueStore rcvs){
+    protected void saveConfig(RemoteConfigValueStore rcvs) {
         CountlyStore cs = new CountlyStore(_cly.context_);
         cs.setRemoteConfigValues(rcvs.dataToString());
     }
 
-    protected RemoteConfigValueStore loadConfig(){
+    protected RemoteConfigValueStore loadConfig() {
         CountlyStore cs = new CountlyStore(_cly.context_);
         String rcvsString = cs.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
@@ -163,7 +163,7 @@ class ModuleRemoteConfig extends ModuleBase {
         return rcvs;
     }
 
-    protected void clearValueStore(){
+    protected void clearValueStore() {
         CountlyStore cs = new CountlyStore(_cly.context_);
         cs.setRemoteConfigValues("");
     }
@@ -177,8 +177,10 @@ class ModuleRemoteConfig extends ModuleBase {
         public JSONObject values = new JSONObject();
 
         //add new values to the current storage
-        public void mergeValues(JSONObject newValues){
-            if(newValues == null) {return;}
+        public void mergeValues(JSONObject newValues) {
+            if (newValues == null) {
+                return;
+            }
 
             Iterator<String> iter = newValues.keys();
             while (iter.hasNext()) {
@@ -194,11 +196,11 @@ class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        private RemoteConfigValueStore(JSONObject values){
+        private RemoteConfigValueStore(JSONObject values) {
             this.values = values;
         }
 
-        public Object getValue(String key){
+        public Object getValue(String key) {
             return values.opt(key);
         }
 
@@ -207,7 +209,7 @@ class ModuleRemoteConfig extends ModuleBase {
 
             Iterator<String> keys = values.keys();
 
-            while(keys.hasNext()) {
+            while (keys.hasNext()) {
                 String key = keys.next();
 
                 try {
@@ -222,8 +224,8 @@ class ModuleRemoteConfig extends ModuleBase {
             return ret;
         }
 
-        public static RemoteConfigValueStore dataFromString(String storageString){
-            if(storageString == null || storageString.isEmpty()){
+        public static RemoteConfigValueStore dataFromString(String storageString) {
+            if (storageString == null || storageString.isEmpty()) {
                 return new RemoteConfigValueStore(new JSONObject());
             }
 
@@ -239,7 +241,7 @@ class ModuleRemoteConfig extends ModuleBase {
             return new RemoteConfigValueStore(values);
         }
 
-        public String dataToString(){
+        public String dataToString() {
             return values.toString();
         }
     }
@@ -261,7 +263,7 @@ class ModuleRemoteConfig extends ModuleBase {
             Log.v(Countly.TAG, "[RemoteConfig] Device ID changed will update values: [" + updateRemoteConfigAfterIdChange + "]");
         }
 
-        if(updateRemoteConfigAfterIdChange) {
+        if (updateRemoteConfigAfterIdChange) {
             updateRemoteConfigAfterIdChange = false;
             updateRemoteConfigValues(null, null, _cly.connectionQueue_, true, null);
         }
@@ -276,7 +278,7 @@ class ModuleRemoteConfig extends ModuleBase {
         /**
          * Clear all stored remote config_ values
          */
-        public synchronized void clearStoredValues(){
+        public synchronized void clearStoredValues() {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[RemoteConfig] Calling 'clearStoredValues'");
             }
@@ -289,28 +291,34 @@ class ModuleRemoteConfig extends ModuleBase {
                 Log.d(Countly.TAG, "[RemoteConfig] Calling 'getAllValues'");
             }
 
-            if(!_cly.anyConsentGiven()) { return null; }
+            if (!_cly.anyConsentGiven()) {
+                return null;
+            }
 
             return getAllRemoteConfigValuesInternal();
         }
 
         /**
          * Get the stored value for the provided remote config_ key
+         *
          * @param key
          * @return
          */
-        public Object getValueForKey(String key){
+        public Object getValueForKey(String key) {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey");
             }
 
-            if(!_cly.anyConsentGiven()) { return null; }
+            if (!_cly.anyConsentGiven()) {
+                return null;
+            }
 
             return getValue(key);
         }
 
         /**
          * Manual remote config update call. Will update all keys except the ones provided
+         *
          * @param keysToExclude
          * @param callback
          */
@@ -319,41 +327,53 @@ class ModuleRemoteConfig extends ModuleBase {
                 Log.d(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
             }
 
-            if(!_cly.anyConsentGiven()){
-                if(callback != null){ callback.callback("No consent given"); }
+            if (!_cly.anyConsentGiven()) {
+                if (callback != null) {
+                    callback.callback("No consent given");
+                }
                 return;
             }
-            if (keysToExclude == null && _cly.isLoggingEnabled()) { Log.w(Countly.TAG,"updateRemoteConfigExceptKeys passed 'keys to ignore' array is null"); }
+            if (keysToExclude == null && _cly.isLoggingEnabled()) {
+                Log.w(Countly.TAG, "updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+            }
             updateRemoteConfigValues(null, keysToExclude, _cly.connectionQueue_, false, callback);
         }
 
         /**
          * Manual remote config_ update call. Will only update the keys provided.
+         *
          * @param keysToInclude
          * @param callback
          */
-        public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback){
+        public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
             }
-            if(!_cly.anyConsentGiven()){
-                if(callback != null){ callback.callback("No consent given"); }
+            if (!_cly.anyConsentGiven()) {
+                if (callback != null) {
+                    callback.callback("No consent given");
+                }
                 return;
             }
-            if (keysToInclude == null && _cly.isLoggingEnabled()) { Log.w(Countly.TAG,"updateRemoteConfigExceptKeys passed 'keys to include' array is null"); }
+            if (keysToInclude == null && _cly.isLoggingEnabled()) {
+                Log.w(Countly.TAG, "updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+            }
             updateRemoteConfigValues(keysToInclude, null, _cly.connectionQueue_, false, callback);
         }
 
         /**
          * Manually update remote config_ values
+         *
          * @param callback
          */
-        public void update(RemoteConfigCallback callback){
+        public void update(RemoteConfigCallback callback) {
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "Manually calling to updateRemoteConfig");
             }
 
-            if(!_cly.anyConsentGiven()){ return; }
+            if (!_cly.anyConsentGiven()) {
+                return;
+            }
 
             updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, callback);
         }

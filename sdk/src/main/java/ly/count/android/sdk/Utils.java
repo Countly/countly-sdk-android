@@ -23,7 +23,7 @@ public class Utils {
     /**
      * Joins objects with a separator
      *
-     * @param objects   objects to join
+     * @param objects objects to join
      * @param separator separator to use
      * @return resulting string
      */
@@ -61,6 +61,7 @@ public class Utils {
 
     /**
      * Returns true if the version you are checking is at or below the build version
+     *
      * @param version
      * @return
      */
@@ -101,12 +102,12 @@ public class Utils {
         }
     }
 
-     static String inputStreamToString(InputStream stream){
+    static String inputStreamToString(InputStream stream) {
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
 
         StringBuilder sbRes = new StringBuilder();
 
-        while (true){
+        while (true) {
             String streamLine;
             try {
                 streamLine = br.readLine();
@@ -117,11 +118,11 @@ public class Utils {
                 break;
             }
 
-            if(streamLine == null){
+            if (streamLine == null) {
                 break;
             }
 
-            if(sbRes.length() > 0){
+            if (sbRes.length() > 0) {
                 //if it's not empty then there has been a previous line
                 sbRes.append("\n");
             }
@@ -132,12 +133,12 @@ public class Utils {
         return sbRes.toString();
     }
 
-    static Map<String, Object> removeKeysFromMap(Map<String,Object> data, String[] keys) {
-        if(data == null || keys == null) {
+    static Map<String, Object> removeKeysFromMap(Map<String, Object> data, String[] keys) {
+        if (data == null || keys == null) {
             return data;
         }
 
-        for(String key : keys){
+        for (String key : keys) {
             data.remove(key);
         }
 
@@ -146,27 +147,28 @@ public class Utils {
 
     /**
      * Removes unsupported data types
+     *
      * @param data
      * @return returns true if any entry had been removed
      */
     static boolean removeUnsupportedDataTypes(Map<String, Object> data) {
-        if(data == null) {
+        if (data == null) {
             return false;
         }
 
         boolean removed = false;
 
-        for(Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
+        for (Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Object> entry = it.next();
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            if(key == null || key.isEmpty()) {
+            if (key == null || key.isEmpty()) {
 
             }
 
             if (key == null || key.isEmpty() ||
-                    !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
+                !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
                 //found unsupported data type or null key or value, removing
                 it.remove();
                 removed = true;
@@ -184,13 +186,15 @@ public class Utils {
 
     /**
      * Used for quickly sorting segments into their respective data type
+     *
      * @param allSegm
      * @param segmStr
      * @param segmInt
      * @param segmDouble
      * @param segmBoolean
      */
-    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Boolean> segmBoolean,Map<String, Object> reminder) {
+    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Boolean> segmBoolean,
+        Map<String, Object> reminder) {
         for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
             String key = pair.getKey();
             Object value = pair.getValue();
@@ -204,7 +208,7 @@ public class Utils {
             } else if (value instanceof Boolean) {
                 segmBoolean.put(key, (Boolean) value);
             } else {
-                if(reminder != null) {
+                if (reminder != null) {
                     reminder.put(key, value);
                 }
             }
@@ -218,8 +222,8 @@ public class Utils {
      */
     protected static boolean isDeviceTablet(Activity activity) {
         boolean device_large = ((activity.getResources().getConfiguration().screenLayout &
-                Configuration.SCREENLAYOUT_SIZE_MASK) ==
-                Configuration.SCREENLAYOUT_SIZE_LARGE);
+            Configuration.SCREENLAYOUT_SIZE_MASK) ==
+            Configuration.SCREENLAYOUT_SIZE_LARGE);
 
         if (device_large) {
             DisplayMetrics metrics = new DisplayMetrics();
@@ -227,10 +231,10 @@ public class Utils {
 
             //noinspection RedundantIfStatement
             if (metrics.densityDpi == DisplayMetrics.DENSITY_DEFAULT
-                    || metrics.densityDpi == DisplayMetrics.DENSITY_HIGH
-                    || metrics.densityDpi == DisplayMetrics.DENSITY_MEDIUM
-                    || metrics.densityDpi == DisplayMetrics.DENSITY_TV
-                    || metrics.densityDpi == DisplayMetrics.DENSITY_XHIGH) {
+                || metrics.densityDpi == DisplayMetrics.DENSITY_HIGH
+                || metrics.densityDpi == DisplayMetrics.DENSITY_MEDIUM
+                || metrics.densityDpi == DisplayMetrics.DENSITY_TV
+                || metrics.densityDpi == DisplayMetrics.DENSITY_XHIGH) {
                 return true;
             }
         }
@@ -239,10 +243,11 @@ public class Utils {
 
     /**
      * Used for detecting if device is a tv
+     *
      * @return
      */
     @SuppressWarnings("RedundantIfStatement")
-    protected static boolean isDeviceTv(Context context){
+    protected static boolean isDeviceTv(Context context) {
         final String TAG = "DeviceTypeRuntimeCheck";
 
         UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);

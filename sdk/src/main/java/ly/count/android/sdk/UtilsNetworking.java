@@ -11,7 +11,7 @@ public class UtilsNetworking {
     // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
     final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
-    protected static String urlEncodeString(String givenValue){
+    protected static String urlEncodeString(String givenValue) {
         String result = "";
 
         try {
@@ -23,7 +23,7 @@ public class UtilsNetworking {
         return result;
     }
 
-    protected static String urlDecodeString(String givenValue){
+    protected static String urlDecodeString(String givenValue) {
         String decodedResult = "";
 
         try {
@@ -35,18 +35,17 @@ public class UtilsNetworking {
         return decodedResult;
     }
 
-    protected static String sha1Hash (String toHash) {
+    protected static String sha1Hash(String toHash) {
         String hash = null;
         try {
-            MessageDigest digest = MessageDigest.getInstance( "SHA-1" );
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
             byte[] bytes = toHash.getBytes("UTF-8");
             digest.update(bytes, 0, bytes.length);
             bytes = digest.digest();
 
             // This is ~55x faster than looping and String.formating()
-            hash = bytesToHex( bytes );
-        }
-        catch( Throwable e ) {
+            hash = bytesToHex(bytes);
+        } catch (Throwable e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Cannot tamper-protect params", e);
             }
@@ -60,14 +59,14 @@ public class UtilsNetworking {
      * @param bytes array of bytes to convert
      * @return hex string of the byte array in lower case
      */
-    public static String bytesToHex(byte[] bytes ) {
-        char[] hexChars = new char[ bytes.length * 2 ];
-        for( int j = 0; j < bytes.length; j++ ) {
-            int v = bytes[ j ] & 0xFF;
-            hexChars[ j * 2 ] = hexArray[ v >>> 4 ];
-            hexChars[ j * 2 + 1 ] = hexArray[ v & 0x0F ];
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
         }
-        return new String( hexChars ).toLowerCase();
+        return new String(hexChars).toLowerCase();
     }
 
     /**
@@ -80,8 +79,7 @@ public class UtilsNetworking {
             try {
                 new URL(urlStr);
                 validURL = true;
-            }
-            catch (MalformedURLException e) {
+            } catch (MalformedURLException e) {
                 validURL = false;
             }
         }

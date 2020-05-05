@@ -5,14 +5,14 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-class ModuleEvents extends ModuleBase{
+class ModuleEvents extends ModuleBase {
     static final Map<String, Event> timedEvents = new HashMap<>();
-    static final String[] reservedSegmentationKeys = new String[] {"aaaaaaaaaaaaaaaaaaaaCountly"};//just a test key that no one should realistically use
+    static final String[] reservedSegmentationKeys = new String[] { "aaaaaaaaaaaaaaaaaaaaCountly" };//just a test key that no one should realistically use
 
     //interface for SDK users
     final Events eventsInterface;
 
-    public ModuleEvents(Countly cly, CountlyConfig config){
+    public ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {
@@ -23,7 +23,6 @@ class ModuleEvents extends ModuleBase{
     }
 
     /**
-     *
      * @param key
      * @param segmentation
      * @param count
@@ -48,13 +47,12 @@ class ModuleEvents extends ModuleBase{
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
 
-
         Map<String, String> segmentationString = null;
         Map<String, Integer> segmentationInt = null;
         Map<String, Double> segmentationDouble = null;
         Map<String, Boolean> segmentationBoolean = null;
 
-        if(segmentation != null) {
+        if (segmentation != null) {
             segmentationString = new HashMap<>();
             segmentationInt = new HashMap<>();
             segmentationDouble = new HashMap<>();
@@ -62,7 +60,7 @@ class ModuleEvents extends ModuleBase{
             Map<String, Object> segmentationReminder = new HashMap<>();
 
             Utils.removeUnsupportedDataTypes(segmentation);
-            if(!processedSegmentation) {
+            if (!processedSegmentation) {
                 Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
             }
             Utils.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
@@ -74,7 +72,7 @@ class ModuleEvents extends ModuleBase{
                     for (String k : segmentationReminder.keySet()) {
                         if (k != null) {
                             Object obj = segmentationReminder.get(k);
-                            if (obj != null){
+                            if (obj != null) {
                                 Log.w(Countly.TAG, "Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
                             }
                         }
@@ -120,7 +118,7 @@ class ModuleEvents extends ModuleBase{
         }
     }
 
-    synchronized boolean startEventInternal(final String key){
+    synchronized boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
         }
@@ -134,7 +132,7 @@ class ModuleEvents extends ModuleBase{
         return true;
     }
 
-    synchronized boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum){
+    synchronized boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleEvents] Ending event: [" + key + "]");
         }
@@ -142,7 +140,7 @@ class ModuleEvents extends ModuleBase{
         Event event = timedEvents.remove(key);
 
         if (event != null) {
-            if(!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
+            if (!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
                 return true;
             }
 
@@ -174,21 +172,22 @@ class ModuleEvents extends ModuleBase{
     }
 
     @Override
-    void halt(){
+    void halt() {
         timedEvents.clear();
     }
 
-    public class Events{
+    public class Events {
         /**
          * Record a event with a custom timestamp.
          * Use this in case you want to record events that you have tracked
          * and stored internally
+         *
          * @param key event key
          * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
          * @param timestamp unix timestamp in miliseconds of when the event occurred
          */
         public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, long timestamp) {
-            if(timestamp == 0){
+            if (timestamp == 0) {
                 throw new IllegalStateException("Provided timestamp has to be greater that zero");
             }
 
@@ -199,6 +198,7 @@ class ModuleEvents extends ModuleBase{
          * Record a event with a custom timestamp.
          * Use this in case you want to record events that you have tracked
          * and stored internally
+         *
          * @param key event key
          * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
          * @param count how many of these events have occured, default value is "1"
@@ -207,7 +207,7 @@ class ModuleEvents extends ModuleBase{
          * @param timestamp unix timestamp in miliseconds of when the event occurred
          */
         public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
-            if(timestamp == 0){
+            if (timestamp == 0) {
                 throw new IllegalStateException("Provided timestamp has to be greater that zero");
             }
 
@@ -217,6 +217,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Start timed event with a specified key
+         *
          * @param key name of the custom event, required, must not be the empty string or null
          * @return true if no event with this key existed before and event is started, false otherwise
          */
@@ -230,6 +231,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * End timed event with a specified key
+         *
          * @param key name of the custom event, required, must not be the empty string or null
          * @return true if event with this key has been previously started, false otherwise
          */
@@ -239,20 +241,21 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * End timed event with a specified key
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null
          * @param count count to associate with the event, should be more than zero, default value is 1
          * @param sum sum to associate with the event, default value is 0
+         * @return true if event with this key has been previously started, false otherwise
          * @throws IllegalStateException if Countly SDK has not been initialized
          * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
-         * @return true if event with this key has been previously started, false otherwise
          */
         public synchronized boolean endEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
             if (!_cly.isInitialized()) {
                 throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
             }
 
-            if(segmentation != null){
+            if (segmentation != null) {
                 Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
             }
 
@@ -261,6 +264,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Cancel timed event with a specified key
+         *
          * @return true if event with this key has been previously started, false otherwise
          **/
         public synchronized boolean cancelEvent(final String key) {
@@ -273,6 +277,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Records a custom event with no segmentation values, a count of one and a sum of zero.
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @throws IllegalStateException if Countly SDK has not been initialized
          * @throws IllegalArgumentException if key is null or empty
@@ -283,6 +288,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Records a custom event with no segmentation values, the specified count, and a sum of zero.
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @param count count to associate with the event, should be more than zero
          * @throws IllegalStateException if Countly SDK has not been initialized
@@ -294,6 +300,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Records a custom event with no segmentation values, and the specified count and sum.
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @param count count to associate with the event, should be more than zero
          * @param sum sum to associate with the event
@@ -306,6 +313,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Records a custom event with the specified segmentation values and count, and a sum of zero.
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
          * @throws IllegalStateException if Countly SDK has not been initialized
@@ -317,6 +325,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Records a custom event with the specified segmentation values and count, and a sum of zero.
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
          * @param count count to associate with the event, should be more than zero
@@ -329,6 +338,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Records a custom event with the specified values.
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
          * @param count count to associate with the event, should be more than zero
@@ -342,6 +352,7 @@ class ModuleEvents extends ModuleBase{
 
         /**
          * Records a custom event with the specified values.
+         *
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null
          * @param count count to associate with the event, should be more than zero

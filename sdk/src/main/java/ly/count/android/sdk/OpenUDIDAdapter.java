@@ -13,8 +13,8 @@ public class OpenUDIDAdapter {
         try {
             Class.forName(OPEN_UDID_MANAGER_CLASS_NAME);
             openUDIDAvailable = true;
+        } catch (ClassNotFoundException ignored) {
         }
-        catch (ClassNotFoundException ignored) {}
         return openUDIDAvailable;
     }
 
@@ -28,11 +28,11 @@ public class OpenUDIDAdapter {
             if (result instanceof Boolean) {
                 initialized = (Boolean) result;
             }
+        } catch (ClassNotFoundException ignored) {
+        } catch (NoSuchMethodException ignored) {
+        } catch (InvocationTargetException ignored) {
+        } catch (IllegalAccessException ignored) {
         }
-        catch (ClassNotFoundException ignored) {}
-        catch (NoSuchMethodException ignored) {}
-        catch (InvocationTargetException ignored) {}
-        catch (IllegalAccessException ignored) {}
         return initialized;
     }
 
@@ -41,11 +41,11 @@ public class OpenUDIDAdapter {
             final Class<?> cls = Class.forName(OPEN_UDID_MANAGER_CLASS_NAME);
             final Method syncMethod = cls.getMethod("sync", Context.class);
             syncMethod.invoke(null, context);
+        } catch (ClassNotFoundException ignored) {
+        } catch (NoSuchMethodException ignored) {
+        } catch (InvocationTargetException ignored) {
+        } catch (IllegalAccessException ignored) {
         }
-        catch (ClassNotFoundException ignored) {}
-        catch (NoSuchMethodException ignored) {}
-        catch (InvocationTargetException ignored) {}
-        catch (IllegalAccessException ignored) {}
     }
 
     public static String getOpenUDID() {
@@ -57,11 +57,11 @@ public class OpenUDIDAdapter {
             if (result instanceof String) {
                 openUDID = (String) result;
             }
+        } catch (ClassNotFoundException ignored) {
+        } catch (NoSuchMethodException ignored) {
+        } catch (InvocationTargetException ignored) {
+        } catch (IllegalAccessException ignored) {
         }
-        catch (ClassNotFoundException ignored) {}
-        catch (NoSuchMethodException ignored) {}
-        catch (InvocationTargetException ignored) {}
-        catch (IllegalAccessException ignored) {}
         return openUDID;
     }
 }
