@@ -17,7 +17,7 @@ public class ModuleConsent extends ModuleBase {
     }
 
     @Override
-    public void halt() {
+    void halt() {
         consentInterface = null;
     }
 

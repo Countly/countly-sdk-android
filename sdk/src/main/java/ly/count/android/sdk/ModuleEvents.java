@@ -5,14 +5,14 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-class ModuleEvents extends ModuleBase {
+public class ModuleEvents extends ModuleBase {
     static final Map<String, Event> timedEvents = new HashMap<>();
     static final String[] reservedSegmentationKeys = new String[] { "aaaaaaaaaaaaaaaaaaaaCountly" };//just a test key that no one should realistically use
 
     //interface for SDK users
     final Events eventsInterface;
 
-    public ModuleEvents(Countly cly, CountlyConfig config) {
+    ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {

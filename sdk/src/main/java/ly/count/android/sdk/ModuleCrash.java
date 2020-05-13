@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class ModuleCrash extends ModuleBase {
+public class ModuleCrash extends ModuleBase {
     //native crash
     private static final String countlyFolderName = "Countly";
     private static final String countlyNativeCrashFolderName = "CrashDumps";
@@ -47,7 +47,7 @@ class ModuleCrash extends ModuleBase {
      *
      * @param context android context
      */
-    protected synchronized void checkForNativeCrashDumps(Context context) {
+    synchronized void checkForNativeCrashDumps(Context context) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleCrash] Checking for native crash dumps");
         }

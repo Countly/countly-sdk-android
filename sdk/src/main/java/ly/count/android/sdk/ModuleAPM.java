@@ -337,7 +337,7 @@ public class ModuleAPM extends ModuleBase {
     }
 
     @Override
-    public void halt() {
+    void halt() {
         codeTraces = null;
         networkTraces = null;
     }
@@ -348,7 +348,7 @@ public class ModuleAPM extends ModuleBase {
      * @param activity
      */
     @Override
-    public void callbackOnActivityResumed(Activity activity) {
+    void callbackOnActivityResumed(Activity activity) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Apm] Calling 'callbackOnActivityResumed', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
         }

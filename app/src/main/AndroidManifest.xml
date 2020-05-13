@@ -120,8 +120,9 @@
                     android:host="sample_b" />
             </intent-filter>
         </activity>
+      <activity android:name=".ActivityExampleKotlin" />
 
-        <service android:name="org.openudid.OpenUDID_service" android:exported="false">
+      <service android:name="org.openudid.OpenUDID_service" android:exported="false">
             <intent-filter>
                 <action android:name="org.OpenUDID.GETUDID" />
             </intent-filter>

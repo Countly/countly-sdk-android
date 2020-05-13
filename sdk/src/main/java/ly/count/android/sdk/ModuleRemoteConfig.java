@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-class ModuleRemoteConfig extends ModuleBase {
+public class ModuleRemoteConfig extends ModuleBase {
     boolean updateRemoteConfigAfterIdChange = false;
 
     RemoteConfig remoteConfigInterface = null;
@@ -36,7 +36,7 @@ class ModuleRemoteConfig extends ModuleBase {
      * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
      * @param callback called after the update is done
      */
-    protected void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
+    void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
         }
@@ -145,17 +145,17 @@ class ModuleRemoteConfig extends ModuleBase {
         });
     }
 
-    protected Object getValue(String key) {
+    Object getValue(String key) {
         RemoteConfigValueStore rcvs = loadConfig();
         return rcvs.getValue(key);
     }
 
-    protected void saveConfig(RemoteConfigValueStore rcvs) {
+    void saveConfig(RemoteConfigValueStore rcvs) {
         CountlyStore cs = new CountlyStore(_cly.context_);
         cs.setRemoteConfigValues(rcvs.dataToString());
     }
 
-    protected RemoteConfigValueStore loadConfig() {
+    RemoteConfigValueStore loadConfig() {
         CountlyStore cs = new CountlyStore(_cly.context_);
         String rcvsString = cs.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
@@ -163,17 +163,17 @@ class ModuleRemoteConfig extends ModuleBase {
         return rcvs;
     }
 
-    protected void clearValueStore() {
+    void clearValueStore() {
         CountlyStore cs = new CountlyStore(_cly.context_);
         cs.setRemoteConfigValues("");
     }
 
-    protected Map<String, Object> getAllRemoteConfigValuesInternal() {
+    Map<String, Object> getAllRemoteConfigValuesInternal() {
         RemoteConfigValueStore rcvs = loadConfig();
         return rcvs.getAllValues();
     }
 
-    protected static class RemoteConfigValueStore {
+    static class RemoteConfigValueStore {
         public JSONObject values = new JSONObject();
 
         //add new values to the current storage

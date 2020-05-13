@@ -23,7 +23,7 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
-class ModuleRatings extends ModuleBase {
+public class ModuleRatings extends ModuleBase {
     static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
 
     //star rating
@@ -344,7 +344,7 @@ class ModuleRatings extends ModuleBase {
      * @param context android context
      * @param callback
      */
-    protected void showStarRatingInternal(final Context context, final CountlyStore cs, final StarRatingCallback callback) {
+    void showStarRatingInternal(final Context context, final CountlyStore cs, final StarRatingCallback callback) {
         StarRatingPreferences srp = loadStarRatingPreferences(cs);
         showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
@@ -383,7 +383,7 @@ class ModuleRatings extends ModuleBase {
      * @param isCancellable
      * @param callback
      */
-    public void showStarRatingCustom(
+    void showStarRatingCustom(
         final Context context,
         final String title,
         final String message,
@@ -453,7 +453,7 @@ class ModuleRatings extends ModuleBase {
 
     /// Countly webDialog user rating
 
-    protected static synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final Countly countly, final ConnectionQueue connectionQueue_,
+    static synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final Countly countly, final ConnectionQueue connectionQueue_,
         final FeedbackRatingCallback devCallback) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Showing Feedback popup for widget id: [" + widgetId + "]");

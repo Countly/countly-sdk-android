@@ -2479,7 +2479,7 @@ public class Countly {
      *
      * @param widgetId ID that identifies this dialog
      * @return
-     * @deprecated use 'Countly.sharedInstance().remoteConfig().showFeedbackPopup'
+     * @deprecated use 'Countly.sharedInstance().ratings().showFeedbackPopup'
      */
     public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final CountlyStarRating.FeedbackRatingCallback feedbackCallback) {
         if (!isInitialized()) {

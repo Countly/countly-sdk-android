@@ -8,7 +8,7 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-class ModuleViews extends ModuleBase {
+public class ModuleViews extends ModuleBase {
     private String lastView = null;
     private int lastViewStart = 0;
     private boolean firstView = true;
@@ -16,7 +16,7 @@ class ModuleViews extends ModuleBase {
 
     Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
 
-    protected Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
+    Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
     //track orientation changes
     boolean trackOrientationChanges = false;
@@ -26,7 +26,7 @@ class ModuleViews extends ModuleBase {
     //interface for SDK users
     final Views viewsInterface;
 
-    public ModuleViews(Countly cly, CountlyConfig config) {
+    ModuleViews(Countly cly, CountlyConfig config) {
         super(cly);
 
         if (_cly.isLoggingEnabled()) {

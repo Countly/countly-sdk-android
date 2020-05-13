@@ -158,7 +158,7 @@ class ModuleDeviceId extends ModuleBase {
     }
 
     @Override
-    public void halt() {
+    void halt() {
 
     }
 }
