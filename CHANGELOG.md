@@ -1,3 +1,6 @@
+20.04.1
+  * Changing permissions for modules so that they are accessible from kotlin
+
 20.04
   * Adding functionality for filtering crashes
   * Adding functionality to set segmentation for automatic and manual views
