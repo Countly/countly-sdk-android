@@ -73,17 +73,20 @@ public class ConnectionProcessor implements Runnable {
         requestHeaderCustomValues_ = requestHeaderCustomValues;
     }
 
-    public URLConnection urlConnectionForServerRequest(final String requestData, final String customEndpoint) throws IOException {
+    public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
         String urlEndpoint = "/i?";
         if (customEndpoint != null) {
             urlEndpoint = customEndpoint;
         }
+
+        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced());
+
         String urlStr = serverURL_ + urlEndpoint;
-        if (!requestData.contains("&crash=") && requestData.length() < 2048) {
+        if (usingHttpPost) {
+            requestData += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
+        } else {
             urlStr += requestData;
             urlStr += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
-        } else {
-            urlStr += "checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
         }
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
@@ -119,7 +122,8 @@ public class ConnectionProcessor implements Runnable {
             Log.v(Countly.TAG, "Got picturePath: " + picturePath);
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "Is the HTTP POST forced: " + Countly.sharedInstance().isHttpPostForced());
+            Log.v(Countly.TAG, "Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
+            //Log.v(Countly.TAG, "Used url: " + urlStr);
         }
         if (!picturePath.equals("")) {
             //Uploading files:
@@ -158,10 +162,7 @@ public class ConnectionProcessor implements Runnable {
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
         } else {
-            if (requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced()) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "Using HTTP POST");
-                }
+            if (usingHttpPost) {
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
                 OutputStream os = conn.getOutputStream();

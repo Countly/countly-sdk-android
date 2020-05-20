@@ -56,7 +56,7 @@ public class ActivityExampleViewTracking extends Activity {
         viewSegmentation.put("Moons", 9.98d);
         viewSegmentation.put("Moose", "Deer");
 
-        Countly.sharedInstance().recordView("Better view", viewSegmentation);
+        Countly.sharedInstance().views().recordView("Better view", viewSegmentation);
     }
 
 
