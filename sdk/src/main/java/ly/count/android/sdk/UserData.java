@@ -576,6 +576,12 @@ public class UserData {
     //for url query parsing
     public static String getPicturePathFromQuery(URL url) {
         String query = url.getQuery();
+
+        if(query == null) {
+            //assume no query part in url
+            return "";
+        }
+
         String[] pairs = query.split("&");
         String ret = "";
         if (url.getQuery().contains(PICTURE_PATH_KEY)) {

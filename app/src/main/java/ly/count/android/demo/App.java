@@ -78,8 +78,6 @@ public class App extends Application {
         automaticViewSegmentation.put("Three", 4.44d);
         automaticViewSegmentation.put("Five", "Six");
 
-        //Countly.sharedInstance().setConsent(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views}, false);
-        //Log.i(demoTag, "Before calling init. This should return 'false', the value is:" + Countly.sharedInstance().isInitialized());
         CountlyConfig config = (new CountlyConfig(appC, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
                 //.enableTemporaryDeviceIdMode()
                 .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
@@ -88,13 +86,12 @@ public class App extends Application {
                     @Override
                     public void callback(String error) {
                         if(error == null) {
-                            Log.d(Countly.TAG, "Automatic remote config download has completed");
+                            Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
                         } else {
                             Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
                         }
                     }
                 })
-                .setRemoteConfigAutomaticDownload(true, null)
                 .setParameterTamperingProtectionSalt("SampleSalt")
                 .setAutomaticViewSegmentation(automaticViewSegmentation)
                 .setAutoTrackingExceptions(new Class[]{ActivityExampleCustomEvents.class})

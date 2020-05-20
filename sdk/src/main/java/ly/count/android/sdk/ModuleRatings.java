@@ -482,28 +482,16 @@ public class ModuleRatings extends ModuleBase {
                 deviceIsPhone = false;
             }
 
-            ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
-            URLConnection urlConnection;
-            try {
-                urlConnection = cp.urlConnectionForServerRequest("app_key=" + connectionQueue_.getAppKey() + "&widget_id=" + widgetId, "/o/feedback/widget?");
-            } catch (IOException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "IOException while checking for rating widget availability :[" + e.toString() + "]");
-                }
-
-                if (devCallback != null) {
-                    devCallback.callback("Encountered problem while checking for rating widget availability");
-                }
-                return;
-            }
-
+            String requestData = connectionQueue_.prepareRatingWidgetRequest(widgetId);
             final String ratingWidgetUrl = connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + connectionQueue_.getDeviceId().getId() + "&app_key=" + connectionQueue_.getAppKey();
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "rating widget url :[" + ratingWidgetUrl + "]");
             }
 
-            (new ImmediateRequestMaker()).execute(urlConnection, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+            ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
+
+            (new ImmediateRequestMaker()).execute(requestData, "/o/feedback/widget", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     if (checkResponse == null) {

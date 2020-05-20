@@ -635,7 +635,7 @@ public class ConnectionQueue {
         return data;
     }
 
-    protected String prepareRemoteConfigRequest(String keysInclude, String keysExclude) {
+    String prepareRemoteConfigRequest(String keysInclude, String keysExclude) {
         String data = prepareCommonRequestData()
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
@@ -656,6 +656,13 @@ public class ConnectionQueue {
             data += "&omit_keys=" + UtilsNetworking.urlEncodeString(keysExclude);
         }
 
+        return data;
+    }
+
+    String prepareRatingWidgetRequest(String widgetId) {
+        String data = prepareCommonRequestData()
+            + "&widget_id=" + widgetId
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
         return data;
     }
 

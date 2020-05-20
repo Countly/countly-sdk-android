@@ -86,28 +86,14 @@ public class ModuleRemoteConfig extends ModuleBase {
             return;
         }
 
-        ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
-        URLConnection urlConnection;
         String requestData = connectionQueue_.prepareRemoteConfigRequest(keysInclude, keysExclude);
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
         }
 
-        try {
-            urlConnection = cp.urlConnectionForServerRequest(requestData, "/o/sdk?");
-        } catch (IOException e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleRemoteConfig] IOException while preparing remote config update request :[" + e.toString() + "]");
-            }
+        ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
 
-            if (callback != null) {
-                callback.callback("Encountered problem while trying to reach the server");
-            }
-
-            return;
-        }
-
-        (new ImmediateRequestMaker()).execute(urlConnection, requestShouldBeDelayed, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+        (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, requestShouldBeDelayed, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
             @Override
             public void callback(JSONObject checkResponse) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -306,7 +292,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public Object getValueForKey(String key) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey");
+                Log.d(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey, " + key);
             }
 
             if (!_cly.anyConsentGiven()) {

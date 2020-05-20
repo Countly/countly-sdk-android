@@ -73,8 +73,8 @@ public class ConnectionProcessor implements Runnable {
         requestHeaderCustomValues_ = requestHeaderCustomValues;
     }
 
-    public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
-        String urlEndpoint = "/i?";
+    synchronized public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
+        String urlEndpoint = "/i";
         if (customEndpoint != null) {
             urlEndpoint = customEndpoint;
         }
@@ -85,7 +85,7 @@ public class ConnectionProcessor implements Runnable {
         if (usingHttpPost) {
             requestData += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
         } else {
-            urlStr += requestData;
+            urlStr += "?" + requestData;
             urlStr += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
         }
         final URL url = new URL(urlStr);
