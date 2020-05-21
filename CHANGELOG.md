@@ -1,5 +1,6 @@
 20.04.2
   * Fixed bug where data was not removed from the URL in case of forced http POST
+  * Fixed HTTP post issue with remote config and rating widget
 
 20.04.1
   * Changing permissions for modules so that they are accessible from kotlin

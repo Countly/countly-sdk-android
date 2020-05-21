@@ -51,7 +51,7 @@ dependencies {
     androidTestImplementation  'androidx.test.espresso:espresso-core:3.2.0'
     implementation "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    //implementation 'ly.count.android:sdk:20.04.1'
+    //implementation 'ly.count.android:sdk:20.04.2'
 }
 
 apply plugin: 'com.google.gms.google-services'
