@@ -120,7 +120,10 @@ public class ModuleEvents extends ModuleBase {
 
     synchronized boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Valid Countly event key is required");
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleEvents] Can't end event with a null or empty key");
+            }
+            return false;
         }
         if (timedEvents.containsKey(key)) {
             return false;
@@ -135,6 +138,13 @@ public class ModuleEvents extends ModuleBase {
     synchronized boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleEvents] Ending event: [" + key + "]");
+        }
+
+        if(key == null || key.length() == 0) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleEvents] Can't end event with a null or empty key");
+            }
+            return false;
         }
 
         Event event = timedEvents.remove(key);
@@ -166,6 +176,13 @@ public class ModuleEvents extends ModuleBase {
     }
 
     synchronized boolean cancelEventInternal(final String key) {
+        if(key == null || key.length() == 0) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleEvents] Can't cancel event with a null or empty key");
+            }
+            return false;
+        }
+
         Event event = timedEvents.remove(key);
 
         return event != null;

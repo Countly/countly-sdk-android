@@ -1247,7 +1247,7 @@ public class Countly {
      */
     public synchronized Countly setLocation(String country_code, String city, String gpsCoordinates, String ipAddress) {
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting location parameters");
+            Log.d(Countly.TAG, "Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
         }
 
         if (!isInitialized()) {

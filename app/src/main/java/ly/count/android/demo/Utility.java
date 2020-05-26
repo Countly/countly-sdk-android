@@ -29,8 +29,38 @@ public class Utility {
         //keep this here, it's for proguard testing
     }
 
-    public static void DeepCall_b() throws Exception{
-        throw new Exception("Exception at the end of the call");
+    public static void DeepCall_b() throws Exception {
+        try {
+            try {
+                try {
+                    try {
+                        try {
+                            throw new Exception("Exception at the end of the call");
+                        } catch (Exception ex) {
+                            ArrayIndexOutOfBoundsException ai = new ArrayIndexOutOfBoundsException();
+                            ai.initCause(ex);
+                            throw ai;
+                        }
+                    } catch (Exception ex) {
+                        ClassCastException cc = new ClassCastException();
+                        cc.initCause(ex);
+                        throw cc;
+                    }
+                } catch (Exception ex) {
+                    ClassCastException cc = new ClassCastException();
+                    cc.initCause(ex);
+                    throw cc;
+                }
+            } catch (Exception ex) {
+                ClassCastException cc = new ClassCastException();
+                cc.initCause(ex);
+                throw cc;
+            }
+        } catch (Exception ex) {
+            ClassCastException cc = new ClassCastException();
+            cc.initCause(ex);
+            throw cc;
+        }
     }
 
     @SuppressWarnings("EmptyMethod")
