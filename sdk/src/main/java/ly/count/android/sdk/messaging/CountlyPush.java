@@ -625,6 +625,10 @@ public class CountlyPush {
             throw new IllegalStateException("No FirebaseMessaging library in class path. Please either add it to your gradle config or don't use CountlyPush.");
         }
 
+        if(application == null) {
+            throw new IllegalStateException("Non null application must be provided!");
+        }
+
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Initializing Countly FCM push");
         }

@@ -4,6 +4,8 @@ import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
+import ly.count.android.sdk.messaging.CountlyPush;
+import ly.count.android.sdk.messaging.ModulePush;
 
 public class ModuleEvents extends ModuleBase {
     static final Map<String, Event> timedEvents = new HashMap<>();
@@ -20,6 +22,31 @@ public class ModuleEvents extends ModuleBase {
         }
 
         eventsInterface = new Events();
+    }
+
+    void checkCachedPushData(CountlyStore cs) {
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleEvents] Starting cache call");
+        }
+
+        String[] cachedData = cs.getCachedPushData();
+
+        if(cachedData[0] != null && cachedData[1] != null) {
+            //found valid data cached, record it
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[ModuleEvents] Found cached push event, recording it");
+            }
+
+            Map<String, Object> map = new HashMap<>();
+            map.put(ModulePush.PUSH_EVENT_ACTION_ID_KEY, cachedData[0]);
+            map.put(ModulePush.PUSH_EVENT_ACTION_INDEX_KEY, cachedData[1]);
+            recordEventInternal(ModulePush.PUSH_EVENT_ACTION, map, 1, 0, 0, null, false);
+        }
+
+        if(cachedData[0] == null || cachedData[1] == null) {
+            //if something was recorded, clear it
+            cs.clearCachedPushData();
+        }
     }
 
     /**
@@ -84,8 +111,8 @@ public class ModuleEvents extends ModuleBase {
                 if (k == null || k.length() == 0) {
                     throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
                 }
-                if (segmentationString.get(k) == null || segmentationString.get(k).length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null or empty");
+                if (segmentationString.get(k) == null) {
+                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
                 }
             }
         }

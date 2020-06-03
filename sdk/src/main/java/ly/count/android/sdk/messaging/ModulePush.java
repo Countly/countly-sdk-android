@@ -6,6 +6,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 
+import ly.count.android.sdk.CountlyStore;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -23,11 +24,11 @@ import ly.count.android.sdk.Countly;
  * Messaging support module.
  */
 
-class ModulePush {
+public class ModulePush {
 
-    static final String PUSH_EVENT_ACTION = "[CLY]_push_action";
-    static final String PUSH_EVENT_ACTION_ID_KEY = "i";
-    static final String PUSH_EVENT_ACTION_INDEX_KEY = "b";
+    public static final String PUSH_EVENT_ACTION = "[CLY]_push_action";
+    public static final String PUSH_EVENT_ACTION_ID_KEY = "i";
+    public static final String PUSH_EVENT_ACTION_INDEX_KEY = "b";
     static final String KEY_ID = "c.i";
     static final String KEY_TITLE = "title";
     static final String KEY_MESSAGE = "message";
@@ -228,10 +229,15 @@ class ModulePush {
 
         @Override
         public void recordAction(Context context, int buttonIndex) {
-            Map<String, String> map = new HashMap<>();
-            map.put(PUSH_EVENT_ACTION_ID_KEY, id);
-            map.put(PUSH_EVENT_ACTION_INDEX_KEY, String.valueOf(buttonIndex));
-            Countly.sharedInstance().recordEvent(PUSH_EVENT_ACTION, map, 1);
+            if(Countly.sharedInstance().isInitialized()) {
+                Map<String, String> map = new HashMap<>();
+                map.put(PUSH_EVENT_ACTION_ID_KEY, id);
+                map.put(PUSH_EVENT_ACTION_INDEX_KEY, String.valueOf(buttonIndex));
+                Countly.sharedInstance().recordEvent(PUSH_EVENT_ACTION, map, 1);
+            } else {
+                //we're not initialised, cache the data
+                CountlyStore.cachePushData(id, String.valueOf(buttonIndex), context);
+            }
         }
 
         @Override

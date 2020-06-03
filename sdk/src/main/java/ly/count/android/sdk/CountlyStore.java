@@ -50,7 +50,7 @@ import java.util.Map;
  */
 public class CountlyStore {
     private static final String PREFERENCES = "COUNTLY_STORE";
-    private static final String PREFERENCES_GCM = "ly.count.android.api.messaging";
+    private static final String PREFERENCES_PUSH = "ly.count.android.api.messaging";
     private static final String DELIMITER = ":::";
     private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
@@ -62,11 +62,13 @@ public class CountlyStore {
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
     private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
+    private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
+    private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
     private static final int MAX_EVENTS = 100;
     private static final int MAX_REQUESTS = 1000;
 
     private final SharedPreferences preferences_;
-    private final SharedPreferences preferencesGCM_;
+    private final SharedPreferences preferencesPush_;
 
     private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
@@ -81,7 +83,11 @@ public class CountlyStore {
             throw new IllegalArgumentException("must provide valid context");
         }
         preferences_ = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
-        preferencesGCM_ = context.getSharedPreferences(PREFERENCES_GCM, Context.MODE_PRIVATE);
+        preferencesPush_ = createPreferencesPush(context);
+    }
+
+    static SharedPreferences createPreferencesPush(Context context) {
+        return context.getSharedPreferences(PREFERENCES_PUSH, Context.MODE_PRIVATE);
     }
 
     /**
@@ -261,11 +267,11 @@ public class CountlyStore {
     }
 
     void setConsentPush(boolean consentValue) {
-        preferencesGCM_.edit().putBoolean(CONSENT_GCM_PREFERENCES, consentValue).apply();
+        preferencesPush_.edit().putBoolean(CONSENT_GCM_PREFERENCES, consentValue).apply();
     }
 
     Boolean getConsentPush() {
-        return preferencesGCM_.getBoolean(CONSENT_GCM_PREFERENCES, false);
+        return preferencesPush_.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
     /**
@@ -329,6 +335,23 @@ public class CountlyStore {
         return join(strings, delimiter);
     }
 
+    public static synchronized void cachePushData(String id_key, String index_key, Context context) {
+        SharedPreferences sp = createPreferencesPush(context);
+        sp.edit().putString(CACHED_PUSH_ACTION_ID, id_key).apply();
+        sp.edit().putString(CACHED_PUSH_ACTION_INDEX, index_key).apply();
+    }
+
+    String[] getCachedPushData() {
+        String[] res = new String[2];
+        res[0] = preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null);
+        res[1] = preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null);
+        return res;
+    }
+
+    void clearCachedPushData(){
+        preferencesPush_.edit().remove(CACHED_PUSH_ACTION_ID).apply();
+        preferencesPush_.edit().remove(CACHED_PUSH_ACTION_INDEX).apply();
+    }
     /**
      * Joins all the strings in the specified collection into a single string with the specified delimiter.
      */
