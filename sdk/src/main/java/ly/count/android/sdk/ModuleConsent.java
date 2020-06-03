@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.content.Intent;
 import android.util.Log;
 
 public class ModuleConsent extends ModuleBase {
@@ -14,6 +15,36 @@ public class ModuleConsent extends ModuleBase {
         }
 
         consentInterface = new Consent();
+    }
+
+    @Override
+    void initFinished(CountlyConfig config) {
+        if (_cly.requiresConsent) {
+            //do delayed push consent action, if needed
+            if (_cly.delayedPushConsent != null) {
+                _cly.doPushConsentSpecialAction(_cly.delayedPushConsent);
+            }
+
+            //do delayed location erasure, if needed
+            if (_cly.delayedLocationErasure) {
+                _cly.doLocationConsentSpecialErasure();
+            }
+
+            //send collected consent changes that were made before initialization
+            if (_cly.collectedConsentChanges.size() != 0) {
+                for (String changeItem : _cly.collectedConsentChanges) {
+                    _cly.connectionQueue_.sendConsentChanges(changeItem);
+                }
+                _cly.collectedConsentChanges.clear();
+            }
+
+            _cly.context_.sendBroadcast(new Intent(_cly.CONSENT_BROADCAST));
+
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Init] Countly is initialized with the current consent state:");
+                _cly.checkAllConsent();
+            }
+        }
     }
 
     @Override

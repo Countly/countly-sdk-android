@@ -57,4 +57,7 @@ abstract class ModuleBase {
 
     void deviceIdChanged() {
     }
+
+    void initFinished(CountlyConfig config) {
+    }
 }

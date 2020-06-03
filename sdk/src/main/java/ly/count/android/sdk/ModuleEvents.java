@@ -189,6 +189,11 @@ public class ModuleEvents extends ModuleBase {
     }
 
     @Override
+    void initFinished(CountlyConfig config) {
+        checkCachedPushData(_cly.connectionQueue_.getCountlyStore());
+    }
+
+    @Override
     void halt() {
         timedEvents.clear();
     }

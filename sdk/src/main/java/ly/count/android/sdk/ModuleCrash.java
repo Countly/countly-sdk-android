@@ -255,6 +255,15 @@ public class ModuleCrash extends ModuleBase {
     }
 
     @Override
+    void initFinished(CountlyConfig config) {
+        //check for previous native crash dumps
+        if (config.checkForNativeCrashDumps) {
+            //flag so that this can be turned off during testing
+            _cly.moduleCrash.checkForNativeCrashDumps(config.context);
+        }
+    }
+
+    @Override
     void halt() {
 
     }

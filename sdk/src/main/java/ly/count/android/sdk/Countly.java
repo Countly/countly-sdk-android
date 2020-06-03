@@ -168,7 +168,7 @@ public class Countly {
 
     private final Map<String, Boolean> featureConsentValues = new HashMap<>();
     private final Map<String, String[]> groupedFeatures = new HashMap<>();
-    private final List<String> collectedConsentChanges = new ArrayList<>();
+    final List<String> collectedConsentChanges = new ArrayList<>();
 
     Boolean delayedPushConsent = null;//if this is set, consent for push has to be set before finishing init and sending push changes
     boolean delayedLocationErasure = false;//if location needs to be cleared at the end of init
@@ -741,37 +741,8 @@ public class Countly {
             connectionQueue_.setContext(context_);
         }
 
-        if (requiresConsent) {
-            //do delayed push consent action, if needed
-            if (delayedPushConsent != null) {
-                doPushConsentSpecialAction(delayedPushConsent);
-            }
-
-            //do delayed location erasure, if needed
-            if (delayedLocationErasure) {
-                doLocationConsentSpecialErasure();
-            }
-
-            //send collected consent changes that were made before initialization
-            if (collectedConsentChanges.size() != 0) {
-                for (String changeItem : collectedConsentChanges) {
-                    connectionQueue_.sendConsentChanges(changeItem);
-                }
-                collectedConsentChanges.clear();
-            }
-
-            context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
-
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Init] Countly is initialized with the current consent state:");
-                checkAllConsent();
-            }
-        }
-
-        //check for previous native crash dumps
-        if (config.checkForNativeCrashDumps) {
-            //flag so that this can be turned off during testing
-            moduleCrash.checkForNativeCrashDumps(config.context);
+        for (ModuleBase module : modules) {
+            module.initFinished(config);
         }
 
         return this;
@@ -2115,7 +2086,7 @@ public class Countly {
      *
      * @param consentValue The value of push consent
      */
-    private void doPushConsentSpecialAction(boolean consentValue) {
+    void doPushConsentSpecialAction(boolean consentValue) {
         if (isLoggingEnabled()) {
             Log.d(TAG, "Doing push consent special action: [" + consentValue + "]");
         }
@@ -2125,7 +2096,7 @@ public class Countly {
     /**
      * Actions needed to be done for the consent related location erasure
      */
-    private void doLocationConsentSpecialErasure() {
+    void doLocationConsentSpecialErasure() {
         resetLocationValues();
         connectionQueue_.sendLocation();
     }
