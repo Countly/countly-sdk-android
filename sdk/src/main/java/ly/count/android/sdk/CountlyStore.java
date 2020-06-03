@@ -64,6 +64,7 @@ public class CountlyStore {
     private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
+    private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
     private static final int MAX_EVENTS = 100;
     private static final int MAX_REQUESTS = 1000;
 
@@ -352,6 +353,17 @@ public class CountlyStore {
         preferencesPush_.edit().remove(CACHED_PUSH_ACTION_ID).apply();
         preferencesPush_.edit().remove(CACHED_PUSH_ACTION_INDEX).apply();
     }
+
+    public static void cacheLastMessagingMode(int mode, Context context) {
+        SharedPreferences sp = createPreferencesPush(context);
+        sp.edit().putInt(CACHED_PUSH_MESSAGING_MODE, mode).apply();
+    }
+
+    public static int getLastMessagingMode(Context context) {
+        SharedPreferences sp = createPreferencesPush(context);
+        return sp.getInt(CACHED_PUSH_MESSAGING_MODE, -1);
+    }
+
     /**
      * Joins all the strings in the specified collection into a single string with the specified delimiter.
      */

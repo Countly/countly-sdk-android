@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyStore;
 
 /**
  * Just a public holder class for Messaging-related display logic, listeners, managers, etc.
@@ -634,6 +635,11 @@ public class CountlyPush {
         }
 
         CountlyPush.mode = mode;
+        if(mode == Countly.CountlyMessagingMode.TEST) {
+            CountlyStore.cacheLastMessagingMode(0, application);
+        } else {
+            CountlyStore.cacheLastMessagingMode(1, application);
+        }
 
         if (callbacks == null) {
             callbacks = new Application.ActivityLifecycleCallbacks() {
@@ -682,6 +688,16 @@ public class CountlyPush {
             consentReceiver = new ConsentBroadcastReceiver();
             application.registerReceiver(consentReceiver, filter);
         }
+    }
+
+    /**
+     * Returns which messaging mode was used in the previous init
+     * -1 - no data / no init has hapened
+     *  0 - test mode
+     *  1 - production mode
+     */
+    public static int getLastMessagingMethod(Context context) {
+        return CountlyStore.getLastMessagingMode(context);
     }
 
     public static void setNotificationAccentColor(int alpha, int red, int green, int blue) {
