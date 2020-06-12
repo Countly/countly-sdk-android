@@ -266,7 +266,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public synchronized void clearStoredValues() {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[RemoteConfig] Calling 'clearStoredValues'");
+                Log.i(Countly.TAG, "[RemoteConfig] Calling 'clearStoredValues'");
             }
 
             clearValueStore();
@@ -274,7 +274,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         public synchronized Map<String, Object> getAllValues() {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[RemoteConfig] Calling 'getAllValues'");
+                Log.i(Countly.TAG, "[RemoteConfig] Calling 'getAllValues'");
             }
 
             if (!_cly.anyConsentGiven()) {
@@ -292,7 +292,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public Object getValueForKey(String key) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey, " + key);
+                Log.i(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey, " + key);
             }
 
             if (!_cly.anyConsentGiven()) {
@@ -310,7 +310,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
+                Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
             }
 
             if (!_cly.anyConsentGiven()) {
@@ -333,7 +333,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
+                Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
             }
             if (!_cly.anyConsentGiven()) {
                 if (callback != null) {
@@ -354,7 +354,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void update(RemoteConfigCallback callback) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Manually calling to updateRemoteConfig");
+                Log.i(Countly.TAG, "Manually calling to updateRemoteConfig");
             }
 
             if (!_cly.anyConsentGiven()) {

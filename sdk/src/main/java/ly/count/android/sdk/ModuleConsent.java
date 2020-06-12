@@ -60,7 +60,7 @@ public class ModuleConsent extends ModuleBase {
          */
         public synchronized void checkAllConsent() {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Consent] calling checkAllConsent");
+                Log.i(Countly.TAG, "[Consent] calling checkAllConsent");
             }
 
             _cly.checkAllConsent();
@@ -102,7 +102,7 @@ public class ModuleConsent extends ModuleBase {
          */
         public synchronized void giveConsentAll() {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Giving consent for all features");
+                Log.i(Countly.TAG, "Giving consent for all features");
             }
 
             if (_cly.isLoggingEnabled() && !_cly.isInitialized()) {

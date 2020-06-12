@@ -133,7 +133,6 @@ public class ModuleAPM extends ModuleBase {
         }
 
         Pattern p = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
-        Matcher m = p.matcher("aaaaab");
 
         for (Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Integer> entry = it.next();
@@ -388,7 +387,7 @@ public class ModuleAPM extends ModuleBase {
          */
         public void startTrace(String traceKey) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Apm] Calling 'startTrace' with key:[" + traceKey + "]");
+                Log.i(Countly.TAG, "[Apm] Calling 'startTrace' with key:[" + traceKey + "]");
             }
 
             startTraceInternal(traceKey);
@@ -401,7 +400,7 @@ public class ModuleAPM extends ModuleBase {
          */
         public void endTrace(String traceKey, Map<String, Integer> customMetrics) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
+                Log.i(Countly.TAG, "[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
             }
 
             endTraceInternal(traceKey, customMetrics);
@@ -416,7 +415,7 @@ public class ModuleAPM extends ModuleBase {
          */
         public void startNetworkRequest(String networkTraceKey, String uniqueId) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Apm] Calling 'startNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
+                Log.i(Countly.TAG, "[Apm] Calling 'startNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
             }
 
             startNetworkRequestInternal(networkTraceKey, uniqueId);
@@ -434,7 +433,7 @@ public class ModuleAPM extends ModuleBase {
          */
         public void endNetworkRequest(String networkTraceKey, String uniqueId, int responseCode, int requestPayloadSize, int responsePayloadSize) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Apm] Calling 'endNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
+                Log.i(Countly.TAG, "[Apm] Calling 'endNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
             }
 
             endNetworkRequestInternal(networkTraceKey, uniqueId, responseCode, requestPayloadSize, responsePayloadSize);

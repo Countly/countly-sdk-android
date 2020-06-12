@@ -592,7 +592,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public synchronized void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Ratings] Calling recordManualRating");
+                Log.i(Countly.TAG, "[Ratings] Calling recordManualRating");
             }
 
             if (widgetId == null || widgetId.isEmpty()) {
@@ -610,7 +610,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Ratings] Calling showFeedbackPopup");
+                Log.i(Countly.TAG, "[Ratings] Calling showFeedbackPopup");
             }
 
             showFeedbackPopupInternal(widgetId, closeButtonText, activity, _cly, _cly.connectionQueue_, callback);
@@ -624,7 +624,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public synchronized void showStarRating(Activity activity, StarRatingCallback callback) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Ratings] Calling showStarRating");
+                Log.i(Countly.TAG, "[Ratings] Calling showStarRating");
             }
 
             if (!_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
@@ -643,7 +643,7 @@ public class ModuleRatings extends ModuleBase {
             int sessionCount = getCurrentVersionsSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Ratings] Getting star rating current version session count: [" + sessionCount + "]");
+                Log.i(Countly.TAG, "[Ratings] Getting star rating current version session count: [" + sessionCount + "]");
             }
 
             return sessionCount;
@@ -654,7 +654,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public synchronized void clearAutomaticStarRatingSessionCount() {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Ratings] Clearing star rating session count");
+                Log.i(Countly.TAG, "[Ratings] Clearing star rating session count");
             }
 
             clearAutomaticStarRatingSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
@@ -667,7 +667,7 @@ public class ModuleRatings extends ModuleBase {
             int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.connectionQueue_.getCountlyStore());
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Getting automatic star rating session limit: [" + sessionLimit + "]");
+                Log.i(Countly.TAG, "Getting automatic star rating session limit: [" + sessionLimit + "]");
             }
 
             return sessionLimit;

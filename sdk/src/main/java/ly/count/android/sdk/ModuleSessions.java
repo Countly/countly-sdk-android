@@ -77,7 +77,7 @@ public class ModuleSessions extends ModuleBase {
             }
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                Log.i(Countly.TAG, "[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
             }
 
             if (!manualSessionControlEnabled) {
@@ -85,10 +85,6 @@ public class ModuleSessions extends ModuleBase {
                     Log.w(Countly.TAG, "[Sessions] 'beginSession' will be ignored since manual session control is not enabled");
                     return;
                 }
-            }
-
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Sessions] Calling 'beginSession'");
             }
 
             beginSessionInternal();
@@ -100,7 +96,7 @@ public class ModuleSessions extends ModuleBase {
             }
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                Log.i(Countly.TAG, "[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
             }
 
             if (!manualSessionControlEnabled) {
@@ -111,7 +107,7 @@ public class ModuleSessions extends ModuleBase {
             }
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Sessions] Calling 'updateSession'");
+                Log.i(Countly.TAG, "[Sessions] Calling 'updateSession'");
             }
 
             updateSessionInternal();
@@ -123,7 +119,7 @@ public class ModuleSessions extends ModuleBase {
             }
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                Log.i(Countly.TAG, "[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
             }
 
             if (!manualSessionControlEnabled) {

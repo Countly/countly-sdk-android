@@ -39,6 +39,21 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
 
         Log.d("DemoFirebaseService", "got new message: " + remoteMessage.getData());
 
+        //this initiates countly push in cases where the app was closed and push was received
+        //this is a fallback in case it's impossible to initiate countly in Application onCreate
+        //this is not the recommended way of handling it
+        /*
+        if(!Countly.sharedInstance().isInitialized()) {
+            Countly.sharedInstance().setLoggingEnabled(true);
+            int mode = CountlyPush.getLastMessagingMethod(this);
+            if(mode == 0) {
+                CountlyPush.init(getApplication(), Countly.CountlyMessagingMode.TEST);
+            } else if(mode == 1) {
+                CountlyPush.init(getApplication(), Countly.CountlyMessagingMode.PRODUCTION);
+            }
+        }
+         */
+
         // decode message data and extract meaningful information from it: title, body, badge, etc.
         CountlyPush.Message message = CountlyPush.decodeMessage(remoteMessage.getData());
 

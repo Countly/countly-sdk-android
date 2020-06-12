@@ -111,6 +111,12 @@ public class Countly {
     EventQueue eventQueue_;
     private int activityCount_;
     boolean disableUpdateSessionRequests_ = false;//todo, move to module after 'setDisableUpdateSessionRequests' is removed
+
+    //w - warnings
+    //e - errors
+    //i - user accessible calls and important SDK internals
+    //d - regular SDK internals
+    //v - spammy SDK internals
     private boolean enableLogging_;
     private Countly.CountlyMessagingMode messagingMode_;
     Context context_;

@@ -67,7 +67,7 @@ public class ModuleEvents extends ModuleBase {
         }
 
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Recording event with key: [" + key + "]");
+            Log.d(Countly.TAG, "[ModuleEvents] Recording event with key: [" + key + "]");
         }
 
         if (!_cly.isInitialized()) {
@@ -94,13 +94,13 @@ public class ModuleEvents extends ModuleBase {
 
             if (segmentationReminder.size() > 0) {
                 if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Event contains events segments with unsupported types:");
+                    Log.w(Countly.TAG, "[ModuleEvents] Event contains events segments with unsupported types:");
 
                     for (String k : segmentationReminder.keySet()) {
                         if (k != null) {
                             Object obj = segmentationReminder.get(k);
                             if (obj != null) {
-                                Log.w(Countly.TAG, "Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
+                                Log.w(Countly.TAG, "[ModuleEvents] Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
                             }
                         }
                     }
@@ -188,7 +188,7 @@ public class ModuleEvents extends ModuleBase {
                 throw new IllegalArgumentException("Countly event count should be greater than zero");
             }
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Ending event: [" + key + "]");
+                Log.d(Countly.TAG, "[ModuleEvents] Ending event: [" + key + "]");
             }
 
             long currentTimestamp = UtilsTime.currentTimestampMs();
@@ -256,6 +256,10 @@ public class ModuleEvents extends ModuleBase {
          * @param timestamp unix timestamp in miliseconds of when the event occurred
          */
         public synchronized void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
+            if (_cly.isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Events] Calling recordPastEvent: [" + key + "]");
+            }
+
             if (timestamp == 0) {
                 throw new IllegalStateException("Provided timestamp has to be greater that zero");
             }
@@ -318,7 +322,7 @@ public class ModuleEvents extends ModuleBase {
          **/
         public synchronized boolean cancelEvent(final String key) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Events] Calling cancelEvent: [" + key + "]");
+                Log.i(Countly.TAG, "[Events] Calling cancelEvent: [" + key + "]");
             }
 
             return cancelEventInternal(key);
@@ -416,7 +420,7 @@ public class ModuleEvents extends ModuleBase {
             }
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Events] Calling recordEvent: [" + key + "]");
+                Log.i(Countly.TAG, "[Events] Calling recordEvent: [" + key + "]");
             }
 
             recordEventInternal(key, segmentation, count, sum, dur, null, false);

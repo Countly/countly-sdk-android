@@ -277,7 +277,7 @@ public class ModuleCrash extends ModuleBase {
          */
         public synchronized Countly addCrashBreadcrumb(String record) {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Crashes] Adding crash breadcrumb");
+                Log.i(Countly.TAG, "[Crashes] Adding crash breadcrumb");
             }
 
             if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
@@ -286,7 +286,7 @@ public class ModuleCrash extends ModuleBase {
 
             if (record == null || record.isEmpty()) {
                 if (_cly.isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[Crashes] Can't add a null or empty crash breadcrumb");
+                    Log.e(Countly.TAG, "[Crashes] Can't add a null or empty crash breadcrumb");
                 }
                 return _cly;
             }

@@ -281,7 +281,7 @@ public class ModuleViews extends ModuleBase {
          */
         public synchronized boolean isAutomaticViewTrackingEnabled() {
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
+                Log.i(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
             }
 
             return _cly.autoViewTracker;
@@ -311,6 +311,10 @@ public class ModuleViews extends ModuleBase {
         public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
             if (!_cly.isInitialized()) {
                 throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+            }
+
+            if (_cly.isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Views] Calling recordView [" + viewName + "]");
             }
 
             return recordViewInternal(viewName, viewSegmentation);
