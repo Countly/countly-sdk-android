@@ -2220,6 +2220,13 @@ public class Countly {
             return this;
         }
 
+        if(featureNames == null) {
+            if (isLoggingEnabled()) {
+                Log.w(Countly.TAG, "Calling setConsent with null featureNames!");
+            }
+            return this;
+        }
+
         boolean previousSessionsConsent = false;
         if (featureConsentValues.containsKey(CountlyFeatureNames.sessions)) {
             previousSessionsConsent = featureConsentValues.get(CountlyFeatureNames.sessions);

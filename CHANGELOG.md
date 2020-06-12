@@ -1,3 +1,7 @@
+20.04.3
+  * Adding fallback cache to CountlyPush for cases where the SDK is not initialised
+  * Fixed bug which happened when consent was required but no consent was provided during init
+
 20.04.2
   * Fixed bug where data was not removed from the URL in case of forced http POST
   * Fixed HTTP post issue with remote config and rating widget
