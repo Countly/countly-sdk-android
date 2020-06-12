@@ -59,12 +59,16 @@ public class ConnectionQueueTests {
 
     @Before
     public void setUp() {
+        Countly.sharedInstance().halt();
         Countly.sharedInstance().setLoggingEnabled(true);
         freshConnQ = new ConnectionQueue();
-        connQ = new ConnectionQueue();
-        connQ.setAppKey("abcDeFgHiJkLmNoPQRstuVWxyz");
-        connQ.setServerURL("http://countly.coupons.com");
-        connQ.setContext(getContext());
+        Countly.sharedInstance().init(new CountlyConfig(getContext(), "abcDeFgHiJkLmNoPQRstuVWxyz", "http://countly.coupons.com"));
+        connQ = Countly.sharedInstance().connectionQueue_;
+
+        //connQ = new ConnectionQueue();
+        //connQ.setAppKey("abcDeFgHiJkLmNoPQRstuVWxyz");
+        //connQ.setServerURL("http://countly.coupons.com");
+        //connQ.setContext(getContext());
         CountlyStore cs = mock(CountlyStore.class);
         when(cs.getCachedAdvertisingId()).thenReturn("");
         connQ.setCountlyStore(cs);

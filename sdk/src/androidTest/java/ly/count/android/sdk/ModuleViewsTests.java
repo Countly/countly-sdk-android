@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.mockito.ArgumentMatchers;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -33,6 +35,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -469,5 +472,91 @@ public class ModuleViewsTests {
         segmD.put("cannndy", 9534.33d);
         segmB.put("calaaling", true);
         verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+    }
+
+    @Test
+    public void recordViewNullViewName()  {
+        Countly mCountly = new Countly();
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
+        EventQueue evQ = mock(EventQueue.class);
+        mCountly.setEventQueue(evQ);
+
+        ModuleEvents mEvents = mock(ModuleEvents.class);
+        mCountly.moduleEvents = mEvents;
+
+        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Boolean> argB = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
+
+        mCountly.views().recordView(null);
+
+        String mockInv = mockingDetails(mEvents).printInvocations();
+        System.out.println(mockInv);
+
+        System.out.println(mockingDetails(mEvents).getInvocations());
+
+        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture(), argB.capture());
+    }
+
+    @Test
+    public void recordViewEmptyViewName()  {
+        Countly mCountly = new Countly();
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
+        EventQueue evQ = mock(EventQueue.class);
+        mCountly.setEventQueue(evQ);
+
+        ModuleEvents mEvents = mock(ModuleEvents.class);
+        mCountly.moduleEvents = mEvents;
+
+        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Boolean> argB = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
+
+        mCountly.views().recordView("");
+
+        String mockInv = mockingDetails(mEvents).printInvocations();
+        System.out.println(mockInv);
+
+        System.out.println(mockingDetails(mEvents).getInvocations());
+
+        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture(), argB.capture());
+    }
+
+    @Test
+    public void recordViewWithoutConsent()  {
+        Countly mCountly = new Countly();
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
+            .setViewTracking(true).setAutoTrackingUseShortName(true).setRequiresConsent(true));
+
+        EventQueue evQ = mock(EventQueue.class);
+        mCountly.setEventQueue(evQ);
+
+        ModuleEvents mEvents = mock(ModuleEvents.class);
+        mCountly.moduleEvents = mEvents;
+
+        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Boolean> argB = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
+
+        mCountly.views().recordView(null);
+
+        String mockInv = mockingDetails(mEvents).printInvocations();
+        System.out.println(mockInv);
+
+        System.out.println(mockingDetails(mEvents).getInvocations());
+
+        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture(), argB.capture());
     }
 }
