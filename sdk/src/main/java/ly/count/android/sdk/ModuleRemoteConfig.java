@@ -320,7 +320,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 return;
             }
             if (keysToExclude == null && _cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+                Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
             }
             updateRemoteConfigValues(null, keysToExclude, _cly.connectionQueue_, false, callback);
         }
@@ -342,7 +342,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 return;
             }
             if (keysToInclude == null && _cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+                Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
             }
             updateRemoteConfigValues(keysToInclude, null, _cly.connectionQueue_, false, callback);
         }
@@ -354,7 +354,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void update(RemoteConfigCallback callback) {
             if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Manually calling to updateRemoteConfig");
+                Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig");
             }
 
             if (!_cly.anyConsentGiven()) {

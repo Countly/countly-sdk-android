@@ -295,7 +295,7 @@ public class UserData {
             File sourceFile = new File(picturePath);
             if (!sourceFile.isFile()) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Provided file " + picturePath + " can not be opened");
+                    Log.w(Countly.TAG, "[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
                 }
                 picturePath = null;
             }
@@ -311,7 +311,7 @@ public class UserData {
                 byear = Integer.parseInt(data.get(BYEAR_KEY));
             } catch (NumberFormatException e) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Incorrect byear number format");
+                    Log.w(Countly.TAG, "[UserData] Incorrect byear number format");
                 }
                 byear = 0;
             }
@@ -526,7 +526,7 @@ public class UserData {
             json.put(CUSTOM_KEY, ob);
         } catch (JSONException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Got exception converting an UserData to JSON", e);
+                Log.w(Countly.TAG, "[UserData] Got exception converting an UserData to JSON", e);
             }
         }
 
@@ -566,7 +566,7 @@ public class UserData {
                     }
                 } catch (JSONException e) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Got exception converting an Custom Json to Custom User data", e);
+                        Log.w(Countly.TAG, "[UserData] Got exception converting an Custom Json to Custom User data", e);
                     }
                 }
             }

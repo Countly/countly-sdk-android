@@ -224,7 +224,7 @@ public class ModuleViews extends ModuleBase {
                 _cly.recordView(usedActivityName, automaticViewSegmentation);
             } else {
                 if (_cly.isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[onStart] Ignoring activity because it's in the exception list");
+                    Log.d(Countly.TAG, "[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
                 }
             }
         }

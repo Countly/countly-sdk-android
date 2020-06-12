@@ -85,7 +85,7 @@ public class DeviceId {
         // some other strategy. We still have to use that strategy.
         if (overriddenType != null && overriddenType != type) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(TAG, "Overridden device ID generation strategy detected: " + overriddenType + ", using it instead of " + this.type);
+                Log.i(TAG, "[DeviceId] Overridden device ID generation strategy detected: " + overriddenType + ", using it instead of " + this.type);
             }
             type = overriddenType;
         }
@@ -97,7 +97,7 @@ public class DeviceId {
             case OPEN_UDID:
                 if (OpenUDIDAdapter.isOpenUDIDAvailable()) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.i(TAG, "Using OpenUDID");
+                        Log.i(TAG, "[DeviceId] Using OpenUDID");
                     }
                     if (!OpenUDIDAdapter.isInitialized()) {
                         OpenUDIDAdapter.sync(context);
@@ -109,13 +109,13 @@ public class DeviceId {
             case ADVERTISING_ID:
                 if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.i(TAG, "Using Advertising ID");
+                        Log.i(TAG, "[DeviceId] Using Advertising ID");
                     }
                     AdvertisingIdAdapter.setAdvertisingId(context, store, this);
                 } else if (OpenUDIDAdapter.isOpenUDIDAvailable()) {
                     // Fall back to OpenUDID on devices without google play services set up
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.i(TAG, "Advertising ID is not available, falling back to OpenUDID");
+                        Log.i(TAG, "[DeviceId] Advertising ID is not available, falling back to OpenUDID");
                     }
                     if (!OpenUDIDAdapter.isInitialized()) {
                         OpenUDIDAdapter.sync(context);
@@ -123,7 +123,7 @@ public class DeviceId {
                 } else {
                     // just do nothing, without Advertising ID and OpenUDID this user is lost for Countly
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(TAG, "Advertising ID is not available, neither OpenUDID is");
+                        Log.w(TAG, "[DeviceId] Advertising ID is not available, neither OpenUDID is");
                     }
                     if (raiseExceptions) throw new IllegalStateException("OpenUDID is not available, please make sure that you have it in your classpath");
                 }
@@ -166,7 +166,7 @@ public class DeviceId {
     @SuppressWarnings("SameParameterValue")
     protected void setId(Type type, String id) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.w(TAG, "Device ID is " + id + " (type " + type + ")");
+            Log.w(TAG, "[DeviceId] Device ID is " + id + " (type " + type + ")");
         }
         this.type = type;
         this.id = id;
@@ -175,7 +175,7 @@ public class DeviceId {
     @SuppressWarnings("SameParameterValue")
     protected void switchToIdType(Type type, Context context, CountlyStore store) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.w(TAG, "Switching to device ID generation strategy " + type + " from " + this.type);
+            Log.w(TAG, "[DeviceId] Switching to device ID generation strategy " + type + " from " + this.type);
         }
         this.type = type;
         storeOverriddenType(store, type);

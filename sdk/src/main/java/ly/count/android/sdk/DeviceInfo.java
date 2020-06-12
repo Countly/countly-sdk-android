@@ -91,7 +91,7 @@ class DeviceInfo {
             resolution = metrics.widthPixels + "x" + metrics.heightPixels;
         } catch (Throwable t) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Device resolution cannot be determined");
+                Log.i(Countly.TAG, "[DeviceInfo] Device resolution cannot be determined");
             }
         }
         return resolution;
@@ -161,7 +161,7 @@ class DeviceInfo {
         if (carrier == null || carrier.length() == 0) {
             carrier = "";
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "No carrier found");
+                Log.i(Countly.TAG, "[DeviceInfo] No carrier found");
             }
         }
         return carrier;
@@ -193,7 +193,7 @@ class DeviceInfo {
             }
         } catch (PackageManager.NameNotFoundException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "No app version found");
+                Log.i(Countly.TAG, "[DeviceInfo] No app version found");
             }
         }
         return result;

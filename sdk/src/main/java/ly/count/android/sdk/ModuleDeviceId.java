@@ -14,7 +14,7 @@ class ModuleDeviceId extends ModuleBase {
 
     private void exitTemporaryIdMode(DeviceId.Type type, String deviceId) {
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling exitTemporaryIdMode");
+            Log.d(Countly.TAG, "[ModuleDeviceId] Calling exitTemporaryIdMode");
         }
 
         if (!_cly.isInitialized()) {
@@ -33,7 +33,7 @@ class ModuleDeviceId extends ModuleBase {
         for (int a = 0; a < storedRequests.length; a++) {
             if (storedRequests[a].contains(temporaryIdTag)) {
                 if (_cly.isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[exitTemporaryIdMode] Found a tag to replace in: [" + storedRequests[a] + "]");
+                    Log.d(Countly.TAG, "[ModuleDeviceId] [exitTemporaryIdMode] Found a tag to replace in: [" + storedRequests[a] + "]");
                 }
                 storedRequests[a] = storedRequests[a].replace(temporaryIdTag, newIdTag);
                 foundOne = true;
@@ -71,7 +71,7 @@ class ModuleDeviceId extends ModuleBase {
 
         if (!_cly.anyConsentGiven()) {
             if (_cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
+                Log.w(Countly.TAG, "[ModuleDeviceId] Can't change Device ID if no consent is given");
             }
             return;
         }
@@ -122,7 +122,7 @@ class ModuleDeviceId extends ModuleBase {
 
         if (!_cly.anyConsentGiven()) {
             if (_cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Can't change Device ID if no consent is given");
+                Log.w(Countly.TAG, "[ModuleDeviceId] Can't change Device ID if no consent is given");
             }
             return;
         }

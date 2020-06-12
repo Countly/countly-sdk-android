@@ -106,7 +106,7 @@ public class ConnectionProcessor implements Runnable {
         if (requestHeaderCustomValues_ != null) {
             //if there are custom header values, add them
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.v(Countly.TAG, "Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
+                Log.v(Countly.TAG, "[Connection Processor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
             }
             for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
                 String key = entry.getKey();
@@ -119,10 +119,10 @@ public class ConnectionProcessor implements Runnable {
 
         String picturePath = UserData.getPicturePathFromQuery(url);
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "Got picturePath: " + picturePath);
+            Log.v(Countly.TAG, "[Connection Processor] Got picturePath: " + picturePath);
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
+            Log.v(Countly.TAG, "[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
             //Log.v(Countly.TAG, "Used url: " + urlStr);
         }
         if (!picturePath.equals("")) {
@@ -173,7 +173,7 @@ public class ConnectionProcessor implements Runnable {
                 os.close();
             } else {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "Using HTTP GET");
+                    Log.v(Countly.TAG, "[Connection Processor] Using HTTP GET");
                 }
                 conn.setDoOutput(false);
             }

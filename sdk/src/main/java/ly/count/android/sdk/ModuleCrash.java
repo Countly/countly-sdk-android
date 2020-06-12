@@ -174,7 +174,7 @@ public class ModuleCrash extends ModuleBase {
      */
     synchronized Countly recordExceptionInternal(Throwable exception, boolean itIsHandled) {
         if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
+            Log.i(Countly.TAG, "[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
         }
 
         if (!_cly.isInitialized()) {

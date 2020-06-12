@@ -393,7 +393,7 @@ public class ModuleRatings extends ModuleBase {
 
         if (!(context instanceof Activity)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't show star rating dialog, the provided context is not based off a activity");
+                Log.e(Countly.TAG, "[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
             }
 
             return;
@@ -456,7 +456,7 @@ public class ModuleRatings extends ModuleBase {
     static synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final Countly countly, final ConnectionQueue connectionQueue_,
         final FeedbackRatingCallback devCallback) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Showing Feedback popup for widget id: [" + widgetId + "]");
+            Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
         }
 
         if (widgetId == null || widgetId.isEmpty()) {
@@ -486,7 +486,7 @@ public class ModuleRatings extends ModuleBase {
             final String ratingWidgetUrl = connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + connectionQueue_.getDeviceId().getId() + "&app_key=" + connectionQueue_.getAppKey();
 
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "rating widget url :[" + ratingWidgetUrl + "]");
+                Log.d(Countly.TAG, "[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
             }
 
             ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
@@ -496,7 +496,7 @@ public class ModuleRatings extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     if (checkResponse == null) {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
+                            Log.d(Countly.TAG, "[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
                         }
                         if (devCallback != null) {
                             devCallback.callback("Not possible to show Rating popup, probably no internet connection");
@@ -512,7 +512,7 @@ public class ModuleRatings extends ModuleBase {
                             if ((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)) {
                                 //it's possible to show the rating window on this device
                                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                                    Log.d(Countly.TAG, "Showing Feedback popup for widget id: [" + widgetId + "]");
+                                    Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
                                 }
 
                                 RatingDialogWebView webView = new RatingDialogWebView(activity);
@@ -667,7 +667,7 @@ public class ModuleRatings extends ModuleBase {
             int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.connectionQueue_.getCountlyStore());
 
             if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Getting automatic star rating session limit: [" + sessionLimit + "]");
+                Log.i(Countly.TAG, "[Ratings] Getting automatic star rating session limit: [" + sessionLimit + "]");
             }
 
             return sessionLimit;

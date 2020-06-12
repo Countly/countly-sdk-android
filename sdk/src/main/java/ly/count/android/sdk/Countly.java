@@ -2317,7 +2317,7 @@ public class Countly {
      */
     public synchronized Countly giveConsent(String[] featureNames) {
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Giving consent for features named: [" + Arrays.toString(featureNames) + "]");
+            Log.i(Countly.TAG, "Giving consent for features named: [" + Arrays.toString(featureNames) + "]");
         }
 
         if (isLoggingEnabled() && !isInitialized()) {

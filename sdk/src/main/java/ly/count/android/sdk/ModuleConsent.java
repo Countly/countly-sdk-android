@@ -41,7 +41,7 @@ public class ModuleConsent extends ModuleBase {
             _cly.context_.sendBroadcast(new Intent(_cly.CONSENT_BROADCAST));
 
             if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Init] Countly is initialized with the current consent state:");
+                Log.d(Countly.TAG, "[ModuleConsent] [Init] Countly is initialized with the current consent state:");
                 _cly.checkAllConsent();
             }
         }
@@ -102,11 +102,11 @@ public class ModuleConsent extends ModuleBase {
          */
         public synchronized void giveConsentAll() {
             if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Giving consent for all features");
+                Log.i(Countly.TAG, "[Consent] Giving consent for all features");
             }
 
             if (_cly.isLoggingEnabled() && !_cly.isInitialized()) {
-                Log.w(Countly.TAG, "Calling this before initialising the SDK is deprecated!");
+                Log.w(Countly.TAG, "[Consent] Calling this before initialising the SDK is deprecated!");
             }
 
             _cly.giveConsent(_cly.validFeatureNames);
