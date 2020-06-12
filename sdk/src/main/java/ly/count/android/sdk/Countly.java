@@ -196,6 +196,7 @@ public class Countly {
         public static final String users = "users";
         public static final String push = "push";
         public static final String starRating = "star-rating";
+        public static final String apm = "apm";
         //public static final String accessoryDevices = "accessory-devices";
     }
 
@@ -209,7 +210,8 @@ public class Countly {
         CountlyFeatureNames.attribution,
         CountlyFeatureNames.users,
         CountlyFeatureNames.push,
-        CountlyFeatureNames.starRating
+        CountlyFeatureNames.starRating,
+        CountlyFeatureNames.apm
     };
 
     /**
@@ -2086,14 +2088,6 @@ public class Countly {
         }
         requiresConsent = shouldRequireConsent;
         return this;
-    }
-
-    /**
-     * Initiate all things related to consent
-     */
-    private void initConsent() {
-        //groupedFeatures.put("activity", new String[]{CountlyFeatureNames.sessions, CountlyFeatureNames.events, CountlyFeatureNames.views});
-        //groupedFeatures.put("interaction", new String[]{CountlyFeatureNames.sessions, CountlyFeatureNames.events, CountlyFeatureNames.views});
     }
 
     /**

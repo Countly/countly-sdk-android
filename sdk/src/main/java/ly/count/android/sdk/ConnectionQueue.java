@@ -481,7 +481,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] sendAPMCustomTrace");
         }
 
-        if (!Countly.sharedInstance().anyConsentGiven()) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
@@ -510,7 +510,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] sendAPMNetworkTrace");
         }
 
-        if (!Countly.sharedInstance().anyConsentGiven()) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
@@ -540,7 +540,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] sendAPMAppStart");
         }
 
-        if (!Countly.sharedInstance().anyConsentGiven()) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
@@ -567,7 +567,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
         }
 
-        if (!Countly.sharedInstance().anyConsentGiven()) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
