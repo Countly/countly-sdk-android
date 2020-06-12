@@ -31,7 +31,7 @@ public class ModuleEvents extends ModuleBase {
 
         String[] cachedData = cs.getCachedPushData();
 
-        if(cachedData[0] != null && cachedData[1] != null) {
+        if(cachedData != null && cachedData[0] != null && cachedData[1] != null) {
             //found valid data cached, record it
             if (_cly.isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[ModuleEvents] Found cached push event, recording it");
@@ -43,7 +43,7 @@ public class ModuleEvents extends ModuleBase {
             recordEventInternal(ModulePush.PUSH_EVENT_ACTION, map, 1, 0, 0, null, false);
         }
 
-        if(cachedData[0] == null || cachedData[1] == null) {
+        if(cachedData != null && (cachedData[0] != null || cachedData[1] != null)) {
             //if something was recorded, clear it
             cs.clearCachedPushData();
         }

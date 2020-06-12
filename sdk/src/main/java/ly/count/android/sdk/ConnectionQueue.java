@@ -150,7 +150,7 @@ public class ConnectionQueue {
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
 
-        if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&begin_session=1"
                 + "&metrics=" + DeviceInfo.getMetrics(context_);//can be only sent with begin session
@@ -165,7 +165,7 @@ public class ConnectionQueue {
             dataAvailable = true;
         }
 
-        if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+        if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.attribution)) {
             //add attribution data if consent given
             if (Countly.sharedInstance().isAttributionEnabled) {
                 String cachedAdId = store_.getCachedAdvertisingId();
@@ -203,12 +203,12 @@ public class ConnectionQueue {
             boolean dataAvailable = false;//will only send data if there is something valuable to send
             String data = prepareCommonRequestData();
 
-            if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+            if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.sessions)) {
                 data += "&session_duration=" + duration;
                 dataAvailable = true;
             }
 
-            if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+            if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.attribution)) {
                 if (Countly.sharedInstance().isAttributionEnabled) {
                     String cachedAdId = store_.getCachedAdvertisingId();
 
@@ -242,7 +242,7 @@ public class ConnectionQueue {
 
         String data = prepareCommonRequestData();
 
-        if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.sessions)) {
             data += "&session_duration=" + duration;
         }
 
@@ -259,7 +259,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] tokenSession");
         }
 
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
@@ -310,7 +310,7 @@ public class ConnectionQueue {
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
 
-        if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.sessions)) {
             data += "&end_session=1";
             if (duration > 0) {
                 data += "&session_duration=" + duration;
@@ -360,7 +360,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] sendUserData");
         }
 
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.users)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
@@ -390,7 +390,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] checkInternalState");
         }
 
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.attribution)) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.attribution)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
@@ -417,7 +417,7 @@ public class ConnectionQueue {
             Log.d(Countly.TAG, "[Connection Queue] sendCrashReport");
         }
 
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.crashes)) {
+        if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.crashes)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
             }
@@ -602,13 +602,13 @@ public class ConnectionQueue {
     private String prepareLocationData(CountlyStore cs, boolean canSendEmptyWithNoConsent) {
         String data = "";
 
-        if (canSendEmptyWithNoConsent && (cs.getLocationDisabled() || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location))) {
+        if (canSendEmptyWithNoConsent && (cs.getLocationDisabled() || !Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.location))) {
             //if location is disabled or consent not given, send empty location info
             //this way it is cleared server side and geoip is not used
             //do this only if allowed
             data += "&location=";
         } else {
-            if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.location)) {
+            if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.location)) {
                 //location should be send, add all the fields we have
                 String location = cs.getLocation();
                 String city = cs.getLocationCity();
@@ -640,7 +640,7 @@ public class ConnectionQueue {
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
 
-        if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&metrics=" + DeviceInfo.getMetrics(context_);
         }
