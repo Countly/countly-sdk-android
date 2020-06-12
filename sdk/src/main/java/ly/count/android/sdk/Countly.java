@@ -224,12 +224,14 @@ public class Countly {
      * Creates a new ConnectionQueue and initializes the session timer.
      */
     Countly() {
+        timerService_ = Executors.newSingleThreadScheduledExecutor();
+        staticInit();
+    }
+
+    private void staticInit(){
         connectionQueue_ = new ConnectionQueue();
         Countly.userData = new UserData(connectionQueue_);
-        timerService_ = Executors.newSingleThreadScheduledExecutor();
         startTimerService(timerService_, timerFuture, TIMER_DELAY_IN_SECONDS);
-
-        initConsent();
     }
 
     private void startTimerService(ScheduledExecutorService service, ScheduledFuture<?> previousTimer, long timerDelay) {
@@ -776,14 +778,19 @@ public class Countly {
             Log.i(Countly.TAG, "Halting Countly!");
         }
         eventQueue_ = null;
-        final CountlyStore countlyStore = connectionQueue_.getCountlyStore();
-        if (countlyStore != null) {
-            countlyStore.clear();
+
+        if(connectionQueue_ != null) {
+            final CountlyStore countlyStore = connectionQueue_.getCountlyStore();
+            if (countlyStore != null) {
+                countlyStore.clear();
+            }
+            connectionQueue_.setContext(null);
+            connectionQueue_.setServerURL(null);
+            connectionQueue_.setAppKey(null);
+            connectionQueue_.setCountlyStore(null);
+            connectionQueue_ = null;
         }
-        connectionQueue_.setContext(null);
-        connectionQueue_.setServerURL(null);
-        connectionQueue_.setAppKey(null);
-        connectionQueue_.setCountlyStore(null);
+
         activityCount_ = 0;
 
         for (ModuleBase module : modules) {
@@ -800,6 +807,8 @@ public class Countly {
         moduleConsent = null;
         moduleAPM = null;
         moduleDeviceId = null;
+
+        staticInit();
     }
 
     synchronized void notifyDeviceIdChange() {
