@@ -322,9 +322,9 @@ public class ConnectionProcessor implements Runnable {
                             rRes = RequestResult.OK;
                         } else {
                             if (Countly.sharedInstance().isLoggingEnabled()) {
-                                Log.v(Countly.TAG, "[Connection Processor] Response was a unknown, will retry request");
+                                Log.v(Countly.TAG, "[Connection Processor] Response was a unknown, will still assume success");
                             }
-                            rRes = RequestResult.RETRY;
+                            rRes = RequestResult.OK;
                         }
                     } else if (responseCode >= 300 && responseCode < 400) {
                         //assume redirect

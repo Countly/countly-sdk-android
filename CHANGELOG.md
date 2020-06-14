@@ -1,3 +1,6 @@
+20.04.4
+  * Fixed a issue in the network request retry logic
+
 20.04.3
   * Adding fallback cache to CountlyPush for cases where the SDK is not initialised
   * Fixed bug which happened when consent was required but no consent was provided during init
