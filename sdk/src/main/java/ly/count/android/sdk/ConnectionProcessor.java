@@ -38,6 +38,8 @@ import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * ConnectionProcessor is a Runnable that is executed on a background
@@ -310,21 +312,41 @@ public class ConnectionProcessor implements Runnable {
                     final RequestResult rRes;
 
                     if (responseCode >= 200 && responseCode < 300) {
-                        if (responseString.isEmpty()) {
+
+                        if (responseString.isEmpty()){
                             if (Countly.sharedInstance().isLoggingEnabled()) {
-                                Log.v(Countly.TAG, "[Connection Processor] Response was empty, assuming a success");
+                                Log.v(Countly.TAG, "[Connection Processor] Response was empty, will retry");
                             }
-                            rRes = RequestResult.OK;
-                        } else if (responseString.contains("Success")) {
-                            if (Countly.sharedInstance().isLoggingEnabled()) {
-                                Log.v(Countly.TAG, "[Connection Processor] Response was a success");
-                            }
-                            rRes = RequestResult.OK;
+                            rRes = RequestResult.RETRY;
                         } else {
-                            if (Countly.sharedInstance().isLoggingEnabled()) {
-                                Log.v(Countly.TAG, "[Connection Processor] Response was a unknown, will still assume success");
+                            JSONObject jsonObject;
+                            try {
+                                jsonObject = new JSONObject(responseString);
+                            } catch (JSONException ex){
+                                //failed to parse, so not a valid json
+                                jsonObject = null;
                             }
-                            rRes = RequestResult.OK;
+
+                            if (jsonObject == null) {
+                                //received unparseable response, retrying
+                                if (Countly.sharedInstance().isLoggingEnabled()) {
+                                    Log.v(Countly.TAG, "[Connection Processor] Response was a unknown, will retry");
+                                }
+                                rRes = RequestResult.RETRY;
+                            } else {
+                                if(jsonObject.has("result")){
+                                    //contains result entry
+                                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                                        Log.v(Countly.TAG, "[Connection Processor] Response was a success");
+                                    }
+                                    rRes = RequestResult.OK;
+                                } else {
+                                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                                        Log.v(Countly.TAG, "[Connection Processor] Response does not contain 'result', will retry");
+                                    }
+                                    rRes = RequestResult.RETRY;
+                                }
+                            }
                         }
                     } else if (responseCode >= 300 && responseCode < 400) {
                         //assume redirect
@@ -334,9 +356,9 @@ public class ConnectionProcessor implements Runnable {
                         rRes = RequestResult.RETRY;
                     } else if (responseCode == 400 || responseCode == 404) {
                         if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.w(Countly.TAG, "[Connection Processor] Bad request, will be dropped");
+                            Log.w(Countly.TAG, "[Connection Processor] Bad request, will still retry");
                         }
-                        rRes = RequestResult.REMOVE;
+                        rRes = RequestResult.RETRY;
                     } else if (responseCode > 400) {
                         //server down, try again later
                         if (Countly.sharedInstance().isLoggingEnabled()) {

@@ -219,7 +219,7 @@ public class ConnectionProcessorTests {
         verify(mockURLConnection).getInputStream();
         assertTrue(testInputStream.fullyRead());
         verify(mockURLConnection).getResponseCode();
-        verify(mockStore, times(0)).removeConnection(eventData);
+        verify(mockStore, times(1)).removeConnection(eventData);
         assertTrue(testInputStream.closed);
         verify(mockURLConnection).disconnect();
     }
