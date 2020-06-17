@@ -620,7 +620,6 @@ public class CountlyPush {
             }
             return;
         }
-
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Consent not given, ignoring call");

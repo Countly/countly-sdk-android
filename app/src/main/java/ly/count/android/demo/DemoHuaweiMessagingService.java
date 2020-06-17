@@ -27,11 +27,16 @@ public class DemoHuaweiMessagingService extends HmsMessageService {
 
         // decode message data and extract meaningful information from it: title, body, badge, etc.
         CountlyPush.Message message = CountlyPush.decodeMessage(remoteMessage.getDataOfMap());
+<<<<<<< HEAD
         if (message == null) {
             Log.d(TAG, "Not a Countly message");
             return;
         }
         if (message.has("typ")) {
+=======
+
+        if (message != null && message.has("typ")) {
+>>>>>>> Initial hw commit
             // custom handling only for messages with specific "typ" keys
             if (message.data("typ").equals("download")) {
                 // Some bg download case.
