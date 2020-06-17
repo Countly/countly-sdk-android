@@ -1661,7 +1661,10 @@ public class Countly {
      * Immediately sends all stored events
      */
     protected void sendEventsForced() {
-        connectionQueue_.recordEvents(eventQueue_.events());
+        if (eventQueue_.size() > 0) {
+            //only send events if there is anything to send
+            connectionQueue_.recordEvents(eventQueue_.events());
+        }
     }
 
     /**
