@@ -40,6 +40,7 @@ import java.util.Set;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
+import ly.count.android.sdk.Utils;
 
 /**
  * Just a public holder class for Messaging-related display logic, listeners, managers, etc.
@@ -616,13 +617,17 @@ public class CountlyPush {
             return;
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Refreshing FCM push token");
+            Log.d(Countly.TAG, "Refreshing push token");
         }
         Countly.sharedInstance().onRegistrationId(token, mode, provider);
     }
 
     static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
     static final String FIREBASE_INSTANCEID_CLASS = "com.google.firebase.iid.FirebaseInstanceId";
+
+    static final String HUAWEI_MESSAGING_CLASS = "com.huawei.hms.push.HmsMessageService";
+    static final String HUAWEI_CONFIG_CLASS = "com.huawei.agconnect.config.AGConnectServicesConfig";
+    static final String HUAWEI_INSTANCEID_CLASS = "com.huawei.hms.aaid.HmsInstanceId";
 
     /**
      * Set an activity to start when user taps on a notification
@@ -631,12 +636,12 @@ public class CountlyPush {
      * @throws IllegalStateException
      */
     @SuppressWarnings("unchecked")
-    public static void init(Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
-        if (!UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
-            throw new IllegalStateException("No FirebaseMessaging library in class path. Please either add it to your gradle config or don't use CountlyPush.");
+    public static void init(final Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
+        if (!UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS) && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+            throw new IllegalStateException("Neither FirebaseMessaging, nor HmsMessageService classes in the class path. Please either add it to your gradle config or don't use CountlyPush.");
         }
 
-        if(application == null) {
+        if (application == null) {
             throw new IllegalStateException("Non null application must be provided!");
         }
 
@@ -645,7 +650,7 @@ public class CountlyPush {
         }
 
         CountlyPush.mode = mode;
-        if(mode == Countly.CountlyMessagingMode.TEST) {
+        if (mode == Countly.CountlyMessagingMode.TEST) {
             CountlyStore.cacheLastMessagingMode(0, application);
         } else {
             CountlyStore.cacheLastMessagingMode(1, application);
@@ -697,6 +702,55 @@ public class CountlyPush {
             filter.addAction(Countly.CONSENT_BROADCAST);
             consentReceiver = new ConsentBroadcastReceiver();
             application.registerReceiver(consentReceiver, filter);
+        }
+
+        //if (!UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS) && UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+        if (UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+            String version = getEMUIVersion();
+            if (version.startsWith("10")) {
+                AsyncTask.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", application, Context.class);
+                        if (config == null) {
+                            Log.e(Countly.TAG, "No Huawei Config");
+                            return;
+                        }
+
+                        Object appId = UtilsMessaging.reflectiveCall(HUAWEI_CONFIG_CLASS, config, "getString", "client/app_id");
+                        if (appId == null || "".equals(appId)) {
+                            Log.e(Countly.TAG, "No Huawei app id in config");
+                            return;
+                        }
+
+                        Object instanceId = UtilsMessaging.reflectiveCallStrict(HUAWEI_INSTANCEID_CLASS, null, "getInstance", application, Context.class);
+                        if (instanceId == null) {
+                            Log.e(Countly.TAG, "No Huawei instance id class");
+                            return;
+                        }
+
+                        Object token = UtilsMessaging.reflectiveCall(HUAWEI_INSTANCEID_CLASS, instanceId, "getToken", appId, "HCM");
+                        if (token != null && !"".equals(token)) {
+                            onTokenRefresh((String) token, Countly.CountlyMessagingProvider.HMS);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    private static String getEMUIVersion () {
+        try {
+            String line = Build.DISPLAY;
+            int spaceIndex = line.indexOf(" ");
+            int lastIndex = line.indexOf("(");
+            if (lastIndex != -1) {
+                return line.substring(spaceIndex, lastIndex).trim();
+            } else {
+                return line.substring(spaceIndex).trim();
+            }
+        } catch (Throwable t) {
+            return "";
         }
     }
 

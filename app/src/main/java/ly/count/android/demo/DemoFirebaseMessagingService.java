@@ -56,8 +56,12 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
 
         // decode message data and extract meaningful information from it: title, body, badge, etc.
         CountlyPush.Message message = CountlyPush.decodeMessage(remoteMessage.getData());
+        if (message == null) {
+            Log.d(TAG, "Not a Countly message");
+            return;
+        }
 
-        if (message != null && message.has("typ")) {
+        if (message.has("typ")) {
             // custom handling only for messages with specific "typ" keys
             if (message.data("typ").equals("download")) {
                 // Some bg download case.

@@ -946,7 +946,7 @@ public class Countly {
             return;
         }
 
-        connectionQueue_.tokenSession(registrationId, mode);
+        connectionQueue_.tokenSession(registrationId, mode, provider);
     }
 
     /**
