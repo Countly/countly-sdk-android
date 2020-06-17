@@ -1,5 +1,8 @@
 20.04.4
   * Fixed a issue in the network request retry logic
+  * Removed requirement for any consent to be set before device ID can be changed.
+  * Mitigating issue which would happen if push token is refreshed before SDK is initialized.
+  * Fixed the sending of empty event collections in cases where event sending was forced.
 
 20.04.3
   * Adding fallback cache to CountlyPush for cases where the SDK is not initialised
