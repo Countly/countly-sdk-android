@@ -613,6 +613,14 @@ public class CountlyPush {
      * @param provider which provider the token belongs to
      */
     public static void onTokenRefresh(String token, Countly.CountlyMessagingProvider provider) {
+        if(!Countly.sharedInstance().isInitialized()){
+            //is some edge cases this might be called before the SDK is initialized
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] SDK is not initialized, ignoring call");
+            }
+            return;
+        }
+
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
             return;
         }

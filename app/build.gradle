@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.huawei.agconnect'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 repositories {
     maven {
@@ -54,6 +54,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation project(':sdk')
 
     implementation 'com.google.firebase:firebase-messaging:18.0.0'
@@ -67,10 +68,13 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation  'androidx.test.espresso:espresso-core:3.2.0'
     implementation "androidx.core:core-ktx:+"
+<<<<<<< HEAD
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     implementation 'com.huawei.hms:push:4.0.3.301'
 
+=======
+>>>>>>> Fixed kotlin import warning. Fixed the sending of 0 events in cases where it was forced. Mitigating issue which would happen if push token is refreshed before SDK is initialized.
     //implementation 'ly.count.android:sdk:20.04.2'
 }
 
