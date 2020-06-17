@@ -602,13 +602,23 @@ public class CountlyPush {
      * @param token String token to be sent to Countly server
      */
     public static void onTokenRefresh(String token) {
+        onTokenRefresh(token, Countly.CountlyMessagingProvider.FCM);
+    }
+
+    /**
+     * Token refresh callback to be called from {@code FirebaseInstanceIdService}.
+     *
+     * @param token String token to be sent to Countly server
+     * @param provider which provider the token belongs to
+     */
+    public static void onTokenRefresh(String token, Countly.CountlyMessagingProvider provider) {
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
             return;
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "Refreshing FCM push token");
         }
-        Countly.sharedInstance().onRegistrationId(token, mode);
+        Countly.sharedInstance().onRegistrationId(token, mode, provider);
     }
 
     static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";

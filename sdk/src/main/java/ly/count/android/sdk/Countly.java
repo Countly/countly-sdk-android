@@ -99,6 +99,15 @@ public class Countly {
         PRODUCTION,
     }
 
+    /**
+     * Enum used in Countly.initMessaging() method which controls what kind of
+     * messaging provider is in use in current app installation.
+     */
+    public enum CountlyMessagingProvider {
+        FCM,    // Firebase
+        HMS,    // Huawei
+    }
+
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
         @SuppressLint("StaticFieldLeak")
@@ -926,6 +935,13 @@ public class Countly {
      * DON'T USE THIS!!!!
      */
     public void onRegistrationId(String registrationId, CountlyMessagingMode mode) {
+        onRegistrationId(registrationId, mode, CountlyMessagingProvider.FCM);
+    }
+
+    /**
+     * DON'T USE THIS!!!!
+     */
+    public void onRegistrationId(String registrationId, CountlyMessagingMode mode, CountlyMessagingProvider provider) {
         if (!getConsent(CountlyFeatureNames.push)) {
             return;
         }

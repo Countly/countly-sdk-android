@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.huawei.agconnect'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
 
@@ -6,11 +7,25 @@ repositories {
     maven {
         url  "http://dl.bintray.com/countly/maven"
     }
+    maven {
+        url "https://developer.huawei.com/repo/"
+    }
     mavenCentral()
 }
 
 android {
     compileSdkVersion 28
+
+    signingConfigs {
+        release {
+            storeFile file('keys')
+            keyAlias 'HWDemo'
+            keyPassword 'countly'
+            storePassword 'countly'
+            v1SigningEnabled true
+            v2SigningEnabled true
+        }
+    }
 
     defaultConfig {
         applicationId "ly.count.android.demo"
@@ -22,10 +37,12 @@ android {
     }
     buildTypes {
         debug {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -51,6 +68,9 @@ dependencies {
     androidTestImplementation  'androidx.test.espresso:espresso-core:3.2.0'
     implementation "androidx.core:core-ktx:+"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    implementation 'com.huawei.hms:push:4.0.3.301'
+
     //implementation 'ly.count.android:sdk:20.04.2'
 }
 

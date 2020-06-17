@@ -28,6 +28,14 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name=".DemoHuaweiMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.huawei.push.action.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".ActivityExampleAPM"
             android:label="@string/activity_name_apm"
@@ -120,9 +128,9 @@
                     android:host="sample_b" />
             </intent-filter>
         </activity>
-      <activity android:name=".ActivityExampleKotlin" />
+        <activity android:name=".ActivityExampleKotlin" />
 
-      <service android:name="org.openudid.OpenUDID_service" android:exported="false">
+        <service android:name="org.openudid.OpenUDID_service" android:exported="false">
             <intent-filter>
                 <action android:name="org.OpenUDID.GETUDID" />
             </intent-filter>
