@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -150,10 +151,25 @@ public class CountlyStore {
         if (str != null && str.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
             if (connections.size() < MAX_REQUESTS) {
+                //request under max requests, add as normal
                 connections.add(str);
                 preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+            } else {
+                //reached the limit, start deleting oldest requests
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[CountlyStore] Store reached it's limit, deleting oldest request");
+                }
+
+                deleteOldestRequest();
+                addConnection(str);
             }
         }
+    }
+
+    private synchronized void deleteOldestRequest(){
+        final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
+        connections.remove(0);
+        preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
     }
 
     /**
