@@ -622,10 +622,13 @@ public class CountlyPush {
         }
 
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Consent not given, ignoring call");
+            }
             return;
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Refreshing push token");
+            Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Refreshing FCM push token, with mode: [" + mode + "] for [" + provider + "]");
         }
         Countly.sharedInstance().onRegistrationId(token, mode, provider);
     }
@@ -654,7 +657,7 @@ public class CountlyPush {
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Initializing Countly FCM push");
+            Log.i(Countly.TAG, "Initializing Countly FCM push with mode: [" + mode + "]");
         }
 
         CountlyPush.mode = mode;
