@@ -813,9 +813,8 @@ public class CountlyPush {
     }
 
     private static void loadImage(final Context context, final Message msg, final BitmapCallback callback) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
+        new Thread(new Runnable() {
+            @Override public void run() {
                 final Bitmap[] bitmap = new Bitmap[] { null };
 
                 if (msg.media() != null) {
@@ -863,10 +862,8 @@ public class CountlyPush {
                         callback.call(bitmap[0]);
                     }
                 });
-
-                return null;
             }
-        }.doInBackground();
+        }).start();
     }
 }
 
