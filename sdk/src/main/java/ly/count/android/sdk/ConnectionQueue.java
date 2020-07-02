@@ -253,10 +253,6 @@ public class ConnectionQueue {
         tick();
     }
 
-    public void tokenSession(String token, Countly.CountlyMessagingMode mode) {
-        tokenSession(token, mode, Countly.CountlyMessagingProvider.FCM);
-    }
-
     public void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider) {
         checkInternalState();
         if (Countly.sharedInstance().isLoggingEnabled()) {
