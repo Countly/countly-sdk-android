@@ -16,10 +16,25 @@ import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static android.content.Context.UI_MODE_SERVICE;
 
 public class Utils {
+    private static final ExecutorService bg = Executors.newSingleThreadExecutor();
+
+    public static Future<?> runInBackground (Runnable runnable) {
+        return bg.submit(runnable);
+    }
+
+    public static <T> Future<T> runInBackground (Callable<T> runnable) {
+        return bg.submit(runnable);
+    }
+
     /**
      * Joins objects with a separator
      *

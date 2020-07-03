@@ -17,7 +17,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -40,6 +39,7 @@ import java.util.Set;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
+import ly.count.android.sdk.Utils;
 
 /**
  * Just a public holder class for Messaging-related display logic, listeners, managers, etc.
@@ -690,6 +690,7 @@ public class CountlyPush {
             throw new IllegalStateException("Non null application must be provided!");
         }
 
+        CountlyPush.provider = preferredProvider;
         if (provider == null) {
             if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
                 provider = Countly.CountlyMessagingProvider.FCM;
@@ -718,7 +719,6 @@ public class CountlyPush {
         }
 
         CountlyPush.mode = mode;
-        CountlyPush.provider = preferredProvider;
         CountlyStore.cacheLastMessagingMode(mode == Countly.CountlyMessagingMode.TEST ? 0 : 1, application);
         CountlyStore.storeMessagingProvider(provider == Countly.CountlyMessagingProvider.FCM ? 1 : 2, application);
 
@@ -860,7 +860,7 @@ public class CountlyPush {
     }
 
     private static void loadImage(final Context context, final Message msg, final BitmapCallback callback) {
-        new Thread(new Runnable() {
+        Utils.runInBackground(new Runnable() {
             @Override public void run() {
                 final Bitmap[] bitmap = new Bitmap[] { null };
 
@@ -910,7 +910,7 @@ public class CountlyPush {
                     }
                 });
             }
-        }).start();
+        });
     }
 }
 
