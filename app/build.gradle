@@ -5,29 +5,6 @@ apply plugin: 'com.android.application'
 
 apply plugin: 'kotlin-android'
 
-/*
-//for automatic symbol upload
-apply plugin: ly.count.android.plugins.UploadSymbolsPlugin
-
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '20.11.8'
-    }
-}
-*/
-
-repositories {
-  mavenCentral()
-
-  //required for huawei push
-  maven {
-      url "https://developer.huawei.com/repo/"
-  }
-}
-
 android {
   compileSdk 34
   namespace 'ly.count.android.demo'

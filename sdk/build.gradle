@@ -2,13 +2,12 @@ apply plugin: 'com.android.library'
 apply plugin: "com.vanniktech.maven.publish" //for publishing
 
 buildscript {
-  repositories {
-    mavenCentral()
-  }
-  dependencies {
-    //classpath "com.vanniktech:gradle-android-junit-jacoco-plugin:0.16.0" //test coverage reports
-    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.21.0' //for publishing
-  }
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.9.2'
+    }
 }
 
 android {
