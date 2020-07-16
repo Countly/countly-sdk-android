@@ -51,15 +51,7 @@ android {
 
 }
 
-repositories {
-    // needed for using sdk-native from countly maven repo
-    maven {
-        url 'https://dl.bintray.com/countly/maven'
-    }
-    jcenter()
-}
-
-// sdk and sdk-native are pulled from submodules of the project. 
+// sdk and sdk-native are pulled from submodules of the project.
 // If you are running app independently, you may pull their latest version from our maven repo using the commented lines.
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -88,7 +80,6 @@ buildscript {
         classpath group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.14.1'
         // classpath files('../upload-plugin/build/libs/upload-plugin.jar')
         classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '0.2'
-
     }
 }
 

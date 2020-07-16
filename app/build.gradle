@@ -2,13 +2,6 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
-repositories {
-    maven {
-        url  "http://dl.bintray.com/countly/maven"
-    }
-    mavenCentral()
-}
-
 android {
     compileSdkVersion 28
 
