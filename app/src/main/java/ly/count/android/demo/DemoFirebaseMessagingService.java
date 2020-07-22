@@ -37,7 +37,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
-        Log.d("DemoFirebaseService", "got new message: " + remoteMessage.getData());
+        Log.d(TAG, "got new message: " + remoteMessage.getData());
 
         //this initiates countly push in cases where the app was closed and push was received
         //this is a fallback in case it's impossible to initiate countly in Application onCreate

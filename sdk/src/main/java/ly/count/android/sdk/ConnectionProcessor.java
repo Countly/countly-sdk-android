@@ -125,8 +125,8 @@ public class ConnectionProcessor implements Runnable {
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.v(Countly.TAG, "[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
-            //Log.v(Countly.TAG, "Used url: " + urlStr);
         }
+        //Log.v(Countly.TAG, "Used url: " + urlStr);
         if (!picturePath.equals("")) {
             //Uploading files:
             //http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests

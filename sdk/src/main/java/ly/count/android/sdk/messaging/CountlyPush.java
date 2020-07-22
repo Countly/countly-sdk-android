@@ -302,7 +302,7 @@ public class CountlyPush {
             Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
             return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
         } catch (Throwable logged) {
-            Log.e(Countly.TAG, "Couldn't get token for Countly FCM", logged);
+            Log.e(Countly.TAG, "[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
             return null;
         }
     }
@@ -327,7 +327,7 @@ public class CountlyPush {
      */
     public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Displaying push message");
+            Log.d(Countly.TAG, "[CountlyPush, displayMessage] Displaying push message");
         }
 
         if (msg == null) {
@@ -367,7 +367,7 @@ public class CountlyPush {
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Displaying push notification");
+            Log.d(Countly.TAG, "[CountlyPush, displayNotification] Displaying push notification");
         }
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -469,7 +469,7 @@ public class CountlyPush {
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Displaying push dialog");
+            Log.d(Countly.TAG, "[CountlyPush, displayDialog] Displaying push dialog");
         }
 
         loadImage(activity, msg, new BitmapCallback() {
@@ -642,7 +642,7 @@ public class CountlyPush {
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, "Initializing Countly FCM push with mode: [" + mode + "]");
+            Log.i(Countly.TAG, "[CountlyPush] Initializing Countly FCM push with mode: [" + mode + "]");
         }
 
         CountlyPush.mode = mode;
