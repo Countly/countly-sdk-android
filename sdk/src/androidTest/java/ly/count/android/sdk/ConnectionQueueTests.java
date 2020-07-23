@@ -230,7 +230,7 @@ public class ConnectionQueueTests {
         assertEquals("1", queryParams.get("begin_session"));
         // validate metrics
         final JSONObject actualMetrics = new JSONObject(queryParams.get("metrics"));
-        final String metricsJsonStr = URLDecoder.decode(DeviceInfo.getMetrics(getContext()), "UTF-8");
+        final String metricsJsonStr = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), null), "UTF-8");
         final JSONObject expectedMetrics = new JSONObject(metricsJsonStr);
         assertEquals(expectedMetrics.length(), actualMetrics.length());
         final Iterator actualMetricsKeyIterator = actualMetrics.keys();

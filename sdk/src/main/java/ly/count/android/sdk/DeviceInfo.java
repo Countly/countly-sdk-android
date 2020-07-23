@@ -29,6 +29,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
+import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -226,7 +227,7 @@ class DeviceInfo {
      * See the following link for more info:
      * https://count.ly/resources/reference/server-api
      */
-    static String getMetrics(final Context context) {
+    static String getMetrics(final Context context, final Map<String, String> metricOverride) {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
@@ -240,6 +241,33 @@ class DeviceInfo {
             "_app_version", getAppVersion(context),
             "_store", getStore(context),
             "_deep_link", deepLink);
+
+        //override metric values
+        if(metricOverride != null) {
+            for (String k : metricOverride.keySet()) {
+                if (k == null || k.length() == 0) {
+                    if(Countly.sharedInstance().isLoggingEnabled()){
+                        Log.w(Countly.TAG, "Provided metric override key can't be null or empty");
+                    }
+                    continue;
+                }
+
+                String overrideValue = metricOverride.get(k);
+
+                if (overrideValue == null) {
+                    if(Countly.sharedInstance().isLoggingEnabled()){
+                        Log.w(Countly.TAG, "Provided metric override value can't be null, key:[" + k + "]");
+                    }
+                    continue;
+                }
+
+                try {
+                    json.put(k, overrideValue);
+                } catch (Exception ex){
+                    Log.e(Countly.TAG, "Could not set metric override, [" + ex + "]");
+                }
+            }
+        }
 
         String result = json.toString();
 

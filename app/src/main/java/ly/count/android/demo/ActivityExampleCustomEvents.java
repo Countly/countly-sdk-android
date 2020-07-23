@@ -35,7 +35,7 @@ public class ActivityExampleCustomEvents extends Activity {
     }
 
     public void onClickRecordEvent04(View v) {
-        Countly.sharedInstance().recordEvent("Custom event 4", null, 1, 0, 55);
+        Countly.sharedInstance().events().recordEvent("Custom event 4", null, 1, 0, 55);
     }
 
     public void onClickRecordEvent05(View v) {

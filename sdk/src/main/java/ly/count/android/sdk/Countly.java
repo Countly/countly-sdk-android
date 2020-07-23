@@ -604,6 +604,7 @@ public class Countly {
             connectionQueue_.setCountlyStore(countlyStore);
             connectionQueue_.setDeviceId(deviceIdInstance);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
+            connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
 
             eventQueue_ = new EventQueue(countlyStore);
