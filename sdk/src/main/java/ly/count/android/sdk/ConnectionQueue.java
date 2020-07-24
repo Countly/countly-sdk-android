@@ -592,7 +592,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    private String prepareCommonRequestData() {
+    String prepareCommonRequestData() {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
         return "app_key=" + appKey_
@@ -600,8 +600,8 @@ public class ConnectionQueue {
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
             + "&tz=" + DeviceInfo.getTimezoneOffset()
-            + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-            + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+            + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
+            + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
     }
 
     private String prepareLocationData(CountlyStore cs, boolean canSendEmptyWithNoConsent) {

@@ -1,5 +1,6 @@
 20.04.4
   * Adding metric override feature
+  * Adding functionality to override SDK name and SDK version strings
   * Fixed a issue in the network request retry logic
   * Removed requirement for any consent to be set before device ID can be changed.
   * Mitigating issue which would happen if push token is refreshed before SDK is initialized.

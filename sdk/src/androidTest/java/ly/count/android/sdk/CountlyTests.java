@@ -26,6 +26,7 @@ import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 
 import java.util.HashMap;
@@ -847,5 +848,10 @@ public class CountlyTests {
         assertTrue(mUninitedCountly.isLoggingEnabled());
         mUninitedCountly.setLoggingEnabled(false);
         assertFalse(mUninitedCountly.isLoggingEnabled());
+    }
+
+    @Test
+    public void confirmSDKVersionMatches() {
+        Assert.assertEquals(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING, BuildConfig.VERSION_NAME);
     }
 }
