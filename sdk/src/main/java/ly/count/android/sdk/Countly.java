@@ -52,14 +52,20 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("JavadocReference")
 public class Countly {
 
-    /**
-     * Current version of the Count.ly Android SDK as a displayable string.
-     */
-    public String COUNTLY_SDK_VERSION_STRING = "20.04.4";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.04.4";
     /**
      * Used as request meta data on every request
      */
-    public String COUNTLY_SDK_NAME = "java-native-android";
+    private String DEFAULT_COUNTLY_SDK_NAME = "java-native-android";
+
+    /**
+     * Current version of the Count.ly Android SDK as a displayable string.
+     */
+    public String COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
+    /**
+     * Used as request meta data on every request
+     */
+    public String COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
@@ -810,6 +816,9 @@ public class Countly {
         moduleConsent = null;
         moduleAPM = null;
         moduleDeviceId = null;
+
+        COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
+        COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
 
         staticInit();
     }
