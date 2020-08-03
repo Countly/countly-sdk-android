@@ -58,11 +58,11 @@ public class App extends Application {
                 channel.setDescription(getString(R.string.countly_channel_description));
 
                 AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                        .build();
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .build();
 
-                Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://"+ getApplicationContext().getPackageName() + "/" + R.raw.notif_sample);
+                Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getApplicationContext().getPackageName() + "/" + R.raw.notif_sample);
 
                 channel.setSound(soundUri, audioAttributes);
                 notificationManager.createNotificationChannel(channel);
@@ -114,47 +114,55 @@ public class App extends Application {
         customHeaderValues.put("foo", "bar");
 
         Map<String, Object> automaticViewSegmentation = new HashMap<>();
-
         automaticViewSegmentation.put("One", 2);
         automaticViewSegmentation.put("Three", 4.44d);
         automaticViewSegmentation.put("Five", "Six");
 
-        CountlyConfig config = (new CountlyConfig(appC, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
-                //.enableTemporaryDeviceIdMode()
-                .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
-                .setRequiresConsent(true).setConsentEnabled(new String[]{Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
-                Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,Countly.CountlyFeatureNames.apm})
-                .addCustomNetworkRequestHeaders(customHeaderValues).setPushIntentAddMetadata(true).setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
-                    @Override
-                    public void callback(String error) {
-                        if(error == null) {
-                            Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
-                        } else {
-                            Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
-                        }
-                    }
-                })
-                .setParameterTamperingProtectionSalt("SampleSalt")
-                .setAutomaticViewSegmentation(automaticViewSegmentation)
-                .setAutoTrackingExceptions(new Class[]{ActivityExampleCustomEvents.class})
-                .setTrackOrientationChanges(true)
-                .setRecordAllThreadsWithCrash()
-                .setCrashFilterCallback(new CrashFilterCallback() {
-                    @Override
-                    public boolean filterCrash(String crash) {
-                        return crash.contains("crash");
-                    }
-                })
-                .setApplication(this)
-                .setRecordAppStartTime(true)
-                //.enableCertificatePinning(certificates)
-                //.enablePublicKeyPinning(certificates)
+        Map<String, String> metricOverride = new HashMap<>();
+        metricOverride.put("SomeKey", "123");
+        metricOverride.put("_carrier", "BoneyK");
 
-                //.setDisableLocation()
-                //.setLocation("us", "Boston", "27.634933,-85.220255", null)
-                .setEnableAttribution(true);
-                ;
-                
+        Countly.sharedInstance().setLoggingEnabled(true);
+        CountlyConfig config = (new CountlyConfig(appC, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
+            //.enableTemporaryDeviceIdMode()
+            .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
+            .setRequiresConsent(true).setConsentEnabled(new String[] {
+                Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions,
+                Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
+                Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views, Countly.CountlyFeatureNames.apm
+            })
+            .addCustomNetworkRequestHeaders(customHeaderValues).setPushIntentAddMetadata(true).setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
+                @Override
+                public void callback(String error) {
+                    if (error == null) {
+                        Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
+                    } else {
+                        Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
+                    }
+                }
+            })
+            .setParameterTamperingProtectionSalt("SampleSalt")
+            .setAutomaticViewSegmentation(automaticViewSegmentation)
+            .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
+            .setTrackOrientationChanges(true)
+            .setRecordAllThreadsWithCrash()
+            .setCrashFilterCallback(new CrashFilterCallback() {
+                @Override
+                public boolean filterCrash(String crash) {
+                    return crash.contains("crash");
+                }
+            })
+            .setApplication(this)
+            .setRecordAppStartTime(true)
+            .setHttpPostForced(false)
+            //.enableCertificatePinning(certificates)
+            //.enablePublicKeyPinning(certificates)
+
+            //.setDisableLocation()
+            //.setLocation("us", "Boston", "27.634933,-85.220255", null)
+            //.setMetricOverride(metricOverride)
+            .setEnableAttribution(true);
+
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
@@ -162,19 +170,19 @@ public class App extends Application {
         CountlyPush.setNotificationAccentColor(255, 213, 89, 134);
 
         FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
-                        if (!task.isSuccessful()) {
-                            Log.w(TAG, "getInstanceId failed", task.getException());
-                            return;
-                        }
-
-                        // Get new Instance ID token
-                        String token = task.getResult().getToken();
-                        CountlyPush.onTokenRefresh(token);
+            .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+                @Override
+                public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                    if (!task.isSuccessful()) {
+                        Log.w(TAG, "getInstanceId failed", task.getException());
+                        return;
                     }
-                });
+
+                    // Get new Instance ID token
+                    String token = task.getResult().getToken();
+                    CountlyPush.onTokenRefresh(token);
+                }
+            });
 
         /* Register for broadcast action if you need to be notified when Countly message received */
         messageReceiver = new BroadcastReceiver() {
@@ -199,7 +207,6 @@ public class App extends Application {
                 }
 
                 Log.i("Countly", "[CountlyActivity] Got a message, :[" + msg + "]");
-
             }
         };
         IntentFilter filter = new IntentFilter();

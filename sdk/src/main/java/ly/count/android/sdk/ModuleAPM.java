@@ -101,6 +101,36 @@ public class ModuleAPM extends ModuleBase {
         }
     }
 
+    void cancelTraceInternal(String traceKey) {
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleAPM] Calling 'cancelTraceInternal' with key:[" + traceKey + "]");
+        }
+
+        if (traceKey == null || traceKey.isEmpty()) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleAPM] Provided a invalid trace key");
+            }
+            return;
+        }
+
+        if(!codeTraces.containsKey(traceKey)) {
+            if (_cly.isLoggingEnabled()) {
+                Log.w(Countly.TAG, "[ModuleAPM] no trace with key [" + traceKey + "] found");
+            }
+            return;
+        }
+
+        codeTraces.remove(traceKey);
+    }
+
+    void cancelAllTracesInternal() {
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleAPM] Calling 'cancelAllTracesInternal'");
+        }
+
+        codeTraces.clear();
+    }
+
     static String customMetricsToString(Map<String, Integer> customMetrics) {
         StringBuilder ret = new StringBuilder();
 
@@ -254,25 +284,6 @@ public class ModuleAPM extends ModuleBase {
             return;
         }
 
-        if (!(responseCode >= 100 && responseCode < 600)) {
-            if (_cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[ModuleAPM] Invalid response code was provided");
-            }
-            responseCode = -1;
-        }
-
-        if (requestPayloadSize < 0) {
-            if (_cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[ModuleAPM] Invalid request payload size was provided");
-            }
-        }
-
-        if (responsePayloadSize < 0) {
-            if (_cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[ModuleAPM] Invalid response payload size was provided");
-            }
-        }
-
         String internalTraceKey = networkTraceKey + "|" + uniqueId;
 
         if (networkTraces.containsKey(internalTraceKey)) {
@@ -283,15 +294,70 @@ public class ModuleAPM extends ModuleBase {
                     Log.e(Countly.TAG, "[ModuleAPM] endNetworkRequestInternal, retrieved 'startTimestamp' is null");
                 }
             } else {
-                Long responseTimeMs = currentTimestamp - startTimestamp;
-
-                _cly.connectionQueue_.sendAPMNetworkTrace(networkTraceKey, responseTimeMs, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, currentTimestamp);
+                recordNetworkRequestInternal(networkTraceKey, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, currentTimestamp);
             }
         } else {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[ModuleAPM] endNetworkRequestInternal, trying to end trace which was not started");
             }
         }
+    }
+
+    /**
+     * Record network trace
+     *
+     * @param networkTraceKey key that identifies the network trace
+     * @param responseCode returned response code
+     * @param requestPayloadSize sent request payload size in bytes
+     * @param responsePayloadSize received response payload size in bytes
+     * @param startTimestamp timestamp in milliseconds of when the request was started
+     * @param endTimestamp timestamp in milliseconds of when the request was ended
+     */
+    void recordNetworkRequestInternal(String networkTraceKey, int responseCode, int requestPayloadSize, int responsePayloadSize, long startTimestamp, long endTimestamp) {
+        if (_cly.isLoggingEnabled()) {
+            Log.v(Countly.TAG, "[ModuleAPM] Calling 'recordNetworkRequestInternal' with key:[" + networkTraceKey + "]");
+        }
+
+        if (networkTraceKey == null || networkTraceKey.isEmpty()) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleAPM] Provided a invalid trace key, aborting request");
+            }
+            return;
+        }
+
+        if (!(responseCode >= 100 && responseCode < 600)) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleAPM] Invalid response code was provided, setting to '0'");
+            }
+            responseCode = 0;
+        }
+
+        if (requestPayloadSize < 0) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleAPM] Invalid request payload size was provided, setting to '0'");
+            }
+            requestPayloadSize = 0;
+        }
+
+        if (responsePayloadSize < 0) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleAPM] Invalid response payload size was provided, setting to '0'");
+            }
+            responsePayloadSize = 0;
+        }
+
+        if(startTimestamp > endTimestamp) {
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[ModuleAPM] End timestamp is smaller than start timestamp, switching values");
+            }
+
+            Long tmp = startTimestamp;
+            startTimestamp = endTimestamp;
+            endTimestamp = tmp;
+        }
+
+        Long responseTimeMs = endTimestamp - startTimestamp;
+        _cly.connectionQueue_.sendAPMNetworkTrace(networkTraceKey, responseTimeMs, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, endTimestamp);
     }
 
     void recordAppStart() {
@@ -406,6 +472,22 @@ public class ModuleAPM extends ModuleBase {
             endTraceInternal(traceKey, customMetrics);
         }
 
+        public void cancelTrace(String traceKey) {
+            if (_cly.isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Apm] Calling 'cancelTrace' with key:[" + traceKey + "]");
+            }
+
+            cancelTraceInternal(traceKey);
+        }
+
+        public void cancelAllTraces() {
+            if (_cly.isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Apm] Calling 'cancelAllTraces'");
+            }
+
+            cancelAllTracesInternal();
+        }
+
         /**
          * Begin the tracking of a network request
          *
@@ -437,6 +519,24 @@ public class ModuleAPM extends ModuleBase {
             }
 
             endNetworkRequestInternal(networkTraceKey, uniqueId, responseCode, requestPayloadSize, responsePayloadSize);
+        }
+
+        /**
+         * Mark that a network request has ended
+         *
+         * @param networkTraceKey key that identifies the network trace
+         * @param responseCode returned response code
+         * @param requestPayloadSize sent request payload size in bytes
+         * @param responsePayloadSize received response payload size in bytes
+         * @param requestStartTimestampMs network request start timestamp in milliseconds
+         * @param requestEndTimestampMs network request end timestamp in milliseconds
+         */
+        public void recordNetworkTrace(String networkTraceKey, int responseCode, int requestPayloadSize, int responsePayloadSize, long requestStartTimestampMs, long requestEndTimestampMs) {
+            if (_cly.isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Apm] Calling 'recordNetworkTrace' with key:[" + networkTraceKey + "]");
+            }
+
+            recordNetworkRequestInternal(networkTraceKey, responseCode, requestPayloadSize, responsePayloadSize, requestStartTimestampMs, requestEndTimestampMs);
         }
     }
 }

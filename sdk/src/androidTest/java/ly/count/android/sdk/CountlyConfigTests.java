@@ -90,6 +90,10 @@ public class CountlyConfigTests {
         crashSegments.put("s434s", 33434.33d);
         crashSegments.put("ddsa44s", true);
 
+        Map<String, String> metricOverride = new HashMap<>();
+        metricOverride.put("SomeKey", "123");
+        metricOverride.put("_Carrier", "BoneyK");
+
         Application app = new Application();
 
 
@@ -142,6 +146,7 @@ public class CountlyConfigTests {
         config.setRecordAppStartTime(true);
         config.setDisableLocation();
         config.setLocation("CC", "city", "loc", "ip");
+        config.setMetricOverride(metricOverride);
 
 
 
@@ -195,6 +200,7 @@ public class CountlyConfigTests {
         Assert.assertEquals("city", config.locationCity);
         Assert.assertEquals("loc", config.locationLocation);
         Assert.assertEquals("ip", config.locationIpAddress);
+        Assert.assertEquals(metricOverride, config.metricOverride);
 
 
         config.setLocation("CC", "city", "loc", "ip");
@@ -267,5 +273,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.locationCity);
         Assert.assertNull(config.locationLocation);
         Assert.assertNull(config.locationIpAddress);
+        Assert.assertNull(config.metricOverride);
     }
 }

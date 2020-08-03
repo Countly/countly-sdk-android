@@ -55,6 +55,7 @@ public class ConnectionQueue {
     private SSLContext sslContext_;
 
     private Map<String, String> requestHeaderCustomValues;
+    Map<String, String> metricOverride = null;
 
     // Getters are for unit testing
     String getAppKey() {
@@ -109,8 +110,12 @@ public class ConnectionQueue {
         this.deviceId_ = deviceId;
     }
 
-    public void setRequestHeaderCustomValues(Map<String, String> headerCustomValues) {
+    protected void setRequestHeaderCustomValues(Map<String, String> headerCustomValues) {
         requestHeaderCustomValues = headerCustomValues;
+    }
+
+    protected void setMetricOverride(Map<String, String> metricOverride) {
+        this.metricOverride = metricOverride;
     }
 
     /**
@@ -153,7 +158,7 @@ public class ConnectionQueue {
         if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&begin_session=1"
-                + "&metrics=" + DeviceInfo.getMetrics(context_);//can be only sent with begin session
+                + "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);//can be only sent with begin session
             dataAvailable = true;
         }
 
@@ -588,7 +593,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    private String prepareCommonRequestData() {
+    String prepareCommonRequestData() {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
         return "app_key=" + appKey_
@@ -596,8 +601,8 @@ public class ConnectionQueue {
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
             + "&tz=" + DeviceInfo.getTimezoneOffset()
-            + "&sdk_version=" + Countly.COUNTLY_SDK_VERSION_STRING
-            + "&sdk_name=" + Countly.COUNTLY_SDK_NAME;
+            + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
+            + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
     }
 
     private String prepareLocationData(CountlyStore cs, boolean canSendEmptyWithNoConsent) {
@@ -643,7 +648,7 @@ public class ConnectionQueue {
 
         if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
-            data += "&metrics=" + DeviceInfo.getMetrics(context_);
+            data += "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);
         }
 
         CountlyStore cs = getCountlyStore();

@@ -142,6 +142,8 @@ public class CountlyConfig {
 
     String locationIpAddress = null;
 
+    Map<String, String> metricOverride = null;
+
     public CountlyConfig() {
     }
 
@@ -477,6 +479,11 @@ public class CountlyConfig {
         locationCity = city;
         locationLocation = gpsCoordinates;
         locationIpAddress = ipAddress;
+        return this;
+    }
+
+    public synchronized CountlyConfig setMetricOverride(Map<String, String> providedMetricOverride) {
+        metricOverride = providedMetricOverride;
         return this;
     }
 }

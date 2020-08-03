@@ -148,7 +148,7 @@ public class ModuleEvents extends ModuleBase {
     synchronized boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
             if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleEvents] Can't end event with a null or empty key");
+                Log.e(Countly.TAG, "[ModuleEvents] Can't start event with a null or empty key");
             }
             return false;
         }
@@ -276,7 +276,7 @@ public class ModuleEvents extends ModuleBase {
          */
         public synchronized boolean startEvent(final String key) {
             if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before startEvent");
             }
 
             return startEventInternal(key);
@@ -305,7 +305,7 @@ public class ModuleEvents extends ModuleBase {
          */
         public synchronized boolean endEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
             if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before endEvent");
             }
 
             if (segmentation != null) {

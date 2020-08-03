@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.huawei.agconnect'
+
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
@@ -68,7 +69,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation  'androidx.test.espresso:espresso-core:3.2.0'
     implementation "androidx.core:core-ktx:+"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     implementation 'com.huawei.hms:push:4.0.3.301'
 

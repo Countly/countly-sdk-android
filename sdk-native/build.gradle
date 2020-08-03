@@ -18,7 +18,7 @@ android {
         minSdkVersion 15
         targetSdkVersion 29
         versionCode 1
-        versionName "20.04.3"
+        versionName "20.04.4"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -53,12 +53,12 @@ tasks.whenTaskAdded { task ->
     }
 }
 
-//publish {
-//    userOrg = 'countly'
-//    groupId = 'ly.count.android'
-//    artifactId = 'sdk-native'
-//    publishVersion = '20.04.3'
-//    desc = 'Countly Android Native Crash Support'
-//    website = 'https://github.com/Countly/countly-sdk-android'
-//    autoPublish = false
-//}
+publish {
+    userOrg = 'countly'
+    groupId = 'ly.count.android'
+    artifactId = 'sdk-native'
+    publishVersion = '20.04.4'
+    desc = 'Countly Android Native Crash Support'
+    website = 'https://github.com/Countly/countly-sdk-android'
+    autoPublish = false
+}
