@@ -18,6 +18,7 @@ import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.booleanThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(AndroidJUnit4.class)
 public class ModuleAPMTests {
     Countly mCountly;
+    ConnectionQueue connectionQueue;
 
     @Before
     public void setUp() {
@@ -33,6 +35,10 @@ public class ModuleAPMTests {
 
         mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+
+        connectionQueue = mock(ConnectionQueue.class);
+        mCountly.setConnectionQueue(connectionQueue);
+
     }
 
     @After
@@ -108,5 +114,115 @@ public class ModuleAPMTests {
         String metricString = ModuleAPM.customMetricsToString(customMetrics);
 
         Assert.assertEquals(",\"a11\":2,\"aaa\":23,\"a351\":22,\"a1__f1\":24,\"a114\":21", metricString);
+    }
+
+    @Test
+    public void recordNetworkTraceBasic() {
+        //ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
+        mCountly.apm().recordNetworkTrace("aaa", 234, 123, 456, 7654, 8765);
+        verify(connectionQueue).sendAPMNetworkTrace("aaa", (8765L - 7654L),234, 123, 456, 7654L, 8765L);
+    }
+
+    @Test
+    public void recordNetworkTraceFalseValues_1() {
+        mCountly.apm().recordNetworkTrace("aaa", -100, -123, 456, 7654, 8765);
+        verify(connectionQueue).sendAPMNetworkTrace("aaa", (8765L - 7654L),0, 0, 456, 7654L, 8765L);
+    }
+
+    @Test
+    public void recordNetworkTraceFalseValues_2() {
+        mCountly.apm().recordNetworkTrace("aaa", 999, 123, -456, 8765, 7654);
+        verify(connectionQueue).sendAPMNetworkTrace("aaa", (8765L - 7654L),0, 123, 0, 7654L, 8765L);
+    }
+
+    @Test
+    public void recordNetworkTraceStartStop() {
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> start = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> stop = ArgumentCaptor.forClass(Long.class);
+
+        String internalTraceKey = "abc|111";
+
+        mCountly.apm().startNetworkRequest("abc", "111");
+        Assert.assertTrue(mCountly.moduleAPM.networkTraces.containsKey(internalTraceKey));
+        Long starVal = mCountly.moduleAPM.networkTraces.get(internalTraceKey);
+
+        mCountly.apm().endNetworkRequest("abc", "111", 345, 222, 555);
+
+        Assert.assertFalse(mCountly.moduleAPM.networkTraces.containsKey(internalTraceKey));
+
+        verify(connectionQueue).sendAPMNetworkTrace(eq("abc"), duration.capture(), eq(345), eq(222), eq(555), start.capture(), stop.capture());
+
+        Assert.assertEquals(starVal, start.getValue());
+        Assert.assertTrue(stop.getValue() > start.getValue());
+        Assert.assertTrue((stop.getValue() - start.getValue()) < 100);
+    }
+
+    @Test
+    public void customTrace() {
+        String key = "ddd";
+        Long ts1 = UtilsTime.currentTimestampMs();
+        mCountly.apm().startTrace(key);
+        Long ts2 = UtilsTime.currentTimestampMs();
+
+        Assert.assertTrue(mCountly.moduleAPM.codeTraces.containsKey(key));
+        Long keyTs = mCountly.moduleAPM.codeTraces.get(key);
+        Assert.assertTrue(ts1 < keyTs && keyTs < ts2);
+
+        mCountly.apm().endTrace(key, null);
+
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> start = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> stop = ArgumentCaptor.forClass(Long.class);
+
+        verify(connectionQueue).sendAPMCustomTrace(eq(key), duration.capture(), start.capture(), stop.capture(), eq(""));
+
+        Assert.assertEquals(keyTs, start.getValue());
+        Assert.assertTrue(stop.getValue() > start.getValue());
+        Assert.assertTrue((stop.getValue() - start.getValue()) < 100);
+    }
+
+    @Test
+    public void cancelTrace() {
+        mCountly.apm().startTrace("11");
+        mCountly.apm().startTrace("112");
+        mCountly.apm().startTrace("113");
+        mCountly.apm().startTrace("114");
+        mCountly.apm().startTrace("115");
+
+        Assert.assertEquals(5, mCountly.moduleAPM.codeTraces.size());
+
+        mCountly.apm().cancelTrace("113");
+        Assert.assertEquals(4, mCountly.moduleAPM.codeTraces.size());
+        mCountly.apm().cancelTrace("115");
+        Assert.assertEquals(3, mCountly.moduleAPM.codeTraces.size());
+        mCountly.apm().cancelTrace("113");
+        Assert.assertEquals(3, mCountly.moduleAPM.codeTraces.size());
+        mCountly.apm().cancelTrace("11");
+        Assert.assertEquals(2, mCountly.moduleAPM.codeTraces.size());
+        mCountly.apm().cancelTrace("114");
+        Assert.assertEquals(1, mCountly.moduleAPM.codeTraces.size());
+        mCountly.apm().cancelTrace("112");
+        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
+    }
+
+    @Test
+    public void cancelAllTraces() {
+        mCountly.apm().startTrace("11");
+        mCountly.apm().startTrace("112");
+        mCountly.apm().startTrace("113");
+        mCountly.apm().startTrace("114");
+        mCountly.apm().startTrace("115");
+
+        Assert.assertEquals(5, mCountly.moduleAPM.codeTraces.size());
+        mCountly.apm().cancelAllTraces();
+        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
+
+        mCountly.apm().cancelTrace("115");
+        mCountly.apm().cancelTrace("113");
+        mCountly.apm().cancelTrace("11");
+        mCountly.apm().cancelTrace("114");
+        mCountly.apm().cancelTrace("112");
+        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
     }
 }
