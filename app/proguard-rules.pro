@@ -24,3 +24,14 @@
 # Rules to keep the FCM dependency optional
 -dontwarn com.google.firebase.messaging.RemoteMessage
 -keep class com.google.firebase.messaging.RemoteMessage
+
+# Rules recommended for Huawei PushKit
+-ignorewarnings
+-keepattributes *Annotation*
+-keepattributes Exceptions
+-keepattributes InnerClasses
+-keepattributes Signature
+-keepattributes SourceFile,LineNumberTable
+-keep class com.hianalytics.android.**{*;}
+-keep class com.huawei.updatesdk.**{*;}
+-keep class com.huawei.hms.**{*;}

@@ -258,7 +258,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    public void tokenSession(String token, Countly.CountlyMessagingMode mode) {
+    public void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider) {
         checkInternalState();
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Connection Queue] tokenSession");
@@ -274,6 +274,7 @@ public class ConnectionQueue {
         final String data = prepareCommonRequestData()
             + "&token_session=1"
             + "&android_token=" + token
+            + "&token_provider=" + provider
             + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
             + "&locale=" + DeviceInfo.getLocale();
 

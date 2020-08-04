@@ -17,7 +17,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -40,6 +39,7 @@ import java.util.Set;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
+import ly.count.android.sdk.Utils;
 
 /**
  * Just a public holder class for Messaging-related display logic, listeners, managers, etc.
@@ -56,6 +56,7 @@ public class CountlyPush {
     private static Activity activity = null;
 
     private static Countly.CountlyMessagingMode mode = null;
+    private static Countly.CountlyMessagingProvider provider = null;
 
     static Integer notificationAccentColor = null;
 
@@ -283,10 +284,10 @@ public class CountlyPush {
     public static class ConsentBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent broadcast) {
-            if (mode != null && Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
-                String token = getToken();
-                if (token != null) {
-                    onTokenRefresh(getToken());
+            if (mode != null && provider != null && Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
+                String token = getToken(context, provider);
+                if (token != null && !"".equals(token)) {
+                    onTokenRefresh(token, provider);
                 }
             }
         }
@@ -297,10 +298,35 @@ public class CountlyPush {
      *
      * @return token string or null if no token is currently available.
      */
-    private static String getToken() {
+    private static String getToken(Context context, Countly.CountlyMessagingProvider prov) {
         try {
-            Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
-            return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
+            if (prov == Countly.CountlyMessagingProvider.FCM) {
+                Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
+                return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
+            } else if (prov == Countly.CountlyMessagingProvider.HMS) {
+                Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", context, Context.class);
+                if (config == null) {
+                    Log.e(Countly.TAG, "No Huawei Config");
+                    return null;
+                }
+
+                Object appId = UtilsMessaging.reflectiveCall(HUAWEI_CONFIG_CLASS, config, "getString", "client/app_id");
+                if (appId == null || "".equals(appId)) {
+                    Log.e(Countly.TAG, "No Huawei app id in config");
+                    return null;
+                }
+
+                Object instanceId = UtilsMessaging.reflectiveCallStrict(HUAWEI_INSTANCEID_CLASS, null, "getInstance", context, Context.class);
+                if (instanceId == null) {
+                    Log.e(Countly.TAG, "No Huawei instance id class");
+                    return null;
+                }
+
+                Object token = UtilsMessaging.reflectiveCall(HUAWEI_INSTANCEID_CLASS, instanceId, "getToken", appId, "HCM");
+                return (String) token;
+            } else {
+                return null;
+            }
         } catch (Throwable logged) {
             Log.e(Countly.TAG, "[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
             return null;
@@ -602,6 +628,16 @@ public class CountlyPush {
      * @param token String token to be sent to Countly server
      */
     public static void onTokenRefresh(String token) {
+        onTokenRefresh(token, Countly.CountlyMessagingProvider.FCM);
+    }
+
+    /**
+     * Token refresh callback to be called from {@code FirebaseInstanceIdService}.
+     *
+     * @param token String token to be sent to Countly server
+     * @param provider which provider the token belongs to
+     */
+    public static void onTokenRefresh(String token, Countly.CountlyMessagingProvider provider) {
         if(!Countly.sharedInstance().isInitialized()){
             //is some edge cases this might be called before the SDK is initialized
             if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -617,40 +653,77 @@ public class CountlyPush {
             return;
         }
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Refreshing FCM push token, with mode:[" + mode + "]");
+            Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Refreshing FCM push token, with mode: [" + mode + "] for [" + provider + "]");
         }
-        Countly.sharedInstance().onRegistrationId(token, mode);
+        Countly.sharedInstance().onRegistrationId(token, mode, provider);
     }
 
     static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
     static final String FIREBASE_INSTANCEID_CLASS = "com.google.firebase.iid.FirebaseInstanceId";
 
+    static final String HUAWEI_MESSAGING_CLASS = "com.huawei.hms.push.HmsMessageService";
+    static final String HUAWEI_CONFIG_CLASS = "com.huawei.agconnect.config.AGConnectServicesConfig";
+    static final String HUAWEI_INSTANCEID_CLASS = "com.huawei.hms.aaid.HmsInstanceId";
+
     /**
-     * Set an activity to start when user taps on a notification
+     * Initialize Countly messaging functionality
      *
      * @param application application instance
+     * @param mode whether to mark push token as test or as production one
      * @throws IllegalStateException
      */
     @SuppressWarnings("unchecked")
-    public static void init(Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
-        if (!UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
-            throw new IllegalStateException("No FirebaseMessaging library in class path. Please either add it to your gradle config or don't use CountlyPush.");
-        }
+    public static void init(final Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
+        init(application, mode, null);
+    }
 
-        if(application == null) {
+    /**
+     * Initialize Countly messaging functionality
+     *
+     * @param application application instance
+     * @param mode whether to mark push token as test or as production one
+     * @param preferredProvider prefer specified push provider, {@code null} means use FCM first, then fallback to Huawei
+     * @throws IllegalStateException
+     */
+    @SuppressWarnings("unchecked")
+    public static void init(final Application application, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
+        if (application == null) {
             throw new IllegalStateException("Non null application must be provided!");
         }
 
+        // set preferred push provider
+        CountlyPush.provider = preferredProvider;
+        if (provider == null) {
+            if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+                provider = Countly.CountlyMessagingProvider.FCM;
+            } else if (UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+                provider = Countly.CountlyMessagingProvider.HMS;
+            }
+        } else if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+            provider = Countly.CountlyMessagingProvider.HMS;
+        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+            provider = Countly.CountlyMessagingProvider.FCM;
+        }
+
+        // print error in case preferred push provider is not available
+        if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+            Log.e("Countly", "No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            return;
+        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+            Log.e("Countly", "No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            return;
+        } else if (provider == null) {
+            Log.e("Countly", "Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            return;
+        }
+
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[CountlyPush] Initializing Countly FCM push with mode: [" + mode + "]");
+            Log.i(Countly.TAG, "[CountlyPush] Initializing Countly FCM push with mode: [" + mode + "] and [" + provider + "]");
         }
 
         CountlyPush.mode = mode;
-        if(mode == Countly.CountlyMessagingMode.TEST) {
-            CountlyStore.cacheLastMessagingMode(0, application);
-        } else {
-            CountlyStore.cacheLastMessagingMode(1, application);
-        }
+        CountlyStore.cacheLastMessagingMode(mode == Countly.CountlyMessagingMode.TEST ? 0 : 1, application);
+        CountlyStore.storeMessagingProvider(provider == Countly.CountlyMessagingProvider.FCM ? 1 : 2, application);
 
         if (callbacks == null) {
             callbacks = new Application.ActivityLifecycleCallbacks() {
@@ -698,6 +771,36 @@ public class CountlyPush {
             filter.addAction(Countly.CONSENT_BROADCAST);
             consentReceiver = new ConsentBroadcastReceiver();
             application.registerReceiver(consentReceiver, filter);
+        }
+
+        if (provider == Countly.CountlyMessagingProvider.HMS && Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push)) {
+            String version = getEMUIVersion();
+            if (version.startsWith("10")) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String token = getToken(application, Countly.CountlyMessagingProvider.HMS);
+                        if (token != null && !"".equals(token)) {
+                            onTokenRefresh(token, Countly.CountlyMessagingProvider.HMS);
+                        }
+                    }
+                }).start();
+            }
+        }
+    }
+
+    private static String getEMUIVersion () {
+        try {
+            String line = Build.DISPLAY;
+            int spaceIndex = line.indexOf(" ");
+            int lastIndex = line.indexOf("(");
+            if (lastIndex != -1) {
+                return line.substring(spaceIndex, lastIndex).trim();
+            } else {
+                return line.substring(spaceIndex).trim();
+            }
+        } catch (Throwable t) {
+            return "";
         }
     }
 
@@ -760,9 +863,8 @@ public class CountlyPush {
     }
 
     private static void loadImage(final Context context, final Message msg, final BitmapCallback callback) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
+        Utils.runInBackground(new Runnable() {
+            @Override public void run() {
                 final Bitmap[] bitmap = new Bitmap[] { null };
 
                 if (msg.media() != null) {
@@ -810,10 +912,8 @@ public class CountlyPush {
                         callback.call(bitmap[0]);
                     }
                 });
-
-                return null;
             }
-        }.doInBackground();
+        });
     }
 }
 

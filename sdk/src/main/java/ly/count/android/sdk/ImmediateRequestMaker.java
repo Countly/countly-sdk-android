@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import java.net.URLConnection;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
