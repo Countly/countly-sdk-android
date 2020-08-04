@@ -691,6 +691,7 @@ public class CountlyPush {
             throw new IllegalStateException("Non null application must be provided!");
         }
 
+        // set preferred push provider
         CountlyPush.provider = preferredProvider;
         if (provider == null) {
             if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
@@ -704,6 +705,7 @@ public class CountlyPush {
             provider = Countly.CountlyMessagingProvider.FCM;
         }
 
+        // print error in case preferred push provider is not available
         if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
             Log.e("Countly", "No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
