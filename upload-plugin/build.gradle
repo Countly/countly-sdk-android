@@ -12,7 +12,7 @@ plugins {
     id 'groovy'
 }
 
-//apply plugin: 'bintray-release'
+apply plugin: 'bintray-release'
 
 
 gradlePlugin {
