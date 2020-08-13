@@ -1,3 +1,3 @@
 [submodule "sdk-native/src/cpp_precompilation/breakpad"]
 	path = sdk-native/src/cpp_precompilation/breakpad
-	url = https://github.com/google/breakpad.git
+	url = https://github.com/Countly/countly-breakpad.git
