@@ -31,7 +31,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
-import static ly.count.android.sdk.UtilsNetworking.sha1Hash;
+import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -75,7 +75,7 @@ public class ConnectionProcessorTests {
         assertFalse(urlConnection.getUseCaches());
         assertTrue(urlConnection.getDoInput());
         assertFalse(urlConnection.getDoOutput());
-        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum=" + sha1Hash(eventData + null)), urlConnection.getURL());
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + null)), urlConnection.getURL());
     }
 
     @Test

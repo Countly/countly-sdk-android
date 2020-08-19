@@ -35,10 +35,10 @@ public class UtilsNetworking {
         return decodedResult;
     }
 
-    protected static String sha1Hash(String toHash) {
+    protected static String sha256Hash(String toHash) {
         String hash = null;
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes = toHash.getBytes("UTF-8");
             digest.update(bytes, 0, bytes.length);
             bytes = digest.digest();

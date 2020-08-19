@@ -1,3 +1,8 @@
+20.04.5
+  * Replacing sha-1 hash with sha-256 hash for requests.
+  * Adding apm calls for cancelTrace, cancelAllTraces, recordNetworkTrace
+  * Adding option to use Huawei push notifications
+
 20.04.4
   * Adding metric override feature
   * Adding functionality to override SDK name and SDK version strings

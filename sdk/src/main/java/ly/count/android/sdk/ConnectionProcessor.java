@@ -85,10 +85,10 @@ public class ConnectionProcessor implements Runnable {
 
         String urlStr = serverURL_ + urlEndpoint;
         if (usingHttpPost) {
-            requestData += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
+            requestData += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
         } else {
             urlStr += "?" + requestData;
-            urlStr += "&checksum=" + UtilsNetworking.sha1Hash(requestData + salt);
+            urlStr += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
         }
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
