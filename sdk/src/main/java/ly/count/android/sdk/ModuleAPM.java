@@ -360,6 +360,14 @@ public class ModuleAPM extends ModuleBase {
         _cly.connectionQueue_.sendAPMNetworkTrace(networkTraceKey, responseTimeMs, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, endTimestamp);
     }
 
+    void clearNetworkTraces() {
+        if (_cly.isLoggingEnabled()) {
+            Log.v(Countly.TAG, "[ModuleAPM] Calling 'clearNetworkTraces'");
+        }
+
+        networkTraces.clear();
+    }
+
     void recordAppStart() {
         if (_cly.config_.recordAppStartTime) {
             if (Countly.applicationStart == -1) {

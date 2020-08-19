@@ -212,6 +212,7 @@ public class Countly {
         public static final String push = "push";
         public static final String starRating = "star-rating";
         public static final String apm = "apm";
+        //public static final String remoteConfig = "remote-config";
         //public static final String accessoryDevices = "accessory-devices";
     }
 
@@ -226,6 +227,7 @@ public class Countly {
         CountlyFeatureNames.users,
         CountlyFeatureNames.push,
         CountlyFeatureNames.starRating,
+        //CountlyFeatureNames.remoteConfig,
         CountlyFeatureNames.apm
     };
 
@@ -375,7 +377,6 @@ public class Countly {
      * @param config contains all needed information to init SDK
      */
     public synchronized Countly init(CountlyConfig config) {
-
         //enable logging
         if (config.loggingEnabled) {
             //enable logging before any potential logging calls
@@ -1378,7 +1379,7 @@ public class Countly {
      * @deprecated use crashes().recordHandledException
      */
     public synchronized Countly recordHandledException(Exception exception) {
-        return moduleCrash.recordExceptionInternal(exception, true);
+        return moduleCrash.recordExceptionInternal(exception, true, null);
     }
 
     /**
@@ -1389,7 +1390,7 @@ public class Countly {
      * @deprecated use crashes().recordHandledException
      */
     public synchronized Countly recordHandledException(Throwable exception) {
-        return moduleCrash.recordExceptionInternal(exception, true);
+        return moduleCrash.recordExceptionInternal(exception, true, null);
     }
 
     /**
@@ -1400,7 +1401,7 @@ public class Countly {
      * @deprecated use crashes().recordUnhandledException
      */
     public synchronized Countly recordUnhandledException(Exception exception) {
-        return moduleCrash.recordExceptionInternal(exception, false);
+        return moduleCrash.recordExceptionInternal(exception, false, null);
     }
 
     /**
@@ -1411,7 +1412,7 @@ public class Countly {
      * @deprecated use crashes().recordUnhandledException
      */
     public synchronized Countly recordUnhandledException(Throwable exception) {
-        return moduleCrash.recordExceptionInternal(exception, false);
+        return moduleCrash.recordExceptionInternal(exception, false, null);
     }
 
     /**
@@ -1449,7 +1450,7 @@ public class Countly {
 
                     //check if it passes the crash filter
                     if (!moduleCrash.crashFilterCheck(exceptionString)) {
-                        Countly.sharedInstance().connectionQueue_.sendCrashReport(exceptionString, false, false);
+                        Countly.sharedInstance().connectionQueue_.sendCrashReport(exceptionString, false, false, null);
                     }
                 }
 
@@ -2307,6 +2308,12 @@ public class Countly {
                         }
                     }
                     break;
+                case CountlyFeatureNames.apm:
+                    if(!isConsentGiven) {
+                        //in case APM consent is removed, clear custom and network traces
+                        moduleAPM.clearNetworkTraces();
+                        moduleAPM.cancelAllTracesInternal();
+                    }
             }
         }
 

@@ -159,7 +159,7 @@ public class App extends Application {
             //.enablePublicKeyPinning(certificates)
 
             //.setDisableLocation()
-            //.setLocation("us", "Boston", "27.634933,-85.220255", null)
+            .setLocation("us", "Boston", "-23.8043604,-46.6718331", "10.2.33.12")
             //.setMetricOverride(metricOverride)
             .setEnableAttribution(true);
 

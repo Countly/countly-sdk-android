@@ -417,7 +417,7 @@ public class ConnectionQueue {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash) {
+    void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
         checkInternalState();
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Connection Queue] sendCrashReport");
@@ -436,7 +436,7 @@ public class ConnectionQueue {
         }
 
         final String data = prepareCommonRequestData()
-            + "&crash=" + UtilsNetworking.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash));
+            + "&crash=" + UtilsNetworking.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash, customSegmentation));
 
         store_.addConnection(data);
 

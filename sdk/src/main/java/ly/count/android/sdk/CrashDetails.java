@@ -192,12 +192,42 @@ class CrashDetails {
     /**
      * Get custom segments json string
      */
-    static JSONObject getCustomSegmentsJson() {
-        if (customSegments != null && !customSegments.isEmpty()) {
-            return new JSONObject(customSegments);
-        } else {
+    static JSONObject getCustomSegmentsJson(final Map<String, Object> additionalCustomSegmentation) {
+        if(additionalCustomSegmentation == null && (customSegments == null || customSegments.isEmpty())) {
             return null;
         }
+
+        JSONObject returnedSegmentation = new JSONObject();
+
+        if(customSegments != null) {
+            for (String k : customSegments.keySet()) {
+                if (k != null) {
+                    try {
+                        returnedSegmentation.put(k, customSegments.get(k));
+                    } catch (JSONException e) {
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.w(Countly.TAG, "[getCustomSegmentsJson] Failed to add custom segmentation to crash");
+                        }
+                    }
+                }
+            }
+        }
+
+        if(additionalCustomSegmentation != null) {
+            for (String k : additionalCustomSegmentation.keySet()) {
+                if (k != null) {
+                    try {
+                        returnedSegmentation.put(k, additionalCustomSegmentation.get(k));
+                    } catch (JSONException e) {
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.w(Countly.TAG, "[getCustomSegmentsJson] Failed to add custom segmentation to crash");
+                        }
+                    }
+                }
+            }
+        }
+
+        return returnedSegmentation;
     }
 
     /**
@@ -401,7 +431,7 @@ class CrashDetails {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
-    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash) {
+    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash, final Map<String, Object> additionalCustomSegmentation) {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
@@ -442,7 +472,7 @@ class CrashDetails {
         }
 
         try {
-            json.put("_custom", getCustomSegmentsJson());
+            json.put("_custom", getCustomSegmentsJson(additionalCustomSegmentation));
         } catch (JSONException e) {
             //no custom segments
         }

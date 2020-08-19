@@ -208,6 +208,8 @@ public class ModuleAPMTests {
 
     @Test
     public void cancelAllTraces() {
+        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
+
         mCountly.apm().startTrace("11");
         mCountly.apm().startTrace("112");
         mCountly.apm().startTrace("113");
@@ -224,5 +226,24 @@ public class ModuleAPMTests {
         mCountly.apm().cancelTrace("114");
         mCountly.apm().cancelTrace("112");
         Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
+    }
+
+    @Test
+    public void clearNetworkTraces() {
+        Assert.assertEquals(0, mCountly.moduleAPM.networkTraces.size());
+
+        mCountly.apm().startNetworkRequest("aa", "11");
+        mCountly.apm().startNetworkRequest("aa", "12");
+        mCountly.apm().startNetworkRequest("aa", "13");
+        mCountly.apm().startNetworkRequest("aa", "14");
+
+        mCountly.apm().startNetworkRequest("aa2", "13");
+        mCountly.apm().startNetworkRequest("aa23", "14");
+
+        Assert.assertEquals(6, mCountly.moduleAPM.networkTraces.size());
+
+        mCountly.moduleAPM.clearNetworkTraces();
+
+        Assert.assertEquals(0, mCountly.moduleAPM.networkTraces.size());
     }
 }

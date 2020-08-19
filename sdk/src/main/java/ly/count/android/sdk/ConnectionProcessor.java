@@ -262,13 +262,6 @@ public class ConnectionProcessor implements Runnable {
                     } else {
                         //new device_id provided, make sure it will be merged
                         eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
-
-                        // since the new_id will be merged with the old one, we wait 10 seconds before sending this request
-                        // to give the server time to finish processing previous requests.
-
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[Connection Processor] Waiting 10 seconds before sending device_id merge request");
-                        }
                     }
                 } else {
                     // this branch will be used in almost all requests.

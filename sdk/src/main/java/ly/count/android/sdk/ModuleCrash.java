@@ -119,7 +119,7 @@ public class ModuleCrash extends ModuleBase {
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         //record crash
-        _cly.connectionQueue_.sendCrashReport(dumpString, false, true);
+        _cly.connectionQueue_.sendCrashReport(dumpString, false, true, null);
     }
 
     void setCrashFilterCallback(CrashFilterCallback callback) {
@@ -172,7 +172,7 @@ public class ModuleCrash extends ModuleBase {
      * @param itIsHandled If the exception is handled or not (fatal)
      * @return Returns link to Countly for call chaining
      */
-    synchronized Countly recordExceptionInternal(Throwable exception, boolean itIsHandled) {
+    synchronized Countly recordExceptionInternal(final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
         if (_cly.isLoggingEnabled()) {
             Log.i(Countly.TAG, "[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
         }
@@ -208,7 +208,7 @@ public class ModuleCrash extends ModuleBase {
                 Log.d(Countly.TAG, "[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
             }
         } else {
-            _cly.connectionQueue_.sendCrashReport(exceptionString, itIsHandled, false);
+            _cly.connectionQueue_.sendCrashReport(exceptionString, itIsHandled, false, customSegmentation);
         }
         return _cly;
     }
@@ -302,7 +302,7 @@ public class ModuleCrash extends ModuleBase {
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordHandledException(Exception exception) {
-            return recordExceptionInternal(exception, true);
+            return recordExceptionInternal(exception, true, null);
         }
 
         /**
@@ -312,7 +312,7 @@ public class ModuleCrash extends ModuleBase {
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordHandledException(Throwable exception) {
-            return recordExceptionInternal(exception, true);
+            return recordExceptionInternal(exception, true, null);
         }
 
         /**
@@ -322,7 +322,7 @@ public class ModuleCrash extends ModuleBase {
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordUnhandledException(Exception exception) {
-            return recordExceptionInternal(exception, false);
+            return recordExceptionInternal(exception, false, null);
         }
 
         /**
@@ -332,7 +332,27 @@ public class ModuleCrash extends ModuleBase {
          * @return Returns link to Countly for call chaining
          */
         public synchronized Countly recordUnhandledException(Throwable exception) {
-            return recordExceptionInternal(exception, false);
+            return recordExceptionInternal(exception, false, null);
+        }
+
+        /**
+         * Log handled exception to report it to server as non fatal crash
+         *
+         * @param exception Throwable to log
+         * @return Returns link to Countly for call chaining
+         */
+        public synchronized Countly recordHandledException(final Throwable exception, final Map<String, Object> customSegmentation) {
+            return recordExceptionInternal(exception, true, customSegmentation);
+        }
+
+        /**
+         * Log unhandled exception to report it to server as fatal crash
+         *
+         * @param exception Throwable to log
+         * @return Returns link to Countly for call chaining
+         */
+        public synchronized Countly recordUnhandledException(final Throwable exception, final Map<String, Object> customSegmentation) {
+            return recordExceptionInternal(exception, false, customSegmentation);
         }
     }
 }
