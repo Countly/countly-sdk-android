@@ -79,7 +79,7 @@ public class ModuleAPM extends ModuleBase {
 
             if (startTimestamp == null) {
                 if (_cly.isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[ModuleAPM] endTraceInternal, retrieved 'startTimestamp' is null");
+                    Log.e(Countly.TAG, "[ModuleAPM] endTraceInternal, retrieved 'startTimestamp' is null, dropping trace");
                 }
             } else {
                 Long durationMs = currentTimestamp - startTimestamp;
@@ -91,6 +91,8 @@ public class ModuleAPM extends ModuleBase {
                 }
 
                 String metricString = customMetricsToString(customMetrics);
+
+                traceKey = validateAndModifyTraceKey(traceKey);
 
                 _cly.connectionQueue_.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp, metricString);
             }
@@ -162,8 +164,6 @@ public class ModuleAPM extends ModuleBase {
             customMetrics.remove(rKey);
         }
 
-        Pattern p = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
-
         for (Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Integer> entry = it.next();
             String key = entry.getKey();
@@ -187,38 +187,39 @@ public class ModuleAPM extends ModuleBase {
                 //remove key longer than 32 characters
                 it.remove();
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, it can't be longer than 32 characters, [" + key + "]");
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key can't be longer than 32 characters, skipping entry, [" + key + "]");
                 }
                 continue;
             }
 
-            if (key.charAt(0) == '_') {
-                //remove key that starts with underscore
-                it.remove();
+            if (key.charAt(0) == '$') {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, it can't start with underscore, [" + key + "]");
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key can't start with '$', it will be removed server side, [" + key + "]");
                 }
-                continue;
             }
 
-            if (key.charAt(0) == ' ' || key.charAt(keyLength - 1) == ' ') {
-                //remove key that starts with whitespace
-                it.remove();
+            if (key.contains(".")) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, it can't start or end with whitespace, [" + key + "]");
+                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key can't contain '.', those will be removed server side, [" + key + "]");
                 }
-                continue;
-            }
-
-            if (!p.matcher(key).matches()) {
-                //validate against regex
-                it.remove();
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[ModuleAPM] custom metric key removed, did not correspond to the allowed regex '/^[a-zA-Z][a-zA-Z0-9_]*$/'");
-                }
-                continue;
             }
         }
+    }
+
+    String validateAndModifyTraceKey(String traceKey) {
+        if(traceKey.charAt(0) == '$' && _cly.isLoggingEnabled()) {
+            Log.w(Countly.TAG, "[ModuleAPM] validateAndModifyTraceKey, trace keys can't start with '$', it will be removed server side");
+        }
+
+        if(traceKey.length() > 2048) {
+            traceKey = traceKey.substring(0, 2047);
+
+            if(_cly.isLoggingEnabled()) {
+                Log.w(Countly.TAG, "[ModuleAPM] validateAndModifyTraceKey, trace keys can't be longer than 2048 characters, it will be trimmed down");
+            }
+        }
+
+        return traceKey;
     }
 
     /**
@@ -355,6 +356,9 @@ public class ModuleAPM extends ModuleBase {
             startTimestamp = endTimestamp;
             endTimestamp = tmp;
         }
+
+        //validate trace key
+        networkTraceKey = validateAndModifyTraceKey(networkTraceKey);
 
         Long responseTimeMs = endTimestamp - startTimestamp;
         _cly.connectionQueue_.sendAPMNetworkTrace(networkTraceKey, responseTimeMs, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, endTimestamp);
@@ -494,6 +498,7 @@ public class ModuleAPM extends ModuleBase {
             }
 
             cancelAllTracesInternal();
+            clearNetworkTraces();
         }
 
         /**

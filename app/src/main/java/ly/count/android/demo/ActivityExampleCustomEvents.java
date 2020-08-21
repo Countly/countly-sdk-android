@@ -23,15 +23,15 @@ public class ActivityExampleCustomEvents extends Activity {
     }
 
     public void onClickRecordEvent01(View v) {
-        Countly.sharedInstance().recordEvent("Custom event 1");
+        Countly.sharedInstance().events().recordEvent("Custom event 1");
     }
 
     public void onClickRecordEvent02(View v) {
-        Countly.sharedInstance().recordEvent("Custom event 2", 3);
+        Countly.sharedInstance().events().recordEvent("Custom event 2", 3);
     }
 
     public void onClickRecordEvent03(View v) {
-        Countly.sharedInstance().recordEvent("Custom event 3", 1, 134);
+        Countly.sharedInstance().events().recordEvent("Custom event 3", 1, 134);
     }
 
     public void onClickRecordEvent04(View v) {
@@ -39,9 +39,9 @@ public class ActivityExampleCustomEvents extends Activity {
     }
 
     public void onClickRecordEvent05(View v) {
-        Map<String, String> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "green");
-        Countly.sharedInstance().recordEvent("Custom event 5", segmentation, 1, 0, 0);
+        Countly.sharedInstance().events().recordEvent("Custom event 5", segmentation, 1, 0, 0);
     }
 
     public void onClickRecordEvent06(View v) {
@@ -68,19 +68,19 @@ public class ActivityExampleCustomEvents extends Activity {
     }
 
     public void onClickRecordEvent08(View v) {
-        Map<String, String> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "yellow");
-        Countly.sharedInstance().recordEvent("Custom event 8", segmentation, 25, 10, 50);
+        Countly.sharedInstance().events().recordEvent("Custom event 8", segmentation, 25, 10, 50);
     }
 
     public void onClickRecordEvent09(View v) {
         //start timed event
-        Countly.sharedInstance().startEvent("Custom event 9");
+        Countly.sharedInstance().events().recordEvent("Custom event 9");
     }
 
     public void onClickRecordEvent10(View v) {
         //stop timed event
-        Countly.sharedInstance().endEvent("Custom event 9");
+        Countly.sharedInstance().events().recordEvent("Custom event 9");
     }
 
     public void onClickRecordEvent12(View v) {
@@ -89,9 +89,9 @@ public class ActivityExampleCustomEvents extends Activity {
     }
 
     public void onClickRecordEvent11(View v) {
-        Map<String, String> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "orange");
-        Countly.sharedInstance().endEvent("Custom event 9", segmentation, 4, 34);
+        Countly.sharedInstance().events().recordEvent("Custom event 9", segmentation, 4, 34);
     }
 
     @Override

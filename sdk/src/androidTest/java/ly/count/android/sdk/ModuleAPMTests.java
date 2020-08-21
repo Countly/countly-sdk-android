@@ -92,9 +92,8 @@ public class ModuleAPMTests {
         customMetrics.put(" a11", 2);
         customMetrics.put("a11 ", 2);
 
-
         ModuleAPM.removeReservedInvalidKeys(customMetrics);
-        Assert.assertEquals(1, customMetrics.size());
+        Assert.assertEquals(4, customMetrics.size());
     }
 
     @Test
@@ -215,17 +214,18 @@ public class ModuleAPMTests {
         mCountly.apm().startTrace("113");
         mCountly.apm().startTrace("114");
         mCountly.apm().startTrace("115");
+        mCountly.apm().startNetworkRequest("aa", "11");
 
-        Assert.assertEquals(5, mCountly.moduleAPM.codeTraces.size());
+        Assert.assertEquals(6, mCountly.moduleAPM.codeTraces.size() + mCountly.moduleAPM.networkTraces.size());
         mCountly.apm().cancelAllTraces();
-        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
+        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size() + mCountly.moduleAPM.networkTraces.size());
 
         mCountly.apm().cancelTrace("115");
         mCountly.apm().cancelTrace("113");
         mCountly.apm().cancelTrace("11");
         mCountly.apm().cancelTrace("114");
         mCountly.apm().cancelTrace("112");
-        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
+        Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size() + mCountly.moduleAPM.networkTraces.size());
     }
 
     @Test

@@ -109,10 +109,16 @@ public class ModuleEvents extends ModuleBase {
 
             for (String k : segmentationString.keySet()) {
                 if (k == null || k.length() == 0) {
-                    throw new IllegalArgumentException("Countly event segmentation key cannot be null or empty");
+                    if (_cly.isLoggingEnabled()) {
+                        Log.e(Countly.TAG, "[ModuleEvents] Countly event segmentation key cannot be null or empty, skipping");
+                    }
+                    continue;
                 }
                 if (segmentationString.get(k) == null) {
-                    throw new IllegalArgumentException("Countly event segmentation value cannot be null");
+                    if (_cly.isLoggingEnabled()) {
+                        Log.e(Countly.TAG, "[ModuleEvents] Countly event segmentation value cannot be null, skipping");
+                    }
+                    continue;
                 }
             }
         }
