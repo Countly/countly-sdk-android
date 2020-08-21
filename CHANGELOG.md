@@ -2,6 +2,7 @@
   * Replacing sha-1 hash with sha-256 hash for requests.
   * Adding apm calls for cancelTrace, cancelAllTraces, recordNetworkTrace
   * Adding option to use Huawei push notifications
+  * making tweaks to APM key validation logic
 
 20.04.4
   * Adding metric override feature

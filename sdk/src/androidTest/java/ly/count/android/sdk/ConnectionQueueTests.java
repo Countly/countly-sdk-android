@@ -495,7 +495,7 @@ public class ConnectionQueueTests {
                         break;
                     case "sdk_version":
                         if(a == 0) {
-                            Assert.assertTrue(pair[1].equals("20.04.4"));
+                            Assert.assertTrue(pair[1].equals("20.04.5"));
                         } else if(a == 1) {
                             Assert.assertTrue(pair[1].equals("123sdf.v-213"));
                         }

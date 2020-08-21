@@ -15,10 +15,10 @@ android {
 
 
     defaultConfig {
-        minSdkVersion 15
+        minSdkVersion 17
         targetSdkVersion 29
         versionCode 1
-        versionName "20.04.4"
+        versionName "20.04.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -57,7 +57,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk-native'
-    publishVersion = '20.04.4'
+    publishVersion = '20.04.5'
     desc = 'Countly Android Native Crash Support'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

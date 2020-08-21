@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("JavadocReference")
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.04.4";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.04.5";
     /**
      * Used as request meta data on every request
      */
