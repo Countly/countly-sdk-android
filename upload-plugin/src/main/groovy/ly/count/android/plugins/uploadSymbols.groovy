@@ -89,7 +89,7 @@ class UploadSymbolsPlugin implements Plugin<Project> {
                 String buildVersion = project.android.defaultConfig.versionName
                 String url = "${ext.server}/i/crash_symbols/upload_symbol"
                 String breakpadVersion = "$ext.dumpSymsPath/dump_syms --version".execute().getText().trim()
-                println breakpadVersion
+                // println breakpadVersion
 
                 def objectsDir = new File("$project.buildDir/$ext.nativeObjectFilesDir")
                 def countlyDirStr = "$project.buildDir/intermediates/countly"
@@ -135,6 +135,7 @@ class UploadSymbolsPlugin implements Plugin<Project> {
                         .addFormDataPart("app_key", ext.app_key)
                         .addFormDataPart("build", buildVersion)
                         .addFormDataPart("note", ext.noteNative)
+                        .addFormDataPart("breakpad_version", breakpadVersion)
                         .build()
                 request = new Request.Builder().url(url).post(formBody).build();
             }
