@@ -60,6 +60,16 @@ public class CountlyPush {
 
     static Integer notificationAccentColor = null;
 
+    /**
+     * Read & connection timeout for rich push media download
+     */
+    static int MEDIA_DOWNLOAD_TIMEOUT = 15000;
+
+    /**
+     * Maximum attempts to download a media for a rich push
+     */
+    static int MEDIA_DOWNLOAD_ATTEMPTS = 3;
+
     @SuppressWarnings("FieldCanBeLocal")
     private static BroadcastReceiver notificationActionReceiver = null, consentReceiver = null;
 
@@ -458,7 +468,7 @@ public class CountlyPush {
                         manager.notify(msg.hashCode(), builder.build());
                     }
                 }
-            });
+            }, 1);
         } else {
             if (android.os.Build.VERSION.SDK_INT > 16) {
                 manager.notify(msg.hashCode(), builder.build());
@@ -585,7 +595,7 @@ public class CountlyPush {
 
                 builder.create().show();
             }
-        });
+        }, 1);
         return Boolean.TRUE;
     }
 
@@ -862,7 +872,7 @@ public class CountlyPush {
         void call(Bitmap bitmap);
     }
 
-    private static void loadImage(final Context context, final Message msg, final BitmapCallback callback) {
+    private static void loadImage(final Context context, final Message msg, final BitmapCallback callback, final int attempt) {
         Utils.runInBackground(new Runnable() {
             @Override public void run() {
                 final Bitmap[] bitmap = new Bitmap[] { null };
@@ -873,8 +883,8 @@ public class CountlyPush {
                     try {
                         connection = (HttpURLConnection) msg.media().openConnection();
                         connection.setDoInput(true);
-                        connection.setConnectTimeout(15000);
-                        connection.setReadTimeout(15000);
+                        connection.setConnectTimeout(MEDIA_DOWNLOAD_TIMEOUT);
+                        connection.setReadTimeout(MEDIA_DOWNLOAD_TIMEOUT);
                         connection.connect();
                         input = connection.getInputStream();
                         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -889,7 +899,10 @@ public class CountlyPush {
                         bitmap[0] = BitmapFactory.decodeByteArray(data, 0, data.length);
                     } catch (Exception e) {
                         System.out.println("Cannot download message media " + e);
-                        bitmap[0] = null;
+                        if (attempt < MEDIA_DOWNLOAD_ATTEMPTS) {
+                            loadImage(context, msg, callback, attempt + 1);
+                            return;
+                        }
                     } finally {
                         if (input != null) {
                             try {
