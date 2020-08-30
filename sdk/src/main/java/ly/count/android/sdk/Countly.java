@@ -2881,7 +2881,7 @@ public class Countly {
             return "NULL VIEW";
         }
         PersistentName ann = view.getClass().getAnnotation(PersistentName.class);
-        String persistentName = ann != null ? ann.value() : moduleViews.persistentNames.get(System.identityHashCode(view));
+        String persistentName = ann != null ? ann.value() : moduleViews.getPersistentNames().get(System.identityHashCode(view));
         return persistentName != null ? persistentName : automaticTrackingShouldUseShortName ?
             view.getClass().getSimpleName() : view.getClass().getName();
     }

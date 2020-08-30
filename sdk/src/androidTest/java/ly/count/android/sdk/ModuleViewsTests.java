@@ -3,8 +3,6 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.res.Configuration;
 
-import androidx.lifecycle.Lifecycle;
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 

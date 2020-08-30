@@ -22,8 +22,6 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.app.Activity;
-import android.app.Application;
-import android.content.Context;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;

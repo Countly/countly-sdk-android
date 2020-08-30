@@ -175,16 +175,14 @@ public class ConnectionQueue {
             dataAvailable = true;
         }
 
-        if (cly_.consent().getConsent(Countly.CountlyFeatureNames.attribution)) {
+        if (cly_.consent().getConsent(Countly.CountlyFeatureNames.attribution) && cly_.isAttributionEnabled) {
             //add attribution data if consent given
-            if (cly_.isAttributionEnabled) {
-                String cachedAdId = store_.getCachedAdvertisingId();
+            String cachedAdId = store_.getCachedAdvertisingId();
 
-                if (!cachedAdId.isEmpty()) {
-                    data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
+            if (!cachedAdId.isEmpty()) {
+                data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
 
-                    dataAvailable = true;
-                }
+                dataAvailable = true;
             }
         }
 

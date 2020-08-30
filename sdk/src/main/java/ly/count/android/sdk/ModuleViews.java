@@ -17,9 +17,9 @@ public class ModuleViews extends ModuleBase {
     // identity of object to start time
     @VisibleForTesting Map<Integer, Integer> identityStartTimes = new HashMap<>();
     // identity of object to custom segmentation
-    Map<Integer, Map<String, Object>> identitySegmentation = new HashMap<>();
+    private Map<Integer, Map<String, Object>> identitySegmentation = new HashMap<>();
     // manually added persistent names
-    Map<Integer, String> persistentNames = new HashMap<>();
+    private Map<Integer, String> persistentNames = new HashMap<>();
 
     private boolean firstView = true;
     final static String VIEW_EVENT_KEY = "[CLY]_view";
@@ -116,7 +116,7 @@ public class ModuleViews extends ModuleBase {
         }
     }
 
-    <V> boolean shouldTrack(V view) {
+    private <V> boolean shouldTrack(V view) {
         if (autoTrackingActivityExceptions != null) {
             //noinspection rawtypes
             for (Class autoTrackingActivityException : autoTrackingActivityExceptions) {
@@ -346,6 +346,10 @@ public class ModuleViews extends ModuleBase {
             automaticViewSegmentation = null;
         }
         autoTrackingActivityExceptions = null;
+    }
+
+    public Map<Integer, String> getPersistentNames() {
+        return this.persistentNames;
     }
 
     public class Views {
