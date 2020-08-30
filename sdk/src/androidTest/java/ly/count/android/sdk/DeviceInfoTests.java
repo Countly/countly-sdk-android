@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
@@ -250,35 +251,6 @@ public class DeviceInfoTests {
         json.put("123", "bb");
         json.put("456", "cc");
         json.put("Test", "aa");
-        final String expected = URLEncoder.encode(json.toString(), "UTF-8");
-        assertNotNull(expected);
-        assertEquals(expected, DeviceInfo.getMetrics(getContext(), metricOverride));
-    }
-
-    @Test
-    public void testGetMetricsWithOverride_2() throws UnsupportedEncodingException, JSONException {
-        Map<String, String> metricOverride = new HashMap<>();
-        metricOverride.put("_device", "a1");
-        metricOverride.put("_os", "b2");
-        metricOverride.put("_os_version", "c3");
-        metricOverride.put("_carrier", "d1");
-        metricOverride.put("_resolution", "d2");
-        metricOverride.put("_density", "d3");
-        metricOverride.put("_locale", "d4");
-        metricOverride.put("_app_version", "d5");
-        metricOverride.put("asd", "123");
-
-        final JSONObject json = new JSONObject();
-        json.put("_device", "a1");
-        json.put("_os", "b2");
-        json.put("_os_version", "c3");
-        json.put("_carrier", "d1");
-        json.put("_resolution", "d2");
-        json.put("_density", "d3");
-        json.put("_locale", "d4");
-        json.put("_app_version", "d5");
-        json.put("asd", "123");
-
         final String expected = URLEncoder.encode(json.toString(), "UTF-8");
         assertNotNull(expected);
         assertEquals(expected, DeviceInfo.getMetrics(getContext(), metricOverride));

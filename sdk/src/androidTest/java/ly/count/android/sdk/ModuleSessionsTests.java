@@ -1,19 +1,16 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -29,7 +26,7 @@ public class ModuleSessionsTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init((new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @After
@@ -39,7 +36,7 @@ public class ModuleSessionsTests {
     @Test
     public void manualSessionBegin(){
         Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
+        CountlyConfig config = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
 
         mCountly.init(config);
         ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
@@ -53,7 +50,7 @@ public class ModuleSessionsTests {
     @Test
     public void manualSessionBeginUpdateEnd() throws InterruptedException {
         Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
+        CountlyConfig config = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
 
         mCountly.init(config);
         ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
@@ -75,7 +72,7 @@ public class ModuleSessionsTests {
     @Test
     public void manualSessionBeginUpdateEndManualDisabled() throws InterruptedException {
         Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
 
         mCountly.init(config);
         ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
@@ -96,7 +93,7 @@ public class ModuleSessionsTests {
     @Test
     public void automaticSessionBeginEndWithManualEnabled() throws InterruptedException {
         Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
+        CountlyConfig config = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
 
         mCountly.init(config);
         ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
@@ -115,18 +112,23 @@ public class ModuleSessionsTests {
     @Test
     public void automaticSessionBeginEndWithManualDisabled() throws InterruptedException {
         Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        Activity activity = mock(Activity.class);
+        CountlyConfig config = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
 
         mCountly.init(config);
         ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(connectionQueue);
 
-        mCountly.onStart(null);
+        mCountly.activityLifecycleCallbacks_.onActivityStarted(activity);
 
         verify(connectionQueue, times(1)).beginSession();
-        Thread.sleep(1000);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            fail("sleep failed");
+        }
 
-        mCountly.onStop();
+        mCountly.activityLifecycleCallbacks_.onActivityStopped(activity);
 
         verify(connectionQueue, times(1)).endSession(1, null);
     }

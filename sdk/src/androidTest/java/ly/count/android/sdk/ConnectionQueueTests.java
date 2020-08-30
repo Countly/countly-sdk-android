@@ -25,6 +25,7 @@ import android.app.Instrumentation;
 import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -63,8 +64,8 @@ public class ConnectionQueueTests {
     public void setUp() {
         Countly.sharedInstance().halt();
         Countly.sharedInstance().setLoggingEnabled(true);
-        freshConnQ = new ConnectionQueue();
-        Countly.sharedInstance().init(new CountlyConfig(getContext(), appKey, "http://countly.coupons.com"));
+        freshConnQ = new ConnectionQueue(Countly.sharedInstance());
+        Countly.sharedInstance().init(new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), appKey, "http://countly.coupons.com"));
         connQ = Countly.sharedInstance().connectionQueue_;
 
         //connQ = new ConnectionQueue();
