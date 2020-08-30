@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import androidx.annotation.CallSuper;
 
 abstract class ModuleBase {
     Countly _cly;
@@ -22,37 +23,38 @@ abstract class ModuleBase {
     void onConfigurationChanged(Configuration newConfig) {
     }
 
-    /**
-     * Called manually by a countly call from the developer
-     */
+    private <F> void checkFragment(F fragment) {
+        if (!(fragment instanceof android.app.Fragment) && !(fragment instanceof androidx.fragment.app.Fragment)) {
+            throw new IllegalArgumentException("fragment must be an android.app.Fragment or an androidx.fragment.app.Fragment");
+        }
+    }
+
+    @CallSuper
+    <F> void onFragmentStarted(F fragment) {
+        checkFragment(fragment);
+    }
+
+    @CallSuper
+    <F> void onFragmentStopped(F fragment) {
+        checkFragment(fragment);
+    }
+
+    void onActivityCreated(Activity activity) {
+    }
+
     void onActivityStarted(Activity activity) {
     }
 
-    /**
-     * Called manually by a countly call from the developer
-     */
-    void onActivityStopped() {
+    void onActivityResumed(Activity activity) {
     }
 
-    void callbackOnActivityCreated(Activity activity) {
+    void onActivityPaused(Activity activity) {
     }
 
-    void callbackOnActivityStarted(Activity activity) {
+    void onActivityStopped(Activity activity) {
     }
 
-    void callbackOnActivityResumed(Activity activity) {
-    }
-
-    void callbackOnActivityPaused(Activity activity) {
-    }
-
-    void callbackOnActivityStopped(Activity activity) {
-    }
-
-    void callbackOnActivitySaveInstanceState(Activity activity) {
-    }
-
-    void callbackOnActivityDestroyed(Activity activity) {
+    void onActivityDestroyed(Activity activity) {
     }
 
     void deviceIdChanged() {

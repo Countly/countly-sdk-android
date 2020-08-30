@@ -144,11 +144,24 @@ public class CountlyConfig {
 
     Map<String, String> metricOverride = null;
 
+    /** @deprecated Use {@link CountlyConfig#CountlyConfig(Application, String, String)} -
+     * an {@link Application} reference is required for automatic lifecycle tracking>} */
+    @Deprecated
     public CountlyConfig() {
     }
 
+    /** @deprecated Use {@link CountlyConfig#CountlyConfig(Application, String, String)} -
+     * an {@link Application} reference is required for automatic lifecycle tracking>} */
+    @Deprecated
     public CountlyConfig(Context context, String appKey, String serverURL) {
         setContext(context);
+        setAppKey(appKey);
+        setServerURL(serverURL);
+    }
+
+    public CountlyConfig(Application application, String appKey, String serverURL) {
+        setApplication(application);
+        setContext(application.getApplicationContext());
         setAppKey(appKey);
         setServerURL(serverURL);
     }

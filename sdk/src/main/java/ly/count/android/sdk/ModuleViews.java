@@ -5,12 +5,22 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ModuleViews extends ModuleBase {
-    private String lastView = null;
-    private int lastViewStart = 0;
+    // viewName to startTime
+    @VisibleForTesting Map<String, Integer> namedViewStartTimes = new HashMap<>();
+    // identity of object to start time
+    @VisibleForTesting Map<Integer, Integer> identityStartTimes = new HashMap<>();
+    // identity of object to custom segmentation
+    Map<Integer, Map<String, Object>> identitySegmentation = new HashMap<>();
+    // manually added persistent names
+    Map<Integer, String> persistentNames = new HashMap<>();
+
     private boolean firstView = true;
     final static String VIEW_EVENT_KEY = "[CLY]_view";
 
@@ -66,50 +76,56 @@ public class ModuleViews extends ModuleBase {
     }
 
     /**
-     * Reports duration of last view
+     * Reports duration of a named view
      */
-    void reportViewDuration() {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleViews] View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "], current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
-        }
-
-        if (lastView != null && lastViewStart <= 0) {
-            if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleViews] Last view start value is not normal: [" + lastViewStart + "]");
-            }
-        }
-
+    @VisibleForTesting
+    void reportNamedViewDuration(String viewName) {
         if (!_cly.getConsent(Countly.CountlyFeatureNames.views)) {
             return;
         }
-
-        //only record view if the view name is not null and if it has a reasonable duration
-        //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
-        //and therefore will be ignored
-        if (lastView != null && lastViewStart > 0) {
-            HashMap<String, Object> segments = new HashMap<>();
-
-            segments.put("name", lastView);
-            segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
-            segments.put("segment", "Android");
-            _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, true);
-            lastView = null;
-            lastViewStart = 0;
+        if (namedViewStartTimes.containsKey(viewName)) {
+            int curr = UtilsTime.currentTimestampSeconds();
+            //noinspection ConstantConditions
+            int start = namedViewStartTimes.get(viewName);
+            int dur = curr - start;
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[ModuleViews] View [" + viewName + "] is getting closed, reporting duration: [" + dur + "], current timestamp: [" + curr + "], view start: [" + start + "]");
+            }
+            recordViewEventEnd(viewName, dur);
+            namedViewStartTimes.remove(viewName);
         }
     }
 
-    boolean isActivityInExceptionList(Activity act) {
-        if (autoTrackingActivityExceptions == null) {
-            return false;
+    @VisibleForTesting
+    <V> void reportIdentityViewDuration(@NonNull V obj) {
+        String viewName = _cly.getViewName(obj);
+        int identity = System.identityHashCode(obj);
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
         }
+        if (identityStartTimes.containsKey(identity)) {
+            int curr = UtilsTime.currentTimestampSeconds();
+            //noinspection ConstantConditions
+            int start = identityStartTimes.get(identity);
+            int dur = curr - start;
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[ModuleViews] View [" + viewName + "] is getting closed, reporting duration: [" + dur + "], current timestamp: [" + curr + "], view start: [" + start + "]");
+            }
+            recordViewEventEnd(viewName, dur);
+            identityStartTimes.remove(identity);
+        }
+    }
 
-        for (Class autoTrackingActivityException : autoTrackingActivityExceptions) {
-            if (act.getClass().equals(autoTrackingActivityException)) {
-                return true;
+    <V> boolean shouldTrack(V view) {
+        if (autoTrackingActivityExceptions != null) {
+            //noinspection rawtypes
+            for (Class autoTrackingActivityException : autoTrackingActivityExceptions) {
+                if (view.getClass().equals(autoTrackingActivityException)) {
+                    return false;
+                }
             }
         }
-
-        return false;
+        return view.getClass().getAnnotation(DoNotTrack.class) == null;
     }
 
     /**
@@ -121,7 +137,8 @@ public class ModuleViews extends ModuleBase {
      * @param customViewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
      * @return Returns link to Countly for call chaining
      */
-    synchronized Countly recordViewInternal(String viewName, Map<String, Object> customViewSegmentation) {
+    @VisibleForTesting
+    synchronized Countly recordNamedView(String viewName, Map<String, Object> customViewSegmentation) {
         if (!_cly.isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
         }
@@ -133,17 +150,46 @@ public class ModuleViews extends ModuleBase {
             return _cly;
         }
 
-        if (_cly.isLoggingEnabled()) {
-            int segmCount = 0;
-            if (customViewSegmentation != null) {
-                segmCount = customViewSegmentation.size();
-            }
-            Log.d(Countly.TAG, "[ModuleViews] Recording view with name: [" + viewName + "], previous view:[" + lastView + "] custom view segment count:[" + segmCount + "]");
+        Map<String, Object> viewSegmentation = new HashMap<>();
+        if (customViewSegmentation != null) {
+            viewSegmentation.putAll(customViewSegmentation);
         }
+        if (automaticViewSegmentation != null) {
+            viewSegmentation.putAll(automaticViewSegmentation);
+        }
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleViews] Recording view with name: [" + viewName + "], custom view segment count:[" + viewSegmentation.size() + "]");
+        }
+        namedViewStartTimes.put(viewName, UtilsTime.currentTimestampSeconds());
+        recordViewEventStart(viewName, customViewSegmentation);
+        return _cly;
+    }
 
-        reportViewDuration();
-        lastView = viewName;
-        lastViewStart = UtilsTime.currentTimestampSeconds();
+    @VisibleForTesting
+    synchronized <V> Countly recordIdentityView(@NonNull V view) {
+        if (!_cly.isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before trackLifecycle");
+        }
+        String viewName = _cly.getViewName(view);
+        int identity = System.identityHashCode(view);
+        Map<String, Object> viewSegmentation = new HashMap<>();
+        if (identitySegmentation.containsKey(identity)) {
+            //noinspection ConstantConditions
+            viewSegmentation.putAll(identitySegmentation.get(identity));
+        }
+        if (automaticViewSegmentation != null) {
+            viewSegmentation.putAll(automaticViewSegmentation);
+        }
+        if (_cly.isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleViews] Recording view with name: [" + viewName + "], custom view segment count:[" + viewSegmentation.size() + "]");
+        }
+        identityStartTimes.put(identity, UtilsTime.currentTimestampSeconds());
+        recordViewEventStart(viewName, viewSegmentation);
+        return _cly;
+    }
+
+    @VisibleForTesting
+    void recordViewEventStart(@NonNull String viewName, @Nullable Map<String, Object> customViewSegmentation) {
 
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
@@ -161,8 +207,15 @@ public class ModuleViews extends ModuleBase {
         }
 
         _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, true);
+    }
 
-        return _cly;
+    @VisibleForTesting
+    void recordViewEventEnd(@NonNull String viewName, int duration) {
+        HashMap<String, Object> segments = new HashMap<>();
+        segments.put("name", viewName);
+        segments.put("dur", String.valueOf(duration));
+        segments.put("segment", "Android");
+        _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, true);
     }
 
     void updateOrientation(int newOrientation) {
@@ -201,34 +254,45 @@ public class ModuleViews extends ModuleBase {
     }
 
     @Override
-    void onActivityStopped() {
-        //report current view duration
-        reportViewDuration();
+    <F> void onFragmentStarted(F fragment) {
+        super.onFragmentStarted(fragment);
+        onViewAppeared(fragment);
+    }
+
+    @Override
+    <F> void onFragmentStopped(F fragment) {
+        super.onFragmentStopped(fragment);
+        onViewDisappeared(fragment);
     }
 
     @Override
     void onActivityStarted(Activity activity) {
+        onViewAppeared(activity);
+    }
+
+    @Override
+    void onActivityStopped(Activity activity) {
+        onViewDisappeared(activity);
+    }
+
+    @VisibleForTesting
+    <V> void onViewAppeared(@NonNull V view) {
         //automatic view tracking
         if (_cly.autoViewTracker) {
-            if (!isActivityInExceptionList(activity)) {
-                String usedActivityName = "NULL ACTIVITY";
-
-                if (activity != null) {
-                    if (_cly.automaticTrackingShouldUseShortName) {
-                        usedActivityName = activity.getClass().getSimpleName();
-                    } else {
-                        usedActivityName = activity.getClass().getName();
-                    }
-                }
-
-                _cly.recordView(usedActivityName, automaticViewSegmentation);
+            if (shouldTrack(view)) {
+                recordIdentityView(view);
             } else {
                 if (_cly.isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
+                    Log.d(Countly.TAG, "[ModuleViews] [onViewAppeared] Ignoring activity because it's in the exception list");
                 }
             }
         }
+        if (view instanceof Activity) {
+            trackOrientation((Activity) view);
+        }
+    }
 
+    private void trackOrientation(@NonNull Activity activity) {
         //orientation tracking
         if (trackOrientationChanges) {
             Integer orient = getOrientationFromActivity(activity);
@@ -236,6 +300,11 @@ public class ModuleViews extends ModuleBase {
                 updateOrientation(orient);
             }
         }
+    }
+
+    @VisibleForTesting
+    <V> void onViewDisappeared(@NonNull V obj) {
+        reportIdentityViewDuration(obj);
     }
 
     /**
@@ -262,7 +331,6 @@ public class ModuleViews extends ModuleBase {
         if (act == null) {
             return null;
         }
-
         Resources resources = act.getResources();
         if (resources != null) {
             return resources.getConfiguration().orientation;
@@ -290,7 +358,6 @@ public class ModuleViews extends ModuleBase {
             if (_cly.isLoggingEnabled()) {
                 Log.i(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
             }
-
             return _cly.autoViewTracker;
         }
 
@@ -301,19 +368,19 @@ public class ModuleViews extends ModuleBase {
          *
          * @param viewName String - name of the view
          * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
          */
         public synchronized Countly recordView(String viewName) {
             return recordView(viewName, null);
         }
 
         /**
-         * Record a view manually, without automatic tracking
-         * or track view that is not automatically tracked
-         * like fragment, Message box or transparent Activity
+         * Record a view manually by name. Only 1 view of each unique name can be recorded at a time.
          *
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
          * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
          */
         public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
             if (!_cly.isInitialized()) {
@@ -323,8 +390,128 @@ public class ModuleViews extends ModuleBase {
             if (_cly.isLoggingEnabled()) {
                 Log.i(Countly.TAG, "[Views] Calling recordView [" + viewName + "]");
             }
+            return recordNamedView(viewName, viewSegmentation);
+        }
 
-            return recordViewInternal(viewName, viewSegmentation);
+        /**
+         * Record a view by identity hashcode.
+         *
+         * @param view The view
+         * @param <V> an arbitrary type. Activity, Fragment, View, etc.
+         * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
+         */
+        public synchronized <V> Countly recordView(@NonNull V view) {
+            return recordView(view, null, null);
+        }
+
+        /**
+         * Record a view by identity hashcode.
+         * @param view The view
+         * @param viewSegmentation segmentation to be associated with this view
+         * @param <V> an arbitrary type. Activity, Fragment, View, etc.
+         * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
+         */
+        public synchronized <V> Countly recordView(@NonNull V view, @Nullable Map<String, Object> viewSegmentation) {
+            return recordView(view, viewSegmentation, null);
+        }
+
+        /**
+         * Record a view by identity hashcode.
+         * @param view The view
+         * @param viewSegmentation segmentation to be associated with this view
+         * @param persistentName a persistent name to be associated wit this view
+         * @param <V> an arbitrary type. Activity, Fragment, View, etc.
+         * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
+         */
+        public synchronized <V> Countly recordView(@NonNull V view, @Nullable Map<String, Object> viewSegmentation, @Nullable String persistentName) {
+            if (!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+            }
+
+            if (!shouldTrack(view)) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Views] View is in exception list or is annotated with"
+                        + " @DoNotTrack. Ignoring...");
+                }
+                return _cly;
+            }
+
+            if (viewSegmentation != null) {
+                addViewSegmentation(view, viewSegmentation);
+            }
+
+            if (persistentName != null) {
+                addViewPersistentName(view, persistentName);
+            }
+
+            if (_cly.isLoggingEnabled()) {
+                Log.i(Countly.TAG, "[Views] Calling recordView [" + _cly.getViewName(view) + "]");
+            }
+            return recordIdentityView(view);
+        }
+
+        /**
+         * Ends the view recording for the provided view name
+         * @param viewName The view's name
+         * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
+         */
+        public synchronized Countly endViewRecording(@NonNull String viewName) {
+            if (!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before endViewRecording");
+            }
+            reportNamedViewDuration(viewName);
+            return _cly;
+        }
+
+        /**
+         * Ends the view recording for the provided view
+         * @param view The view
+         * @param <V> an arbitrary type. Activity, Fragment, View, etc.
+         * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
+         */
+        public synchronized <V> Countly endViewRecording(@NonNull V view) {
+            if (!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly.sharedInstance().init must be called before endViewRecording");
+            }
+            reportIdentityViewDuration(view);
+            return _cly;
+        }
+
+        /**
+         * Adds view segmentation for an arbitrary view
+         * @param view The view
+         * @param viewSegmentation View segmentation to use for view tracking
+         * @param <V> an arbitrary type. Activity, Fragment, View, etc.
+         * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
+         */
+        public synchronized <V> Countly addViewSegmentation(@NonNull V view, @NonNull Map<String, Object> viewSegmentation) {
+            if(!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly is not initialized");
+            }
+            identitySegmentation.put(System.identityHashCode(view), viewSegmentation);
+            return _cly;
+        }
+
+        /**
+         * Adds a persistent name for an arbitrary view
+         * @param view The view
+         * @param persistentName A {@link PersistentName} for the view
+         * @param <V> an arbitrary type. Activity, Fragment, View, etc.
+         * @return Returns link to Countly for call chaining
+         * @throws IllegalStateException If Countly is not initialized
+         */
+        public synchronized <V> Countly addViewPersistentName(@NonNull V view, @NonNull String persistentName) {
+            if(!_cly.isInitialized()) {
+                throw new IllegalStateException("Countly is not initialized");
+            }
+            persistentNames.put(System.identityHashCode(view), persistentName);
+            return _cly;
         }
     }
 }
