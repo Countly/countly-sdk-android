@@ -11,9 +11,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
-import ly.count.android.sdk.DeviceId;
+import ly.count.android.sdk.PersistentName;
 import ly.count.android.sdknative.CountlyNative;
 
+@PersistentName("MainActivity")
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = "CountlyDemoNative";
@@ -41,11 +42,9 @@ public class MainActivity extends AppCompatActivity {
         CountlyConfig config = (new CountlyConfig(appC, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setDeviceId("4432")
                 .setLoggingEnabled(true)
                 .enableCrashReporting()
-                .setViewTracking(false)
+                .setViewTracking(true)
                 .setRequiresConsent(false);
         Countly.sharedInstance().init(config);
-
-        Countly.onCreate(this);
 
         // Example of a call to a native method
         TextView tv = findViewById(R.id.sampleText);
@@ -59,20 +58,6 @@ public class MainActivity extends AppCompatActivity {
                 testCrash();
             }
         });
-    }
-
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
     }
 
     // defined in native-lib.cpp

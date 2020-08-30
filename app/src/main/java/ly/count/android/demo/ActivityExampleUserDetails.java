@@ -5,19 +5,21 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.PersistentName;
 
 @SuppressWarnings("UnusedParameters")
-public class ActivityExampleUserDetails extends Activity {
+@PersistentName("ActivityExampleUserDetails")
+public class ActivityExampleUserDetails extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_user_details);
-        Countly.onCreate(this);
-
     }
 
     public void onClickUserData01(View v) {
@@ -89,25 +91,6 @@ public class ActivityExampleUserDetails extends Activity {
         Countly.userData.pushUniqueValue("skill", "earth");
 
         Countly.userData.save();
-    }
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged (Configuration newConfig){
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
 }
 

@@ -1,12 +1,14 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import ly.count.android.sdk.PersistentName;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -15,15 +17,13 @@ import java.util.Map;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.RemoteConfigCallback;
 
-public class ActivityExampleRemoteConfig extends Activity {
-    Activity activity;
+@PersistentName("ActivityExampleRemoteConfig")
+public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_remote_config);
-        Countly.onCreate(this);
     }
 
     public void onClickRemoteConfigUpdate(View v) {
@@ -130,25 +130,5 @@ public class ActivityExampleRemoteConfig extends Activity {
         Toast t = Toast.makeText(getApplicationContext(), "Stored Remote Config Values: [" + printValues + "]", Toast.LENGTH_LONG);
         t.setGravity(Gravity.BOTTOM, 0,0);
         t.show();
-    }
-
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged (Configuration newConfig){
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
 }

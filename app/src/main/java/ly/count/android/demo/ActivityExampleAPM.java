@@ -1,17 +1,19 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.PersistentName;
 
-public class ActivityExampleAPM extends Activity {
+@PersistentName("ActivityExampleAPM")
+public class ActivityExampleAPM extends AppCompatActivity {
 
     int[] successCodes = new int[]{100, 101, 200, 201, 202, 205, 300, 301, 303, 305};
     int[] failureCodes = new int[]{400, 402, 405, 408, 500, 501, 502, 505};
@@ -23,26 +25,8 @@ public class ActivityExampleAPM extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_apm);
-        Countly.onCreate(this);
 
-    }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop() {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
 
     public void onClickStartTrace_1(View v) {

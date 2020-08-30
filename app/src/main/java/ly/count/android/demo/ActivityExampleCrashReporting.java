@@ -1,21 +1,21 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.PersistentName;
 
 @SuppressWarnings("UnusedParameters")
-public class ActivityExampleCrashReporting extends Activity {
+@PersistentName("ActivityExampleCrashReporting")
+public class ActivityExampleCrashReporting extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_crash_reporting);
-        Countly.onCreate(this);
-
     }
 
     @SuppressWarnings("unused")
@@ -115,25 +115,5 @@ public class ActivityExampleCrashReporting extends Activity {
         } else {
             Utility.AnotherRecursiveCall(3);
         }
-    }
-
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged (Configuration newConfig){
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
 }

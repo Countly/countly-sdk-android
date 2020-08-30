@@ -10,59 +10,79 @@
               android:paddingBottom="@dimen/activity_vertical_margin" >
 
     <Button
-        android:id="@+id/button34"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="onClickViewTrackingDisableAuto"
-        android:text="turn off automatic view reporting" />
+        android:onClick="onClickViewTrackingRecordViewById"
+        android:text="record view by id" />
 
     <Button
-        android:id="@+id/button35"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="onClickViewTrackingEnableAuto"
-        android:text="turn on automatic view reporting" />
-
-    <Button
-        android:text="@string/present_modal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button36"
-        android:enabled="false"/>
-
-    <Button
-        android:text="@string/navigation_controller_push_pop"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button37"
-        android:enabled="false"/>
-
-    <Button
-        android:text="@string/add_exception"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button38"
-        android:enabled="false"/>
-
-    <Button
-        android:text="@string/remove_exception"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button39"
-        android:enabled="false"/>
+        android:onClick="onClickViewTrackingEndById"
+        android:text="end recording view by id" />
 
     <Button
         android:id="@+id/button40"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickViewTrackingRecordView"
-        android:text="record view" />
+        android:text="record view by name" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewTrackingEnd"
+        android:text="end recording view by name" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewTrackingRecordViewByIdWithSegmentation"
+        android:text="by id with custom segmentation" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewTrackingEndByIdWithSegmentation"
+        android:text="end by id with custom seg" />
 
     <Button
         android:id="@+id/button68"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickViewTrackingRecordViewWithSegmentation"
-        android:text="record view with custom segmentation" />
+        android:text="by name with custom segmentation" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickViewTrackingEndWithSegmentation"
+        android:text="end by name with custom seg" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tap fragments below to see fragment tracking"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:id="@+id/fragment_left"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="4"
+            android:onClick="onFragmentClick" />
+
+        <FrameLayout
+            android:id="@+id/fragment_right"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="4"
+            android:onClick="onFragmentClick" />
+
+    </LinearLayout>
 
 </LinearLayout>
