@@ -91,6 +91,10 @@ class UploadSymbolsPlugin implements Plugin<Project> {
                 String breakpadVersion = "$ext.dumpSymsPath/dump_syms --version".execute().getText().trim()
                 // println breakpadVersion
 
+                if (!(breakpadVersion =~ /^\d+\.\d+\+cly$/)) {
+                    breakpadVersion = "0.1+bpd"
+                }
+
                 def objectsDir = new File("$project.buildDir/$ext.nativeObjectFilesDir")
                 def countlyDirStr = "$project.buildDir/intermediates/countly"
                 def countlyDir = new File("$countlyDirStr")
