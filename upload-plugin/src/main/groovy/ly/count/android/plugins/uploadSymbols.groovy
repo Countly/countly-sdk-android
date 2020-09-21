@@ -139,7 +139,7 @@ class UploadSymbolsPlugin implements Plugin<Project> {
                         .addFormDataPart("app_key", ext.app_key)
                         .addFormDataPart("build", buildVersion)
                         .addFormDataPart("note", ext.noteNative)
-                        .addFormDataPart("breakpad_version", breakpadVersion)
+                        .addFormDataPart("sym_tool_ver", breakpadVersion)
                         .build()
                 request = new Request.Builder().url(url).post(formBody).build();
             }
