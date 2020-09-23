@@ -1,15 +1,15 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatActivity;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.messaging.CountlyPush;
 
-public class ActivityExampleDeepLinkB extends Activity {
+public class ActivityExampleDeepLinkB extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

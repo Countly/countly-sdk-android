@@ -21,9 +21,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import ly.count.android.sdk.Countly;
@@ -108,8 +106,6 @@ public class App extends Application {
                 + "PTJ7eeMmX9g/0h"
         };
 
-        Context appC = getApplicationContext();
-
         HashMap<String, String> customHeaderValues = new HashMap<>();
         customHeaderValues.put("foo", "bar");
 
@@ -123,7 +119,7 @@ public class App extends Application {
         metricOverride.put("_carrier", "BoneyK");
 
         Countly.sharedInstance().setLoggingEnabled(true);
-        CountlyConfig config = (new CountlyConfig(appC, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
+        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
             //.enableTemporaryDeviceIdMode()
             .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
             .setRequiresConsent(true).setConsentEnabled(new String[] {

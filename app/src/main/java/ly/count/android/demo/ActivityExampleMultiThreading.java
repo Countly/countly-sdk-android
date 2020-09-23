@@ -1,12 +1,12 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatActivity;
 import ly.count.android.sdk.Countly;
 
-public class ActivityExampleMultiThreading extends Activity {
+public class ActivityExampleMultiThreading extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -1,14 +1,14 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
 import ly.count.android.sdk.Countly;
 
-@SuppressWarnings("UnusedParameters")
-public class ActivityExampleCrashReporting extends Activity {
+@SuppressWarnings({ "UnusedParameters", "ConstantConditions" })
+public class ActivityExampleCrashReporting extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

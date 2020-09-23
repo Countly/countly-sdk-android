@@ -279,12 +279,6 @@ public class CountlyPush {
                 i.putExtra(EXTRA_ACTION_INDEX, index);
                 context.startActivity(i);
             }
-
-            //            final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            //            if (manager != null) {
-            //                Log.d("cly", message.id() + ", code: " + message.hashCode());
-            //                manager.cancel(message.hashCode());
-            //            }
         }
     }
 

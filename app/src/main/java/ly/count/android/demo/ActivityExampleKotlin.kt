@@ -1,11 +1,10 @@
 package ly.count.android.demo
 
-import android.app.Activity
 import android.content.res.Configuration
+import androidx.appcompat.app.AppCompatActivity
 import ly.count.android.sdk.Countly
-import ly.count.android.sdk.ModuleAPM
 
-class ActivityExampleKotlin : Activity() {
+class ActivityExampleKotlin : AppCompatActivity() {
   override fun onStart() {
     super.onStart()
     Countly.sharedInstance().onStart(this);
@@ -26,7 +25,7 @@ class ActivityExampleKotlin : Activity() {
     super.onStop()
   }
 
-  override fun onConfigurationChanged(newConfig: Configuration?) {
+  override fun onConfigurationChanged(newConfig: Configuration) {
     super.onConfigurationChanged(newConfig)
     Countly.sharedInstance().onConfigurationChanged(newConfig);
   }

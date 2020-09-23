@@ -1,22 +1,18 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.CountlyConfig;
-import ly.count.android.sdk.RemoteConfig;
 
 
 @SuppressWarnings("UnusedParameters")
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
     private String demoTag = "CountlyDemo";
 
     @Override

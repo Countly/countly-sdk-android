@@ -1,18 +1,12 @@
 package ly.count.android.demo;
 
-import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.util.Log;
 
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.messaging.CountlyPush;
-
-//import ly.count.android.sdk.messaging.CountlyPush;
 
 /**
  * Demo service explaining Firebase Messaging notifications handling:

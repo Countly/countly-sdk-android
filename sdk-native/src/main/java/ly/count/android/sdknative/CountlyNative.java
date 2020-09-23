@@ -1,9 +1,7 @@
 package ly.count.android.sdknative;
 
 import android.content.Context;
-import android.text.TextUtils;
 import android.util.Log;
-import android.os.Environment;
 import java.io.File;
 
 public class CountlyNative {

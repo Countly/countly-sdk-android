@@ -1,17 +1,17 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 import java.util.Map;
 
 import ly.count.android.sdk.Countly;
 
 @SuppressWarnings({"UnusedParameters", "unused"})
-public class ActivityExampleViewTracking extends Activity {
+public class ActivityExampleViewTracking extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

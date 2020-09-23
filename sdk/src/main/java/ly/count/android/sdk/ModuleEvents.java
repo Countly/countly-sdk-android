@@ -4,7 +4,6 @@ import android.util.Log;
 
 import java.util.HashMap;
 import java.util.Map;
-import ly.count.android.sdk.messaging.CountlyPush;
 import ly.count.android.sdk.messaging.ModulePush;
 
 public class ModuleEvents extends ModuleBase {
