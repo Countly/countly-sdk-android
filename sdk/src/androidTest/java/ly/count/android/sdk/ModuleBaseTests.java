@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.content.res.Configuration;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
@@ -26,7 +27,7 @@ public class ModuleBaseTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init((new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @After

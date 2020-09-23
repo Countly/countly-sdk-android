@@ -22,15 +22,18 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Application;
+import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -94,6 +97,8 @@ public class Countly {
     protected static List<String> publicKeyPinCertificates;
     protected static List<String> certificatePinCertificates;
 
+    boolean autoViewTracker = false;
+
     /**
      * Enum used in Countly.initMessaging() method which controls what kind of
      * app installation it is. Later (in Countly Dashboard or when calling Countly API method),
@@ -152,7 +157,6 @@ public class Countly {
     public static UserData userData;
 
     //view related things
-    boolean autoViewTracker = false;//todo, move to module after "setViewTracking" is removed
     boolean automaticTrackingShouldUseShortName = false;//flag for using short names | todo, move to module after setter is removed
 
     //if set to true, it will automatically download remote configs on module startup
@@ -194,9 +198,172 @@ public class Countly {
     Boolean delayedPushConsent = null;//if this is set, consent for push has to be set before finishing init and sending push changes
     boolean delayedLocationErasure = false;//if location needs to be cleared at the end of init
 
-    private boolean appLaunchDeepLink = true;
+    boolean appLaunchDeepLink = true;
 
     CountlyConfig config_ = null;
+
+    private final ComponentCallbacks componentCallbacks_ = new ComponentCallbacks() {
+        @Override
+        public void onConfigurationChanged(@NonNull Configuration configuration) {
+            if (isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Calling [onConfigurationChanged]");
+            }
+            if (!isInitialized()) {
+                throw new IllegalStateException("init must be called before onConfigurationChanged");
+            }
+
+            for (ModuleBase module : modules) {
+                module.onConfigurationChanged(configuration);
+            }
+        }
+
+        @Override
+        public void onLowMemory() { }
+    };
+
+    private final androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks supportFragmentLifecycleCallbacks_ = new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+
+        @Override
+        public void onFragmentStarted(@NonNull androidx.fragment.app.FragmentManager fm, @NonNull androidx.fragment.app.Fragment f) {
+            if (!fragmentVerify(f, "Started")) {
+                return;
+            }
+            for (ModuleBase module : modules) {
+                module.onFragmentStarted(f);
+            }
+        }
+
+        @Override
+        public void onFragmentStopped(@NonNull androidx.fragment.app.FragmentManager fm, @NonNull androidx.fragment.app.Fragment f) {
+            if (!fragmentVerify(f, "Stopped")) {
+                return;
+            }
+            for (ModuleBase module : modules) {
+                module.onFragmentStopped(f);
+            }
+        }
+    };
+
+    private <F> boolean fragmentVerify(@NonNull F fragment, @NonNull String eventVerb) {
+        if (!isInitialized()) {
+            // do NOT throw, just return false. we cannot reacquire references to all fragment managers to
+            // unregister all callbacks recursively.
+            return false;
+        }
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Countly] onFragment" + eventVerb + ", " + getViewName(fragment));
+        }
+        return true;
+    }
+
+    private android.app.FragmentManager.FragmentLifecycleCallbacks legacyFragmentLifecycleCallbacks = null;
+
+    private void activityVerify(@NonNull android.app.Activity activity, @NonNull String eventVerb) {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly not initialized");
+        }
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Countly] onActivity" + eventVerb + ", " + getViewName(activity));
+        }
+    }
+
+    @VisibleForTesting final Application.ActivityLifecycleCallbacks activityLifecycleCallbacks_ = new Application.ActivityLifecycleCallbacks() {
+
+        @Override
+        public void onActivityCreated(@NonNull android.app.Activity activity, Bundle bundle) {
+            activityVerify(activity, "Created");
+            if (activity instanceof androidx.fragment.app.FragmentActivity) {
+                // This is a support lib Activity. Use supportFragmentManager
+                androidx.fragment.app.FragmentActivity fragmentActivity = (androidx.fragment.app.FragmentActivity) activity;
+                fragmentActivity.getSupportFragmentManager().registerFragmentLifecycleCallbacks(supportFragmentLifecycleCallbacks_, true);
+            } else {
+                // This is not a support lib Activity. Use legacy fragmentManager if we're on a sufficiently new device
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    activity.getFragmentManager().registerFragmentLifecycleCallbacks(legacyFragmentLifecycleCallbacks, true);
+                }
+            }
+            onCreateInternal(activity);
+            for (ModuleBase module : modules) {
+                module.onActivityCreated(activity);
+            }
+        }
+
+        @Override
+        public void onActivityStarted(@NonNull android.app.Activity activity) {
+            activityVerify(activity, "Started");
+            appLaunchDeepLink = false;
+            ++activityCount_;
+            //check if there is an install referrer data
+            String referrer = ReferrerReceiver.getReferrer(context_);
+            if (isLoggingEnabled()) {
+                Log.d(Countly.TAG, "Checking referrer: " + referrer);
+            }
+            if (referrer != null) {
+                connectionQueue_.sendReferrerData(referrer);
+                ReferrerReceiver.deleteReferrer(context_);
+            }
+            if (activityCount_ == 1 && !moduleSessions.manualSessionControlEnabled) {
+                //if we open the first activity
+                //and we are not using manual session control,
+                //begin a session
+                moduleSessions.beginSessionInternal();
+                CrashDetails.inForeground();
+            }
+            calledAtLeastOnceOnStart = true;
+            for (ModuleBase module : modules) {
+                module.onActivityStarted(activity);
+            }
+        }
+
+        @Override
+        public void onActivityResumed(android.app.Activity activity) {
+            activityVerify(activity, "Resumed");
+            for (ModuleBase module : modules) {
+                module.onActivityResumed(activity);
+            }
+        }
+
+        @Override
+        public void onActivityPaused(@NonNull android.app.Activity activity) {
+            activityVerify(activity, "Paused");
+            for (ModuleBase module : modules) {
+                module.onActivityPaused(activity);
+            }
+        }
+
+        @Override
+        public void onActivityStopped(@NonNull android.app.Activity activity) {
+            activityVerify(activity, "Stopped");
+            if (activityCount_ == 0) {
+                throw new IllegalStateException("must call onStart before onStop");
+            }
+
+            --activityCount_;
+            if (activityCount_ == 0) {
+                // if we don't use manual session control
+                // Called when final Activity is stopped.
+                // Sends an end session event to the server, also sends any unsent custom events.
+                if (!moduleSessions.manualSessionControlEnabled) {
+                    moduleSessions.endSessionInternal(null);
+                }
+                CrashDetails.inBackground();
+            }
+            for (ModuleBase module : modules) {
+                module.onActivityStopped(activity);
+            }
+        }
+
+        @Override
+        public void onActivitySaveInstanceState(@NonNull android.app.Activity activity, @NonNull Bundle bundle) { }
+
+        @Override
+        public void onActivityDestroyed(@NonNull android.app.Activity activity) {
+            activityVerify(activity, "Destroyed");
+            for (ModuleBase module : modules) {
+                module.onActivityDestroyed(activity);
+            }
+        }
+    };
 
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
@@ -248,7 +415,7 @@ public class Countly {
     }
 
     private void staticInit(){
-        connectionQueue_ = new ConnectionQueue();
+        connectionQueue_ = new ConnectionQueue(this);
         Countly.userData = new UserData(connectionQueue_);
         startTimerService(timerService_, timerFuture, TIMER_DELAY_IN_SECONDS);
     }
@@ -389,6 +556,10 @@ public class Countly {
 
         if (config.context == null) {
             throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");
+        }
+
+        if (config.application == null) {
+            throw new IllegalArgumentException("Application reference is required");
         }
 
         if (!UtilsNetworking.isValidURL(config.serverURL)) {
@@ -669,97 +840,30 @@ public class Countly {
 
             //set global application listeners
             if (config.application != null) {
-                config.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-                    @Override
-                    public void onActivityCreated(Activity activity, Bundle bundle) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityCreated, " + actName);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    legacyFragmentLifecycleCallbacks = new android.app.FragmentManager.FragmentLifecycleCallbacks() {
+                        @Override
+                        public void onFragmentStarted(android.app.FragmentManager fm, android.app.Fragment f) {
+                            if (!fragmentVerify(f, "Started")) {
+                                return;
+                            }
+                            for (ModuleBase module : modules) {
+                                module.onFragmentStarted(f);
+                            }
                         }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityCreated(activity);
+                        @Override
+                        public void onFragmentStopped(android.app.FragmentManager fm, android.app.Fragment f) {
+                            if (!fragmentVerify(f, "Stopped")) {
+                                return;
+                            }
+                            for (ModuleBase module : modules) {
+                                module.onFragmentStopped(f);
+                            }
                         }
-                    }
-
-                    @Override
-                    public void onActivityStarted(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityStarted, " + actName);
-                        }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityStarted(activity);
-                        }
-                    }
-
-                    @Override
-                    public void onActivityResumed(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityResumed, " + actName);
-                        }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityResumed(activity);
-                        }
-                    }
-
-                    @Override
-                    public void onActivityPaused(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityPaused, " + actName);
-                        }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityPaused(activity);
-                        }
-                    }
-
-                    @Override
-                    public void onActivityStopped(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityStopped, " + actName);
-                        }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityStopped(activity);
-                        }
-                    }
-
-                    @Override
-                    public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivitySaveInstanceState, " + actName);
-                        }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivitySaveInstanceState(activity);
-                        }
-                    }
-
-                    @Override
-                    public void onActivityDestroyed(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityDestroyed, " + actName);
-                        }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityDestroyed(activity);
-                        }
-                    }
-                });
-/*
-                config.application.registerComponentCallbacks(new ComponentCallbacks() {
-                    @Override
-                    public void onConfigurationChanged(Configuration configuration) {
-
-                    }
-
-                    @Override
-                    public void onLowMemory() {
-
-                    }
-                });
- */
+                    };
+                }
+                config.application.registerActivityLifecycleCallbacks(activityLifecycleCallbacks_);
+                config.application.registerComponentCallbacks(componentCallbacks_);
             }
         } else {
             //if this is not the first time we are calling init
@@ -830,6 +934,10 @@ public class Countly {
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
 
+        if (config_ != null && config_.application != null) {
+            config_.application.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks_);
+            config_.application.unregisterComponentCallbacks(componentCallbacks_);
+        }
         staticInit();
     }
 
@@ -843,104 +951,17 @@ public class Countly {
         }
     }
 
-    /**
-     * Tells the Countly SDK that an Activity has started. Since Android does not have an
-     * easy way to determine when an application instance starts and stops, you must call this
-     * method from every one of your Activity's onStart methods for accurate application
-     * session tracking.
-     *
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     */
-    public synchronized void onStart(Activity activity) {
-        if (isLoggingEnabled()) {
-            String activityName = "NULL ACTIVITY PROVIDED";
-            if (activity != null) {
-                activityName = activity.getClass().getSimpleName();
-            }
-            Log.d(Countly.TAG, "Countly onStart called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
-        }
+    /** @deprecated No-op. Activity starts are now tracked automatically */
+    @Deprecated
+    public synchronized void onStart(android.app.Activity activity) { }
 
-        appLaunchDeepLink = false;
-        if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before onStart");
-        }
+    /** @deprecated No-op. Activity stops are now tracked automatically */
+    @Deprecated
+    public synchronized void onStop() { }
 
-        ++activityCount_;
-        if (activityCount_ == 1 && !moduleSessions.manualSessionControlEnabled) {
-            //if we open the first activity
-            //and we are not using manual session control,
-            //begin a session
-
-            moduleSessions.beginSessionInternal();
-        }
-
-        //check if there is an install referrer data
-        String referrer = ReferrerReceiver.getReferrer(context_);
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Checking referrer: " + referrer);
-        }
-        if (referrer != null) {
-            connectionQueue_.sendReferrerData(referrer);
-            ReferrerReceiver.deleteReferrer(context_);
-        }
-
-        CrashDetails.inForeground();
-
-        for (ModuleBase module : modules) {
-            module.onActivityStarted(activity);
-        }
-
-        calledAtLeastOnceOnStart = true;
-    }
-
-    /**
-     * Tells the Countly SDK that an Activity has stopped. Since Android does not have an
-     * easy way to determine when an application instance starts and stops, you must call this
-     * method from every one of your Activity's onStop methods for accurate application
-     * session tracking.
-     *
-     * @throws IllegalStateException if Countly SDK has not been initialized, or if
-     * unbalanced calls to onStart/onStop are detected
-     */
-    public synchronized void onStop() {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Countly onStop called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
-        }
-
-        if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before onStop");
-        }
-        if (activityCount_ == 0) {
-            throw new IllegalStateException("must call onStart before onStop");
-        }
-
-        --activityCount_;
-        if (activityCount_ == 0 && !moduleSessions.manualSessionControlEnabled) {
-            // if we don't use manual session control
-            // Called when final Activity is stopped.
-            // Sends an end session event to the server, also sends any unsent custom events.
-            moduleSessions.endSessionInternal(null);
-        }
-
-        CrashDetails.inBackground();
-
-        for (ModuleBase module : modules) {
-            module.onActivityStopped();
-        }
-    }
-
-    public synchronized void onConfigurationChanged(Configuration newConfig) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [onConfigurationChanged]");
-        }
-        if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before onConfigurationChanged");
-        }
-
-        for (ModuleBase module : modules) {
-            module.onConfigurationChanged(newConfig);
-        }
-    }
+    /** @deprecated No-op. Configuration changes are now tracked automatically */
+    @Deprecated
+    public synchronized void onConfigurationChanged(Configuration newConfig) { }
 
     /**
      * DON'T USE THIS!!!!
@@ -1156,9 +1177,9 @@ public class Countly {
     }
 
     /**
-     * Enable or disable automatic view tracking
+     * Sets automatic view tracking
      *
-     * @param enable boolean for the state of automatic view tracking
+     * @param enable enables automatic view tracking
      * @return Returns link to Countly for call chaining
      * @deprecated use CountlyConfig during init to set this
      */
@@ -1212,7 +1233,7 @@ public class Countly {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
         }
 
-        return moduleViews.recordViewInternal(viewName, viewSegmentation);
+        return moduleViews.recordNamedView(viewName, viewSegmentation);
     }
 
     /**
@@ -1639,7 +1660,12 @@ public class Countly {
         return this;
     }
 
-    public static void onCreate(Activity activity) {
+    /** @deprecated
+     * This is now a no-op. Functionality previously in this function is now called automatically for all Activities */
+    @Deprecated
+    public static void onCreate(android.app.Activity activity) { }
+
+    private void onCreateInternal(android.app.Activity activity) {
         Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
 
         if (sharedInstance().isLoggingEnabled()) {
@@ -1762,7 +1788,7 @@ public class Countly {
      * @param callback callback for the star rating dialog "rate" and "dismiss" events
      * @deprecated call this trough 'Countly.sharedInstance().remoteConfig()'
      */
-    public void showStarRating(Activity activity, final CountlyStarRating.RatingCallback callback) {
+    public void showStarRating(android.app.Activity activity, final CountlyStarRating.RatingCallback callback) {
         if (!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.e(Countly.TAG, "Can't call this function before init has been called");
@@ -2504,7 +2530,7 @@ public class Countly {
      * @return
      * @deprecated use 'Countly.sharedInstance().ratings().showFeedbackPopup'
      */
-    public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final CountlyStarRating.FeedbackRatingCallback feedbackCallback) {
+    public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final android.app.Activity activity, final CountlyStarRating.FeedbackRatingCallback feedbackCallback) {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before showFeedbackPopup");
         }
@@ -2842,7 +2868,21 @@ public class Countly {
         return activityCount_;
     }
 
+    void setActivityCount(int value) {
+        this.activityCount_ = value;
+    }
+
     synchronized boolean getDisableUpdateSessionRequests() {
         return disableUpdateSessionRequests_;
+    }
+
+    <T> String getViewName(T view) {
+        if (view == null) {
+            return "NULL VIEW";
+        }
+        PersistentName ann = view.getClass().getAnnotation(PersistentName.class);
+        String persistentName = ann != null ? ann.value() : moduleViews.getPersistentNames().get(System.identityHashCode(view));
+        return persistentName != null ? persistentName : automaticTrackingShouldUseShortName ?
+            view.getClass().getSimpleName() : view.getClass().getName();
     }
 }

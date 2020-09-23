@@ -1,25 +1,24 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.PersistentName;
 
 @SuppressWarnings("UnusedParameters")
-public class ActivityExampleCustomEvents extends Activity {
+@PersistentName("ActivityExampleCustomEvents")
+public class ActivityExampleCustomEvents extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
-        Countly.onCreate(this);
-
     }
 
     public void onClickRecordEvent01(View v) {
@@ -92,25 +91,5 @@ public class ActivityExampleCustomEvents extends Activity {
         Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "orange");
         Countly.sharedInstance().events().recordEvent("Custom event 9", segmentation, 4, 34);
-    }
-
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged (Configuration newConfig){
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
 }

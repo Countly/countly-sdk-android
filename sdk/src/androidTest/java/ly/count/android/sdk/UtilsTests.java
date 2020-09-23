@@ -55,15 +55,6 @@ public class UtilsTests {
     }
 
     @Test
-    public void testAPI() {
-        Assert.assertTrue(Utils.API(28));
-        Assert.assertTrue(Utils.API(27));
-        Assert.assertTrue(Utils.API(15));
-
-        Assert.assertFalse(Utils.API(32));
-    }
-
-    @Test
     public void removeKeysFromMapNullBoth(){
         Map<String, Object> res = Utils.removeKeysFromMap(null, null);
         Assert.assertNull(res);

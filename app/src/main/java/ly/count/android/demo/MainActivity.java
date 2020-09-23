@@ -1,30 +1,25 @@
 package ly.count.android.demo;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.CountlyConfig;
-import ly.count.android.sdk.RemoteConfig;
-
+import ly.count.android.sdk.PersistentName;
 
 @SuppressWarnings("UnusedParameters")
-public class MainActivity extends Activity {
+@PersistentName("MainActivity")
+public class MainActivity extends AppCompatActivity {
     private String demoTag = "CountlyDemo";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Countly.onCreate(this);
     }
 
     public void onClickButtonCustomEvents(View v) {
@@ -76,25 +71,4 @@ public class MainActivity extends Activity {
         Countly.sharedInstance().setCustomCrashSegments(data);
         Countly.sharedInstance().enableCrashReporting();
     }
-
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged (Configuration newConfig){
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
-    }
-
 }

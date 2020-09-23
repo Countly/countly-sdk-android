@@ -425,7 +425,7 @@ public class ModuleAPM extends ModuleBase {
      * @param activity
      */
     @Override
-    void callbackOnActivityResumed(Activity activity) {
+    void onActivityResumed(Activity activity) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Apm] Calling 'callbackOnActivityResumed', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
         }
@@ -448,7 +448,7 @@ public class ModuleAPM extends ModuleBase {
      * @param activity
      */
     @Override
-    void callbackOnActivityStopped(Activity activity) {
+    void onActivityStopped(Activity activity) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
         }

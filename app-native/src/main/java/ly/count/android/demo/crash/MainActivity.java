@@ -1,6 +1,5 @@
 package ly.count.android.demo.crash;
 
-import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -9,17 +8,13 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.CountlyConfig;
-import ly.count.android.sdk.DeviceId;
+import ly.count.android.sdk.PersistentName;
 import ly.count.android.sdknative.CountlyNative;
 
+@PersistentName("MainActivity")
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = "CountlyDemoNative";
-
-    final String COUNTLY_SERVER_URL = "https://try.count.ly";
-    final String COUNTLY_APP_KEY = "xxxxxxx";
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -35,18 +30,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //init countly
-        Context appC = getApplicationContext();
-
-        CountlyConfig config = (new CountlyConfig(appC, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setDeviceId("4432")
-                .setLoggingEnabled(true)
-                .enableCrashReporting()
-                .setViewTracking(false)
-                .setRequiresConsent(false);
-        Countly.sharedInstance().init(config);
-
-        Countly.onCreate(this);
-
         // Example of a call to a native method
         TextView tv = findViewById(R.id.sampleText);
         tv.setText(stringFromJNI());
@@ -59,20 +42,6 @@ public class MainActivity extends AppCompatActivity {
                 testCrash();
             }
         });
-    }
-
-    @Override
-    public void onStart()
-    {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop()
-    {
-        Countly.sharedInstance().onStop();
-        super.onStop();
     }
 
     // defined in native-lib.cpp

@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.After;
@@ -35,7 +36,7 @@ public class ModuleCrashTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         connectionQueue = mock(ConnectionQueue.class);
@@ -59,7 +60,7 @@ public class ModuleCrashTests {
         };
 
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.setCrashFilterCallback(callback);
 
         countly.init(cConfig);
@@ -70,7 +71,7 @@ public class ModuleCrashTests {
     @Test
     public void crashFilterTest() {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.setCrashFilterCallback(new CrashFilterCallback() {
             @Override
             public boolean filterCrash(String crash) {
@@ -111,7 +112,7 @@ public class ModuleCrashTests {
     public void setCustomCrashSegment() {
         CrashDetails.customSegments = null;
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
 
         Map<String, Object> segmIn = CrashDetails.customSegments;
         Assert.assertTrue(segmIn == null || segmIn.size() == 0);

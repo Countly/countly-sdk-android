@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.Assert;
@@ -27,7 +28,7 @@ public class CountlyConfigTests {
 
     @Test
     public void constructor(){
-        CountlyConfig config = new CountlyConfig(getContext(), "Som345345", "fsdf7349374");
+        CountlyConfig config = new CountlyConfig((TestApplication) ApplicationProvider.getApplicationContext(), "Som345345", "fsdf7349374");
 
         assertDefaultValues(config, false);
     }
@@ -225,6 +226,7 @@ public class CountlyConfigTests {
             Assert.assertNull(config.context);
             Assert.assertNull(config.serverURL);
             Assert.assertNull(config.appKey);
+            Assert.assertNull(config.application);
         }
 
         Assert.assertNull(config.countlyStore);
@@ -266,7 +268,6 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.starRatingDialogIsCancellable);
         Assert.assertFalse(config.starRatingShownAutomatically);
         Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
-        Assert.assertNull(config.application);
         Assert.assertFalse(config.recordAppStartTime);
         Assert.assertFalse(config.disableLocation);
         Assert.assertNull(config.locationCountyCode);

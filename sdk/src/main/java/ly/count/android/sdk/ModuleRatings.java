@@ -553,7 +553,7 @@ public class ModuleRatings extends ModuleBase {
     }
 
     @Override
-    void callbackOnActivityResumed(Activity activity) {
+    void onActivityResumed(Activity activity) {
         if (showStarRatingDialogOnFirstActivity) {
             CountlyStore cs = _cly.connectionQueue_.getCountlyStore();
             StarRatingPreferences srp = loadStarRatingPreferences(cs);
