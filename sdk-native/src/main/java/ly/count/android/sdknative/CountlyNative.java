@@ -47,6 +47,10 @@ public class CountlyNative {
     public static void crash() {
         testCrash();
     }
+
+    public static native String getBreakpadVersion();
+    public static native String getBreakpadChecksum();
+
     private static native int init(String dumpFileDir);
     private static native int testCrash();
 }
