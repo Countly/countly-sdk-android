@@ -425,9 +425,7 @@ public class CountlyPush {
         builder.setAutoCancel(true)
             .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, 0));
 
-        if (android.os.Build.VERSION.SDK_INT > 16) {
-            builder.setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
-        }
+        builder.setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
 
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
@@ -435,9 +433,7 @@ public class CountlyPush {
             broadcast = new Intent(NOTIFICATION_BROADCAST);
             broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
-            if (android.os.Build.VERSION.SDK_INT > 16) {
-                builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, 0));
-            }
+            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, 0));
         }
 
         if (msg.sound() != null) {
@@ -452,21 +448,17 @@ public class CountlyPush {
             loadImage(context, msg, new BitmapCallback() {
                 @Override
                 public void call(Bitmap bitmap) {
-                    if (android.os.Build.VERSION.SDK_INT > 16) {
-                        if (bitmap != null) {
-                            builder.setStyle(new Notification.BigPictureStyle()
-                                .bigPicture(bitmap)
-                                .setBigContentTitle(msg.title())
-                                .setSummaryText(msg.message()));
-                        }
-                        manager.notify(msg.hashCode(), builder.build());
+                    if (bitmap != null) {
+                        builder.setStyle(new Notification.BigPictureStyle()
+                            .bigPicture(bitmap)
+                            .setBigContentTitle(msg.title())
+                            .setSummaryText(msg.message()));
                     }
+                    manager.notify(msg.hashCode(), builder.build());
                 }
             }, 1);
         } else {
-            if (android.os.Build.VERSION.SDK_INT > 16) {
-                manager.notify(msg.hashCode(), builder.build());
-            }
+            manager.notify(msg.hashCode(), builder.build());
         }
 
         return Boolean.TRUE;
