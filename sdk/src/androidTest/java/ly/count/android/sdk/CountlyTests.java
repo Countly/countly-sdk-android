@@ -633,8 +633,9 @@ public class CountlyTests {
         final EventQueue mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
 
+        //create a spied countly class
         final Countly countly = spy(mCountly);
-        countly.moduleEvents._cly = countly;
+        countly.moduleEvents = new ModuleEvents(countly, countly.config_);
 
         doNothing().when(countly).sendEventsIfNeeded();
         doReturn(true).when(countly).isInitialized();

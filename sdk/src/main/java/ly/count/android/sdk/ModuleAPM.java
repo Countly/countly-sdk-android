@@ -461,11 +461,13 @@ public class ModuleAPM extends ModuleBase {
          * @param traceKey key by which this action is identified
          */
         public void startTrace(String traceKey) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Apm] Calling 'startTrace' with key:[" + traceKey + "]");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'startTrace' with key:[" + traceKey + "]");
+                }
 
-            startTraceInternal(traceKey);
+                startTraceInternal(traceKey);
+            }
         }
 
         /**
@@ -474,28 +476,34 @@ public class ModuleAPM extends ModuleBase {
          * @param traceKey key by which this action is identified
          */
         public void endTrace(String traceKey, Map<String, Integer> customMetrics) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
+                }
 
-            endTraceInternal(traceKey, customMetrics);
+                endTraceInternal(traceKey, customMetrics);
+            }
         }
 
         public void cancelTrace(String traceKey) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Apm] Calling 'cancelTrace' with key:[" + traceKey + "]");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'cancelTrace' with key:[" + traceKey + "]");
+                }
 
-            cancelTraceInternal(traceKey);
+                cancelTraceInternal(traceKey);
+            }
         }
 
         public void cancelAllTraces() {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Apm] Calling 'cancelAllTraces'");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'cancelAllTraces'");
+                }
 
-            cancelAllTracesInternal();
-            clearNetworkTraces();
+                cancelAllTracesInternal();
+                clearNetworkTraces();
+            }
         }
 
         /**
@@ -506,11 +514,13 @@ public class ModuleAPM extends ModuleBase {
          * for the same trace. This helps to distinguish them.
          */
         public void startNetworkRequest(String networkTraceKey, String uniqueId) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Apm] Calling 'startNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'startNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
+                }
 
-            startNetworkRequestInternal(networkTraceKey, uniqueId);
+                startNetworkRequestInternal(networkTraceKey, uniqueId);
+            }
         }
 
         /**
@@ -524,11 +534,13 @@ public class ModuleAPM extends ModuleBase {
          * @param responsePayloadSize received response payload size in bytes
          */
         public void endNetworkRequest(String networkTraceKey, String uniqueId, int responseCode, int requestPayloadSize, int responsePayloadSize) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Apm] Calling 'endNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'endNetworkRequest' with key:[" + networkTraceKey + "], uniqueID:[" + uniqueId + "]");
+                }
 
-            endNetworkRequestInternal(networkTraceKey, uniqueId, responseCode, requestPayloadSize, responsePayloadSize);
+                endNetworkRequestInternal(networkTraceKey, uniqueId, responseCode, requestPayloadSize, responsePayloadSize);
+            }
         }
 
         /**
@@ -542,11 +554,13 @@ public class ModuleAPM extends ModuleBase {
          * @param requestEndTimestampMs network request end timestamp in milliseconds
          */
         public void recordNetworkTrace(String networkTraceKey, int responseCode, int requestPayloadSize, int responsePayloadSize, long requestStartTimestampMs, long requestEndTimestampMs) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Apm] Calling 'recordNetworkTrace' with key:[" + networkTraceKey + "]");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'recordNetworkTrace' with key:[" + networkTraceKey + "]");
+                }
 
-            recordNetworkRequestInternal(networkTraceKey, responseCode, requestPayloadSize, responsePayloadSize, requestStartTimestampMs, requestEndTimestampMs);
+                recordNetworkRequestInternal(networkTraceKey, responseCode, requestPayloadSize, responsePayloadSize, requestStartTimestampMs, requestEndTimestampMs);
+            }
         }
     }
 }

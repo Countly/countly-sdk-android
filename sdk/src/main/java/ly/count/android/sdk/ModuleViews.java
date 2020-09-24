@@ -286,12 +286,14 @@ public class ModuleViews extends ModuleBase {
          *
          * @return boolean - true if enabled, false if disabled
          */
-        public synchronized boolean isAutomaticViewTrackingEnabled() {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
-            }
+        public boolean isAutomaticViewTrackingEnabled() {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
+                }
 
-            return _cly.autoViewTracker;
+                return _cly.autoViewTracker;
+            }
         }
 
         /**
@@ -302,8 +304,10 @@ public class ModuleViews extends ModuleBase {
          * @param viewName String - name of the view
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordView(String viewName) {
-            return recordView(viewName, null);
+        public Countly recordView(String viewName) {
+            synchronized (_cly) {
+                return recordView(viewName, null);
+            }
         }
 
         /**
@@ -315,16 +319,18 @@ public class ModuleViews extends ModuleBase {
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
-            if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
-            }
+        public Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                if (!_cly.isInitialized()) {
+                    throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+                }
 
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Views] Calling recordView [" + viewName + "]");
-            }
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Views] Calling recordView [" + viewName + "]");
+                }
 
-            return recordViewInternal(viewName, viewSegmentation);
+                return recordViewInternal(viewName, viewSegmentation);
+            }
         }
     }
 }

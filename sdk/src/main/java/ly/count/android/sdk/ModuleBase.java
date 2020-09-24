@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.res.Configuration;
 
 abstract class ModuleBase {
-    Countly _cly;
+    final Countly _cly;
 
     ModuleBase(Countly cly) {
         _cly = cly;

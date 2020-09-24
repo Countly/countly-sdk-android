@@ -273,24 +273,26 @@ public class ModuleCrash extends ModuleBase {
          * @param record String a bread crumb for the crash report
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly addCrashBreadcrumb(String record) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Crashes] Adding crash breadcrumb");
-            }
-
-            if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
-                return _cly;
-            }
-
-            if (record == null || record.isEmpty()) {
+        public Countly addCrashBreadcrumb(String record) {
+            synchronized (_cly) {
                 if (_cly.isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[Crashes] Can't add a null or empty crash breadcrumb");
+                    Log.i(Countly.TAG, "[Crashes] Adding crash breadcrumb");
                 }
+
+                if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
+                    return _cly;
+                }
+
+                if (record == null || record.isEmpty()) {
+                    if (_cly.isLoggingEnabled()) {
+                        Log.e(Countly.TAG, "[Crashes] Can't add a null or empty crash breadcrumb");
+                    }
+                    return _cly;
+                }
+
+                CrashDetails.addLog(record);
                 return _cly;
             }
-
-            CrashDetails.addLog(record);
-            return _cly;
         }
 
         /**
@@ -299,8 +301,10 @@ public class ModuleCrash extends ModuleBase {
          * @param exception Exception to log
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordHandledException(Exception exception) {
-            return recordExceptionInternal(exception, true, null);
+        public Countly recordHandledException(Exception exception) {
+            synchronized (_cly) {
+                return recordExceptionInternal(exception, true, null);
+            }
         }
 
         /**
@@ -309,8 +313,10 @@ public class ModuleCrash extends ModuleBase {
          * @param exception Throwable to log
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordHandledException(Throwable exception) {
-            return recordExceptionInternal(exception, true, null);
+        public Countly recordHandledException(Throwable exception) {
+            synchronized (_cly) {
+                return recordExceptionInternal(exception, true, null);
+            }
         }
 
         /**
@@ -319,8 +325,10 @@ public class ModuleCrash extends ModuleBase {
          * @param exception Exception to log
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordUnhandledException(Exception exception) {
-            return recordExceptionInternal(exception, false, null);
+        public Countly recordUnhandledException(Exception exception) {
+            synchronized (_cly) {
+                return recordExceptionInternal(exception, false, null);
+            }
         }
 
         /**
@@ -329,8 +337,10 @@ public class ModuleCrash extends ModuleBase {
          * @param exception Throwable to log
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordUnhandledException(Throwable exception) {
-            return recordExceptionInternal(exception, false, null);
+        public Countly recordUnhandledException(Throwable exception) {
+            {
+                return recordExceptionInternal(exception, false, null);
+            }
         }
 
         /**
@@ -339,8 +349,10 @@ public class ModuleCrash extends ModuleBase {
          * @param exception Throwable to log
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordHandledException(final Throwable exception, final Map<String, Object> customSegmentation) {
-            return recordExceptionInternal(exception, true, customSegmentation);
+        public Countly recordHandledException(final Throwable exception, final Map<String, Object> customSegmentation) {
+            synchronized (_cly) {
+                return recordExceptionInternal(exception, true, customSegmentation);
+            }
         }
 
         /**
@@ -349,8 +361,10 @@ public class ModuleCrash extends ModuleBase {
          * @param exception Throwable to log
          * @return Returns link to Countly for call chaining
          */
-        public synchronized Countly recordUnhandledException(final Throwable exception, final Map<String, Object> customSegmentation) {
-            return recordExceptionInternal(exception, false, customSegmentation);
+        public Countly recordUnhandledException(final Throwable exception, final Map<String, Object> customSegmentation) {
+            synchronized (_cly) {
+                return recordExceptionInternal(exception, false, customSegmentation);
+            }
         }
     }
 }

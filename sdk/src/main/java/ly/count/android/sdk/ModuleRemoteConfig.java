@@ -261,24 +261,28 @@ public class ModuleRemoteConfig extends ModuleBase {
         /**
          * Clear all stored remote config_ values
          */
-        public synchronized void clearStoredValues() {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[RemoteConfig] Calling 'clearStoredValues'");
-            }
+        public void clearStoredValues() {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[RemoteConfig] Calling 'clearStoredValues'");
+                }
 
-            clearValueStore();
+                clearValueStore();
+            }
         }
 
-        public synchronized Map<String, Object> getAllValues() {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[RemoteConfig] Calling 'getAllValues'");
-            }
+        public Map<String, Object> getAllValues() {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[RemoteConfig] Calling 'getAllValues'");
+                }
 
-            if (!_cly.anyConsentGiven()) {
-                return null;
-            }
+                if (!_cly.anyConsentGiven()) {
+                    return null;
+                }
 
-            return getAllRemoteConfigValuesInternal();
+                return getAllRemoteConfigValuesInternal();
+            }
         }
 
         /**
@@ -288,15 +292,17 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @return
          */
         public Object getValueForKey(String key) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey, " + key);
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey, " + key);
+                }
 
-            if (!_cly.anyConsentGiven()) {
-                return null;
-            }
+                if (!_cly.anyConsentGiven()) {
+                    return null;
+                }
 
-            return getValue(key);
+                return getValue(key);
+            }
         }
 
         /**
@@ -306,20 +312,22 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param callback
          */
         public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
-            }
-
-            if (!_cly.anyConsentGiven()) {
-                if (callback != null) {
-                    callback.callback("No consent given");
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
                 }
-                return;
+
+                if (!_cly.anyConsentGiven()) {
+                    if (callback != null) {
+                        callback.callback("No consent given");
+                    }
+                    return;
+                }
+                if (keysToExclude == null && _cly.isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+                }
+                updateRemoteConfigValues(null, keysToExclude, _cly.connectionQueue_, false, callback);
             }
-            if (keysToExclude == null && _cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
-            }
-            updateRemoteConfigValues(null, keysToExclude, _cly.connectionQueue_, false, callback);
         }
 
         /**
@@ -329,19 +337,21 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param callback
          */
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
-            }
-            if (!_cly.anyConsentGiven()) {
-                if (callback != null) {
-                    callback.callback("No consent given");
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
                 }
-                return;
+                if (!_cly.anyConsentGiven()) {
+                    if (callback != null) {
+                        callback.callback("No consent given");
+                    }
+                    return;
+                }
+                if (keysToInclude == null && _cly.isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+                }
+                updateRemoteConfigValues(keysToInclude, null, _cly.connectionQueue_, false, callback);
             }
-            if (keysToInclude == null && _cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
-            }
-            updateRemoteConfigValues(keysToInclude, null, _cly.connectionQueue_, false, callback);
         }
 
         /**
@@ -350,15 +360,17 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param callback
          */
         public void update(RemoteConfigCallback callback) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig");
-            }
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig");
+                }
 
-            if (!_cly.anyConsentGiven()) {
-                return;
-            }
+                if (!_cly.anyConsentGiven()) {
+                    return;
+                }
 
-            updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, callback);
+                updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, callback);
+            }
         }
     }
 }

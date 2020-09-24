@@ -71,65 +71,71 @@ public class ModuleSessions extends ModuleBase {
     }
 
     public class Sessions {
-        public synchronized void beginSession() {
-            if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before beginSession");
-            }
-
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
-            }
-
-            if (!manualSessionControlEnabled) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[Sessions] 'beginSession' will be ignored since manual session control is not enabled");
-                    return;
+        public void beginSession() {
+            synchronized (_cly) {
+                if (!_cly.isInitialized()) {
+                    throw new IllegalStateException("Countly.sharedInstance().init must be called before beginSession");
                 }
-            }
 
-            beginSessionInternal();
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                }
+
+                if (!manualSessionControlEnabled) {
+                    if (_cly.isLoggingEnabled()) {
+                        Log.w(Countly.TAG, "[Sessions] 'beginSession' will be ignored since manual session control is not enabled");
+                        return;
+                    }
+                }
+
+                beginSessionInternal();
+            }
         }
 
-        public synchronized void updateSession() {
-            if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before updateSession");
-            }
-
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
-            }
-
-            if (!manualSessionControlEnabled) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[Sessions] 'updateSession' will be ignored since manual session control is not enabled");
-                    return;
+        public void updateSession() {
+            synchronized (_cly) {
+                if (!_cly.isInitialized()) {
+                    throw new IllegalStateException("Countly.sharedInstance().init must be called before updateSession");
                 }
-            }
 
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Sessions] Calling 'updateSession'");
-            }
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                }
 
-            updateSessionInternal();
+                if (!manualSessionControlEnabled) {
+                    if (_cly.isLoggingEnabled()) {
+                        Log.w(Countly.TAG, "[Sessions] 'updateSession' will be ignored since manual session control is not enabled");
+                        return;
+                    }
+                }
+
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Sessions] Calling 'updateSession'");
+                }
+
+                updateSessionInternal();
+            }
         }
 
-        public synchronized void endSession() {
-            if (!_cly.isInitialized()) {
-                throw new IllegalStateException("Countly.sharedInstance().init must be called before endSession");
-            }
-
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
-            }
-
-            if (!manualSessionControlEnabled) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[Sessions] 'endSession' will be ignored since manual session control is not enabled");
-                    return;
+        public void endSession() {
+            synchronized (_cly) {
+                if (!_cly.isInitialized()) {
+                    throw new IllegalStateException("Countly.sharedInstance().init must be called before endSession");
                 }
-            }
 
-            endSessionInternal(null);
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                }
+
+                if (!manualSessionControlEnabled) {
+                    if (_cly.isLoggingEnabled()) {
+                        Log.w(Countly.TAG, "[Sessions] 'endSession' will be ignored since manual session control is not enabled");
+                        return;
+                    }
+                }
+
+                endSessionInternal(null);
+            }
         }
     }
 }

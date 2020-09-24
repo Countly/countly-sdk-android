@@ -573,7 +573,6 @@ public class ModuleRatings extends ModuleBase {
     }
 
     public class Ratings {
-
         /**
          * Record user rating manually without showing any message dialog.
          *
@@ -583,16 +582,18 @@ public class ModuleRatings extends ModuleBase {
          * @param comment comment set by the user
          * @param userCanBeContacted set true if the user wants you to contact him
          */
-        public synchronized void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Ratings] Calling recordManualRating");
-            }
+        public void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Ratings] Calling recordManualRating");
+                }
 
-            if (widgetId == null || widgetId.isEmpty()) {
-                throw new IllegalStateException("A valid widgetID must be provided. The current one is either null or empty");
-            }
+                if (widgetId == null || widgetId.isEmpty()) {
+                    throw new IllegalStateException("A valid widgetID must be provided. The current one is either null or empty");
+                }
 
-            recordManualRatingInternal(widgetId, rating, email, comment, userCanBeContacted);
+                recordManualRatingInternal(widgetId, rating, email, comment, userCanBeContacted);
+            }
         }
 
         /**
@@ -601,12 +602,14 @@ public class ModuleRatings extends ModuleBase {
          * @param widgetId ID that identifies this dialog
          * @return
          */
-        public synchronized void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Ratings] Calling showFeedbackPopup");
-            }
+        public void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Ratings] Calling showFeedbackPopup");
+                }
 
-            showFeedbackPopupInternal(widgetId, closeButtonText, activity, _cly, _cly.connectionQueue_, callback);
+                showFeedbackPopupInternal(widgetId, closeButtonText, activity, _cly, _cly.connectionQueue_, callback);
+            }
         }
 
         /**
@@ -615,16 +618,18 @@ public class ModuleRatings extends ModuleBase {
          * @param activity the activity that will own the dialog
          * @param callback callback for the star rating dialog "rate" and "dismiss" events
          */
-        public synchronized void showStarRating(Activity activity, StarRatingCallback callback) {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Ratings] Calling showStarRating");
-            }
+        public void showStarRating(Activity activity, StarRatingCallback callback) {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Ratings] Calling showStarRating");
+                }
 
-            if (!_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
-                return;
-            }
+                if (!_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
+                    return;
+                }
 
-            showStarRatingInternal(activity, _cly.connectionQueue_.getCountlyStore(), callback);
+                showStarRatingInternal(activity, _cly.connectionQueue_.getCountlyStore(), callback);
+            }
         }
 
         /**
@@ -632,38 +637,44 @@ public class ModuleRatings extends ModuleBase {
          *
          * @return
          */
-        public synchronized int getCurrentVersionsSessionCount() {
-            int sessionCount = getCurrentVersionsSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
+        public int getCurrentVersionsSessionCount() {
+            synchronized (_cly) {
+                int sessionCount = getCurrentVersionsSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
 
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Ratings] Getting star rating current version session count: [" + sessionCount + "]");
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Ratings] Getting star rating current version session count: [" + sessionCount + "]");
+                }
+
+                return sessionCount;
             }
-
-            return sessionCount;
         }
 
         /**
          * Set the automatic star rating session count back to 0
          */
-        public synchronized void clearAutomaticStarRatingSessionCount() {
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Ratings] Clearing star rating session count");
-            }
+        public void clearAutomaticStarRatingSessionCount() {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Ratings] Clearing star rating session count");
+                }
 
-            clearAutomaticStarRatingSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
+                clearAutomaticStarRatingSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
+            }
         }
 
         /**
          * Returns the session limit set for automatic star rating
          */
         public int getAutomaticStarRatingSessionLimit() {
-            int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.connectionQueue_.getCountlyStore());
+            synchronized (_cly) {
+                int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.connectionQueue_.getCountlyStore());
 
-            if (_cly.isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Ratings] Getting automatic star rating session limit: [" + sessionLimit + "]");
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Ratings] Getting automatic star rating session limit: [" + sessionLimit + "]");
+                }
+
+                return sessionLimit;
             }
-
-            return sessionLimit;
         }
     }
 }
