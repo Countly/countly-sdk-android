@@ -388,6 +388,10 @@ public class ModuleAPM extends ModuleBase {
         boolean goingToBackground = (previousCount == 1 && newCount == 0);
         boolean goingToForeground = (previousCount == 0 && newCount == 1);
 
+        if (_cly.isLoggingEnabled()) {
+            Log.v(Countly.TAG, "[ModuleAPM] calculateAppRunningTimes, toBG[" + goingToBackground + "] toFG[" + goingToForeground + "]");
+        }
+
         if (goingToBackground || goingToForeground) {
             long currentTimeMs = UtilsTime.currentTimestampMs();
 
