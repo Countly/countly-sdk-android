@@ -802,7 +802,7 @@ public class CountlyPush {
 
     /**
      * Returns which messaging mode was used in the previous init
-     * -1 - no data / no init has hapened
+     * -1 - no data / no init has happened
      *  0 - test mode
      *  1 - production mode
      */

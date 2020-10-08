@@ -41,9 +41,6 @@ import java.util.TimeZone;
 /**
  * This class provides several static methods to retrieve information about
  * the current device and operating environment.
- *
- * It is important to call setDeviceID early, before logging any session or custom
- * event data.
  */
 class DeviceInfo {
     /**
@@ -222,6 +219,23 @@ class DeviceInfo {
     }
 
     /**
+     * Returns what kind of device this is. The potential values are:
+     * ["console", "mobile", "tablet", "smarttv", "wearable", "embedded", "desktop"]
+     * Currently the Android SDK differentiates between ["mobile", "tablet", "smarttv"]
+     */
+    private static String getDeviceType(final Context context) {
+        if(Utils.isDeviceTv(context)) {
+            return "smarttv";
+        }
+
+        if(Utils.isDeviceTablet(context)){
+            return "tablet";
+        }
+
+        return "mobile";
+    }
+
+    /**
      * Returns a URL-encoded JSON string containing the device metrics
      * to be associated with a begin session event.
      * See the following link for more info:
@@ -240,7 +254,8 @@ class DeviceInfo {
             "_locale", getLocale(),
             "_app_version", getAppVersion(context),
             "_store", getStore(context),
-            "_deep_link", deepLink);
+            "_deep_link", deepLink,
+            "_device_type", getDeviceType(context));
 
         //override metric values
         if(metricOverride != null) {
