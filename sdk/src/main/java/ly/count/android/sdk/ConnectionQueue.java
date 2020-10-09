@@ -626,11 +626,11 @@ public class ConnectionQueue {
                 }
 
                 if (city != null && !city.isEmpty()) {
-                    data += "&city=" + city;
+                    data += "&city=" + UtilsNetworking.urlEncodeString(city);
                 }
 
                 if (country_code != null && !country_code.isEmpty()) {
-                    data += "&country_code=" + country_code;
+                    data += "&country_code=" + UtilsNetworking.urlEncodeString(country_code);
                 }
 
                 if (ip != null && !ip.isEmpty()) {
