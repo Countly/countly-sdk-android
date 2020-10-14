@@ -146,7 +146,7 @@ public class ConnectionQueue {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void beginSession() {
+    void beginSession(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         checkInternalState();
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Connection Queue] beginSession");
@@ -162,8 +162,7 @@ public class ConnectionQueue {
             dataAvailable = true;
         }
 
-        CountlyStore cs = getCountlyStore();
-        String locationData = prepareLocationData(cs, true);
+        String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
 
         if (!locationData.isEmpty()) {
             data += locationData;
@@ -339,7 +338,7 @@ public class ConnectionQueue {
     /**
      * Send user location
      */
-    void sendLocation() {
+    void sendLocation(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         checkInternalState();
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Connection Queue] sendLocation");
@@ -347,8 +346,7 @@ public class ConnectionQueue {
 
         String data = prepareCommonRequestData();
 
-        CountlyStore cs = getCountlyStore();
-        data += prepareLocationData(cs, true);
+        data += prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
 
         store_.addConnection(data);
 
@@ -605,37 +603,32 @@ public class ConnectionQueue {
             + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
     }
 
-    private String prepareLocationData(CountlyStore cs, boolean canSendEmptyWithNoConsent) {
+    private String prepareLocationData(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         String data = "";
 
-        if (canSendEmptyWithNoConsent && (cs.getLocationDisabled() || !Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.location))) {
+        if (locationDisabled || !Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.location)) {
             //if location is disabled or consent not given, send empty location info
             //this way it is cleared server side and geoip is not used
             //do this only if allowed
             data += "&location=";
         } else {
-            if (Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.location)) {
-                //location should be send, add all the fields we have
-                String location = cs.getLocation();
-                String city = cs.getLocationCity();
-                String country_code = cs.getLocationCountryCode();
-                String ip = cs.getLocationIpAddress();
+            //if we get here, location consent was given
+            //location should be sent, add all the fields we have
 
-                if (location != null && !location.isEmpty()) {
-                    data += "&location=" + UtilsNetworking.urlEncodeString(location);
-                }
+            if (locationGpsCoordinates != null && !locationGpsCoordinates.isEmpty()) {
+                data += "&location=" + UtilsNetworking.urlEncodeString(locationGpsCoordinates);
+            }
 
-                if (city != null && !city.isEmpty()) {
-                    data += "&city=" + UtilsNetworking.urlEncodeString(city);
-                }
+            if (locationCity != null && !locationCity.isEmpty()) {
+                data += "&city=" + UtilsNetworking.urlEncodeString(locationCity);
+            }
 
-                if (country_code != null && !country_code.isEmpty()) {
-                    data += "&country_code=" + UtilsNetworking.urlEncodeString(country_code);
-                }
+            if (locationCountryCode != null && !locationCountryCode.isEmpty()) {
+                data += "&country_code=" + UtilsNetworking.urlEncodeString(locationCountryCode);
+            }
 
-                if (ip != null && !ip.isEmpty()) {
-                    data += "&ip=" + ip;
-                }
+            if (locationIpAddress != null && !locationIpAddress.isEmpty()) {
+                data += "&ip=" + locationIpAddress;
             }
         }
         return data;
@@ -650,10 +643,6 @@ public class ConnectionQueue {
             //add session data if consent given
             data += "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);
         }
-
-        CountlyStore cs = getCountlyStore();
-        String locationData = prepareLocationData(cs, true);
-        data += locationData;
 
         //add key filters
         if (keysInclude != null) {

@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("JavadocReference")
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.04.5";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.10.0";
     /**
      * Used as request meta data on every request
      */
@@ -147,6 +147,7 @@ public class Countly {
     ModuleAPM moduleAPM = null;
     ModuleConsent moduleConsent = null;
     ModuleDeviceId moduleDeviceId = null;
+    ModuleLocation moduleLocation = null;
 
     //user data access
     public static UserData userData;
@@ -502,6 +503,7 @@ public class Countly {
             moduleRemoteConfig = new ModuleRemoteConfig(this, config);
             moduleConsent = new ModuleConsent(this, config);
             moduleAPM = new ModuleAPM(this, config);
+            moduleLocation = new ModuleLocation(this, config);
 
             modules.clear();
             modules.add(moduleCrash);
@@ -513,6 +515,7 @@ public class Countly {
             modules.add(moduleConsent);
             modules.add(moduleAPM);
             modules.add(moduleDeviceId);
+            modules.add(moduleLocation);
 
             if (isLoggingEnabled()) {
                 Log.i(Countly.TAG, "[Init] Finished initialising modules");
@@ -649,16 +652,6 @@ public class Countly {
                 moduleRatings.registerAppSession(config.context, countlyStore, moduleRatings.starRatingCallback_);
             }
 
-            //do location related things
-            if (config.disableLocation) {
-                disableLocation();
-            } else {
-                //if we are not disabling location, check for other set values
-                if (config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
-                    setLocation(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
-                }
-            }
-
             //update remote config_ values if automatic update is enabled and we are not in temporary id mode
             if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven() && !doingTemporaryIdMode) {
                 if (isLoggingEnabled()) {
@@ -760,16 +753,16 @@ public class Countly {
                     }
                 });
  */
+
+                for (ModuleBase module : modules) {
+                    module.initFinished(config);
+                }
             }
         } else {
             //if this is not the first time we are calling init
 
             // context is allowed to be changed on the second init call
             connectionQueue_.setContext(context_);
-        }
-
-        for (ModuleBase module : modules) {
-            module.initFinished(config);
         }
 
         return this;
@@ -826,6 +819,7 @@ public class Countly {
         moduleConsent = null;
         moduleAPM = null;
         moduleDeviceId = null;
+        moduleLocation = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
@@ -1219,35 +1213,21 @@ public class Countly {
      * Disable sending of location data
      *
      * @return Returns link to Countly for call chaining
+     * @deprecated Use 'Countly.sharedInstance().location().disableLocation()'
      */
     public synchronized Countly disableLocation() {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "Disabling location");
         }
-
         if (!isInitialized()) {
             if (isLoggingEnabled()) {
                 Log.w(Countly.TAG, "The use of this before init is deprecated, use CountlyConfig instead of this");
             }
         }
 
-        if (!getConsent(CountlyFeatureNames.location)) {
-            //can't send disable location request if no consent given
-            return this;
-        }
-
-        resetLocationValues();
-        connectionQueue_.getCountlyStore().setLocationDisabled(true);
-        connectionQueue_.sendLocation();
+        location().disableLocation();
 
         return this;
-    }
-
-    private synchronized void resetLocationValues() {
-        connectionQueue_.getCountlyStore().setLocationCountryCode(null);
-        connectionQueue_.getCountlyStore().setLocationCity(null);
-        connectionQueue_.getCountlyStore().setLocationGpsCoordinates(null);
-        connectionQueue_.getCountlyStore().setLocationIpAddress(null);
     }
 
     /**
@@ -1259,6 +1239,7 @@ public class Countly {
      * @param city Name of the user's city
      * @param gpsCoordinates comma separate lat and lng values. For example, "56.42345,123.45325"
      * @return Returns link to Countly for call chaining
+     * @deprecated Use 'Countly.sharedInstance().location().setLocation()'
      */
     public synchronized Countly setLocation(String country_code, String city, String gpsCoordinates, String ipAddress) {
         if (isLoggingEnabled()) {
@@ -1271,43 +1252,7 @@ public class Countly {
             }
         }
 
-        if (!getConsent(CountlyFeatureNames.location)) {
-            return this;
-        }
-
-        if (country_code != null) {
-            connectionQueue_.getCountlyStore().setLocationCountryCode(country_code);
-        }
-
-        if (city != null) {
-            connectionQueue_.getCountlyStore().setLocationCity(city);
-        }
-
-        if (gpsCoordinates != null) {
-            connectionQueue_.getCountlyStore().setLocationGpsCoordinates(gpsCoordinates);
-        }
-
-        if (ipAddress != null) {
-            connectionQueue_.getCountlyStore().setLocationIpAddress(ipAddress);
-        }
-
-        if ((country_code == null && city != null) || (city == null && country_code != null)) {
-            if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "In \"setLocation\" both city and country code need to be set at the same time to be sent");
-            }
-        }
-
-        if (country_code != null || city != null || gpsCoordinates != null || ipAddress != null) {
-            connectionQueue_.getCountlyStore().setLocationDisabled(false);
-        }
-
-        if (isBeginSessionSent || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
-            //send as a separate request if either begin session was already send and we missed our first opportunity
-            //or if consent for sessions is not given and our only option to send this is as a separate request
-            connectionQueue_.sendLocation();
-        } else {
-            //will be sent a part of begin session
-        }
+        location().setLocation(country_code, city, gpsCoordinates, ipAddress);
 
         return this;
     }
@@ -2136,8 +2081,8 @@ public class Countly {
      * Actions needed to be done for the consent related location erasure
      */
     void doLocationConsentSpecialErasure() {
-        resetLocationValues();
-        connectionQueue_.sendLocation();
+        moduleLocation.resetLocationValues();
+        connectionQueue_.sendLocation(true, null, null, null, null);
     }
 
     /**
@@ -2334,6 +2279,19 @@ public class Countly {
                         moduleSessions.beginSessionInternal();
                     }
                 }
+            }
+
+            //if consent was changed and set to false
+            if ((previousSessionsConsent != currentSessionConsent) && !currentSessionConsent) {
+                if(!isBeginSessionSent) {
+                    //if session consent was removed and first begins session was not sent
+                    //that means that we might not have sent the initially given location information
+
+                    if(moduleLocation.anyValidLocation()) {
+                        moduleLocation.sendCurrentLocation();
+                    }
+                }
+
             }
         } else {
             // if countly is not initialized, collect and send it after it is
@@ -2803,6 +2761,14 @@ public class Countly {
         }
 
         return moduleConsent.consentInterface;
+    }
+
+    public ModuleLocation.Location location() {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing location");
+        }
+
+        return moduleLocation.locationInterface;
     }
 
     public static void applicationOnCreate() {

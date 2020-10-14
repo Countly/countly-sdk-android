@@ -224,6 +224,7 @@ public class DeviceInfoTests {
         json.put("_density", DeviceInfo.getDensity(getContext()));
         json.put("_locale", DeviceInfo.getLocale());
         json.put("_app_version", DeviceInfo.getAppVersion(getContext()));
+        json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
         final String expected = URLEncoder.encode(json.toString(), "UTF-8");
         assertNotNull(expected);
         assertEquals(expected, DeviceInfo.getMetrics(getContext(), null));
@@ -247,6 +248,7 @@ public class DeviceInfoTests {
         json.put("_density", DeviceInfo.getDensity(getContext()));
         json.put("_locale", DeviceInfo.getLocale());
         json.put("_app_version", DeviceInfo.getAppVersion(getContext()));
+        json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
         json.put("123", "bb");
         json.put("456", "cc");
         json.put("Test", "aa");
@@ -277,6 +279,7 @@ public class DeviceInfoTests {
         json.put("_density", "d3");
         json.put("_locale", "d4");
         json.put("_app_version", "d5");
+        json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
         json.put("asd", "123");
 
         final String expected = URLEncoder.encode(json.toString(), "UTF-8");

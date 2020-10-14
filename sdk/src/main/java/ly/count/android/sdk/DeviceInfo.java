@@ -223,7 +223,7 @@ class DeviceInfo {
      * ["console", "mobile", "tablet", "smarttv", "wearable", "embedded", "desktop"]
      * Currently the Android SDK differentiates between ["mobile", "tablet", "smarttv"]
      */
-    private static String getDeviceType(final Context context) {
+    static String getDeviceType(final Context context) {
         if(Utils.isDeviceTv(context)) {
             return "smarttv";
         }

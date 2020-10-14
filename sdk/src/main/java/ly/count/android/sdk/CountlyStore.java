@@ -55,11 +55,6 @@ public class CountlyStore {
     private static final String DELIMITER = ":::";
     private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
-    private static final String LOCATION_CITY_PREFERENCE = "LOCATION_CITY";
-    private static final String LOCATION_COUNTRY_CODE_PREFERENCE = "LOCATION_COUNTRY_CODE";
-    private static final String LOCATION_IP_ADDRESS_PREFERENCE = "LOCATION_IP_ADDRESS";
-    private static final String LOCATION_GPS_PREFERENCE = "LOCATION";
-    private static final String LOCATION_DISABLED_PREFERENCE = "LOCATION_DISABLED";
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
     private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
@@ -206,52 +201,6 @@ public class CountlyStore {
             events.add(event);
             preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
         }
-    }
-
-    /**
-     * Sets location of user and sends it with next request
-     */
-    void setLocationGpsCoordinates(final String latLonCoordinates) {
-        preferences_.edit().putString(LOCATION_GPS_PREFERENCE, latLonCoordinates).apply();
-    }
-
-    void setLocationCity(final String city) {
-        preferences_.edit().putString(LOCATION_CITY_PREFERENCE, city).apply();
-    }
-
-    void setLocationCountryCode(final String countryCode) {
-        preferences_.edit().putString(LOCATION_COUNTRY_CODE_PREFERENCE, countryCode).apply();
-    }
-
-    void setLocationIpAddress(final String ipAddress) {
-        preferences_.edit().putString(LOCATION_IP_ADDRESS_PREFERENCE, ipAddress).apply();
-    }
-
-    void setLocationDisabled(final boolean locationDisabled) {
-        preferences_.edit().putBoolean(LOCATION_DISABLED_PREFERENCE, locationDisabled).apply();
-    }
-
-    /**
-     * Get location or empty string in case if no location is specified
-     */
-    String getLocation() {
-        return preferences_.getString(LOCATION_GPS_PREFERENCE, null);
-    }
-
-    String getLocationCity() {
-        return preferences_.getString(LOCATION_CITY_PREFERENCE, null);
-    }
-
-    String getLocationCountryCode() {
-        return preferences_.getString(LOCATION_COUNTRY_CODE_PREFERENCE, null);
-    }
-
-    String getLocationIpAddress() {
-        return preferences_.getString(LOCATION_IP_ADDRESS_PREFERENCE, null);
-    }
-
-    boolean getLocationDisabled() {
-        return preferences_.getBoolean(LOCATION_DISABLED_PREFERENCE, false);
     }
 
     /**

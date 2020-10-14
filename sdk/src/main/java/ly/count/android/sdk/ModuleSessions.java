@@ -28,7 +28,7 @@ public class ModuleSessions extends ModuleBase {
         }
 
         prevSessionDurationStartTime_ = System.nanoTime();
-        _cly.connectionQueue_.beginSession();
+        _cly.connectionQueue_.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);
     }
 
     void updateSessionInternal() {

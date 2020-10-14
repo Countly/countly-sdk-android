@@ -26,7 +26,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
     public void onClickViewOther05(View v) {
         //set user location
         String countryCode = "us";
-        String city = "Houston";
+        String city = "Höuston";
         String latitude = "29.634933";
         String longitude = "-95.220255";
         String ipAddress = null;

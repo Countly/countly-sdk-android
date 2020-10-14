@@ -47,7 +47,7 @@ public class ModuleSessionsTests {
 
         mCountly.sessions().beginSession();
 
-        verify(connectionQueue, times(1)).beginSession();
+        verify(connectionQueue, times(1)).beginSession(false, null, null, null, null);
     }
 
     @Test
@@ -60,7 +60,7 @@ public class ModuleSessionsTests {
         mCountly.setConnectionQueue(connectionQueue);
 
         mCountly.sessions().beginSession();
-        verify(connectionQueue, times(1)).beginSession();
+        verify(connectionQueue, times(1)).beginSession(false, null, null, null, null);
 
         Thread.sleep(1000);
         mCountly.sessions().updateSession();
@@ -82,7 +82,7 @@ public class ModuleSessionsTests {
         mCountly.setConnectionQueue(connectionQueue);
 
         mCountly.sessions().beginSession();
-        verify(connectionQueue, never()).beginSession();
+        verify(connectionQueue, never()).beginSession(false, null, null, null, null);
 
         Thread.sleep(1000);
         mCountly.sessions().updateSession();
@@ -104,7 +104,7 @@ public class ModuleSessionsTests {
 
         mCountly.onStart(null);
 
-        verify(connectionQueue, never()).beginSession();
+        verify(connectionQueue, never()).beginSession(false, null, null, null, null);
         Thread.sleep(1000);
 
         mCountly.onStop();
@@ -123,7 +123,7 @@ public class ModuleSessionsTests {
 
         mCountly.onStart(null);
 
-        verify(connectionQueue, times(1)).beginSession();
+        verify(connectionQueue, times(1)).beginSession(false, null, null, null, null);
         Thread.sleep(1000);
 
         mCountly.onStop();

@@ -205,7 +205,7 @@ public class ConnectionQueueTests {
     @Test
     public void testBeginSession_checkInternalState() {
         try {
-            freshConnQ.beginSession();
+            freshConnQ.beginSession(false, null, null, null, null);
             fail("expected IllegalStateException when internal state is not set up");
         } catch (IllegalStateException ignored) {
             // success!
@@ -214,7 +214,7 @@ public class ConnectionQueueTests {
 
     @Test
     public void testBeginSession() throws JSONException, UnsupportedEncodingException {
-        connQ.beginSession();
+        connQ.beginSession(false, null, null, null, null);
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
         verify(connQ.getCountlyStore()).addConnection(arg.capture());
         verify(connQ.getExecutor()).submit(any(ConnectionProcessor.class));
@@ -495,7 +495,7 @@ public class ConnectionQueueTests {
                         break;
                     case "sdk_version":
                         if(a == 0) {
-                            Assert.assertTrue(pair[1].equals("20.04.5"));
+                            Assert.assertTrue(pair[1].equals("20.10.0"));
                         } else if(a == 1) {
                             Assert.assertTrue(pair[1].equals("123sdf.v-213"));
                         }

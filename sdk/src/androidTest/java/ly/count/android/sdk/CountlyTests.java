@@ -276,7 +276,6 @@ public class CountlyTests {
     public void testHalt() {
         CountlyStore mockCountlyStore = mock(CountlyStore.class);
 
-        when(mockCountlyStore.getLocationDisabled()).thenReturn(true);
         when(mockCountlyStore.getCachedAdvertisingId()).thenReturn("");
 
         mCountly.getConnectionQueue().setCountlyStore(mockCountlyStore);
@@ -342,7 +341,7 @@ public class CountlyTests {
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
         assertTrue(prevSessionDurationStartTime > 0);
         assertTrue(prevSessionDurationStartTime <= System.nanoTime());
-        verify(mockConnectionQueue).beginSession();
+        verify(mockConnectionQueue).beginSession(false, null, null, null, null);
     }
 
     @Test
@@ -356,7 +355,7 @@ public class CountlyTests {
 
         assertEquals(2, mCountly.getActivityCount());
         assertEquals(prevSessionDurationStartTime, mCountly.getPrevSessionDurationStartTime());
-        verify(mockConnectionQueue).beginSession();
+        verify(mockConnectionQueue).beginSession(false, null, null, null, null);
     }
 
     @Test
