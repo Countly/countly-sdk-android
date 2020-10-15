@@ -238,6 +238,21 @@ public class CountlyPush {
             broadcast.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
             Intent intent = broadcast.getParcelableExtra(EXTRA_INTENT);
+            int flags = intent.getFlags();
+            if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) ||
+                ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
+                Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
+                return;
+            }
+            if (!intent.getComponent().getPackageName().equals(context.getPackageName())) {
+                Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
+                return;
+            }
+            if (!intent.getComponent().getClassName().startsWith(intent.getComponent().getPackageName())) {
+                Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Just to ensure it passes validation");
+                return;
+            }
+
             intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
             int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
