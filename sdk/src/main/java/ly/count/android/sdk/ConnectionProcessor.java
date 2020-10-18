@@ -261,7 +261,7 @@ public class ConnectionProcessor implements Runnable {
                         }
                     } else {
                         //new device_id provided, make sure it will be merged
-                        eventData = storedEvents[0] + "&old_device_id=" + deviceId_.getId();
+                        eventData = storedEvents[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
                     }
                 } else {
                     // this branch will be used in almost all requests.
