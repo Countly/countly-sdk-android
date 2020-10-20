@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 public class RemoteConfigTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 

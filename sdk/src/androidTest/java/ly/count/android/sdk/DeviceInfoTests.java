@@ -51,7 +51,7 @@ import org.junit.runner.RunWith;
 public class DeviceInfoTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 

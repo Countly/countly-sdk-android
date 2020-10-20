@@ -47,24 +47,24 @@ public class ModuleConsentTests {
     }
 
     @Test
-    public void usingValidFeatureList(){
+    public void usingValidFeatureList() {
         Countly mCountly = new Countly();
         Assert.assertEquals(usedFeatureNames.length, mCountly.validFeatureNames.length);
 
-        for(int a = 0 ; a < usedFeatureNames.length ; a++){
+        for (int a = 0; a < usedFeatureNames.length; a++) {
             Assert.assertEquals(usedFeatureNames[a], mCountly.validFeatureNames[a]);
         }
     }
 
     @Test
-    public void enableConsentWithoutConsentGiven(){
+    public void enableConsentWithoutConsentGiven() {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true);
         mCountly.init(config);
     }
 
     @Test
-    public void enableConsentGiveAll(){
+    public void enableConsentGiveAll() {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true)
             .setConsentEnabled(usedFeatureNames);
@@ -72,25 +72,25 @@ public class ModuleConsentTests {
     }
 
     @Test
-    public void enableConsentRemoveAfter(){
+    public void enableConsentRemoveAfter() {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true)
             .setConsentEnabled(usedFeatureNames);
         mCountly.init(config);
 
-        for(int a = 0 ; a < usedFeatureNames.length ; a++){
+        for (int a = 0; a < usedFeatureNames.length; a++) {
             Assert.assertTrue(mCountly.consent().getConsent(usedFeatureNames[a]));
         }
 
         mCountly.consent().removeConsentAll();
 
-        for(int a = 0 ; a < usedFeatureNames.length ; a++){
+        for (int a = 0; a < usedFeatureNames.length; a++) {
             Assert.assertFalse(mCountly.consent().getConsent(usedFeatureNames[a]));
         }
 
         mCountly.consent().giveConsentAll();
 
-        for(int a = 0 ; a < usedFeatureNames.length ; a++){
+        for (int a = 0; a < usedFeatureNames.length; a++) {
             Assert.assertTrue(mCountly.consent().getConsent(usedFeatureNames[a]));
         }
     }

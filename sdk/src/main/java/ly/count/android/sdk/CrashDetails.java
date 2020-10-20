@@ -193,13 +193,13 @@ class CrashDetails {
      * Get custom segments json string
      */
     static JSONObject getCustomSegmentsJson(final Map<String, Object> additionalCustomSegmentation) {
-        if(additionalCustomSegmentation == null && (customSegments == null || customSegments.isEmpty())) {
+        if (additionalCustomSegmentation == null && (customSegments == null || customSegments.isEmpty())) {
             return null;
         }
 
         JSONObject returnedSegmentation = new JSONObject();
 
-        if(customSegments != null) {
+        if (customSegments != null) {
             for (String k : customSegments.keySet()) {
                 if (k != null) {
                     try {
@@ -213,7 +213,7 @@ class CrashDetails {
             }
         }
 
-        if(additionalCustomSegmentation != null) {
+        if (additionalCustomSegmentation != null) {
             for (String k : additionalCustomSegmentation.keySet()) {
                 if (k != null) {
                     try {

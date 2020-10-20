@@ -21,12 +21,12 @@ import static org.mockito.Mockito.mock;
 public class CountlyConfigTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 
     @Test
-    public void constructor(){
+    public void constructor() {
         CountlyConfig config = new CountlyConfig(getContext(), "Som345345", "fsdf7349374");
 
         assertDefaultValues(config, false);
@@ -34,7 +34,7 @@ public class CountlyConfigTests {
 
     @Test
     public void settingAllValues() {
-        String[] s = new String[]{"4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd"};
+        String[] s = new String[] { "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd" };
         Context c = getContext();
         CountlyConfig config = new CountlyConfig();
         CountlyStore cs = new CountlyStore(c);
@@ -62,7 +62,7 @@ public class CountlyConfigTests {
         hv.put("11", "22");
         hv.put("1331", "2332");
 
-        String[] fn = new String[]{"ds dsd", "434f", "ngfhg"};
+        String[] fn = new String[] { "ds dsd", "434f", "ngfhg" };
 
         CrashFilterCallback callback = new CrashFilterCallback() {
             @Override
@@ -77,9 +77,9 @@ public class CountlyConfigTests {
         vs.put("s44s", 33434.33d);
         vs.put("dds44s", true);
 
-        Class[] act = new Class[]{Activity.class};
+        Class[] act = new Class[] { Activity.class };
 
-        String[] appCrawlerNames = new String[] {"Some", "Crazy", "name"};
+        String[] appCrawlerNames = new String[] { "Some", "Crazy", "name" };
 
         String[] publicKeyCerts = new String[] { "ddd", "111", "ffd" };
         String[] certificateCerts = new String[] { "ddsd", "vvcv", "mbnb" };
@@ -96,9 +96,7 @@ public class CountlyConfigTests {
 
         Application app = new Application();
 
-
         assertDefaultValues(config, true);
-
 
         config.setServerURL(s[0]);
         config.setContext(c);
@@ -147,8 +145,6 @@ public class CountlyConfigTests {
         config.setDisableLocation();
         config.setLocation("CC", "city", "loc", "ip");
         config.setMetricOverride(metricOverride);
-
-
 
         Assert.assertEquals(s[0], config.serverURL);
         Assert.assertEquals(c, config.context);
@@ -202,26 +198,24 @@ public class CountlyConfigTests {
         Assert.assertEquals("ip", config.locationIpAddress);
         Assert.assertEquals(metricOverride, config.metricOverride);
 
-
         config.setLocation("CC", "city", "loc", "ip");
-
     }
 
     @Test
-    public void defaultValues(){
+    public void defaultValues() {
         CountlyConfig config = new CountlyConfig();
 
         assertDefaultValues(config, true);
     }
 
-    @Test (expected = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void autoTrackingExceptionNull() {
         CountlyConfig config = new CountlyConfig();
-        config.setAutoTrackingExceptions(new Class[]{null});
+        config.setAutoTrackingExceptions(new Class[] { null });
     }
 
-    void assertDefaultValues(CountlyConfig config, boolean includeConstructorValues){
-        if(includeConstructorValues){
+    void assertDefaultValues(CountlyConfig config, boolean includeConstructorValues) {
+        if (includeConstructorValues) {
             Assert.assertNull(config.context);
             Assert.assertNull(config.serverURL);
             Assert.assertNull(config.appKey);

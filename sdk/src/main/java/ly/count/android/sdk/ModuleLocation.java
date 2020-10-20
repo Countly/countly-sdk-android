@@ -49,7 +49,7 @@ public class ModuleLocation extends ModuleBase {
             return false;
         }
 
-        if(locationCountryCode != null || locationCity != null || locationIpAddress != null || locationGpsCoordinates != null) {
+        if (locationCountryCode != null || locationCity != null || locationIpAddress != null || locationGpsCoordinates != null) {
             return true;
         }
 

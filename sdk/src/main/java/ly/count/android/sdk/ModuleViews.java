@@ -126,7 +126,7 @@ public class ModuleViews extends ModuleBase {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
         }
 
-        if(viewName == null || viewName.isEmpty()) {
+        if (viewName == null || viewName.isEmpty()) {
             if (_cly.isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleViews] Trying to record view with null or empty view name, ignoring request");
             }

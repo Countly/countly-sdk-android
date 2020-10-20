@@ -156,7 +156,7 @@ public class CountlyTests {
     @Test
     public void testInit_nullDeviceID() {
         // null device ID is okay because it tells Countly to use OpenUDID
-       mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId(null));
+        mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId(null));
     }
 
     @Test
@@ -212,8 +212,7 @@ public class CountlyTests {
         try {
             mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test2.count.ly")).setDeviceId("1234"));
             fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
-        }
-        catch (IllegalStateException ignored) {
+        } catch (IllegalStateException ignored) {
             // success!
         }
     }
@@ -224,8 +223,7 @@ public class CountlyTests {
         try {
             mUninitedCountly.init((new CountlyConfig(getContext(), "appkey2", "http://test.count.ly")).setDeviceId("1234"));
             fail("expected IllegalStateException to be thrown when calling init a second time with different app key");
-        }
-        catch (IllegalStateException ignored) {
+        } catch (IllegalStateException ignored) {
             // success!
         }
     }
@@ -236,8 +234,7 @@ public class CountlyTests {
         try {
             mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("4321"));
             fail("expected IllegalStateException to be thrown when calling init a second time with different device ID");
-        }
-        catch (IllegalStateException ignored) {
+        } catch (IllegalStateException ignored) {
             // success!
         }
     }
@@ -296,7 +293,7 @@ public class CountlyTests {
         assertNotNull(mCountly.moduleRatings);
         assertNotNull(mCountly.moduleViews);
 
-        for(ModuleBase module:mCountly.modules){
+        for (ModuleBase module : mCountly.modules) {
             assertNotNull(module);
         }
 

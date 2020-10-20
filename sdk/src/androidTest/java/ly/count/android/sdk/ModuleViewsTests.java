@@ -59,16 +59,16 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStartedViewTrackingLongNames(){
+    public void onActivityStartedViewTrackingLongNames() {
         activityStartedViewTracking(false);
     }
 
     @Test
-    public void onActivityStartedViewTrackingShortNames(){
+    public void onActivityStartedViewTrackingShortNames() {
         activityStartedViewTracking(true);
     }
 
-    void activityStartedViewTracking(boolean shortNames){
+    void activityStartedViewTracking(boolean shortNames) {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames));
         EventQueue evQ = mock(EventQueue.class);
@@ -86,7 +86,7 @@ public class ModuleViewsTests {
         segmS.put("start", "1");
         segmS.put("visit", "1");
 
-        if(shortNames) {
+        if (shortNames) {
             segmS.put("name", act.getClass().getSimpleName());
         } else {
             segmS.put("name", act.getClass().getName());
@@ -96,23 +96,24 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStartedViewTrackingLongNamesException(){
+    public void onActivityStartedViewTrackingLongNamesException() {
         activityStartedViewTrackingException(false);
     }
 
     @Test
-    public void onActivityStartedViewTrackingShortNamesException(){
+    public void onActivityStartedViewTrackingShortNamesException() {
         activityStartedViewTrackingException(true);
     }
 
-    class Activity2 extends Activity {}
+    class Activity2 extends Activity {
+    }
 
-    void activityStartedViewTrackingException(boolean shortNames){
+    void activityStartedViewTrackingException(boolean shortNames) {
         Activity act1 = mock(Activity.class);
         Activity act2 = mock(Activity2.class);
 
         Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames).setAutoTrackingExceptions(new Class[]{act1.getClass()});
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames).setAutoTrackingExceptions(new Class[] { act1.getClass() });
         mCountly.init(config);
         EventQueue evQ = mock(EventQueue.class);
         mCountly.setEventQueue(evQ);
@@ -132,7 +133,7 @@ public class ModuleViewsTests {
         segmS.put("start", "1");
         segmS.put("visit", "1");
 
-        if(shortNames) {
+        if (shortNames) {
             segmS.put("name", act2.getClass().getSimpleName());
         } else {
             segmS.put("name", act2.getClass().getName());
@@ -142,7 +143,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStartedDisabledOrientationView(){
+    public void onActivityStartedDisabledOrientationView() {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
@@ -157,7 +158,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStartedOrientation(){
+    public void onActivityStartedOrientation() {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(true);
         mCountly.init(config);
@@ -241,7 +242,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStopped(){
+    public void onActivityStopped() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true));
         EventQueue evQ = mock(EventQueue.class);
@@ -298,7 +299,6 @@ public class ModuleViewsTests {
         segmD.put("2", 234.0d);
         segmB.put("3", true);
 
-
         verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
 
         segmS.clear();
@@ -320,7 +320,7 @@ public class ModuleViewsTests {
         EventQueue evQ = mock(EventQueue.class);
         mCountly.setEventQueue(evQ);
 
-        String[] viewNames = new String[] {"DSD", "32", "DSD"};
+        String[] viewNames = new String[] { "DSD", "32", "DSD" };
 
         final Map<String, String> segmS = new HashMap<>(4);
         final Map<String, Integer> segmI = new HashMap<>();
@@ -377,7 +377,7 @@ public class ModuleViewsTests {
         segms.put("2", 234.0d);
         segms.put("3", true);
 
-//{"name", "segment", "visit", "start", "bounce", "exit", "view", "domain", "dur"};
+        //{"name", "segment", "visit", "start", "bounce", "exit", "view", "domain", "dur"};
         Map<String, Object> cSegm1 = new HashMap<>();
         Map<String, Object> cSegm2 = new HashMap<>();
         cSegm2.put("name", "33");
@@ -405,7 +405,7 @@ public class ModuleViewsTests {
         EventQueue evQ = mock(EventQueue.class);
         mCountly.setEventQueue(evQ);
 
-        String[] viewNames = new String[] {"DSD", "32", "DSD"};
+        String[] viewNames = new String[] { "DSD", "32", "DSD" };
 
         final Map<String, String> segmS = new HashMap<>(4);
         final Map<String, Integer> segmI = new HashMap<>();
@@ -475,7 +475,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void recordViewNullViewName()  {
+    public void recordViewNullViewName() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
         EventQueue evQ = mock(EventQueue.class);
@@ -503,7 +503,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void recordViewEmptyViewName()  {
+    public void recordViewEmptyViewName() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
         EventQueue evQ = mock(EventQueue.class);
@@ -531,7 +531,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void recordViewWithoutConsent()  {
+    public void recordViewWithoutConsent() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
             .setViewTracking(true).setAutoTrackingUseShortName(true).setRequiresConsent(true));

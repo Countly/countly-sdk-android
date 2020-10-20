@@ -577,7 +577,7 @@ public class UserData {
     public static String getPicturePathFromQuery(URL url) {
         String query = url.getQuery();
 
-        if(query == null) {
+        if (query == null) {
             //assume no query part in url
             return "";
         }

@@ -19,7 +19,7 @@ public class MultiThreadingTests {
     Countly mCountly;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
 
         mCountly = new Countly();
@@ -40,33 +40,33 @@ public class MultiThreadingTests {
         final CyclicBarrier gate = new CyclicBarrier(eventThreads + locationThreads + viewThreads + crashThreads + ratingThreads + 1);
         List<Thread> runs = new ArrayList<>();
 
-        for(int a = 0 ; a < eventThreads ; a++) {
+        for (int a = 0; a < eventThreads; a++) {
             runs.add(tBase(gate, a, 3, 0, createEventJob()));
         }
 
-        for(int a = 0 ; a < locationThreads ; a++) {
+        for (int a = 0; a < locationThreads; a++) {
             runs.add(tBase(gate, a, 3, 0, createLocationJob()));
         }
 
-        for(int a = 0 ; a < viewThreads ; a++) {
+        for (int a = 0; a < viewThreads; a++) {
             runs.add(tBase(gate, a, 3, 0, createViewJob()));
         }
 
-        for(int a = 0 ; a < crashThreads ; a++) {
+        for (int a = 0; a < crashThreads; a++) {
             runs.add(tBase(gate, a, 3, 0, createCrashJob()));
         }
 
-        for(int a = 0 ; a < ratingThreads ; a++) {
+        for (int a = 0; a < ratingThreads; a++) {
             runs.add(tBase(gate, a, 3, 0, createRatingsJob()));
         }
 
-        for (Thread t:runs) {
+        for (Thread t : runs) {
             t.start();
         }
 
         gate.await();
 
-        for (Thread t:runs) {
+        for (Thread t : runs) {
             t.join();
         }
 
@@ -191,7 +191,7 @@ public class MultiThreadingTests {
         };
     }
 
-    interface ThreadCall{
+    interface ThreadCall {
         void call(final int threadNumber, int iter, final long sleepTime);
     }
 

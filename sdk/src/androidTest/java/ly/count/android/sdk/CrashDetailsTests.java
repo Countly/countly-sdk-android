@@ -20,12 +20,12 @@ import static org.mockito.ArgumentMatchers.isNull;
 public class CrashDetailsTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 
     @Test
-    public void simpleCrashDetails_1(){
+    public void simpleCrashDetails_1() {
         String errorText = "SomeError";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
@@ -35,7 +35,7 @@ public class CrashDetailsTests {
     }
 
     @Test
-    public void simpleCrashDetails_2(){
+    public void simpleCrashDetails_2() {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
@@ -45,7 +45,7 @@ public class CrashDetailsTests {
     }
 
     @Test
-    public void simpleCrashDetails_3(){
+    public void simpleCrashDetails_3() {
         String errorText = "SomeError65756";
         boolean nonfatal = true;
         boolean isNativeCrash = true;
@@ -55,7 +55,7 @@ public class CrashDetailsTests {
     }
 
     @Test
-    public void simpleCrashDetails_4(){
+    public void simpleCrashDetails_4() {
         String errorText = "SomeErrorsh454353";
         boolean nonfatal = false;
         boolean isNativeCrash = true;
@@ -65,7 +65,7 @@ public class CrashDetailsTests {
     }
 
     @Test
-    public void testAddLogs(){
+    public void testAddLogs() {
         String errorText = "fsdfdsfFFFDD";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
@@ -73,7 +73,7 @@ public class CrashDetailsTests {
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
         Assert.assertFalse(cData.contains("\"logs\":"));
 
-        String [] sArr = TestUtils.createStringArray(8);
+        String[] sArr = TestUtils.createStringArray(8);
         for (String s : sArr) {
             CrashDetails.addLog(s);
         }
@@ -93,7 +93,7 @@ public class CrashDetailsTests {
     }
 
     @Test
-    public void testCustomSegments(){
+    public void testCustomSegments() {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
@@ -110,7 +110,7 @@ public class CrashDetailsTests {
 
         Assert.assertTrue(cData2.contains("_custom"));
 
-        for(Map.Entry<String, Object> entry : cSeg.entrySet()) {
+        for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
             String key = entry.getKey();
             String value = (String) entry.getValue();
 
@@ -122,7 +122,7 @@ public class CrashDetailsTests {
         String cData3 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, additionalSeg);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
-        for(Map.Entry<String, Object> entry : cSeg.entrySet()) {
+        for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
             String key = entry.getKey();
             String value = (String) entry.getValue();
 
@@ -130,7 +130,7 @@ public class CrashDetailsTests {
             Assert.assertTrue(cData3.contains(value));
         }
 
-        for(Map.Entry<String, Object> entry : additionalSeg.entrySet()) {
+        for (Map.Entry<String, Object> entry : additionalSeg.entrySet()) {
             String key = entry.getKey();
             String value = (String) entry.getValue();
 
@@ -149,14 +149,14 @@ public class CrashDetailsTests {
 
         Assert.assertEquals(11, jobj.length());
 
-        for(Map.Entry<String, Object> entry : cSeg.entrySet()) {
+        for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
             String key = entry.getKey();
             String value = (String) entry.getValue();
 
             Assert.assertEquals(value, jobj.get(key));
         }
 
-        for(Map.Entry<String, Object> entry : additionalSeg.entrySet()) {
+        for (Map.Entry<String, Object> entry : additionalSeg.entrySet()) {
             String key = entry.getKey();
             String value = (String) entry.getValue();
 
@@ -190,9 +190,9 @@ public class CrashDetailsTests {
         Assert.assertEquals(84.3d, jobj.get("a3"));
     }
 
-    void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash){
+    void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {
         Assert.assertTrue(cData.contains("\"_error\":\"" + error + "\""));
-        Assert.assertTrue(cData.contains("\"_nonfatal\":\"" + nonfatal+ "\""));
+        Assert.assertTrue(cData.contains("\"_nonfatal\":\"" + nonfatal + "\""));
         Assert.assertTrue(cData.contains("\"_os\":\"Android\""));
         Assert.assertTrue(cData.contains("\"_device\":\""));
         Assert.assertTrue(cData.contains("\"_os_version\":\""));
@@ -204,7 +204,7 @@ public class CrashDetailsTests {
         Assert.assertTrue(cData.contains("\"_ram_total\":\""));
         Assert.assertTrue(cData.contains("\"_disk_total\":\""));
 
-        if(isNativeCrash) {
+        if (isNativeCrash) {
             Assert.assertTrue(cData.contains("\"_native_cpp\":true"));
         } else {
             Assert.assertFalse(cData.contains("\"_native_cpp\":true"));

@@ -306,7 +306,7 @@ public class ConnectionProcessor implements Runnable {
 
                     if (responseCode >= 200 && responseCode < 300) {
 
-                        if (responseString.isEmpty()){
+                        if (responseString.isEmpty()) {
                             if (Countly.sharedInstance().isLoggingEnabled()) {
                                 Log.v(Countly.TAG, "[Connection Processor] Response was empty, will retry");
                             }
@@ -315,7 +315,7 @@ public class ConnectionProcessor implements Runnable {
                             JSONObject jsonObject;
                             try {
                                 jsonObject = new JSONObject(responseString);
-                            } catch (JSONException ex){
+                            } catch (JSONException ex) {
                                 //failed to parse, so not a valid json
                                 jsonObject = null;
                             }
@@ -327,7 +327,7 @@ public class ConnectionProcessor implements Runnable {
                                 }
                                 rRes = RequestResult.RETRY;
                             } else {
-                                if(jsonObject.has("result")){
+                                if (jsonObject.has("result")) {
                                     //contains result entry
                                     if (Countly.sharedInstance().isLoggingEnabled()) {
                                         Log.v(Countly.TAG, "[Connection Processor] Response was a success");

@@ -35,19 +35,19 @@ public class ModuleBaseTests {
 
     //making sure all needed modules are added
     @Test
-    public void checkup(){
+    public void checkup() {
         Assert.assertEquals(10, mCountly.modules.size());
     }
 
     //just making sure nothing throws exceptions
     @Test
-    public void onConfigurationChanged(){
+    public void onConfigurationChanged() {
         mCountly.onConfigurationChanged(null);
     }
 
     //just making sure nothing throws exceptions
     @Test
-    public void onActivityStartStop(){
+    public void onActivityStartStop() {
         mCountly.onStart(null);
         mCountly.onStop();
     }

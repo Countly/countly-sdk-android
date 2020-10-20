@@ -17,7 +17,7 @@ import java.util.Map;
 public class UtilsTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 
@@ -64,19 +64,19 @@ public class UtilsTests {
     }
 
     @Test
-    public void removeKeysFromMapNullBoth(){
+    public void removeKeysFromMapNullBoth() {
         Map<String, Object> res = Utils.removeKeysFromMap(null, null);
         Assert.assertNull(res);
     }
 
     @Test
-    public void removeKeysFromMapNullKeys(){
-        Map<String, Object> res = Utils.removeKeysFromMap(null, new String[]{"1", "2"});
+    public void removeKeysFromMapNullKeys() {
+        Map<String, Object> res = Utils.removeKeysFromMap(null, new String[] { "1", "2" });
         Assert.assertNull(res);
     }
 
     @Test
-    public void removeKeysFromMapNullData(){
+    public void removeKeysFromMapNullData() {
         Map<String, Object> map = new HashMap<>();
         map.put("1", "ff");
         map.put("2", "ee");
@@ -88,14 +88,14 @@ public class UtilsTests {
     }
 
     @Test
-    public void removeKeysFromMap(){
+    public void removeKeysFromMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("1", "ff");
         map.put("2", "ee");
         map.put("3", "kk");
         map.put("4", "fer");
 
-        String[] keys = new String[] {"1", "3"};
+        String[] keys = new String[] { "1", "3" };
 
         Map<String, Object> res = Utils.removeKeysFromMap(map, keys);
         Assert.assertEquals(2, res.size());
@@ -119,7 +119,7 @@ public class UtilsTests {
         segm.put("3", true);
         segm.put("4", 45.4f);
         segm.put("41", new Object());
-        segm.put("42", new int[]{1, 2});
+        segm.put("42", new int[] { 1, 2 });
 
         Assert.assertTrue(Utils.removeUnsupportedDataTypes(segm));
 
@@ -153,7 +153,7 @@ public class UtilsTests {
         segm.put("", null);
         segm.put("3", 345.33d);
         segm.put("4", false);
-        segm.put("aa1", new String[] {"ff", "33"});
+        segm.put("aa1", new String[] { "ff", "33" });
 
         Assert.assertEquals(7, segm.size());
 

@@ -251,7 +251,7 @@ public class Countly {
         staticInit();
     }
 
-    private void staticInit(){
+    private void staticInit() {
         connectionQueue_ = new ConnectionQueue();
         Countly.userData = new UserData(connectionQueue_);
         startTimerService(timerService_, timerFuture, TIMER_DELAY_IN_SECONDS);
@@ -796,7 +796,7 @@ public class Countly {
         }
         eventQueue_ = null;
 
-        if(connectionQueue_ != null) {
+        if (connectionQueue_ != null) {
             final CountlyStore countlyStore = connectionQueue_.getCountlyStore();
             if (countlyStore != null) {
                 countlyStore.clear();
@@ -2204,7 +2204,7 @@ public class Countly {
             return this;
         }
 
-        if(featureNames == null) {
+        if (featureNames == null) {
             if (isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[Countly] Calling setConsent with null featureNames!");
             }
@@ -2260,7 +2260,7 @@ public class Countly {
                     }
                     break;
                 case CountlyFeatureNames.apm:
-                    if(!isConsentGiven) {
+                    if (!isConsentGiven) {
                         //in case APM consent is removed, clear custom and network traces
                         moduleAPM.clearNetworkTraces();
                         moduleAPM.cancelAllTracesInternal();
@@ -2289,15 +2289,14 @@ public class Countly {
 
             //if consent was changed and set to false
             if ((previousSessionsConsent != currentSessionConsent) && !currentSessionConsent) {
-                if(!isBeginSessionSent) {
+                if (!isBeginSessionSent) {
                     //if session consent was removed and first begins session was not sent
                     //that means that we might not have sent the initially given location information
 
-                    if(moduleLocation.anyValidLocation()) {
+                    if (moduleLocation.anyValidLocation()) {
                         moduleLocation.sendCurrentLocation();
                     }
                 }
-
             }
         } else {
             // if countly is not initialized, collect and send it after it is

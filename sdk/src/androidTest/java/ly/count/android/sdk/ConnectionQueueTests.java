@@ -227,7 +227,7 @@ public class ConnectionQueueTests {
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
-        assertTrue(((curTimestamp-400) <= actualTimestamp) && ((curTimestamp+400) >= actualTimestamp));
+        assertTrue(((curTimestamp - 400) <= actualTimestamp) && ((curTimestamp + 400) >= actualTimestamp));
         assertEquals(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING, queryParams.get("sdk_version"));
         assertEquals("1", queryParams.get("begin_session"));
         // validate metrics
@@ -279,7 +279,7 @@ public class ConnectionQueueTests {
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
         // this check attempts to account for minor time changes during this test
-        assertTrue(((curTimestamp-400) <= actualTimestamp) && ((curTimestamp+400) >= actualTimestamp));
+        assertTrue(((curTimestamp - 400) <= actualTimestamp) && ((curTimestamp + 400) >= actualTimestamp));
         assertEquals("60", queryParams.get("session_duration"));
     }
 
@@ -438,8 +438,8 @@ public class ConnectionQueueTests {
         final ArgumentCaptor<Runnable> arg = ArgumentCaptor.forClass(Runnable.class);
         when(connQ.getExecutor().submit(arg.capture())).thenReturn(null);
         connQ.tick();
-        assertEquals(((ConnectionProcessor)arg.getValue()).getServerURL(), connQ.getServerURL());
-        assertSame(((ConnectionProcessor)arg.getValue()).getCountlyStore(), connQ.getCountlyStore());
+        assertEquals(((ConnectionProcessor) arg.getValue()).getServerURL(), connQ.getServerURL());
+        assertSame(((ConnectionProcessor) arg.getValue()).getCountlyStore(), connQ.getCountlyStore());
     }
 
     @Test
@@ -466,8 +466,8 @@ public class ConnectionQueueTests {
     public void testPrepareCommonRequest() {
         // 0 - test default common request
         // 1 - test common request with SDK_name and SDK_version override
-        for(int a = 0 ; a < 2 ; a++) {
-            if(a == 1){
+        for (int a = 0; a < 2; a++) {
+            if (a == 1) {
                 Countly.sharedInstance().COUNTLY_SDK_NAME = "someBigNew123-+name";
                 Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING = "123sdf.v-213";
             }
@@ -494,16 +494,16 @@ public class ConnectionQueueTests {
                         Assert.assertTrue(pair[1].equals("" + DeviceInfo.getTimezoneOffset()));
                         break;
                     case "sdk_version":
-                        if(a == 0) {
+                        if (a == 0) {
                             Assert.assertTrue(pair[1].equals("20.10.0"));
-                        } else if(a == 1) {
+                        } else if (a == 1) {
                             Assert.assertTrue(pair[1].equals("123sdf.v-213"));
                         }
                         break;
                     case "sdk_name":
-                        if(a == 0) {
+                        if (a == 0) {
                             Assert.assertTrue(pair[1].equals("java-native-android"));
-                        } else if(a == 1){
+                        } else if (a == 1) {
                             Assert.assertTrue(pair[1].equals("someBigNew123-+name"));
                         }
                         break;

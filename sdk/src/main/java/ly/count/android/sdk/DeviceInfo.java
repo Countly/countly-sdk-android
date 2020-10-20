@@ -224,11 +224,11 @@ class DeviceInfo {
      * Currently the Android SDK differentiates between ["mobile", "tablet", "smarttv"]
      */
     static String getDeviceType(final Context context) {
-        if(Utils.isDeviceTv(context)) {
+        if (Utils.isDeviceTv(context)) {
             return "smarttv";
         }
 
-        if(Utils.isDeviceTablet(context)){
+        if (Utils.isDeviceTablet(context)) {
             return "tablet";
         }
 
@@ -258,10 +258,10 @@ class DeviceInfo {
             "_device_type", getDeviceType(context));
 
         //override metric values
-        if(metricOverride != null) {
+        if (metricOverride != null) {
             for (String k : metricOverride.keySet()) {
                 if (k == null || k.length() == 0) {
-                    if(Countly.sharedInstance().isLoggingEnabled()){
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
                         Log.w(Countly.TAG, "Provided metric override key can't be null or empty");
                     }
                     continue;
@@ -270,7 +270,7 @@ class DeviceInfo {
                 String overrideValue = metricOverride.get(k);
 
                 if (overrideValue == null) {
-                    if(Countly.sharedInstance().isLoggingEnabled()){
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
                         Log.w(Countly.TAG, "Provided metric override value can't be null, key:[" + k + "]");
                     }
                     continue;
@@ -278,7 +278,7 @@ class DeviceInfo {
 
                 try {
                     json.put(k, overrideValue);
-                } catch (Exception ex){
+                } catch (Exception ex) {
                     Log.e(Countly.TAG, "Could not set metric override, [" + ex + "]");
                 }
             }

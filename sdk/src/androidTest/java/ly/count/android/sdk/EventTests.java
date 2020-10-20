@@ -40,7 +40,7 @@ import org.junit.runner.RunWith;
 public class EventTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 
@@ -378,7 +378,7 @@ public class EventTests {
 
     @Test
     public void testSegmentationSorter() {
-        String[] keys = new String[]{"a", "b", "c", "d", "e", "f", "l", "r"};
+        String[] keys = new String[] { "a", "b", "c", "d", "e", "f", "l", "r" };
 
         Map<String, Object> automaticViewSegmentation = new HashMap<>();
 
@@ -418,12 +418,12 @@ public class EventTests {
 
     @Test
     public void testSegmentationSorterReminder() {
-        String[] keys = new String[]{"a", "b", "c", "d", "e", "f", "l", "r"};
+        String[] keys = new String[] { "a", "b", "c", "d", "e", "f", "l", "r" };
 
         Map<String, Object> automaticViewSegmentation = new HashMap<>();
 
         Object obj = new Object();
-        int[] arr = new int[] {1, 2, 3};
+        int[] arr = new int[] { 1, 2, 3 };
 
         automaticViewSegmentation.put(keys[0], 2);
         automaticViewSegmentation.put(keys[1], 12.2f);

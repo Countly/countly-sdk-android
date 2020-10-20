@@ -162,7 +162,7 @@ public class CountlyStore {
         }
     }
 
-    private synchronized void deleteOldestRequest(){
+    private synchronized void deleteOldestRequest() {
         final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
         connections.remove(0);
         preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
@@ -315,7 +315,7 @@ public class CountlyStore {
         return res;
     }
 
-    void clearCachedPushData(){
+    void clearCachedPushData() {
         preferencesPush_.edit().remove(CACHED_PUSH_ACTION_ID).apply();
         preferencesPush_.edit().remove(CACHED_PUSH_ACTION_INDEX).apply();
     }

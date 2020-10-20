@@ -26,11 +26,11 @@ import static android.content.Context.UI_MODE_SERVICE;
 public class Utils {
     private static final ExecutorService bg = Executors.newSingleThreadExecutor();
 
-    public static Future<?> runInBackground (Runnable runnable) {
+    public static Future<?> runInBackground(Runnable runnable) {
         return bg.submit(runnable);
     }
 
-    public static <T> Future<T> runInBackground (Callable<T> runnable) {
+    public static <T> Future<T> runInBackground(Callable<T> runnable) {
         return bg.submit(runnable);
     }
 

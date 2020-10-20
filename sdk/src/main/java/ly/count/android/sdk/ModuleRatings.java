@@ -561,7 +561,6 @@ public class ModuleRatings extends ModuleBase {
         public boolean onCheckIsTextEditor() {
             return true;
         }
-
     }
 
     static class FeedbackDialogWebViewClient extends WebViewClient {

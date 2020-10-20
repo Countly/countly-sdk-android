@@ -112,7 +112,7 @@ public class ModuleAPM extends ModuleBase {
             return;
         }
 
-        if(!codeTraces.containsKey(traceKey)) {
+        if (!codeTraces.containsKey(traceKey)) {
             if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[ModuleAPM] no trace with key [" + traceKey + "] found");
             }
@@ -204,14 +204,14 @@ public class ModuleAPM extends ModuleBase {
     }
 
     String validateAndModifyTraceKey(String traceKey) {
-        if(traceKey.charAt(0) == '$' && _cly.isLoggingEnabled()) {
+        if (traceKey.charAt(0) == '$' && _cly.isLoggingEnabled()) {
             Log.w(Countly.TAG, "[ModuleAPM] validateAndModifyTraceKey, trace keys can't start with '$', it will be removed server side");
         }
 
-        if(traceKey.length() > 2048) {
+        if (traceKey.length() > 2048) {
             traceKey = traceKey.substring(0, 2047);
 
-            if(_cly.isLoggingEnabled()) {
+            if (_cly.isLoggingEnabled()) {
                 Log.w(Countly.TAG, "[ModuleAPM] validateAndModifyTraceKey, trace keys can't be longer than 2048 characters, it will be trimmed down");
             }
         }
@@ -344,7 +344,7 @@ public class ModuleAPM extends ModuleBase {
             responsePayloadSize = 0;
         }
 
-        if(startTimestamp > endTimestamp) {
+        if (startTimestamp > endTimestamp) {
             if (_cly.isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleAPM] End timestamp is smaller than start timestamp, switching values");
             }

@@ -41,7 +41,7 @@ public class ModuleRatingsTests {
         EventQueue mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
 
-        String[] vals = new String[]{"aa", "bb", "cc"};
+        String[] vals = new String[] { "aa", "bb", "cc" };
         mCountly.ratings().recordManualRating(vals[0], 3, vals[1], vals[2], true);
 
         final Map<String, String> segmS = new HashMap<>(6);
@@ -58,20 +58,19 @@ public class ModuleRatingsTests {
 
         segmB.put("contactMe", true);
 
-        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB,1, 0, 0, null);
+        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
         mCountly.ratings().recordManualRating(vals[0], -12, vals[1], vals[2], true);
         segmS.put("rating", "" + 0);
-        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB,1, 0, 0, null);
+        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
         mCountly.ratings().recordManualRating(vals[0], 12, vals[1], vals[2], true);
         segmS.put("rating", "" + 5);
-        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB,1, 0, 0, null);
-
+        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
@@ -82,12 +81,12 @@ public class ModuleRatingsTests {
         verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void recordManualRatingNullID() {
         mCountly.ratings().recordManualRating(null, 3, "ss", "qq", true);
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void recordManualRatingEmptyID() {
         mCountly.ratings().recordManualRating("", 3, "ss", "qq", true);
     }
@@ -175,7 +174,6 @@ public class ModuleRatingsTests {
         config.setCountlyStore(cs);
 
         ModuleRatings mr = new ModuleRatings(mCountly, config);
-
 
         ModuleRatings.StarRatingPreferences srp = ModuleRatings.loadStarRatingPreferences(cs);
 

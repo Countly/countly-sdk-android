@@ -6,23 +6,23 @@ import java.util.Random;
 
 public class TestUtils {
 
-    public static String[] createStringArray(int count){
+    public static String[] createStringArray(int count) {
         String[] sArr = new String[count];
         Random rnd = new Random();
 
-        for (int a = 0 ; a < sArr.length ; a++){
+        for (int a = 0; a < sArr.length; a++) {
             sArr[a] = "" + rnd.nextInt();
         }
 
         return sArr;
     }
 
-    public static Map<String, Object> createMapString(int count){
+    public static Map<String, Object> createMapString(int count) {
         Map<String, Object> mRes = new HashMap<>(count);
         Random rnd = new Random();
 
-        for (int a = 0 ; a < count ; a++){
-            mRes.put(""+rnd.nextInt(), ""+rnd.nextInt());
+        for (int a = 0; a < count; a++) {
+            mRes.put("" + rnd.nextInt(), "" + rnd.nextInt());
         }
 
         return mRes;

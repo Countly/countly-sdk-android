@@ -37,7 +37,7 @@ public class ModuleSessionsTests {
     }
 
     @Test
-    public void manualSessionBegin(){
+    public void manualSessionBegin() {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
 
@@ -69,7 +69,6 @@ public class ModuleSessionsTests {
         Thread.sleep(2000);
         mCountly.sessions().endSession();
         verify(connectionQueue, times(1)).endSession(2, null);
-
     }
 
     @Test

@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class UtilsTimeTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 
@@ -32,7 +32,7 @@ public class UtilsTimeTests {
         Assert.assertEquals(1579463653876L, i1.timestampMs);
 
         //weird stuff to account for timezones and daylight saving
-        int diff = Math.abs((int)(i1.hour - (18 + TimeUnit.HOURS.convert(Calendar.getInstance().getTimeZone().getRawOffset(), TimeUnit.MILLISECONDS))));
+        int diff = Math.abs((int) (i1.hour - (18 + TimeUnit.HOURS.convert(Calendar.getInstance().getTimeZone().getRawOffset(), TimeUnit.MILLISECONDS))));
         Assert.assertTrue(diff <= 1);
     }
 
@@ -41,7 +41,7 @@ public class UtilsTimeTests {
         long tms = UtilsTime.currentTimestampMs();
         int tsec = UtilsTime.currentTimestampSeconds();
 
-        long diff = tms/1000 - tsec;
+        long diff = tms / 1000 - tsec;
         Assert.assertTrue(diff < 1);
     }
 

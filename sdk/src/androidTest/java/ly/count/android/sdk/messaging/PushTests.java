@@ -19,7 +19,7 @@ import ly.count.android.sdk.messaging.ModulePush;
 public class PushTests {
 
     @Before
-    public void setUp(){
+    public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 
@@ -28,7 +28,7 @@ public class PushTests {
     }
 
     @Test
-    public void decodeMessage(){
+    public void decodeMessage() {
         //{c.b=[{"t":"Button 1","l":"https:\/\/www.google111.com"},{"t":"Button 2","l":"https:\/\/www.google222.com"}], c.i=5e56ae8c80171b2dc1154f3d, c.l=https://www.google333.com, sound=default, title=112, message=rewrwer}
 
         Map<String, String> values = new HashMap<>();

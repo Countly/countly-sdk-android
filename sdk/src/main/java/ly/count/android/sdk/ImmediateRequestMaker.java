@@ -43,7 +43,6 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
         final boolean requestShouldBeDelayed = (boolean) params[3];
         callback = (InternalFeedbackRatingCallback) params[4];
 
-
         HttpURLConnection connection = null;
         BufferedReader reader = null;
         boolean wasSuccess = true;
