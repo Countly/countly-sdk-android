@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.util.Log;
+import java.util.UUID;
 
 /**
  * Created by artem on 07/11/14.
@@ -14,15 +15,15 @@ public class DeviceId {
      */
     public enum Type {
         DEVELOPER_SUPPLIED,//custom value provided by the developer
-        OPEN_UDID,//random UDID generated
+        OPEN_UDID,//OPEN_UDID generated UDID
         ADVERTISING_ID,//id provided by the android OS
+        TEMPORARY_ID,//temporary device ID mode
+        RANDOM_UDID//fallback random UDID
     }
 
     private static final String TAG = "DeviceId";
     private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
-    private static final String PREFERENCE_KEY_ID_ROLLBACK_ID = "ly.count.android.api.DeviceId.rollback.id";
-    private static final String PREFERENCE_KEY_ID_ROLLBACK_TYPE = "ly.count.android.api.DeviceId.rollback.type";
 
     protected final static String temporaryCountlyDeviceId = "CLYTemporaryDeviceID";
 
@@ -40,7 +41,10 @@ public class DeviceId {
         } else if (type == Type.DEVELOPER_SUPPLIED) {
             throw new IllegalStateException("Please use another DeviceId constructor for device IDs supplied by developer");
         }
+        //setup the preferred device ID type
         this.type = type;
+
+        //check if there wasn't a value set before
         retrieveId(store);
     }
 
@@ -53,15 +57,23 @@ public class DeviceId {
         if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
             throw new IllegalStateException("Please make sure that device ID is not null or empty");
         }
+        //setup the preferred device ID type
         this.type = Type.DEVELOPER_SUPPLIED;
         this.id = developerSuppliedId;
 
+        //check if there wasn't a value set before
         retrieveId(store);
     }
 
+    /**
+     * Used during setup to retrieve the previously saved value
+     * @param store
+     */
     private void retrieveId(CountlyStore store) {
+        //check if there is some stored value
         String storedId = store.getPreference(PREFERENCE_KEY_ID_ID);
         if (storedId != null) {
+            //if there was a value saved previously, set it and it's type
             this.id = storedId;
             this.type = retrieveType(store, PREFERENCE_KEY_ID_TYPE);
         }
@@ -93,6 +105,9 @@ public class DeviceId {
         switch (type) {
             case DEVELOPER_SUPPLIED:
                 // no initialization for developer id
+                // we just store the provided value so that it's
+                store.setPreference(PREFERENCE_KEY_ID_ID, id);
+                store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
                 break;
             case OPEN_UDID:
                 if (OpenUDIDAdapter.isOpenUDIDAvailable()) {
@@ -103,7 +118,10 @@ public class DeviceId {
                         OpenUDIDAdapter.sync(context);
                     }
                 } else {
-                    if (raiseExceptions) throw new IllegalStateException("OpenUDID is not available, please make sure that you have it in your classpath");
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.w(TAG, "[DeviceId] Advertising ID is not available, switching to a random UDID");
+                    }
+                    GenerateRandomUDID(store);
                 }
                 break;
             case ADVERTISING_ID:
@@ -121,14 +139,32 @@ public class DeviceId {
                         OpenUDIDAdapter.sync(context);
                     }
                 } else {
-                    // just do nothing, without Advertising ID and OpenUDID this user is lost for Countly
+                    // use random ID, otherwise without Advertising ID and OpenUDID this user is lost for Countly
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(TAG, "[DeviceId] Advertising ID is not available, neither OpenUDID is");
+                        Log.w(TAG, "[DeviceId] Advertising ID is not available, neither OpenUDID is, switching to a random UDID");
                     }
-                    if (raiseExceptions) throw new IllegalStateException("OpenUDID is not available, please make sure that you have it in your classpath");
+                    GenerateRandomUDID(store);
+                }
+                break;
+            case RANDOM_UDID:
+                if(id == null) {
+                    GenerateRandomUDID(store);
                 }
                 break;
         }
+    }
+
+    void GenerateRandomUDID(CountlyStore store){
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.w(TAG, "[DeviceId] Generating new random UDID");
+        }
+
+        //generated new ID and clear override
+        String generatedID = UUID.randomUUID().toString();
+        setId(Type.RANDOM_UDID, generatedID);
+
+        store.setPreference(PREFERENCE_KEY_ID_ID, id);
+        store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
     }
 
     private void storeOverriddenType(CountlyStore store, Type type) {
@@ -151,6 +187,10 @@ public class DeviceId {
             return Type.OPEN_UDID;
         } else if (typeString.equals(Type.ADVERTISING_ID.toString())) {
             return Type.ADVERTISING_ID;
+        } else if (typeString.equals(Type.TEMPORARY_ID.toString())) {
+            return Type.TEMPORARY_ID;
+        } else if (typeString.equals(Type.RANDOM_UDID.toString())) {
+            return Type.RANDOM_UDID;
         } else {
             return null;
         }
@@ -183,10 +223,6 @@ public class DeviceId {
     }
 
     protected String changeToDeveloperProvidedId(CountlyStore store, String newId) {
-        if (id != null && type != null && type != Type.DEVELOPER_SUPPLIED) {
-            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_ID, id);
-            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_TYPE, type.toString());
-        }
 
         String oldId = id == null || !id.equals(newId) ? id : null;
 
@@ -209,30 +245,21 @@ public class DeviceId {
         init(context, store, false);
     }
 
-    protected String revertFromDeveloperId(CountlyStore store) {
-        store.setPreference(PREFERENCE_KEY_ID_ID, null);
-        store.setPreference(PREFERENCE_KEY_ID_TYPE, null);
-
-        String i = store.getPreference(PREFERENCE_KEY_ID_ROLLBACK_ID);
-        Type t = retrieveType(store, PREFERENCE_KEY_ID_ROLLBACK_TYPE);
-
-        String oldId = null;
-
-        if (i != null && t != null) {
-            oldId = id == null || !id.equals(i) ? id : null;
-            this.id = i;
-            this.type = t;
-            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_ID, null);
-            store.setPreference(PREFERENCE_KEY_ID_ROLLBACK_TYPE, null);
-        }
-
-        return oldId;
-    }
-
+    /**
+     * Returns the current type which would be returned to the developer
+     * @return
+     */
     protected Type getType() {
+        if(temporaryIdModeEnabled()) {
+            return Type.TEMPORARY_ID;
+        }
         return type;
     }
 
+    /**
+     * Checks if temporary device ID mode is enabled by checking the currently set ID
+     * @return
+     */
     protected boolean temporaryIdModeEnabled() {
         String id = getId();
         if (id == null) {

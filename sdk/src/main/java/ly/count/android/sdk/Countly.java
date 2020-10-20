@@ -425,11 +425,23 @@ public class Countly {
             //device ID is provided but it's a empty string
             throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
         }
+        if(config.idMode != null) {
+            if(config.idMode == DeviceId.Type.DEVELOPER_SUPPLIED) {
+                throw new IllegalArgumentException("Developer_Supplied type can't be provided during init");
+            }
+            if(config.idMode == DeviceId.Type.TEMPORARY_ID) {
+                throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
+            }
+        }
         if (config.deviceID == null && config.idMode == null) {
             //device ID was not provided and no preferred mode specified. Choosing defaults
             if (OpenUDIDAdapter.isOpenUDIDAvailable()) {
                 config.idMode = DeviceId.Type.OPEN_UDID;
-            } else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) config.idMode = DeviceId.Type.ADVERTISING_ID;
+            } else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
+                config.idMode = DeviceId.Type.ADVERTISING_ID;
+            } else {
+                config.idMode = DeviceId.Type.RANDOM_UDID;//use this as fallback
+            }
         }
         if (config.deviceID == null && config.idMode == DeviceId.Type.OPEN_UDID && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
             //choosing OPEN_UDID as ID type, but it's not available on this device
