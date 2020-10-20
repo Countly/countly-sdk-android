@@ -661,6 +661,23 @@ public class ConnectionQueue {
         return data;
     }
 
+    String prepareSurveyListRequest(ModuleSurveys.SurveyType requiredSurveyType) {
+        String data = prepareCommonRequestData()
+            + "&method=fetch_surveys"
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+
+        switch (requiredSurveyType) {
+            case NPS:
+                data += "&type=nps";
+                break;
+            case basicSurvey:
+                data += "&type=survey";
+                break;
+        }
+
+        return data;
+    }
+
     /**
      * Ensures that an executor has been created for ConnectionProcessor instances to be submitted to.
      */

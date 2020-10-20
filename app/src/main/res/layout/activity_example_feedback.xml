@@ -29,5 +29,19 @@
         android:layout_height="wrap_content"
         android:onClick="onClickSendManualRating"
         android:text="Send Manual Rating" />
+    <Button
+        android:id="@+id/button63"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickShowSurvey"
+        android:text="Show survey"
+        />
+    <Button
+        android:id="@+id/button69"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickShowNPS"
+        android:text="Show NPS"
+        />
 
 </LinearLayout>

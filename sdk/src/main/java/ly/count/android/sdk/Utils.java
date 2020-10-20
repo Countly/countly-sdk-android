@@ -235,6 +235,10 @@ public class Utils {
      * Used for detecting if current device is a tablet of phone
      */
     static boolean isDeviceTablet(Context context) {
+        if (context == null) {
+            return false;
+        }
+
         return (context.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_LARGE;
     }
 
@@ -245,6 +249,10 @@ public class Utils {
      */
     @SuppressWarnings("RedundantIfStatement")
     static boolean isDeviceTv(Context context) {
+        if (context == null) {
+            return false;
+        }
+
         UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);
 
         if (uiModeManager == null) {

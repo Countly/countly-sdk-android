@@ -4,12 +4,20 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.os.Build;
+import android.os.Debug;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.RatingBar;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -376,14 +384,7 @@ public class ModuleRatings extends ModuleBase {
      * @param isCancellable
      * @param callback
      */
-    void showStarRatingCustom(
-        final Context context,
-        final String title,
-        final String message,
-        final String cancelText,
-        final boolean isCancellable,
-        final StarRatingCallback callback) {
-
+    void showStarRatingCustom(final Context context, final String title, final String message, final String cancelText, final boolean isCancellable, final StarRatingCallback callback) {
         if (!(context instanceof Activity)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
@@ -446,8 +447,7 @@ public class ModuleRatings extends ModuleBase {
 
     /// Countly webDialog user rating
 
-    static synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final Countly countly, final ConnectionQueue connectionQueue_,
-        final FeedbackRatingCallback devCallback) {
+    synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback devCallback) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
         }
@@ -456,89 +456,100 @@ public class ModuleRatings extends ModuleBase {
             if (devCallback != null) {
                 devCallback.callback("Countly widgetId cannot be null or empty");
             }
-            throw new IllegalArgumentException("Countly widgetId cannot be null or empty");
+            Log.e(Countly.TAG, "[ModuleRatings] Countly widgetId cannot be null or empty");
+            return;
         }
 
-        if (countly.getConsent(Countly.CountlyFeatureNames.starRating)) {
-            //check the device type
-            final boolean deviceIsPhone;
-            final boolean deviceIsTablet;
-            final boolean deviceIsTv;
-
-            deviceIsTv = Utils.isDeviceTv(activity);
-
-            if (!deviceIsTv) {
-                deviceIsPhone = !Utils.isDeviceTablet(activity);
-                deviceIsTablet = Utils.isDeviceTablet(activity);
-            } else {
-                deviceIsTablet = false;
-                deviceIsPhone = false;
+        if (activity == null) {
+            if (devCallback != null) {
+                devCallback.callback("When showing feedback popup, Activity can't be null");
             }
+            Log.e(Countly.TAG, "[ModuleRatings] When showing feedback popup, Activity can't be null");
+            return;
+        }
 
-            String requestData = connectionQueue_.prepareRatingWidgetRequest(widgetId);
-            final String ratingWidgetUrl = connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + connectionQueue_.getDeviceId().getId() + "&app_key=" + connectionQueue_.getAppKey();
-
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
-            }
-
-            ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
-
-            (new ImmediateRequestMaker()).execute(requestData, "/o/feedback/widget", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    if (checkResponse == null) {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
-                        }
-                        if (devCallback != null) {
-                            devCallback.callback("Not possible to show Rating popup, probably no internet connection");
-                        }
-                    } else {
-                        try {
-                            JSONObject jDevices = checkResponse.getJSONObject("target_devices");
-
-                            boolean showOnTv = jDevices.optBoolean("desktop", false);
-                            boolean showOnPhone = jDevices.optBoolean("phone", false);
-                            boolean showOnTablet = jDevices.optBoolean("tablet", false);
-
-                            if ((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)) {
-                                //it's possible to show the rating window on this device
-                                if (Countly.sharedInstance().isLoggingEnabled()) {
-                                    Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
-                                }
-
-                                RatingDialogWebView webView = new RatingDialogWebView(activity);
-                                webView.getSettings().setJavaScriptEnabled(true);
-                                webView.loadUrl(ratingWidgetUrl);
-
-                                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                                builder.setView(webView);
-                                if (closeButtonText != null && !closeButtonText.isEmpty()) {
-                                    builder.setNeutralButton(closeButtonText, null);
-                                }
-                                builder.show();
-                            } else {
-                                if (devCallback != null) {
-                                    devCallback.callback("Rating dialog is not meant for this form factor");
-                                }
-                            }
-                        } catch (JSONException e) {
-                            if (Countly.sharedInstance().isLoggingEnabled()) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            });
-        } else {
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
             if (devCallback != null) {
                 devCallback.callback("Consent is not granted");
             }
+            return;
         }
+
+        //check the device type
+        final boolean deviceIsPhone;
+        final boolean deviceIsTablet;
+        final boolean deviceIsTv;
+
+        deviceIsTv = Utils.isDeviceTv(activity);
+
+        if (!deviceIsTv) {
+            deviceIsPhone = !Utils.isDeviceTablet(activity);
+            deviceIsTablet = Utils.isDeviceTablet(activity);
+        } else {
+            deviceIsTablet = false;
+            deviceIsPhone = false;
+        }
+
+        String requestData = _cly.connectionQueue_.prepareRatingWidgetRequest(widgetId);
+        final String ratingWidgetUrl = _cly.connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + _cly.connectionQueue_.getDeviceId().getId() + "&app_key=" + _cly.connectionQueue_.getAppKey();
+
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
+        }
+
+        ConnectionProcessor cp = _cly.connectionQueue_.createConnectionProcessor();
+
+        (new ImmediateRequestMaker()).execute(requestData, "/o/feedback/widget", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+            @Override
+            public void callback(JSONObject checkResponse) {
+                if (checkResponse == null) {
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
+                    }
+                    if (devCallback != null) {
+                        devCallback.callback("Not possible to show Rating popup, probably no internet connection");
+                    }
+                    return;
+                }
+
+                try {
+                    JSONObject jDevices = checkResponse.getJSONObject("target_devices");
+
+                    boolean showOnTv = jDevices.optBoolean("desktop", false);
+                    boolean showOnPhone = jDevices.optBoolean("phone", false);
+                    boolean showOnTablet = jDevices.optBoolean("tablet", false);
+
+                    if ((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)) {
+                        //it's possible to show the rating window on this device
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
+                        }
+
+                        RatingDialogWebView webView = new RatingDialogWebView(activity);
+                        webView.getSettings().setJavaScriptEnabled(true);
+                        webView.loadUrl(ratingWidgetUrl);
+
+                        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                        builder.setView(webView);
+                        if (closeButtonText != null && !closeButtonText.isEmpty()) {
+                            builder.setNeutralButton(closeButtonText, null);
+                        }
+                        builder.show();
+                    } else {
+                        if (devCallback != null) {
+                            devCallback.callback("Rating dialog is not meant for this form factor");
+                        }
+                    }
+                } catch (JSONException e) {
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
     }
 
-    private static class RatingDialogWebView extends WebView {
+    static class RatingDialogWebView extends WebView {
         public RatingDialogWebView(Context context) {
             super(context);
         }
@@ -549,6 +560,23 @@ public class ModuleRatings extends ModuleBase {
         @Override
         public boolean onCheckIsTextEditor() {
             return true;
+        }
+
+    }
+
+    static class FeedbackDialogWebViewClient extends WebViewClient {
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+            Log.i(Countly.TAG, "attempting to load resource: " + url);
+            return null;
+        }
+
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Log.i(Countly.TAG, "attempting to load resource: " + request.getUrl());
+            }
+            return null;
         }
     }
 
@@ -608,7 +636,7 @@ public class ModuleRatings extends ModuleBase {
                     Log.i(Countly.TAG, "[Ratings] Calling showFeedbackPopup");
                 }
 
-                showFeedbackPopupInternal(widgetId, closeButtonText, activity, _cly, _cly.connectionQueue_, callback);
+                showFeedbackPopupInternal(widgetId, closeButtonText, activity, callback);
             }
         }
 

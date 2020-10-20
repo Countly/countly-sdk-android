@@ -63,7 +63,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[ImmediateRequestMaker]While waiting for 0.5 seconds in ImmediateRequestMaker, sleep was interrupted");
+                        Log.w(Countly.TAG, "[ImmediateRequestMaker] While waiting for 0.5 seconds in ImmediateRequestMaker, sleep was interrupted");
                     }
                 }
             }

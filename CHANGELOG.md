@@ -1,3 +1,6 @@
+20.10.0
+  * Added survey, nps feature
+
 20.04.5
   * Replacing sha-1 hash with sha-256 hash for requests.
   * Adding apm calls for cancelTrace, cancelAllTraces, recordNetworkTrace

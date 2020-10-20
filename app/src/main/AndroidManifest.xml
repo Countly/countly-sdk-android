@@ -90,7 +90,7 @@
         </activity>
 
         <activity
-            android:name=".ActivityExampleRatings"
+            android:name=".ActivityExampleFeedback"
             android:label="@string/activity_name_device_id"
             android:configChanges="orientation|screenSize">
         </activity>

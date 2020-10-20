@@ -148,6 +148,7 @@ public class Countly {
     ModuleConsent moduleConsent = null;
     ModuleDeviceId moduleDeviceId = null;
     ModuleLocation moduleLocation = null;
+    ModuleSurveys moduleSurveys = null;
 
     //user data access
     public static UserData userData;
@@ -213,6 +214,7 @@ public class Countly {
         public static final String push = "push";
         public static final String starRating = "star-rating";
         public static final String apm = "apm";
+        public static final String surveys = "surveys";
         //public static final String remoteConfig = "remote-config";
         //public static final String accessoryDevices = "accessory-devices";
     }
@@ -229,7 +231,8 @@ public class Countly {
         CountlyFeatureNames.push,
         CountlyFeatureNames.starRating,
         //CountlyFeatureNames.remoteConfig,
-        CountlyFeatureNames.apm
+        CountlyFeatureNames.apm,
+        CountlyFeatureNames.surveys
     };
 
     /**
@@ -504,6 +507,7 @@ public class Countly {
             moduleConsent = new ModuleConsent(this, config);
             moduleAPM = new ModuleAPM(this, config);
             moduleLocation = new ModuleLocation(this, config);
+            moduleSurveys = new ModuleSurveys(this, config);
 
             modules.clear();
             modules.add(moduleCrash);
@@ -516,6 +520,7 @@ public class Countly {
             modules.add(moduleAPM);
             modules.add(moduleDeviceId);
             modules.add(moduleLocation);
+            modules.add(moduleSurveys);
 
             if (isLoggingEnabled()) {
                 Log.i(Countly.TAG, "[Init] Finished initialising modules");
@@ -820,6 +825,7 @@ public class Countly {
         moduleAPM = null;
         moduleDeviceId = null;
         moduleLocation = null;
+        moduleSurveys = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
@@ -2769,6 +2775,14 @@ public class Countly {
         }
 
         return moduleLocation.locationInterface;
+    }
+
+    public ModuleSurveys.Surveys surveys() {
+        if (!isInitialized()) {
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing surveys");
+        }
+
+        return moduleSurveys.surveysInterface;
     }
 
     public static void applicationOnCreate() {

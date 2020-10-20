@@ -77,7 +77,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:onClick="onClickButtonRatings"
-            android:text="Ratings" />
+            android:text="Surveys and Ratings"
+            />
 
         <Button
             android:text="@string/others"
