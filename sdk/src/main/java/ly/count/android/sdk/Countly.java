@@ -439,8 +439,6 @@ public class Countly {
                 config.idMode = DeviceId.Type.OPEN_UDID;
             } else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
                 config.idMode = DeviceId.Type.ADVERTISING_ID;
-            } else {
-                config.idMode = DeviceId.Type.RANDOM_UDID;//use this as fallback
             }
         }
         if (config.deviceID == null && config.idMode == DeviceId.Type.OPEN_UDID && !OpenUDIDAdapter.isOpenUDIDAvailable()) {

@@ -18,7 +18,6 @@ public class DeviceId {
         OPEN_UDID,//OPEN_UDID generated UDID
         ADVERTISING_ID,//id provided by the android OS
         TEMPORARY_ID,//temporary device ID mode
-        RANDOM_UDID//fallback random UDID
     }
 
     private static final String TAG = "DeviceId";
@@ -118,10 +117,7 @@ public class DeviceId {
                         OpenUDIDAdapter.sync(context);
                     }
                 } else {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(TAG, "[DeviceId] Advertising ID is not available, switching to a random UDID");
-                    }
-                    GenerateRandomUDID(store);
+                    if (raiseExceptions) throw new IllegalStateException("OpenUDID is not available, please make sure that it is configured correctly");
                 }
                 break;
             case ADVERTISING_ID:
@@ -139,32 +135,14 @@ public class DeviceId {
                         OpenUDIDAdapter.sync(context);
                     }
                 } else {
-                    // use random ID, otherwise without Advertising ID and OpenUDID this user is lost for Countly
+                    // just do nothing, without Advertising ID and OpenUDID this user is lost for Countly
                     if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(TAG, "[DeviceId] Advertising ID is not available, neither OpenUDID is, switching to a random UDID");
+                        Log.e(TAG, "[DeviceId] Advertising ID is not available, neither OpenUDID is");
                     }
-                    GenerateRandomUDID(store);
-                }
-                break;
-            case RANDOM_UDID:
-                if(id == null) {
-                    GenerateRandomUDID(store);
+                    if (raiseExceptions) throw new IllegalStateException("OpenUDID is not available, please make sure that it is configured correctly");
                 }
                 break;
         }
-    }
-
-    void GenerateRandomUDID(CountlyStore store){
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.w(TAG, "[DeviceId] Generating new random UDID");
-        }
-
-        //generated new ID and clear override
-        String generatedID = UUID.randomUUID().toString();
-        setId(Type.RANDOM_UDID, generatedID);
-
-        store.setPreference(PREFERENCE_KEY_ID_ID, id);
-        store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
     }
 
     private void storeOverriddenType(CountlyStore store, Type type) {
@@ -189,8 +167,6 @@ public class DeviceId {
             return Type.ADVERTISING_ID;
         } else if (typeString.equals(Type.TEMPORARY_ID.toString())) {
             return Type.TEMPORARY_ID;
-        } else if (typeString.equals(Type.RANDOM_UDID.toString())) {
-            return Type.RANDOM_UDID;
         } else {
             return null;
         }

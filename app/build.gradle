@@ -72,7 +72,7 @@ dependencies {
 
     implementation 'com.huawei.hms:push:4.0.3.301'
 
-    //implementation 'ly.count.android:sdk:20.04.2'
+    //implementation 'ly.count.android:sdk:20.04.5'
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -130,12 +130,6 @@
         </activity>
         <activity android:name=".ActivityExampleKotlin" />
 
-        <service android:name="org.openudid.OpenUDID_service" android:exported="false">
-            <intent-filter>
-                <action android:name="org.OpenUDID.GETUDID" />
-            </intent-filter>
-        </service>
-
         <receiver android:name="ly.count.android.sdk.ReferrerReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="com.android.vending.INSTALL_REFERRER" />
