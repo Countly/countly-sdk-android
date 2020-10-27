@@ -91,7 +91,7 @@
 
         <activity
             android:name=".ActivityExampleFeedback"
-            android:label="@string/activity_name_device_id"
+            android:label="@string/activity_name_feedback"
             android:configChanges="orientation|screenSize">
         </activity>
 

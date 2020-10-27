@@ -407,7 +407,7 @@ public class Countly {
         //react to given consent
         if (config.shouldRequireConsent) {
             setRequiresConsent(true);
-            setConsent(config.enabledFeatureNames, true);
+            setConsentInternal(config.enabledFeatureNames, true);
         }
 
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {
@@ -507,6 +507,7 @@ public class Countly {
             }
 
             //initialise modules
+            moduleConsent = new ModuleConsent(this, config);
             moduleDeviceId = new ModuleDeviceId(this, config);
             moduleCrash = new ModuleCrash(this, config);
             moduleEvents = new ModuleEvents(this, config);
@@ -514,19 +515,18 @@ public class Countly {
             moduleRatings = new ModuleRatings(this, config);
             moduleSessions = new ModuleSessions(this, config);
             moduleRemoteConfig = new ModuleRemoteConfig(this, config);
-            moduleConsent = new ModuleConsent(this, config);
             moduleAPM = new ModuleAPM(this, config);
             moduleLocation = new ModuleLocation(this, config);
             moduleSurveys = new ModuleSurveys(this, config);
 
             modules.clear();
+            modules.add(moduleConsent);
             modules.add(moduleCrash);
             modules.add(moduleEvents);
             modules.add(moduleViews);
             modules.add(moduleRatings);
             modules.add(moduleSessions);
             modules.add(moduleRemoteConfig);
-            modules.add(moduleConsent);
             modules.add(moduleAPM);
             modules.add(moduleDeviceId);
             modules.add(moduleLocation);
@@ -2189,7 +2189,7 @@ public class Countly {
             return this;
         }
 
-        setConsent(groupedFeatures.get(groupName), isConsentGiven);
+        setConsentInternal(groupedFeatures.get(groupName), isConsentGiven);
 
         return this;
     }
@@ -2207,6 +2207,10 @@ public class Countly {
             Log.w(Countly.TAG, "[Countly] Calling 'setConsent' before initialising the SDK is deprecated!");
         }
 
+        return setConsentInternal(featureNames, isConsentGiven);
+    }
+
+    Countly setConsentInternal(String[] featureNames, boolean isConsentGiven) {
         final boolean isInit = isInitialized();//is the SDK initialized
 
         if (!requiresConsent) {
@@ -2333,7 +2337,7 @@ public class Countly {
             Log.w(Countly.TAG, "[Countly] Calling 'giveConsent' before initialising the SDK is deprecated!");
         }
 
-        setConsent(featureNames, true);
+        setConsentInternal(featureNames, true);
 
         return this;
     }
@@ -2354,7 +2358,7 @@ public class Countly {
             Log.w(Countly.TAG, "Calling 'removeConsent' before initialising the SDK is deprecated!");
         }
 
-        setConsent(featureNames, false);
+        setConsentInternal(featureNames, false);
 
         return this;
     }

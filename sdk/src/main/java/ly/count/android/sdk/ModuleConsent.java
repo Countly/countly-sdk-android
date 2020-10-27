@@ -143,7 +143,7 @@ public class ModuleConsent extends ModuleBase {
          */
         public void setConsent(String[] featureNames, boolean isConsentGiven) {
             synchronized (_cly) {
-                _cly.setConsent(featureNames, isConsentGiven);
+                _cly.setConsentInternal(featureNames, isConsentGiven);
             }
         }
 
