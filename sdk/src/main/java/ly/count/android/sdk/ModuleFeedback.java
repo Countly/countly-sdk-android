@@ -208,15 +208,15 @@ public class ModuleFeedback extends ModuleBase {
             case survey:
                 //'/o/surveys/nps/widget?widget_ids=' + nps[0]._id
                 //https://xxxx.count.ly/surveys/widget/nps?widget_id=5f8445c4eecf2a6de4dcb53e
-                widgetListUrl = _cly.connectionQueue_.getServerURL() + "/feedback/survey?widget_id=" + widgetInfo.widgetId;
+                widgetListUrl = _cly.connectionQueue_.getServerURL() + "/feedback/survey?widget_id=" + UtilsNetworking.urlEncodeString(widgetInfo.widgetId);
 
                 break;
             case nps:
-                widgetListUrl = _cly.connectionQueue_.getServerURL() + "/feedback/nps?widget_id=" + widgetInfo.widgetId;
+                widgetListUrl = _cly.connectionQueue_.getServerURL() + "/feedback/nps?widget_id=" + UtilsNetworking.urlEncodeString(widgetInfo.widgetId);
                 break;
         }
 
-        widgetListUrl += "&device_id=" + _cly.connectionQueue_.getDeviceId().getId() + "&app_key=" + _cly.connectionQueue_.getAppKey();
+        widgetListUrl += "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()) + "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
         widgetListUrl += "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
         //device_id, app_key, app_version, sdk_version, sdk_name,
 

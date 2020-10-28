@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("JavadocReference")
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.10.0";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.10.0-rc1";
     /**
      * Used as request meta data on every request
      */
@@ -425,13 +425,8 @@ public class Countly {
             //device ID is provided but it's a empty string
             throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
         }
-        if(config.idMode != null) {
-            if(config.idMode == DeviceId.Type.DEVELOPER_SUPPLIED) {
-                throw new IllegalArgumentException("Developer_Supplied type can't be provided during init");
-            }
-            if(config.idMode == DeviceId.Type.TEMPORARY_ID) {
-                throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
-            }
+        if(config.idMode == DeviceId.Type.TEMPORARY_ID) {
+            throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
         }
         if (config.deviceID == null && config.idMode == null) {
             //device ID was not provided and no preferred mode specified. Choosing defaults
@@ -440,6 +435,9 @@ public class Countly {
             } else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
                 config.idMode = DeviceId.Type.ADVERTISING_ID;
             }
+        }
+        if (config.idMode == DeviceId.Type.DEVELOPER_SUPPLIED && config.deviceID == null) {
+            throw new IllegalArgumentException("Valid device ID has to be provided with the Developer_Supplied device ID type");
         }
         if (config.deviceID == null && config.idMode == DeviceId.Type.OPEN_UDID && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
             //choosing OPEN_UDID as ID type, but it's not available on this device
@@ -2011,6 +2009,11 @@ public class Countly {
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before getDeviceID");
         }
+
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Countly] Calling 'getDeviceID'");
+        }
+
         return connectionQueue_.getDeviceId().getId();
     }
 
@@ -2024,6 +2027,10 @@ public class Countly {
             throw new IllegalStateException("init must be called before getDeviceID");
         }
 
+        if (isLoggingEnabled()) {
+            Log.d(Countly.TAG, "[Countly] Calling 'getDeviceIDType'");
+        }
+
         return connectionQueue_.getDeviceId().getType();
     }
 
@@ -2034,7 +2041,7 @@ public class Countly {
      */
     public synchronized Countly setPushIntentAddMetadata(boolean shouldAddMetadata) {
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting if adding metadata to push intents: [" + shouldAddMetadata + "]");
+            Log.d(Countly.TAG, "[Countly] Setting if adding metadata to push intents: [" + shouldAddMetadata + "]");
         }
         addMetadataToPushIntents = shouldAddMetadata;
         return this;
@@ -2704,6 +2711,113 @@ public class Countly {
         connectionQueue_.tick();
     }
 
+    /**
+     * Go through the request queue and replace the appKey of all requests with the current appKey
+     */
+    public void requestQueueOverwriteAppKeys() {
+        if (isLoggingEnabled()) {
+            Log.i(Countly.TAG, "[Countly] Calling requestQueueOverwriteAppKeys");
+        }
+
+        if (!isInitialized()) {
+            if (isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[Countly] Countly.sharedInstance().init must be called before requestQueueOverwriteAppKeys");
+            }
+            return;
+        }
+
+        List<String> filteredRequests = requestLogReplaceWithAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
+        if(filteredRequests != null) {
+            connectionQueue_.getCountlyStore().replaceConnectionsList(filteredRequests);
+            doStoredRequests();
+        }
+    }
+
+    /**
+     * Go through the request queue and delete all requests that don't have the current application key
+     */
+    public void requestQueueEraseAppKeysRequests() {
+        if (isLoggingEnabled()) {
+            Log.i(Countly.TAG, "[Countly] Calling requestQueueEraseAppKeysRequests");
+        }
+
+        if (!isInitialized()) {
+            if (isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[Countly] Countly.sharedInstance().init must be called before requestQueueEraseAppKeysRequests");
+            }
+            return;
+        }
+
+        List<String> filteredRequests = requestLogRemoveWithoutAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
+        connectionQueue_.getCountlyStore().replaceConnectionsList(filteredRequests);
+        doStoredRequests();
+    }
+
+    private List<String> requestLogReplaceWithAppKey(String[] storedRequests, String targetAppKey) {
+        try {
+            List<String> filteredRequests = new ArrayList<>();
+            String replacementPart = "app_key=" + UtilsNetworking.urlEncodeString(targetAppKey);
+
+            for (int a = 0; a < storedRequests.length; a++) {
+                boolean found = false;
+                String[] parts = storedRequests[a].split("&");
+
+                for (int b = 0; b < parts.length; b++) {
+                    if (parts[b].contains("app_key=")) {
+                        parts[b] = replacementPart;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    //recombine and add
+                    StringBuilder stringBuilder = new StringBuilder(storedRequests[a].length());
+
+                    for (int c = 0; c < parts.length; c++) {
+                        if (c != 0) {
+                            stringBuilder.append("&");
+                        }
+                        stringBuilder.append(parts[c]);
+                    }
+                } else {
+                    //pass through the old one
+                    filteredRequests.add(storedRequests[a]);
+                }
+            }
+
+            return filteredRequests;
+        } catch (Exception ex) {
+            //in case of failure, abort
+            if (isLoggingEnabled()) {
+                Log.e(Countly.TAG, "[Countly] Failed while overwriting appKeys, " + ex.toString());
+            }
+
+            return null;
+        }
+    }
+
+    private List<String> requestLogRemoveWithoutAppKey(String[] storedRequests, String appKey) {
+        String searchablePart = "app_key=" + appKey;
+
+        List<String> filteredRequests = new ArrayList<>();
+        for (int a = 0; a < storedRequests.length; a++) {
+            if (storedRequests[a].contains(searchablePart)) {
+                if (isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[requestQueueEraseAppKeysRequests] Found a entry to remove: [" + storedRequests[a] + "]");
+                }
+            } else {
+                filteredRequests.add(storedRequests[a]);
+            }
+        }
+
+        return filteredRequests;
+    }
+
+    /**
+     * Go into temporary device ID mode
+     * @return
+     */
     public Countly enableTemporaryIdMode() {
         if (isLoggingEnabled()) {
             Log.i(Countly.TAG, "[Countly] Calling enableTemporaryIdMode");
@@ -2790,9 +2904,9 @@ public class Countly {
         return moduleLocation.locationInterface;
     }
 
-    public ModuleFeedback.Feedback surveys() {
+    public ModuleFeedback.Feedback feedback() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing surveys");
+            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing feedback");
         }
 
         return moduleFeedback.feedbackInterface;

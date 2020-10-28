@@ -186,7 +186,13 @@ public class CountlyStore {
     protected synchronized void replaceConnections(final String[] newConns) {
         if (newConns != null) {
             final List<String> connections = new ArrayList<>(Arrays.asList(newConns));
-            preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+            replaceConnectionsList(connections);
+        }
+    }
+
+    protected synchronized void replaceConnectionsList(final List<String> newConns) {
+        if (newConns != null) {
+            preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(newConns, DELIMITER)).apply();
         }
     }
 

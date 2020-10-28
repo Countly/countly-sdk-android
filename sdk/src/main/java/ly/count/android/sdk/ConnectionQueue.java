@@ -594,7 +594,7 @@ public class ConnectionQueue {
     String prepareCommonRequestData() {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
-        return "app_key=" + appKey_
+        return "app_key=" + UtilsNetworking.urlEncodeString(appKey_)
             + "&timestamp=" + instant.timestampMs
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
@@ -628,7 +628,7 @@ public class ConnectionQueue {
             }
 
             if (locationIpAddress != null && !locationIpAddress.isEmpty()) {
-                data += "&ip=" + locationIpAddress;
+                data += "&ip=" + UtilsNetworking.urlEncodeString(locationIpAddress);
             }
         }
         return data;
@@ -656,7 +656,7 @@ public class ConnectionQueue {
 
     String prepareRatingWidgetRequest(String widgetId) {
         String data = prepareCommonRequestData()
-            + "&widget_id=" + widgetId
+            + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
         return data;
     }

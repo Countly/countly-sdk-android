@@ -1,5 +1,14 @@
 20.10.0
   * Added survey, nps feature
+  * Added retries to push media download
+  * Update breakpad for native exception catching
+  * Symbol upload tool now sends the used breakpad version
+  * Reworked openID device ID to not be a separate service  
+  * Sending device type (phone, tablet, tv) as part of metrics
+  * Reworked location data persistence and when it is sent
+  * Adding BroadcastReceiver vulnerability fix
+  * Fixed potential multithreaded synchronization issues
+  * Fixed location url encoding bug
 
 20.04.5
   * Replacing sha-1 hash with sha-256 hash for requests.
@@ -10,7 +19,7 @@
 20.04.4
   * Adding metric override feature
   * Adding functionality to override SDK name and SDK version strings
-  * Fixed a issue in the network request retry logic
+  * Fixed an issue in the network request retry logic
   * Removed requirement for any consent to be set before device ID can be changed.
   * Mitigating issue which would happen if push token is refreshed before SDK is initialized.
   * Fixed the sending of empty event collections in cases where event sending was forced.
@@ -32,33 +41,33 @@
   * Adding functionality to ignore activities for automatic view tracking
   * Adding functionality to track orientation changes
   * Adding call to manually record user rating without showing any UI
-  * Adding call to record a event with a given timestamp
+  * Adding call to record an event with a given timestamp
   * Adding call to cancel a timed event
   * Adding manual session control
   * Adding option to set tamper protection salt in config object
   * Adding calls to give and remove consent to all features at the same time
   * Adding a way to change the session update timer interval
   * Adding call to set notification accent color
-  * Adding APM functinality to record app start time
-  * Adding APM functinality to record custom traces
-  * Adding APM functinality to record network request traces
-  * Adding APM functinality to record app time spent in foreground and background
+  * Adding APM functionality to record app start time
+  * Adding APM functionality to record custom traces
+  * Adding APM functionality to record network request traces
+  * Adding APM functionality to record app time spent in foreground and background
   * Adding remote config call to get all saved values
-  * Moving crash, event, view, rating related calls to a seperate modules
+  * Moving crash, event, view, rating related calls to a separate modules
   * Deprecating functions that are being put into modules
   * Migrated to AndroidX
   * Improved internal time management which fixes inconsistencies that could arrise on day changes
   * Fixed a bug where deep links from notifications did not include the sent message as part of the intent
-  * Removing depracated "addCrashLog" call
-  * Removing depracated "logException" call
-  * Removing depracated "setCustomUserData" call
-  * Removing depracated "setUserData" call
+  * Removing deprecated "addCrashLog" call
+  * Removing deprecated "logException" call
+  * Removing deprecated "setCustomUserData" call
+  * Removing deprecated "setUserData" call
 
 19.09.3
-  * Fixed a bug which did not add the link to the push dialog button.
+  * Fixed a bug that did not add the link to the push dialog button.
   
 19.09.2
-  * Fixed a bug which did not add links to push buttons.
+  * Fixed a bug that did not add links to push buttons.
 
 19.09.1
   * Applying null pointer exception mitigations to immediate request maker.
