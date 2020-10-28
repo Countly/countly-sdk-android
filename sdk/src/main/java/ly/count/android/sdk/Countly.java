@@ -148,7 +148,7 @@ public class Countly {
     ModuleConsent moduleConsent = null;
     ModuleDeviceId moduleDeviceId = null;
     ModuleLocation moduleLocation = null;
-    ModuleSurveys moduleSurveys = null;
+    ModuleFeedback moduleFeedback = null;
 
     //user data access
     public static UserData userData;
@@ -517,7 +517,7 @@ public class Countly {
             moduleRemoteConfig = new ModuleRemoteConfig(this, config);
             moduleAPM = new ModuleAPM(this, config);
             moduleLocation = new ModuleLocation(this, config);
-            moduleSurveys = new ModuleSurveys(this, config);
+            moduleFeedback = new ModuleFeedback(this, config);
 
             modules.clear();
             modules.add(moduleConsent);
@@ -530,7 +530,7 @@ public class Countly {
             modules.add(moduleAPM);
             modules.add(moduleDeviceId);
             modules.add(moduleLocation);
-            modules.add(moduleSurveys);
+            modules.add(moduleFeedback);
 
             if (isLoggingEnabled()) {
                 Log.i(Countly.TAG, "[Init] Finished initialising modules");
@@ -835,7 +835,7 @@ public class Countly {
         moduleAPM = null;
         moduleDeviceId = null;
         moduleLocation = null;
-        moduleSurveys = null;
+        moduleFeedback = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
@@ -2790,12 +2790,12 @@ public class Countly {
         return moduleLocation.locationInterface;
     }
 
-    public ModuleSurveys.Surveys surveys() {
+    public ModuleFeedback.Feedback surveys() {
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing surveys");
         }
 
-        return moduleSurveys.surveysInterface;
+        return moduleFeedback.feedbackInterface;
     }
 
     public static void applicationOnCreate() {

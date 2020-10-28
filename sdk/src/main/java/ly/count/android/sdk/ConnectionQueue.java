@@ -661,19 +661,10 @@ public class ConnectionQueue {
         return data;
     }
 
-    String prepareSurveyListRequest(ModuleSurveys.SurveyType requiredSurveyType) {
+    String prepareSurveyListRequest() {
         String data = prepareCommonRequestData()
-            + "&method=fetch_surveys"
+            + "&method=feedback"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
-
-        switch (requiredSurveyType) {
-            case NPS:
-                data += "&type=nps";
-                break;
-            case basicSurvey:
-                data += "&type=survey";
-                break;
-        }
 
         return data;
     }

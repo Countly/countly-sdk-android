@@ -8,8 +8,11 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import java.util.List;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.FeedbackRatingCallback;
+import ly.count.android.sdk.ModuleFeedback;
+import ly.count.android.sdk.ModuleFeedback.CountlyPresentableFeedback;
 import ly.count.android.sdk.StarRatingCallback;
 import ly.count.android.sdk.SurveyCallback;
 
@@ -70,19 +73,53 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     }
 
     public void onClickShowSurvey(View v) {
-        Countly.sharedInstance().surveys().showSurvey(ActivityExampleFeedback.this, new SurveyCallback() {
-            @Override public void onCompleted(boolean surveyWasAvailable, String error) {
-                Log.d(Countly.TAG, "'showSurvey' callback, was available:[" + surveyWasAvailable + "], error:[" + error + "]");
-                Toast.makeText(ActivityExampleFeedback.this, "'showSurvey' callback, was available:[ + " + surveyWasAvailable + "], error:[" + error + "]", Toast.LENGTH_SHORT).show();
+        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
+            @Override public void onFinished(List<CountlyPresentableFeedback> retrievedWidgets, String error) {
+                if(error != null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+                }
+
+                CountlyPresentableFeedback chosenWidget = null;
+                for(CountlyPresentableFeedback widget:retrievedWidgets) {
+                    if(widget.type == ModuleFeedback.SurveyType.survey) {
+                        chosenWidget = widget;
+                        break;
+                    }
+                }
+
+                Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new SurveyCallback() {
+                    @Override public void onCompleted(String error) {
+                        if(error != null) {
+                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
             }
         });
     }
 
     public void onClickShowNPS(View v) {
-        Countly.sharedInstance().surveys().showNps(ActivityExampleFeedback.this, new SurveyCallback() {
-            @Override public void onCompleted(boolean surveyWasAvailable, String error) {
-                Log.d(Countly.TAG, "'showNps' callback, was available:[" + surveyWasAvailable + "], error:[" + error + "]");
-                Toast.makeText(ActivityExampleFeedback.this, "'showNps' callback, was available:[ + " + surveyWasAvailable + "], error:[" + error + "]", Toast.LENGTH_SHORT).show();
+        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
+            @Override public void onFinished(List<CountlyPresentableFeedback> retrievedWidgets, String error) {
+                if(error != null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+                }
+
+                CountlyPresentableFeedback chosenWidget = null;
+                for(CountlyPresentableFeedback widget:retrievedWidgets) {
+                    if(widget.type == ModuleFeedback.SurveyType.nps) {
+                        chosenWidget = widget;
+                        break;
+                    }
+                }
+
+                Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new SurveyCallback() {
+                    @Override public void onCompleted(String error) {
+                        if(error != null) {
+                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
             }
         });
     }
