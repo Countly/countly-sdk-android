@@ -15,6 +15,7 @@ public class ModuleFeedback extends ModuleBase {
     public static class CountlyFeedbackWidget {
         public String widgetId;
         public SurveyType type;
+        public String name;
     }
 
     Feedback feedbackInterface = null;
@@ -87,7 +88,7 @@ public class ModuleFeedback extends ModuleBase {
         });
     }
 
-    List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
+    static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleFeedback] calling 'parseSurveyList'");
         }
@@ -110,6 +111,7 @@ public class ModuleFeedback extends ModuleBase {
 
                         String valId = jObj.optString("_id", "");
                         String valType = jObj.optString("type", "");
+                        String valName = jObj.optString("name", "");
 
                         if(valId.isEmpty()) {
                             if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -143,6 +145,7 @@ public class ModuleFeedback extends ModuleBase {
                         CountlyFeedbackWidget se = new CountlyFeedbackWidget();
                         se.type = plannedType;
                         se.widgetId = valId;
+                        se.name = valName;
 
                         parsedRes.add(se);
                     } catch (Exception ex) {
