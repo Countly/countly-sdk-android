@@ -1,6 +1,10 @@
 20.10.0
+  * !! Consent change !! To record orientation you now need to give "user" consent
+  * !! Consent change !! To use remote config, you now need to give "remote-config" consent
   * Added survey, nps feature
   * Added retries to push media download
+  * Added call that removes all server requests that don't have the currently set appKey
+  * Added call that updates all server requests so that all of them have the currently set appKey
   * Update breakpad for native exception catching
   * Symbol upload tool now sends the used breakpad version
   * Reworked openID device ID to not be a separate service  

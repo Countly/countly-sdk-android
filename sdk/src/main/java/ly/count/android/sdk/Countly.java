@@ -133,7 +133,6 @@ public class Countly {
     //d - regular SDK internals
     //v - spammy SDK internals
     private boolean enableLogging_;
-    private Countly.CountlyMessagingMode messagingMode_;
     Context context_;
 
     //Internal modules for functionality grouping
@@ -2726,7 +2725,7 @@ public class Countly {
             return;
         }
 
-        List<String> filteredRequests = requestLogReplaceWithAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
+        List<String> filteredRequests = requestQueueReplaceWithAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
         if(filteredRequests != null) {
             connectionQueue_.getCountlyStore().replaceConnectionsList(filteredRequests);
             doStoredRequests();
@@ -2748,17 +2747,27 @@ public class Countly {
             return;
         }
 
-        List<String> filteredRequests = requestLogRemoveWithoutAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
+        List<String> filteredRequests = requestQueueRemoveWithoutAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
         connectionQueue_.getCountlyStore().replaceConnectionsList(filteredRequests);
         doStoredRequests();
     }
 
-    private List<String> requestLogReplaceWithAppKey(String[] storedRequests, String targetAppKey) {
+    List<String> requestQueueReplaceWithAppKey(String[] storedRequests, String targetAppKey) {
         try {
             List<String> filteredRequests = new ArrayList<>();
+
+            if(storedRequests == null || targetAppKey == null) {
+                //early abort
+                return filteredRequests;
+            }
+
             String replacementPart = "app_key=" + UtilsNetworking.urlEncodeString(targetAppKey);
 
             for (int a = 0; a < storedRequests.length; a++) {
+                if(storedRequests[a] == null) {
+                    continue;
+                }
+
                 boolean found = false;
                 String[] parts = storedRequests[a].split("&");
 
@@ -2780,6 +2789,7 @@ public class Countly {
                         }
                         stringBuilder.append(parts[c]);
                     }
+                    filteredRequests.add(stringBuilder.toString());
                 } else {
                     //pass through the old one
                     filteredRequests.add(storedRequests[a]);
@@ -2797,12 +2807,22 @@ public class Countly {
         }
     }
 
-    private List<String> requestLogRemoveWithoutAppKey(String[] storedRequests, String appKey) {
-        String searchablePart = "app_key=" + appKey;
-
+    List<String> requestQueueRemoveWithoutAppKey(String[] storedRequests, String targetAppKey) {
         List<String> filteredRequests = new ArrayList<>();
+
+        if(storedRequests == null || targetAppKey == null) {
+            //early abort
+            return filteredRequests;
+        }
+
+        String searchablePart = "app_key=" + targetAppKey;
+
         for (int a = 0; a < storedRequests.length; a++) {
-            if (storedRequests[a].contains(searchablePart)) {
+            if(storedRequests[a] == null) {
+                continue;
+            }
+
+            if (!storedRequests[a].contains(searchablePart)) {
                 if (isLoggingEnabled()) {
                     Log.d(Countly.TAG, "[requestQueueEraseAppKeysRequests] Found a entry to remove: [" + storedRequests[a] + "]");
                 }
