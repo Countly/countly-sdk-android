@@ -718,13 +718,13 @@ public class CountlyPush {
 
         // print error in case preferred push provider is not available
         if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
-            Log.e("Countly", "No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Log.e(Countly.TAG, "No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
-            Log.e("Countly", "No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Log.e(Countly.TAG, "No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == null) {
-            Log.e("Countly", "Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            Log.e(Countly.TAG, "Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
             return;
         }
 

@@ -42,15 +42,15 @@ licenses:
 install:
   #- sdkmanager --list || true # List all available targets, device definitions and AVDs.
   # Update sdk tools to latest version and install/update components
-  - echo yes | sdkmanager "tools"
-  - echo yes | sdkmanager "platform-tools"
+  #- echo yes | sdkmanager "tools"
+  #- echo yes | sdkmanager "platform-tools"
   - echo yes | sdkmanager "build-tools;"$ANDROID_BUILD_TOOLS_VERSION
   - echo yes | sdkmanager "platforms;android-"$ANDROID_API_LEVEL # Latest platform required by SDK tools
 
-  - echo yes | sdkmanager "extras;android;m2repository"
-  - echo yes | sdkmanager "extras;google;m2repository"
-  - echo yes | sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout;1.0.2"
-  - echo yes | sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout-solver;1.0.2"
+  #- echo yes | sdkmanager "extras;android;m2repository"
+  #- echo yes | sdkmanager "extras;google;m2repository"
+  #- echo yes | sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout;1.0.2"
+  #- echo yes | sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout-solver;1.0.2"
 
   - echo yes | sdkmanager --update
   - echo yes | sdkmanager --licenses

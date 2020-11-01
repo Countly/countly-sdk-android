@@ -13,6 +13,7 @@
   * Adding BroadcastReceiver vulnerability fix
   * Fixed potential multithreaded synchronization issues
   * Fixed location url encoding bug
+  * Fixed init issue where the device ID was not saved and could be changed by changing it's value during next init
 
 20.04.5
   * Replacing sha-1 hash with sha-256 hash for requests.

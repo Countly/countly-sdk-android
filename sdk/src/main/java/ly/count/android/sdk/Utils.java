@@ -104,7 +104,7 @@ public class Utils {
             return bytes.toByteArray();
         } catch (IOException e) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e("Countly", "Couldn't read stream: " + e);
+                Log.e(Countly.TAG, "Couldn't read stream: " + e);
             }
             return null;
         } finally {
@@ -191,7 +191,7 @@ public class Utils {
 
         if (removed) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w("Countly", "Unsupported data types were removed from provided segmentation");
+                Log.w(Countly.TAG, "Unsupported data types were removed from provided segmentation");
             }
         }
 
