@@ -209,8 +209,8 @@ public class ModuleFeedback extends ModuleBase {
 
         switch (widgetInfo.type) {
             case survey:
-                //'/o/surveys/nps/widget?widget_ids=' + nps[0]._id
-                //https://xxxx.count.ly/surveys/widget/nps?widget_id=5f8445c4eecf2a6de4dcb53e
+                //'/o/feedback/nps/widget?widget_ids=' + nps[0]._id
+                //https://xxxx.count.ly/feedback/nps?widget_id=5f8445c4eecf2a6de4dcb53e
                 widgetListUrl = _cly.connectionQueue_.getServerURL() + "/feedback/survey?widget_id=" + UtilsNetworking.urlEncodeString(widgetInfo.widgetId);
 
                 break;
@@ -235,6 +235,7 @@ public class ModuleFeedback extends ModuleBase {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
         builder.setView(webView);
+        builder.setCancelable(false);
 
         if (closeButtonText != null && !closeButtonText.isEmpty()) {
             builder.setNeutralButton(closeButtonText, null);
