@@ -53,7 +53,7 @@ install:
   #- echo yes | sdkmanager "extras;m2repository;com;android;support;constraint;constraint-layout-solver;1.0.2"
 
   - echo yes | sdkmanager --update
-  - echo yes | sdkmanager --licenses
+  #- echo yes | sdkmanager --licenses
 
 before_script:
   # Create and start the emulator
