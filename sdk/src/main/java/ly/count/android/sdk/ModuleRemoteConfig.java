@@ -235,7 +235,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         _cly.remoteConfig().clearStoredValues();
-        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.anyConsentGiven()) {
+        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
         }
     }
@@ -277,7 +277,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     Log.i(Countly.TAG, "[RemoteConfig] Calling 'getAllValues'");
                 }
 
-                if (!_cly.anyConsentGiven()) {
+                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return null;
                 }
 
@@ -297,7 +297,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     Log.i(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey, " + key);
                 }
 
-                if (!_cly.anyConsentGiven()) {
+                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return null;
                 }
 
@@ -317,7 +317,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
                 }
 
-                if (!_cly.anyConsentGiven()) {
+                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
                         callback.callback("No consent given");
                     }
@@ -341,7 +341,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (_cly.isLoggingEnabled()) {
                     Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
                 }
-                if (!_cly.anyConsentGiven()) {
+                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
                         callback.callback("No consent given");
                     }
@@ -365,7 +365,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig");
                 }
 
-                if (!_cly.anyConsentGiven()) {
+                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;
                 }
 

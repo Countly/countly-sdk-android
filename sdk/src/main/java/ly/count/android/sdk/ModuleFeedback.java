@@ -12,7 +12,7 @@ public class ModuleFeedback extends ModuleBase {
 
     public enum SurveyType {survey, nps}
 
-    public static class CountlyPresentableFeedback {
+    public static class CountlyFeedbackWidget {
         public String widgetId;
         public SurveyType type;
     }
@@ -30,7 +30,7 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     public interface RetrieveFeedbackWidgets{
-        void onFinished(List<CountlyPresentableFeedback> retrievedWidgets, String error);
+        void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error);
     }
 
     public interface FeedbackCallback {
@@ -80,19 +80,19 @@ public class ModuleFeedback extends ModuleBase {
                     Log.d(Countly.TAG, "[ModuleFeedback] Retrieved request: [" + checkResponse.toString() + "]");
                 }
 
-                List<CountlyPresentableFeedback> feedbackEntries = parseFeedbackList(checkResponse);
+                List<CountlyFeedbackWidget> feedbackEntries = parseFeedbackList(checkResponse);
 
                 devCallback.onFinished(feedbackEntries, null);
             }
         });
     }
 
-    List<CountlyPresentableFeedback> parseFeedbackList(JSONObject requestResponse) {
+    List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleFeedback] calling 'parseSurveyList'");
         }
 
-        List<CountlyPresentableFeedback> parsedRes = new ArrayList<>();
+        List<CountlyFeedbackWidget> parsedRes = new ArrayList<>();
         try {
             if (requestResponse != null) {
                 JSONArray jArray = requestResponse.optJSONArray("result");
@@ -140,7 +140,7 @@ public class ModuleFeedback extends ModuleBase {
                                 continue;
                         }
 
-                        CountlyPresentableFeedback se = new CountlyPresentableFeedback();
+                        CountlyFeedbackWidget se = new CountlyFeedbackWidget();
                         se.type = plannedType;
                         se.widgetId = valId;
 
@@ -161,7 +161,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(CountlyPresentableFeedback widgetInfo, Activity activity, String closeButtonText, FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(CountlyFeedbackWidget widgetInfo, Activity activity, String closeButtonText, FeedbackCallback devCallback) {
         if(widgetInfo == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleFeedback] Can't present widget with null widget info");
@@ -276,7 +276,7 @@ public class ModuleFeedback extends ModuleBase {
          * @param closeButtonText if this is null, no "close" button will be shown
          * @param devCallback
          */
-        public void presentFeedbackWidget(CountlyPresentableFeedback widgetInfo, Activity activity, String closeButtonText, FeedbackCallback devCallback) {
+        public void presentFeedbackWidget(CountlyFeedbackWidget widgetInfo, Activity activity, String closeButtonText, FeedbackCallback devCallback) {
             synchronized (_cly) {
                 if (_cly.isLoggingEnabled()) {
                     Log.i(Countly.TAG, "[Feedback] Trying to present feedback widget");

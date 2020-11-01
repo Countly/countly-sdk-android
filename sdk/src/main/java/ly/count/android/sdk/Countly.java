@@ -215,7 +215,7 @@ public class Countly {
         public static final String starRating = "star-rating";
         public static final String apm = "apm";
         public static final String surveys = "surveys";
-        //public static final String remoteConfig = "remote-config";
+        public static final String remoteConfig = "remote-config";
         //public static final String accessoryDevices = "accessory-devices";
     }
 
@@ -230,7 +230,7 @@ public class Countly {
         CountlyFeatureNames.users,
         CountlyFeatureNames.push,
         CountlyFeatureNames.starRating,
-        //CountlyFeatureNames.remoteConfig,
+        CountlyFeatureNames.remoteConfig,
         CountlyFeatureNames.apm,
         CountlyFeatureNames.surveys
     };

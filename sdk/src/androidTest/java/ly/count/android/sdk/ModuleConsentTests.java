@@ -35,8 +35,9 @@ public class ModuleConsentTests {
         Countly.CountlyFeatureNames.users,
         Countly.CountlyFeatureNames.push,
         Countly.CountlyFeatureNames.starRating,
+        Countly.CountlyFeatureNames.remoteConfig,
         Countly.CountlyFeatureNames.apm,
-        Countly.CountlyFeatureNames.surveys
+        Countly.CountlyFeatureNames.surveys,
     };
 
     @Before

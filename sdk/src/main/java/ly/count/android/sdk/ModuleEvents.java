@@ -136,7 +136,7 @@ public class ModuleEvents extends ModuleBase {
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.events)) {
+                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)) {
                     _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsIfNeeded();
                 }
