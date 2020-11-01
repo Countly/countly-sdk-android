@@ -85,7 +85,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
 
                 CountlyFeedbackWidget chosenWidget = null;
                 for(CountlyFeedbackWidget widget:retrievedWidgets) {
-                    if(widget.type == SurveyType.survey) {
+                    if(widget.type == FeedbackWidgetType.survey) {
                         chosenWidget = widget;
                         break;
                     }
@@ -117,7 +117,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
 
                 CountlyFeedbackWidget chosenWidget = null;
                 for(CountlyFeedbackWidget widget:retrievedWidgets) {
-                    if(widget.type == SurveyType.nps) {
+                    if(widget.type == FeedbackWidgetType.nps) {
                         chosenWidget = widget;
                         break;
                     }

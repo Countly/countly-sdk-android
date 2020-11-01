@@ -58,6 +58,9 @@ public class ModuleEvents extends ModuleBase {
      * @param processedSegmentation if segmentation has been processed and reserved keywords should not be removed
      */
     synchronized void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, boolean processedSegmentation) {
+        if (_cly.isLoggingEnabled()) {
+            Log.v(Countly.TAG, "[ModuleEvents] calling 'recordEventInternal'");
+        }
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
         }

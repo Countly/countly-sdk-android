@@ -126,7 +126,7 @@ public class App extends Application {
                 Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions,
                 Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
                 Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views, Countly.CountlyFeatureNames.apm,
-                Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.surveys
+                Countly.CountlyFeatureNames.location, Countly.CountlyFeatureNames.feedback
             })
             .addCustomNetworkRequestHeaders(customHeaderValues).setPushIntentAddMetadata(true).setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
                 @Override

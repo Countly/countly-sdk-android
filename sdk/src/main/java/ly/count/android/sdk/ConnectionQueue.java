@@ -661,7 +661,7 @@ public class ConnectionQueue {
         return data;
     }
 
-    String prepareSurveyListRequest() {
+    String prepareFeedbackListRequest() {
         String data = prepareCommonRequestData()
             + "&method=feedback"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());

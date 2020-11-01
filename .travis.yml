@@ -28,6 +28,27 @@ android:
     # Specify the needed emulator
     - sys-img-armeabi-v7a-android-24
 
+licenses:
+  - 'android-sdk-license-.+'
+  - '.+'
+
+before_script:
+  # Create and start the emulator
+  - sdkmanager "system-images;android-24;google_apis;armeabi-v7a"
+  - echo no | avdmanager -v create avd -f -n test -k "system-images;android-24;google_apis;armeabi-v7a"
+  - $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window &
+
+  - android-wait-for-emulator
+
+  # Turn off animations
+  - adb shell settings put global window_animation_scale 0 &
+  - adb shell settings put global transition_animation_scale 0 &
+  - adb shell settings put global animator_duration_scale 0 &
+
+  # Wake up
+  - adb shell input keyevent 82 &
+  - adb shell input keyevent 1 &
+
 script:
   - ./gradlew test # Local unit test
   - ./gradlew connectedAndroidTest # Instrumented unit test

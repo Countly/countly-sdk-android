@@ -1,22 +1,28 @@
 package ly.count.android.sdk;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.util.Log;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class ModuleFeedback extends ModuleBase {
 
-    public enum SurveyType {survey, nps}
+    public enum FeedbackWidgetType {survey, nps}
 
     public static class CountlyFeedbackWidget {
         public String widgetId;
-        public SurveyType type;
+        public FeedbackWidgetType type;
         public String name;
     }
+
+    final static String NPS_EVENT_KEY = "[CLY]_nps";
+    final static String SURVEY_EVENT_KEY = "[CLY]_survey";
 
     Feedback feedbackInterface = null;
 
@@ -50,7 +56,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.surveys)) {
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
             devCallback.onFinished(null, "Consent is not granted");
             return;
         }
@@ -65,7 +71,7 @@ public class ModuleFeedback extends ModuleBase {
 
         ConnectionProcessor cp = _cly.connectionQueue_.createConnectionProcessor();
 
-        String requestData = _cly.connectionQueue_.prepareSurveyListRequest();
+        String requestData = _cly.connectionQueue_.prepareFeedbackListRequest();
 
         (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
             @Override public void callback(JSONObject checkResponse) {
@@ -90,7 +96,7 @@ public class ModuleFeedback extends ModuleBase {
 
     static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleFeedback] calling 'parseSurveyList'");
+            Log.d(Countly.TAG, "[ModuleFeedback] calling 'parseFeedbackList'");
         }
 
         List<CountlyFeedbackWidget> parsedRes = new ArrayList<>();
@@ -127,13 +133,13 @@ public class ModuleFeedback extends ModuleBase {
                             continue;
                         }
 
-                        SurveyType plannedType;
+                        FeedbackWidgetType plannedType;
                         switch (valType) {
                             case "survey":
-                                plannedType = SurveyType.survey;
+                                plannedType = FeedbackWidgetType.survey;
                                 break;
                             case "nps":
-                                plannedType = SurveyType.nps;
+                                plannedType = FeedbackWidgetType.nps;
                                 break;
                             default:
                                 if (Countly.sharedInstance().isLoggingEnabled()) {
@@ -164,7 +170,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(CountlyFeedbackWidget widgetInfo, Activity activity, String closeButtonText, FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(final CountlyFeedbackWidget widgetInfo, final Context context, String closeButtonText, FeedbackCallback devCallback) {
         if(widgetInfo == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleFeedback] Can't present widget with null widget info");
@@ -177,20 +183,20 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", survey id:[" + widgetInfo.widgetId + "], survey type:[" + widgetInfo.type + "]");
+            Log.d(Countly.TAG, "[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", feedback id:[" + widgetInfo.widgetId + "], feedback type:[" + widgetInfo.type + "]");
         }
 
-        if (activity == null) {
+        if (context == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleFeedback] Can't show survey, provided activity is null");
+                Log.e(Countly.TAG, "[ModuleFeedback] Can't show feedback, provided context is null");
             }
             if (devCallback != null) {
-                devCallback.onFinished("Can't show survey, provided activity is null");
+                devCallback.onFinished("Can't show feedback, provided context is null");
             }
             return;
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.surveys)) {
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
             if (devCallback != null) {
                 devCallback.onFinished("Consent is not granted");
             }
@@ -227,19 +233,45 @@ public class ModuleFeedback extends ModuleBase {
             Log.d(Countly.TAG, "[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
         }
 
-        ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(activity);
+        ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
         webView.loadUrl(widgetListUrl);
         webView.requestFocus();
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setView(webView);
         builder.setCancelable(false);
 
-        if (closeButtonText != null && !closeButtonText.isEmpty()) {
-            builder.setNeutralButton(closeButtonText, null);
+        if (closeButtonText == null || closeButtonText.isEmpty()) {
+            closeButtonText = "Close";
         }
+
+        builder.setNeutralButton(closeButtonText, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface dialogInterface, int i) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[ModuleFeedback] Cancel button clicked for the feedback widget");
+                }
+
+                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.feedback)) {
+                    Map<String, Object> segm = new HashMap<>();
+                    segm.put("platform", "android");
+                    segm.put("app_version", DeviceInfo.getAppVersion(context));
+                    segm.put("widget_id", "" + widgetInfo.widgetId);
+                    segm.put("closed", "1");
+
+                    final String key;
+
+                    if(widgetInfo.type == FeedbackWidgetType.survey) {
+                        key = SURVEY_EVENT_KEY;
+                    } else {
+                        key = NPS_EVENT_KEY;
+                    }
+
+                    _cly.moduleEvents.recordEventInternal(key, segm, 1, 0, 0, null, false);
+                }
+            }
+        });
 
         builder.show();
 
@@ -276,17 +308,17 @@ public class ModuleFeedback extends ModuleBase {
         /**
          * Present a chosen feedback widget
          * @param widgetInfo
-         * @param activity
+         * @param context
          * @param closeButtonText if this is null, no "close" button will be shown
          * @param devCallback
          */
-        public void presentFeedbackWidget(CountlyFeedbackWidget widgetInfo, Activity activity, String closeButtonText, FeedbackCallback devCallback) {
+        public void presentFeedbackWidget(CountlyFeedbackWidget widgetInfo, Context context, String closeButtonText, FeedbackCallback devCallback) {
             synchronized (_cly) {
                 if (_cly.isLoggingEnabled()) {
                     Log.i(Countly.TAG, "[Feedback] Trying to present feedback widget");
                 }
 
-                presentFeedbackWidgetInternal(widgetInfo, activity, closeButtonText,  devCallback);
+                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText,  devCallback);
             }
         }
     }

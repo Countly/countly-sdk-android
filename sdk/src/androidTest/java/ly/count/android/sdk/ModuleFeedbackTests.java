@@ -50,9 +50,9 @@ public class ModuleFeedbackTests {
         Assert.assertNotNull(ret);
         Assert.assertEquals(3, ret.size());
 
-        Assert.assertEquals(ModuleFeedback.SurveyType.survey, ret.get(0).type);
-        Assert.assertEquals(ModuleFeedback.SurveyType.nps, ret.get(1).type);
-        Assert.assertEquals(ModuleFeedback.SurveyType.nps, ret.get(2).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(1).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(2).type);
 
         Assert.assertEquals("sdfsdfdsf", ret.get(0).name);
         Assert.assertEquals("fdsfsd", ret.get(1).name);
