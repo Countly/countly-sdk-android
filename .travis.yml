@@ -35,15 +35,11 @@ android:
     # Specify the needed emulator
     - $ANDROID_EMULATOR_IMAGE
 
-licenses:
-  - 'android-sdk-license-.+'
-  - '.+'
-
 install:
   #- sdkmanager --list || true # List all available targets, device definitions and AVDs.
   # Update sdk tools to latest version and install/update components
-  #- echo yes | sdkmanager "tools"
-  #- echo yes | sdkmanager "platform-tools"
+  - echo yes | sdkmanager "tools"
+  - echo yes | sdkmanager "platform-tools"
   - echo yes | sdkmanager "build-tools;"$ANDROID_BUILD_TOOLS_VERSION
   - echo yes | sdkmanager "platforms;android-"$ANDROID_API_LEVEL # Latest platform required by SDK tools
 

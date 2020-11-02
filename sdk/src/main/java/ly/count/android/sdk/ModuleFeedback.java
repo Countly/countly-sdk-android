@@ -3,7 +3,9 @@ package ly.count.android.sdk;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.os.Build;
 import android.util.Log;
+import android.webkit.WebView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -227,10 +229,16 @@ public class ModuleFeedback extends ModuleBase {
 
         widgetListUrl += "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()) + "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
         widgetListUrl += "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
+        widgetListUrl += "&widget_v=android";
         //device_id, app_key, app_version, sdk_version, sdk_name,
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            //enable for chrome debugging
+            //WebView.setWebContentsDebuggingEnabled(true);
         }
 
         ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);

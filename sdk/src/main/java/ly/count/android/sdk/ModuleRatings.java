@@ -512,6 +512,16 @@ public class ModuleRatings extends ModuleBase {
                     return;
                 }
 
+                if(!checkResponse.has("target_devices")) {
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably using a widget_id not intended for the rating widget");
+                    }
+                    if (devCallback != null) {
+                        devCallback.callback("Not possible to show Rating popup, probably using a widget_id not intended for the rating widget");
+                    }
+                    return;
+                }
+
                 try {
                     JSONObject jDevices = checkResponse.getJSONObject("target_devices");
 
@@ -541,6 +551,10 @@ public class ModuleRatings extends ModuleBase {
                         }
                     }
                 } catch (JSONException e) {
+                    if (Countly.sharedInstance().isLoggingEnabled()) {
+                        Log.d(Countly.TAG, "[ModuleRatings] Encountered a issue while trying to parse the results of the widget config");
+                    }
+
                     if (Countly.sharedInstance().isLoggingEnabled()) {
                         e.printStackTrace();
                     }
