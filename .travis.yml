@@ -11,8 +11,8 @@ env:
     - ANDROID_BUILD_TOOLS_VERSION=29.0.2
     - ADB_INSTALL_TIMEOUT=20 # wait up to 20 minutes for adb to connect to emulator (2 minutes by default)
     - ANDROID_ABI=armeabi-v7a
-    - ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-24
-    - EMULATOR_API_LEVEL=24
+    - ANDROID_EMULATOR_IMAGE=sys-img-armeabi-v7a-android-19
+    - EMULATOR_API_LEVEL=19
 
 android:
   components:
