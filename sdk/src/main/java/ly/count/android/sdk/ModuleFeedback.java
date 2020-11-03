@@ -229,7 +229,7 @@ public class ModuleFeedback extends ModuleBase {
 
         widgetListUrl += "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()) + "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
         widgetListUrl += "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
-        widgetListUrl += "&widget_v=android";
+        widgetListUrl += "&platform=android";
         //device_id, app_key, app_version, sdk_version, sdk_name,
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
