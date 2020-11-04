@@ -22,13 +22,11 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.util.Log;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * This class holds the data for a single Count.ly custom event instance.

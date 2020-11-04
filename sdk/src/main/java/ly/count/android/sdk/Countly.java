@@ -30,15 +30,14 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -424,7 +423,7 @@ public class Countly {
             //device ID is provided but it's a empty string
             throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
         }
-        if(config.idMode == DeviceId.Type.TEMPORARY_ID) {
+        if (config.idMode == DeviceId.Type.TEMPORARY_ID) {
             throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
         }
         if (config.deviceID == null && config.idMode == null) {
@@ -2726,7 +2725,7 @@ public class Countly {
         }
 
         List<String> filteredRequests = requestQueueReplaceWithAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
-        if(filteredRequests != null) {
+        if (filteredRequests != null) {
             connectionQueue_.getCountlyStore().replaceConnectionsList(filteredRequests);
             doStoredRequests();
         }
@@ -2756,7 +2755,7 @@ public class Countly {
         try {
             List<String> filteredRequests = new ArrayList<>();
 
-            if(storedRequests == null || targetAppKey == null) {
+            if (storedRequests == null || targetAppKey == null) {
                 //early abort
                 return filteredRequests;
             }
@@ -2764,7 +2763,7 @@ public class Countly {
             String replacementPart = "app_key=" + UtilsNetworking.urlEncodeString(targetAppKey);
 
             for (int a = 0; a < storedRequests.length; a++) {
-                if(storedRequests[a] == null) {
+                if (storedRequests[a] == null) {
                     continue;
                 }
 
@@ -2810,7 +2809,7 @@ public class Countly {
     List<String> requestQueueRemoveWithoutAppKey(String[] storedRequests, String targetAppKey) {
         List<String> filteredRequests = new ArrayList<>();
 
-        if(storedRequests == null || targetAppKey == null) {
+        if (storedRequests == null || targetAppKey == null) {
             //early abort
             return filteredRequests;
         }
@@ -2818,7 +2817,7 @@ public class Countly {
         String searchablePart = "app_key=" + targetAppKey;
 
         for (int a = 0; a < storedRequests.length; a++) {
-            if(storedRequests[a] == null) {
+            if (storedRequests[a] == null) {
                 continue;
             }
 
@@ -2836,6 +2835,7 @@ public class Countly {
 
     /**
      * Go into temporary device ID mode
+     *
      * @return
      */
     public Countly enableTemporaryIdMode() {

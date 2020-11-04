@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.util.Log;
-
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;

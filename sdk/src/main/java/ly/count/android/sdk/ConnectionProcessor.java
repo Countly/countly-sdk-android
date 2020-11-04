@@ -22,7 +22,6 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.util.Log;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,7 +34,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
-
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import org.json.JSONException;

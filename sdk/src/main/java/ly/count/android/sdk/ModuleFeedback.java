@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
 import android.util.Log;
-import android.webkit.WebView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +37,7 @@ public class ModuleFeedback extends ModuleBase {
         feedbackInterface = new Feedback();
     }
 
-    public interface RetrieveFeedbackWidgets{
+    public interface RetrieveFeedbackWidgets {
         void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error);
     }
 
@@ -51,7 +50,7 @@ public class ModuleFeedback extends ModuleBase {
             Log.d(Countly.TAG, "[ModuleFeedback] calling 'getAvailableFeedbackWidgetsInternal', callback set:[" + (devCallback != null) + "]");
         }
 
-        if(devCallback == null) {
+        if (devCallback == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleFeedback] available feedback widget list can't be retrieved without a callback");
             }
@@ -106,7 +105,7 @@ public class ModuleFeedback extends ModuleBase {
             if (requestResponse != null) {
                 JSONArray jArray = requestResponse.optJSONArray("result");
 
-                if(jArray == null) {
+                if (jArray == null) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
                         Log.w(Countly.TAG, "[ModuleFeedback] parseFeedbackList, response does not have a valid 'result' entry. No widgets retrieved.");
                     }
@@ -121,14 +120,14 @@ public class ModuleFeedback extends ModuleBase {
                         String valType = jObj.optString("type", "");
                         String valName = jObj.optString("name", "");
 
-                        if(valId.isEmpty()) {
+                        if (valId.isEmpty()) {
                             if (Countly.sharedInstance().isLoggingEnabled()) {
                                 Log.e(Countly.TAG, "[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
                             }
                             continue;
                         }
 
-                        if(valType.isEmpty()) {
+                        if (valType.isEmpty()) {
                             if (Countly.sharedInstance().isLoggingEnabled()) {
                                 Log.e(Countly.TAG, "[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget type, dropping");
                             }
@@ -173,12 +172,12 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     void presentFeedbackWidgetInternal(final CountlyFeedbackWidget widgetInfo, final Context context, String closeButtonText, FeedbackCallback devCallback) {
-        if(widgetInfo == null) {
+        if (widgetInfo == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleFeedback] Can't present widget with null widget info");
             }
 
-            if(devCallback != null) {
+            if (devCallback != null) {
                 devCallback.onFinished("Can't present widget with null widget info");
             }
             return;
@@ -270,7 +269,7 @@ public class ModuleFeedback extends ModuleBase {
 
                     final String key;
 
-                    if(widgetInfo.type == FeedbackWidgetType.survey) {
+                    if (widgetInfo.type == FeedbackWidgetType.survey) {
                         key = SURVEY_EVENT_KEY;
                     } else {
                         key = NPS_EVENT_KEY;
@@ -301,7 +300,8 @@ public class ModuleFeedback extends ModuleBase {
     public class Feedback {
         /**
          * Get a list of available feedback widgets for this device ID
-          * @param callback
+         *
+         * @param callback
          */
         public void getAvailableFeedbackWidgets(RetrieveFeedbackWidgets callback) {
             synchronized (_cly) {
@@ -315,6 +315,7 @@ public class ModuleFeedback extends ModuleBase {
 
         /**
          * Present a chosen feedback widget
+         *
          * @param widgetInfo
          * @param context
          * @param closeButtonText if this is null, no "close" button will be shown
@@ -326,7 +327,7 @@ public class ModuleFeedback extends ModuleBase {
                     Log.i(Countly.TAG, "[Feedback] Trying to present feedback widget");
                 }
 
-                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText,  devCallback);
+                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
             }
         }
     }

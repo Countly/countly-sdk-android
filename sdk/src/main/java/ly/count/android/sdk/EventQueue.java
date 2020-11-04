@@ -21,11 +21,10 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import org.json.JSONArray;
-
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 
 /**
  * This class queues event data locally and can convert that event data to JSON

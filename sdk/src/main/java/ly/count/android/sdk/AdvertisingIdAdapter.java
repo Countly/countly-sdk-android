@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.util.Log;
-
 import java.lang.reflect.Method;
 
 public class AdvertisingIdAdapter {

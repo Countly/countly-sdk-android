@@ -28,15 +28,13 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
-
-import java.util.Map;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * This class provides several static methods to retrieve information about

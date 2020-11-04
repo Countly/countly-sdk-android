@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
-import android.os.Debug;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,15 +13,10 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.RatingBar;
-
-import java.util.ArrayList;
-import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class ModuleRatings extends ModuleBase {
     static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
@@ -491,7 +485,9 @@ public class ModuleRatings extends ModuleBase {
         }
 
         String requestData = _cly.connectionQueue_.prepareRatingWidgetRequest(widgetId);
-        final String ratingWidgetUrl = _cly.connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId + "&device_id=" + _cly.connectionQueue_.getDeviceId().getId() + "&app_key=" + _cly.connectionQueue_.getAppKey();
+        final String ratingWidgetUrl = _cly.connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId +
+            "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()) +
+            "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
@@ -512,7 +508,7 @@ public class ModuleRatings extends ModuleBase {
                     return;
                 }
 
-                if(!checkResponse.has("target_devices")) {
+                if (!checkResponse.has("target_devices")) {
                     if (Countly.sharedInstance().isLoggingEnabled()) {
                         Log.d(Countly.TAG, "[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably using a widget_id not intended for the rating widget");
                     }

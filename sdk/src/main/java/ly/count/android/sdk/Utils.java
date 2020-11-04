@@ -1,13 +1,10 @@
 package ly.count.android.sdk;
 
-import android.app.Activity;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
-import android.util.DisplayMetrics;
 import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

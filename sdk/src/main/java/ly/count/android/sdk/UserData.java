@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.util.Log;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -7,11 +8,8 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import android.util.Log;
 
 public class UserData {
     private static final String NAME_KEY = "name";

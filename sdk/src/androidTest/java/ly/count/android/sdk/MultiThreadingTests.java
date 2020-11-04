@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

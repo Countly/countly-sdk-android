@@ -28,7 +28,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +36,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
 import ly.count.android.sdk.Utils;
@@ -844,8 +842,8 @@ public class CountlyPush {
     /**
      * Returns which messaging mode was used in the previous init
      * -1 - no data / no init has happened
-     *  0 - test mode
-     *  1 - production mode
+     * 0 - test mode
+     * 1 - production mode
      */
     public static int getLastMessagingMethod(Context context) {
         return CountlyStore.getLastMessagingMode(context);

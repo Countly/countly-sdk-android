@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.app.Application;
 import android.content.Context;
-
 import java.util.Map;
 
 public class CountlyConfig {

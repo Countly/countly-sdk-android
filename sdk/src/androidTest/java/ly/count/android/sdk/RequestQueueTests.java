@@ -1,10 +1,8 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +49,7 @@ public class RequestQueueTests {
         wantedRes.add(sampleRequests[3]);
         wantedRes.add(sampleRequests[4]);
 
-        for(int a = 0 ; a < resRequests.size() ; a++){
+        for (int a = 0; a < resRequests.size(); a++) {
             Assert.assertEquals(wantedRes.get(a), resRequests.get(a));
         }
     }
@@ -106,7 +104,7 @@ public class RequestQueueTests {
         wantedRes.add(sampleRequests[4]);
         wantedRes.add(sampleRequests[5].replace("app_key=qqq45qer", "app_key=12345qer"));
 
-        for(int a = 0 ; a < resRequests.size() ; a++){
+        for (int a = 0; a < resRequests.size(); a++) {
             Assert.assertEquals(wantedRes.get(a), resRequests.get(a));
         }
     }
@@ -129,7 +127,7 @@ public class RequestQueueTests {
         List<String> wantedRes = new ArrayList<>();
         wantedRes.add(sampleRequests[2]);
 
-        for(int a = 0 ; a < resRequests.size() ; a++){
+        for (int a = 0; a < resRequests.size(); a++) {
             Assert.assertEquals(wantedRes.get(a), resRequests.get(a));
         }
     }
@@ -154,7 +152,7 @@ public class RequestQueueTests {
         wantedRes.add(sampleRequests[2]);
         wantedRes.add(sampleRequests[3].replace("app_key=qqq45qer", "app_key=12345qer"));
 
-        for(int a = 0 ; a < resRequests.size() ; a++){
+        for (int a = 0; a < resRequests.size(); a++) {
             Assert.assertEquals(wantedRes.get(a), resRequests.get(a));
         }
     }

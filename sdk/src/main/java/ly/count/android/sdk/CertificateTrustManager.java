@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.util.Base64;
-
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -11,7 +10,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;

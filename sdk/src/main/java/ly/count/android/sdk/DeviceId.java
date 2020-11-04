@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.util.Log;
-import java.util.UUID;
 
 /**
  * Created by artem on 07/11/14.
@@ -66,6 +65,7 @@ public class DeviceId {
 
     /**
      * Used during setup to retrieve the previously saved value
+     *
      * @param store
      */
     private void retrieveId(CountlyStore store) {
@@ -223,10 +223,11 @@ public class DeviceId {
 
     /**
      * Returns the current type which would be returned to the developer
+     *
      * @return
      */
     protected Type getType() {
-        if(temporaryIdModeEnabled()) {
+        if (temporaryIdModeEnabled()) {
             return Type.TEMPORARY_ID;
         }
         return type;
@@ -234,6 +235,7 @@ public class DeviceId {
 
     /**
      * Checks if temporary device ID mode is enabled by checking the currently set ID
+     *
      * @return
      */
     protected boolean temporaryIdModeEnabled() {

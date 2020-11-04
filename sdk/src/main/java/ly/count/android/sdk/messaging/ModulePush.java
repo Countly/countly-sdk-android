@@ -5,11 +5,6 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
-
-import ly.count.android.sdk.CountlyStore;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -17,8 +12,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.CountlyStore;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Messaging support module.

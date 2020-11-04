@@ -2,12 +2,9 @@ package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-
 import android.content.SharedPreferences;
 import android.provider.Settings;
 import android.util.Log;
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.UUID;
 
 public class OpenUDIDAdapter {
@@ -40,7 +37,6 @@ public class OpenUDIDAdapter {
 
             storeOpenUDID(context);//Store it locally
             mInitialized = true;
-
         } else {//Got it, you can now call getOpenUDID()
             if (LOG) Log.d(TAG, "OpenUDID: " + OpenUDID);
             mInitialized = true;
