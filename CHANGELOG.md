@@ -1,6 +1,7 @@
 ## 20.11.0
   * !! Consent change !! To record orientation you now need to give "user" consent
   * !! Consent change !! To use remote config, you now need to give "remote-config" consent
+  * !! Push changes !! Due to a security vulnerability the "ly.count.CountlyPush.BROADCAST_PERMISSION" permission needs to be set in your app
   * Added survey, nps feature
   * Added retries to push media download
   * Added call that removes all server requests that don't have the currently set appKey
@@ -9,7 +10,7 @@
   * Symbol upload tool now sends the used breakpad version
   * Reworked openID device ID to not be a separate service  
   * Sending device type (phone, tablet, tv) as part of metrics
-  * Reworked location data persistence and when it is sent
+  * Reworked location data persistence and when it is sent. It's recommended to recheck your app to see if it's still behaving as expected.
   * Adding BroadcastReceiver vulnerability fix
   * Fixed potential multithreaded synchronization issues
   * Fixed location url encoding bug

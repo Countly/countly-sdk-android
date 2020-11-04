@@ -208,6 +208,6 @@ public class App extends Application {
         };
         IntentFilter filter = new IntentFilter();
         filter.addAction(CountlyPush.NOTIFICATION_BROADCAST);
-        registerReceiver(messageReceiver, filter);
+        registerReceiver(messageReceiver, filter, COUNTLY_BROADCAST_PERMISSION, null);
     }
 }

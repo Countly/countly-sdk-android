@@ -1,9 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="ly.count.android.sdk">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ly.count.android.sdk">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+  <permission
+      android:name="ly.count.CountlyPush.BROADCAST_PERMISSION"
+      android:protectionLevel="signature" />
 
-    <application>
-        <uses-library android:name="android.test.runner"/>
-    </application>
+  <uses-permission android:name="android.permission.INTERNET" />
+
+  <application>
+    <uses-library android:name="android.test.runner" />
+  </application>
 
 </manifest>
