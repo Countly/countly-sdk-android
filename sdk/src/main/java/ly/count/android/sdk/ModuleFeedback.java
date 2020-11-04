@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -171,7 +173,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(final CountlyFeedbackWidget widgetInfo, final Context context, String closeButtonText, FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(final CountlyFeedbackWidget widgetInfo, final Context context, final String closeButtonText, final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.e(Countly.TAG, "[ModuleFeedback] Can't present widget with null widget info");
@@ -212,24 +214,35 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        String widgetListUrl = "";
+        StringBuilder widgetListUrl = new StringBuilder();
 
         switch (widgetInfo.type) {
             case survey:
                 //'/o/feedback/nps/widget?widget_ids=' + nps[0]._id
                 //https://xxxx.count.ly/feedback/nps?widget_id=5f8445c4eecf2a6de4dcb53e
-                widgetListUrl = _cly.connectionQueue_.getServerURL() + "/feedback/survey?widget_id=" + UtilsNetworking.urlEncodeString(widgetInfo.widgetId);
+                widgetListUrl.append(_cly.connectionQueue_.getServerURL());
+                widgetListUrl.append("/feedback/survey?widget_id=");
+                widgetListUrl.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
 
                 break;
             case nps:
-                widgetListUrl = _cly.connectionQueue_.getServerURL() + "/feedback/nps?widget_id=" + UtilsNetworking.urlEncodeString(widgetInfo.widgetId);
+                widgetListUrl.append(_cly.connectionQueue_.getServerURL());
+                widgetListUrl.append("/feedback/nps?widget_id=");
+                widgetListUrl.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
                 break;
         }
 
-        widgetListUrl += "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()) + "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
-        widgetListUrl += "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
-        widgetListUrl += "&platform=android";
-        //device_id, app_key, app_version, sdk_version, sdk_name,
+        widgetListUrl.append("&device_id=");
+        widgetListUrl.append(UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()));
+        widgetListUrl.append("&app_key=");
+        widgetListUrl.append(UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey()));
+        widgetListUrl.append("&sdk_version=");
+        widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING);
+        widgetListUrl.append("&sdk_name=");
+        widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
+        widgetListUrl.append("&platform=android");
+
+        final String preparedWidgetUrl = widgetListUrl.toString();
 
         if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
@@ -240,51 +253,61 @@ public class ModuleFeedback extends ModuleBase {
             //WebView.setWebContentsDebuggingEnabled(true);
         }
 
-        ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
-        webView.loadUrl(widgetListUrl);
-        webView.requestFocus();
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setView(webView);
-        builder.setCancelable(false);
-
-        if (closeButtonText == null || closeButtonText.isEmpty()) {
-            closeButtonText = "Close";
-        }
-
-        builder.setNeutralButton(closeButtonText, new DialogInterface.OnClickListener() {
-            @Override public void onClick(DialogInterface dialogInterface, int i) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            public void run() {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleFeedback] Cancel button clicked for the feedback widget");
+                    Log.d(Countly.TAG, "[ModuleFeedback] Calling on main thread");
                 }
 
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    Map<String, Object> segm = new HashMap<>();
-                    segm.put("platform", "android");
-                    segm.put("app_version", DeviceInfo.getAppVersion(context));
-                    segm.put("widget_id", "" + widgetInfo.widgetId);
-                    segm.put("closed", "1");
+                ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
+                webView.loadUrl(preparedWidgetUrl);
+                webView.requestFocus();
 
-                    final String key;
+                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                builder.setView(webView);
+                builder.setCancelable(false);
 
-                    if (widgetInfo.type == FeedbackWidgetType.survey) {
-                        key = SURVEY_EVENT_KEY;
-                    } else {
-                        key = NPS_EVENT_KEY;
+                String usedCloseButtonText = closeButtonText;
+                if (closeButtonText == null || closeButtonText.isEmpty()) {
+                    usedCloseButtonText = "Close";
+                }
+
+                builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface dialogInterface, int i) {
+                        if (Countly.sharedInstance().isLoggingEnabled()) {
+                            Log.d(Countly.TAG, "[ModuleFeedback] Cancel button clicked for the feedback widget");
+                        }
+
+                        if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.feedback)) {
+                            Map<String, Object> segm = new HashMap<>();
+                            segm.put("platform", "android");
+                            segm.put("app_version", DeviceInfo.getAppVersion(context));
+                            segm.put("widget_id", "" + widgetInfo.widgetId);
+                            segm.put("closed", "1");
+
+                            final String key;
+
+                            if (widgetInfo.type == FeedbackWidgetType.survey) {
+                                key = SURVEY_EVENT_KEY;
+                            } else {
+                                key = NPS_EVENT_KEY;
+                            }
+
+                            _cly.moduleEvents.recordEventInternal(key, segm, 1, 0, 0, null, false);
+                        }
                     }
+                });
 
-                    _cly.moduleEvents.recordEventInternal(key, segm, 1, 0, 0, null, false);
+                builder.show();
+
+                if (devCallback != null) {
+                    devCallback.onFinished(null);
                 }
             }
         });
-
-        builder.show();
-
-        if (devCallback != null) {
-            devCallback.onFinished(null);
-        }
     }
 
     @Override

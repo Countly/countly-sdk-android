@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -531,16 +533,25 @@ public class ModuleRatings extends ModuleBase {
                             Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
                         }
 
-                        RatingDialogWebView webView = new RatingDialogWebView(activity);
-                        webView.getSettings().setJavaScriptEnabled(true);
-                        webView.loadUrl(ratingWidgetUrl);
+                        Handler handler = new Handler(Looper.getMainLooper());
+                        handler.post(new Runnable() {
+                            public void run() {
+                                if (Countly.sharedInstance().isLoggingEnabled()) {
+                                    Log.d(Countly.TAG, "[ModuleRatings] Calling on main thread");
+                                }
 
-                        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-                        builder.setView(webView);
-                        if (closeButtonText != null && !closeButtonText.isEmpty()) {
-                            builder.setNeutralButton(closeButtonText, null);
-                        }
-                        builder.show();
+                                RatingDialogWebView webView = new RatingDialogWebView(activity);
+                                webView.getSettings().setJavaScriptEnabled(true);
+                                webView.loadUrl(ratingWidgetUrl);
+
+                                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                                builder.setView(webView);
+                                if (closeButtonText != null && !closeButtonText.isEmpty()) {
+                                    builder.setNeutralButton(closeButtonText, null);
+                                }
+                                builder.show();
+                            }
+                        });
                     } else {
                         if (devCallback != null) {
                             devCallback.callback("Rating dialog is not meant for this form factor");
