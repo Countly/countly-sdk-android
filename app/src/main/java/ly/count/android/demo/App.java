@@ -32,6 +32,7 @@ import ly.count.android.sdk.RemoteConfig;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 import static ly.count.android.sdk.Countly.TAG;
+import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_BROADCAST_PERMISSION;
 
 public class App extends Application {
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */

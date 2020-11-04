@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -51,6 +52,7 @@ public class CountlyPush {
     public static final String EXTRA_INTENT = "ly.count.android.sdk.CountlyPush.intent";
     public static final String CHANNEL_ID = "ly.count.android.sdk.CountlyPush.CHANNEL_ID";
     public static final String NOTIFICATION_BROADCAST = "ly.count.android.sdk.CountlyPush.NOTIFICATION_BROADCAST";
+    public static final String COUNTLY_BROADCAST_PERMISSION = "ly.count.CountlyPush.BROADCAST_PERMISSION";
 
     private static Application.ActivityLifecycleCallbacks callbacks = null;
     private static Activity activity = null;
@@ -238,19 +240,43 @@ public class CountlyPush {
             broadcast.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
             Intent intent = broadcast.getParcelableExtra(EXTRA_INTENT);
+
+            if (intent == null) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent, stopping execution");
+                }
+                return;
+            }
+
             int flags = intent.getFlags();
-            if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) ||
-                ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
-                Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
+            if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) || ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
+                }
                 return;
             }
-            if (!intent.getComponent().getPackageName().equals(context.getPackageName())) {
-                Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
+            ComponentName componentName = intent.getComponent();
+            String intentPackageName = componentName.getPackageName();
+            String intentClassName = componentName.getClassName();
+            String contextPackageName = context.getPackageName();
+
+            if (!intentPackageName.equals(contextPackageName)) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
+                }
                 return;
             }
-            if (!intent.getComponent().getClassName().startsWith(intent.getComponent().getPackageName())) {
-                Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Just to ensure it passes validation");
+            if (!intentClassName.startsWith(intentPackageName)) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Just to ensure it passes validation");
+                }
                 return;
+            }
+
+            if (Countly.sharedInstance().isLoggingEnabled()) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.d(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Push broadcast, after filtering");
+                }
             }
 
             intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
@@ -776,12 +802,12 @@ public class CountlyPush {
             IntentFilter filter = new IntentFilter();
             filter.addAction(NOTIFICATION_BROADCAST);
             notificationActionReceiver = new NotificationBroadcastReceiver();
-            application.registerReceiver(notificationActionReceiver, filter);
+            application.registerReceiver(notificationActionReceiver, filter, COUNTLY_BROADCAST_PERMISSION, null);
 
             filter = new IntentFilter();
             filter.addAction(Countly.CONSENT_BROADCAST);
             consentReceiver = new ConsentBroadcastReceiver();
-            application.registerReceiver(consentReceiver, filter);
+            application.registerReceiver(consentReceiver, filter, COUNTLY_BROADCAST_PERMISSION, null);
         }
 
         if (provider == Countly.CountlyMessagingProvider.HMS && Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push)) {
