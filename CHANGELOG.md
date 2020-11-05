@@ -1,7 +1,12 @@
 ## 20.11.0
   * !! Consent change !! To record orientation you now need to give "user" consent
   * !! Consent change !! To use remote config, you now need to give "remote-config" consent
-  * !! Push changes !! Due to a security vulnerability the "ly.count.CountlyPush.BROADCAST_PERMISSION" permission needs to be set in your app
+  * !! Push changes !! Due to a security vulnerability the following entries need to be added to your app manifest:
+  '
+  <uses-permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION" />
+  <permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
+      android:protectionLevel="signature" />
+  '
   * Added survey, nps feature
   * Added retries to push media download
   * Added call that removes all server requests that don't have the currently set appKey
@@ -11,7 +16,8 @@
   * Reworked openID device ID to not be a separate service  
   * Sending device type (phone, tablet, tv) as part of metrics
   * Reworked location data persistence and when it is sent. It's recommended to recheck your app to see if it's still behaving as expected.
-  * Adding BroadcastReceiver vulnerability fix
+  * Deprecated CountlyConfig constructor that takes 'Context'. Added new constructor that also takes the Application class instead of 'Context'
+  * Initialising the SDK without providing the application class is not deprecated
   * Fixed potential multithreaded synchronization issues
   * Fixed location url encoding bug
   * Fixed init issue where the device ID was not saved and could be changed by changing it's value during next init

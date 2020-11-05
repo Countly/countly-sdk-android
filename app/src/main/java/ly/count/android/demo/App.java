@@ -32,7 +32,7 @@ import ly.count.android.sdk.RemoteConfig;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 import static ly.count.android.sdk.Countly.TAG;
-import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_BROADCAST_PERMISSION;
+import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_BROADCAST_PERMISSION_POSTFIX;
 
 public class App extends Application {
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
@@ -209,6 +209,6 @@ public class App extends Application {
         };
         IntentFilter filter = new IntentFilter();
         filter.addAction(CountlyPush.NOTIFICATION_BROADCAST);
-        registerReceiver(messageReceiver, filter, COUNTLY_BROADCAST_PERMISSION, null);
+        registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
     }
 }

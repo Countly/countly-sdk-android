@@ -36,6 +36,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import ly.count.android.sdk.BuildConfig;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
 import ly.count.android.sdk.Utils;
@@ -50,7 +51,7 @@ public class CountlyPush {
     public static final String EXTRA_INTENT = "ly.count.android.sdk.CountlyPush.intent";
     public static final String CHANNEL_ID = "ly.count.android.sdk.CountlyPush.CHANNEL_ID";
     public static final String NOTIFICATION_BROADCAST = "ly.count.android.sdk.CountlyPush.NOTIFICATION_BROADCAST";
-    public static final String COUNTLY_BROADCAST_PERMISSION = "ly.count.CountlyPush.BROADCAST_PERMISSION";
+    public static final String COUNTLY_BROADCAST_PERMISSION_POSTFIX = ".CountlyPush.BROADCAST_PERMISSION";
 
     private static Application.ActivityLifecycleCallbacks callbacks = null;
     private static Activity activity = null;
@@ -800,12 +801,12 @@ public class CountlyPush {
             IntentFilter filter = new IntentFilter();
             filter.addAction(NOTIFICATION_BROADCAST);
             notificationActionReceiver = new NotificationBroadcastReceiver();
-            application.registerReceiver(notificationActionReceiver, filter, COUNTLY_BROADCAST_PERMISSION, null);
+            application.registerReceiver(notificationActionReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
 
             filter = new IntentFilter();
             filter.addAction(Countly.CONSENT_BROADCAST);
             consentReceiver = new ConsentBroadcastReceiver();
-            application.registerReceiver(consentReceiver, filter, COUNTLY_BROADCAST_PERMISSION, null);
+            application.registerReceiver(consentReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
         }
 
         if (provider == Countly.CountlyMessagingProvider.HMS && Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push)) {

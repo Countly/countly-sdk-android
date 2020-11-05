@@ -146,10 +146,23 @@ public class CountlyConfig {
     public CountlyConfig() {
     }
 
+    /**
+     * @param context
+     * @param appKey
+     * @param serverURL
+     * @deprecated Please use the constructor that takes the application class
+     */
     public CountlyConfig(Context context, String appKey, String serverURL) {
         setContext(context);
         setAppKey(appKey);
         setServerURL(serverURL);
+    }
+
+    public CountlyConfig(Application application, String appKey, String serverURL) {
+        setContext(application.getApplicationContext());
+        setAppKey(appKey);
+        setServerURL(serverURL);
+        setApplication(application);
     }
 
     /**

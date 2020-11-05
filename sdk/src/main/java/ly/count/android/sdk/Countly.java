@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("JavadocReference")
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.0-rc2";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.0-rc3";
     /**
      * Used as request meta data on every request
      */
@@ -417,6 +417,12 @@ public class Countly {
 
         if (config.appKey == null || config.appKey.length() == 0) {
             throw new IllegalArgumentException("valid appKey is required, but was provided either 'null' or empty String");
+        }
+
+        if (config.application == null) {
+            if (isLoggingEnabled()) {
+                Log.w(Countly.TAG, "[Init] Initialising the SDK without providing the application class is deprecated");
+            }
         }
 
         if (config.deviceID != null && config.deviceID.length() == 0) {

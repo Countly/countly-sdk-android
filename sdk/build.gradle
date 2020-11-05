@@ -24,7 +24,7 @@ android {
     minSdkVersion 17
     targetSdkVersion 29
     versionCode 1
-    versionName "20.11.0-rc2"
+    versionName "20.11.0-rc3"
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true
@@ -70,7 +70,7 @@ publish {
   userOrg = 'countly'
   groupId = 'ly.count.android'
   artifactId = 'sdk'
-  publishVersion = '20.11.0-rc2'
+  publishVersion = '20.11.0-rc3'
   desc = 'Android SDK for Countly mobile analytics'
   website = 'https://github.com/Countly/countly-sdk-android'
   autoPublish = false
