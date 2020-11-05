@@ -208,7 +208,7 @@ public class App extends Application {
             }
         };
         IntentFilter filter = new IntentFilter();
-        filter.addAction(CountlyPush.NOTIFICATION_BROADCAST);
+        filter.addAction(CountlyPush.SECURE_NOTIFICATION_BROADCAST);
         registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
     }
 }

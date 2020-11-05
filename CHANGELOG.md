@@ -1,12 +1,12 @@
 ## 20.11.0
   * !! Consent change !! To record orientation you now need to give "user" consent
   * !! Consent change !! To use remote config, you now need to give "remote-config" consent
-  * !! Push changes !! Due to a security vulnerability the following entries need to be added to your app manifest:
+  * !! Push breaking changes !! Due to a security vulnerability the following permission need to be added to your app manifest:
   '
   <uses-permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION" />
-  <permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
-      android:protectionLevel="signature" />
   '
+  To make these breaking changes noticable, the broadcast listener id 'NOTIFICATION_BROADCAST' has been replaced with 'SECURE_NOTIFICATION_BROADCAST'
+
   * Added survey, nps feature
   * Added retries to push media download
   * Added call that removes all server requests that don't have the currently set appKey

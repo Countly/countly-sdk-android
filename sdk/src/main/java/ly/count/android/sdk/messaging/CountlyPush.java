@@ -50,7 +50,7 @@ public class CountlyPush {
     public static final String EXTRA_MESSAGE = "ly.count.android.sdk.CountlyPush.message";
     public static final String EXTRA_INTENT = "ly.count.android.sdk.CountlyPush.intent";
     public static final String CHANNEL_ID = "ly.count.android.sdk.CountlyPush.CHANNEL_ID";
-    public static final String NOTIFICATION_BROADCAST = "ly.count.android.sdk.CountlyPush.NOTIFICATION_BROADCAST";
+    public static final String SECURE_NOTIFICATION_BROADCAST = "ly.count.android.sdk.CountlyPush.SECURE_NOTIFICATION_BROADCAST";
     public static final String COUNTLY_BROADCAST_PERMISSION_POSTFIX = ".CountlyPush.BROADCAST_PERMISSION";
 
     private static Application.ActivityLifecycleCallbacks callbacks = null;
@@ -446,7 +446,7 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        Intent broadcast = new Intent(NOTIFICATION_BROADCAST);
+        Intent broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST);
         broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, 0));
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
@@ -470,7 +470,7 @@ public class CountlyPush {
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            broadcast = new Intent(NOTIFICATION_BROADCAST);
+            broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST);
             broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
             builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, 0));
@@ -799,7 +799,7 @@ public class CountlyPush {
             application.registerActivityLifecycleCallbacks(callbacks);
 
             IntentFilter filter = new IntentFilter();
-            filter.addAction(NOTIFICATION_BROADCAST);
+            filter.addAction(SECURE_NOTIFICATION_BROADCAST);
             notificationActionReceiver = new NotificationBroadcastReceiver();
             application.registerReceiver(notificationActionReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
 
