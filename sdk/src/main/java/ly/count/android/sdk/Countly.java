@@ -2410,21 +2410,7 @@ public class Countly {
         Boolean returnValue = featureConsentValues.get(featureName);
 
         if (returnValue == null) {
-            if (featureName.equals(CountlyFeatureNames.push)) {
-                //if the feature is 'push", set it with the value from preferences
-
-                boolean storedConsent = connectionQueue_.getCountlyStore().getConsentPush();
-
-                if (isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[Countly] Push consent has not been set this session. Setting the value found stored in preferences:[" + storedConsent + "]");
-                }
-
-                featureConsentValues.put(featureName, storedConsent);
-
-                returnValue = storedConsent;
-            } else {
-                returnValue = false;
-            }
+            returnValue = false;
         }
 
         if (isLoggingEnabled()) {

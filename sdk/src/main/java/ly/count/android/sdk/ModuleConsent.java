@@ -25,6 +25,11 @@ public class ModuleConsent extends ModuleBase {
                 _cly.doPushConsentSpecialAction(_cly.delayedPushConsent);
             }
 
+            //remove persistent push flag if no push consent was set
+            if (!_cly.featureConsentValues.containsKey(Countly.CountlyFeatureNames.push)) {
+                _cly.doPushConsentSpecialAction(false);
+            }
+
             //do delayed location erasure, if needed
             if (_cly.delayedLocationErasure) {
                 _cly.doLocationConsentSpecialErasure();

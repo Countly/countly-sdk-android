@@ -18,6 +18,8 @@
   * Reworked location data persistence and when it is sent. It's recommended to recheck your app to see if it's still behaving as expected.
   * Deprecated CountlyConfig constructor that takes 'Context'. Added new constructor that also takes the Application class instead of 'Context'
   * Initialising the SDK without providing the application class is not deprecated
+  * Fixed a push consent edge case bug where it would have been counted when set in the past
+  * Fixed a push consent bug where 'anyConsent' would have returned true when no consent would have been set
   * Fixed potential multithreaded synchronization issues
   * Fixed location url encoding bug
   * Fixed init issue where the device ID was not saved and could be changed by changing it's value during next init

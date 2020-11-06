@@ -328,7 +328,7 @@ public class CountlyPush {
     public static class ConsentBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent broadcast) {
-            if (mode != null && provider != null && Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
+            if (mode != null && provider != null && getPushConsent(context)) {
                 String token = getToken(context, provider);
                 if (token != null && !"".equals(token)) {
                     onTokenRefresh(token, provider);
@@ -426,7 +426,7 @@ public class CountlyPush {
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if message is not displayable as {@link Notification}
      */
     public static Boolean displayNotification(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
+        if (!getPushConsent(context)) {
             return null;
         }
 
@@ -526,7 +526,7 @@ public class CountlyPush {
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if message is not displayable as {@link Notification}
      */
     public static Boolean displayDialog(final Activity activity, final Message msg) {
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
+        if (!getPushConsent(activity)) {
             return null;
         }
 
@@ -682,7 +682,7 @@ public class CountlyPush {
             return;
         }
 
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push)) {
+        if (!getPushConsent(null)) {
             if (Countly.sharedInstance().isLoggingEnabled()) {
                 Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Consent not given, ignoring call");
             }
@@ -726,6 +726,9 @@ public class CountlyPush {
         if (application == null) {
             throw new IllegalStateException("Non null application must be provided!");
         }
+
+        Log.e(Countly.TAG, "CURRENT PUSH CONSENT " + getPushConsent(application));
+
 
         // set preferred push provider
         CountlyPush.provider = preferredProvider;
@@ -809,7 +812,7 @@ public class CountlyPush {
             application.registerReceiver(consentReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
         }
 
-        if (provider == Countly.CountlyMessagingProvider.HMS && Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push)) {
+        if (provider == Countly.CountlyMessagingProvider.HMS && getPushConsent(application)) {
             String version = getEMUIVersion();
             if (version.startsWith("10")) {
                 new Thread(new Runnable() {
@@ -823,6 +826,18 @@ public class CountlyPush {
                 }).start();
             }
         }
+    }
+
+    static boolean getPushConsent(Context context) {
+        if(Countly.sharedInstance().isInitialized() || context == null) {
+            //todo currently this is also used when context is null and might result in unintended consequences
+            //if SDK is initialised, used the stored value
+            return Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push);
+        } else {
+            //if the SDK is not initialised, use the cached value
+            return CountlyStore.getConsentPushNoInit(context);
+        }
+
     }
 
     private static String getEMUIVersion() {

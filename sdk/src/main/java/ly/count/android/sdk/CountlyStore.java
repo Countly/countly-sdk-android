@@ -245,6 +245,11 @@ public class CountlyStore {
         return preferencesPush_.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
+    public static Boolean getConsentPushNoInit(Context context) {
+        SharedPreferences sp = createPreferencesPush(context);
+        return sp.getBoolean(CONSENT_GCM_PREFERENCES, false);
+    }
+
     /**
      * Adds a custom event to the local store.
      *
