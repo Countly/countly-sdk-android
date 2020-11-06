@@ -187,7 +187,7 @@ public class Countly {
     //GDPR
     protected boolean requiresConsent = false;
 
-    private final Map<String, Boolean> featureConsentValues = new HashMap<>();
+    final Map<String, Boolean> featureConsentValues = new HashMap<>();
     private final Map<String, String[]> groupedFeatures = new HashMap<>();
     final List<String> collectedConsentChanges = new ArrayList<>();
 

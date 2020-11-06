@@ -157,13 +157,12 @@ public class ConnectionQueue {
             //add session data if consent given
             data += "&begin_session=1"
                 + "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);//can be only sent with begin session
-            dataAvailable = true;
-        }
 
-        String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            if (!locationData.isEmpty()) {
+                data += locationData;
+            }
 
-        if (!locationData.isEmpty()) {
-            data += locationData;
             dataAvailable = true;
         }
 

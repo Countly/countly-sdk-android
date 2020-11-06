@@ -12,6 +12,9 @@ public class ModuleLocation extends ModuleBase {
 
     Location locationInterface = null;
 
+    boolean sendLocationPostInit;
+    boolean postInitReached = false;
+
     ModuleLocation(Countly cly, CountlyConfig config) {
         super(cly);
 
@@ -109,7 +112,12 @@ public class ModuleLocation extends ModuleBase {
         if (_cly.isBeginSessionSent || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
-            _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            if(postInitReached) {
+                _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            } else {
+                //if we are still in init, send it at the end so that the SDK finished initialisation
+                sendLocationPostInit = true;
+            }
         } else {
             //will be sent a part of begin session
         }
@@ -119,7 +127,14 @@ public class ModuleLocation extends ModuleBase {
 
     @Override
     void initFinished(CountlyConfig config) {
+        postInitReached = true;
 
+        if(sendLocationPostInit) {
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[ModuleLocation] Sending location post init");
+            }
+            _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+        }
     }
 
     @Override
