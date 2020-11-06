@@ -12,7 +12,7 @@ class ModuleDeviceId extends ModuleBase {
         }
     }
 
-    private void exitTemporaryIdMode(DeviceId.Type type, String deviceId) {
+    void exitTemporaryIdMode(DeviceId.Type type, String deviceId) {
         if (_cly.isLoggingEnabled()) {
             Log.d(Countly.TAG, "[ModuleDeviceId] Calling exitTemporaryIdMode");
         }
@@ -69,6 +69,14 @@ class ModuleDeviceId extends ModuleBase {
             throw new IllegalStateException("WHen type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
         }
 
+        if(!_cly.anyConsentGiven() && type != DeviceId.Type.TEMPORARY_ID){
+            //if we are not trying to set a temporary id, consent has to be given
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't change Device ID if no consent is given");
+            }
+            return;
+        }
+
         DeviceId currentDeviceId = _cly.connectionQueue_.getDeviceId();
 
         if (currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(DeviceId.temporaryCountlyDeviceId))) {
@@ -111,6 +119,13 @@ class ModuleDeviceId extends ModuleBase {
     void changeDeviceIdWithMerge(String deviceId) {
         if (deviceId == null || "".equals(deviceId)) {
             throw new IllegalStateException("deviceId cannot be null or empty");
+        }
+
+        if(!_cly.anyConsentGiven()){
+            if (_cly.isLoggingEnabled()) {
+                Log.e(Countly.TAG, "Can't change Device ID if no consent is given");
+            }
+            return;
         }
 
         if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {

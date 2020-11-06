@@ -573,7 +573,8 @@ public class Countly {
 
             checkIfDeviceIsAppCrawler();
 
-            boolean doingTemporaryIdMode = false;
+            boolean doingTemporaryIdMode = false;//if we have to enter temporary device ID mode
+            boolean exitingTemporaryIdMode = false;//if we have to exit temporary device ID mode
             boolean customIDWasProvided = (config.deviceID != null);
             if (config.temporaryDeviceIdEnabled && !customIDWasProvided) {
                 //if we want to use temporary ID mode and no developer custom ID is provided
@@ -614,6 +615,8 @@ public class Countly {
                     if (isLoggingEnabled()) {
                         Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Decided we have to exit temporary device ID mode, mode enabled: [" + config.temporaryDeviceIdEnabled + "], custom Device ID Set: [" + customIDWasProvided + "]");
                     }
+
+                    exitingTemporaryIdMode = true;
                 } else {
                     //we continue to stay in temporary ID mode
                     //no changes need to happen
@@ -644,6 +647,7 @@ public class Countly {
             connectionQueue_.setContext(context_);
 
             eventQueue_ = new EventQueue(countlyStore);
+            //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
 
             if (doingTemporaryIdMode) {
                 if (isLoggingEnabled()) {
@@ -656,10 +660,20 @@ public class Countly {
                         Log.d(Countly.TAG, "[Init] Temporary ID mode was not enabled, entering it");
                     }
                     //temporary ID is not set
-                    changeDeviceId(DeviceId.temporaryCountlyDeviceId);
+                    moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
                 } else {
                     if (isLoggingEnabled()) {
                         Log.d(Countly.TAG, "[Init] Temporary ID mode was enabled previously, nothing to enter");
+                    }
+                }
+            } else {
+                if(exitingTemporaryIdMode){
+                    if(customIDWasProvided){
+                        moduleDeviceId.exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, config.deviceID);
+                    } else {
+                        if (isLoggingEnabled()) {
+                            Log.e(Countly.TAG, "[Init] Can't exit temporary device ID mode, no custom ID was provided");
+                        }
                     }
                 }
             }
@@ -2839,7 +2853,7 @@ public class Countly {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before enableTemporaryIdMode");
         }
 
-        changeDeviceId(DeviceId.temporaryCountlyDeviceId);
+        moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
 
         return this;
     }
