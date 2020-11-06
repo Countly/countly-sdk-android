@@ -194,6 +194,8 @@ public class Countly {
     Boolean delayedPushConsent = null;//if this is set, consent for push has to be set before finishing init and sending push changes
     boolean delayedLocationErasure = false;//if location needs to be cleared at the end of init
 
+    String[] locationFallback;//temporary used until location can't be set before init
+
     private boolean appLaunchDeepLink = true;
 
     CountlyConfig config_ = null;
@@ -506,6 +508,16 @@ public class Countly {
             } else {
                 countlyStore = new CountlyStore(config.context);
                 config.setCountlyStore(countlyStore);
+            }
+
+            //check fallbacks
+            if (locationFallback != null && config.locationCountyCode == null && config.locationCity == null && config.locationLocation == null && config.locationIpAddress == null) {
+                //if the fallback was set and config did not contain any location, use the fallback info
+                // { country_code, city, gpsCoordinates, ipAddress };
+                config.locationCountyCode = locationFallback[0];
+                config.locationCity = locationFallback[1];
+                config.locationLocation = locationFallback[2];
+                config.locationIpAddress = locationFallback[3];
             }
 
             //initialise modules
@@ -1284,7 +1296,12 @@ public class Countly {
             }
         }
 
-        location().setLocation(country_code, city, gpsCoordinates, ipAddress);
+        if (isInitialized()) {
+            location().setLocation(country_code, city, gpsCoordinates, ipAddress);
+        } else {
+            //use fallback
+            locationFallback = new String[] { country_code, city, gpsCoordinates, ipAddress };
+        }
 
         return this;
     }
