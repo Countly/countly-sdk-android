@@ -113,6 +113,17 @@ public class ConnectionQueue {
     }
 
     protected void setMetricOverride(Map<String, String> metricOverride) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
+            if(metricOverride != null) {
+                Log.d(Countly.TAG, "[Connection Queue] The following metric overrides are set:");
+
+                for (String k : metricOverride.keySet()) {
+                    Log.d(Countly.TAG, "[Connection Queue] key[" + k + "] val[" + metricOverride.get(k) + "]");
+                }
+            } else {
+                Log.d(Countly.TAG, "[Connection Queue] No metric override is provided");
+            }
+        }
         this.metricOverride = metricOverride;
     }
 

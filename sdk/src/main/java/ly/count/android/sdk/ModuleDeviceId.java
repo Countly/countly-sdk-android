@@ -72,7 +72,7 @@ class ModuleDeviceId extends ModuleBase {
         if(!_cly.anyConsentGiven() && type != DeviceId.Type.TEMPORARY_ID){
             //if we are not trying to set a temporary id, consent has to be given
             if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't change Device ID if no consent is given");
+                Log.e(Countly.TAG, "[ModuleDeviceId] Can't change Device ID if no consent is given");
             }
             return;
         }
@@ -123,7 +123,7 @@ class ModuleDeviceId extends ModuleBase {
 
         if(!_cly.anyConsentGiven()){
             if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't change Device ID if no consent is given");
+                Log.e(Countly.TAG, "[ModuleDeviceId] Can't change Device ID if no consent is given");
             }
             return;
         }
@@ -137,7 +137,7 @@ class ModuleDeviceId extends ModuleBase {
                 //just exit, nothing to do
 
                 if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[changeDeviceId] About to enter temporary ID mode when already in it");
+                    Log.w(Countly.TAG, "[ModuleDeviceId, changeDeviceId] About to enter temporary ID mode when already in it");
                 }
 
                 return;

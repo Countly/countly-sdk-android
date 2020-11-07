@@ -510,7 +510,7 @@ public class Countly {
                 config.setCountlyStore(countlyStore);
             }
 
-            //check fallbacks
+            //check legacy access methods
             if (locationFallback != null && config.locationCountyCode == null && config.locationCity == null && config.locationLocation == null && config.locationIpAddress == null) {
                 //if the fallback was set and config did not contain any location, use the fallback info
                 // { country_code, city, gpsCoordinates, ipAddress };
@@ -799,6 +799,10 @@ public class Countly {
 
                 for (ModuleBase module : modules) {
                     module.initFinished(config);
+                }
+
+                if (isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Init] Finished initialising SDK");
                 }
             }
         } else {
@@ -1265,7 +1269,7 @@ public class Countly {
         }
         if (!isInitialized()) {
             if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "The use of this before init is deprecated, use CountlyConfig instead of this");
+                Log.w(Countly.TAG, "The use of 'disableLocation' before init is deprecated, use CountlyConfig instead of this");
             }
         }
 
@@ -1292,7 +1296,7 @@ public class Countly {
 
         if (!isInitialized()) {
             if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "The use of this before init is deprecated, use CountlyConfig instead of this");
+                Log.w(Countly.TAG, "The use of 'setLocation' before init is deprecated, use CountlyConfig instead of this");
             }
         }
 
