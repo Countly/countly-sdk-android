@@ -293,7 +293,7 @@ public class Countly {
      * @deprecated use {@link CountlyConfig} to pass data to init.
      */
     public Countly init(final Context context, final String serverURL, final String appKey) {
-        return init(context, serverURL, appKey, null, OpenUDIDAdapter.isOpenUDIDAvailable() ? DeviceId.Type.OPEN_UDID : DeviceId.Type.ADVERTISING_ID);
+        return init(context, serverURL, appKey, null, DeviceId.Type.OPEN_UDID);
     }
 
     /**
@@ -435,19 +435,11 @@ public class Countly {
             throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
         }
         if (config.deviceID == null && config.idMode == null) {
-            //device ID was not provided and no preferred mode specified. Choosing defaults
-            if (OpenUDIDAdapter.isOpenUDIDAvailable()) {
-                config.idMode = DeviceId.Type.OPEN_UDID;
-            } else if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
-                config.idMode = DeviceId.Type.ADVERTISING_ID;
-            }
+            //device ID was not provided and no preferred mode specified. Choosing default
+            config.idMode = DeviceId.Type.OPEN_UDID;
         }
         if (config.idMode == DeviceId.Type.DEVELOPER_SUPPLIED && config.deviceID == null) {
             throw new IllegalArgumentException("Valid device ID has to be provided with the Developer_Supplied device ID type");
-        }
-        if (config.deviceID == null && config.idMode == DeviceId.Type.OPEN_UDID && !OpenUDIDAdapter.isOpenUDIDAvailable()) {
-            //choosing OPEN_UDID as ID type, but it's not available on this device
-            throw new IllegalArgumentException("valid deviceID is required because OpenUDID is not available");
         }
         if (config.deviceID == null && config.idMode == DeviceId.Type.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
             //choosing advertising ID as type, but it's available on this device

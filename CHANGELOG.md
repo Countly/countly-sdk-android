@@ -20,6 +20,8 @@
   * Initialising the SDK without providing the application class is not deprecated
   * Fixed a push consent edge case bug where it would have been counted when set in the past
   * Fixed a push consent bug where 'anyConsent' would have returned true when no consent would have been set
+  * Fixed a bug regarding temporary ID mode transitioning device ID's which would merge it to the previous value
+  * Fixed init time openUDID bug which made it less persistent than required
   * Fixed potential multithreaded synchronization issues
   * Fixed location url encoding bug
   * Fixed init issue where the device ID was not saved and could be changed by changing it's value during next init

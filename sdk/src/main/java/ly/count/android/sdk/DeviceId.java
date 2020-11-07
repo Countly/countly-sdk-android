@@ -100,20 +100,14 @@ public class DeviceId {
             case DEVELOPER_SUPPLIED:
                 // no initialization for developer id
                 // we just store the provided value so that it's
-                store.setPreference(PREFERENCE_KEY_ID_ID, id);
-                store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
+                setAndStoreId(store, Type.DEVELOPER_SUPPLIED, id);
                 break;
             case OPEN_UDID:
-                if (OpenUDIDAdapter.isOpenUDIDAvailable()) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.i(Countly.TAG, "[DeviceId] Using OpenUDID");
-                    }
-                    if (!OpenUDIDAdapter.isInitialized()) {
-                        OpenUDIDAdapter.sync(context);
-                    }
-                } else {
-                    if (raiseExceptions) throw new IllegalStateException("OpenUDID is not available, please make sure that it is configured correctly");
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[DeviceId] Using OpenUDID");
                 }
+                OpenUDIDAdapter.sync(context);
+                setAndStoreId(store, Type.OPEN_UDID, OpenUDIDAdapter.OpenUDID);
                 break;
             case ADVERTISING_ID:
                 if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
@@ -121,20 +115,13 @@ public class DeviceId {
                         Log.i(Countly.TAG, "[DeviceId] Using Advertising ID");
                     }
                     AdvertisingIdAdapter.setAdvertisingId(context, store, this);
-                } else if (OpenUDIDAdapter.isOpenUDIDAvailable()) {
+                } else {
                     // Fall back to OpenUDID on devices without google play services set up
                     if (Countly.sharedInstance().isLoggingEnabled()) {
                         Log.i(Countly.TAG, "[DeviceId] Advertising ID is not available, falling back to OpenUDID");
                     }
-                    if (!OpenUDIDAdapter.isInitialized()) {
-                        OpenUDIDAdapter.sync(context);
-                    }
-                } else {
-                    // just do nothing, without Advertising ID and OpenUDID this user is lost for Countly
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "[DeviceId] Advertising ID is not available, neither OpenUDID is");
-                    }
-                    if (raiseExceptions) throw new IllegalStateException("OpenUDID is not available, please make sure that it is configured correctly");
+                    OpenUDIDAdapter.sync(context);
+                    setAndStoreId(store, Type.OPEN_UDID, OpenUDIDAdapter.OpenUDID);
                 }
                 break;
         }
@@ -169,7 +156,7 @@ public class DeviceId {
 
     protected String getId() {
         if (id == null && type == Type.OPEN_UDID) {
-            id = OpenUDIDAdapter.getOpenUDID();
+            id = OpenUDIDAdapter.OpenUDID;
         }
         return id;
     }
@@ -193,27 +180,21 @@ public class DeviceId {
         init(context, store, false);
     }
 
-    protected String changeToDeveloperProvidedId(CountlyStore store, String newId) {
-
-        String oldId = id == null || !id.equals(newId) ? id : null;
-
-        id = newId;
-        type = Type.DEVELOPER_SUPPLIED;
-
-        store.setPreference(PREFERENCE_KEY_ID_ID, id);
-        store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
-
-        return oldId;
+    protected void changeToDeveloperProvidedId(CountlyStore store, String newId) {
+        setAndStoreId(store, Type.DEVELOPER_SUPPLIED, newId);
     }
 
     protected void changeToId(Context context, CountlyStore store, Type type, String deviceId) {
+        setAndStoreId(store, type, deviceId);
+        init(context, store, false);
+    }
+
+    void setAndStoreId(CountlyStore store, Type type, String deviceId) {
         this.id = deviceId;
         this.type = type;
 
         store.setPreference(PREFERENCE_KEY_ID_ID, deviceId);
         store.setPreference(PREFERENCE_KEY_ID_TYPE, type.toString());
-
-        init(context, store, false);
     }
 
     /**

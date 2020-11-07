@@ -150,7 +150,6 @@ public class App extends Application {
                     return crash.contains("crash");
                 }
             })
-            .setApplication(this)
             .setRecordAppStartTime(true)
             .setHttpPostForced(false)
             //.enableCertificatePinning(certificates)
