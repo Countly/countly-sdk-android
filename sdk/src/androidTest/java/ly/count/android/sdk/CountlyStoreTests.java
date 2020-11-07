@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -46,6 +47,8 @@ import static org.mockito.Mockito.verify;
 @RunWith(AndroidJUnit4.class)
 public class CountlyStoreTests {
     CountlyStore store;
+    final String countlyStoreName = "COUNTLY_STORE";
+    final String countlyStoreNamePush = "ly.count.android.api.messaging";
 
     @Before
     public void setUp() {
@@ -73,7 +76,7 @@ public class CountlyStoreTests {
     public void testConstructor() {
         Context mockContext = mock(Context.class);
         new CountlyStore(mockContext);
-        verify(mockContext).getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
+        verify(mockContext).getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
     }
 
     @Test
@@ -215,7 +218,7 @@ public class CountlyStoreTests {
         event2.count = 1;
 
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::blah:::" + event2.toJSON().toString();
-        final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
         final List<Event> expected = new ArrayList<>(2);
@@ -243,7 +246,7 @@ public class CountlyStoreTests {
         event2.count = 1;
 
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::{\"key\":null}:::" + event2.toJSON().toString();
-        final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
         final List<Event> expected = new ArrayList<>(2);
@@ -384,7 +387,7 @@ public class CountlyStoreTests {
 
     @Test
     public void testClear() {
-        final SharedPreferences prefs = getContext().getSharedPreferences("COUNTLY_STORE", Context.MODE_PRIVATE);
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
         store.addConnection("blah");
@@ -395,5 +398,107 @@ public class CountlyStoreTests {
         store.clear();
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
+    }
+
+    @Test
+    // just making sure we can get and set simple string preferences
+    public void setGetPreference() {
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
+        String keyX = "xxx";
+        prefs.edit().remove(keyX).apply();
+        assertFalse(prefs.contains(keyX));
+
+        assertNull(store.getPreference(keyX));
+        store.setPreference(keyX, "asd");
+        assertEquals("asd", store.getPreference(keyX));
+
+        store.setPreference(keyX, "123");
+        assertEquals("123", store.getPreference(keyX));
+
+        store.setPreference(keyX, null);
+        assertNull(store.getPreference(keyX));
+        assertFalse(prefs.contains(keyX));
+    }
+
+    @Test
+    public void setGetMessagingProvider() {
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
+        String keyX = "PUSH_MESSAGING_PROVIDER";
+        prefs.edit().remove(keyX).apply();
+        assertFalse(prefs.contains(keyX));
+
+        assertEquals(0, CountlyStore.getMessagingProvider(getContext()));
+        CountlyStore.storeMessagingProvider(1234, getContext());
+        assertEquals(1234, CountlyStore.getMessagingProvider(getContext()));
+    }
+
+    @Test
+    public void setGetMessagingMode() {
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
+        String keyX = "PUSH_MESSAGING_MODE";
+        prefs.edit().remove(keyX).apply();
+        assertFalse(prefs.contains(keyX));
+
+        assertEquals(-1, CountlyStore.getLastMessagingMode(getContext()));
+        CountlyStore.cacheLastMessagingMode(1234, getContext());
+        assertEquals(1234, CountlyStore.getLastMessagingMode(getContext()));
+    }
+
+    @Test
+    public void setGetClearCachedPushData() {
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
+        String keyX = "PUSH_ACTION_ID";
+        String keyY = "PUSH_ACTION_INDEX";
+        prefs.edit().remove(keyX).apply();
+        prefs.edit().remove(keyY).apply();
+        assertFalse(prefs.contains(keyX));
+        assertFalse(prefs.contains(keyY));
+
+        assertEquals(new String[] {null, null}, store.getCachedPushData());
+        CountlyStore.cachePushData("asdf", "1234", getContext());
+        assertEquals(new String[] {"asdf", "1234"}, store.getCachedPushData());
+
+        store.clearCachedPushData();
+        assertEquals(new String[] {null, null}, store.getCachedPushData());
+        assertFalse(prefs.contains(keyX));
+        assertFalse(prefs.contains(keyY));
+    }
+
+    @Test
+    public void setGetConsentPush() {
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
+        String keyX = "ly.count.android.api.messaging.consent.gcm";
+        prefs.edit().remove(keyX).apply();
+        assertFalse(prefs.contains(keyX));
+
+        assertEquals(false, CountlyStore.getConsentPushNoInit(getContext()));
+        assertEquals(false, store.getConsentPush());
+        store.setConsentPush(true);
+        assertEquals(true, store.getConsentPush());
+        assertEquals(true, CountlyStore.getConsentPushNoInit(getContext()));
+        store.setConsentPush(false);
+        assertEquals(false, store.getConsentPush());
+    }
+
+    @Test
+    public void setGetAdvertisingId() {
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
+        String keyX = "CACHED_ADVERTISING_ID";
+        prefs.edit().remove(keyX).apply();
+        assertFalse(prefs.contains(keyX));
+
+        store.setCachedAdvertisingId("qwe");
+        assertEquals("qwe", store.getCachedAdvertisingId());
+    }
+
+    @Test
+    public void setGetRemoteConfigValues() {
+        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
+        String keyX = "REMOTE_CONFIG_VALUES";
+        prefs.edit().remove(keyX).apply();
+        assertFalse(prefs.contains(keyX));
+
+        store.setRemoteConfigValues("qwe");
+        assertEquals("qwe", store.getRemoteConfigValues());
     }
 }

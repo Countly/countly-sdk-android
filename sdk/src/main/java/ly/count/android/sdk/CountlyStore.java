@@ -61,7 +61,7 @@ public class CountlyStore {
     private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
     private static final String CACHED_PUSH_MESSAGING_PROVIDER = "PUSH_MESSAGING_PROVIDER";
     private static final int MAX_EVENTS = 100;
-    private static final int MAX_REQUESTS = 1000;
+    static int MAX_REQUESTS = 1000;//value is configurable for tests
 
     private final SharedPreferences preferences_;
     private final SharedPreferences preferencesPush_;
