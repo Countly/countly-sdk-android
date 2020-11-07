@@ -616,6 +616,14 @@ public class ModuleRatings extends ModuleBase {
     }
 
     @Override
+    void initFinished(CountlyConfig config) {
+        //do star rating related things
+        if (_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
+            registerAppSession(config.context, config.countlyStore, starRatingCallback_);
+        }
+    }
+
+    @Override
     void halt() {
 
     }

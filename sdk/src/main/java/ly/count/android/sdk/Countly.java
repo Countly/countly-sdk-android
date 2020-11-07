@@ -555,8 +555,6 @@ public class Countly {
 
             setPushIntentAddMetadata(config.pushIntentAddMetadata);
 
-            setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
-
             setHttpPostForced(config.httpPostForced);
 
             enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
@@ -688,19 +686,6 @@ public class Countly {
                         }
                     }
                 }
-            }
-
-            //do star rating related things
-            if (getConsent(CountlyFeatureNames.starRating)) {
-                moduleRatings.registerAppSession(config.context, countlyStore, moduleRatings.starRatingCallback_);
-            }
-
-            //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-            if (remoteConfigAutomaticUpdateEnabled && anyConsentGiven() && !doingTemporaryIdMode) {
-                if (isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[Init] Automatically updating remote config values");
-                }
-                moduleRemoteConfig.updateRemoteConfigValues(null, null, connectionQueue_, false, remoteConfigInitCallback);
             }
 
             //set global application listeners

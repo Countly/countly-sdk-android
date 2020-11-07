@@ -20,6 +20,8 @@ public class ModuleRemoteConfig extends ModuleBase {
             Log.v(Countly.TAG, "[ModuleRemoteConfig] Initialising");
         }
 
+        _cly.setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
+
         remoteConfigInterface = new RemoteConfig();
     }
 
@@ -247,6 +249,17 @@ public class ModuleRemoteConfig extends ModuleBase {
         if (updateRemoteConfigAfterIdChange) {
             updateRemoteConfigAfterIdChange = false;
             updateRemoteConfigValues(null, null, _cly.connectionQueue_, true, null);
+        }
+    }
+
+    @Override
+    public void initFinished(CountlyConfig config){
+        //update remote config_ values if automatic update is enabled and we are not in temporary id mode
+        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Init] Automatically updating remote config values");
+            }
+            updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, _cly.remoteConfigInitCallback);
         }
     }
 
