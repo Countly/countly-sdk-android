@@ -7,12 +7,15 @@ import java.util.Map;
 public class CountlyConfig {
 
     /**
-     * Internal fields for testing
+     * Internal fields and fields for testing
      */
 
     protected CountlyStore countlyStore = null;
 
     protected boolean checkForNativeCrashDumps = true;
+
+    //used to deliver this object to connection queue
+    protected DeviceId deviceIdInstance = null;
 
     /**
      * Android context.

@@ -535,6 +535,7 @@ public class Countly {
 
             modules.clear();
             modules.add(moduleConsent);
+            modules.add(moduleDeviceId);
             modules.add(moduleCrash);
             modules.add(moduleEvents);
             modules.add(moduleViews);
@@ -542,7 +543,6 @@ public class Countly {
             modules.add(moduleSessions);
             modules.add(moduleRemoteConfig);
             modules.add(moduleAPM);
-            modules.add(moduleDeviceId);
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
 
@@ -551,13 +551,16 @@ public class Countly {
             }
 
             //init other things
+            if (isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
+            }
+            AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
+
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
+            setHttpPostForced(config.httpPostForced);
+            enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
 
             setPushIntentAddMetadata(config.pushIntentAddMetadata);
-
-            setHttpPostForced(config.httpPostForced);
-
-            enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
 
             if (config.eventQueueSizeThreshold != null) {
                 setEventQueueSizeToSend(config.eventQueueSizeThreshold);
@@ -583,110 +586,17 @@ public class Countly {
 
             checkIfDeviceIsAppCrawler();
 
-            boolean doingTemporaryIdMode = false;//if we have to enter temporary device ID mode
-            boolean exitingTemporaryIdMode = false;//if we have to exit temporary device ID mode
-            boolean customIDWasProvided = (config.deviceID != null);
-            if (config.temporaryDeviceIdEnabled && !customIDWasProvided) {
-                //if we want to use temporary ID mode and no developer custom ID is provided
-                //then we override that custom ID to set the temporary mode
-                config.deviceID = DeviceId.temporaryCountlyDeviceId;
-                doingTemporaryIdMode = true;
-            }
-
-            DeviceId deviceIdInstance;
-            if (config.deviceID != null) {
-                //if the developer provided a ID
-                deviceIdInstance = new DeviceId(countlyStore, config.deviceID);
-            } else {
-                //the dev provided only a type, generate a appropriate ID
-                deviceIdInstance = new DeviceId(countlyStore, config.idMode);
-            }
-
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
-            }
-            AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
-
-            deviceIdInstance.init(config.context, countlyStore, true);
-
-            boolean temporaryDeviceIdWasEnabled = deviceIdInstance.temporaryIdModeEnabled();
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Previously was enabled: [" + temporaryDeviceIdWasEnabled + "]");
-            }
-
-            if (temporaryDeviceIdWasEnabled) {
-                //if we previously we're in temporary ID mode
-
-                if (!config.temporaryDeviceIdEnabled || customIDWasProvided) {
-                    //if we don't set temporary device ID mode or
-                    //a custom device ID is explicitly provided
-                    //that means we have to exit temporary ID mode
-
-                    if (isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Decided we have to exit temporary device ID mode, mode enabled: [" + config.temporaryDeviceIdEnabled + "], custom Device ID Set: [" + customIDWasProvided + "]");
-                    }
-
-                    exitingTemporaryIdMode = true;
-                } else {
-                    //we continue to stay in temporary ID mode
-                    //no changes need to happen
-
-                    if (isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Decided to stay in temporary ID mode");
-                    }
-                }
-            } else {
-                if (config.temporaryDeviceIdEnabled && config.deviceID == null) {
-                    //temporary device ID mode is enabled and
-                    //no custom device ID is provided
-                    //we can safely enter temporary device ID mode
-
-                    if (isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[Init] [TemporaryDeviceId] Decided to enter temporary ID mode");
-                    }
-                }
-            }
-
             //initialize networking queues
             connectionQueue_.setServerURL(config.serverURL);
             connectionQueue_.setAppKey(config.appKey);
             connectionQueue_.setCountlyStore(countlyStore);
-            connectionQueue_.setDeviceId(deviceIdInstance);
+            connectionQueue_.setDeviceId(config.deviceIdInstance);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
 
             eventQueue_ = new EventQueue(countlyStore);
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
-
-            if (doingTemporaryIdMode) {
-                if (isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[Init] Trying to enter temporary ID mode");
-                }
-                //if we are doing temporary ID, make sure it is applied
-                //if it's not, change ID to it
-                if (!deviceIdInstance.temporaryIdModeEnabled()) {
-                    if (isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[Init] Temporary ID mode was not enabled, entering it");
-                    }
-                    //temporary ID is not set
-                    moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
-                } else {
-                    if (isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[Init] Temporary ID mode was enabled previously, nothing to enter");
-                    }
-                }
-            } else {
-                if(exitingTemporaryIdMode){
-                    if(customIDWasProvided){
-                        moduleDeviceId.exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, config.deviceID);
-                    } else {
-                        if (isLoggingEnabled()) {
-                            Log.e(Countly.TAG, "[Init] Can't exit temporary device ID mode, no custom ID was provided");
-                        }
-                    }
-                }
-            }
 
             //set global application listeners
             if (config.application != null) {
