@@ -160,7 +160,7 @@ public class CountlyStore {
         }
     }
 
-    private synchronized void deleteOldestRequest() {
+    synchronized void deleteOldestRequest() {
         final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
         connections.remove(0);
         preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
@@ -396,5 +396,7 @@ public class CountlyStore {
         prefsEditor.remove(CONNECTIONS_PREFERENCE);
         prefsEditor.clear();
         prefsEditor.apply();
+
+        preferencesPush_.edit().clear().apply();
     }
 }

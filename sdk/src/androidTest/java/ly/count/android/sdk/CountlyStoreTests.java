@@ -59,6 +59,7 @@ public class CountlyStoreTests {
 
     @After
     public void tearDown() {
+        CountlyStore.MAX_REQUESTS = 1000;
         store.clear();
     }
 
@@ -405,8 +406,6 @@ public class CountlyStoreTests {
     public void setGetPreference() {
         final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         String keyX = "xxx";
-        prefs.edit().remove(keyX).apply();
-        assertFalse(prefs.contains(keyX));
 
         assertNull(store.getPreference(keyX));
         store.setPreference(keyX, "asd");
@@ -422,11 +421,6 @@ public class CountlyStoreTests {
 
     @Test
     public void setGetMessagingProvider() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
-        String keyX = "PUSH_MESSAGING_PROVIDER";
-        prefs.edit().remove(keyX).apply();
-        assertFalse(prefs.contains(keyX));
-
         assertEquals(0, CountlyStore.getMessagingProvider(getContext()));
         CountlyStore.storeMessagingProvider(1234, getContext());
         assertEquals(1234, CountlyStore.getMessagingProvider(getContext()));
@@ -434,11 +428,6 @@ public class CountlyStoreTests {
 
     @Test
     public void setGetMessagingMode() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
-        String keyX = "PUSH_MESSAGING_MODE";
-        prefs.edit().remove(keyX).apply();
-        assertFalse(prefs.contains(keyX));
-
         assertEquals(-1, CountlyStore.getLastMessagingMode(getContext()));
         CountlyStore.cacheLastMessagingMode(1234, getContext());
         assertEquals(1234, CountlyStore.getLastMessagingMode(getContext()));
@@ -449,28 +438,21 @@ public class CountlyStoreTests {
         final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
         String keyX = "PUSH_ACTION_ID";
         String keyY = "PUSH_ACTION_INDEX";
-        prefs.edit().remove(keyX).apply();
-        prefs.edit().remove(keyY).apply();
         assertFalse(prefs.contains(keyX));
         assertFalse(prefs.contains(keyY));
 
-        assertEquals(new String[] {null, null}, store.getCachedPushData());
+        assertEquals(new String[] { null, null }, store.getCachedPushData());
         CountlyStore.cachePushData("asdf", "1234", getContext());
-        assertEquals(new String[] {"asdf", "1234"}, store.getCachedPushData());
+        assertEquals(new String[] { "asdf", "1234" }, store.getCachedPushData());
 
         store.clearCachedPushData();
-        assertEquals(new String[] {null, null}, store.getCachedPushData());
+        assertEquals(new String[] { null, null }, store.getCachedPushData());
         assertFalse(prefs.contains(keyX));
         assertFalse(prefs.contains(keyY));
     }
 
     @Test
     public void setGetConsentPush() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
-        String keyX = "ly.count.android.api.messaging.consent.gcm";
-        prefs.edit().remove(keyX).apply();
-        assertFalse(prefs.contains(keyX));
-
         assertEquals(false, CountlyStore.getConsentPushNoInit(getContext()));
         assertEquals(false, store.getConsentPush());
         store.setConsentPush(true);
@@ -482,23 +464,65 @@ public class CountlyStoreTests {
 
     @Test
     public void setGetAdvertisingId() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
-        String keyX = "CACHED_ADVERTISING_ID";
-        prefs.edit().remove(keyX).apply();
-        assertFalse(prefs.contains(keyX));
-
         store.setCachedAdvertisingId("qwe");
         assertEquals("qwe", store.getCachedAdvertisingId());
     }
 
     @Test
     public void setGetRemoteConfigValues() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
-        String keyX = "REMOTE_CONFIG_VALUES";
-        prefs.edit().remove(keyX).apply();
-        assertFalse(prefs.contains(keyX));
-
         store.setRemoteConfigValues("qwe");
         assertEquals("qwe", store.getRemoteConfigValues());
+    }
+
+    @Test
+    public void removeConnection_nonExisting() {
+        store.addConnection("blah1");
+        store.addConnection("blah2");
+        assertEquals(2, store.connections().length);
+        store.removeConnection("blah3");
+        assertEquals(2, store.connections().length);
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.connections()));
+    }
+
+    @Test
+    public void replaceConnections() {
+        store.addConnection("blah1");
+        store.addConnection("blah2");
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.connections()));
+        store.replaceConnections(new String[] { "aa", "bb", "cc" });
+        assertTrue(Arrays.equals(new String[] { "aa", "bb", "cc" }, store.connections()));
+
+        List<String> newList = new ArrayList<>();
+        newList.add("33");
+        newList.add("pp");
+        store.replaceConnectionsList(newList);
+        assertTrue(Arrays.equals(new String[] { "33", "pp" }, store.connections()));
+    }
+
+    @Test
+    public void deleteOldestConnection() {
+        store.addConnection("blah1");
+        store.addConnection("blah2");
+        store.addConnection("blah3");
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2", "blah3" }, store.connections()));
+        store.deleteOldestRequest();
+        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.connections()));
+    }
+
+    @Test
+    public void addConnectionMaxRequests() {
+        CountlyStore.MAX_REQUESTS = 2;
+        store.addConnection("blah1");
+        store.addConnection("blah2");
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.connections()));
+
+        store.addConnection("blah3");
+        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.connections()));
+
+        store.addConnection("123");
+        assertTrue(Arrays.equals(new String[] { "blah3", "123" }, store.connections()));
+
+        store.addConnection("1qwe");
+        assertTrue(Arrays.equals(new String[] { "123", "1qwe" }, store.connections()));
     }
 }

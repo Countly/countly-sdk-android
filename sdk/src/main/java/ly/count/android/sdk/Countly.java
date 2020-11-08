@@ -2626,7 +2626,7 @@ public class Countly {
     /**
      * Go through the request queue and replace the appKey of all requests with the current appKey
      */
-    public void requestQueueOverwriteAppKeys() {
+    synchronized public void requestQueueOverwriteAppKeys() {
         if (isLoggingEnabled()) {
             Log.i(Countly.TAG, "[Countly] Calling requestQueueOverwriteAppKeys");
         }
@@ -2648,7 +2648,7 @@ public class Countly {
     /**
      * Go through the request queue and delete all requests that don't have the current application key
      */
-    public void requestQueueEraseAppKeysRequests() {
+    synchronized public void requestQueueEraseAppKeysRequests() {
         if (isLoggingEnabled()) {
             Log.i(Countly.TAG, "[Countly] Calling requestQueueEraseAppKeysRequests");
         }
@@ -2665,7 +2665,7 @@ public class Countly {
         doStoredRequests();
     }
 
-    List<String> requestQueueReplaceWithAppKey(String[] storedRequests, String targetAppKey) {
+    synchronized List<String> requestQueueReplaceWithAppKey(String[] storedRequests, String targetAppKey) {
         try {
             List<String> filteredRequests = new ArrayList<>();
 
@@ -2720,7 +2720,7 @@ public class Countly {
         }
     }
 
-    List<String> requestQueueRemoveWithoutAppKey(String[] storedRequests, String targetAppKey) {
+    synchronized List<String> requestQueueRemoveWithoutAppKey(String[] storedRequests, String targetAppKey) {
         List<String> filteredRequests = new ArrayList<>();
 
         if (storedRequests == null || targetAppKey == null) {
