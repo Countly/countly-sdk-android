@@ -125,6 +125,13 @@ public class ModuleEvents extends ModuleBase {
         }
 
         switch (key) {
+            case ModuleFeedback.NPS_EVENT_KEY:
+            case ModuleFeedback.SURVEY_EVENT_KEY:
+                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.feedback)) {
+                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
+                    _cly.sendEventsForced();
+                }
+                break;
             case ModuleRatings.STAR_RATING_EVENT_KEY:
                 if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
                     _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);

@@ -2429,7 +2429,7 @@ public class Countly {
      */
     public synchronized Countly setRemoteConfigAutomaticDownload(boolean enabled, final RemoteConfig.RemoteConfigCallback feedbackCallback) {
         if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Setting if remote config_ Automatic download will be enabled, " + enabled);
+            Log.d(Countly.TAG, "[Countly] Setting if remote config Automatic download will be enabled, " + enabled);
         }
 
         remoteConfigAutomaticUpdateEnabled = enabled;
