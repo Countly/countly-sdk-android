@@ -240,7 +240,7 @@ public class CountlyPush {
 
             if (intent == null) {
                 if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent, stopping execution");
+                    Log.e(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent, stopping execution");
                 }
                 return;
             }
@@ -258,11 +258,17 @@ public class CountlyPush {
             int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
             Bundle bundle = intent.getParcelableExtra(EXTRA_MESSAGE);
             if (bundle == null) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.e(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle, stopping execution");
+                }
                 return;
             }
 
             Message message = bundle.getParcelable(EXTRA_MESSAGE);
             if (message == null) {
+                if (Countly.sharedInstance().isLoggingEnabled()) {
+                    Log.e(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle message, stopping execution");
+                }
                 return;
             }
 

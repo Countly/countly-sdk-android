@@ -1,3 +1,6 @@
+## 20.11.1
+  * Lessened push notification security restrictions 
+
 ## 20.11.0
   * !! Consent change !! To record orientation you now need to give "user" consent
   * !! Consent change !! To use remote config, you now need to give "remote-config" consent
