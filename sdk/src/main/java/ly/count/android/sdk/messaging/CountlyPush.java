@@ -8,7 +8,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -36,7 +35,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import ly.count.android.sdk.BuildConfig;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
 import ly.count.android.sdk.Utils;
@@ -253,29 +251,6 @@ public class CountlyPush {
                     Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
                 }
                 return;
-            }
-            ComponentName componentName = intent.getComponent();
-            String intentPackageName = componentName.getPackageName();
-            String intentClassName = componentName.getClassName();
-            String contextPackageName = context.getPackageName();
-
-            if (!intentPackageName.equals(contextPackageName)) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
-                }
-                return;
-            }
-            if (!intentClassName.startsWith(intentPackageName)) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Just to ensure it passes validation");
-                }
-                return;
-            }
-
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Push broadcast, after filtering");
-                }
             }
 
             intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
