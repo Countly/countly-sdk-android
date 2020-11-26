@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.os.SystemClock;
 import android.util.Log;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,10 +20,12 @@ public class ModuleAPM extends ModuleBase {
     //used to determine app start time
     boolean hasFirstOnResumeHappened = false;
 
-    long firstOnResumeTimeMs = -1;// used for determining app start duration
     long lastScreenSwitchTime = -1;// timestamp of when the app last changed from foreground to background
 
     int activitiesOpen = -1;
+
+    boolean useManualAppLoadedTrigger = false;
+    long appStartTimestamp;
 
     ModuleAPM(Countly cly, CountlyConfig config) {
         super(cly);
@@ -35,6 +38,23 @@ public class ModuleAPM extends ModuleBase {
         networkTraces = new HashMap<>();
 
         activitiesOpen = 0;
+
+        useManualAppLoadedTrigger = config.appLoadedManualTrigger;
+        if(config.appStartTimestampOverride != null) {
+            //if there is a app start time override, use it
+            appStartTimestamp = config.appStartTimestampOverride;
+
+            if (_cly.isLoggingEnabled()) {
+                Log.d(Countly.TAG, "[ModuleAPM] Using app start timestamp override");
+            }
+        } else {
+            //otherwise use the statically generated timestamp
+            appStartTimestamp = Countly.applicationStart;
+        }
+
+        if (_cly.isLoggingEnabled() && config.appLoadedManualTrigger) {
+            Log.d(Countly.TAG, "[ModuleAPM] Using manual app finished loading trigger for app start");
+        }
 
         apmInterface = new Apm();
     }
@@ -368,18 +388,18 @@ public class ModuleAPM extends ModuleBase {
         networkTraces.clear();
     }
 
-    void recordAppStart() {
+    void recordAppStart(long appLoadedTimestamp) {
         if (_cly.config_.recordAppStartTime) {
-            if (Countly.applicationStart == -1) {
+            long durationMs = appLoadedTimestamp - appStartTimestamp;
+
+            if(durationMs <= 0) {
                 if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[ModuleAPM] Application onCreate start time is not recorded. Don't forget to call 'applicationOnCreate'");
-                    return;
+                    Log.e(Countly.TAG, "[ModuleAPM] Encountered negative app start duration:[" + durationMs + "] dropping app start duration request");
                 }
+                return;
             }
 
-            long durationMs = firstOnResumeTimeMs - Countly.applicationStart;
-
-            _cly.connectionQueue_.sendAPMAppStart(durationMs, Countly.applicationStart, firstOnResumeTimeMs);
+            _cly.connectionQueue_.sendAPMAppStart(durationMs, appStartTimestamp, appLoadedTimestamp);
         }
     }
 
@@ -430,15 +450,16 @@ public class ModuleAPM extends ModuleBase {
             Log.d(Countly.TAG, "[Apm] Calling 'callbackOnActivityResumed', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
         }
 
+        Long currentTimestamp = System.currentTimeMillis();
+
         calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
         activitiesOpen++;
 
         if (!hasFirstOnResumeHappened) {
             hasFirstOnResumeHappened = true;
-
-            firstOnResumeTimeMs = UtilsTime.currentTimestampMs();
-
-            recordAppStart();
+            if(!useManualAppLoadedTrigger) {
+                recordAppStart(currentTimestamp);
+            }
         }
     }
 
@@ -563,6 +584,29 @@ public class ModuleAPM extends ModuleBase {
                 }
 
                 recordNetworkRequestInternal(networkTraceKey, responseCode, requestPayloadSize, responsePayloadSize, requestStartTimestampMs, requestEndTimestampMs);
+            }
+        }
+
+        /**
+         * Manually set that the app is loaded so that the app load duration can be recorded.
+         * Should only be used if manual app loading trigger is enabled
+         */
+        public void setAppIsLoaded() {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'setAppIsLoaded'");
+                }
+
+                long timestamp = System.currentTimeMillis();
+
+                if(!useManualAppLoadedTrigger) {
+                    if (_cly.isLoggingEnabled()) {
+                        Log.w(Countly.TAG, "[Apm] trying to record that app has finished loading without enabling manual trigger");
+                    }
+                    return;
+                }
+
+                recordAppStart(timestamp);
             }
         }
     }

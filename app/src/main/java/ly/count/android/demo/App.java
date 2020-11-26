@@ -38,13 +38,13 @@ public class App extends Application {
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
     final String COUNTLY_SERVER_URL = "YOUR_SERVER";
     final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+    static long applicationStartTimestamp = System.currentTimeMillis();
 
     private BroadcastReceiver messageReceiver;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Countly.applicationOnCreate();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
@@ -151,6 +151,7 @@ public class App extends Application {
             })
             .setRecordAppStartTime(true)
             .setHttpPostForced(false)
+            .setAppStartTimestampOverride(applicationStartTimestamp)
             //.enableCertificatePinning(certificates)
             //.enablePublicKeyPinning(certificates)
 

@@ -146,6 +146,10 @@ public class CountlyConfig {
 
     Map<String, String> metricOverride = null;
 
+    Long appStartTimestampOverride = null;
+
+    boolean appLoadedManualTrigger = false;
+
     public CountlyConfig() {
     }
 
@@ -261,11 +265,20 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Call to enable uncaught crash reporting
+     * @return
+     */
     public CountlyConfig enableCrashReporting() {
         this.enableUnhandledCrashReporting = true;
         return this;
     }
 
+    /**
+     * Set if automatic view tracking should be enabled
+     * @param enable
+     * @return
+     */
     public CountlyConfig setViewTracking(boolean enable) {
         this.enableViewTracking = enable;
         return this;
@@ -466,16 +479,30 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set the link to the application class
+     * @param application
+     * @return
+     */
     public synchronized CountlyConfig setApplication(Application application) {
         this.application = application;
         return this;
     }
 
+    /**
+     * Enable the recording of the app start time
+     * @param recordAppStartTime
+     * @return
+     */
     public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime) {
         this.recordAppStartTime = recordAppStartTime;
         return this;
     }
 
+    /**
+     * Disable location tracking
+     * @return
+     */
     public synchronized CountlyConfig setDisableLocation() {
         disableLocation = true;
         return this;
@@ -497,8 +524,32 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set the metrics you want to override or additional custom metrics you want to provide
+     * @param providedMetricOverride
+     * @return
+     */
     public synchronized CountlyConfig setMetricOverride(Map<String, String> providedMetricOverride) {
         metricOverride = providedMetricOverride;
+        return this;
+    }
+
+    /**
+     * Override the app start timestamp in case you have a more precise way to measure it
+     * @param appStartTimestampOverride
+     * @return
+     */
+    public synchronized CountlyConfig setAppStartTimestampOverride(long appStartTimestampOverride) {
+        this.appStartTimestampOverride = appStartTimestampOverride;
+        return this;
+    }
+
+    /**
+     * Set to manually trigger the moment when the app has finished loading
+     * @return
+     */
+    public synchronized CountlyConfig enableManualAppLoadedTrigger() {
+        appLoadedManualTrigger = true;
         return this;
     }
 }

@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("JavadocReference")
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.0";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.1-rc1";
     /**
      * Used as request meta data on every request
      */
@@ -182,7 +182,7 @@ public class Countly {
     //custom request header fields
     Map<String, String> requestHeaderCustomValues;
 
-    static long applicationStart = -1;
+    static long applicationStart = System.currentTimeMillis();
 
     //GDPR
     protected boolean requiresConsent = false;
@@ -2847,7 +2847,6 @@ public class Countly {
     }
 
     public static void applicationOnCreate() {
-        applicationStart = UtilsTime.currentTimestampMs();
     }
 
     // for unit testing
