@@ -150,6 +150,8 @@ public class CountlyConfig {
 
     boolean appLoadedManualTrigger = false;
 
+    boolean manualForegroundBackgroundTrigger = false;
+
     public CountlyConfig() {
     }
 
@@ -550,6 +552,15 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableManualAppLoadedTrigger() {
         appLoadedManualTrigger = true;
+        return this;
+    }
+
+    /**
+     * Set this in case you want to control these triggers manually
+     * @return
+     */
+    public synchronized CountlyConfig enableManualForegroundBackgroundTriggerAPM() {
+        manualForegroundBackgroundTrigger = true;
         return this;
     }
 }

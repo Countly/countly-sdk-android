@@ -3,6 +3,7 @@
   * Added a default way to acquire app start timestamp for APM
   * Added a way to override the current app start timestamp for APM
   * Added manual trigger for when app has finished loading for APM
+  * Added manual foreground/background triggers for APM
 
 ## 20.11.0
   * !! Consent change !! To record orientation you now need to give "user" consent

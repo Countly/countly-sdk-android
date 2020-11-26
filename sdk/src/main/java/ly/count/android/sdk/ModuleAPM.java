@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
-import android.os.SystemClock;
 import android.util.Log;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,6 +25,9 @@ public class ModuleAPM extends ModuleBase {
 
     boolean useManualAppLoadedTrigger = false;
     long appStartTimestamp;
+
+    boolean manualForegroundBackgroundTriggers = false;
+    boolean manualOverrideInForeground = false;//app starts in background
 
     ModuleAPM(Countly cly, CountlyConfig config) {
         super(cly);
@@ -54,6 +56,11 @@ public class ModuleAPM extends ModuleBase {
 
         if (_cly.isLoggingEnabled() && config.appLoadedManualTrigger) {
             Log.d(Countly.TAG, "[ModuleAPM] Using manual app finished loading trigger for app start");
+        }
+
+        manualForegroundBackgroundTriggers = config.manualForegroundBackgroundTrigger;
+        if (_cly.isLoggingEnabled() && manualForegroundBackgroundTriggers) {
+            Log.d(Countly.TAG, "[ModuleAPM] Using manual foreground/background triggers");
         }
 
         apmInterface = new Apm();
@@ -411,7 +418,12 @@ public class ModuleAPM extends ModuleBase {
             Log.v(Countly.TAG, "[ModuleAPM] calculateAppRunningTimes, toBG[" + goingToBackground + "] toFG[" + goingToForeground + "]");
         }
 
+        doForegroundBackgroundCalculations(goingToBackground, goingToForeground);
+    }
+
+    void doForegroundBackgroundCalculations(boolean goingToBackground, boolean goingToForeground) {
         if (goingToBackground || goingToForeground) {
+
             long currentTimeMs = UtilsTime.currentTimestampMs();
 
             if (lastScreenSwitchTime != -1) {
@@ -433,6 +445,24 @@ public class ModuleAPM extends ModuleBase {
         }
     }
 
+    void goToForeground() {
+        if(manualOverrideInForeground) {
+            //if we already are in foreground, do nothing
+            return;
+        }
+        manualOverrideInForeground = true;
+        doForegroundBackgroundCalculations(false, true);
+    }
+
+    void goToBackground() {
+        if(!manualOverrideInForeground) {
+            //if we already are in background, do nothing
+            return;
+        }
+        manualOverrideInForeground = false;
+        doForegroundBackgroundCalculations(true, false);
+    }
+
     @Override
     void halt() {
         codeTraces = null;
@@ -452,7 +482,9 @@ public class ModuleAPM extends ModuleBase {
 
         Long currentTimestamp = System.currentTimeMillis();
 
-        calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
+        if(!manualForegroundBackgroundTriggers) {
+            calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
+        }
         activitiesOpen++;
 
         if (!hasFirstOnResumeHappened) {
@@ -474,7 +506,9 @@ public class ModuleAPM extends ModuleBase {
             Log.d(Countly.TAG, "[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
         }
 
-        calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
+        if(!manualForegroundBackgroundTriggers) {
+            calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
+        }
         activitiesOpen--;
     }
 
@@ -607,6 +641,40 @@ public class ModuleAPM extends ModuleBase {
                 }
 
                 recordAppStart(timestamp);
+            }
+        }
+
+        public void triggerForeground() {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'triggerForeground'");
+                }
+
+                if(!manualForegroundBackgroundTriggers) {
+                    if (_cly.isLoggingEnabled()) {
+                        Log.w(Countly.TAG, "[Apm] trying to use manual foreground/background triggers without enabling them");
+                    }
+                    return;
+                }
+
+                goToForeground();
+            }
+        }
+
+        public void triggerBackground() {
+            synchronized (_cly) {
+                if (_cly.isLoggingEnabled()) {
+                    Log.i(Countly.TAG, "[Apm] Calling 'triggerBackground'");
+                }
+
+                if(!manualForegroundBackgroundTriggers) {
+                    if (_cly.isLoggingEnabled()) {
+                        Log.w(Countly.TAG, "[Apm] trying to use manual foreground/background triggers without enabling them");
+                    }
+                    return;
+                }
+
+                goToBackground();
             }
         }
     }
