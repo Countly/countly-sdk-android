@@ -652,7 +652,7 @@ public class ModuleAPM extends ModuleBase {
 
                 if(!manualForegroundBackgroundTriggers) {
                     if (_cly.isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[Apm] trying to use manual foreground/background triggers without enabling them");
+                        Log.w(Countly.TAG, "[Apm] trying to use manual foreground triggers without enabling them");
                     }
                     return;
                 }
@@ -669,7 +669,7 @@ public class ModuleAPM extends ModuleBase {
 
                 if(!manualForegroundBackgroundTriggers) {
                     if (_cly.isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[Apm] trying to use manual foreground/background triggers without enabling them");
+                        Log.w(Countly.TAG, "[Apm] trying to use manual background triggers without enabling them");
                     }
                     return;
                 }

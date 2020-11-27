@@ -708,8 +708,7 @@ public class CountlyPush {
             throw new IllegalStateException("Non null application must be provided!");
         }
 
-        Log.e(Countly.TAG, "CURRENT PUSH CONSENT " + getPushConsent(application));
-
+        //Log.e(Countly.TAG, "CURRENT PUSH CONSENT " + getPushConsent(application));
 
         // set preferred push provider
         CountlyPush.provider = preferredProvider;
