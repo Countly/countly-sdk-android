@@ -152,6 +152,8 @@ public class CountlyConfig {
 
     boolean manualForegroundBackgroundTrigger = false;
 
+    ModuleLog.LogCallback providedLogCallback;
+
     public CountlyConfig() {
     }
 
@@ -561,6 +563,11 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableManualForegroundBackgroundTriggerAPM() {
         manualForegroundBackgroundTrigger = true;
+        return this;
+    }
+
+    public synchronized CountlyConfig setLogListener(ModuleLog.LogCallback logCallback) {
+        providedLogCallback = logCallback;
         return this;
     }
 }

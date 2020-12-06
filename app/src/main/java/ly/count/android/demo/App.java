@@ -28,6 +28,7 @@ import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
 import ly.count.android.sdk.DeviceId;
+import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.RemoteConfig;
 import ly.count.android.sdk.messaging.CountlyPush;
 
@@ -121,7 +122,29 @@ public class App extends Application {
 
         Countly.sharedInstance().setLoggingEnabled(true);
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
-            .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)//.enableTemporaryDeviceIdMode()
+            .enableCrashReporting().setLoggingEnabled(true).setLogListener(new ModuleLog.LogCallback() {
+                @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
+                    //duplicated countly logs
+                    switch (logLevel) {
+                        case Verbose:
+                            Log.v("Countly Duplicate", logMessage);
+                            break;
+                        case Debug:
+                            Log.d("Countly Duplicate", logMessage);
+                            break;
+                        case Info:
+                            Log.i("Countly Duplicate", logMessage);
+                            break;
+                        case Warning:
+                            Log.w("Countly Duplicate", logMessage);
+                            break;
+                        case Error:
+                            Log.e("Countly Duplicate", logMessage);
+                            break;
+                    }
+                }
+            })
+            .enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)//.enableTemporaryDeviceIdMode()
             .setRequiresConsent(true).setConsentEnabled(new String[] {
                 Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
                 Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,

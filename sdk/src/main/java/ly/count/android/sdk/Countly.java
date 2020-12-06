@@ -75,6 +75,8 @@ public class Countly {
      */
     public static final String TAG = "Countly";
 
+    ModuleLog L = new ModuleLog();
+
     /**
      * Broadcast sent when consent set is changed
      */
@@ -381,6 +383,10 @@ public class Countly {
      * @param config contains all needed information to init SDK
      */
     public synchronized Countly init(CountlyConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("Can't init SDK with 'null' config");
+        }
+
         //enable logging
         if (config.loggingEnabled) {
             //enable logging before any potential logging calls
@@ -390,6 +396,7 @@ public class Countly {
         if (isLoggingEnabled()) {
             Log.d(Countly.TAG, "[Init] Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
         }
+        L.SetListener(config.providedLogCallback);
 
         if (config.context == null) {
             throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");

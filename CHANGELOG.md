@@ -1,3 +1,6 @@
+## 20.11.2
+  * Added SDK log listener
+
 ## 20.11.1
   * Lessened push notification security restrictions
   * Added a default way to acquire app start timestamp for APM
