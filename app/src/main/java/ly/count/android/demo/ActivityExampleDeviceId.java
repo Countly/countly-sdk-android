@@ -34,16 +34,6 @@ public class ActivityExampleDeviceId extends AppCompatActivity {
         Countly.sharedInstance().enableTemporaryIdMode();
     }
 
-    public void onClickDeviceId04(View v) {
-        //set device id without merge
-        Countly.sharedInstance().changeDeviceId(DeviceId.Type.OPEN_UDID, null);
-    }
-
-    public void onClickDeviceId05(View v) {
-        //set device id witho merge
-        Countly.sharedInstance().changeDeviceId(null);
-    }
-
     @Override
     public void onStart()
     {

@@ -127,19 +127,19 @@ public class App extends Application {
                     //duplicated countly logs
                     switch (logLevel) {
                         case Verbose:
-                            Log.v("Countly Duplicate", logMessage);
+                            //.v("Countly Duplicate", logMessage);
                             break;
                         case Debug:
-                            Log.d("Countly Duplicate", logMessage);
+                            //Log.d("Countly Duplicate", logMessage);
                             break;
                         case Info:
-                            Log.i("Countly Duplicate", logMessage);
+                            //Log.i("Countly Duplicate", logMessage);
                             break;
                         case Warning:
-                            Log.w("Countly Duplicate", logMessage);
+                            //Log.w("Countly Duplicate", logMessage);
                             break;
                         case Error:
-                            Log.e("Countly Duplicate", logMessage);
+                            //Log.e("Countly Duplicate", logMessage);
                             break;
                     }
                 }

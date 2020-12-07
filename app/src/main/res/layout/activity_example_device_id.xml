@@ -24,20 +24,6 @@
         android:text="@string/set_new_device_id_with_server_merge" />
 
     <Button
-        android:id="@+id/button61"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickDeviceId04"
-        android:text="Set device ID to null" />
-
-    <Button
-        android:id="@+id/button62"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickDeviceId05"
-        android:text="Set Device ID to null (with merge)" />
-
-    <Button
         android:id="@+id/button54"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

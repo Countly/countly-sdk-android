@@ -1,5 +1,6 @@
 ## 20.11.2
   * Added SDK log listener
+  * Refactored all logs to use the new logging mechanism
   * Fixed bug where manual session control calls were working even when not enabled
 
 ## 20.11.1
