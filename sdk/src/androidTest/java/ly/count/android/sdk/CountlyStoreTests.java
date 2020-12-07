@@ -53,7 +53,7 @@ public class CountlyStoreTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
-        store = new CountlyStore(getContext());
+        store = new CountlyStore(getContext(), mock(ModuleLog.class));
         store.clear();
     }
 
@@ -66,7 +66,7 @@ public class CountlyStoreTests {
     @Test
     public void testConstructor_nullContext() {
         try {
-            new CountlyStore(null);
+            new CountlyStore(null, mock(ModuleLog.class));
             fail("expected IllegalArgumentException when calling CountlyStore() ctor with null context");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -76,7 +76,7 @@ public class CountlyStoreTests {
     @Test
     public void testConstructor() {
         Context mockContext = mock(Context.class);
-        new CountlyStore(mockContext);
+        new CountlyStore(mockContext, mock(ModuleLog.class));
         verify(mockContext).getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
     }
 

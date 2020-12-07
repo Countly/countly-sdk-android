@@ -23,12 +23,14 @@ public class ModuleCrash extends ModuleBase {
     //interface for SDK users
     final Crashes crashesInterface;
 
+    ModuleLog L;
+
     ModuleCrash(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleCrash] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleCrash] Initialising");
 
         setCrashFilterCallback(config.crashFilterCallback);
 
@@ -45,18 +47,14 @@ public class ModuleCrash extends ModuleBase {
      * @param context android context
      */
     synchronized void checkForNativeCrashDumps(Context context) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleCrash] Checking for native crash dumps");
-        }
+        L.d("[ModuleCrash] Checking for native crash dumps");
 
         String basePath = context.getCacheDir().getAbsolutePath();
         String finalPath = basePath + File.separator + countlyFolderName + File.separator + countlyNativeCrashFolderName;
 
         File folder = new File(finalPath);
         if (folder.exists()) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleCrash] Native crash folder exists, checking for dumps");
-            }
+            L.d("[ModuleCrash] Native crash folder exists, checking for dumps");
 
             File[] dumpFiles = folder.listFiles();
 
@@ -66,9 +64,7 @@ public class ModuleCrash extends ModuleBase {
                 dumpFileCount = dumpFiles.length;
             }
 
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleCrash] Crash dump folder contains [" + dumpFileCount + "] files");
-            }
+            L.d("[ModuleCrash] Crash dump folder contains [" + dumpFileCount + "] files");
 
             if (dumpFiles != null) {
                 for (File dumpFile : dumpFiles) {
@@ -80,16 +76,12 @@ public class ModuleCrash extends ModuleBase {
                 }
             }
         } else {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleCrash] Native crash folder does not exist");
-            }
+            L.d("[ModuleCrash] Native crash folder does not exist");
         }
     }
 
     private synchronized void recordNativeException(File dumpFile) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
-        }
+        L.d("[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
 
         //check for consent
         if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
@@ -105,9 +97,7 @@ public class ModuleCrash extends ModuleBase {
             buf.read(bytes, 0, bytes.length);
             buf.close();
         } catch (Exception e) {
-            if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleCrash] Failed to read dump file bytes");
-            }
+            L.e("[ModuleCrash] Failed to read dump file bytes");
             e.printStackTrace();
             return;
         }
@@ -131,9 +121,7 @@ public class ModuleCrash extends ModuleBase {
      * @return true if a match was found
      */
     boolean crashFilterCheck(String crash) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleCrash] Calling crashFilterCheck");
-        }
+        L.d("[ModuleCrash] Calling crashFilterCheck");
 
         if (crashFilterCallback == null) {
             //no filter callback set, nothing to compare against
@@ -170,9 +158,7 @@ public class ModuleCrash extends ModuleBase {
      * @return Returns link to Countly for call chaining
      */
     synchronized Countly recordExceptionInternal(final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
-        if (_cly.isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
-        }
+        L.i("[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
 
         if (!_cly.isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recording exceptions");
@@ -183,9 +169,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (exception == null) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleCrash] recordException, provided exception was null, returning");
-            }
+            L.d("[ModuleCrash] recordException, provided exception was null, returning");
 
             return _cly;
         }
@@ -201,9 +185,7 @@ public class ModuleCrash extends ModuleBase {
         String exceptionString = sw.toString();
 
         if (crashFilterCheck(exceptionString)) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
-            }
+            L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
             _cly.connectionQueue_.sendCrashReport(exceptionString, itIsHandled, false, customSegmentation);
         }
@@ -219,30 +201,20 @@ public class ModuleCrash extends ModuleBase {
     public synchronized Countly crashTest(int crashNumber) {
 
         if (crashNumber == 1) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 1");
-            }
+            L.d("Running crashTest 1");
 
             stackOverflow();
         } else if (crashNumber == 2) {
-
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 2");
-            }
+            L.d("Running crashTest 2");
 
             //noinspection UnusedAssignment,divzero
             @SuppressWarnings("NumericOverflow") int test = 10 / 0;
         } else if (crashNumber == 3) {
-
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 3");
-            }
+            L.d("Running crashTest 3");
 
             throw new RuntimeException("This is a crash");
         } else {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Running crashTest 4");
-            }
+            L.d("Running crashTest 4");
 
             String test = null;
             //noinspection ResultOfMethodCallIgnored
@@ -274,18 +246,14 @@ public class ModuleCrash extends ModuleBase {
          */
         public Countly addCrashBreadcrumb(String record) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Crashes] Adding crash breadcrumb");
-                }
+                L.i("[Crashes] Adding crash breadcrumb");
 
                 if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
                     return _cly;
                 }
 
                 if (record == null || record.isEmpty()) {
-                    if (_cly.isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "[Crashes] Can't add a null or empty crash breadcrumb");
-                    }
+                    L.e("[Crashes] Can't add a null or empty crash breadcrumb");
                     return _cly;
                 }
 

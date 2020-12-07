@@ -29,12 +29,14 @@ public class ModuleFeedback extends ModuleBase {
 
     Feedback feedbackInterface = null;
 
+    ModuleLog L;
+
     ModuleFeedback(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleFeedback] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleFeedback] Initialising");
 
         feedbackInterface = new Feedback();
     }
@@ -48,14 +50,10 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     void getAvailableFeedbackWidgetsInternal(final RetrieveFeedbackWidgets devCallback) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleFeedback] calling 'getAvailableFeedbackWidgetsInternal', callback set:[" + (devCallback != null) + "]");
-        }
+        L.d("[ModuleFeedback] calling 'getAvailableFeedbackWidgetsInternal', callback set:[" + (devCallback != null) + "]");
 
         if (devCallback == null) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleFeedback] available feedback widget list can't be retrieved without a callback");
-            }
+            L.e("[ModuleFeedback] available feedback widget list can't be retrieved without a callback");
             return;
         }
 
@@ -65,9 +63,7 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
-            }
+            L.e("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             devCallback.onFinished(null, "[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             return;
         }
@@ -79,28 +75,22 @@ public class ModuleFeedback extends ModuleBase {
         (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
             @Override public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[ModuleFeedback] Not possible to retrieve widget list. Probably due to lack of connection to the server");
-                    }
+                    L.d("[ModuleFeedback] Not possible to retrieve widget list. Probably due to lack of connection to the server");
                     devCallback.onFinished(null, "Not possible to retrieve widget list. Probably due to lack of connection to the server");
                     return;
                 }
 
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleFeedback] Retrieved request: [" + checkResponse.toString() + "]");
-                }
+                L.d("[ModuleFeedback] Retrieved request: [" + checkResponse.toString() + "]");
 
                 List<CountlyFeedbackWidget> feedbackEntries = parseFeedbackList(checkResponse);
 
                 devCallback.onFinished(feedbackEntries, null);
             }
-        });
+        }, _cly.L);
     }
 
     static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleFeedback] calling 'parseFeedbackList'");
-        }
+        Countly.sharedInstance().L.d("[ModuleFeedback] calling 'parseFeedbackList'");
 
         List<CountlyFeedbackWidget> parsedRes = new ArrayList<>();
         try {
@@ -108,9 +98,7 @@ public class ModuleFeedback extends ModuleBase {
                 JSONArray jArray = requestResponse.optJSONArray("result");
 
                 if (jArray == null) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[ModuleFeedback] parseFeedbackList, response does not have a valid 'result' entry. No widgets retrieved.");
-                    }
+                    Countly.sharedInstance().L.w("[ModuleFeedback] parseFeedbackList, response does not have a valid 'result' entry. No widgets retrieved.");
                     return parsedRes;
                 }
 
@@ -123,16 +111,12 @@ public class ModuleFeedback extends ModuleBase {
                         String valName = jObj.optString("name", "");
 
                         if (valId.isEmpty()) {
-                            if (Countly.sharedInstance().isLoggingEnabled()) {
-                                Log.e(Countly.TAG, "[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
-                            }
+                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
                             continue;
                         }
 
                         if (valType.isEmpty()) {
-                            if (Countly.sharedInstance().isLoggingEnabled()) {
-                                Log.e(Countly.TAG, "[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget type, dropping");
-                            }
+                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget type, dropping");
                             continue;
                         }
 
@@ -145,9 +129,7 @@ public class ModuleFeedback extends ModuleBase {
                                 plannedType = FeedbackWidgetType.nps;
                                 break;
                             default:
-                                if (Countly.sharedInstance().isLoggingEnabled()) {
-                                    Log.e(Countly.TAG, "[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
-                                }
+                                Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
                                 continue;
                         }
 
@@ -158,16 +140,12 @@ public class ModuleFeedback extends ModuleBase {
 
                         parsedRes.add(se);
                     } catch (Exception ex) {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.e(Countly.TAG, "[ModuleFeedback] parseFeedbackList, failed to parse json, [" + ex.toString() + "]");
-                        }
+                        Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, failed to parse json, [" + ex.toString() + "]");
                     }
                 }
             }
         } catch (Exception ex) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleFeedback] parseFeedbackList, Encountered exception while parsing feedback list, [" + ex.toString() + "]");
-            }
+            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, Encountered exception while parsing feedback list, [" + ex.toString() + "]");
         }
 
         return parsedRes;
@@ -175,9 +153,7 @@ public class ModuleFeedback extends ModuleBase {
 
     void presentFeedbackWidgetInternal(final CountlyFeedbackWidget widgetInfo, final Context context, final String closeButtonText, final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleFeedback] Can't present widget with null widget info");
-            }
+            L.e("[ModuleFeedback] Can't present widget with null widget info");
 
             if (devCallback != null) {
                 devCallback.onFinished("Can't present widget with null widget info");
@@ -185,14 +161,10 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", feedback id:[" + widgetInfo.widgetId + "], feedback type:[" + widgetInfo.type + "]");
-        }
+        L.d("[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", feedback id:[" + widgetInfo.widgetId + "], feedback type:[" + widgetInfo.type + "]");
 
         if (context == null) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleFeedback] Can't show feedback, provided context is null");
-            }
+            L.e("[ModuleFeedback] Can't show feedback, provided context is null");
             if (devCallback != null) {
                 devCallback.onFinished("Can't show feedback, provided context is null");
             }
@@ -207,9 +179,7 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
-            }
+            L.e("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             devCallback.onFinished("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             return;
         }
@@ -244,9 +214,7 @@ public class ModuleFeedback extends ModuleBase {
 
         final String preparedWidgetUrl = widgetListUrl.toString();
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
-        }
+        L.d("[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             //enable for chrome debugging
@@ -256,9 +224,7 @@ public class ModuleFeedback extends ModuleBase {
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleFeedback] Calling on main thread");
-                }
+                L.d("[ModuleFeedback] Calling on main thread");
 
                 ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
                 webView.getSettings().setJavaScriptEnabled(true);
@@ -277,9 +243,7 @@ public class ModuleFeedback extends ModuleBase {
 
                 builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface dialogInterface, int i) {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[ModuleFeedback] Cancel button clicked for the feedback widget");
-                        }
+                        L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
 
                         if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.feedback)) {
                             Map<String, Object> segm = new HashMap<>();
@@ -328,9 +292,7 @@ public class ModuleFeedback extends ModuleBase {
          */
         public void getAvailableFeedbackWidgets(RetrieveFeedbackWidgets callback) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Feedback] Trying to retrieve feedback widget list");
-                }
+                L.i("[Feedback] Trying to retrieve feedback widget list");
 
                 getAvailableFeedbackWidgetsInternal(callback);
             }
@@ -346,9 +308,7 @@ public class ModuleFeedback extends ModuleBase {
          */
         public void presentFeedbackWidget(CountlyFeedbackWidget widgetInfo, Context context, String closeButtonText, FeedbackCallback devCallback) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Feedback] Trying to present feedback widget");
-                }
+                L.i("[Feedback] Trying to present feedback widget");
 
                 presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
             }

@@ -13,12 +13,14 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     RemoteConfig remoteConfigInterface = null;
 
+    ModuleLog L;
+
     ModuleRemoteConfig(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleRemoteConfig] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleRemoteConfig] Initialising");
 
         _cly.setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
 
@@ -34,9 +36,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param callback called after the update is done
      */
     void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
-        }
+        L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
         String keysInclude = null;
         String keysExclude = null;
 
@@ -59,9 +59,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         if (connectionQueue_.getDeviceId().getId() == null) {
             //device ID is null, abort
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
-            }
+            L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
 
             if (callback != null) {
                 callback.callback("Can't complete call, device ID is null");
@@ -72,9 +70,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         if (connectionQueue_.getDeviceId().temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()) {
             //temporary id mode enabled, abort
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
-            }
+            L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
 
             if (callback != null) {
                 callback.callback("Can't complete call, temporary device ID is set");
@@ -84,18 +80,14 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         String requestData = connectionQueue_.prepareRemoteConfigRequest(keysInclude, keysExclude);
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
-        }
+        L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
         ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
 
         (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, requestShouldBeDelayed, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
             @Override
             public void callback(JSONObject checkResponse) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
-                }
+                L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
                 if (checkResponse == null) {
                     if (callback != null) {
                         callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
@@ -111,21 +103,17 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
                 rcvs.mergeValues(checkResponse);
 
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleRemoteConfig] Finished remote config processing, starting saving");
-                }
+                Countly.sharedInstance().L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
 
                 saveConfig(rcvs);
 
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleRemoteConfig] Finished remote config saving");
-                }
+                Countly.sharedInstance().L.d("[ModuleRemoteConfig] Finished remote config saving");
 
                 if (callback != null) {
                     callback.callback(null);
                 }
             }
-        });
+        }, _cly.L);
     }
 
     Object getValue(String key) {
@@ -134,12 +122,11 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void saveConfig(RemoteConfigValueStore rcvs) {
-        CountlyStore cs = new CountlyStore(_cly.context_);
-        cs.setRemoteConfigValues(rcvs.dataToString());
+        _cly.connectionQueue_.getCountlyStore().setRemoteConfigValues(rcvs.dataToString());
     }
 
     RemoteConfigValueStore loadConfig() {
-        CountlyStore cs = new CountlyStore(_cly.context_);
+        CountlyStore cs = _cly.connectionQueue_.getCountlyStore();
         String rcvsString = cs.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString);
@@ -147,8 +134,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void clearValueStore() {
-        CountlyStore cs = new CountlyStore(_cly.context_);
-        cs.setRemoteConfigValues("");
+        _cly.connectionQueue_.getCountlyStore().setRemoteConfigValues("");
     }
 
     Map<String, Object> getAllRemoteConfigValuesInternal() {
@@ -172,9 +158,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     Object value = newValues.get(key);
                     values.put(key, value);
                 } catch (Exception e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "[RemoteConfigValueStore] Failed merging new remote config values");
-                    }
+                    Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed merging new remote config values");
                 }
             }
         }
@@ -198,9 +182,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 try {
                     ret.put(key, values.get(key));
                 } catch (Exception ex) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "[RemoteConfigValueStore] Got JSON exception while calling 'getAllValues': " + ex.toString());
-                    }
+                    Countly.sharedInstance().L.e("[RemoteConfigValueStore] Got JSON exception while calling 'getAllValues': " + ex.toString());
                 }
             }
 
@@ -216,9 +198,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             try {
                 values = new JSONObject(storageString);
             } catch (JSONException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[RemoteConfigValueStore] Couldn't decode RemoteConfigValueStore successfully: " + e.toString());
-                }
+                Countly.sharedInstance().L.e("[RemoteConfigValueStore] Couldn't decode RemoteConfigValueStore successfully: " + e.toString());
                 values = new JSONObject();
             }
             return new RemoteConfigValueStore(values);
@@ -230,9 +210,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void clearAndDownloadAfterIdChange() {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[RemoteConfig] Clearing remote config values and preparing to download after ID update");
-        }
+        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
         _cly.remoteConfig().clearStoredValues();
         if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
@@ -242,9 +220,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     @Override
     void deviceIdChanged() {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[RemoteConfig] Device ID changed will update values: [" + updateRemoteConfigAfterIdChange + "]");
-        }
+        L.v("[RemoteConfig] Device ID changed will update values: [" + updateRemoteConfigAfterIdChange + "]");
 
         if (updateRemoteConfigAfterIdChange) {
             updateRemoteConfigAfterIdChange = false;
@@ -256,9 +232,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     public void initFinished(CountlyConfig config){
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
         if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Init] Automatically updating remote config values");
-            }
+            L.d("[Init] Automatically updating remote config values");
             updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, _cly.remoteConfigInitCallback);
         }
     }
@@ -274,9 +248,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void clearStoredValues() {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[RemoteConfig] Calling 'clearStoredValues'");
-                }
+                L.i("[RemoteConfig] Calling 'clearStoredValues'");
 
                 clearValueStore();
             }
@@ -284,9 +256,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         public Map<String, Object> getAllValues() {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[RemoteConfig] Calling 'getAllValues'");
-                }
+                L.i("[RemoteConfig] Calling 'getAllValues'");
 
                 if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return null;
@@ -304,9 +274,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public Object getValueForKey(String key) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[RemoteConfig] Calling remoteConfigValueForKey, " + key);
-                }
+                L.i("[RemoteConfig] Calling remoteConfigValueForKey, " + key);
 
                 if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return null;
@@ -324,9 +292,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
-                }
+                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
 
                 if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
@@ -334,8 +300,8 @@ public class ModuleRemoteConfig extends ModuleBase {
                     }
                     return;
                 }
-                if (keysToExclude == null && _cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+                if (keysToExclude == null) {
+                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
                 updateRemoteConfigValues(null, keysToExclude, _cly.connectionQueue_, false, callback);
             }
@@ -349,17 +315,15 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
-                }
+                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
                 if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
                         callback.callback("No consent given");
                     }
                     return;
                 }
-                if (keysToInclude == null && _cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+                if (keysToInclude == null) {
+                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
                 updateRemoteConfigValues(keysToInclude, null, _cly.connectionQueue_, false, callback);
             }
@@ -372,9 +336,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void update(RemoteConfigCallback callback) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[RemoteConfig] Manually calling to updateRemoteConfig");
-                }
+                L.i("[RemoteConfig] Manually calling to updateRemoteConfig");
 
                 if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;

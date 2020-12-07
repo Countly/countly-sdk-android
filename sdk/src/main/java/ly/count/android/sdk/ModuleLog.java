@@ -16,62 +16,77 @@ public class ModuleLog {
         this.logListener = logListener;
     }
 
-    void v(String msg) {
+    public void v(String msg) {
         if(!logEnabled()) {
             return;
         }
         if(Countly.sharedInstance().isLoggingEnabled()) {
             Log.v(Countly.TAG, msg);
         }
-        informListener(msg, LogLevel.Verbose);
+        informListener(msg, null, LogLevel.Verbose);
     }
 
-    void d(String msg) {
+    public void d(String msg) {
         if(!logEnabled()) {
             return;
         }
         if(Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, msg);
         }
-        informListener(msg, LogLevel.Debug);
+        informListener(msg, null, LogLevel.Debug);
     }
 
-    void i(String msg) {
+    public void i(String msg) {
         if(!logEnabled()) {
             return;
         }
         if(Countly.sharedInstance().isLoggingEnabled()) {
             Log.i(Countly.TAG, msg);
         }
-        informListener(msg, LogLevel.Info);
+        informListener(msg, null, LogLevel.Info);
     }
 
-    void w(String msg) {
+    public void w(String msg) {
+        w(msg, null);
+    }
+
+    public void w(String msg, Throwable t) {
         if(!logEnabled()) {
             return;
         }
         if(Countly.sharedInstance().isLoggingEnabled()) {
             Log.w(Countly.TAG, msg);
         }
-        informListener(msg, LogLevel.Warning);
+        informListener(msg, null, LogLevel.Warning);
     }
 
-    void e(String msg) {
+    public void e(String msg) {
+        e(msg, null);
+    }
+
+    public void e(String msg, Throwable t) {
         if(!logEnabled()) {
             return;
         }
         if(Countly.sharedInstance().isLoggingEnabled()) {
-            Log.e(Countly.TAG, msg);
+            Log.e(Countly.TAG, msg, t);
         }
-        informListener(msg, LogLevel.Error);
+        informListener(msg, t, LogLevel.Error);
     }
 
-    boolean logEnabled() {
+    public boolean logEnabled() {
         return (logListener != null) || Countly.sharedInstance().isLoggingEnabled();
     }
 
-    private void informListener(String msg, LogLevel level) {
+    private void informListener(String msg, final Throwable t, final LogLevel level) {
         try {
+            if (msg == null) {
+                msg = "";
+            }
+            if(t != null) {
+                msg += Log.getStackTraceString(t);
+            }
+
             if (logListener != null) {
                 logListener.LogHappened(msg, level);
             }

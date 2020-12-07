@@ -100,9 +100,7 @@ public class Utils {
             }
             return bytes.toByteArray();
         } catch (IOException e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Couldn't read stream: " + e);
-            }
+            Countly.sharedInstance().L.e("Couldn't read stream: " + e);
             return null;
         } finally {
             try {
@@ -123,9 +121,7 @@ public class Utils {
             try {
                 streamLine = br.readLine();
             } catch (IOException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    e.printStackTrace();
-                }
+                Countly.sharedInstance().L.e("", e);
                 break;
             }
 
@@ -187,9 +183,7 @@ public class Utils {
         }
 
         if (removed) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Unsupported data types were removed from provided segmentation");
-            }
+            Countly.sharedInstance().L.w("Unsupported data types were removed from provided segmentation");
         }
 
         return removed;

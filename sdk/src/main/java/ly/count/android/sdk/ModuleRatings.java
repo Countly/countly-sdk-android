@@ -29,12 +29,14 @@ public class ModuleRatings extends ModuleBase {
 
     final Ratings ratingsInterface;
 
+    ModuleLog L;
+
     ModuleRatings(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleRatings] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleRatings] Initialising");
 
         starRatingCallback_ = config.starRatingCallback;
         setStarRatingInitConfig(config.countlyStore, config.starRatingSessionLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
@@ -46,42 +48,32 @@ public class ModuleRatings extends ModuleBase {
     }
 
     void recordManualRatingInternal(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleRatings] Calling recordManualRatingInternal");
-        }
+        L.d("[ModuleRatings] Calling recordManualRatingInternal");
 
         if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
             return;
         }
 
         if (widgetId == null) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
-            }
+            L.d("[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
             return;
         }
 
         if (widgetId.isEmpty()) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
-            }
+            L.d("[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
             return;
         }
 
         if (rating < 0) {
             rating = 0;
 
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleRatings] recordManualRatingInternal, given rating too low, defaulting to 0");
-            }
+            L.d("[ModuleRatings] recordManualRatingInternal, given rating too low, defaulting to 0");
         }
 
         if (rating > 5) {
             rating = 5;
 
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleRatings] recordManualRatingInternal, given rating too high, defaulting to 5");
-            }
+            L.d("[ModuleRatings] recordManualRatingInternal, given rating too high, defaulting to 5");
         }
 
         Map<String, Object> segm = new HashMap<>();
@@ -284,9 +276,7 @@ public class ModuleRatings extends ModuleBase {
                 json.put(KEY_DIALOG_TEXT_MESSAGE, dialogTextMessage);
                 json.put(KEY_DIALOG_TEXT_DISMISS, dialogTextDismiss);
             } catch (JSONException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Got exception converting an StarRatingPreferences to JSON", e);
-                }
+                Countly.sharedInstance().L.w("Got exception converting an StarRatingPreferences to JSON", e);
             }
 
             return json;
@@ -325,9 +315,7 @@ public class ModuleRatings extends ModuleBase {
                         srp.dialogTextDismiss = json.getString(KEY_DIALOG_TEXT_DISMISS);
                     }
                 } catch (JSONException e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Got exception converting JSON to a StarRatingPreferences", e);
-                    }
+                    Countly.sharedInstance().L.w( "Got exception converting JSON to a StarRatingPreferences", e);
                 }
             }
 
@@ -382,9 +370,7 @@ public class ModuleRatings extends ModuleBase {
      */
     void showStarRatingCustom(final Context context, final String title, final String message, final String cancelText, final boolean isCancellable, final StarRatingCallback callback) {
         if (!(context instanceof Activity)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
-            }
+            L.e("[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
 
             return;
         }
@@ -444,15 +430,13 @@ public class ModuleRatings extends ModuleBase {
     /// Countly webDialog user rating
 
     synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback devCallback) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
-        }
+        L.d("[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
 
         if (widgetId == null || widgetId.isEmpty()) {
             if (devCallback != null) {
                 devCallback.callback("Countly widgetId cannot be null or empty");
             }
-            Log.e(Countly.TAG, "[ModuleRatings] Countly widgetId cannot be null or empty");
+            L.e("[ModuleRatings] Countly widgetId cannot be null or empty");
             return;
         }
 
@@ -460,7 +444,7 @@ public class ModuleRatings extends ModuleBase {
             if (devCallback != null) {
                 devCallback.callback("When showing feedback popup, Activity can't be null");
             }
-            Log.e(Countly.TAG, "[ModuleRatings] When showing feedback popup, Activity can't be null");
+            L.e("[ModuleRatings] When showing feedback popup, Activity can't be null");
             return;
         }
 
@@ -491,9 +475,7 @@ public class ModuleRatings extends ModuleBase {
             "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()) +
             "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
-        }
+        L.d("[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
 
         ConnectionProcessor cp = _cly.connectionQueue_.createConnectionProcessor();
 
@@ -501,9 +483,7 @@ public class ModuleRatings extends ModuleBase {
             @Override
             public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
-                    }
+                    L.d("[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
                     if (devCallback != null) {
                         devCallback.callback("Not possible to show Rating popup, probably no internet connection");
                     }
@@ -511,9 +491,7 @@ public class ModuleRatings extends ModuleBase {
                 }
 
                 if (!checkResponse.has("target_devices")) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably using a widget_id not intended for the rating widget");
-                    }
+                    L.d("[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably using a widget_id not intended for the rating widget");
                     if (devCallback != null) {
                         devCallback.callback("Not possible to show Rating popup, probably using a widget_id not intended for the rating widget");
                     }
@@ -529,16 +507,12 @@ public class ModuleRatings extends ModuleBase {
 
                     if ((deviceIsPhone && showOnPhone) || (deviceIsTablet && showOnTablet) || (deviceIsTv && showOnTv)) {
                         //it's possible to show the rating window on this device
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
-                        }
+                        L.d("[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
 
                         Handler handler = new Handler(Looper.getMainLooper());
                         handler.post(new Runnable() {
                             public void run() {
-                                if (Countly.sharedInstance().isLoggingEnabled()) {
-                                    Log.d(Countly.TAG, "[ModuleRatings] Calling on main thread");
-                                }
+                                L.d("[ModuleRatings] Calling on main thread");
 
                                 RatingDialogWebView webView = new RatingDialogWebView(activity);
                                 webView.getSettings().setJavaScriptEnabled(true);
@@ -558,16 +532,10 @@ public class ModuleRatings extends ModuleBase {
                         }
                     }
                 } catch (JSONException e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[ModuleRatings] Encountered a issue while trying to parse the results of the widget config");
-                    }
-
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        e.printStackTrace();
-                    }
+                    L.e("[ModuleRatings] Encountered a issue while trying to parse the results of the widget config", e);
                 }
             }
-        });
+        }, _cly.L);
     }
 
     static class RatingDialogWebView extends WebView {
@@ -587,14 +555,14 @@ public class ModuleRatings extends ModuleBase {
     static class FeedbackDialogWebViewClient extends WebViewClient {
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            Log.i(Countly.TAG, "attempting to load resource: " + url);
+            Countly.sharedInstance().L.i("attempting to load resource: " + url);
             return null;
         }
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                Log.i(Countly.TAG, "attempting to load resource: " + request.getUrl());
+                Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
             }
             return null;
         }
@@ -640,9 +608,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Ratings] Calling recordManualRating");
-                }
+                L.i("[Ratings] Calling recordManualRating");
 
                 if (widgetId == null || widgetId.isEmpty()) {
                     throw new IllegalStateException("A valid widgetID must be provided. The current one is either null or empty");
@@ -660,9 +626,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Ratings] Calling showFeedbackPopup");
-                }
+                L.i("[Ratings] Calling showFeedbackPopup");
 
                 showFeedbackPopupInternal(widgetId, closeButtonText, activity, callback);
             }
@@ -676,9 +640,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public void showStarRating(Activity activity, StarRatingCallback callback) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Ratings] Calling showStarRating");
-                }
+                L.i("[Ratings] Calling showStarRating");
 
                 if (!_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
                     return;
@@ -697,9 +659,7 @@ public class ModuleRatings extends ModuleBase {
             synchronized (_cly) {
                 int sessionCount = getCurrentVersionsSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Ratings] Getting star rating current version session count: [" + sessionCount + "]");
-                }
+                L.i("[Ratings] Getting star rating current version session count: [" + sessionCount + "]");
 
                 return sessionCount;
             }
@@ -710,9 +670,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public void clearAutomaticStarRatingSessionCount() {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Ratings] Clearing star rating session count");
-                }
+                L.i("[Ratings] Clearing star rating session count");
 
                 clearAutomaticStarRatingSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
             }
@@ -725,9 +683,7 @@ public class ModuleRatings extends ModuleBase {
             synchronized (_cly) {
                 int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.connectionQueue_.getCountlyStore());
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Ratings] Getting automatic star rating session limit: [" + sessionLimit + "]");
-                }
+                L.i("[Ratings] Getting automatic star rating session limit: [" + sessionLimit + "]");
 
                 return sessionLimit;
             }

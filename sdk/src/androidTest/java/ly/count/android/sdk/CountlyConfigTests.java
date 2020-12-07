@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
 public class CountlyConfigTests {
@@ -33,7 +34,7 @@ public class CountlyConfigTests {
         String[] s = new String[] { "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd" };
         Context c = getContext();
         CountlyConfig config = new CountlyConfig();
-        CountlyStore cs = new CountlyStore(c);
+        CountlyStore cs = new CountlyStore(c, mock(ModuleLog.class));
 
         StarRatingCallback rc = new StarRatingCallback() {
             @Override

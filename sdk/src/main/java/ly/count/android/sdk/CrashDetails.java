@@ -129,18 +129,14 @@ class CrashDetails {
     static void addLog(String record) {
         int recordLength = record.length();
         if (recordLength > maxBreadcrumbSize) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbSize + "]");
-            }
+            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbSize + "]");
             record = record.substring(0, Math.min(maxBreadcrumbSize, recordLength));
         }
 
         logs.add(record);
 
         if (logs.size() > maxBreadcrumbLimit) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "Breadcrumb amount limit exceeded, deleting the oldest one");
-            }
+            Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
             logs.removeFirst();
         }
     }
@@ -178,9 +174,7 @@ class CrashDetails {
             } else if (value instanceof Boolean) {
                 customSegments.put(key, (Boolean) value);
             } else {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "Unsupported data type added as custom crash segment");
-                }
+                Countly.sharedInstance().L.w("Unsupported data type added as custom crash segment");
             }
         }
 
@@ -203,9 +197,7 @@ class CrashDetails {
                     try {
                         returnedSegmentation.put(k, customSegments.get(k));
                     } catch (JSONException e) {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.w(Countly.TAG, "[getCustomSegmentsJson] Failed to add custom segmentation to crash");
-                        }
+                        Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
                     }
                 }
             }
@@ -217,9 +209,7 @@ class CrashDetails {
                     try {
                         returnedSegmentation.put(k, additionalCustomSegmentation.get(k));
                     } catch (JSONException e) {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.w(Countly.TAG, "[getCustomSegmentsJson] Failed to add custom segmentation to crash");
-                        }
+                        Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
                     }
                 }
             }
@@ -336,9 +326,7 @@ class CrashDetails {
                 }
             }
         } catch (Exception e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "Can't get battery level");
-            }
+            Countly.sharedInstance().L.i("Can't get battery level");
         }
 
         return null;
@@ -398,9 +386,7 @@ class CrashDetails {
             }
             return "false";
         } catch (Exception e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Got exception determining connectivity", e);
-            }
+            Countly.sharedInstance().L.w("Got exception determining connectivity", e);
         }
         return null;
     }

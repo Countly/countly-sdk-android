@@ -15,12 +15,14 @@ public class ModuleLocation extends ModuleBase {
     boolean sendLocationPostInit;
     boolean postInitReached = false;
 
+    ModuleLog L;
+
     ModuleLocation(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleLocation] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleLocation] Initialising");
 
         //do location related things
         if (config.disableLocation) {
@@ -44,9 +46,7 @@ public class ModuleLocation extends ModuleBase {
     }
 
     boolean anyValidLocation() {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleLocation] Calling 'anyValidLocation'");
-        }
+        L.d("[ModuleLocation] Calling 'anyValidLocation'");
 
         if (locationDisabled) {
             return false;
@@ -60,16 +60,12 @@ public class ModuleLocation extends ModuleBase {
     }
 
     void sendCurrentLocation() {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleLocation] Calling 'sendCurrentLocation'");
-        }
+        L.d("[ModuleLocation] Calling 'sendCurrentLocation'");
         _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
     }
 
     void disableLocationInternal() {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleLocation] Calling 'disableLocationInternal'");
-        }
+        L.d("[ModuleLocation] Calling 'disableLocationInternal'");
 
         if (!_cly.getConsent(Countly.CountlyFeatureNames.location)) {
             //can't send disable location request if no consent given
@@ -82,13 +78,9 @@ public class ModuleLocation extends ModuleBase {
     }
 
     void setLocationInternal(String country_code, String city, String gpsCoordinates, String ipAddress) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleLocation] Calling 'setLocationInternal'");
-        }
+        L.d("[ModuleLocation] Calling 'setLocationInternal'");
 
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
-        }
+        L.d("[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
 
         if (!_cly.getConsent(Countly.CountlyFeatureNames.location)) {
             return;
@@ -100,9 +92,7 @@ public class ModuleLocation extends ModuleBase {
         locationIpAddress = ipAddress;
 
         if ((country_code == null && city != null) || (city == null && country_code != null)) {
-            if (_cly.isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[ModuleLocation] In \"setLocation\" both city and country code need to be set at the same time to be sent");
-            }
+            L.w("[ModuleLocation] In \"setLocation\" both city and country code need to be set at the same time to be sent");
         }
 
         if (country_code != null || city != null || gpsCoordinates != null || ipAddress != null) {
@@ -130,9 +120,7 @@ public class ModuleLocation extends ModuleBase {
         postInitReached = true;
 
         if(sendLocationPostInit) {
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleLocation] Sending location post init");
-            }
+            L.d("[ModuleLocation] Sending location post init");
             _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
         }
     }
@@ -148,9 +136,7 @@ public class ModuleLocation extends ModuleBase {
          */
         public void disableLocation() {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Location] Calling 'disableLocation'");
-                }
+                L.i("[Location] Calling 'disableLocation'");
 
                 disableLocationInternal();
             }
@@ -169,9 +155,7 @@ public class ModuleLocation extends ModuleBase {
          */
         public void setLocation(String countryCode, String city, String gpsCoordinates, String ipAddress) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Location] Calling 'setLocation'");
-                }
+                L.i("[Location] Calling 'setLocation'");
 
                 setLocationInternal(countryCode, city, gpsCoordinates, ipAddress);
             }

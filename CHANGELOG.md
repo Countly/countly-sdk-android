@@ -1,5 +1,6 @@
 ## 20.11.2
   * Added SDK log listener
+  * Fixed bug where manual session control calls were working even when not enabled
 
 ## 20.11.1
   * Lessened push notification security restrictions

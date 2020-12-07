@@ -45,9 +45,7 @@ public class UtilsNetworking {
             // This is ~55x faster than looping and String.formating()
             hash = bytesToHex(bytes);
         } catch (Throwable e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Cannot tamper-protect params", e);
-            }
+            Countly.sharedInstance().L.e("Cannot tamper-protect params", e);
         }
         return hash;
     }

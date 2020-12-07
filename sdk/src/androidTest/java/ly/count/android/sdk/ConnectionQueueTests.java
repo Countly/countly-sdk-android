@@ -112,15 +112,15 @@ public class ConnectionQueueTests {
 
     @Test
     public void testCountlyStore() {
-        final CountlyStore store = new CountlyStore(getContext());
+        final CountlyStore store = new CountlyStore(getContext(), mock(ModuleLog.class));
         freshConnQ.setCountlyStore(store);
         assertSame(store, freshConnQ.getCountlyStore());
     }
 
     @Test
     public void testDeviceId() {
-        final CountlyStore store = new CountlyStore(getContext());
-        final DeviceId deviceId = new DeviceId(store, "blah");
+        final CountlyStore store = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final DeviceId deviceId = new DeviceId(store, "blah", mock(ModuleLog.class));
         freshConnQ.setDeviceId(deviceId);
         assertSame(deviceId, freshConnQ.getDeviceId());
     }

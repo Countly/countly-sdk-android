@@ -230,26 +230,20 @@ public class CountlyPush {
     public static class NotificationBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent broadcast) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Push broadcast receiver receiving message");
-            }
+            Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Push broadcast receiver receiving message");
 
             broadcast.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
             Intent intent = broadcast.getParcelableExtra(EXTRA_INTENT);
 
             if (intent == null) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent, stopping execution");
-                }
+                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent, stopping execution");
                 return;
             }
 
             int flags = intent.getFlags();
             if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) || ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
-                }
+                Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
                 return;
             }
 
@@ -258,17 +252,13 @@ public class CountlyPush {
             int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
             Bundle bundle = intent.getParcelableExtra(EXTRA_MESSAGE);
             if (bundle == null) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle, stopping execution");
-                }
+                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle, stopping execution");
                 return;
             }
 
             Message message = bundle.getParcelable(EXTRA_MESSAGE);
             if (message == null) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle message, stopping execution");
-                }
+                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle message, stopping execution");
                 return;
             }
 
@@ -331,19 +321,19 @@ public class CountlyPush {
             } else if (prov == Countly.CountlyMessagingProvider.HMS) {
                 Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", context, Context.class);
                 if (config == null) {
-                    Log.e(Countly.TAG, "No Huawei Config");
+                    Countly.sharedInstance().L.e("No Huawei Config");
                     return null;
                 }
 
                 Object appId = UtilsMessaging.reflectiveCall(HUAWEI_CONFIG_CLASS, config, "getString", "client/app_id");
                 if (appId == null || "".equals(appId)) {
-                    Log.e(Countly.TAG, "No Huawei app id in config");
+                    Countly.sharedInstance().L.e("No Huawei app id in config");
                     return null;
                 }
 
                 Object instanceId = UtilsMessaging.reflectiveCallStrict(HUAWEI_INSTANCEID_CLASS, null, "getInstance", context, Context.class);
                 if (instanceId == null) {
-                    Log.e(Countly.TAG, "No Huawei instance id class");
+                    Countly.sharedInstance().L.e("No Huawei instance id class");
                     return null;
                 }
 
@@ -353,7 +343,7 @@ public class CountlyPush {
                 return null;
             }
         } catch (Throwable logged) {
-            Log.e(Countly.TAG, "[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
+            Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
             return null;
         }
     }
@@ -377,9 +367,7 @@ public class CountlyPush {
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if no Countly message is found in {@code data}
      */
     public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[CountlyPush, displayMessage] Displaying push message");
-        }
+        Countly.sharedInstance().L.d("[CountlyPush, displayMessage] Displaying push message");
 
         if (msg == null) {
             return null;
@@ -417,9 +405,7 @@ public class CountlyPush {
             return null;
         }
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[CountlyPush, displayNotification] Displaying push notification");
-        }
+        Countly.sharedInstance().L.d("[CountlyPush, displayNotification] Displaying push notification");
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -511,9 +497,7 @@ public class CountlyPush {
             return null;
         }
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[CountlyPush, displayDialog] Displaying push dialog");
-        }
+        Countly.sharedInstance().L.d("[CountlyPush, displayDialog] Displaying push dialog");
 
         loadImage(activity, msg, new BitmapCallback() {
             @Override
@@ -657,21 +641,15 @@ public class CountlyPush {
     public static void onTokenRefresh(String token, Countly.CountlyMessagingProvider provider) {
         if (!Countly.sharedInstance().isInitialized()) {
             //is some edge cases this might be called before the SDK is initialized
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] SDK is not initialized, ignoring call");
-            }
+            Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] SDK is not initialized, ignoring call");
             return;
         }
 
         if (!getPushConsent(null)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Consent not given, ignoring call");
-            }
+            Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] Consent not given, ignoring call");
             return;
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[CountlyPush, onTokenRefresh] Refreshing FCM push token, with mode: [" + mode + "] for [" + provider + "]");
-        }
+        Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] Refreshing FCM push token, with mode: [" + mode + "] for [" + provider + "]");
         Countly.sharedInstance().onRegistrationId(token, mode, provider);
     }
 
@@ -726,19 +704,17 @@ public class CountlyPush {
 
         // print error in case preferred push provider is not available
         if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
-            Log.e(Countly.TAG, "No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
-            Log.e(Countly.TAG, "No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == null) {
-            Log.e(Countly.TAG, "Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
             return;
         }
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[CountlyPush] Initializing Countly FCM push with mode: [" + mode + "] and [" + provider + "]");
-        }
+        Countly.sharedInstance().L.i("[CountlyPush] Initializing Countly FCM push with mode: [" + mode + "] and [" + provider + "]");
 
         CountlyPush.mode = mode;
         CountlyStore.cacheLastMessagingMode(mode == Countly.CountlyMessagingMode.TEST ? 0 : 1, application);
@@ -851,9 +827,7 @@ public class CountlyPush {
         green = Math.min(255, Math.max(0, green));
         blue = Math.min(255, Math.max(0, blue));
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[CountlyPush] Calling [setNotificationAccentColor], [" + alpha + "][" + red + "][" + green + "][" + blue + "]");
-        }
+        Countly.sharedInstance().L.d("[CountlyPush] Calling [setNotificationAccentColor], [" + alpha + "][" + red + "][" + green + "][" + blue + "]");
 
         notificationAccentColor = Color.argb(alpha, red, green, blue);
     }
@@ -868,24 +842,17 @@ public class CountlyPush {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         List<ActivityManager.RunningAppProcessInfo> appProcesses = activityManager.getRunningAppProcesses();
         if (appProcesses == null) {
-
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[CountlyPush] Checking if app in foreground, NO");
-            }
+            Countly.sharedInstance().L.d("[CountlyPush] Checking if app in foreground, NO");
             return false;
         }
         final String packageName = context.getPackageName();
         for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
             if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND && appProcess.processName.equals(packageName)) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[CountlyPush] Checking if app in foreground, YES");
-                }
+                Countly.sharedInstance().L.d("[CountlyPush] Checking if app in foreground, YES");
                 return true;
             }
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[CountlyPush] Checking if app in foreground, NO");
-        }
+        Countly.sharedInstance().L.d("[CountlyPush] Checking if app in foreground, NO");
         return false;
     }
 
@@ -919,7 +886,7 @@ public class CountlyPush {
                         byte[] data = bytes.toByteArray();
                         bitmap[0] = BitmapFactory.decodeByteArray(data, 0, data.length);
                     } catch (Exception e) {
-                        System.out.println("Cannot download message media " + e);
+                        Countly.sharedInstance().L.e("[CountlyPush] loadImage, Cannot download message media ", e);
                         if (attempt < MEDIA_DOWNLOAD_ATTEMPTS) {
                             loadImage(context, msg, callback, attempt + 1);
                             return;

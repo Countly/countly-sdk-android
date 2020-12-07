@@ -22,7 +22,7 @@ public class ModuleAPMTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext());
+        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         mCountly = new Countly();
@@ -40,7 +40,7 @@ public class ModuleAPMTests {
     public void customMetricFilter_invlidFields() {
         Map<String, Integer> customMetrics = new HashMap<>();
 
-        ModuleAPM.removeReservedInvalidKeys(customMetrics);
+        mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);
         Assert.assertEquals(0, customMetrics.size());
 
         customMetrics.put("a11", 2);
@@ -49,7 +49,7 @@ public class ModuleAPMTests {
         customMetrics.put("", 44);
         customMetrics.put(null, null);
 
-        ModuleAPM.removeReservedInvalidKeys(customMetrics);
+        mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);
         Assert.assertEquals(1, customMetrics.size());
     }
 
@@ -57,7 +57,7 @@ public class ModuleAPMTests {
     public void customMetricFilter_reservedKeys() {
         Map<String, Integer> customMetrics = new HashMap<>();
 
-        ModuleAPM.removeReservedInvalidKeys(customMetrics);
+        mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);
         Assert.assertEquals(0, customMetrics.size());
 
         customMetrics.put("a11", 2);
@@ -66,7 +66,7 @@ public class ModuleAPMTests {
             customMetrics.put(key, 4);
         }
 
-        ModuleAPM.removeReservedInvalidKeys(customMetrics);
+        mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);
         Assert.assertEquals(1, customMetrics.size());
     }
 
@@ -74,7 +74,7 @@ public class ModuleAPMTests {
     public void customMetricFilter_validKeyName() {
         Map<String, Integer> customMetrics = new HashMap<>();
 
-        ModuleAPM.removeReservedInvalidKeys(customMetrics);
+        mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);
         Assert.assertEquals(0, customMetrics.size());
 
         customMetrics.put("a11", 2);
@@ -83,7 +83,7 @@ public class ModuleAPMTests {
         customMetrics.put(" a11", 2);
         customMetrics.put("a11 ", 2);
 
-        ModuleAPM.removeReservedInvalidKeys(customMetrics);
+        mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);
         Assert.assertEquals(4, customMetrics.size());
     }
 
@@ -96,7 +96,7 @@ public class ModuleAPMTests {
         customMetrics.put("a114", 21);
         customMetrics.put("a1__f1", 24);
 
-        ModuleAPM.removeReservedInvalidKeys(customMetrics);
+        mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);
 
         Assert.assertEquals(5, customMetrics.size());
 

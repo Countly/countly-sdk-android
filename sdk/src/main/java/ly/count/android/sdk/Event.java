@@ -121,9 +121,7 @@ class Event {
                 json.put(DUR_KEY, dur);
             }
         } catch (JSONException e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Got exception converting an Event to JSON", e);
-            }
+            Countly.sharedInstance().L.w("Got exception converting an Event to JSON", e);
         }
 
         return json;
@@ -186,9 +184,7 @@ class Event {
                 event.segmentationBoolean = segmentationBoolean;
             }
         } catch (JSONException e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w(Countly.TAG, "Got exception converting JSON to an Event", e);
-            }
+            Countly.sharedInstance().L.w("Got exception converting JSON to an Event", e);
             event = null;
         }
 

@@ -27,9 +27,7 @@ public class OpenUDIDAdapter {
             storeOpenUDID(context);//Store it locally
         }
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[OpenUDID] ID: " + OpenUDID);
-        }
+        Countly.sharedInstance().L.d("[OpenUDID] ID: " + OpenUDID);
     }
 
     /*
@@ -37,9 +35,8 @@ public class OpenUDIDAdapter {
      */
     @SuppressLint("HardwareIds")
     private static void generateOpenUDID(Context context) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[OpenUDID] Generating openUDID");
-        }
+        Countly.sharedInstance().L.d("[OpenUDID] Generating openUDID");
+
         //Try to get the ANDROID_ID
         OpenUDID = Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
         if (OpenUDID == null || OpenUDID.equals("9774d56d682e549c") || OpenUDID.length() < 15) {

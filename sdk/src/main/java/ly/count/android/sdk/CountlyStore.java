@@ -68,18 +68,20 @@ public class CountlyStore {
 
     private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
+    ModuleLog L;
     /**
      * Constructs a CountlyStore object.
      *
      * @param context used to retrieve storage meta data, must not be null.
      * @throws IllegalArgumentException if context is null
      */
-    CountlyStore(final Context context) {
+    CountlyStore(final Context context, ModuleLog logModule) {
         if (context == null) {
             throw new IllegalArgumentException("must provide valid context");
         }
         preferences_ = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
         preferencesPush_ = createPreferencesPush(context);
+        L = logModule;
     }
 
     static SharedPreferences createPreferencesPush(Context context) {
@@ -150,9 +152,7 @@ public class CountlyStore {
                 preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
             } else {
                 //reached the limit, start deleting oldest requests
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[CountlyStore] Store reached it's limit, deleting oldest request");
-                }
+                L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
 
                 deleteOldestRequest();
                 addConnection(str);

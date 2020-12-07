@@ -9,12 +9,14 @@ public class ModuleSessions extends ModuleBase {
 
     final Sessions sessionInterface;
 
+    ModuleLog L;
+
     ModuleSessions(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleSessions] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleSessions] Initialising");
 
         manualSessionControlEnabled = config.manualSessionControlEnabled;
         _cly.disableUpdateSessionRequests_ = config.disableUpdateSessionRequests;
@@ -23,18 +25,14 @@ public class ModuleSessions extends ModuleBase {
     }
 
     void beginSessionInternal() {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleSessions] 'beginSessionInternal'");
-        }
+        L.d("[ModuleSessions] 'beginSessionInternal'");
 
         prevSessionDurationStartTime_ = System.nanoTime();
         _cly.connectionQueue_.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);
     }
 
     void updateSessionInternal() {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleSessions] 'updateSessionInternal'");
-        }
+        L.d("[ModuleSessions] 'updateSessionInternal'");
 
         if (!_cly.disableUpdateSessionRequests_) {
             _cly.connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
@@ -45,9 +43,7 @@ public class ModuleSessions extends ModuleBase {
      * @param deviceIdOverride used when switching deviceID to a different one and ending the previous session
      */
     void endSessionInternal(String deviceIdOverride) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleSessions] 'endSessionInternal'");
-        }
+        L.d("[ModuleSessions] 'endSessionInternal'");
 
         _cly.connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
         prevSessionDurationStartTime_ = 0;
@@ -77,15 +73,11 @@ public class ModuleSessions extends ModuleBase {
                     throw new IllegalStateException("Countly.sharedInstance().init must be called before beginSession");
                 }
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
-                }
+                L.i("[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {
-                    if (_cly.isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[Sessions] 'beginSession' will be ignored since manual session control is not enabled");
-                        return;
-                    }
+                    L.w("[Sessions] 'beginSession' will be ignored since manual session control is not enabled");
+                    return;
                 }
 
                 beginSessionInternal();
@@ -98,20 +90,14 @@ public class ModuleSessions extends ModuleBase {
                     throw new IllegalStateException("Countly.sharedInstance().init must be called before updateSession");
                 }
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
-                }
+                L.i("[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {
-                    if (_cly.isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[Sessions] 'updateSession' will be ignored since manual session control is not enabled");
-                        return;
-                    }
+                    L.w("[Sessions] 'updateSession' will be ignored since manual session control is not enabled");
+                    return;
                 }
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Sessions] Calling 'updateSession'");
-                }
+                L.i("[Sessions] Calling 'updateSession'");
 
                 updateSessionInternal();
             }
@@ -123,15 +109,11 @@ public class ModuleSessions extends ModuleBase {
                     throw new IllegalStateException("Countly.sharedInstance().init must be called before endSession");
                 }
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
-                }
+                L.i("[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {
-                    if (_cly.isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[Sessions] 'endSession' will be ignored since manual session control is not enabled");
-                        return;
-                    }
+                    L.w("[Sessions] 'endSession' will be ignored since manual session control is not enabled");
+                    return;
                 }
 
                 endSessionInternal(null);

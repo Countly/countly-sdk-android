@@ -25,12 +25,14 @@ public class ModuleViews extends ModuleBase {
     //interface for SDK users
     final Views viewsInterface;
 
+    ModuleLog L;
+
     ModuleViews(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleViews] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleViews] Initialising");
 
         _cly.setViewTracking(config.enableViewTracking);
         _cly.setAutoTrackingUseShortName(config.autoTrackingUseShortName);
@@ -43,9 +45,7 @@ public class ModuleViews extends ModuleBase {
     }
 
     void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleViews] Calling setAutomaticViewSegmentationInternal");
-        }
+        L.d("[ModuleViews] Calling setAutomaticViewSegmentationInternal");
 
         automaticViewSegmentation.clear();
 
@@ -53,9 +53,7 @@ public class ModuleViews extends ModuleBase {
             if (Utils.removeUnsupportedDataTypes(segmentation)) {
                 //found a unsupported type, print warning
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[ModuleViews] You have provided a unsupported type for automatic View Segmentation");
-                }
+                L.w("[ModuleViews] You have provided a unsupported type for automatic View Segmentation");
             }
 
             Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
@@ -68,14 +66,10 @@ public class ModuleViews extends ModuleBase {
      * Reports duration of last view
      */
     void reportViewDuration() {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleViews] View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "], current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
-        }
+        L.d("[ModuleViews] View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "], current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
 
         if (lastView != null && lastViewStart <= 0) {
-            if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleViews] Last view start value is not normal: [" + lastViewStart + "]");
-            }
+            L.e("[ModuleViews] Last view start value is not normal: [" + lastViewStart + "]");
         }
 
         if (!_cly.getConsent(Countly.CountlyFeatureNames.views)) {
@@ -126,18 +120,16 @@ public class ModuleViews extends ModuleBase {
         }
 
         if (viewName == null || viewName.isEmpty()) {
-            if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleViews] Trying to record view with null or empty view name, ignoring request");
-            }
+            L.e("[ModuleViews] Trying to record view with null or empty view name, ignoring request");
             return _cly;
         }
 
-        if (_cly.isLoggingEnabled()) {
+        if (L.logEnabled()) {
             int segmCount = 0;
             if (customViewSegmentation != null) {
                 segmCount = customViewSegmentation.size();
             }
-            Log.d(Countly.TAG, "[ModuleViews] Recording view with name: [" + viewName + "], previous view:[" + lastView + "] custom view segment count:[" + segmCount + "]");
+            L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view:[" + lastView + "] custom view segment count:[" + segmCount + "]");
         }
 
         reportViewDuration();
@@ -165,9 +157,7 @@ public class ModuleViews extends ModuleBase {
     }
 
     void updateOrientation(int newOrientation) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleViews] Calling [updateOrientation], new orientation:[" + newOrientation + "]");
-        }
+        L.d("[ModuleViews] Calling [updateOrientation], new orientation:[" + newOrientation + "]");
 
         if (!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
             //we don't have consent, just leave
@@ -222,9 +212,7 @@ public class ModuleViews extends ModuleBase {
 
                 _cly.recordView(usedActivityName, automaticViewSegmentation);
             } else {
-                if (_cly.isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
-                }
+                L.d("[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
             }
         }
 
@@ -287,9 +275,7 @@ public class ModuleViews extends ModuleBase {
          */
         public boolean isAutomaticViewTrackingEnabled() {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Views] Calling isAutomaticViewTrackingEnabled");
-                }
+                L.i("[Views] Calling isAutomaticViewTrackingEnabled");
 
                 return _cly.autoViewTracker;
             }
@@ -324,9 +310,7 @@ public class ModuleViews extends ModuleBase {
                     throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
                 }
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Views] Calling recordView [" + viewName + "]");
-                }
+                L.i("[Views] Calling recordView [" + viewName + "]");
 
                 return recordViewInternal(viewName, viewSegmentation);
             }

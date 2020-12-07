@@ -7,12 +7,14 @@ public class ModuleConsent extends ModuleBase {
 
     Consent consentInterface = null;
 
+    ModuleLog L;
+
     ModuleConsent(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleConsent] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleConsent] Initialising");
 
         consentInterface = new Consent();
     }
@@ -45,8 +47,8 @@ public class ModuleConsent extends ModuleBase {
 
             _cly.context_.sendBroadcast(new Intent(_cly.CONSENT_BROADCAST));
 
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleConsent] [Init] Countly is initialized with the current consent state:");
+            if (L.logEnabled()) {
+                L.d("[ModuleConsent] [Init] Countly is initialized with the current consent state:");
                 _cly.checkAllConsent();
             }
         }
@@ -65,9 +67,7 @@ public class ModuleConsent extends ModuleBase {
          */
         public void checkAllConsent() {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Consent] calling checkAllConsent");
-                }
+                L.i("[Consent] calling checkAllConsent");
 
                 _cly.checkAllConsent();
             }
@@ -115,12 +115,10 @@ public class ModuleConsent extends ModuleBase {
          */
         public void giveConsentAll() {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Consent] Giving consent for all features");
-                }
+                L.i("[Consent] Giving consent for all features");
 
-                if (_cly.isLoggingEnabled() && !_cly.isInitialized()) {
-                    Log.w(Countly.TAG, "[Consent] Calling this before initialising the SDK is deprecated!");
+                if (!_cly.isInitialized()) {
+                    L.w("[Consent] Calling this before initialising the SDK is deprecated!");
                 }
 
                 _cly.giveConsent(_cly.validFeatureNames);

@@ -32,7 +32,7 @@ public class ModuleViewsTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext());
+        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         //mCountly = new Countly();

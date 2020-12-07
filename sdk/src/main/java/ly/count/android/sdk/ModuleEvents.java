@@ -12,28 +12,26 @@ public class ModuleEvents extends ModuleBase {
     //interface for SDK users
     final Events eventsInterface;
 
+    ModuleLog L;
+
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly);
 
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleEvents] Initialising");
-        }
+        L = cly.L;
+
+        L.v("[ModuleEvents] Initialising");
 
         eventsInterface = new Events();
     }
 
     void checkCachedPushData(CountlyStore cs) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleEvents] Starting cache call");
-        }
+        L.d("[ModuleEvents] Starting cache call");
 
         String[] cachedData = cs.getCachedPushData();
 
         if (cachedData != null && cachedData[0] != null && cachedData[1] != null) {
             //found valid data cached, record it
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleEvents] Found cached push event, recording it");
-            }
+            L.d("[ModuleEvents] Found cached push event, recording it");
 
             Map<String, Object> map = new HashMap<>();
             map.put(ModulePush.PUSH_EVENT_ACTION_ID_KEY, cachedData[0]);
@@ -57,9 +55,7 @@ public class ModuleEvents extends ModuleBase {
      * @param processedSegmentation if segmentation has been processed and reserved keywords should not be removed
      */
     synchronized void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, boolean processedSegmentation) {
-        if (_cly.isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ModuleEvents] calling 'recordEventInternal'");
-        }
+        L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
         }
@@ -67,9 +63,7 @@ public class ModuleEvents extends ModuleBase {
             throw new IllegalArgumentException("Countly event count should be greater than zero");
         }
 
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleEvents] Recording event with key: [" + key + "]");
-        }
+        L.d("[ModuleEvents] Recording event with key: [" + key + "]");
 
         if (!_cly.isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
@@ -94,14 +88,14 @@ public class ModuleEvents extends ModuleBase {
             Utils.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
 
             if (segmentationReminder.size() > 0) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[ModuleEvents] Event contains events segments with unsupported types:");
+                if (L.logEnabled()) {
+                    L.w("[ModuleEvents] Event contains events segments with unsupported types:");
 
                     for (String k : segmentationReminder.keySet()) {
                         if (k != null) {
                             Object obj = segmentationReminder.get(k);
                             if (obj != null) {
-                                Log.w(Countly.TAG, "[ModuleEvents] Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
+                                L.w("[ModuleEvents] Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
                             }
                         }
                     }
@@ -110,15 +104,11 @@ public class ModuleEvents extends ModuleBase {
 
             for (String k : segmentationString.keySet()) {
                 if (k == null || k.length() == 0) {
-                    if (_cly.isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "[ModuleEvents] Countly event segmentation key cannot be null or empty, skipping");
-                    }
+                    L.e("[ModuleEvents] Countly event segmentation key cannot be null or empty, skipping");
                     continue;
                 }
                 if (segmentationString.get(k) == null) {
-                    if (_cly.isLoggingEnabled()) {
-                        Log.e(Countly.TAG, "[ModuleEvents] Countly event segmentation value cannot be null, skipping");
-                    }
+                    L.e("[ModuleEvents] Countly event segmentation value cannot be null, skipping");
                     continue;
                 }
             }
@@ -161,30 +151,22 @@ public class ModuleEvents extends ModuleBase {
 
     synchronized boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
-            if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleEvents] Can't start event with a null or empty key");
-            }
+            L.e("[ModuleEvents] Can't start event with a null or empty key");
             return false;
         }
         if (timedEvents.containsKey(key)) {
             return false;
         }
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleEvents] Starting event: [" + key + "]");
-        }
+        L.d( "[ModuleEvents] Starting event: [" + key + "]");
         timedEvents.put(key, new Event(key));
         return true;
     }
 
     synchronized boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
-        if (_cly.isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleEvents] Ending event: [" + key + "]");
-        }
+        L.d("[ModuleEvents] Ending event: [" + key + "]");
 
         if (key == null || key.length() == 0) {
-            if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleEvents] Can't end event with a null or empty key");
-            }
+            L.e("[ModuleEvents] Can't end event with a null or empty key");
             return false;
         }
 
@@ -201,9 +183,7 @@ public class ModuleEvents extends ModuleBase {
             if (count < 1) {
                 throw new IllegalArgumentException("Countly event count should be greater than zero");
             }
-            if (_cly.isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ModuleEvents] Ending event: [" + key + "]");
-            }
+            L.d("[ModuleEvents] Ending event: [" + key + "]");
 
             long currentTimestamp = UtilsTime.currentTimestampMs();
             double duration = (currentTimestamp - event.timestamp) / 1000.0;
@@ -218,9 +198,7 @@ public class ModuleEvents extends ModuleBase {
 
     synchronized boolean cancelEventInternal(final String key) {
         if (key == null || key.length() == 0) {
-            if (_cly.isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ModuleEvents] Can't cancel event with a null or empty key");
-            }
+            L.e("[ModuleEvents] Can't cancel event with a null or empty key");
             return false;
         }
 
@@ -273,9 +251,7 @@ public class ModuleEvents extends ModuleBase {
          */
         public void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Events] Calling recordPastEvent: [" + key + "]");
-                }
+                L.i("[Events] Calling recordPastEvent: [" + key + "]");
 
                 if (timestamp == 0) {
                     throw new IllegalStateException("Provided timestamp has to be greater that zero");
@@ -346,9 +322,7 @@ public class ModuleEvents extends ModuleBase {
          **/
         public boolean cancelEvent(final String key) {
             synchronized (_cly) {
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Events] Calling cancelEvent: [" + key + "]");
-                }
+                L.i("[Events] Calling cancelEvent: [" + key + "]");
 
                 return cancelEventInternal(key);
             }
@@ -458,9 +432,7 @@ public class ModuleEvents extends ModuleBase {
                     throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
                 }
 
-                if (_cly.isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Events] Calling recordEvent: [" + key + "]");
-                }
+                L.i("[Events] Calling recordEvent: [" + key + "]");
 
                 recordEventInternal(key, segmentation, count, sum, dur, null, false);
             }

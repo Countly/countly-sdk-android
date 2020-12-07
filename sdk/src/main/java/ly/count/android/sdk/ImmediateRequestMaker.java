@@ -22,6 +22,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
     }
 
     InternalFeedbackRatingCallback callback;
+    ModuleLog L;
 
     /**
      * params fields:
@@ -32,36 +33,30 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
      * 4 - callback
      */
     protected JSONObject doInBackground(Object... params) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ImmediateRequestMaker] Starting request");
-        }
         final String requestData = (String) params[0];
         final String customEndpoint = (String) params[1];
         final ConnectionProcessor cp = (ConnectionProcessor) params[2];
         final boolean requestShouldBeDelayed = (boolean) params[3];
         callback = (InternalFeedbackRatingCallback) params[4];
+        L = (ModuleLog) params[5];
+
+        L.v("[ImmediateRequestMaker] Starting request");
 
         HttpURLConnection connection = null;
         BufferedReader reader = null;
         boolean wasSuccess = true;
 
         try {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[ImmediateRequestMaker] delayed[" + requestShouldBeDelayed + "] hasCallback[" + (callback != null) + "] endpoint[" + customEndpoint + "] request[" + requestData + "]");
-            }
+            L.d("[ImmediateRequestMaker] delayed[" + requestShouldBeDelayed + "] hasCallback[" + (callback != null) + "] endpoint[" + customEndpoint + "] request[" + requestData + "]");
 
             if (requestShouldBeDelayed) {
                 //used in cases after something has to be done after a device id change
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[ImmediateRequestMaker] request should be delayed, waiting for 0.5 seconds");
-                }
+                L.v("[ImmediateRequestMaker] request should be delayed, waiting for 0.5 seconds");
 
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[ImmediateRequestMaker] While waiting for 0.5 seconds in ImmediateRequestMaker, sleep was interrupted");
-                    }
+                    L.w("[ImmediateRequestMaker] While waiting for 0.5 seconds in ImmediateRequestMaker, sleep was interrupted");
                 }
             }
 
@@ -69,9 +64,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
             try {
                 connection = (HttpURLConnection) cp.urlConnectionForServerRequest(requestData, customEndpoint);
             } catch (IOException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[ImmediateRequestMaker] IOException while preparing remote config update request :[" + e.toString() + "]");
-                }
+                L.e("[ImmediateRequestMaker] IOException while preparing remote config update request :[" + e.toString() + "]");
 
                 return null;
             }
@@ -92,9 +85,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
             }
 
             if (stream == null) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[ImmediateRequestMaker] Encountered problem while making a immediate server request, received stream was null");
-                }
+                L.e("[ImmediateRequestMaker] Encountered problem while making a immediate server request, received stream was null");
                 return null;
             }
 
@@ -111,16 +102,11 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
             if (wasSuccess) {
                 return new JSONObject(buffer.toString());
             } else {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.e(Countly.TAG, "[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + buffer.toString() + "]");
-                }
+                L.e("[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + buffer.toString() + "]");
                 return null;
             }
         } catch (Exception e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[ImmediateRequestMaker] Received exception while making a immediate server request");
-                e.printStackTrace();
-            }
+            L.e("[ImmediateRequestMaker] Received exception while making a immediate server request", e);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -130,23 +116,17 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
                     reader.close();
                 }
             } catch (IOException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    e.printStackTrace();
-                }
+                L.e("[ImmediateRequestMaker] ", e);
             }
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ImmediateRequestMaker] Finished request");
-        }
+        L.v("[ImmediateRequestMaker] Finished request");
         return null;
     }
 
     @Override
     protected void onPostExecute(JSONObject result) {
         super.onPostExecute(result);
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[ImmediateRequestMaker] onPostExecute");
-        }
+        L.v("[ImmediateRequestMaker] onPostExecute");
 
         if (callback != null) {
             callback.callback(result);

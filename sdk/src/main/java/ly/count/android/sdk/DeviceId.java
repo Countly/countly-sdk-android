@@ -23,12 +23,14 @@ public class DeviceId {
     private String id;
     private Type type;
 
+    ModuleLog L;
+
     /**
      * Initialize DeviceId with Type of OPEN_UDID or ADVERTISING_ID
      *
      * @param type type of ID generation strategy
      */
-    protected DeviceId(CountlyStore store, Type type) {
+    protected DeviceId(CountlyStore store, Type type, ModuleLog moduleLog) {
         if (type == null) {
             throw new IllegalStateException("Please specify DeviceId.Type, that is which type of device ID generation you want to use");
         } else if (type == Type.DEVELOPER_SUPPLIED) {
@@ -36,6 +38,7 @@ public class DeviceId {
         }
         //setup the preferred device ID type
         this.type = type;
+        L = moduleLog;
 
         //check if there wasn't a value set before
         retrieveId(store);
@@ -46,13 +49,14 @@ public class DeviceId {
      *
      * @param developerSuppliedId Device ID string supplied by developer
      */
-    protected DeviceId(CountlyStore store, String developerSuppliedId) {
+    protected DeviceId(CountlyStore store, String developerSuppliedId, ModuleLog moduleLog) {
         if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
             throw new IllegalStateException("Please make sure that device ID is not null or empty");
         }
         //setup the preferred device ID type
         this.type = Type.DEVELOPER_SUPPLIED;
         this.id = developerSuppliedId;
+        L = moduleLog;
 
         //check if there wasn't a value set before
         retrieveId(store);
@@ -90,9 +94,7 @@ public class DeviceId {
         // Some time ago some ID generation strategy was not available and SDK fell back to
         // some other strategy. We still have to use that strategy.
         if (overriddenType != null && overriddenType != type) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[DeviceId] Overridden device ID generation strategy detected: " + overriddenType + ", using it instead of " + this.type);
-            }
+            L.i("[DeviceId] Overridden device ID generation strategy detected: " + overriddenType + ", using it instead of " + this.type);
             type = overriddenType;
         }
 
@@ -103,23 +105,17 @@ public class DeviceId {
                 setAndStoreId(store, Type.DEVELOPER_SUPPLIED, id);
                 break;
             case OPEN_UDID:
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[DeviceId] Using OpenUDID");
-                }
+                L.i("[DeviceId] Using OpenUDID");
                 OpenUDIDAdapter.sync(context);
                 setAndStoreId(store, Type.OPEN_UDID, OpenUDIDAdapter.OpenUDID);
                 break;
             case ADVERTISING_ID:
                 if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.i(Countly.TAG, "[DeviceId] Using Advertising ID");
-                    }
+                    L.i("[DeviceId] Using Advertising ID");
                     AdvertisingIdAdapter.setAdvertisingId(context, store, this);
                 } else {
                     // Fall back to OpenUDID on devices without google play services set up
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.i(Countly.TAG, "[DeviceId] Advertising ID is not available, falling back to OpenUDID");
-                    }
+                    L.i("[DeviceId] Advertising ID is not available, falling back to OpenUDID");
                     OpenUDIDAdapter.sync(context);
                     setAndStoreId(store, Type.OPEN_UDID, OpenUDIDAdapter.OpenUDID);
                 }
@@ -163,18 +159,14 @@ public class DeviceId {
 
     @SuppressWarnings("SameParameterValue")
     protected void setId(Type type, String id) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.w(Countly.TAG, "[DeviceId] Device ID is " + id + " (type " + type + ")");
-        }
+        L.w("[DeviceId] Device ID is " + id + " (type " + type + ")");
         this.type = type;
         this.id = id;
     }
 
     @SuppressWarnings("SameParameterValue")
     protected void switchToIdType(Type type, Context context, CountlyStore store) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.w(Countly.TAG, "[DeviceId] Switching to device ID generation strategy " + type + " from " + this.type);
-        }
+        L.w("[DeviceId] Switching to device ID generation strategy " + type + " from " + this.type);
         this.type = type;
         storeOverriddenType(store, type);
         init(context, store, false);

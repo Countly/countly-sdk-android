@@ -86,9 +86,7 @@ class DeviceInfo {
             display.getMetrics(metrics);
             resolution = metrics.widthPixels + "x" + metrics.heightPixels;
         } catch (Throwable t) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[DeviceInfo] Device resolution cannot be determined");
-            }
+            Countly.sharedInstance().L.i("[DeviceInfo] Device resolution cannot be determined");
         }
         return resolution;
     }
@@ -156,9 +154,7 @@ class DeviceInfo {
         }
         if (carrier == null || carrier.length() == 0) {
             carrier = "";
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[DeviceInfo] No carrier found");
-            }
+            Countly.sharedInstance().L.i("[DeviceInfo] No carrier found");
         }
         return carrier;
     }
@@ -188,9 +184,7 @@ class DeviceInfo {
                 result = tmpVersion;
             }
         } catch (PackageManager.NameNotFoundException e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[DeviceInfo] No app version found");
-            }
+            Countly.sharedInstance().L.i("[DeviceInfo] No app version found");
         }
         return result;
     }
@@ -203,15 +197,11 @@ class DeviceInfo {
         try {
             result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
         } catch (Exception e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[DeviceInfo, getStore] Can't get Installer package ");
-            }
+            Countly.sharedInstance().L.d("[DeviceInfo, getStore] Can't get Installer package ");
         }
         if (result == null || result.length() == 0) {
             result = "";
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[DeviceInfo, getStore] No store found");
-            }
+            Countly.sharedInstance().L.d("[DeviceInfo, getStore] No store found");
         }
         return result;
     }
@@ -259,25 +249,21 @@ class DeviceInfo {
         if (metricOverride != null) {
             for (String k : metricOverride.keySet()) {
                 if (k == null || k.length() == 0) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Provided metric override key can't be null or empty");
-                    }
+                    Countly.sharedInstance().L.w("Provided metric override key can't be null or empty");
                     continue;
                 }
 
                 String overrideValue = metricOverride.get(k);
 
                 if (overrideValue == null) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "Provided metric override value can't be null, key:[" + k + "]");
-                    }
+                    Countly.sharedInstance().L.w("Provided metric override value can't be null, key:[" + k + "]");
                     continue;
                 }
 
                 try {
                     json.put(k, overrideValue);
                 } catch (Exception ex) {
-                    Log.e(Countly.TAG, "Could not set metric override, [" + ex + "]");
+                    Countly.sharedInstance().L.e("Could not set metric override, [" + ex + "]");
                 }
             }
         }

@@ -53,13 +53,16 @@ public class ConnectionProcessorTests {
     CountlyStore mockStore;
     DeviceId mockDeviceId;
     String testDeviceId;
+    ModuleLog moduleLog;
 
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
         mockStore = mock(CountlyStore.class);
         mockDeviceId = mock(DeviceId.class);
-        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, null);
+        moduleLog = mock(ModuleLog.class);
+
+        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, null, moduleLog);
         testDeviceId = "123";
     }
 
@@ -68,7 +71,7 @@ public class ConnectionProcessorTests {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
         final DeviceId mockDeviceId = mock(DeviceId.class);
-        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, null, null);
+        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, null, null, moduleLog);
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
         assertSame(mockDeviceId, connectionProcessor1.getDeviceId());

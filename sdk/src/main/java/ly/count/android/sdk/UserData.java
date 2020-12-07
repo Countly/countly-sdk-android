@@ -292,9 +292,7 @@ public class UserData {
         if (picturePath != null) {
             File sourceFile = new File(picturePath);
             if (!sourceFile.isFile()) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
-                }
+                Countly.sharedInstance().L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
                 picturePath = null;
             }
         }
@@ -308,9 +306,7 @@ public class UserData {
             try {
                 byear = Integer.parseInt(data.get(BYEAR_KEY));
             } catch (NumberFormatException e) {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.w(Countly.TAG, "[UserData] Incorrect byear number format");
-                }
+                Countly.sharedInstance().L.w("[UserData] Incorrect byear number format");
                 byear = 0;
             }
         }
@@ -523,9 +519,7 @@ public class UserData {
             }
             json.put(CUSTOM_KEY, ob);
         } catch (JSONException e) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[UserData] Got exception converting an UserData to JSON", e);
-            }
+            Countly.sharedInstance().L.w("[UserData] Got exception converting an UserData to JSON", e);
         }
 
         return json;
@@ -563,9 +557,7 @@ public class UserData {
                         }
                     }
                 } catch (JSONException e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[UserData] Got exception converting an Custom Json to Custom User data", e);
-                    }
+                    Countly.sharedInstance().L.w("[UserData] Got exception converting an Custom Json to Custom User data", e);
                 }
             }
         }

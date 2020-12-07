@@ -75,7 +75,13 @@ public class Countly {
      */
     public static final String TAG = "Countly";
 
-    ModuleLog L = new ModuleLog();
+    /**
+     * Countly internal logger
+     * Should not be used outside of the SDK
+     * No guarantees of not breaking functionality
+     * Exposed only for the SDK push implementation
+     */
+    public ModuleLog L = new ModuleLog();
 
     /**
      * Broadcast sent when consent set is changed
@@ -393,10 +399,10 @@ public class Countly {
             setLoggingEnabled(true);
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Init] Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
-        }
         L.SetListener(config.providedLogCallback);
+
+
+        L.d("[Init] Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
 
         if (config.context == null) {
             throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");
@@ -418,9 +424,7 @@ public class Countly {
         }
 
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {
-            if (isLoggingEnabled()) {
-                Log.v(Countly.TAG, "[Init] Removing trailing '/' from provided server url");
-            }
+            L.v("[Init] Removing trailing '/' from provided server url");
             config.serverURL = config.serverURL.substring(0, config.serverURL.length() - 1);//removing trailing '/' from server url
         }
 
@@ -429,9 +433,7 @@ public class Countly {
         }
 
         if (config.application == null) {
-            if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[Init] Initialising the SDK without providing the application class is deprecated");
-            }
+            L.w("[Init] Initialising the SDK without providing the application class is deprecated");
         }
 
         if (config.deviceID != null && config.deviceID.length() == 0) {
@@ -459,9 +461,9 @@ public class Countly {
             throw new IllegalStateException("Countly cannot be reinitialized with different values");
         }
 
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Init] Checking init parameters");
-            Log.i(Countly.TAG, "[Init] Is consent required? [" + requiresConsent + "]");
+        if (L.logEnabled()) {
+            L.i("[Init] Checking init parameters");
+            L.i("[Init] Is consent required? [" + requiresConsent + "]");
 
             // Context class hierarchy
             // Context
@@ -480,7 +482,7 @@ public class Countly {
                 contextText += ", it's superclass: [" + contextSuperClass.getSimpleName() + "]";
             }
 
-            Log.i(Countly.TAG, contextText);
+            L.i(contextText);
         }
 
         //set internal context, it's allowed to be changed on the second init call
@@ -489,9 +491,7 @@ public class Countly {
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
         if (eventQueue_ == null) {
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Init] About to init internal systems");
-            }
+            L.d("[Init] About to init internal systems");
 
             config_ = config;
 
@@ -505,7 +505,7 @@ public class Countly {
                 //we are running a test and using a mock object
                 countlyStore = config.countlyStore;
             } else {
-                countlyStore = new CountlyStore(config.context);
+                countlyStore = new CountlyStore(config.context, L);
                 config.setCountlyStore(countlyStore);
             }
 
@@ -545,14 +545,10 @@ public class Countly {
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
 
-            if (isLoggingEnabled()) {
-                Log.i(Countly.TAG, "[Init] Finished initialising modules");
-            }
+            L.i("[Init] Finished initialising modules");
 
             //init other things
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
-            }
+            L.d("[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
             AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
 
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
@@ -586,6 +582,7 @@ public class Countly {
             checkIfDeviceIsAppCrawler();
 
             //initialize networking queues
+            connectionQueue_.L = L;
             connectionQueue_.setServerURL(config.serverURL);
             connectionQueue_.setAppKey(config.appKey);
             connectionQueue_.setCountlyStore(countlyStore);
@@ -602,9 +599,8 @@ public class Countly {
                 config.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                     @Override
                     public void onActivityCreated(Activity activity, Bundle bundle) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityCreated, " + actName);
+                        if (L.logEnabled()) {
+                            L.d("[Countly] onActivityCreated, " + activity.getClass().getSimpleName());
                         }
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityCreated(activity);
@@ -613,9 +609,8 @@ public class Countly {
 
                     @Override
                     public void onActivityStarted(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityStarted, " + actName);
+                        if (L.logEnabled()) {
+                            L.d("[Countly] onActivityStarted, " + activity.getClass().getSimpleName());
                         }
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityStarted(activity);
@@ -624,9 +619,8 @@ public class Countly {
 
                     @Override
                     public void onActivityResumed(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityResumed, " + actName);
+                        if (L.logEnabled()) {
+                            L.d("[Countly] onActivityResumed, " + activity.getClass().getSimpleName());
                         }
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityResumed(activity);
@@ -635,9 +629,8 @@ public class Countly {
 
                     @Override
                     public void onActivityPaused(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityPaused, " + actName);
+                        if (L.logEnabled()) {
+                            L.d("[Countly] onActivityPaused, " + activity.getClass().getSimpleName());
                         }
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityPaused(activity);
@@ -646,9 +639,8 @@ public class Countly {
 
                     @Override
                     public void onActivityStopped(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityStopped, " + actName);
+                        if (L.logEnabled()) {
+                            L.d("[Countly] onActivityStopped, " + activity.getClass().getSimpleName());
                         }
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityStopped(activity);
@@ -657,9 +649,8 @@ public class Countly {
 
                     @Override
                     public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivitySaveInstanceState, " + actName);
+                        if (L.logEnabled()) {
+                            L.d("[Countly] onActivitySaveInstanceState, " + activity.getClass().getSimpleName());
                         }
                         for (ModuleBase module : modules) {
                             module.callbackOnActivitySaveInstanceState(activity);
@@ -668,9 +659,8 @@ public class Countly {
 
                     @Override
                     public void onActivityDestroyed(Activity activity) {
-                        if (isLoggingEnabled()) {
-                            String actName = activity.getClass().getSimpleName();
-                            Log.d(Countly.TAG, "[Countly] onActivityDestroyed, " + actName);
+                        if (L.logEnabled()) {
+                            L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
                         }
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityDestroyed(activity);
@@ -695,9 +685,7 @@ public class Countly {
                     module.initFinished(config);
                 }
 
-                if (isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Init] Finished initialising SDK");
-                }
+                L.i("[Init] Finished initialising SDK");
             }
         } else {
             //if this is not the first time we are calling init
@@ -727,10 +715,9 @@ public class Countly {
      * again.
      */
     public synchronized void halt() {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "Halting Countly!");
-        }
+        L.i("Halting Countly!");
         eventQueue_ = null;
+        L.SetListener(null);
 
         if (connectionQueue_ != null) {
             final CountlyStore countlyStore = connectionQueue_.getCountlyStore();
@@ -770,9 +757,7 @@ public class Countly {
     }
 
     synchronized void notifyDeviceIdChange() {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Notifying modules that device ID changed");
-        }
+        L.d("Notifying modules that device ID changed");
 
         for (ModuleBase module : modules) {
             module.deviceIdChanged();
@@ -788,12 +773,12 @@ public class Countly {
      * @throws IllegalStateException if Countly SDK has not been initialized
      */
     public synchronized void onStart(Activity activity) {
-        if (isLoggingEnabled()) {
+        if (L.logEnabled()) {
             String activityName = "NULL ACTIVITY PROVIDED";
             if (activity != null) {
                 activityName = activity.getClass().getSimpleName();
             }
-            Log.d(Countly.TAG, "Countly onStart called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
+            L.d("Countly onStart called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
         }
 
         appLaunchDeepLink = false;
@@ -812,9 +797,7 @@ public class Countly {
 
         //check if there is an install referrer data
         String referrer = ReferrerReceiver.getReferrer(context_);
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Checking referrer: " + referrer);
-        }
+        L.d("Checking referrer: " + referrer);
         if (referrer != null) {
             connectionQueue_.sendReferrerData(referrer);
             ReferrerReceiver.deleteReferrer(context_);
@@ -839,9 +822,7 @@ public class Countly {
      * unbalanced calls to onStart/onStop are detected
      */
     public synchronized void onStop() {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Countly onStop called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
-        }
+        L.d("Countly onStop called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
 
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before onStop");
@@ -866,9 +847,7 @@ public class Countly {
     }
 
     public synchronized void onConfigurationChanged(Configuration newConfig) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [onConfigurationChanged]");
-        }
+        L.d("Calling [onConfigurationChanged]");
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before onConfigurationChanged");
         }
@@ -904,9 +883,7 @@ public class Countly {
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
      */
     public void changeDeviceIdWithoutMerge(DeviceId.Type type, String deviceId) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [changeDeviceIdWithoutMerge] with type and ID");
-        }
+        L.d("Calling [changeDeviceIdWithoutMerge] with type and ID");
 
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceIdWithoutMerge");
@@ -922,9 +899,7 @@ public class Countly {
      * @param deviceId new device id
      */
     public void changeDeviceIdWithMerge(String deviceId) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [changeDeviceIdWithMerge] only with ID");
-        }
+        L.d("Calling [changeDeviceIdWithMerge] only with ID");
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceIdWithMerge");
         }
@@ -941,9 +916,7 @@ public class Countly {
      * @deprecated use 'changeDeviceIdWithoutMerge'
      */
     public void changeDeviceId(DeviceId.Type type, String deviceId) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [changeDeviceId] with type and ID");
-        }
+        L.d("Calling [changeDeviceId] with type and ID");
 
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceId");
@@ -960,9 +933,7 @@ public class Countly {
      * @deprecated use 'changeDeviceIdWithMerge'
      */
     public void changeDeviceId(String deviceId) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling [changeDeviceId] only with ID");
-        }
+        L.d("Calling [changeDeviceId] only with ID");
         if (!isInitialized()) {
             throw new IllegalStateException("init must be called before changeDeviceId");
         }
@@ -1099,9 +1070,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setViewTracking(boolean enable) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Enabling automatic view tracking");
-        }
+        L.d("Enabling automatic view tracking");
         autoViewTracker = enable;
         return this;
     }
@@ -1158,13 +1127,9 @@ public class Countly {
      * @deprecated Use 'Countly.sharedInstance().location().disableLocation()'
      */
     public synchronized Countly disableLocation() {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Disabling location");
-        }
+        L.d("Disabling location");
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "The use of 'disableLocation' before init is deprecated, use CountlyConfig instead of this");
-            }
+            L.w("The use of 'disableLocation' before init is deprecated, use CountlyConfig instead of this");
         }
 
         location().disableLocation();
@@ -1184,14 +1149,10 @@ public class Countly {
      * @deprecated Use 'Countly.sharedInstance().location().setLocation()'
      */
     public synchronized Countly setLocation(String country_code, String city, String gpsCoordinates, String ipAddress) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
-        }
+        L.d("Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
 
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "The use of 'setLocation' before init is deprecated, use CountlyConfig instead of this");
-            }
+            L.w("The use of 'setLocation' before init is deprecated, use CountlyConfig instead of this");
         }
 
         if (isInitialized()) {
@@ -1213,9 +1174,7 @@ public class Countly {
      * @deprecated set this through CountlyConfig during init
      */
     public synchronized Countly setCustomCrashSegments(Map<String, String> segments) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Calling setCustomCrashSegments");
-        }
+        L.d("Calling setCustomCrashSegments");
 
         if (segments == null) {
             return this;
@@ -1237,9 +1196,7 @@ public class Countly {
      * todo move to module after 'setCustomCrashSegments' is removed
      */
     synchronized void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[ModuleCrash] Calling setCustomCrashSegmentsInternal");
-        }
+        L.d("[ModuleCrash] Calling setCustomCrashSegmentsInternal");
 
         if (!getConsent(Countly.CountlyFeatureNames.crashes)) {
             return;
@@ -1314,9 +1271,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly enableCrashReporting() {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Enabling unhandled crash reporting");
-        }
+        L.d("Enabling unhandled crash reporting");
         //get default handler
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 
@@ -1324,9 +1279,7 @@ public class Countly {
 
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                if (isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "Uncaught crash handler triggered");
-                }
+                L.d("Uncaught crash handler triggered");
                 if (getConsent(CountlyFeatureNames.crashes)) {
 
                     StringWriter sw = new StringWriter();
@@ -1446,9 +1399,7 @@ public class Countly {
      * @deprecated set through countlyConfig
      */
     public synchronized Countly setDisableUpdateSessionRequests(final boolean disable) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Disabling periodic session time updates");
-        }
+        L.d("Disabling periodic session time updates");
         disableUpdateSessionRequests_ = disable;
         return this;
     }
@@ -1461,10 +1412,8 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setLoggingEnabled(final boolean enableLogging) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Enabling logging");
-        }
         enableLogging_ = enableLogging;
+        L.d("Enabling logging");
         return this;
     }
 
@@ -1483,9 +1432,7 @@ public class Countly {
      * @deprecated use CountlyConfig (setParameterTamperingProtectionSalt) during init to set this
      */
     public synchronized Countly enableParameterTamperingProtection(String salt) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Enabling tamper protection");
-        }
+        L.d("Enabling tamper protection");
 
         enableParameterTamperingProtectionInternal(salt);
 
@@ -1516,14 +1463,10 @@ public class Countly {
      * @deprecated use countly config to set this
      */
     public synchronized Countly setEventQueueSizeToSend(int size) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting event queue size: [" + size + "]");
-        }
+        L.d("Setting event queue size: [" + size + "]");
 
         if (size < 1) {
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[setEventQueueSizeToSend] queue size can't be less than zero");
-            }
+            L.d("[setEventQueueSizeToSend] queue size can't be less than zero");
             size = 1;
         }
 
@@ -1534,22 +1477,22 @@ public class Countly {
     public static void onCreate(Activity activity) {
         Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
 
-        if (sharedInstance().isLoggingEnabled()) {
+        if (sharedInstance().L.logEnabled()) {
 
             String mainClassName = "[VALUE NULL]";
             if (launchIntent != null && launchIntent.getComponent() != null) {
                 mainClassName = launchIntent.getComponent().getClassName();
             }
 
-            Log.d(Countly.TAG, "Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
+            sharedInstance().L.d("Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
         }
 
         Intent intent = activity.getIntent();
         if (intent != null) {
             Uri data = intent.getData();
             if (data != null) {
-                if (sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "Data in activity created intent: " + data + " (appLaunchDeepLink " + sharedInstance().appLaunchDeepLink + ") ");
+                if (sharedInstance().L.logEnabled()) {
+                    sharedInstance().L.d("Data in activity created intent: " + data + " (appLaunchDeepLink " + sharedInstance().appLaunchDeepLink + ") ");
                 }
                 if (sharedInstance().appLaunchDeepLink) {
                     DeviceInfo.deepLink = data.toString();
@@ -1591,9 +1534,7 @@ public class Countly {
      * is not an active application session.
      */
     synchronized void onTimer() {
-        if (isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
-        }
+        L.v("[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
 
         if (isInitialized()) {
             final boolean hasActiveSession = activityCount_ > 0;
@@ -1622,9 +1563,7 @@ public class Countly {
      * @deprecated set this through CountlyConfig
      */
     public static Countly enablePublicKeyPinning(List<String> certificates) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, "Enabling public key pinning");
-        }
+        sharedInstance().L.i("Enabling public key pinning");
         publicKeyPinCertificates = certificates;
         return Countly.sharedInstance();
     }
@@ -1640,9 +1579,7 @@ public class Countly {
      * @deprecated set this through CountlyConfig
      */
     public static Countly enableCertificatePinning(List<String> certificates) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, "Enabling certificate pinning");
-        }
+        Countly.sharedInstance().L.i("Enabling certificate pinning");
         certificatePinCertificates = certificates;
         return Countly.sharedInstance();
     }
@@ -1656,10 +1593,8 @@ public class Countly {
      */
     public void showStarRating(Activity activity, final CountlyStarRating.RatingCallback callback) {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return;
-            }
+            L.e("Can't call this function before init has been called");
+            return;
         }
 
         if (callback == null) {
@@ -1689,15 +1624,11 @@ public class Countly {
      */
     public synchronized Countly setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return this;
-            }
+            L.e("Can't call this function before init has been called");
+            return this;
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting star rating texts");
-        }
+        L.d("Setting star rating texts");
 
         moduleRatings.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
 
@@ -1712,15 +1643,11 @@ public class Countly {
      */
     public synchronized Countly setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return this;
-            }
+            L.e("Can't call this function before init has been called");
+            return this;
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting to show star rating automatically: [" + IsShownAutomatically + "]");
-        }
+        L.d("Setting to show star rating automatically: [" + IsShownAutomatically + "]");
 
         moduleRatings.setShowDialogAutomatically(connectionQueue_.getCountlyStore(), IsShownAutomatically);
 
@@ -1735,15 +1662,11 @@ public class Countly {
      */
     public synchronized Countly setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return this;
-            }
+            L.e("Can't call this function before init has been called");
+            return this;
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting to disable showing of star rating for each app version:[" + disableAsking + "]");
-        }
+        L.d("Setting to disable showing of star rating for each app version:[" + disableAsking + "]");
 
         moduleRatings.setStarRatingDisableAskingForEachAppVersion(connectionQueue_.getCountlyStore(), disableAsking);
 
@@ -1759,15 +1682,11 @@ public class Countly {
      */
     public synchronized Countly setAutomaticStarRatingSessionLimit(int limit) {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return this;
-            }
+            L.e("Can't call this function before init has been called");
+            return this;
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting automatic star rating session limit: [" + limit + "]");
-        }
+        L.d("Setting automatic star rating session limit: [" + limit + "]");
         moduleRatings.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), limit, null, null, null);
 
         return this;
@@ -1780,17 +1699,13 @@ public class Countly {
      */
     public int getAutomaticStarRatingSessionLimit() {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return -1;
-            }
+            L.e("Can't call this function before init has been called");
+            return -1;
         }
 
         int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(connectionQueue_.getCountlyStore());
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Getting automatic star rating session limit: [" + sessionLimit + "]");
-        }
+        L.d("Getting automatic star rating session limit: [" + sessionLimit + "]");
 
         return sessionLimit;
     }
@@ -1802,10 +1717,8 @@ public class Countly {
      */
     public int getStarRatingsCurrentVersionsSessionCount() {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return -1;
-            }
+            L.e( "Can't call this function before init has been called");
+            return -1;
         }
 
         return ratings().getCurrentVersionsSessionCount();
@@ -1818,10 +1731,8 @@ public class Countly {
      */
     public void clearAutomaticStarRatingSessionCount() {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return;
-            }
+            L.e("Can't call this function before init has been called");
+            return;
         }
 
         ratings().clearAutomaticStarRatingSessionCount();
@@ -1835,15 +1746,11 @@ public class Countly {
      */
     public synchronized Countly setIfStarRatingDialogIsCancellable(boolean isCancellable) {
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "Can't call this function before init has been called");
-                return this;
-            }
+            L.e("Can't call this function before init has been called");
+            return this;
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting if star rating is cancellable: [" + isCancellable + "]");
-        }
+        L.d("Setting if star rating is cancellable: [" + isCancellable + "]");
 
         moduleRatings.setIfRatingDialogIsCancellableInternal(connectionQueue_.getCountlyStore(), isCancellable);
 
@@ -1857,9 +1764,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setHttpPostForced(boolean isItForced) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting if HTTP POST is forced: [" + isItForced + "]");
-        }
+        L.d("Setting if HTTP POST is forced: [" + isItForced + "]");
 
         isHttpPostForced = isItForced;
         return this;
@@ -1892,9 +1797,7 @@ public class Countly {
      * @deprecated use CountlyConfig to set this
      */
     public synchronized Countly setShouldIgnoreCrawlers(boolean shouldIgnore) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Setting if should ignore app crawlers: [" + shouldIgnore + "]");
-        }
+        L.d("Setting if should ignore app crawlers: [" + shouldIgnore + "]");
         shouldIgnoreCrawlers = shouldIgnore;
         return this;
     }
@@ -1906,9 +1809,7 @@ public class Countly {
      * @deprecated use CountlyConfig to set this
      */
     public void addAppCrawlerName(String crawlerName) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "Adding app crawler name: [" + crawlerName + "]");
-        }
+        L.d("Adding app crawler name: [" + crawlerName + "]");
         if (crawlerName != null && !crawlerName.isEmpty()) {
             appCrawlerNames.add(crawlerName);
         }
@@ -1943,9 +1844,7 @@ public class Countly {
             throw new IllegalStateException("init must be called before getDeviceID");
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Calling 'getDeviceID'");
-        }
+        L.d("[Countly] Calling 'getDeviceID'");
 
         return connectionQueue_.getDeviceId().getId();
     }
@@ -1960,9 +1859,7 @@ public class Countly {
             throw new IllegalStateException("init must be called before getDeviceID");
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Calling 'getDeviceIDType'");
-        }
+        L.d("[Countly] Calling 'getDeviceIDType'");
 
         return connectionQueue_.getDeviceId().getType();
     }
@@ -1973,9 +1870,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setPushIntentAddMetadata(boolean shouldAddMetadata) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Setting if adding metadata to push intents: [" + shouldAddMetadata + "]");
-        }
+        L.d("[Countly] Setting if adding metadata to push intents: [" + shouldAddMetadata + "]");
         addMetadataToPushIntents = shouldAddMetadata;
         return this;
     }
@@ -1987,9 +1882,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setAutoTrackingUseShortName(boolean shouldUseShortName) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Setting if automatic view tracking should use short names: [" + shouldUseShortName + "]");
-        }
+        L.d("[Countly] Setting if automatic view tracking should use short names: [" + shouldUseShortName + "]");
         automaticTrackingShouldUseShortName = shouldUseShortName;
         return this;
     }
@@ -2001,9 +1894,7 @@ public class Countly {
      * @deprecated use CountlyConfig to set this
      */
     public synchronized Countly setEnableAttribution(boolean shouldEnableAttribution) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Setting if attribution should be enabled");
-        }
+        L.d("[Countly] Setting if attribution should be enabled");
         isAttributionEnabled = shouldEnableAttribution;
         return this;
     }
@@ -2014,9 +1905,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setRequiresConsent(boolean shouldRequireConsent) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Setting if consent should be required, [" + shouldRequireConsent + "]");
-        }
+        L.d("[Countly] Setting if consent should be required, [" + shouldRequireConsent + "]");
         requiresConsent = shouldRequireConsent;
         return this;
     }
@@ -2027,9 +1916,7 @@ public class Countly {
      * @param consentValue The value of push consent
      */
     void doPushConsentSpecialAction(boolean consentValue) {
-        if (isLoggingEnabled()) {
-            Log.d(TAG, "[Countly] Doing push consent special action: [" + consentValue + "]");
-        }
+        L.d("[Countly] Doing push consent special action: [" + consentValue + "]");
         connectionQueue_.getCountlyStore().setConsentPush(consentValue);
     }
 
@@ -2092,12 +1979,10 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().consent().createFeatureGroup'
      */
     public synchronized Countly createFeatureGroup(String groupName, String[] features) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Creating a feature group with the name: [" + groupName + "]");
-        }
+        L.d("[Countly] Creating a feature group with the name: [" + groupName + "]");
 
-        if (isLoggingEnabled() && !isInitialized()) {
-            Log.w(Countly.TAG, "[Countly] Calling 'createFeatureGroup' before initialising the SDK is deprecated!");
+        if(!isInitialized()) {
+            L.w("[Countly] Calling 'createFeatureGroup' before initialising the SDK is deprecated!");
         }
 
         groupedFeatures.put(groupName, features);
@@ -2113,18 +1998,14 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().consent().setConsent'
      */
     public synchronized Countly setConsentFeatureGroup(String groupName, boolean isConsentGiven) {
-        if (isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[Countly] Setting consent for feature group: [" + groupName + "] with value: [" + isConsentGiven + "]");
-        }
+        L.v("[Countly] Setting consent for feature group: [" + groupName + "] with value: [" + isConsentGiven + "]");
 
-        if (isLoggingEnabled() && !isInitialized()) {
-            Log.w(Countly.TAG, "[Countly] Calling 'setConsentFeatureGroup' before initialising the SDK is deprecated!");
+        if(!isInitialized()) {
+            L.w("[Countly] Calling 'setConsentFeatureGroup' before initialising the SDK is deprecated!");
         }
 
         if (!groupedFeatures.containsKey(groupName)) {
-            if (isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Countly] Trying to set consent for a unknown feature group: [" + groupName + "]");
-            }
+            L.d("[Countly] Trying to set consent for a unknown feature group: [" + groupName + "]");
 
             return this;
         }
@@ -2143,8 +2024,8 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().consent().setConsent' or set consent through CountlyConfig
      */
     public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven) {
-        if (isLoggingEnabled() && !isInitialized()) {
-            Log.w(Countly.TAG, "[Countly] Calling 'setConsent' before initialising the SDK is deprecated!");
+        if (!isInitialized()) {
+            L.w("[Countly] Calling 'setConsent' before initialising the SDK is deprecated!");
         }
 
         return setConsentInternal(featureNames, isConsentGiven);
@@ -2159,9 +2040,7 @@ public class Countly {
         }
 
         if (featureNames == null) {
-            if (isLoggingEnabled()) {
-                Log.w(Countly.TAG, "[Countly] Calling setConsent with null featureNames!");
-            }
+            L.w("[Countly] Calling setConsent with null featureNames!");
             return this;
         }
 
@@ -2178,12 +2057,10 @@ public class Countly {
         boolean currentSessionConsent = previousSessionsConsent;
 
         for (String featureName : featureNames) {
-            if (Countly.sharedInstance() != null && isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Countly] Setting consent for feature: [" + featureName + "] with value: [" + isConsentGiven + "]");
-            }
+            L.d("[Countly] Setting consent for feature: [" + featureName + "] with value: [" + isConsentGiven + "]");
 
             if (!isValidFeatureName(featureName)) {
-                Log.d(Countly.TAG, "[Countly] Given feature: [" + featureName + "] is not a valid name, ignoring it");
+                L.w("[Countly] Given feature: [" + featureName + "] is not a valid name, ignoring it");
                 continue;
             }
 
@@ -2269,12 +2146,10 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().consent().giveConsent(featureNames)' or set consent through CountlyConfig
      */
     public synchronized Countly giveConsent(String[] featureNames) {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Giving consent for features named: [" + Arrays.toString(featureNames) + "]");
-        }
+        L.i("[Countly] Giving consent for features named: [" + Arrays.toString(featureNames) + "]");
 
-        if (isLoggingEnabled() && !isInitialized()) {
-            Log.w(Countly.TAG, "[Countly] Calling 'giveConsent' before initialising the SDK is deprecated!");
+        if (!isInitialized()) {
+            L.w("[Countly] Calling 'giveConsent' before initialising the SDK is deprecated!");
         }
 
         setConsentInternal(featureNames, true);
@@ -2290,12 +2165,10 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().consent().removeConsent(featureNames)'
      */
     public synchronized Countly removeConsent(String[] featureNames) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
-        }
+        L.d("[Countly] Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
 
-        if (isLoggingEnabled() && !isInitialized()) {
-            Log.w(Countly.TAG, "Calling 'removeConsent' before initialising the SDK is deprecated!");
+        if (!isInitialized()) {
+            L.w("Calling 'removeConsent' before initialising the SDK is deprecated!");
         }
 
         setConsentInternal(featureNames, false);
@@ -2310,12 +2183,10 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().consent().removeConsentAll()'
      */
     public synchronized Countly removeConsentAll() {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Removing consent for all features");
-        }
+        L.d("[Countly] Removing consent for all features");
 
-        if (isLoggingEnabled() && !isInitialized()) {
-            Log.w(Countly.TAG, "Calling 'removeConsentAll' before initialising the SDK is deprecated!");
+        if (!isInitialized()) {
+            L.w("Calling 'removeConsentAll' before initialising the SDK is deprecated!");
         }
 
         removeConsent(validFeatureNames);
@@ -2342,9 +2213,7 @@ public class Countly {
             returnValue = false;
         }
 
-        if (isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[Countly] Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
-        }
+        L.v("[Countly] Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
 
         return returnValue;
     }
@@ -2356,13 +2225,8 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().consent().checkAllConsent()'
      */
     public synchronized Countly checkAllConsent() {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Checking and printing consent for All features");
-        }
-
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Is consent required? [" + requiresConsent + "]");
-        }
+        L.d("[Countly] Checking and printing consent for All features");
+        L.d("[Countly] Is consent required? [" + requiresConsent + "]");
 
         //make sure push consent has been added to the feature map
         getConsent(CountlyFeatureNames.push);
@@ -2373,9 +2237,7 @@ public class Countly {
             sb.append("Feature named [").append(key).append("], consent value: [").append(featureConsentValues.get(key)).append("]\n");
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, sb.toString());
-        }
+        L.d(sb.toString());
 
         return this;
     }
@@ -2435,9 +2297,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public synchronized Countly setRemoteConfigAutomaticDownload(boolean enabled, final RemoteConfig.RemoteConfigCallback feedbackCallback) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Setting if remote config Automatic download will be enabled, " + enabled);
-        }
+        L.d("[Countly] Setting if remote config Automatic download will be enabled, " + enabled);
 
         remoteConfigAutomaticUpdateEnabled = enabled;
 
@@ -2459,9 +2319,7 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().remoteConfig().update(callback)'
      */
     public void remoteConfigUpdate(final RemoteConfig.RemoteConfigCallback providedCallback) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Manually calling to updateRemoteConfig");
-        }
+        L.d("[Countly] Manually calling to updateRemoteConfig");
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigUpdate");
         }
@@ -2486,9 +2344,7 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().remoteConfig().updateForKeysOnly(keys, callback)'
      */
     public void updateRemoteConfigForKeysOnly(String[] keysToInclude, final RemoteConfig.RemoteConfigCallback providedCallback) {
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] Manually calling to updateRemoteConfig with include keys");
-        }
+        L.d("[Countly] Manually calling to updateRemoteConfig with include keys");
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before updateRemoteConfigForKeysOnly");
         }
@@ -2513,9 +2369,7 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().remoteConfig().updateExceptKeys(keys, callback)'
      */
     public void updateRemoteConfigExceptKeys(String[] keysToExclude, final RemoteConfig.RemoteConfigCallback providedCallback) {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Manually calling to updateRemoteConfig with exclude keys");
-        }
+        L.i("[Countly] Manually calling to updateRemoteConfig with exclude keys");
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before updateRemoteConfigExceptKeys");
         }
@@ -2540,9 +2394,7 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().remoteConfig().getValueForKey(key)'
      */
     public Object getRemoteConfigValueForKey(String key) {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling remoteConfigValueForKey");
-        }
+        L.i("[Countly] Calling remoteConfigValueForKey");
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigValueForKey");
         }
@@ -2556,9 +2408,7 @@ public class Countly {
      * @deprecated use 'Countly.sharedInstance().remoteConfig().clearStoredValues();'
      */
     public void remoteConfigClearValues() {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling remoteConfigClearValues");
-        }
+        L.i("[Countly] Calling remoteConfigClearValues");
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigClearValues");
         }
@@ -2572,9 +2422,7 @@ public class Countly {
      * @deprecated use CountlyConfig during init to set this
      */
     public void addCustomNetworkRequestHeaders(Map<String, String> headerValues) {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling addCustomNetworkRequestHeaders");
-        }
+        L.i("[Countly] Calling addCustomNetworkRequestHeaders");
         requestHeaderCustomValues = headerValues;
         if (connectionQueue_ != null) {
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
@@ -2587,9 +2435,7 @@ public class Countly {
      * Call only if you don't need that information
      */
     public void flushRequestQueues() {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling flushRequestQueues");
-        }
+        L.i("[Countly] Calling flushRequestQueues");
 
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before flushRequestQueues");
@@ -2610,18 +2456,14 @@ public class Countly {
             count++;
         }
 
-        if (isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Countly] flushRequestQueues removed [" + count + "] requests");
-        }
+        L.d("[Countly] flushRequestQueues removed [" + count + "] requests");
     }
 
     /**
      * Countly will attempt to fulfill all stored requests on demand
      */
     public void doStoredRequests() {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling doStoredRequests");
-        }
+        L.i("[Countly] Calling doStoredRequests");
 
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before doStoredRequests");
@@ -2634,14 +2476,10 @@ public class Countly {
      * Go through the request queue and replace the appKey of all requests with the current appKey
      */
     synchronized public void requestQueueOverwriteAppKeys() {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling requestQueueOverwriteAppKeys");
-        }
+        L.i("[Countly] Calling requestQueueOverwriteAppKeys");
 
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[Countly] Countly.sharedInstance().init must be called before requestQueueOverwriteAppKeys");
-            }
+            L.e("[Countly] Countly.sharedInstance().init must be called before requestQueueOverwriteAppKeys");
             return;
         }
 
@@ -2656,14 +2494,10 @@ public class Countly {
      * Go through the request queue and delete all requests that don't have the current application key
      */
     synchronized public void requestQueueEraseAppKeysRequests() {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling requestQueueEraseAppKeysRequests");
-        }
+        L.i("[Countly] Calling requestQueueEraseAppKeysRequests");
 
         if (!isInitialized()) {
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[Countly] Countly.sharedInstance().init must be called before requestQueueEraseAppKeysRequests");
-            }
+            L.e("[Countly] Countly.sharedInstance().init must be called before requestQueueEraseAppKeysRequests");
             return;
         }
 
@@ -2719,9 +2553,7 @@ public class Countly {
             return filteredRequests;
         } catch (Exception ex) {
             //in case of failure, abort
-            if (isLoggingEnabled()) {
-                Log.e(Countly.TAG, "[Countly] Failed while overwriting appKeys, " + ex.toString());
-            }
+            L.e("[Countly] Failed while overwriting appKeys, " + ex.toString());
 
             return null;
         }
@@ -2743,9 +2575,7 @@ public class Countly {
             }
 
             if (!storedRequests[a].contains(searchablePart)) {
-                if (isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[requestQueueEraseAppKeysRequests] Found a entry to remove: [" + storedRequests[a] + "]");
-                }
+                L.d("[requestQueueEraseAppKeysRequests] Found a entry to remove: [" + storedRequests[a] + "]");
             } else {
                 filteredRequests.add(storedRequests[a]);
             }
@@ -2760,9 +2590,7 @@ public class Countly {
      * @return
      */
     public Countly enableTemporaryIdMode() {
-        if (isLoggingEnabled()) {
-            Log.i(Countly.TAG, "[Countly] Calling enableTemporaryIdMode");
-        }
+        L.i("[Countly] Calling enableTemporaryIdMode");
 
         if (!isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before enableTemporaryIdMode");

@@ -55,6 +55,8 @@ public class ConnectionQueue {
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
 
+    public ModuleLog L;
+
     // Getters are for unit testing
     String getAppKey() {
         return appKey_;
@@ -113,15 +115,15 @@ public class ConnectionQueue {
     }
 
     protected void setMetricOverride(Map<String, String> metricOverride) {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
+        if (L.logEnabled()) {
             if(metricOverride != null) {
-                Log.d(Countly.TAG, "[Connection Queue] The following metric overrides are set:");
+                L.d("[Connection Queue] The following metric overrides are set:");
 
                 for (String k : metricOverride.keySet()) {
-                    Log.d(Countly.TAG, "[Connection Queue] key[" + k + "] val[" + metricOverride.get(k) + "]");
+                    L.d("[Connection Queue] key[" + k + "] val[" + metricOverride.get(k) + "]");
                 }
             } else {
-                Log.d(Countly.TAG, "[Connection Queue] No metric override is provided");
+                L.d("[Connection Queue] No metric override is provided");
             }
         }
         this.metricOverride = metricOverride;
@@ -157,9 +159,7 @@ public class ConnectionQueue {
      */
     void beginSession(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] beginSession");
-        }
+        L.d("[Connection Queue] beginSession");
 
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
@@ -207,9 +207,7 @@ public class ConnectionQueue {
      */
     void updateSession(final int duration) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] updateSession");
-        }
+        L.d("[Connection Queue] updateSession");
 
         if (duration > 0) {
             boolean dataAvailable = false;//will only send data if there is something valuable to send
@@ -240,14 +238,10 @@ public class ConnectionQueue {
 
     public void changeDeviceId(String deviceId, final int duration) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] changeDeviceId");
-        }
+        L.d("[Connection Queue] changeDeviceId");
 
         if (!Countly.sharedInstance().anyConsentGiven()) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             //no consent set, aborting
             return;
         }
@@ -267,14 +261,10 @@ public class ConnectionQueue {
 
     public void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] tokenSession");
-        }
+        L.d("[Connection Queue] tokenSession");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
@@ -285,18 +275,14 @@ public class ConnectionQueue {
             + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
             + "&locale=" + DeviceInfo.getLocale();
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] Waiting for 10 seconds before adding token request to queue");
-        }
+        L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
 
         // To ensure begin_session will be fully processed by the server before token_session
         final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
         worker.schedule(new Runnable() {
             @Override
             public void run() {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.d(Countly.TAG, "[Connection Queue] Finished waiting 10 seconds adding token request");
-                }
+                L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
                 store_.addConnection(data);
                 tick();
             }
@@ -316,9 +302,7 @@ public class ConnectionQueue {
 
     void endSession(final int duration, String deviceIdOverride) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] endSession");
-        }
+        L.d("[Connection Queue] endSession");
 
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
@@ -348,9 +332,7 @@ public class ConnectionQueue {
      */
     void sendLocation(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendLocation");
-        }
+        L.d("[Connection Queue] sendLocation");
 
         String data = prepareCommonRequestData();
 
@@ -368,14 +350,10 @@ public class ConnectionQueue {
      */
     void sendUserData() {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendUserData");
-        }
+        L.d("[Connection Queue] sendUserData");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.users)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
@@ -398,14 +376,10 @@ public class ConnectionQueue {
      */
     void sendReferrerData(String referrer) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] checkInternalState");
-        }
+        L.d("[Connection Queue] checkInternalState");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.attribution)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
@@ -425,14 +399,10 @@ public class ConnectionQueue {
      */
     void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendCrashReport");
-        }
+        L.d("[Connection Queue] sendCrashReport");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.crashes)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
@@ -457,9 +427,7 @@ public class ConnectionQueue {
      */
     void recordEvents(final String events) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendConsentChanges");
-        }
+        L.d("[Connection Queue] sendConsentChanges");
 
         ////////////////////////////////////////////////////
         ///CONSENT FOR EVENTS IS CHECKED ON EVENT CREATION//
@@ -474,9 +442,7 @@ public class ConnectionQueue {
 
     void sendConsentChanges(String formattedConsentChanges) {
         checkInternalState();
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendConsentChanges");
-        }
+        L.d("[Connection Queue] sendConsentChanges");
 
         final String data = prepareCommonRequestData()
             + "&consent=" + UtilsNetworking.urlEncodeString(formattedConsentChanges);
@@ -489,14 +455,10 @@ public class ConnectionQueue {
     void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs, String customMetrics) {
         checkInternalState();
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendAPMCustomTrace");
-        }
+        L.d("[Connection Queue] sendAPMCustomTrace");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
@@ -518,14 +480,10 @@ public class ConnectionQueue {
     void sendAPMNetworkTrace(String networkTraceKey, Long responseTimeMs, int responseCode, int requestPayloadSize, int responsePayloadSize, Long startMs, Long endMs) {
         checkInternalState();
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendAPMNetworkTrace");
-        }
+        L.d("[Connection Queue] sendAPMNetworkTrace");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
@@ -548,14 +506,10 @@ public class ConnectionQueue {
     void sendAPMAppStart(long durationMs, Long startMs, Long endMs) {
         checkInternalState();
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendAPMAppStart");
-        }
+        L.d("[Connection Queue] sendAPMAppStart");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
         //https://abc.count.ly/i?app_key=xyz&device_id=pts911&apm={"type":"device","name":"app_start","apm_metrics":{"duration": 15000}, "stz": 1584698900, "etz": 1584699900}
@@ -575,14 +529,10 @@ public class ConnectionQueue {
     void sendAPMScreenTime(boolean recordForegroundTime, long durationMs, Long startMs, Long endMs) {
         checkInternalState();
 
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, "[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
-        }
+        L.d("[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
 
         if (!Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.apm)) {
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.d(Countly.TAG, "[Connection Queue] request ignored, consent not given");
-            }
+            L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
@@ -693,10 +643,8 @@ public class ConnectionQueue {
      * is already running.
      */
     void tick() {
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[Connection Queue] tick, Not empty:[" + !store_.isEmptyConnections() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
-                || connectionProcessorFuture_.isDone()) + "]");
-        }
+        L.v("[Connection Queue] tick, Not empty:[" + !store_.isEmptyConnections() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
+            || connectionProcessorFuture_.isDone()) + "]");
 
         if (!store_.isEmptyConnections() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
@@ -705,7 +653,7 @@ public class ConnectionQueue {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues);
+        return new ConnectionProcessor(getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues, L);
     }
 
     public boolean queueContainsTemporaryIdItems() {

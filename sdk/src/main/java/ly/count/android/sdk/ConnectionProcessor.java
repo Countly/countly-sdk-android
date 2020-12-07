@@ -59,18 +59,21 @@ public class ConnectionProcessor implements Runnable {
 
     protected static String salt;
 
+    ModuleLog L;
+
     private enum RequestResult {
         OK,         // success
         RETRY,      // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
         REMOVE      // bad request, remove
     }
 
-    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues) {
+    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
         serverURL_ = serverURL;
         store_ = store;
         deviceId_ = deviceId;
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
+        L = logModule;
     }
 
     synchronized public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
@@ -105,9 +108,7 @@ public class ConnectionProcessor implements Runnable {
 
         if (requestHeaderCustomValues_ != null) {
             //if there are custom header values, add them
-            if (Countly.sharedInstance().isLoggingEnabled()) {
-                Log.v(Countly.TAG, "[Connection Processor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
-            }
+            L.v("[Connection Processor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
             for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
@@ -118,12 +119,8 @@ public class ConnectionProcessor implements Runnable {
         }
 
         String picturePath = UserData.getPicturePathFromQuery(url);
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[Connection Processor] Got picturePath: " + picturePath);
-        }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, "[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
-        }
+        L.v("[Connection Processor] Got picturePath: " + picturePath);
+        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
         //Log.v(Countly.TAG, "Used url: " + urlStr);
         if (!picturePath.equals("")) {
             //Uploading files:
@@ -172,9 +169,7 @@ public class ConnectionProcessor implements Runnable {
                 writer.close();
                 os.close();
             } else {
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.v(Countly.TAG, "[Connection Processor] Using HTTP GET");
-                }
+                L.v("[Connection Processor] Using HTTP GET");
                 conn.setDoOutput(false);
             }
         }
@@ -187,12 +182,12 @@ public class ConnectionProcessor implements Runnable {
             final String[] storedEvents = store_.connections();
             int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
 
-            if (Countly.sharedInstance().isLoggingEnabled()) {
+            if (L.logEnabled()) {
                 String msg = "[Connection Processor] Starting to run, there are [" + storedEventCount + "] requests stored";
                 if (storedEventCount == 0) {
-                    Log.v(Countly.TAG, msg);
+                    L.v(msg);
                 } else {
-                    Log.i(Countly.TAG, msg);
+                    L.i(msg);
                 }
             }
 
@@ -205,9 +200,7 @@ public class ConnectionProcessor implements Runnable {
             if (deviceId_.getId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Connection Processor] No Device ID available yet, skipping request " + storedEvents[0]);
-                }
+                L.i("[Connection Processor] No Device ID available yet, skipping request " + storedEvents[0]);
                 break;
             }
 
@@ -220,9 +213,7 @@ public class ConnectionProcessor implements Runnable {
                 //the internally set id is the temporary one
 
                 //abort and wait for exiting temporary mode
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceId_.temporaryIdModeEnabled() + "]");
-                }
+                L.i("[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceId_.temporaryIdModeEnabled() + "]");
                 break;
             }
 
@@ -254,9 +245,7 @@ public class ConnectionProcessor implements Runnable {
                         eventData = storedEvents[0];
                         deviceIdChange = false;
 
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
-                        }
+                        L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                     } else {
                         //new device_id provided, make sure it will be merged
                         eventData = storedEvents[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
@@ -296,18 +285,14 @@ public class ConnectionProcessor implements Runnable {
                         responseString = Utils.inputStreamToString(connInputStream);
                     }
 
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.d(Countly.TAG, "[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], request: " + eventData);
-                    }
+                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], request: " + eventData);
 
                     final RequestResult rRes;
 
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {
-                            if (Countly.sharedInstance().isLoggingEnabled()) {
-                                Log.v(Countly.TAG, "[Connection Processor] Response was empty, will retry");
-                            }
+                            L.v("[Connection Processor] Response was empty, will retry");
                             rRes = RequestResult.RETRY;
                         } else {
                             JSONObject jsonObject;
@@ -320,46 +305,32 @@ public class ConnectionProcessor implements Runnable {
 
                             if (jsonObject == null) {
                                 //received unparseable response, retrying
-                                if (Countly.sharedInstance().isLoggingEnabled()) {
-                                    Log.v(Countly.TAG, "[Connection Processor] Response was a unknown, will retry");
-                                }
+                                L.v("[Connection Processor] Response was a unknown, will retry");
                                 rRes = RequestResult.RETRY;
                             } else {
                                 if (jsonObject.has("result")) {
                                     //contains result entry
-                                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                                        Log.v(Countly.TAG, "[Connection Processor] Response was a success");
-                                    }
+                                    L.v("[Connection Processor] Response was a success");
                                     rRes = RequestResult.OK;
                                 } else {
-                                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                                        Log.v(Countly.TAG, "[Connection Processor] Response does not contain 'result', will retry");
-                                    }
+                                    L.v("[Connection Processor] Response does not contain 'result', will retry");
                                     rRes = RequestResult.RETRY;
                                 }
                             }
                         }
                     } else if (responseCode >= 300 && responseCode < 400) {
                         //assume redirect
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[Connection Processor] Encountered redirect, will retry");
-                        }
+                        L.d("[Connection Processor] Encountered redirect, will retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode == 400 || responseCode == 404) {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.w(Countly.TAG, "[Connection Processor] Bad request, will still retry");
-                        }
+                        L.w("[Connection Processor] Bad request, will still retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode > 400) {
                         //server down, try again later
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[Connection Processor] Server is down, will retry");
-                        }
+                        L.d("[Connection Processor] Server is down, will retry");
                         rRes = RequestResult.RETRY;
                     } else {
-                        if (Countly.sharedInstance().isLoggingEnabled()) {
-                            Log.d(Countly.TAG, "[Connection Processor] Bad response code, will retry");
-                        }
+                        L.d("[Connection Processor] Bad response code, will retry");
                         rRes = RequestResult.RETRY;
                     }
 
@@ -386,9 +357,7 @@ public class ConnectionProcessor implements Runnable {
                             break;
                     }
                 } catch (Exception e) {
-                    if (Countly.sharedInstance().isLoggingEnabled()) {
-                        Log.w(Countly.TAG, "[Connection Processor] Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
-                    }
+                    L.w("[Connection Processor] Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
                     // if exception occurred, stop processing, let next tick take care of retrying
                     break;
                 } finally {
@@ -406,9 +375,7 @@ public class ConnectionProcessor implements Runnable {
                 }
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
-                if (Countly.sharedInstance().isLoggingEnabled()) {
-                    Log.i(Countly.TAG, "[Connection Processor] Device identified as a app crawler, skipping request " + storedEvents[0]);
-                }
+                L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedEvents[0]);
 
                 //remove stored data
                 store_.removeConnection(storedEvents[0]);

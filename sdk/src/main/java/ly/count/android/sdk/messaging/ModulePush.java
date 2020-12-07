@@ -110,12 +110,12 @@ public class ModulePush {
             this.message = data.get(KEY_MESSAGE);
             this.sound = data.get(KEY_SOUND);
 
-            Log.d(Countly.TAG, "constructed: " + id);
+            Countly.sharedInstance().L.d("[MessageImpl] constructed: " + id);
             Integer b = null;
             try {
                 b = data.containsKey(KEY_BADGE) ? Integer.parseInt(data.get(KEY_BADGE)) : null;
             } catch (NumberFormatException e) {
-                Log.w(Countly.TAG, "Bad badge value received, ignoring");
+                Countly.sharedInstance().L.w("[MessageImpl] Bad badge value received, ignoring");
             }
             this.badge = b;
 
@@ -124,7 +124,7 @@ public class ModulePush {
                 try {
                     uri = Uri.parse(data.get(KEY_LINK));
                 } catch (Throwable e) {
-                    Log.w(Countly.TAG, "Cannot parse message link", e);
+                    Countly.sharedInstance().L.w("[MessageImpl] Cannot parse message link", e);
                 }
             }
             this.link = uri;
@@ -133,7 +133,7 @@ public class ModulePush {
             try {
                 u = data.containsKey(KEY_MEDIA) ? new URL(data.get(KEY_MEDIA)) : null;
             } catch (MalformedURLException e) {
-                Log.w(Countly.TAG, "Bad media value received, ignoring");
+                Countly.sharedInstance().L.w("[MessageImpl] Bad media value received, ignoring");
             }
             this.media = u;
 
@@ -151,7 +151,7 @@ public class ModulePush {
                                 try {
                                     uri = Uri.parse(btn.getString(KEY_BUTTONS_LINK));
                                 } catch (Throwable e) {
-                                    Log.w(Countly.TAG, "Cannot parse message link", e);
+                                    Countly.sharedInstance().L.w("[MessageImpl] Cannot parse message link", e);
                                 }
                             }
 
@@ -159,7 +159,7 @@ public class ModulePush {
                         }
                     }
                 } catch (Throwable e) {
-                    Log.w(Countly.TAG, "Failed to parse buttons JSON", e);
+                    Countly.sharedInstance().L.w("[MessageImpl] Failed to parse buttons JSON", e);
                 }
             }
         }
@@ -250,7 +250,7 @@ public class ModulePush {
         @Override
         public void writeToParcel(Parcel dest, int flags) {
             dest.writeMap(data);
-            Log.d(Countly.TAG, "written: " + data.get(KEY_ID));
+            Countly.sharedInstance().L.d("[MessageImpl] written: " + data.get(KEY_ID));
         }
 
         public static final Parcelable.Creator<MessageImpl> CREATOR = new Parcelable.Creator<MessageImpl>() {
@@ -258,7 +258,7 @@ public class ModulePush {
             public MessageImpl createFromParcel(Parcel in) {
                 Map<String, String> map = new HashMap<>();
                 in.readMap(map, ClassLoader.getSystemClassLoader());
-                Log.d(Countly.TAG, "read: " + map.get(KEY_ID));
+                Countly.sharedInstance().L.d("[MessageImpl] read: " + map.get(KEY_ID));
                 return new MessageImpl(map);
             }
 
