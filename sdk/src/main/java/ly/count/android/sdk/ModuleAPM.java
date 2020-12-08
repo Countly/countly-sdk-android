@@ -336,6 +336,7 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void recordAppStart(long appLoadedTimestamp) {
+        L.d("[ModuleAPM] Calling 'recordAppStart'");
         if (_cly.config_.recordAppStartTime) {
             long durationMs = appLoadedTimestamp - appStartTimestamp;
 
@@ -358,6 +359,7 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void doForegroundBackgroundCalculations(boolean goingToBackground, boolean goingToForeground) {
+        L.d("[ModuleAPM] Calling 'doForegroundBackgroundCalculations', [" + goingToBackground + "] [" + goingToForeground + "]");
         if (goingToBackground || goingToForeground) {
 
             long currentTimeMs = UtilsTime.currentTimestampMs();
@@ -373,6 +375,8 @@ public class ModuleAPM extends ModuleBase {
                     // going form the foreground to the background
                     _cly.connectionQueue_.sendAPMScreenTime(true, durationMs, lastScreenSwitchTime, currentTimeMs);
                 }
+            } else {
+                L.d("[ModuleAPM] 'doForegroundBackgroundCalculations' last screen switch time was '-1', doing nothing");
             }
 
             lastScreenSwitchTime = currentTimeMs;
@@ -382,6 +386,7 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void goToForeground() {
+        L.d("[ModuleAPM] Calling 'goToForeground'");
         if(manualOverrideInForeground) {
             //if we already are in foreground, do nothing
             return;
@@ -391,6 +396,7 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void goToBackground() {
+        L.d("[ModuleAPM] Calling 'goToBackground'");
         if(!manualOverrideInForeground) {
             //if we already are in background, do nothing
             return;
