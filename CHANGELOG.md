@@ -1,3 +1,5 @@
+## 20.11.3
+
 ## 20.11.2
   * Added SDK log listener
   * Refactored all logs to use the new logging mechanism

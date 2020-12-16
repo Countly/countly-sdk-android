@@ -9,7 +9,7 @@ import java.net.URLDecoder;
 /**
  * ADB Testing
  * adb shell
- * am broadcast -a com.android.vending.INSTALL_REFERRER --es "referrer" "countly_cid%3Dcb14e5f33b528334715f1809e4572842c74686df%26countly_cuid%3Decf125107e4e27e6bcaacb3ae10ddba66459e6ae"
+ * am broadcast -a com.android.vending.INSTALL_REFERRER --es "referrer" "countly_cid%3Dxxxxcidvaluexxxx%26countly_cuid%3Dxxxxcuidvaluexxxx"
  **/
 //******************************************************************************
 public class ReferrerReceiver extends BroadcastReceiver {
