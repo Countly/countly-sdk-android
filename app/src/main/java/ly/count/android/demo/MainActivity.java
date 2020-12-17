@@ -25,6 +25,18 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Countly.onCreate(this);
+
+        /*
+        To send Referrer follow these steps.
+        Steps:
+        1. Start Google Play on the device using campaign link,
+        for example, https://play.google.com/store/apps/details?id=com.test.test_project&referrer=utm_source%3Dtest_source%26utm_medium%3Dtest_medium%26utm_term%3Dtest-term%26utm_content%3Dtest_content%26utm_campaign%3Dtest_name
+        (You can use google play generator: https://developers.google.com/analytics/devguides/collection/android/v3/campaigns#google-play-url-builder)
+        2. DON'T TAP ON INSTALL BUTTON
+        3. Install your test build using adb.
+
+        Google Play will be returning your test campaign now.
+         */
         referrerClient = InstallReferrerClient.newBuilder(this).build();
         referrerClient.startConnection(new InstallReferrerStateListener() {
             @Override
