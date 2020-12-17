@@ -81,6 +81,13 @@
             />
 
         <Button
+            android:id="@+id/button61"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="onClickButtonReferrer"
+            android:text="Referrer Information "
+            />
+        <Button
             android:text="@string/others"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

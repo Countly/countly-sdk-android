@@ -45,6 +45,12 @@
         </activity>
 
         <activity
+            android:name=".ActivityExampleReferrer"
+            android:label="@string/activity_name_referrer"
+            android:configChanges="orientation|screenSize">
+        </activity>
+
+        <activity
             android:name=".ActivityExampleCrashReporting"
             android:label="@string/activity_name_crash_reporting"
             android:configChanges="orientation|screenSize">

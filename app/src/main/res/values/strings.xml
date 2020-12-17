@@ -9,6 +9,7 @@
     <string name="another_activity_text">Another Activity</string>
 
     <string name="activity_name_apm">APM examples</string>
+    <string name="activity_name_referrer">Referrer examples</string>
     <string name="activity_name_crash_reporting">Crash reporting examples</string>
     <string name="activity_name_custom_events">Custom events examples</string>
     <string name="activity_name_multithreading">Multithreading examples</string>

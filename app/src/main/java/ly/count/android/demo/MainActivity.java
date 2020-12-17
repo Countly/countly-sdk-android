@@ -63,6 +63,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, ActivityExampleFeedback.class));
     }
 
+    public void onClickButtonReferrer(View v) {
+        startActivity(new Intent(this, ActivityExampleReferrer.class));
+    }
+
 
     public void enableCrashTracking(){
         //add some custom segments, like dependency library versions
