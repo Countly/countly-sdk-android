@@ -401,8 +401,7 @@ public class Countly {
 
         L.SetListener(config.providedLogCallback);
 
-
-        L.d("[Init] Initializing Countly SDk version " + COUNTLY_SDK_VERSION_STRING);
+        L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
 
         if (config.context == null) {
             throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");

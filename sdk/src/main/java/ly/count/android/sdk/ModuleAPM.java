@@ -381,6 +381,7 @@ public class ModuleAPM extends ModuleBase {
 
             lastScreenSwitchTime = currentTimeMs;
         } else {
+            L.d("[ModuleAPM] Calling 'doForegroundBackgroundCalculations', just changing screens, ignoring request");
             // changing screens normally
         }
     }

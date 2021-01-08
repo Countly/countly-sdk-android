@@ -122,7 +122,7 @@ public class App extends Application {
 
         Countly.sharedInstance().setLoggingEnabled(true);
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
-            .enableCrashReporting().setLoggingEnabled(true).setLogListener(new ModuleLog.LogCallback() {
+            .enableCrashReporting().setLoggingEnabled(false).setLogListener(new ModuleLog.LogCallback() {
                 @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
                     //duplicated countly logs
                     switch (logLevel) {
@@ -179,7 +179,7 @@ public class App extends Application {
             //.enablePublicKeyPinning(certificates)
 
             //.setDisableLocation()
-            .setLocation("us", "Böston", "-23.8043604,-46.6718331", "10.2.33.12")
+            .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
             //.setMetricOverride(metricOverride)
             .setEnableAttribution(true);
 

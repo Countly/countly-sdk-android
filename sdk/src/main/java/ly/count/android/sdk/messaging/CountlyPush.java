@@ -314,11 +314,16 @@ public class CountlyPush {
      * @return token string or null if no token is currently available.
      */
     private static String getToken(Context context, Countly.CountlyMessagingProvider prov) {
-        try {
-            if (prov == Countly.CountlyMessagingProvider.FCM) {
+        if (prov == Countly.CountlyMessagingProvider.FCM) {
+            try {
                 Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
                 return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
-            } else if (prov == Countly.CountlyMessagingProvider.HMS) {
+            } catch (Throwable logged) {
+                Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
+                return null;
+            }
+        } else if (prov == Countly.CountlyMessagingProvider.HMS) {
+            try {
                 Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", context, Context.class);
                 if (config == null) {
                     Countly.sharedInstance().L.e("No Huawei Config");
@@ -339,11 +344,11 @@ public class CountlyPush {
 
                 Object token = UtilsMessaging.reflectiveCall(HUAWEI_INSTANCEID_CLASS, instanceId, "getToken", appId, "HCM");
                 return (String) token;
-            } else {
+            } catch (Throwable logged) {
+                Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly huawei push kit", logged);
                 return null;
             }
-        } catch (Throwable logged) {
-            Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
+        } else {
             return null;
         }
     }
