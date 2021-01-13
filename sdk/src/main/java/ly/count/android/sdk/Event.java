@@ -133,7 +133,6 @@ class Event {
      * @param json JSON object to extract event data from
      * @return Event object built from the data in the JSON or null if the "key" value is not
      * present or the empty string, or if a JSON exception occurs
-     * @throws NullPointerException if JSONObject is null
      */
     static Event fromJSON(final JSONObject json) {
         Event event = new Event();

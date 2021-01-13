@@ -297,7 +297,6 @@ public class Countly {
      * @param appKey app key for the application being tracked; find in the Countly Dashboard under Management &gt; Applications
      * @return Countly instance for easy method chaining
      * @throws IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
-     * @throws IllegalStateException if the Countly SDK has already been initialized
      * @deprecated use {@link CountlyConfig} to pass data to init.
      */
     public Countly init(final Context context, final String serverURL, final String appKey) {
@@ -314,7 +313,6 @@ public class Countly {
      * @param deviceID unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID
      * @return Countly instance for easy method chaining
      * @throws IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
-     * @throws IllegalStateException if init has previously been called with different values during the same application instance
      * @deprecated use {@link CountlyConfig} to pass data to init.
      */
     public Countly init(final Context context, final String serverURL, final String appKey, final String deviceID) {
@@ -332,7 +330,6 @@ public class Countly {
      * @param idMode enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID
      * @return Countly instance for easy method chaining
      * @throws IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
-     * @throws IllegalStateException if init has previously been called with different values during the same application instance
      * @deprecated use {@link CountlyConfig} to pass data to init.
      */
     public synchronized Countly init(final Context context, final String serverURL, final String appKey, final String deviceID, DeviceId.Type idMode) {
@@ -355,7 +352,6 @@ public class Countly {
      * @param starRatingTextDismiss the shown dismiss button text for the shown star rating dialogs
      * @return Countly instance for easy method chaining
      * @throws IllegalArgumentException if context, serverURL, appKey, or deviceID are invalid
-     * @throws IllegalStateException if init has previously been called with different values during the same application instance
      * @deprecated use {@link CountlyConfig} to pass data to init.
      */
     public synchronized Countly init(final Context context, String serverURL, final String appKey, final String deviceID, DeviceId.Type idMode,
@@ -451,13 +447,15 @@ public class Countly {
         }
         if (config.deviceID == null && config.idMode == DeviceId.Type.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
             //choosing advertising ID as type, but it's available on this device
-            throw new IllegalArgumentException("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
+            L.e("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
+            return this;
         }
         if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(config.serverURL) ||
             !connectionQueue_.getAppKey().equals(config.appKey) ||
             !DeviceId.deviceIDEqualsNullSafe(config.deviceID, config.idMode, connectionQueue_.getDeviceId()))) {
             //not sure if this needed
-            throw new IllegalStateException("Countly cannot be reinitialized with different values");
+            L.e("Countly cannot be reinitialized with different values");
+            return this;
         }
 
         if (L.logEnabled()) {
@@ -709,9 +707,7 @@ public class Countly {
     /**
      * Immediately disables session &amp; event tracking and clears any stored session &amp; event data.
      * This API is useful if your app has a tracking opt-out switch, and you want to immediately
-     * disable tracking when a user opts out. The onStart/onStop/recordEvent methods will throw
-     * IllegalStateException after calling this until Countly is reinitialized by calling init
-     * again.
+     * disable tracking when a user opts out.
      */
     public synchronized void halt() {
         L.i("Halting Countly!");
@@ -768,8 +764,6 @@ public class Countly {
      * easy way to determine when an application instance starts and stops, you must call this
      * method from every one of your Activity's onStart methods for accurate application
      * session tracking.
-     *
-     * @throws IllegalStateException if Countly SDK has not been initialized
      */
     public synchronized void onStart(Activity activity) {
         if (L.logEnabled()) {
@@ -782,7 +776,8 @@ public class Countly {
 
         appLaunchDeepLink = false;
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before onStart");
+            L.e("init must be called before onStart");
+            return;
         }
 
         ++activityCount_;
@@ -816,18 +811,18 @@ public class Countly {
      * easy way to determine when an application instance starts and stops, you must call this
      * method from every one of your Activity's onStop methods for accurate application
      * session tracking.
-     *
-     * @throws IllegalStateException if Countly SDK has not been initialized, or if
      * unbalanced calls to onStart/onStop are detected
      */
     public synchronized void onStop() {
         L.d("Countly onStop called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
 
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before onStop");
+            L.e("init must be called before onStop");
+            return;
         }
         if (activityCount_ == 0) {
-            throw new IllegalStateException("must call onStart before onStop");
+            L.e("must call onStart before onStop");
+            return;
         }
 
         --activityCount_;
@@ -848,7 +843,8 @@ public class Countly {
     public synchronized void onConfigurationChanged(Configuration newConfig) {
         L.d("Calling [onConfigurationChanged]");
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before onConfigurationChanged");
+            L.e("init must be called before onConfigurationChanged");
+            return;
         }
 
         for (ModuleBase module : modules) {
@@ -885,7 +881,8 @@ public class Countly {
         L.d("Calling [changeDeviceIdWithoutMerge] with type and ID");
 
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before changeDeviceIdWithoutMerge");
+            L.e("init must be called before changeDeviceIdWithoutMerge");
+            return;
         }
 
         moduleDeviceId.changeDeviceIdWithoutMerge(type, deviceId);
@@ -900,7 +897,8 @@ public class Countly {
     public void changeDeviceIdWithMerge(String deviceId) {
         L.d("Calling [changeDeviceIdWithMerge] only with ID");
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before changeDeviceIdWithMerge");
+            L.e("init must be called before changeDeviceIdWithMerge");
+            return;
         }
 
         moduleDeviceId.changeDeviceIdWithMerge(deviceId);
@@ -918,7 +916,8 @@ public class Countly {
         L.d("Calling [changeDeviceId] with type and ID");
 
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before changeDeviceId");
+            L.e("init must be called before changeDeviceId");
+            return;
         }
 
         moduleDeviceId.changeDeviceIdWithoutMerge(type, deviceId);
@@ -934,7 +933,8 @@ public class Countly {
     public void changeDeviceId(String deviceId) {
         L.d("Calling [changeDeviceId] only with ID");
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before changeDeviceId");
+            L.e("init must be called before changeDeviceId");
+            return;
         }
 
         moduleDeviceId.changeDeviceIdWithMerge(deviceId);
@@ -944,8 +944,6 @@ public class Countly {
      * Records a custom event with no segmentation values, a count of one and a sum of zero.
      *
      * @param key name of the custom event, required, must not be the empty string
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty
      * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key) {
@@ -957,8 +955,6 @@ public class Countly {
      *
      * @param key name of the custom event, required, must not be the empty string
      * @param count count to associate with the event, should be more than zero
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty
      * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key, final int count) {
@@ -971,8 +967,6 @@ public class Countly {
      * @param key name of the custom event, required, must not be the empty string
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty
      * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key, final int count, final double sum) {
@@ -985,8 +979,6 @@ public class Countly {
      * @param key name of the custom event, required, must not be the empty string
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty
      * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public void recordEvent(final String key, final Map<String, String> segmentation, final int count) {
@@ -1000,8 +992,6 @@ public class Countly {
      * @param segmentation segmentation dictionary to associate with the event, can be null
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      * segmentation contains null or empty keys or values
      * @deprecated record events through 'Countly.sharedInstance().events()'
      */
@@ -1017,8 +1007,6 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @param dur duration of an event
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      * segmentation contains null or empty keys or values
      * @deprecated record events through 'Countly.sharedInstance().events()'
      */
@@ -1034,15 +1022,14 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @param dur duration of an event
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      * segmentation contains null or empty keys or values
      * @deprecated record events through 'Countly.sharedInstance().events()'
      */
     public synchronized void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum,
         final double dur) {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+            L.e("Countly.sharedInstance().init must be called before recordEvent");
+            return;
         }
 
         Map<String, Object> segmentationGroup = new HashMap<>();
@@ -1095,7 +1082,8 @@ public class Countly {
      */
     public synchronized Countly recordView(String viewName) {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+            L.e("Countly.sharedInstance().init must be called before recordView");
+            return this;
         }
 
         return recordView(viewName, null);
@@ -1113,7 +1101,8 @@ public class Countly {
      */
     public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+            L.e("Countly.sharedInstance().init must be called before recordView");
+            return this;
         }
 
         return moduleViews.recordViewInternal(viewName, viewSegmentation);
@@ -1319,7 +1308,8 @@ public class Countly {
      */
     public synchronized boolean startEvent(final String key) {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+            L.e("Countly.sharedInstance().init must be called before recordEvent");
+            return false;
         }
 
         return events().startEvent(key);
@@ -1344,8 +1334,6 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @return true if event with this key has been previously started, false otherwise
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      * segmentation contains null or empty keys or values
      * @deprecated use events().endEvent
      */
@@ -1361,14 +1349,13 @@ public class Countly {
      * @param count count to associate with the event, should be more than zero
      * @param sum sum to associate with the event
      * @return true if event with this key has been previously started, false otherwise
-     * @throws IllegalStateException if Countly SDK has not been initialized
-     * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if
      * segmentation contains null or empty keys or values
      * @deprecated use events().endEvent
      */
     public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum) {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
+            L.e("Countly.sharedInstance().init must be called before recordEvent");
+            return false;
         }
 
         Map<String, Object> segmentationGroup = new HashMap<>();
@@ -1828,7 +1815,8 @@ public class Countly {
      */
     public boolean ifShouldIgnoreCrawlers() {
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before ifShouldIgnoreCrawlers");
+            L.e("init must be called before ifShouldIgnoreCrawlers");
+            return false;
         }
         return shouldIgnoreCrawlers;
     }
@@ -1840,7 +1828,8 @@ public class Countly {
      */
     public synchronized String getDeviceID() {
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before getDeviceID");
+            L.e("init must be called before getDeviceID");
+            return null;
         }
 
         L.d("[Countly] Calling 'getDeviceID'");
@@ -1855,7 +1844,8 @@ public class Countly {
      */
     public synchronized DeviceId.Type getDeviceIDType() {
         if (!isInitialized()) {
-            throw new IllegalStateException("init must be called before getDeviceID");
+            L.e("init must be called before getDeviceID");
+            return null;
         }
 
         L.d("[Countly] Calling 'getDeviceIDType'");
@@ -2270,7 +2260,8 @@ public class Countly {
      */
     public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final CountlyStarRating.FeedbackRatingCallback feedbackCallback) {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before showFeedbackPopup");
+            L.e("Countly.sharedInstance().init must be called before showFeedbackPopup");
+            return this;
         }
 
         if (feedbackCallback == null) {
@@ -2320,7 +2311,8 @@ public class Countly {
     public void remoteConfigUpdate(final RemoteConfig.RemoteConfigCallback providedCallback) {
         L.d("[Countly] Manually calling to updateRemoteConfig");
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigUpdate");
+            L.e("Countly.sharedInstance().init must be called before remoteConfigUpdate");
+            return;
         }
 
         if (providedCallback == null) {
@@ -2345,7 +2337,8 @@ public class Countly {
     public void updateRemoteConfigForKeysOnly(String[] keysToInclude, final RemoteConfig.RemoteConfigCallback providedCallback) {
         L.d("[Countly] Manually calling to updateRemoteConfig with include keys");
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before updateRemoteConfigForKeysOnly");
+            L.e("Countly.sharedInstance().init must be called before updateRemoteConfigForKeysOnly");
+            return;
         }
 
         if (providedCallback == null) {
@@ -2370,7 +2363,8 @@ public class Countly {
     public void updateRemoteConfigExceptKeys(String[] keysToExclude, final RemoteConfig.RemoteConfigCallback providedCallback) {
         L.i("[Countly] Manually calling to updateRemoteConfig with exclude keys");
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before updateRemoteConfigExceptKeys");
+            L.e("Countly.sharedInstance().init must be called before updateRemoteConfigExceptKeys");
+            return;
         }
 
         if (providedCallback == null) {
@@ -2395,7 +2389,8 @@ public class Countly {
     public Object getRemoteConfigValueForKey(String key) {
         L.i("[Countly] Calling remoteConfigValueForKey");
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigValueForKey");
+            L.e("Countly.sharedInstance().init must be called before remoteConfigValueForKey");
+            return null;
         }
 
         return remoteConfig().getValueForKey(key);
@@ -2409,7 +2404,8 @@ public class Countly {
     public void remoteConfigClearValues() {
         L.i("[Countly] Calling remoteConfigClearValues");
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before remoteConfigClearValues");
+            L.e("Countly.sharedInstance().init must be called before remoteConfigClearValues");
+            return;
         }
 
         remoteConfig().clearStoredValues();
@@ -2437,7 +2433,8 @@ public class Countly {
         L.i("[Countly] Calling flushRequestQueues");
 
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before flushRequestQueues");
+            L.e("Countly.sharedInstance().init must be called before flushRequestQueues");
+            return;
         }
 
         CountlyStore store = connectionQueue_.getCountlyStore();
@@ -2465,7 +2462,8 @@ public class Countly {
         L.i("[Countly] Calling doStoredRequests");
 
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before doStoredRequests");
+            L.e("Countly.sharedInstance().init must be called before doStoredRequests");
+            return;
         }
 
         connectionQueue_.tick();
@@ -2592,7 +2590,8 @@ public class Countly {
         L.i("[Countly] Calling enableTemporaryIdMode");
 
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before enableTemporaryIdMode");
+            L.e("Countly.sharedInstance().init must be called before enableTemporaryIdMode");
+            return this;
         }
 
         moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
@@ -2602,7 +2601,8 @@ public class Countly {
 
     public ModuleCrash.Crashes crashes() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing crashes");
+            L.e("Countly.sharedInstance().init must be called before accessing crashes");
+            return null;
         }
 
         return moduleCrash.crashesInterface;
@@ -2610,7 +2610,8 @@ public class Countly {
 
     public ModuleEvents.Events events() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing events");
+            L.e("Countly.sharedInstance().init must be called before accessing events");
+            return null;
         }
 
         return moduleEvents.eventsInterface;
@@ -2618,7 +2619,8 @@ public class Countly {
 
     public ModuleViews.Views views() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing views");
+            L.e("Countly.sharedInstance().init must be called before accessing views");
+            return null;
         }
 
         return moduleViews.viewsInterface;
@@ -2626,7 +2628,8 @@ public class Countly {
 
     public ModuleRatings.Ratings ratings() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing ratings");
+            L.e("Countly.sharedInstance().init must be called before accessing ratings");
+            return null;
         }
 
         return moduleRatings.ratingsInterface;
@@ -2634,7 +2637,8 @@ public class Countly {
 
     public ModuleSessions.Sessions sessions() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing sessions");
+            L.e("Countly.sharedInstance().init must be called before accessing sessions");
+            return null;
         }
 
         return moduleSessions.sessionInterface;
@@ -2642,7 +2646,8 @@ public class Countly {
 
     public ModuleRemoteConfig.RemoteConfig remoteConfig() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing remote config");
+            L.e("Countly.sharedInstance().init must be called before accessing remote config");
+            return null;
         }
 
         return moduleRemoteConfig.remoteConfigInterface;
@@ -2650,7 +2655,8 @@ public class Countly {
 
     public ModuleAPM.Apm apm() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing apm");
+            L.e("Countly.sharedInstance().init must be called before accessing apm");
+            return null;
         }
 
         return moduleAPM.apmInterface;
@@ -2658,7 +2664,8 @@ public class Countly {
 
     public ModuleConsent.Consent consent() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing consent");
+            L.e("Countly.sharedInstance().init must be called before accessing consent");
+            return null;
         }
 
         return moduleConsent.consentInterface;
@@ -2666,7 +2673,8 @@ public class Countly {
 
     public ModuleLocation.Location location() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing location");
+            L.e("Countly.sharedInstance().init must be called before accessing location");
+            return null;
         }
 
         return moduleLocation.locationInterface;
@@ -2674,7 +2682,8 @@ public class Countly {
 
     public ModuleFeedback.Feedback feedback() {
         if (!isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before accessing feedback");
+            L.e("Countly.sharedInstance().init must be called before accessing feedback");
+            return null;
         }
 
         return moduleFeedback.feedbackInterface;

@@ -94,7 +94,6 @@ public class EventQueue {
      * @param count count associated with the custom event, should be more than zero
      * @param sum sum associated with the custom event, if not used, pass zero.
      * NaN and infinity values will be quietly ignored.
-     * @throws IllegalArgumentException if key is null or empty
      */
     void recordEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean, final int count,
         final double sum, final double dur, UtilsTime.Instant instant) {

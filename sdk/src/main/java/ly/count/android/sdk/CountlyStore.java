@@ -73,7 +73,6 @@ public class CountlyStore {
      * Constructs a CountlyStore object.
      *
      * @param context used to retrieve storage meta data, must not be null.
-     * @throws IllegalArgumentException if context is null
      */
     CountlyStore(final Context context, ModuleLog logModule) {
         if (context == null) {
