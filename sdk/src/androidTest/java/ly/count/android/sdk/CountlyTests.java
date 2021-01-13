@@ -218,9 +218,10 @@ public class CountlyTests {
         mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test1.count.ly")).setDeviceId("1234"));
         try {
             mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test2.count.ly")).setDeviceId("1234"));
-            fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
-        } catch (IllegalStateException ignored) {
             // success!
+            // should not throw a exception anymore
+        } catch (IllegalStateException ignored) {
+            fail("expected IllegalStateException to be thrown when calling init a second time with different serverURL");
         }
     }
 
@@ -229,9 +230,10 @@ public class CountlyTests {
         mUninitedCountly.init((new CountlyConfig(getContext(), "appkey1", "http://test.count.ly")).setDeviceId("1234"));
         try {
             mUninitedCountly.init((new CountlyConfig(getContext(), "appkey2", "http://test.count.ly")).setDeviceId("1234"));
-            fail("expected IllegalStateException to be thrown when calling init a second time with different app key");
-        } catch (IllegalStateException ignored) {
             // success!
+            // should not throw a exception anymore
+        } catch (IllegalStateException ignored) {
+            fail("expected IllegalStateException to be thrown when calling init a second time with different app key");
         }
     }
 
@@ -240,9 +242,10 @@ public class CountlyTests {
         mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234"));
         try {
             mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("4321"));
-            fail("expected IllegalStateException to be thrown when calling init a second time with different device ID");
-        } catch (IllegalStateException ignored) {
             // success!
+            // should not throw a exception anymore
+        } catch (IllegalStateException ignored) {
+            fail("expected IllegalStateException to be thrown when calling init a second time with different device ID");
         }
     }
 
@@ -328,9 +331,10 @@ public class CountlyTests {
     public void testOnStart_initNotCalled() {
         try {
             mUninitedCountly.onStart(null);
-            fail("expected calling onStart before init to throw IllegalStateException");
-        } catch (IllegalStateException ignored) {
             // success!
+            // should not throw a exception anymore
+        } catch (IllegalStateException ignored) {
+            fail("expected calling onStart before init to throw IllegalStateException");
         }
     }
 
@@ -366,9 +370,11 @@ public class CountlyTests {
     public void testOnStop_initNotCalled() {
         try {
             mUninitedCountly.onStop();
-            fail("expected calling onStop before init to throw IllegalStateException");
-        } catch (IllegalStateException ignored) {
             // success!
+            // call should not throw exception anymore
+        } catch (IllegalStateException ignored) {
+
+            fail("expected calling onStop before init to throw IllegalStateException");
         }
     }
 
@@ -376,9 +382,10 @@ public class CountlyTests {
     public void testOnStop_unbalanced() {
         try {
             mCountly.onStop();
-            fail("expected calling onStop before init to throw IllegalStateException");
-        } catch (IllegalStateException ignored) {
             // success!
+            // call should not throw exception anymore
+        } catch (IllegalStateException ignored) {
+            fail("expected calling onStop before init to throw IllegalStateException");
         }
     }
 
@@ -486,9 +493,10 @@ public class CountlyTests {
 
         try {
             mUninitedCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalStateException when recordEvent called before init");
-        } catch (IllegalStateException ignored) {
             // success
+            // should not throw a exception anymore
+        } catch (IllegalStateException ignored) {
+            fail("expected IllegalStateException when recordEvent called before init");
         }
     }
 
