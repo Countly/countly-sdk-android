@@ -1,4 +1,5 @@
 ## 20.11.3
+  * Removed thrown exceptions in places where that is possible
 
 ## 20.11.2
   * Added SDK log listener

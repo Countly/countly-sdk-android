@@ -116,7 +116,8 @@ public class ModuleViews extends ModuleBase {
      */
     synchronized Countly recordViewInternal(String viewName, Map<String, Object> customViewSegmentation) {
         if (!_cly.isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+            L.e("Countly.sharedInstance().init must be called before recordView");
+            return _cly;
         }
 
         if (viewName == null || viewName.isEmpty()) {
@@ -307,7 +308,8 @@ public class ModuleViews extends ModuleBase {
         public Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+                    L.e("Countly.sharedInstance().init must be called before recordView");
+                    return _cly;
                 }
 
                 L.i("[Views] Calling recordView [" + viewName + "]");
