@@ -183,7 +183,7 @@ public class ConnectionProcessorTests {
         doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId, null);
         connectionProcessor.run();
 
-        verify(mockStore, times(2)).connections();
+        verify(mockStore, times(1)).connections();
         verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId, null);
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
@@ -207,7 +207,7 @@ public class ConnectionProcessorTests {
         doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId, null);
         connectionProcessor.run();
 
-        verify(mockStore, times(2)).connections();
+        verify(mockStore, times(1)).connections();
         verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId, null);
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();

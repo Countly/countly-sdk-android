@@ -334,27 +334,26 @@ public class ConnectionProcessor implements Runnable {
                         rRes = RequestResult.RETRY;
                     }
 
-                    switch (rRes) {
-                        case OK:
-                            // successfully submitted event data to Count.ly server, so remove
-                            // this one from the stored events collection
-                            store_.removeConnection(storedEvents[0]);
+                    // an 'if' needs to be used here so that a 'switch' statement does not 'eat' the 'break' call
+                    // that is used to get out of the request loop
+                    if (rRes == RequestResult.OK) {
+                        // successfully submitted event data to Count.ly server, so remove
+                        // this one from the stored events collection
+                        store_.removeConnection(storedEvents[0]);
 
-                            if (deviceIdChange) {
-                                deviceId_.changeToDeveloperProvidedId(store_, newId);
-                            }
+                        if (deviceIdChange) {
+                            deviceId_.changeToDeveloperProvidedId(store_, newId);
+                        }
 
-                            if (deviceIdChange || deviceIdOverride) {
-                                Countly.sharedInstance().notifyDeviceIdChange();
-                            }
-                            break;
-                        case REMOVE:
-                            //bad request, will be removed
-                            store_.removeConnection(storedEvents[0]);
-                            break;
-                        case RETRY:
-                            // warning was logged above, stop processing, let next tick take care of retrying
-                            break;
+                        if (deviceIdChange || deviceIdOverride) {
+                            Countly.sharedInstance().notifyDeviceIdChange();
+                        }
+                    } else if (rRes == RequestResult.REMOVE) {
+                        //bad request, will be removed
+                        store_.removeConnection(storedEvents[0]);
+                    } else if (rRes == RequestResult.RETRY) {
+                        // warning was logged above, stop processing, let next tick take care of retrying
+                        break;
                     }
                 } catch (Exception e) {
                     L.w("[Connection Processor] Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
