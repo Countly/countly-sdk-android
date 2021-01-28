@@ -381,6 +381,8 @@ public class Countly {
     /**
      * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
      * Must be called before other SDK methods can be used.
+     * To initialise the SDK, you must pass a CountlyConfig object that contains
+     * all the necessary information for setting up the SDK
      *
      * @param config contains all needed information to init SDK
      */

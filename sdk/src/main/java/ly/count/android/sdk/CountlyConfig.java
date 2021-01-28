@@ -261,6 +261,7 @@ public class CountlyConfig {
 
     /**
      * Set to true of you want to enable countly internal debugging logs
+     * Those logs will be printed to the console
      *
      * @param enabled
      */
@@ -410,6 +411,12 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set the threshold for event grouping. Event count that is bellow the
+     * threshold will be send on update ticks.
+     * @param threshold
+     * @return
+     */
     public CountlyConfig setEventQueueSizeToSend(int threshold) {
         eventQueueSizeThreshold = threshold;
         return this;
@@ -431,7 +438,7 @@ public class CountlyConfig {
     }
 
     /**
-     * Sets the interval for the automatic update calls
+     * Sets the interval for the automatic session update calls
      * min value 1 (1 second),
      * max value 600 (10 minutes)
      *
@@ -566,6 +573,12 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Add a log callback that will duplicate all logs done by the SDK.
+     * For each message you will receive the message string and it's targeted log level.
+     * @param logCallback
+     * @return
+     */
     public synchronized CountlyConfig setLogListener(ModuleLog.LogCallback logCallback) {
         providedLogCallback = logCallback;
         return this;

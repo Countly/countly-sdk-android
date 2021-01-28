@@ -1,3 +1,6 @@
+## 20.11.4
+  * Fixed bug where network request were retried too soon after a failed request
+
 ## 20.11.3
   * Removed thrown exceptions in places where that is possible
 
