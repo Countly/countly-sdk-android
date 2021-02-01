@@ -1,4 +1,5 @@
 ## 20.11.4
+  * Added a way to retrieve feedback widget data and manually report them
   * Fixed bug where network request were retried too soon after a failed request
 
 ## 20.11.3
