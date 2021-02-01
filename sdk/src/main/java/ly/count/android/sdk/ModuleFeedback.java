@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -27,6 +28,8 @@ public class ModuleFeedback extends ModuleBase {
     final static String NPS_EVENT_KEY = "[CLY]_nps";
     final static String SURVEY_EVENT_KEY = "[CLY]_survey";
 
+    final String cachedAppVersion;
+
     Feedback feedbackInterface = null;
 
     ModuleLog L;
@@ -38,11 +41,17 @@ public class ModuleFeedback extends ModuleBase {
 
         L.v("[ModuleFeedback] Initialising");
 
+        cachedAppVersion = DeviceInfo.getAppVersion(config.context);
+
         feedbackInterface = new Feedback();
     }
 
     public interface RetrieveFeedbackWidgets {
         void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error);
+    }
+
+    public interface RetrieveFeedbackWidgetData {
+        void onFinished(JSONObject retrievedWidgetData, String error);
     }
 
     public interface FeedbackCallback {
@@ -161,7 +170,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        L.d("[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", feedback id:[" + widgetInfo.widgetId + "], feedback type:[" + widgetInfo.type + "]");
+        L.d("[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", widget id:[" + widgetInfo.widgetId + "], widget type:[" + widgetInfo.type + "]");
 
         if (context == null) {
             L.e("[ModuleFeedback] Can't show feedback, provided context is null");
@@ -274,6 +283,210 @@ public class ModuleFeedback extends ModuleBase {
         });
     }
 
+    /**
+     * Downloads widget info and returns it to the callback
+     * @param widgetInfo identifies the specific widget for which you want to download widget data
+     * @param devCallback mandatory callback in which the downloaded data will be returned
+     */
+    void getFeedbackWidgetDataInternal(CountlyFeedbackWidget widgetInfo, final RetrieveFeedbackWidgetData devCallback) {
+        L.d("[ModuleFeedback] calling 'getFeedbackWidgetDataInternal', callback set:[" + (devCallback != null) + "]");
+
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
+            devCallback.onFinished(null, "Consent is not granted");
+            return;
+        }
+
+        if (devCallback == null) {
+            L.e("[ModuleFeedback] Feedback widget data can't be retrieved without a callback");
+            return;
+        }
+
+        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+            L.e("[ModuleFeedback] Feedback widget data can't be retrieved when in temporary device ID mode");
+            devCallback.onFinished(null, "[ModuleFeedback] Feedback widget data can't be retrieved when in temporary device ID mode");
+            return;
+        }
+
+        StringBuilder requestData = new StringBuilder();
+        String widgetDataEndpoint = "";
+
+        switch (widgetInfo.type) {
+            case survey:
+                //https://xxxx.count.ly/o/surveys/survey/widget?widget_id=601345cf5e313f74&shown=1platform=Android&app_version=7
+                widgetDataEndpoint = "/o/surveys/survey/widget";
+                break;
+            case nps:
+                //https://xxxx.count.ly/o/surveys/nps/widget?widget_id=601345cf5e313f74&shown=1platform=Android&app_version=7
+                widgetDataEndpoint = "/o/surveys/nps/widget";
+                break;
+        }
+
+        requestData.append("widget_id=");
+        requestData.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
+        requestData.append("&shown=1");
+        requestData.append("&sdk_version=");
+        requestData.append(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING);
+        requestData.append("&sdk_name=");
+        requestData.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
+        requestData.append("&platform=android");
+        requestData.append("app_version");
+        requestData.append(cachedAppVersion);
+
+        ConnectionProcessor cp = _cly.connectionQueue_.createConnectionProcessor();
+        String requestDataStr = requestData.toString();
+
+        L.d("[ModuleFeedback] Using following request params for retrieving widget data:[" + requestDataStr + "]");
+
+        (new ImmediateRequestMaker()).execute(requestDataStr, widgetDataEndpoint, cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+            @Override public void callback(JSONObject checkResponse) {
+                if (checkResponse == null) {
+                    L.d("[ModuleFeedback] Not possible to retrieve widget data. Probably due to lack of connection to the server");
+                    devCallback.onFinished(null, "Not possible to retrieve widget data. Probably due to lack of connection to the server");
+                    return;
+                }
+
+                L.d("[ModuleFeedback] Retrieved widget data request: [" + checkResponse.toString() + "]");
+
+                devCallback.onFinished(checkResponse, null);
+            }
+        }, _cly.L);
+    }
+
+    /**
+     * Report widget info and do data validation
+     * @param widgetInfo identifies the specific widget for which the feedback is filled out
+     * @param widgetData widget data for this specific widget
+     * @param widgetResult segmentation of the filled out feedback. If this segmentation is null, it will be assumed that the survey was closed before completion and mark it appropriately
+     */
+    void reportFeedbackWidgetManuallyInternal(CountlyFeedbackWidget widgetInfo, JSONObject widgetData, Map<String, Object> widgetResult) {
+        if (widgetInfo == null) {
+            L.e("[ModuleFeedback] Can't report feedback widget data manually with 'null' widget info");
+            return;
+        }
+
+        L.d("[ModuleFeedback] reportFeedbackWidgetManuallyInternal, widgetData set:[" + (widgetData != null) + ", widget id:[" + widgetInfo.widgetId + "], widget type:[" + widgetInfo.type + "], widget result set:[" + (widgetResult != null) + "]");
+
+        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
+            L.w("[ModuleFeedback] Can't report feedback widget data, consent is not granted");
+            return;
+        }
+
+        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+            L.e("[ModuleFeedback] feedback widget result can't be reported when in temporary device ID mode");
+            return;
+        }
+
+        if(widgetResult != null) {
+            //removing broken values first
+            Iterator<Map.Entry<String,Object>> iter = widgetResult.entrySet().iterator();
+            while (iter.hasNext()) {
+                Map.Entry<String,Object> entry = iter.next();
+                if(entry.getKey() == null) {
+                    L.w("[ModuleFeedback] provided feedback widget result contains a 'null' key, it will be removed, value[" + entry.getValue() + "]");
+                    iter.remove();
+                } else if(entry.getKey().isEmpty()) {
+                    L.w("[ModuleFeedback] provided feedback widget result contains an empty string key, it will be removed, value[" + entry.getValue() + "]");
+                    iter.remove();
+                } else if(entry.getValue() == null) {
+                    L.w("[ModuleFeedback] provided feedback widget result contains a 'null' value, it will be removed, key[" + entry.getKey() + "]");
+                    iter.remove();
+                }
+            }
+
+            if (widgetInfo.type == FeedbackWidgetType.nps) {
+                //in case a nps widget was completed
+                if (!widgetResult.containsKey("rating")) {
+                    L.e("Provided NPS widget result does not have a 'rating' field, result can't be reported");
+                    return;
+                }
+
+                //check rating data type
+                Object ratingValue = widgetResult.get("rating");
+                if(!(ratingValue instanceof Integer)) {
+                    L.e("Provided NPS widget 'rating' field is not an integer, result can't be reported");
+                    return;
+                }
+
+                //check rating value range
+                int ratingValI = (int) ratingValue;
+                if(ratingValI < 0 || ratingValI > 10) {
+                    L.e("Provided NPS widget 'rating' value is out of bounds of the required value '[0;10]', it is probably an error");
+                }
+
+                if (!widgetResult.containsKey("comment")) {
+                    L.w("Provided NPS widget result does not have a 'comment' field");
+                }
+            } else if (widgetInfo.type == FeedbackWidgetType.survey) {
+                //in case a survey widget was completed
+            }
+        }
+
+        if (widgetData == null) {
+            L.d("[ModuleFeedback] reportFeedbackWidgetManuallyInternal, widgetInfo is 'null', no validation will be done");
+        } else {
+            //perform data validation
+
+            String idInData = widgetData.optString("_id");
+
+            if(!widgetInfo.widgetId.equals(idInData)) {
+                L.w("[ModuleFeedback] id in widget info does not match the id in widget data");
+            }
+
+            String typeInData = widgetData.optString("type");
+
+            if (widgetInfo.type == FeedbackWidgetType.nps) {
+                if(!"nps".equals(typeInData)) {
+                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data");
+                }
+            } else if (widgetInfo.type == FeedbackWidgetType.survey) {
+                if(!"survey".equals(typeInData)) {
+                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data");
+                }
+            }
+        }
+
+
+        final String usedEventKey;
+
+        if(widgetInfo.type == FeedbackWidgetType.nps) {
+            usedEventKey = NPS_EVENT_KEY;
+            //event when closed
+            //{"key":"[CLY]_nps","segmentation":{"widget_id":"600e9d2e563e892016316339","platform":"android","app_version":"0.0","closed":1},"timestamp":1611570486021,"hour":15,"dow":1}
+
+            //event when answered
+            //{"key":"[CLY]_nps","segmentation":{"widget_id":"600e9b24563e89201631631f","platform":"android","app_version":"0.0","rating":10,"comment":"Thanks"},"timestamp":1611570182023,"hour":15,"dow":1}
+        } else if(widgetInfo.type == FeedbackWidgetType.survey) {
+            usedEventKey = SURVEY_EVENT_KEY;
+
+            //event when closed
+            //{"key":"[CLY]_survey","segmentation":{"widget_id":"600e9e0b563e89201631633e","platform":"android","app_version":"0.0","closed":1},"timestamp":1611570709449,"hour":16,"dow":1}
+
+            //event when answered
+            //{"key":"[CLY]_survey","segmentation":{"widget_id":"600e9e0b563e89201631633e","platform":"android","app_version":"0.0","answ-1611570700-0":"ch1611570700-0"},"timestamp":1611570895465,"hour":16,"dow":1}
+        } else {
+            usedEventKey = "";
+        }
+
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", cachedAppVersion);
+        segm.put("widget_id", widgetInfo.widgetId);
+
+        if(widgetResult == null) {
+            //mark as closed
+            segm.put("closed", "1");
+        } else {
+            //widget was filled out
+            //merge given segmentation
+            for (Map.Entry<String, Object> entry : widgetResult.entrySet()) {
+                segm.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        _cly.moduleEvents.recordEventInternal(usedEventKey, segm, 1, 0, 0, null, false);
+    }
+
     @Override
     void initFinished(CountlyConfig config) {
 
@@ -311,6 +524,36 @@ public class ModuleFeedback extends ModuleBase {
                 L.i("[Feedback] Trying to present feedback widget");
 
                 presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
+            }
+        }
+
+        /**
+         * Download data for a specific widget so that it can be displayed with a custom UI
+         * When requesting this data, it will count as a shown widget (will increment that "shown" count in the dashboard)
+         *
+         * @param widgetInfo
+         * @param callback
+         */
+        public void getFeedbackWidgetData(CountlyFeedbackWidget widgetInfo, RetrieveFeedbackWidgetData callback) {
+            synchronized (_cly) {
+                L.i("[Feedback] Trying to retrieve feedback widget data");
+
+                getFeedbackWidgetDataInternal(widgetInfo, callback);
+            }
+        }
+
+        /**
+         * Manually report a feedback widget in case a custom interface was used
+         * In case widgetResult is passed as "null", it would be assumed that the widget was cancelled
+         * @param widgetInfo
+         * @param widgetData
+         * @param widgetResult
+         */
+        public void reportFeedbackWidgetManually(CountlyFeedbackWidget widgetInfo, JSONObject widgetData, Map<String, Object> widgetResult) {
+            synchronized (_cly) {
+                L.i("[Feedback] Trying to report feedback widget manually");
+
+                reportFeedbackWidgetManuallyInternal(widgetInfo, widgetData, widgetResult);
             }
         }
     }

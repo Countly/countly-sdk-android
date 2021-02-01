@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -11,7 +13,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleFeedbackTests {
@@ -59,5 +65,172 @@ public class ModuleFeedbackTests {
         Assert.assertEquals("5f8c6f959627f99e8e7de746", ret.get(0).widgetId);
         Assert.assertEquals("5f8c6fd81ac8659e8846acf4", ret.get(1).widgetId);
         Assert.assertEquals("5f97284635935cc338e78200", ret.get(2).widgetId);
+    }
+
+    @Test
+    public void reportFeedbackWidgetManuallyNPSReported() {
+        EventQueue mockEventQueue = mock(EventQueue.class);
+        mCountly.setEventQueue(mockEventQueue);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        final Map<String, Object> segmRes = new HashMap<>();
+        segmRes.put("rating", 4);
+        segmRes.put("comment", "123456");
+
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
+
+        final Map<String, String> segmS = new HashMap<>(5);
+        final Map<String, Integer> segmI = new HashMap<>();
+        final Map<String, Double> segmD = new HashMap<>();
+        final Map<String, Boolean> segmB = new HashMap<>();
+
+        segmS.put("platform", "android");
+        segmS.put("app_version", "1.0");
+        segmS.put("widget_id", widgetInfo.widgetId);
+
+        segmI.put("rating", 4);
+        segmS.put("comment", "123456");
+
+        verify(mockEventQueue).recordEvent(ModuleFeedback.NPS_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+
+        //report without a "null" comment
+        mockEventQueue = mock(EventQueue.class);
+        mCountly.setEventQueue(mockEventQueue);
+
+        segmRes.put("rating", 10);
+        segmRes.put("comment", null);
+        segmI.put("rating", 10);
+        segmS.remove("comment");
+
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
+        verify(mockEventQueue).recordEvent(ModuleFeedback.NPS_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+    }
+
+    @Test
+    public void reportFeedbackWidgetManuallyNPSClosed() {
+        EventQueue mockEventQueue = mock(EventQueue.class);
+        mCountly.setEventQueue(mockEventQueue);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, null);
+
+        final Map<String, String> segmS = new HashMap<>(4);
+        final Map<String, Integer> segmI = new HashMap<>();
+        final Map<String, Double> segmD = new HashMap<>();
+        final Map<String, Boolean> segmB = new HashMap<>(0);
+
+        segmS.put("platform", "android");
+        segmS.put("app_version", "1.0");
+        segmS.put("widget_id", widgetInfo.widgetId);
+        segmS.put("closed", "1");
+
+        verify(mockEventQueue).recordEvent(ModuleFeedback.NPS_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+    }
+
+    @Test
+    public void reportFeedbackWidgetManuallyNPSBadResult_1() {
+        EventQueue mockEventQueue = mock(EventQueue.class);
+        mCountly.setEventQueue(mockEventQueue);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        final Map<String, Object> segmRes = new HashMap<>();
+
+        //just an empty result map
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+
+        //result map with unrelated fields
+        JSONObject emptyJObj = new JSONObject();
+        segmRes.put("bla", "gg");
+        segmRes.put("11", null);
+        segmRes.put(null, "gf");
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+    }
+
+    @Test
+    public void reportFeedbackWidgetManuallyNPSBadResult_2() {
+        EventQueue mockEventQueue = mock(EventQueue.class);
+        mCountly.setEventQueue(mockEventQueue);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        final Map<String, Object> segmRes = new HashMap<>();
+
+        //result map with unrelated fields
+        segmRes.put("rating", "gg");
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+
+        segmRes.put("rating", "");
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+
+        segmRes.put("rating", null);
+        segmRes.put("comment", "123456");
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+
+        segmRes.put("rating", "5.5");
+        JSONObject emptyJObj = new JSONObject();
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+
+        segmRes.put("rating", "6.0");
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+
+        segmRes.put("rating", "0.0");
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+
+        segmRes.put("rating", "10.0f");
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
+        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+    }
+
+    @Test
+    public void reportFeedbackWidgetManuallySurveyReported() {
+
+    }
+
+    @Test
+    public void reportFeedbackWidgetManuallySurveyClosed() {
+        EventQueue mockEventQueue = mock(EventQueue.class);
+        mCountly.setEventQueue(mockEventQueue);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.survey;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, null);
+
+        final Map<String, String> segmS = new HashMap<>(4);
+        final Map<String, Integer> segmI = new HashMap<>();
+        final Map<String, Double> segmD = new HashMap<>();
+        final Map<String, Boolean> segmB = new HashMap<>(0);
+
+        segmS.put("platform", "android");
+        segmS.put("app_version", "1.0");
+        segmS.put("widget_id", widgetInfo.widgetId);
+        segmS.put("closed", "1");
+
+        verify(mockEventQueue).recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
     }
 }

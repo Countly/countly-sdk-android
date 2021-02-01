@@ -204,7 +204,7 @@ public class App extends Application {
                 }
             });
 
-        /* Register for broadcast action if you need to be notified when Countly message received */
+        /* Register for broadcast action if you need to be notified when Countly message clicked */
         messageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {

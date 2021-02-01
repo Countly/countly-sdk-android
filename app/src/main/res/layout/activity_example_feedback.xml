@@ -43,5 +43,19 @@
         android:onClick="onClickShowNPS"
         android:text="Show NPS"
         />
+    <Button
+        android:id="@+id/button61"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickReportSurveyManually"
+        android:text="Report Survey Manually"
+        />
+    <Button
+        android:id="@+id/button62"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickReportNPSManually"
+        android:text="Report NPS manually"
+        />
 
 </LinearLayout>
