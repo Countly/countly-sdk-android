@@ -186,6 +186,7 @@ public class App extends Application {
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
+        CountlyPush.useAdditionalIntentRedirectionChecks = true;
         CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION, Countly.CountlyMessagingProvider.FCM);
         CountlyPush.setNotificationAccentColor(255, 213, 89, 134);
 

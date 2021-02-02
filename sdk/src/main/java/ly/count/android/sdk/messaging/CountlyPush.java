@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -68,6 +69,8 @@ public class CountlyPush {
      * Maximum attempts to download a media for a rich push
      */
     static int MEDIA_DOWNLOAD_ATTEMPTS = 3;
+
+    public static boolean useAdditionalIntentRedirectionChecks = false;
 
     @SuppressWarnings("FieldCanBeLocal")
     private static BroadcastReceiver notificationActionReceiver = null, consentReceiver = null;
@@ -246,6 +249,25 @@ public class CountlyPush {
                 Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
                 return;
             }
+
+            if(useAdditionalIntentRedirectionChecks) {
+                ComponentName componentName = intent.getComponent();
+                String intentPackageName = componentName.getPackageName();
+                String intentClassName = componentName.getClassName();
+                String contextPackageName = context.getPackageName();
+
+                if (intentPackageName != null && !intentPackageName.equals(contextPackageName)) {
+                    Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
+                    return;
+                }
+
+                if (!intentClassName.startsWith(intentPackageName)) {
+                    Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] intent class name and intent package names do not match");
+                    return;
+                }
+            }
+
+            Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Push broadcast, after filtering");
 
             intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
