@@ -1,3 +1,6 @@
+## 20.11.5
+  * Added option to enable additional push redirection protections
+
 ## 20.11.4
   * Added a way to retrieve feedback widget data and manually report them
   * Fixed bug where network request were retried too soon after a failed request

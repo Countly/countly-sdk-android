@@ -285,7 +285,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                                     break;
                                 //rating picker
                                 case "rating":
-                                    segm.put(answerKey, rnd.nextInt(11));
+                                    segm.put(answerKey, rnd.nextInt(11));//put a random rating
                                     break;
                             }
                         }
