@@ -71,7 +71,7 @@ dependencies {
     implementation "androidx.core:core-ktx:+"
 
     implementation 'com.huawei.hms:push:4.0.3.301'
-    implementation 'com.android.installreferrer:installreferrer:2.1'
+    implementation 'com.android.installreferrer:installreferrer:2.2'
     //implementation 'ly.count.android:sdk:20.04.5'
 }
 
