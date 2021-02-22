@@ -402,7 +402,14 @@ public class Countly {
         L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
 
         if (config.context == null) {
-            throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");
+            if(config.application != null) {
+                L.d("[Init] No explicit context provided. Using context from the provided application class");
+                config.context = config.application;
+            } else {
+                throw new IllegalArgumentException("valid context is required in Countly init, but was provided 'null'");
+            }
+        } else {
+            L.d("[Init] Using explicitly provided context");
         }
 
         if (!UtilsNetworking.isValidURL(config.serverURL)) {
@@ -417,7 +424,11 @@ public class Countly {
         //react to given consent
         if (config.shouldRequireConsent) {
             setRequiresConsent(true);
-            setConsentInternal(config.enabledFeatureNames, true);
+            if(config.enabledFeatureNames == null) {
+                L.i("[Init] Consent has been required but no consent was given during init");
+            } else {
+                setConsentInternal(config.enabledFeatureNames, true);
+            }
         }
 
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {

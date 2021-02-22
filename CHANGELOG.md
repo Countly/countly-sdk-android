@@ -1,3 +1,6 @@
+## 20.11.6
+  * Fixed init time bug where the context from the provided application class was not used.
+
 ## 20.11.5
   * Added option to enable additional push redirection protections
 

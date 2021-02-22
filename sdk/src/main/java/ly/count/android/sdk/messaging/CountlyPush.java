@@ -432,7 +432,7 @@ public class CountlyPush {
             return null;
         }
 
-        Countly.sharedInstance().L.d("[CountlyPush, displayNotification] Displaying push notification");
+        Countly.sharedInstance().L.d("[CountlyPush, displayNotification] Displaying push notification, additional intent provided:[" + (notificationIntent != null) + "]");
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
