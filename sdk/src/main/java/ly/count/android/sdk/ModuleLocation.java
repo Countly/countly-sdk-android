@@ -13,7 +13,7 @@ public class ModuleLocation extends ModuleBase {
     Location locationInterface = null;
 
     boolean sendLocationPostInit;
-    boolean postInitReached = false;
+    boolean postInitReached = false;//todo this looks like something that can be removed
 
     ModuleLog L;
 
@@ -23,17 +23,6 @@ public class ModuleLocation extends ModuleBase {
         L = cly.L;
 
         L.v("[ModuleLocation] Initialising");
-
-        //do location related things
-        if (config.disableLocation) {
-            locationDisabled = true;
-            disableLocationInternal();
-        } else {
-            //if we are not disabling location, check for other set values
-            if (config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
-                setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
-            }
-        }
 
         locationInterface = new ModuleLocation.Location();
     }
@@ -117,8 +106,18 @@ public class ModuleLocation extends ModuleBase {
 
     @Override
     void initFinished(CountlyConfig config) {
-        postInitReached = true;
+        //do location related things
+        if (config.disableLocation) {
+            locationDisabled = true;
+            disableLocationInternal();
+        } else {
+            //if we are not disabling location, check for other set values
+            if (config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
+                setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
+            }
+        }
 
+        postInitReached = true;
         if(sendLocationPostInit) {
             L.d("[ModuleLocation] Sending location post init");
             _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);

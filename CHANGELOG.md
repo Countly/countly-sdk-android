@@ -1,5 +1,6 @@
 ## 20.11.6
   * Fixed init time bug where the context from the provided application class was not used.
+  * Fixed init time bug which happened when location was disabled during init.
 
 ## 20.11.5
   * Added option to enable additional push redirection protections
