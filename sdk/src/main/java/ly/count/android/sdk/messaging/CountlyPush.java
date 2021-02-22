@@ -371,6 +371,7 @@ public class CountlyPush {
                 return null;
             }
         } else {
+            Countly.sharedInstance().L.e("[CountlyPush, getToken] Message provider is neither FCM or HMS, aborting");
             return null;
         }
     }
@@ -427,8 +428,10 @@ public class CountlyPush {
         }
 
         if (msg == null) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayNotification] Message is 'null', can't display a notification");
             return null;
         } else if (msg.title() == null && msg.message() == null) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayNotification] Message title and message body is 'null', can't display a notification");
             return null;
         }
 
@@ -437,6 +440,7 @@ public class CountlyPush {
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (manager == null) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayNotification] Retrieved notification manager is 'null', can't display notification");
             return Boolean.FALSE;
         }
 
@@ -709,11 +713,11 @@ public class CountlyPush {
      */
     @SuppressWarnings("unchecked")
     public static void init(final Application application, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
+        Countly.sharedInstance().L.i("[CountlyPush, init] Initialising Countly Push, App:[" + (application != null) + "], mode:[" + mode + "] provider:[" + preferredProvider + "]");
+
         if (application == null) {
             throw new IllegalStateException("Non null application must be provided!");
         }
-
-        //Log.e(Countly.TAG, "CURRENT PUSH CONSENT " + getPushConsent(application));
 
         // set preferred push provider
         CountlyPush.provider = preferredProvider;
@@ -740,8 +744,6 @@ public class CountlyPush {
             Countly.sharedInstance().L.e("Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
             return;
         }
-
-        Countly.sharedInstance().L.i("[CountlyPush] Initializing Countly FCM push with mode: [" + mode + "] and [" + provider + "]");
 
         CountlyPush.mode = mode;
         CountlyStore.cacheLastMessagingMode(mode == Countly.CountlyMessagingMode.TEST ? 0 : 1, application);
@@ -944,4 +946,3 @@ public class CountlyPush {
         });
     }
 }
-
