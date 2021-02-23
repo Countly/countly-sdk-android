@@ -24,7 +24,7 @@ android {
     minSdkVersion 17
     targetSdkVersion 29
     versionCode 1
-    versionName "20.11.5"
+    versionName "20.11.6"
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true
@@ -64,13 +64,14 @@ dependencies {
 
   androidTestImplementation "org.mockito:mockito-core:${mockitoVersion}"
   androidTestImplementation "org.mockito:mockito-android:${mockitoVersion}"
+  //androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.9.0"
 }
 
 publish {
   userOrg = 'countly'
   groupId = 'ly.count.android'
   artifactId = 'sdk'
-  publishVersion = '20.11.5'
+  publishVersion = '20.11.6'
   desc = 'Android SDK for Countly mobile analytics'
   website = 'https://github.com/Countly/countly-sdk-android'
   autoPublish = false
