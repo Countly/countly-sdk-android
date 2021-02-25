@@ -1,3 +1,6 @@
+## 20.11.7
+  * Adding metric for the device manufacturer.
+  
 ## 20.11.6
   * Fixed init time bug where the context from the provided application class was not used.
   * Fixed init time bug which happened when location was disabled during init.
