@@ -21,8 +21,8 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.util.Log;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -67,6 +67,8 @@ public class ConnectionProcessor implements Runnable {
         REMOVE      // bad request, remove
     }
 
+    private ConnectionInterceptor connectionInterceptor;
+
     ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
         serverURL_ = serverURL;
         store_ = store;
@@ -92,7 +94,7 @@ public class ConnectionProcessor implements Runnable {
             urlStr += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
         }
         final URL url = new URL(urlStr);
-        final HttpURLConnection conn;
+        HttpURLConnection conn;
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
             conn = (HttpURLConnection) url.openConnection();
         } else {
@@ -134,7 +136,7 @@ public class ConnectionProcessor implements Runnable {
             String CRLF = "\r\n";
             String charset = "UTF-8";
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-            OutputStream output = conn.getOutputStream();
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
             // Send binary file.
             writer.append("--").append(boundary).append(CRLF);
@@ -158,10 +160,21 @@ public class ConnectionProcessor implements Runnable {
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
+            if (connectionInterceptor != null) {
+                conn = connectionInterceptor.intercept(conn, output.toByteArray());
+            }
+            OutputStream connectionOutput = conn.getOutputStream();
+            connectionOutput.write(output.toByteArray());
+            connectionOutput.flush();
+            output.close();
+            connectionOutput.close();
         } else {
             if (usingHttpPost) {
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
+                if (connectionInterceptor != null) {
+                    conn = connectionInterceptor.intercept(conn, requestData.getBytes());
+                }
                 OutputStream os = conn.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
                 writer.write(requestData);
@@ -169,6 +182,9 @@ public class ConnectionProcessor implements Runnable {
                 writer.close();
                 os.close();
             } else {
+                if (connectionInterceptor != null) {
+                    conn = connectionInterceptor.intercept(conn, null);
+                }
                 L.v("[Connection Processor] Using HTTP GET");
                 conn.setDoOutput(false);
             }
@@ -393,5 +409,13 @@ public class ConnectionProcessor implements Runnable {
 
     DeviceId getDeviceId() {
         return deviceId_;
+    }
+
+    public ConnectionInterceptor getConnectionInterceptor() {
+        return connectionInterceptor;
+    }
+
+    public void setConnectionInterceptor(ConnectionInterceptor connectionInterceptor) {
+        this.connectionInterceptor = connectionInterceptor;
     }
 }

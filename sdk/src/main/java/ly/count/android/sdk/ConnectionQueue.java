@@ -51,6 +51,7 @@ public class ConnectionQueue {
     private Future<?> connectionProcessorFuture_;
     private DeviceId deviceId_;
     private SSLContext sslContext_;
+    private ConnectionInterceptor connectionInterceptor_;
 
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
@@ -652,8 +653,14 @@ public class ConnectionQueue {
         }
     }
 
+    public void setConnectionInterceptor(ConnectionInterceptor interceptor) {
+        this.connectionInterceptor_ = interceptor;
+    }
+
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues, L);
+        ConnectionProcessor processor = new ConnectionProcessor(getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues, L);
+        processor.setConnectionInterceptor(connectionInterceptor_);
+        return processor;
     }
 
     public boolean queueContainsTemporaryIdItems() {

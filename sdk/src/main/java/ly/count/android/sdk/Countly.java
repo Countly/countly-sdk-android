@@ -884,6 +884,16 @@ public class Countly {
     }
 
     /**
+     * Sets an interceptor which can be used to run custom connection processing for each network requests.
+     * This is useful to add dynamic headers for each request.
+     *
+     * @param interceptor Gets an HttpURLConnection and returns a new HttpURLConnection
+     */
+    public void setConnectionInterceptor(ConnectionInterceptor interceptor) {
+        connectionQueue_.setConnectionInterceptor(interceptor);
+    }
+
+    /**
      * Changes current device id type to the one specified in parameter. Closes current session and
      * reopens new one with new id. Doesn't merge user profiles on the server
      *
