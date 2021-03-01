@@ -111,6 +111,14 @@ public class ConnectionQueue {
         this.deviceId_ = deviceId;
     }
 
+    public ConnectionInterceptor getConnectionInterceptor() {
+        return connectionInterceptor_;
+    }
+
+    public void setConnectionInterceptor(ConnectionInterceptor connectionInterceptor_) {
+        this.connectionInterceptor_ = connectionInterceptor_;
+    }
+
     protected void setRequestHeaderCustomValues(Map<String, String> headerCustomValues) {
         requestHeaderCustomValues = headerCustomValues;
     }
@@ -651,10 +659,6 @@ public class ConnectionQueue {
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
         }
-    }
-
-    public void setConnectionInterceptor(ConnectionInterceptor interceptor) {
-        this.connectionInterceptor_ = interceptor;
     }
 
     public ConnectionProcessor createConnectionProcessor() {

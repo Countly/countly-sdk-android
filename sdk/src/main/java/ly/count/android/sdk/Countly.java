@@ -599,6 +599,7 @@ public class Countly {
             connectionQueue_.setDeviceId(config.deviceIdInstance);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
+            connectionQueue_.setConnectionInterceptor(config.interceptor);
             connectionQueue_.setContext(context_);
 
             eventQueue_ = new EventQueue(countlyStore);
@@ -881,16 +882,6 @@ public class Countly {
         }
 
         connectionQueue_.tokenSession(registrationId, mode, provider);
-    }
-
-    /**
-     * Sets an interceptor which can be used to run custom connection processing for each network requests.
-     * This is useful to add dynamic headers for each request.
-     *
-     * @param interceptor Gets an HttpURLConnection and returns a new HttpURLConnection
-     */
-    public void setConnectionInterceptor(ConnectionInterceptor interceptor) {
-        connectionQueue_.setConnectionInterceptor(interceptor);
     }
 
     /**

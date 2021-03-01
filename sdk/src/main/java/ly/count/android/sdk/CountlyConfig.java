@@ -134,6 +134,8 @@ public class CountlyConfig {
 
     protected boolean recordAppStartTime = false;
 
+    protected ConnectionInterceptor interceptor = null;
+
     boolean disableLocation = false;
 
     String locationCountyCode = null;
@@ -581,6 +583,17 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setLogListener(ModuleLog.LogCallback logCallback) {
         providedLogCallback = logCallback;
+        return this;
+    }
+
+    /**
+     * Sets an interceptor which can be used to run custom connection processing for each network requests.
+     * This is useful to add dynamic headers for each request.
+     *
+     * @param interceptor Gets an HttpURLConnection and returns a new HttpURLConnection
+     */
+    public synchronized CountlyConfig setConnectionInterceptor(ConnectionInterceptor interceptor) {
+        this.interceptor = interceptor;
         return this;
     }
 }
