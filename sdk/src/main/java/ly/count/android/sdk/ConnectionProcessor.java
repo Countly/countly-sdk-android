@@ -78,6 +78,38 @@ public class ConnectionProcessor implements Runnable {
         L = logModule;
     }
 
+    private void writeMultipartDataToOutput(File binaryFile, String boundary, OutputStream output) throws IOException {
+        // Line separator required by multipart/form-data.
+        String CRLF = "\r\n";
+        String charset = "UTF-8";
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
+        // Send binary file.
+        writer.append("--").append(boundary).append(CRLF);
+        writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
+        writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
+        writer.append("Content-Transfer-Encoding: binary").append(CRLF);
+        writer.append(CRLF).flush();
+        FileInputStream fileInputStream = new FileInputStream(binaryFile);
+        byte[] buffer = new byte[1024];
+        int len;
+        try {
+            while ((len = fileInputStream.read(buffer)) != -1) {
+                output.write(buffer, 0, len);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        output.flush(); // Important before continuing with writer!
+        writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
+        fileInputStream.close();
+
+        // End of multipart/form-data.
+        writer.append("--").append(boundary).append("--").append(CRLF).flush();
+        writer.close();
+        output.flush();
+        output.close();
+    }
+
     synchronized public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
         String urlEndpoint = "/i";
         if (customEndpoint != null) {
@@ -132,42 +164,13 @@ public class ConnectionProcessor implements Runnable {
             conn.setDoOutput(true);
             // Just generate some unique random value.
             String boundary = Long.toHexString(System.currentTimeMillis());
-            // Line separator required by multipart/form-data.
-            String CRLF = "\r\n";
-            String charset = "UTF-8";
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
-            // Send binary file.
-            writer.append("--").append(boundary).append(CRLF);
-            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
-            writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
-            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-            writer.append(CRLF).flush();
-            FileInputStream fileInputStream = new FileInputStream(binaryFile);
-            byte[] buffer = new byte[1024];
-            int len;
-            try {
-                while ((len = fileInputStream.read(buffer)) != -1) {
-                    output.write(buffer, 0, len);
-                }
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-            output.flush(); // Important before continuing with writer!
-            writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
-            fileInputStream.close();
-
-            // End of multipart/form-data.
-            writer.append("--").append(boundary).append("--").append(CRLF).flush();
             if (connectionInterceptor != null) {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                writeMultipartDataToOutput(binaryFile, boundary, output);
                 conn = connectionInterceptor.intercept(conn, output.toByteArray());
             }
-            OutputStream connectionOutput = conn.getOutputStream();
-            connectionOutput.write(output.toByteArray());
-            connectionOutput.flush();
-            output.close();
-            connectionOutput.close();
+            writeMultipartDataToOutput(binaryFile, boundary, conn.getOutputStream());
         } else {
             if (usingHttpPost) {
                 conn.setDoOutput(true);
