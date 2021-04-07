@@ -1542,9 +1542,7 @@ public class Countly {
                     moduleSessions.updateSessionInternal();
                 }
 
-                if (eventQueue_.size() > 0) {
-                    connectionQueue_.recordEvents(eventQueue_.events());
-                }
+                sendEventsForced();
             }
 
             connectionQueue_.tick();

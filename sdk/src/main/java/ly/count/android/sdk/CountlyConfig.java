@@ -427,6 +427,11 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set custom crash segmentation which will be added to all recorded crashes
+     * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
+     * @return
+     */
     public CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
         customCrashSegment = crashSegment;
         return this;
