@@ -142,8 +142,7 @@ public class ModuleAPM extends ModuleBase {
             return ret.toString();
         }
 
-        for (Iterator<Map.Entry<String, Integer>> it = customMetrics.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<String, Integer> entry = it.next();
+        for (Map.Entry<String, Integer> entry : customMetrics.entrySet()) {
             String key = entry.getKey();
             Integer value = entry.getValue();
 
@@ -251,7 +250,7 @@ public class ModuleAPM extends ModuleBase {
      */
     void endNetworkRequestInternal(String networkTraceKey, String uniqueId, int responseCode, int requestPayloadSize, int responsePayloadSize) {
         //end time counting as fast as possible
-        Long currentTimestamp = UtilsTime.currentTimestampMs();
+        long currentTimestamp = UtilsTime.currentTimestampMs();
 
         L.d("[ModuleAPM] Calling 'endNetworkRequestInternal' with key:[" + networkTraceKey + "]");
 
@@ -420,7 +419,7 @@ public class ModuleAPM extends ModuleBase {
     void callbackOnActivityResumed(Activity activity) {
         L.d("[Apm] Calling 'callbackOnActivityResumed', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
 
-        Long currentTimestamp = System.currentTimeMillis();
+        long currentTimestamp = System.currentTimeMillis();
 
         if (!manualForegroundBackgroundTriggers) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);

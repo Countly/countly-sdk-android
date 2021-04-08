@@ -143,8 +143,8 @@ public class ModuleCrash extends ModuleBase {
 
             pw.println();
             pw.println("Thread " + thread.getName());
-            for (int a = 0; a < val.length; a++) {
-                pw.println(val[a].toString());
+            for (StackTraceElement stackTraceElement : val) {
+                pw.println(stackTraceElement.toString());
             }
         }
     }
@@ -206,7 +206,7 @@ public class ModuleCrash extends ModuleBase {
         } else if (crashNumber == 2) {
             L.d("Running crashTest 2");
 
-            //noinspection UnusedAssignment,divzero
+            // noinspection divzero
             @SuppressWarnings("NumericOverflow") int test = 10 / 0;
         } else if (crashNumber == 3) {
             L.d("Running crashTest 3");

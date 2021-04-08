@@ -309,8 +309,8 @@ public class CountlyConfig {
      */
     public CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
         if (exceptions != null) {
-            for (int a = 0; a < exceptions.length; a++) {
-                if (exceptions[a] == null) {
+            for (Class exception : exceptions) {
+                if (exception == null) {
                     throw new IllegalArgumentException("setAutoTrackingExceptions() does not accept 'null' activities");
                 }
             }

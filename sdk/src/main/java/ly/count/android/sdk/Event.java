@@ -191,7 +191,7 @@ class Event {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || !(o instanceof Event)) {
+        if (!(o instanceof Event)) {
             return false;
         }
 

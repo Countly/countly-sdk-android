@@ -71,7 +71,6 @@ public class CountlyPush {
 
     public static boolean useAdditionalIntentRedirectionChecks = false;
 
-    @SuppressWarnings("FieldCanBeLocal")
     private static BroadcastReceiver notificationActionReceiver = null, consentReceiver = null;
 
     /**
@@ -700,7 +699,6 @@ public class CountlyPush {
      * @param mode whether to mark push token as test or as production one
      * @throws IllegalStateException
      */
-    @SuppressWarnings("unchecked")
     public static void init(final Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
         init(application, mode, null);
     }
@@ -713,7 +711,6 @@ public class CountlyPush {
      * @param preferredProvider prefer specified push provider, {@code null} means use FCM first, then fallback to Huawei
      * @throws IllegalStateException
      */
-    @SuppressWarnings("unchecked")
     public static void init(final Application application, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
         Countly.sharedInstance().L.i("[CountlyPush, init] Initialising Countly Push, App:[" + (application != null) + "], mode:[" + mode + "] provider:[" + preferredProvider + "]");
 

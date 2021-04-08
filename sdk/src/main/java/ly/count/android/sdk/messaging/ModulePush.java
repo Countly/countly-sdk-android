@@ -94,7 +94,7 @@ public class ModulePush {
 
             @Override
             public boolean equals(Object obj) {
-                if (obj == null || !(obj instanceof Button)) {
+                if (!(obj instanceof Button)) {
                     return false;
                 }
                 Button b = (Button) obj;

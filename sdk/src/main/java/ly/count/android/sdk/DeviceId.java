@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 
-@SuppressWarnings("DefaultFileTemplate")
 public class DeviceId {
     /**
      * Enum used throughout Countly which controls what kind of ID Countly should use.

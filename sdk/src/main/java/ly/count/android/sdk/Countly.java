@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
  * This class is the public API for the Countly Android SDK.
  * Get more details <a href="https://github.com/Countly/countly-sdk-android">here</a>.
  */
-@SuppressWarnings("JavadocReference")
 public class Countly {
 
     private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.7";
@@ -2526,13 +2525,13 @@ public class Countly {
 
             String replacementPart = "app_key=" + UtilsNetworking.urlEncodeString(targetAppKey);
 
-            for (int a = 0; a < storedRequests.length; a++) {
-                if (storedRequests[a] == null) {
+            for (String storedRequest : storedRequests) {
+                if (storedRequest == null) {
                     continue;
                 }
 
                 boolean found = false;
-                String[] parts = storedRequests[a].split("&");
+                String[] parts = storedRequest.split("&");
 
                 for (int b = 0; b < parts.length; b++) {
                     if (parts[b].contains("app_key=")) {
@@ -2544,7 +2543,7 @@ public class Countly {
 
                 if (found) {
                     //recombine and add
-                    StringBuilder stringBuilder = new StringBuilder(storedRequests[a].length());
+                    StringBuilder stringBuilder = new StringBuilder(storedRequest.length());
 
                     for (int c = 0; c < parts.length; c++) {
                         if (c != 0) {
@@ -2555,7 +2554,7 @@ public class Countly {
                     filteredRequests.add(stringBuilder.toString());
                 } else {
                     //pass through the old one
-                    filteredRequests.add(storedRequests[a]);
+                    filteredRequests.add(storedRequest);
                 }
             }
 
@@ -2578,15 +2577,15 @@ public class Countly {
 
         String searchablePart = "app_key=" + targetAppKey;
 
-        for (int a = 0; a < storedRequests.length; a++) {
-            if (storedRequests[a] == null) {
+        for (String storedRequest : storedRequests) {
+            if (storedRequest == null) {
                 continue;
             }
 
-            if (!storedRequests[a].contains(searchablePart)) {
-                L.d("[requestQueueEraseAppKeysRequests] Found a entry to remove: [" + storedRequests[a] + "]");
+            if (!storedRequest.contains(searchablePart)) {
+                L.d("[requestQueueEraseAppKeysRequests] Found a entry to remove: [" + storedRequest + "]");
             } else {
-                filteredRequests.add(storedRequests[a]);
+                filteredRequests.add(storedRequest);
             }
         }
 

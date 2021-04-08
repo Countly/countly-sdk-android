@@ -98,8 +98,6 @@ public class ModuleLocation extends ModuleBase {
         } else {
             //will be sent a part of begin session
         }
-
-        return;
     }
 
     @Override

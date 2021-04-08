@@ -65,6 +65,7 @@ class DeviceInfo {
         return android.os.Build.MODEL;
     }
 
+    @SuppressWarnings("SameReturnValue")
     static String getManufacturer() {
         return Build.MANUFACTURER;
     }

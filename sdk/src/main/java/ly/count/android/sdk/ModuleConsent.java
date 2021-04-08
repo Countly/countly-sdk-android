@@ -44,7 +44,7 @@ public class ModuleConsent extends ModuleBase {
                 _cly.collectedConsentChanges.clear();
             }
 
-            _cly.context_.sendBroadcast(new Intent(_cly.CONSENT_BROADCAST));
+            _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
 
             if (L.logEnabled()) {
                 L.d("[ModuleConsent] [Init] Countly is initialized with the current consent state:");
