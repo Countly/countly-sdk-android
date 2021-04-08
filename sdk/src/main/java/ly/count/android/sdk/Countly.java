@@ -1131,6 +1131,7 @@ public class Countly {
         L.d("Disabling location");
         if (!isInitialized()) {
             L.w("The use of 'disableLocation' before init is deprecated, use CountlyConfig instead of this");
+            return this;
         }
 
         location().disableLocation();
@@ -1154,6 +1155,7 @@ public class Countly {
 
         if (!isInitialized()) {
             L.w("The use of 'setLocation' before init is deprecated, use CountlyConfig instead of this");
+            return this;
         }
 
         if (isInitialized()) {
