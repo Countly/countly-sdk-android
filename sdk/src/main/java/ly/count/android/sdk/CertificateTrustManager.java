@@ -98,7 +98,7 @@ public final class CertificateTrustManager implements X509TrustManager {
     }
 
     public void checkClientTrusted(X509Certificate[] xcs, String string) {
-         throw new UnsupportedOperationException("checkClientTrusted: Not supported yet.");
+        throw new UnsupportedOperationException("checkClientTrusted: Not supported yet.");
     }
 
     public X509Certificate[] getAcceptedIssuers() {

@@ -3,8 +3,6 @@ package ly.count.android.sdk;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.util.Log;
 import java.net.URLDecoder;
 
 /**
@@ -43,7 +41,7 @@ public class ReferrerReceiver extends BroadcastReceiver {
                     String referrer = URLDecoder.decode(rawReferrer, "UTF-8");
 
                     // Log the referrer string.
-                    if(Countly.sharedInstance().isInitialized()) {
+                    if (Countly.sharedInstance().isInitialized()) {
                         Countly.sharedInstance().L.d("Referrer: " + referrer);
                     }
 
@@ -66,7 +64,7 @@ public class ReferrerReceiver extends BroadcastReceiver {
                         res += "&campaign_user=" + uid;
                     }
 
-                    if(Countly.sharedInstance().isInitialized()) {
+                    if (Countly.sharedInstance().isInitialized()) {
                         Countly.sharedInstance().L.d("Processed: " + res);
                     }
                     // Persist the referrer string.
@@ -76,7 +74,7 @@ public class ReferrerReceiver extends BroadcastReceiver {
                 }
             }
         } catch (Exception e) {
-            if(Countly.sharedInstance().isInitialized()) {
+            if (Countly.sharedInstance().isInitialized()) {
                 Countly.sharedInstance().L.d(e.toString());
             }
         }

@@ -1,12 +1,11 @@
 package ly.count.android.sdk;
 
-import android.bluetooth.BluetoothClass;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,9 +51,9 @@ public class DeviceIdTests {
     @Test
     public void deviceIDEqualsNullSafe_1() {
         DeviceId did = new DeviceId(store, "aa", mock(ModuleLog.class));
-        assertTrue(DeviceId.deviceIDEqualsNullSafe("a", DeviceId.Type.OPEN_UDID,did));
-        assertTrue(DeviceId.deviceIDEqualsNullSafe("a", DeviceId.Type.TEMPORARY_ID,did));
-        assertTrue(DeviceId.deviceIDEqualsNullSafe("a", DeviceId.Type.ADVERTISING_ID,did));
+        assertTrue(DeviceId.deviceIDEqualsNullSafe("a", DeviceId.Type.OPEN_UDID, did));
+        assertTrue(DeviceId.deviceIDEqualsNullSafe("a", DeviceId.Type.TEMPORARY_ID, did));
+        assertTrue(DeviceId.deviceIDEqualsNullSafe("a", DeviceId.Type.ADVERTISING_ID, did));
 
         did.setId(DeviceId.Type.OPEN_UDID, null);
         assertTrue(DeviceId.deviceIDEqualsNullSafe(null, DeviceId.Type.ADVERTISING_ID, did));

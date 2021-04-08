@@ -1,7 +1,5 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
-
 public class ModuleSessions extends ModuleBase {
 
     boolean manualSessionControlEnabled = false;

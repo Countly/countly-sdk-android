@@ -22,7 +22,6 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
-import android.util.Log;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -116,7 +115,7 @@ public class ConnectionQueue {
 
     protected void setMetricOverride(Map<String, String> metricOverride) {
         if (L.logEnabled()) {
-            if(metricOverride != null) {
+            if (metricOverride != null) {
                 L.d("[Connection Queue] The following metric overrides are set:");
 
                 for (String k : metricOverride.keySet()) {

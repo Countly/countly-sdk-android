@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
-import android.util.Log;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -44,7 +43,7 @@ public class ModuleAPM extends ModuleBase {
         activitiesOpen = 0;
 
         useManualAppLoadedTrigger = config.appLoadedManualTrigger;
-        if(config.appStartTimestampOverride != null) {
+        if (config.appStartTimestampOverride != null) {
             //if there is a app start time override, use it
             appStartTimestamp = config.appStartTimestampOverride;
 
@@ -340,7 +339,7 @@ public class ModuleAPM extends ModuleBase {
         if (_cly.config_.recordAppStartTime) {
             long durationMs = appLoadedTimestamp - appStartTimestamp;
 
-            if(durationMs <= 0) {
+            if (durationMs <= 0) {
                 L.e("[ModuleAPM] Encountered negative app start duration:[" + durationMs + "] dropping app start duration request");
                 return;
             }
@@ -388,7 +387,7 @@ public class ModuleAPM extends ModuleBase {
 
     void goToForeground() {
         L.d("[ModuleAPM] Calling 'goToForeground'");
-        if(manualOverrideInForeground) {
+        if (manualOverrideInForeground) {
             //if we already are in foreground, do nothing
             return;
         }
@@ -398,7 +397,7 @@ public class ModuleAPM extends ModuleBase {
 
     void goToBackground() {
         L.d("[ModuleAPM] Calling 'goToBackground'");
-        if(!manualOverrideInForeground) {
+        if (!manualOverrideInForeground) {
             //if we already are in background, do nothing
             return;
         }
@@ -423,14 +422,14 @@ public class ModuleAPM extends ModuleBase {
 
         Long currentTimestamp = System.currentTimeMillis();
 
-        if(!manualForegroundBackgroundTriggers) {
+        if (!manualForegroundBackgroundTriggers) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
         }
         activitiesOpen++;
 
         if (!hasFirstOnResumeHappened) {
             hasFirstOnResumeHappened = true;
-            if(!useManualAppLoadedTrigger) {
+            if (!useManualAppLoadedTrigger) {
                 recordAppStart(currentTimestamp);
             }
         }
@@ -445,7 +444,7 @@ public class ModuleAPM extends ModuleBase {
     void callbackOnActivityStopped(Activity activity) {
         L.d("[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
 
-        if(!manualForegroundBackgroundTriggers) {
+        if (!manualForegroundBackgroundTriggers) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
         }
         activitiesOpen--;
@@ -556,7 +555,7 @@ public class ModuleAPM extends ModuleBase {
 
                 long timestamp = System.currentTimeMillis();
 
-                if(!useManualAppLoadedTrigger) {
+                if (!useManualAppLoadedTrigger) {
                     L.w("[Apm] trying to record that app has finished loading without enabling manual trigger");
                     return;
                 }
@@ -569,8 +568,8 @@ public class ModuleAPM extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Apm] Calling 'triggerForeground'");
 
-                if(!manualForegroundBackgroundTriggers) {
-                    L.w( "[Apm] trying to use manual foreground triggers without enabling them");
+                if (!manualForegroundBackgroundTriggers) {
+                    L.w("[Apm] trying to use manual foreground triggers without enabling them");
                     return;
                 }
 
@@ -582,7 +581,7 @@ public class ModuleAPM extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Apm] Calling 'triggerBackground'");
 
-                if(!manualForegroundBackgroundTriggers) {
+                if (!manualForegroundBackgroundTriggers) {
                     L.w("[Apm] trying to use manual background triggers without enabling them");
                     return;
                 }

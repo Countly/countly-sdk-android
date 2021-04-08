@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.util.Log;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;

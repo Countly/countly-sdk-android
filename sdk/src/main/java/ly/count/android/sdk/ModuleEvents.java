@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
@@ -157,7 +156,7 @@ public class ModuleEvents extends ModuleBase {
         if (timedEvents.containsKey(key)) {
             return false;
         }
-        L.d( "[ModuleEvents] Starting event: [" + key + "]");
+        L.d("[ModuleEvents] Starting event: [" + key + "]");
         timedEvents.put(key, new Event(key));
         return true;
     }

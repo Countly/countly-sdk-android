@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 

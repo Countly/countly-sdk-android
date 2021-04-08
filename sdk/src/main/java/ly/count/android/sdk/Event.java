@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.util.Log;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;

@@ -22,7 +22,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.Gravity;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -250,7 +249,7 @@ public class CountlyPush {
                 return;
             }
 
-            if(useAdditionalIntentRedirectionChecks) {
+            if (useAdditionalIntentRedirectionChecks) {
                 ComponentName componentName = intent.getComponent();
                 String intentPackageName = componentName.getPackageName();
                 String intentClassName = componentName.getClassName();
@@ -817,7 +816,7 @@ public class CountlyPush {
     }
 
     static boolean getPushConsent(Context context) {
-        if(Countly.sharedInstance().isInitialized() || context == null) {
+        if (Countly.sharedInstance().isInitialized() || context == null) {
             //todo currently this is also used when context is null and might result in unintended consequences
             //if SDK is initialised, used the stored value
             return Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push);
@@ -825,7 +824,6 @@ public class CountlyPush {
             //if the SDK is not initialised, use the cached value
             return CountlyStore.getConsentPushNoInit(context);
         }
-
     }
 
     private static String getEMUIVersion() {

@@ -8,7 +8,9 @@ public class ModuleLog {
     }
 
     public enum LogLevel {Verbose, Debug, Info, Warning, Error}
+
     LogCallback logListener = null;
+
     ModuleLog() {
     }
 
@@ -17,30 +19,30 @@ public class ModuleLog {
     }
 
     public void v(String msg) {
-        if(!logEnabled()) {
+        if (!logEnabled()) {
             return;
         }
-        if(Countly.sharedInstance().isLoggingEnabled()) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.v(Countly.TAG, msg);
         }
         informListener(msg, null, LogLevel.Verbose);
     }
 
     public void d(String msg) {
-        if(!logEnabled()) {
+        if (!logEnabled()) {
             return;
         }
-        if(Countly.sharedInstance().isLoggingEnabled()) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.d(Countly.TAG, msg);
         }
         informListener(msg, null, LogLevel.Debug);
     }
 
     public void i(String msg) {
-        if(!logEnabled()) {
+        if (!logEnabled()) {
             return;
         }
-        if(Countly.sharedInstance().isLoggingEnabled()) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.i(Countly.TAG, msg);
         }
         informListener(msg, null, LogLevel.Info);
@@ -51,10 +53,10 @@ public class ModuleLog {
     }
 
     public void w(String msg, Throwable t) {
-        if(!logEnabled()) {
+        if (!logEnabled()) {
             return;
         }
-        if(Countly.sharedInstance().isLoggingEnabled()) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.w(Countly.TAG, msg);
         }
         informListener(msg, null, LogLevel.Warning);
@@ -65,10 +67,10 @@ public class ModuleLog {
     }
 
     public void e(String msg, Throwable t) {
-        if(!logEnabled()) {
+        if (!logEnabled()) {
             return;
         }
-        if(Countly.sharedInstance().isLoggingEnabled()) {
+        if (Countly.sharedInstance().isLoggingEnabled()) {
             Log.e(Countly.TAG, msg, t);
         }
         informListener(msg, t, LogLevel.Error);
@@ -83,7 +85,7 @@ public class ModuleLog {
             if (msg == null) {
                 msg = "";
             }
-            if(t != null) {
+            if (t != null) {
                 msg += Log.getStackTraceString(t);
             }
 

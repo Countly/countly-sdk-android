@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.content.Context;
-import android.util.Log;
 
 @SuppressWarnings("DefaultFileTemplate")
 public class DeviceId {

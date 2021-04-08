@@ -1,7 +1,5 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
-
 public class ModuleLocation extends ModuleBase {
 
     boolean locationDisabled = false;
@@ -91,7 +89,7 @@ public class ModuleLocation extends ModuleBase {
         if (_cly.isBeginSessionSent || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
             //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
-            if(postInitReached) {
+            if (postInitReached) {
                 _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
             } else {
                 //if we are still in init, send it at the end so that the SDK finished initialisation
@@ -118,7 +116,7 @@ public class ModuleLocation extends ModuleBase {
         }
 
         postInitReached = true;
-        if(sendLocationPostInit) {
+        if (sendLocationPostInit) {
             L.d("[ModuleLocation] Sending location post init");
             _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
         }

@@ -7,7 +7,6 @@ import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.WebResourceRequest;
@@ -315,7 +314,7 @@ public class ModuleRatings extends ModuleBase {
                         srp.dialogTextDismiss = json.getString(KEY_DIALOG_TEXT_DISMISS);
                     }
                 } catch (JSONException e) {
-                    Countly.sharedInstance().L.w( "Got exception converting JSON to a StarRatingPreferences", e);
+                    Countly.sharedInstance().L.w("Got exception converting JSON to a StarRatingPreferences", e);
                 }
             }
 

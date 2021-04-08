@@ -29,7 +29,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -402,7 +401,7 @@ public class Countly {
         L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
 
         if (config.context == null) {
-            if(config.application != null) {
+            if (config.application != null) {
                 L.d("[Init] No explicit context provided. Using context from the provided application class");
                 config.context = config.application;
             } else {
@@ -424,7 +423,7 @@ public class Countly {
         //react to given consent
         if (config.shouldRequireConsent) {
             setRequiresConsent(true);
-            if(config.enabledFeatureNames == null) {
+            if (config.enabledFeatureNames == null) {
                 L.i("[Init] Consent has been required but no consent was given during init");
             } else {
                 setConsentInternal(config.enabledFeatureNames, true);
@@ -1716,7 +1715,7 @@ public class Countly {
      */
     public int getStarRatingsCurrentVersionsSessionCount() {
         if (!isInitialized()) {
-            L.e( "Can't call this function before init has been called");
+            L.e("Can't call this function before init has been called");
             return -1;
         }
 
@@ -1983,7 +1982,7 @@ public class Countly {
     public synchronized Countly createFeatureGroup(String groupName, String[] features) {
         L.d("[Countly] Creating a feature group with the name: [" + groupName + "]");
 
-        if(!isInitialized()) {
+        if (!isInitialized()) {
             L.w("[Countly] Calling 'createFeatureGroup' before initialising the SDK is deprecated!");
         }
 
@@ -2002,7 +2001,7 @@ public class Countly {
     public synchronized Countly setConsentFeatureGroup(String groupName, boolean isConsentGiven) {
         L.v("[Countly] Setting consent for feature group: [" + groupName + "] with value: [" + isConsentGiven + "]");
 
-        if(!isInitialized()) {
+        if (!isInitialized()) {
             L.w("[Countly] Calling 'setConsentFeatureGroup' before initialising the SDK is deprecated!");
         }
 

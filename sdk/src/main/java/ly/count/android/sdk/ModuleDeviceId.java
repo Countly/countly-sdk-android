@@ -1,7 +1,5 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
-
 class ModuleDeviceId extends ModuleBase {
     boolean exitTempIdAfterInit = false;
 
@@ -36,7 +34,7 @@ class ModuleDeviceId extends ModuleBase {
         boolean temporaryDeviceIdIsCurrentlyEnabled = config.deviceIdInstance.temporaryIdModeEnabled();
         L.d("[ModuleDeviceId] [TemporaryDeviceId] Temp ID should be enabled[" + config.temporaryDeviceIdEnabled + "] Currently enabled: [" + temporaryDeviceIdIsCurrentlyEnabled + "]");
 
-        if(temporaryDeviceIdIsCurrentlyEnabled && customIDWasProvided) {
+        if (temporaryDeviceIdIsCurrentlyEnabled && customIDWasProvided) {
             //if a custom ID was provided and we are still in temporary ID mode
             //it means the we had tempID mode at the previous app end
             //exit tempID after init finished
@@ -99,7 +97,7 @@ class ModuleDeviceId extends ModuleBase {
             throw new IllegalStateException("WHen type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
         }
 
-        if(!_cly.anyConsentGiven() && type != DeviceId.Type.TEMPORARY_ID){
+        if (!_cly.anyConsentGiven() && type != DeviceId.Type.TEMPORARY_ID) {
             //if we are not trying to set a temporary id, consent has to be given
             L.e("[ModuleDeviceId] Can't change Device ID if no consent is given");
             return;
@@ -149,7 +147,7 @@ class ModuleDeviceId extends ModuleBase {
             throw new IllegalStateException("deviceId cannot be null or empty");
         }
 
-        if(!_cly.anyConsentGiven()){
+        if (!_cly.anyConsentGiven()) {
             L.e("[ModuleDeviceId] Can't change Device ID if no consent is given");
             return;
         }
@@ -183,8 +181,8 @@ class ModuleDeviceId extends ModuleBase {
     }
 
     @Override
-    public void initFinished(CountlyConfig config){
-        if(exitTempIdAfterInit) {
+    public void initFinished(CountlyConfig config) {
+        if (exitTempIdAfterInit) {
             L.i("[ModuleDeviceId, initFinished] Exiting temp ID at the end of init");
             exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, config.deviceID);
         }

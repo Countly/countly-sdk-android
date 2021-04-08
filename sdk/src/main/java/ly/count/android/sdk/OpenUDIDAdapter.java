@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.provider.Settings;
-import android.util.Log;
 import java.util.UUID;
 
 public class OpenUDIDAdapter {
@@ -14,7 +13,7 @@ public class OpenUDIDAdapter {
     public static String OpenUDID = null;
 
     public static void sync(final Context context) {
-        if (OpenUDID != null){
+        if (OpenUDID != null) {
             return;
         }
 

@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;

@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.content.Intent;
-import android.util.Log;
 
 public class ModuleConsent extends ModuleBase {
 

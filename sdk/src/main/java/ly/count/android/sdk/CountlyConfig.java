@@ -272,6 +272,7 @@ public class CountlyConfig {
 
     /**
      * Call to enable uncaught crash reporting
+     *
      * @return
      */
     public CountlyConfig enableCrashReporting() {
@@ -281,6 +282,7 @@ public class CountlyConfig {
 
     /**
      * Set if automatic view tracking should be enabled
+     *
      * @param enable
      * @return
      */
@@ -414,6 +416,7 @@ public class CountlyConfig {
     /**
      * Set the threshold for event grouping. Event count that is bellow the
      * threshold will be send on update ticks.
+     *
      * @param threshold
      * @return
      */
@@ -429,6 +432,7 @@ public class CountlyConfig {
 
     /**
      * Set custom crash segmentation which will be added to all recorded crashes
+     *
      * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
      * @return
      */
@@ -497,6 +501,7 @@ public class CountlyConfig {
 
     /**
      * Set the link to the application class
+     *
      * @param application
      * @return
      */
@@ -507,6 +512,7 @@ public class CountlyConfig {
 
     /**
      * Enable the recording of the app start time
+     *
      * @param recordAppStartTime
      * @return
      */
@@ -517,6 +523,7 @@ public class CountlyConfig {
 
     /**
      * Disable location tracking
+     *
      * @return
      */
     public synchronized CountlyConfig setDisableLocation() {
@@ -542,6 +549,7 @@ public class CountlyConfig {
 
     /**
      * Set the metrics you want to override or additional custom metrics you want to provide
+     *
      * @param providedMetricOverride
      * @return
      */
@@ -552,6 +560,7 @@ public class CountlyConfig {
 
     /**
      * Override the app start timestamp in case you have a more precise way to measure it
+     *
      * @param appStartTimestampOverride
      * @return
      */
@@ -562,6 +571,7 @@ public class CountlyConfig {
 
     /**
      * Set to manually trigger the moment when the app has finished loading
+     *
      * @return
      */
     public synchronized CountlyConfig enableManualAppLoadedTrigger() {
@@ -571,6 +581,7 @@ public class CountlyConfig {
 
     /**
      * Set this in case you want to control these triggers manually
+     *
      * @return
      */
     public synchronized CountlyConfig enableManualForegroundBackgroundTriggerAPM() {
@@ -581,6 +592,7 @@ public class CountlyConfig {
     /**
      * Add a log callback that will duplicate all logs done by the SDK.
      * For each message you will receive the message string and it's targeted log level.
+     *
      * @param logCallback
      * @return
      */
