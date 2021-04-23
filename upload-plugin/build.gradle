@@ -40,7 +40,7 @@ publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
     artifactId = 'sdk-plugin'
-    publishVersion = '20.11.7'
+    publishVersion = '20.11.8'
     desc = 'Gradle plugin for automatic upload of symbol files'
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false

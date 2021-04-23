@@ -9,6 +9,7 @@ apply plugin: 'bintray-release'
 buildscript {
   repositories {
     jcenter()
+    mavenCentral()
   }
   dependencies {
     classpath 'com.novoda:bintray-release:0.9.1'
@@ -24,7 +25,7 @@ android {
     minSdkVersion 17
     targetSdkVersion 29
     versionCode 1
-    versionName "20.11.7"
+    versionName "20.11.8"
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true
@@ -71,7 +72,7 @@ publish {
   userOrg = 'countly'
   groupId = 'ly.count.android'
   artifactId = 'sdk'
-  publishVersion = '20.11.7'
+  publishVersion = '20.11.8'
   desc = 'Android SDK for Countly mobile analytics'
   website = 'https://github.com/Countly/countly-sdk-android'
   autoPublish = false

@@ -4,6 +4,23 @@ apply plugin: 'com.huawei.agconnect'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
+/*
+//for automatic symbol upload
+apply plugin: ly.count.android.plugins.UploadSymbolsPlugin
+
+buildscript {
+    repositories {
+        maven {
+            url 'https://dl.bintray.com/countly/maven'
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '20.11.7'
+    }
+}
+*/
+
 repositories {
     maven {
         url  "http://dl.bintray.com/countly/maven"
@@ -51,6 +68,13 @@ android {
     lintOptions {
         abortOnError false
     }
+
+    /*
+    //for automatic symbol upload
+    afterEvaluate {
+        assembleRelease.finalizedBy(uploadJavaSymbols)
+    }
+     */
 }
 
 dependencies {
@@ -73,6 +97,15 @@ dependencies {
     implementation 'com.huawei.hms:push:4.0.3.301'
     implementation 'com.android.installreferrer:installreferrer:2.2'
     //implementation 'ly.count.android:sdk:20.11.7'
+    //implementation 'ly.count.android:sdk-plugin:20.11.7'
 }
+
+/*
+//for automatic symbol upload
+countly {
+    server "https://YOUR_SERVER",
+    app_key "YOUR_APP_KEY"
+}
+*/
 
 apply plugin: 'com.google.gms.google-services'

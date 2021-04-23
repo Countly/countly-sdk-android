@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.7";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.8";
     /**
      * Used as request meta data on every request
      */
@@ -505,6 +505,7 @@ public class Countly {
 
             if (config.sessionUpdateTimerDelay != null) {
                 //if we need to change the timer delay, do that first
+                L.d("[Init] Setting custom session update timer delay, [" + config.sessionUpdateTimerDelay + "]");
                 startTimerService(timerService_, timerFuture, config.sessionUpdateTimerDelay);
             }
 

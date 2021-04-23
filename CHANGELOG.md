@@ -1,5 +1,9 @@
+## 20.11.8
+  * Minor tweaks. Changes related to publishing to MavenCentral
+
 ## 20.11.7
   * Adding metric for the device manufacturer.
+  * Fixing potential issues by sending all available events before the "end session" request
   
 ## 20.11.6
   * Fixed init time bug where the context from the provided application class was not used.
