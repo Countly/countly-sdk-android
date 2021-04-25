@@ -1,9 +1,10 @@
 buildscript {
     repositories {
+        mavenCentral()
         jcenter()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:0.9.1'
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2'
     }
 }
 
@@ -11,9 +12,6 @@ plugins {
     id 'java-gradle-plugin'
     id 'groovy'
 }
-
-apply plugin: 'bintray-release'
-
 
 gradlePlugin {
     plugins {
@@ -34,8 +32,7 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.14.1'
 }
 
-
-
+/*
 publish {
     userOrg = 'countly'
     groupId = 'ly.count.android'
@@ -45,3 +42,7 @@ publish {
     website = 'https://github.com/Countly/countly-sdk-android'
     autoPublish = false
 }
+*/
+
+
+apply plugin: "com.vanniktech.maven.publish"

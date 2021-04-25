@@ -277,13 +277,13 @@ public class DeviceInfoTests {
         json.put("_device", "a1");
         json.put("_os", "b2");
         json.put("_os_version", "c3");
-        json.put("_carrier", "d1");
         json.put("_resolution", "d2");
         json.put("_density", "d3");
         json.put("_locale", "d4");
         json.put("_app_version", "d5");
         json.put("_manufacturer", DeviceInfo.getManufacturer());
         json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
+        json.put("_carrier", "d1");
         json.put("asd", "123");
 
         final String expected = URLEncoder.encode(json.toString(), "UTF-8");

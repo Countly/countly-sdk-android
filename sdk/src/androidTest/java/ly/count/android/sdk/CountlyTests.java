@@ -22,6 +22,8 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import org.junit.After;
@@ -860,10 +862,5 @@ public class CountlyTests {
         assertTrue(mUninitedCountly.isLoggingEnabled());
         mUninitedCountly.setLoggingEnabled(false);
         assertFalse(mUninitedCountly.isLoggingEnabled());
-    }
-
-    @Test
-    public void confirmSDKVersionMatches() {
-        Assert.assertEquals(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING, BuildConfig.VERSION_NAME);
     }
 }
