@@ -53,16 +53,4 @@ tasks.whenTaskAdded { task ->
     }
 }
 
-/*
-publish {
-    userOrg = 'countly'
-    groupId = 'ly.count.android'
-    artifactId = 'sdk-native'
-    publishVersion = '20.11.8'
-    desc = 'Countly Android Native Crash Support'
-    website = 'https://github.com/Countly/countly-sdk-android'
-    autoPublish = false
-}
-*/
-
 apply plugin: "com.vanniktech.maven.publish"

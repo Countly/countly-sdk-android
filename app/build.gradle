@@ -12,21 +12,16 @@ apply plugin: ly.count.android.plugins.UploadSymbolsPlugin
 
 buildscript {
     repositories {
-        maven {
-            url 'https://dl.bintray.com/countly/maven'
-        }
-        jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '20.11.7'
+        classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '20.11.8'
     }
 }
 */
 
 repositories {
-    maven {
-        url  "http://dl.bintray.com/countly/maven"
-    }
+    mavenCentral()
 
     //required for huawei push
     /*
@@ -34,8 +29,6 @@ repositories {
         url "https://developer.huawei.com/repo/"
     }
     */
-
-    mavenCentral()
 }
 
 android {
@@ -105,8 +98,8 @@ dependencies {
     //implementation 'com.huawei.hms:push:5.1.1.301'
 
     implementation 'com.android.installreferrer:installreferrer:2.2'
-    //implementation 'ly.count.android:sdk:20.11.7'
-    //implementation 'ly.count.android:sdk-plugin:20.11.7'
+    //implementation 'ly.count.android:sdk:20.11.8'
+    //implementation 'ly.count.android:sdk-plugin:20.11.8'
 }
 
 /*

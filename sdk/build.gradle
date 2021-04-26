@@ -67,16 +67,4 @@ dependencies {
   //androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.9.0"
 }
 
-/*
-publish {
-  userOrg = 'countly'
-  groupId = 'ly.count.android'
-  artifactId = 'sdk'
-  publishVersion = '20.11.8'
-  desc = 'Android SDK for Countly mobile analytics'
-  website = 'https://github.com/Countly/countly-sdk-android'
-  autoPublish = false
-}
-*/
-
 apply plugin: "com.vanniktech.maven.publish"
