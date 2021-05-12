@@ -24,7 +24,7 @@ android {
     minSdkVersion 17
     targetSdkVersion 30
     versionCode 1
-    versionName "20.11.8"
+    versionName "20.11.9"
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true

@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.8";
+    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.9";
     /**
      * Used as request meta data on every request
      */
@@ -90,7 +90,7 @@ public class Countly {
      * Determines how many custom events can be queued locally before
      * an attempt is made to submit them to a Count.ly server.
      */
-    private static int EVENT_QUEUE_SIZE_THRESHOLD = 10;
+    private static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
     /**
      * How often onTimer() is called.
      */
@@ -698,6 +698,7 @@ public class Countly {
             }
         } else {
             //if this is not the first time we are calling init
+            L.i("[Init] Getting in the 'else' block");
 
             // context is allowed to be changed on the second init call
             connectionQueue_.setContext(context_);

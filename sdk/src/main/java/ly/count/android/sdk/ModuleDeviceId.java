@@ -29,7 +29,7 @@ class ModuleDeviceId extends ModuleBase {
         }
 
         //initialise the set device ID value
-        config.deviceIdInstance.init(config.context, config.countlyStore, true);
+        config.deviceIdInstance.init(config.context, config.countlyStore);
 
         boolean temporaryDeviceIdIsCurrentlyEnabled = config.deviceIdInstance.temporaryIdModeEnabled();
         L.d("[ModuleDeviceId] [TemporaryDeviceId] Temp ID should be enabled[" + config.temporaryDeviceIdEnabled + "] Currently enabled: [" + temporaryDeviceIdIsCurrentlyEnabled + "]");

@@ -18,7 +18,7 @@ public class DeviceId {
 
     protected final static String temporaryCountlyDeviceId = "CLYTemporaryDeviceID";
 
-    private String id;
+    private String id = null;
     private Type type;
 
     ModuleLog L;
@@ -38,6 +38,8 @@ public class DeviceId {
         this.type = type;
         L = moduleLog;
 
+        L.d("[DeviceId] initialising with no values, provided type:[" + this.type + "]");
+
         //check if there wasn't a value set before
         retrieveId(store);
     }
@@ -56,6 +58,8 @@ public class DeviceId {
         this.id = developerSuppliedId;
         L = moduleLog;
 
+        L.d("[DeviceId] initialising with values, device ID:[" + this.id + "] type:[" + this.type + "]");
+
         //check if there wasn't a value set before
         retrieveId(store);
     }
@@ -72,6 +76,10 @@ public class DeviceId {
             //if there was a value saved previously, set it and it's type
             this.id = storedId;
             this.type = retrieveType(store, PREFERENCE_KEY_ID_TYPE);
+
+            L.d("[DeviceId] retrieveId, Retrieving a previously set device ID:[" + this.id + "] type:[" + this.type + "]");
+        } else {
+            L.d("[DeviceId] retrieveId, no previous ID stored");
         }
     }
 
@@ -84,10 +92,10 @@ public class DeviceId {
      *
      * @param context Context to use
      * @param store CountlyStore to store configuration in
-     * @param raiseExceptions whether to raise exceptions in case of illegal state or not
      */
-    protected void init(Context context, CountlyStore store, boolean raiseExceptions) {
+    protected void init(Context context, CountlyStore store) {
         Type overriddenType = retrieveOverriddenType(store);
+        L.d("[DeviceId] init, current type:[" + type + "] overidenType:[" + overriddenType + "]");
 
         // Some time ago some ID generation strategy was not available and SDK fell back to
         // some other strategy. We still have to use that strategy.
@@ -167,7 +175,7 @@ public class DeviceId {
         L.w("[DeviceId] Switching to device ID generation strategy " + type + " from " + this.type);
         this.type = type;
         storeOverriddenType(store, type);
-        init(context, store, false);
+        init(context, store);
     }
 
     protected void changeToDeveloperProvidedId(CountlyStore store, String newId) {
@@ -176,7 +184,7 @@ public class DeviceId {
 
     protected void changeToId(Context context, CountlyStore store, Type type, String deviceId) {
         setAndStoreId(store, type, deviceId);
-        init(context, store, false);
+        init(context, store);
     }
 
     void setAndStoreId(CountlyStore store, Type type, String deviceId) {
