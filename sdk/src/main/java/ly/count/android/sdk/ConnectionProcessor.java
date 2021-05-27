@@ -345,6 +345,7 @@ public class ConnectionProcessor implements Runnable {
                         }
 
                         if (deviceIdChange || deviceIdOverride) {
+                            L.v("[Connection Processor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
                             Countly.sharedInstance().notifyDeviceIdChange();
                         }
                     } else if (rRes == RequestResult.REMOVE) {

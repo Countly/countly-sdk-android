@@ -695,7 +695,7 @@ public class CountlyTests {
         mCountly.setConnectionQueue(mockConnectionQueue);
 
         final EventQueue mockEventQueue = mock(EventQueue.class);
-        when(mockEventQueue.size()).thenReturn(10);
+        when(mockEventQueue.size()).thenReturn(100);
         final String eventData = "blahblahblah";
         when(mockEventQueue.events()).thenReturn(eventData);
         mCountly.setEventQueue(mockEventQueue);
@@ -712,7 +712,7 @@ public class CountlyTests {
         mCountly.setConnectionQueue(mockConnectionQueue);
 
         final EventQueue mockEventQueue = mock(EventQueue.class);
-        when(mockEventQueue.size()).thenReturn(20);
+        when(mockEventQueue.size()).thenReturn(120);
         final String eventData = "blahblahblah";
         when(mockEventQueue.events()).thenReturn(eventData);
         mCountly.setEventQueue(mockEventQueue);
