@@ -592,6 +592,7 @@ public class Countly {
 
             //initialize networking queues
             connectionQueue_.L = L;
+            connectionQueue_.moduleConsent = moduleConsent;
             connectionQueue_.setServerURL(config.serverURL);
             connectionQueue_.setAppKey(config.appKey);
             connectionQueue_.setCountlyStore(countlyStore);

@@ -18,6 +18,16 @@ public class ModuleConsent extends ModuleBase {
         consentInterface = new Consent();
     }
 
+    protected boolean getConsent(String featureName) {
+        synchronized (_cly) {
+            return _cly.getConsent(featureName);
+        }
+    }
+
+    protected boolean anyConsentGiven(){
+        return _cly.anyConsentGiven();
+    }
+
     @Override
     void initFinished(CountlyConfig config) {
         if (_cly.requiresConsent) {
