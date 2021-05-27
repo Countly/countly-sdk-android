@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: "com.vanniktech.maven.publish"
 
 buildscript {
     repositories {
@@ -52,5 +53,3 @@ tasks.whenTaskAdded { task ->
         task.dependsOn('copyLibs')
     }
 }
-
-apply plugin: "com.vanniktech.maven.publish"

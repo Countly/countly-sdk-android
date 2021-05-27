@@ -63,10 +63,10 @@ public class ModuleRatings extends ModuleBase {
             return;
         }
 
-        if (rating < 0) {
-            rating = 0;
+        if (rating < 1) {
+            rating = 1;
 
-            L.d("[ModuleRatings] recordManualRatingInternal, given rating too low, defaulting to 0");
+            L.d("[ModuleRatings] recordManualRatingInternal, given rating too low, defaulting to 1");
         }
 
         if (rating > 5) {
@@ -600,7 +600,7 @@ public class ModuleRatings extends ModuleBase {
          * Record user rating manually without showing any message dialog.
          *
          * @param widgetId widget ID to which this rating will be tied. You get it from the dashboard
-         * @param rating value from 0 to 5 that will be set as the rating value
+         * @param rating value from 1 to 5 that will be set as the rating value
          * @param email email of the user
          * @param comment comment set by the user
          * @param userCanBeContacted set true if the user wants you to contact him

@@ -58,12 +58,14 @@ public class ModuleRatingsTests {
 
         verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
+        //validate lower bound
         mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
         mCountly.ratings().recordManualRating(vals[0], -12, vals[1], vals[2], true);
-        segmS.put("rating", "" + 0);
+        segmS.put("rating", "" + 1);
         verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
+        //validate upper bound
         mockEventQueue = mock(EventQueue.class);
         mCountly.setEventQueue(mockEventQueue);
         mCountly.ratings().recordManualRating(vals[0], 12, vals[1], vals[2], true);
