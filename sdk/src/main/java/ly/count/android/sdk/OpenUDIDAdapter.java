@@ -44,10 +44,6 @@ public class OpenUDIDAdapter {
         }
     }
 
-    public static String getOpenUDID() {
-        return OpenUDID;
-    }
-
     private static void storeOpenUDID(Context context) {
         SharedPreferences mPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         final SharedPreferences.Editor e = mPreferences.edit();

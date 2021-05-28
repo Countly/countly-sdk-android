@@ -30,9 +30,9 @@ public class AdvertisingIdAdapter {
                     } else if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesNotAvailableException")) {
                         // non-recoverable, fallback to OpenUDID
                         Countly.sharedInstance().L.w("[AdvertisingIdAdapter] Advertising ID cannot be determined because Play Services are not available");
-                        deviceId.switchToIdType(DeviceId.Type.OPEN_UDID, context);
+                        deviceId.fallbackToOpenUDID();
                     } else {
-                        // unexpected
+                        // unexpected, might recover in the future
                         Countly.sharedInstance().L.e("[AdvertisingIdAdapter] Couldn't get advertising ID", t);
                     }
                 }

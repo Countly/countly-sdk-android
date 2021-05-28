@@ -120,7 +120,7 @@ public class ConnectionQueueTests {
     @Test
     public void testDeviceId() {
         final CountlyStore store = new CountlyStore(getContext(), mock(ModuleLog.class));
-        final DeviceId deviceId = new DeviceId(store, "blah", mock(ModuleLog.class));
+        final DeviceId deviceId = new DeviceId(store, "blah", mock(ModuleLog.class), null);
         freshConnQ.setDeviceId(deviceId);
         assertSame(deviceId, freshConnQ.getDeviceId());
     }

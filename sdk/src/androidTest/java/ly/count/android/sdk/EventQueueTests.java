@@ -78,7 +78,7 @@ public class EventQueueTests {
         verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), eq(segmentationBoolean), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
 
         //used timestamp is withing a couple of ms
-        assertTrue((arg.getValue() - timestamp) <= 2);
+        assertTrue((arg.getValue() - timestamp) <= 4);
     }
 
     @Test

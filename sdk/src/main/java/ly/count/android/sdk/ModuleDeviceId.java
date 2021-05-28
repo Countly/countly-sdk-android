@@ -1,6 +1,6 @@
 package ly.count.android.sdk;
 
-class ModuleDeviceId extends ModuleBase {
+class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
     boolean exitTempIdAfterInit = false;
 
     ModuleLog L;
@@ -22,10 +22,10 @@ class ModuleDeviceId extends ModuleBase {
         if (config.deviceID != null) {
             //if the developer provided a ID
             //or it's a temporary ID
-            config.deviceIdInstance = new DeviceId(config.storageProvider, config.deviceID, _cly.L);
+            config.deviceIdInstance = new DeviceId(config.storageProvider, config.deviceID, _cly.L, this);
         } else {
             //the dev provided only a type and the SDK should generate a appropriate ID
-            config.deviceIdInstance = new DeviceId(config.storageProvider, config.idMode, _cly.L);
+            config.deviceIdInstance = new DeviceId(config.storageProvider, config.idMode, _cly.L, this);
         }
 
         //initialise the set device ID value
@@ -52,7 +52,7 @@ class ModuleDeviceId extends ModuleBase {
         }
 
         //start by changing stored ID
-        _cly.connectionQueue_.getDeviceId().changeToId(_cly.context_, type, deviceId);
+        _cly.connectionQueue_.getDeviceId().changeToId(_cly.context_, type, deviceId, true);//run init because not clear if types other then dev supplied can be provided
 
         //update stored request for ID change to use this new ID
         String[] storedRequests = _cly.connectionQueue_.getCountlyStore().getRequests();
@@ -90,11 +90,13 @@ class ModuleDeviceId extends ModuleBase {
      */
     void changeDeviceIdWithoutMerge(DeviceId.Type type, String deviceId) {
         if (type == null) {
-            throw new IllegalStateException("type cannot be null");
+            L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, type cannot be null");
+            return;
         }
 
         if (type == DeviceId.Type.DEVELOPER_SUPPLIED && deviceId == null) {
-            throw new IllegalStateException("WHen type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
+            L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, When type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
+            return;
         }
 
         if (!_cly.anyConsentGiven() && type != DeviceId.Type.TEMPORARY_ID) {
@@ -129,7 +131,7 @@ class ModuleDeviceId extends ModuleBase {
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
         _cly.moduleSessions.endSessionInternal(currentDeviceId.getId());
-        currentDeviceId.changeToId(_cly.context_, type, deviceId);
+        currentDeviceId.changeToId(_cly.context_, type, deviceId, true);
         _cly.moduleSessions.beginSessionInternal();
 
         //clear automated star rating session values because now we have a new user
@@ -191,5 +193,10 @@ class ModuleDeviceId extends ModuleBase {
     @Override
     void halt() {
 
+    }
+
+    @Override public String getOpenUDID() {
+        OpenUDIDAdapter.sync(_cly.context_);
+        return OpenUDIDAdapter.OpenUDID;
     }
 }
