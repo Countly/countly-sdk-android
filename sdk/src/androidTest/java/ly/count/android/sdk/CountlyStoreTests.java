@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -524,5 +525,30 @@ public class CountlyStoreTests {
 
         store.addRequest("1qwe");
         assertTrue(Arrays.equals(new String[] { "123", "1qwe" }, store.getRequests()));
+    }
+
+    /**
+     * Validate that setting and retrieving device ID and device ID type works as intended
+     */
+    @Test
+    public void testDeviceIDStorage() {
+        String[] values = new String[] { "aa", "bb", "cc"};
+        String[] values2 = new String[] { "11", "22", "33"};
+        StorageProvider sp = store;
+        store.clear();
+
+        assertNull(sp.getDeviceID());
+        assertNull(sp.getDeviceIDType());
+
+        for (int a = 0 ; a <  values.length ; a++) {
+            sp.setDeviceID(values[a]);
+            assertEquals(values[a], sp.getDeviceID());
+            assertNotEquals(values[a], sp.getDeviceIDType());
+
+            sp.setDeviceIDType(values2[a]);
+            assertEquals(values2[a], sp.getDeviceIDType());
+
+            assertEquals(values[a], sp.getDeviceID());
+        }
     }
 }

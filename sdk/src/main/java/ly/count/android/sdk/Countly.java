@@ -518,6 +518,12 @@ public class Countly {
                 config.setCountlyStore(countlyStore);
             }
 
+            if(config.storageProvider == null) {
+                // outside of tests this should be null
+                config.storageProvider = config.countlyStore;
+            }
+
+
             //check legacy access methods
             if (locationFallback != null && config.locationCountyCode == null && config.locationCity == null && config.locationLocation == null && config.locationIpAddress == null) {
                 //if the fallback was set and config did not contain any location, use the fallback info

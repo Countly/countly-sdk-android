@@ -22,14 +22,14 @@ class ModuleDeviceId extends ModuleBase {
         if (config.deviceID != null) {
             //if the developer provided a ID
             //or it's a temporary ID
-            config.deviceIdInstance = new DeviceId(config.countlyStore, config.deviceID, _cly.L);
+            config.deviceIdInstance = new DeviceId(config.storageProvider, config.deviceID, _cly.L);
         } else {
             //the dev provided only a type and the SDK should generate a appropriate ID
-            config.deviceIdInstance = new DeviceId(config.countlyStore, config.idMode, _cly.L);
+            config.deviceIdInstance = new DeviceId(config.storageProvider, config.idMode, _cly.L);
         }
 
         //initialise the set device ID value
-        config.deviceIdInstance.init(config.context, config.countlyStore);
+        config.deviceIdInstance.init(config.context);
 
         boolean temporaryDeviceIdIsCurrentlyEnabled = config.deviceIdInstance.temporaryIdModeEnabled();
         L.d("[ModuleDeviceId] [TemporaryDeviceId] Temp ID should be enabled[" + config.temporaryDeviceIdEnabled + "] Currently enabled: [" + temporaryDeviceIdIsCurrentlyEnabled + "]");
@@ -52,7 +52,7 @@ class ModuleDeviceId extends ModuleBase {
         }
 
         //start by changing stored ID
-        _cly.connectionQueue_.getDeviceId().changeToId(_cly.context_, _cly.connectionQueue_.getCountlyStore(), type, deviceId);
+        _cly.connectionQueue_.getDeviceId().changeToId(_cly.context_, type, deviceId);
 
         //update stored request for ID change to use this new ID
         String[] storedRequests = _cly.connectionQueue_.getCountlyStore().getRequests();
@@ -129,7 +129,7 @@ class ModuleDeviceId extends ModuleBase {
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
         _cly.moduleSessions.endSessionInternal(currentDeviceId.getId());
-        currentDeviceId.changeToId(_cly.context_, _cly.connectionQueue_.getCountlyStore(), type, deviceId);
+        currentDeviceId.changeToId(_cly.context_, type, deviceId);
         _cly.moduleSessions.beginSessionInternal();
 
         //clear automated star rating session values because now we have a new user

@@ -46,7 +46,7 @@ import org.json.JSONObject;
  * NOTE: This class is only public to facilitate unit testing, because
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
-public class CountlyStore {
+public class CountlyStore implements StorageProvider{
     private static final String PREFERENCES = "COUNTLY_STORE";
     private static final String PREFERENCES_PUSH = "ly.count.android.api.messaging";
     private static final String DELIMITER = ":::";
@@ -90,7 +90,7 @@ public class CountlyStore {
     /**
      * Returns an unsorted array of the current stored connections.
      */
-    public String[] getRequests() {
+    public synchronized String[] getRequests() {
         final String joinedConnStr = preferences_.getString(REQUEST_PREFERENCE, "");
         return joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
     }
@@ -98,7 +98,7 @@ public class CountlyStore {
     /**
      * Returns an unsorted array of the current stored event JSON strings.
      */
-    public String[] getEvents() {
+    public synchronized String[] getEvents() {
         final String joinedEventsStr = preferences_.getString(EVENTS_PREFERENCE, "");
         return joinedEventsStr.length() == 0 ? new String[0] : joinedEventsStr.split(DELIMITER);
     }
@@ -106,7 +106,7 @@ public class CountlyStore {
     /**
      * Returns a list of the current stored events, sorted by timestamp from oldest to newest.
      */
-    public List<Event> getEventList() {
+    public synchronized List<Event> getEventList() {
         final String[] array = getEvents();
         final List<Event> events = new ArrayList<>(array.length);
         for (String s : array) {
@@ -133,7 +133,7 @@ public class CountlyStore {
     /**
      * Returns true if no requests are current stored, false otherwise.
      */
-    public boolean noRequestsAvailable() {
+    public synchronized boolean noRequestsAvailable() {
         return preferences_.getString(REQUEST_PREFERENCE, "").length() == 0;
     }
 
@@ -180,14 +180,14 @@ public class CountlyStore {
         }
     }
 
-    protected synchronized void replaceRequests(final String[] newConns) {
+    public synchronized void replaceRequests(final String[] newConns) {
         if (newConns != null) {
             final List<String> connections = new ArrayList<>(Arrays.asList(newConns));
             replaceRequestList(connections);
         }
     }
 
-    protected synchronized void replaceRequestList(final List<String> newConns) {
+    public synchronized void replaceRequestList(final List<String> newConns) {
         if (newConns != null) {
             preferences_.edit().putString(REQUEST_PREFERENCE, join(newConns, DELIMITER)).apply();
         }
@@ -244,7 +244,7 @@ public class CountlyStore {
         return preferencesPush_.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
-    public static Boolean getConsentPushNoInit(Context context) {
+    public synchronized static Boolean getConsentPushNoInit(Context context) {
         SharedPreferences sp = createPreferencesPush(context);
         return sp.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
@@ -397,5 +397,24 @@ public class CountlyStore {
         prefsEditor.apply();
 
         preferencesPush_.edit().clear().apply();
+    }
+
+    private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
+    private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
+
+    public String getDeviceID() {
+        return getPreference(PREFERENCE_KEY_ID_ID);
+    }
+
+    public String getDeviceIDType() {
+        return getPreference(PREFERENCE_KEY_ID_TYPE);
+    }
+
+    public void setDeviceID(String id) {
+        setPreference(PREFERENCE_KEY_ID_ID, id);
+    }
+
+    public void setDeviceIDType(String type) {
+        setPreference(PREFERENCE_KEY_ID_TYPE, type);
     }
 }

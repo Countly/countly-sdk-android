@@ -16,7 +16,7 @@ public class AdvertisingIdAdapter {
         return advertisingIdAvailable;
     }
 
-    public static void setAdvertisingId(final Context context, final CountlyStore store, final DeviceId deviceId) {
+    public static void setAdvertisingId(final Context context, final DeviceId deviceId) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -30,7 +30,7 @@ public class AdvertisingIdAdapter {
                     } else if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesNotAvailableException")) {
                         // non-recoverable, fallback to OpenUDID
                         Countly.sharedInstance().L.w("[AdvertisingIdAdapter] Advertising ID cannot be determined because Play Services are not available");
-                        deviceId.switchToIdType(DeviceId.Type.OPEN_UDID, context, store);
+                        deviceId.switchToIdType(DeviceId.Type.OPEN_UDID, context);
                     } else {
                         // unexpected
                         Countly.sharedInstance().L.e("[AdvertisingIdAdapter] Couldn't get advertising ID", t);

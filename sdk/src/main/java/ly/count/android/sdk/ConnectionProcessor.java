@@ -341,7 +341,7 @@ public class ConnectionProcessor implements Runnable {
                         store_.removeRequest(storedEvents[0]);
 
                         if (deviceIdChange) {
-                            deviceId_.changeToDeveloperProvidedId(store_, newId);
+                            deviceId_.changeToDeveloperProvidedId(newId);
                         }
 
                         if (deviceIdChange || deviceIdOverride) {
