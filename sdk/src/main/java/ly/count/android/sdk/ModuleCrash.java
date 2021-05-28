@@ -25,7 +25,7 @@ public class ModuleCrash extends ModuleBase {
     ModuleLog L;
 
     ModuleCrash(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 
@@ -83,7 +83,7 @@ public class ModuleCrash extends ModuleBase {
         L.d("[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
 
         //check for consent
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return;
         }
 
@@ -163,7 +163,7 @@ public class ModuleCrash extends ModuleBase {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recording exceptions");
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return _cly;
         }
 
@@ -247,7 +247,7 @@ public class ModuleCrash extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Crashes] Adding crash breadcrumb");
 
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
                     return _cly;
                 }
 

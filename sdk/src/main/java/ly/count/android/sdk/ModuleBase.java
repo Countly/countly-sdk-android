@@ -5,9 +5,11 @@ import android.content.res.Configuration;
 
 abstract class ModuleBase {
     final Countly _cly;
+    ConsentProvider consentProvider;
 
-    ModuleBase(Countly cly) {
+    ModuleBase(Countly cly, CountlyConfig config) {
         _cly = cly;
+        consentProvider = config.consentProvider;
     }
 
     void halt() {

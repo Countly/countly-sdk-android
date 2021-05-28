@@ -55,7 +55,7 @@ public class ConnectionQueue {
     Map<String, String> metricOverride = null;
 
     protected ModuleLog L;
-    protected ModuleConsent moduleConsent;//link to the consent module
+    protected ConsentProvider consentProvider;//link to the consent module
 
     // Getters are for unit testing
     String getAppKey() {
@@ -164,7 +164,7 @@ public class ConnectionQueue {
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
 
-        if (moduleConsent.getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&begin_session=1"
                 + "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);//can be only sent with begin session
@@ -177,7 +177,7 @@ public class ConnectionQueue {
             dataAvailable = true;
         }
 
-        if (moduleConsent.getConsent(Countly.CountlyFeatureNames.attribution)) {
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             //add attribution data if consent given
             if (Countly.sharedInstance().isAttributionEnabled) {
                 String cachedAdId = store_.getCachedAdvertisingId();
@@ -213,12 +213,12 @@ public class ConnectionQueue {
             boolean dataAvailable = false;//will only send data if there is something valuable to send
             String data = prepareCommonRequestData();
 
-            if (moduleConsent.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
                 data += "&session_duration=" + duration;
                 dataAvailable = true;
             }
 
-            if (moduleConsent.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            if (consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
                 if (Countly.sharedInstance().isAttributionEnabled) {
                     String cachedAdId = store_.getCachedAdvertisingId();
 
@@ -240,7 +240,7 @@ public class ConnectionQueue {
         checkInternalState();
         L.d("[Connection Queue] changeDeviceId");
 
-        if (!moduleConsent.anyConsentGiven()) {
+        if (!consentProvider.anyConsentGiven()) {
             L.d("[Connection Queue] request ignored, consent not given");
             //no consent set, aborting
             return;
@@ -248,7 +248,7 @@ public class ConnectionQueue {
 
         String data = prepareCommonRequestData();
 
-        if (moduleConsent.getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             data += "&session_duration=" + duration;
         }
 
@@ -263,7 +263,7 @@ public class ConnectionQueue {
         checkInternalState();
         L.d("[Connection Queue] tokenSession");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.push)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -307,7 +307,7 @@ public class ConnectionQueue {
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
 
-        if (moduleConsent.getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             data += "&end_session=1";
             if (duration > 0) {
                 data += "&session_duration=" + duration;
@@ -315,7 +315,7 @@ public class ConnectionQueue {
             dataAvailable = true;
         }
 
-        if (deviceIdOverride != null && moduleConsent.anyConsentGiven()) {
+        if (deviceIdOverride != null && consentProvider.anyConsentGiven()) {
             //if no consent is given, device ID override is not sent
             data += "&override_id=" + UtilsNetworking.urlEncodeString(deviceIdOverride);
             dataAvailable = true;
@@ -352,7 +352,7 @@ public class ConnectionQueue {
         checkInternalState();
         L.d("[Connection Queue] sendUserData");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.users)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -378,7 +378,7 @@ public class ConnectionQueue {
         checkInternalState();
         L.d("[Connection Queue] checkInternalState");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.attribution)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -401,7 +401,7 @@ public class ConnectionQueue {
         checkInternalState();
         L.d("[Connection Queue] sendCrashReport");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.crashes)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -457,7 +457,7 @@ public class ConnectionQueue {
 
         L.d("[Connection Queue] sendAPMCustomTrace");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.apm)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -482,7 +482,7 @@ public class ConnectionQueue {
 
         L.d("[Connection Queue] sendAPMNetworkTrace");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.apm)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -508,7 +508,7 @@ public class ConnectionQueue {
 
         L.d("[Connection Queue] sendAPMAppStart");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.apm)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -531,7 +531,7 @@ public class ConnectionQueue {
 
         L.d("[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
 
-        if (!moduleConsent.getConsent(Countly.CountlyFeatureNames.apm)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
@@ -564,7 +564,7 @@ public class ConnectionQueue {
     private String prepareLocationData(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         String data = "";
 
-        if (locationDisabled || !moduleConsent.getConsent(Countly.CountlyFeatureNames.location)) {
+        if (locationDisabled || !consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
             //if location is disabled or consent not given, send empty location info
             //this way it is cleared server side and geoip is not used
             //do this only if allowed
@@ -597,7 +597,7 @@ public class ConnectionQueue {
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
 
-        if (moduleConsent.getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);
         }

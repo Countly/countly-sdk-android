@@ -6,7 +6,7 @@ class ModuleDeviceId extends ModuleBase {
     ModuleLog L;
 
     ModuleDeviceId(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
         L.v("[ModuleDeviceId] Initialising");

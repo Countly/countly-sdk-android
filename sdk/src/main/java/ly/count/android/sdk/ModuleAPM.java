@@ -31,7 +31,7 @@ public class ModuleAPM extends ModuleBase {
     ModuleLog L;
 
     ModuleAPM(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 

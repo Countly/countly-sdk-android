@@ -34,7 +34,7 @@ public class ModuleFeedback extends ModuleBase {
     ModuleLog L;
 
     ModuleFeedback(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 
@@ -65,7 +65,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             devCallback.onFinished(null, "Consent is not granted");
             return;
         }
@@ -179,7 +179,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             if (devCallback != null) {
                 devCallback.onFinished("Consent is not granted");
             }
@@ -253,7 +253,7 @@ public class ModuleFeedback extends ModuleBase {
                     @Override public void onClick(DialogInterface dialogInterface, int i) {
                         L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
 
-                        if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.feedback)) {
+                        if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
                             Map<String, Object> segm = new HashMap<>();
                             segm.put("platform", "android");
                             segm.put("app_version", DeviceInfo.getAppVersion(context));
@@ -291,7 +291,7 @@ public class ModuleFeedback extends ModuleBase {
     void getFeedbackWidgetDataInternal(CountlyFeedbackWidget widgetInfo, final RetrieveFeedbackWidgetData devCallback) {
         L.d("[ModuleFeedback] calling 'getFeedbackWidgetDataInternal', callback set:[" + (devCallback != null) + "]");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             devCallback.onFinished(null, "Consent is not granted");
             return;
         }
@@ -367,7 +367,7 @@ public class ModuleFeedback extends ModuleBase {
 
         L.d("[ModuleFeedback] reportFeedbackWidgetManuallyInternal, widgetData set:[" + (widgetData != null) + ", widget id:[" + widgetInfo.widgetId + "], widget type:[" + widgetInfo.type + "], widget result set:[" + (widgetResult != null) + "]");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.feedback)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             L.w("[ModuleFeedback] Can't report feedback widget data, consent is not granted");
             return;
         }

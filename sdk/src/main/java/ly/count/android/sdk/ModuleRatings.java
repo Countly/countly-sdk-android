@@ -31,7 +31,7 @@ public class ModuleRatings extends ModuleBase {
     ModuleLog L;
 
     ModuleRatings(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 
@@ -49,7 +49,7 @@ public class ModuleRatings extends ModuleBase {
     void recordManualRatingInternal(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
         L.d("[ModuleRatings] Calling recordManualRatingInternal");
 
-        if (!Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
             return;
         }
 
@@ -409,7 +409,7 @@ public class ModuleRatings extends ModuleBase {
             public void onRatingChanged(RatingBar ratingBar, float v, boolean b) {
                 int rating = (int) v;
 
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
                     Map<String, String> segm = new HashMap<>();
                     segm.put("platform", "android");
                     segm.put("app_version", DeviceInfo.getAppVersion(context));
@@ -447,7 +447,7 @@ public class ModuleRatings extends ModuleBase {
             return;
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
             if (devCallback != null) {
                 devCallback.callback("Consent is not granted");
             }
@@ -585,7 +585,7 @@ public class ModuleRatings extends ModuleBase {
     @Override
     void initFinished(CountlyConfig config) {
         //do star rating related things
-        if (_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
             registerAppSession(config.context, config.countlyStore, starRatingCallback_);
         }
     }
@@ -641,7 +641,7 @@ public class ModuleRatings extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Ratings] Calling showStarRating");
 
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.starRating)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
                     return;
                 }
 

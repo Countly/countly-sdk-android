@@ -76,7 +76,9 @@ public class EventQueueTests {
 
         mEventQueue.recordEvent(eventKey, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, null);
         verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), eq(segmentationBoolean), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
-        assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
+
+        //used timestamp is withing a couple of ms
+        assertTrue((arg.getValue() - timestamp) <= 2);
     }
 
     @Test
@@ -97,7 +99,8 @@ public class EventQueueTests {
 
         mEventQueue.recordEvent(eventKey, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
         verify(mMockCountlyStore).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), eq(segmentationBoolean), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
-        assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
+        assertEquals(timestamp, (long) arg.getValue());
+        //assertTrue(((timestamp - 1) <= arg.getValue()) && ((timestamp + 1) >= arg.getValue()));
     }
 
     @Test

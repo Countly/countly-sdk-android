@@ -10,7 +10,7 @@ public class ModuleSessions extends ModuleBase {
     ModuleLog L;
 
     ModuleSessions(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 

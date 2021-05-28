@@ -15,7 +15,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     ModuleLog L;
 
     ModuleRemoteConfig(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 
@@ -212,7 +212,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
         _cly.remoteConfig().clearStoredValues();
-        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+        if (_cly.remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
         }
     }
@@ -230,7 +230,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     @Override
     public void initFinished(CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+        if (_cly.remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
             L.d("[Init] Automatically updating remote config values");
             updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, _cly.remoteConfigInitCallback);
         }
@@ -257,7 +257,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'getAllValues'");
 
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return null;
                 }
 
@@ -275,7 +275,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling remoteConfigValueForKey, " + key);
 
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return null;
                 }
 
@@ -293,7 +293,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
 
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
                         callback.callback("No consent given");
                     }
@@ -315,7 +315,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
                         callback.callback("No consent given");
                     }
@@ -337,7 +337,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig");
 
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;
                 }
 

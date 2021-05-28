@@ -2,14 +2,16 @@ package ly.count.android.sdk;
 
 import android.content.Intent;
 
-public class ModuleConsent extends ModuleBase {
+public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     Consent consentInterface = null;
 
     ModuleLog L;
 
     ModuleConsent(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
+        consentProvider = this;
+        config.consentProvider = this;
 
         L = cly.L;
 
@@ -18,13 +20,11 @@ public class ModuleConsent extends ModuleBase {
         consentInterface = new Consent();
     }
 
-    protected boolean getConsent(String featureName) {
-        synchronized (_cly) {
-            return _cly.getConsent(featureName);
-        }
+    public boolean getConsent(String featureName) {
+        return _cly.getConsent(featureName);
     }
 
-    protected boolean anyConsentGiven(){
+    public boolean anyConsentGiven() {
         return _cly.anyConsentGiven();
     }
 
@@ -90,7 +90,8 @@ public class ModuleConsent extends ModuleBase {
          */
         public boolean getConsent(String featureName) {
             synchronized (_cly) {
-                return _cly.getConsent(featureName);
+
+                return ModuleConsent.this.getConsent(featureName);
             }
         }
 

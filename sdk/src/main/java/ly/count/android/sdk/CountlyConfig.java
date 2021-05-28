@@ -12,10 +12,17 @@ public class CountlyConfig {
 
     protected CountlyStore countlyStore = null;
 
+    /**
+     * Used to pass the consent provider to all modules and features
+     */
+    protected ConsentProvider consentProvider = null;
+
     protected boolean checkForNativeCrashDumps = true;
 
     //used to deliver this object to connection queue
     protected DeviceId deviceIdInstance = null;
+
+    // Fields used for SDK configuration during init
 
     /**
      * Android context.

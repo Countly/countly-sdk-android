@@ -16,7 +16,7 @@ public class ModuleLocation extends ModuleBase {
     ModuleLog L;
 
     ModuleLocation(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 
@@ -54,7 +54,7 @@ public class ModuleLocation extends ModuleBase {
     void disableLocationInternal() {
         L.d("[ModuleLocation] Calling 'disableLocationInternal'");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.location)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
             //can't send disable location request if no consent given
             return;
         }
@@ -69,7 +69,7 @@ public class ModuleLocation extends ModuleBase {
 
         L.d("[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.location)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
             return;
         }
 
@@ -86,7 +86,7 @@ public class ModuleLocation extends ModuleBase {
             locationDisabled = false;
         }
 
-        if (_cly.isBeginSessionSent || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (_cly.isBeginSessionSent || !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
             if (postInitReached) {

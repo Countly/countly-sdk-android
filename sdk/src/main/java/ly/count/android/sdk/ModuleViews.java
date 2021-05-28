@@ -27,7 +27,7 @@ public class ModuleViews extends ModuleBase {
     ModuleLog L;
 
     ModuleViews(Countly cly, CountlyConfig config) {
-        super(cly);
+        super(cly, config);
 
         L = cly.L;
 
@@ -71,7 +71,7 @@ public class ModuleViews extends ModuleBase {
             L.e("[ModuleViews] Last view start value is not normal: [" + lastViewStart + "]");
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.views)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
             return;
         }
 
@@ -159,7 +159,7 @@ public class ModuleViews extends ModuleBase {
     void updateOrientation(int newOrientation) {
         L.d("[ModuleViews] Calling [updateOrientation], new orientation:[" + newOrientation + "]");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
             //we don't have consent, just leave
             return;
         }
