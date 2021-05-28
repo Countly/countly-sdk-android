@@ -218,7 +218,7 @@ public class ConnectionQueueTests {
     public void testBeginSession() throws JSONException, UnsupportedEncodingException {
         connQ.beginSession(false, null, null, null, null);
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connQ.getCountlyStore()).addConnection(arg.capture());
+        verify(connQ.getCountlyStore()).addRequest(arg.capture());
         verify(connQ.getExecutor()).submit(any(ConnectionProcessor.class));
 
         // verify query parameters
@@ -270,7 +270,7 @@ public class ConnectionQueueTests {
     public void testUpdateSession_moreThanZeroDuration() {
         connQ.updateSession(60);
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connQ.getCountlyStore()).addConnection(arg.capture());
+        verify(connQ.getCountlyStore()).addRequest(arg.capture());
         verify(connQ.getExecutor()).submit(any(ConnectionProcessor.class));
 
         // verify query parameters
@@ -299,7 +299,7 @@ public class ConnectionQueueTests {
     public void testEndSession_zeroDuration() {
         connQ.endSession(0);
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connQ.getCountlyStore()).addConnection(arg.capture());
+        verify(connQ.getCountlyStore()).addRequest(arg.capture());
         verify(connQ.getExecutor()).submit(any(ConnectionProcessor.class));
 
         // verify query parameters
@@ -321,7 +321,7 @@ public class ConnectionQueueTests {
     public void testEndSession_negativeDuration() {
         connQ.endSession(-1);
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connQ.getCountlyStore()).addConnection(arg.capture());
+        verify(connQ.getCountlyStore()).addRequest(arg.capture());
         verify(connQ.getExecutor()).submit(any(ConnectionProcessor.class));
 
         // verify query parameters
@@ -343,7 +343,7 @@ public class ConnectionQueueTests {
     public void testEndSession_moreThanZeroDuration() {
         connQ.endSession(15);
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connQ.getCountlyStore()).addConnection(arg.capture());
+        verify(connQ.getCountlyStore()).addRequest(arg.capture());
         verify(connQ.getExecutor()).submit(any(ConnectionProcessor.class));
 
         // verify query parameters
@@ -376,7 +376,7 @@ public class ConnectionQueueTests {
         final String eventData = "blahblahblah";
         connQ.recordEvents(eventData);
         final ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connQ.getCountlyStore()).addConnection(arg.capture());
+        verify(connQ.getCountlyStore()).addRequest(arg.capture());
         verify(connQ.getExecutor()).submit(any(ConnectionProcessor.class));
 
         // verify query parameters
@@ -421,7 +421,7 @@ public class ConnectionQueueTests {
 
     @Test
     public void testTick_storeHasNoConnections() {
-        when(connQ.getCountlyStore().isEmptyConnections()).thenReturn(true);
+        when(connQ.getCountlyStore().noRequestsAvailable()).thenReturn(true);
         connQ.tick();
         verifyZeroInteractions(connQ.getExecutor());
     }

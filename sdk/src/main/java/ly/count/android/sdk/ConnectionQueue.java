@@ -193,7 +193,7 @@ public class ConnectionQueue {
         Countly.sharedInstance().isBeginSessionSent = true;
 
         if (dataAvailable) {
-            store_.addConnection(data);
+            store_.addRequest(data);
             tick();
         }
     }
@@ -230,7 +230,7 @@ public class ConnectionQueue {
             }
 
             if (dataAvailable) {
-                store_.addConnection(data);
+                store_.addRequest(data);
                 tick();
             }
         }
@@ -255,7 +255,7 @@ public class ConnectionQueue {
         // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGING BREAKS !!!!!
         data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceId);
 
-        store_.addConnection(data);
+        store_.addRequest(data);
         tick();
     }
 
@@ -283,7 +283,7 @@ public class ConnectionQueue {
             @Override
             public void run() {
                 L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
-                store_.addConnection(data);
+                store_.addRequest(data);
                 tick();
             }
         }, 10, TimeUnit.SECONDS);
@@ -322,7 +322,7 @@ public class ConnectionQueue {
         }
 
         if (dataAvailable) {
-            store_.addConnection(data);
+            store_.addRequest(data);
             tick();
         }
     }
@@ -338,7 +338,7 @@ public class ConnectionQueue {
 
         data += prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
 
-        store_.addConnection(data);
+        store_.addRequest(data);
 
         tick();
     }
@@ -362,7 +362,7 @@ public class ConnectionQueue {
         if (!userdata.equals("")) {
             String data = prepareCommonRequestData()
                 + userdata;
-            store_.addConnection(data);
+            store_.addRequest(data);
 
             tick();
         }
@@ -386,7 +386,7 @@ public class ConnectionQueue {
         if (referrer != null) {
             String data = prepareCommonRequestData()
                 + referrer;
-            store_.addConnection(data);
+            store_.addRequest(data);
 
             tick();
         }
@@ -414,7 +414,7 @@ public class ConnectionQueue {
         final String data = prepareCommonRequestData()
             + "&crash=" + UtilsNetworking.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash, customSegmentation));
 
-        store_.addConnection(data);
+        store_.addRequest(data);
 
         tick();
     }
@@ -436,7 +436,7 @@ public class ConnectionQueue {
         final String data = prepareCommonRequestData()
             + "&events=" + events;
 
-        store_.addConnection(data);
+        store_.addRequest(data);
         tick();
     }
 
@@ -447,7 +447,7 @@ public class ConnectionQueue {
         final String data = prepareCommonRequestData()
             + "&consent=" + UtilsNetworking.urlEncodeString(formattedConsentChanges);
 
-        store_.addConnection(data);
+        store_.addRequest(data);
 
         tick();
     }
@@ -472,7 +472,7 @@ public class ConnectionQueue {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addConnection(data);
+        store_.addRequest(data);
 
         tick();
     }
@@ -498,7 +498,7 @@ public class ConnectionQueue {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addConnection(data);
+        store_.addRequest(data);
 
         tick();
     }
@@ -521,7 +521,7 @@ public class ConnectionQueue {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addConnection(data);
+        store_.addRequest(data);
 
         tick();
     }
@@ -544,7 +544,7 @@ public class ConnectionQueue {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addConnection(data);
+        store_.addRequest(data);
 
         tick();
     }
@@ -643,10 +643,10 @@ public class ConnectionQueue {
      * is already running.
      */
     void tick() {
-        L.v("[Connection Queue] tick, Not empty:[" + !store_.isEmptyConnections() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
+        L.v("[Connection Queue] tick, Not empty:[" + !store_.noRequestsAvailable() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
             || connectionProcessorFuture_.isDone()) + "]");
 
-        if (!store_.isEmptyConnections() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
+        if (!store_.noRequestsAvailable() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
         }
@@ -657,7 +657,7 @@ public class ConnectionQueue {
     }
 
     public boolean queueContainsTemporaryIdItems() {
-        String[] storedRequests = getCountlyStore().connections();
+        String[] storedRequests = getCountlyStore().getRequests();
         String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
 
         for (String storedRequest : storedRequests) {

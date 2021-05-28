@@ -105,24 +105,24 @@ public class EventQueueTests {
 
     @Test
     public void testSize_zeroLenArray() {
-        when(mMockCountlyStore.events()).thenReturn(new String[0]);
+        when(mMockCountlyStore.getEvents()).thenReturn(new String[0]);
         assertEquals(0, mEventQueue.size());
     }
 
     @Test
     public void testSize() {
-        when(mMockCountlyStore.events()).thenReturn(new String[2]);
+        when(mMockCountlyStore.getEvents()).thenReturn(new String[2]);
         assertEquals(2, mEventQueue.size());
     }
 
     @Test
     public void testEvents_emptyList() throws UnsupportedEncodingException {
         final List<Event> eventsList = new ArrayList<>();
-        when(mMockCountlyStore.eventsList()).thenReturn(eventsList);
+        when(mMockCountlyStore.getEventList()).thenReturn(eventsList);
 
         final String expected = URLEncoder.encode("[]", "UTF-8");
         assertEquals(expected, mEventQueue.events());
-        verify(mMockCountlyStore).eventsList();
+        verify(mMockCountlyStore).getEventList();
         verify(mMockCountlyStore).removeEvents(eventsList);
     }
 
@@ -135,12 +135,12 @@ public class EventQueueTests {
         final Event event2 = new Event();
         event2.key = "event2Key";
         eventsList.add(event2);
-        when(mMockCountlyStore.eventsList()).thenReturn(eventsList);
+        when(mMockCountlyStore.getEventList()).thenReturn(eventsList);
 
         final String jsonToEncode = "[" + event1.toJSON().toString() + "," + event2.toJSON().toString() + "]";
         final String expected = URLEncoder.encode(jsonToEncode, "UTF-8");
         assertEquals(expected, mEventQueue.events());
-        verify(mMockCountlyStore).eventsList();
+        verify(mMockCountlyStore).getEventList();
         verify(mMockCountlyStore).removeEvents(eventsList);
     }
 }

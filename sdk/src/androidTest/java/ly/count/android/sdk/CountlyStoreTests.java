@@ -83,38 +83,38 @@ public class CountlyStoreTests {
     @Test
     public void testConnections_prefIsNull() {
         // the clear() call in setUp ensures the pref is not present
-        assertTrue(Arrays.equals(new String[0], store.connections()));
+        assertTrue(Arrays.equals(new String[0], store.getRequests()));
     }
 
     @Test
     public void testConnections_prefIsEmptyString() {
         // the following two calls will result in the pref being an empty string
         final String connStr = "blah";
-        store.addConnection(connStr);
-        store.removeConnection(connStr);
-        assertTrue(Arrays.equals(new String[0], store.connections()));
+        store.addRequest(connStr);
+        store.removeRequest(connStr);
+        assertTrue(Arrays.equals(new String[0], store.getRequests()));
     }
 
     @Test
     public void testConnections_prefHasSingleValue() {
         final String connStr = "blah";
-        store.addConnection(connStr);
-        assertTrue(Arrays.equals(new String[] { connStr }, store.connections()));
+        store.addRequest(connStr);
+        assertTrue(Arrays.equals(new String[] { connStr }, store.getRequests()));
     }
 
     @Test
     public void testConnections_prefHasTwoValues() {
         final String connStr1 = "blah1";
         final String connStr2 = "blah2";
-        store.addConnection(connStr1);
-        store.addConnection(connStr2);
-        assertTrue(Arrays.equals(new String[] { connStr1, connStr2 }, store.connections()));
+        store.addRequest(connStr1);
+        store.addRequest(connStr2);
+        assertTrue(Arrays.equals(new String[] { connStr1, connStr2 }, store.getRequests()));
     }
 
     @Test
     public void testEvents_prefIsNull() {
         // the clear() call in setUp ensures the pref is not present
-        assertTrue(Arrays.equals(new String[0], store.events()));
+        assertTrue(Arrays.equals(new String[0], store.getEvents()));
     }
 
     @Test
@@ -122,8 +122,8 @@ public class CountlyStoreTests {
         // the following two calls will result in the pref being an empty string
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         store.addEvent("eventKey", null, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
-        store.removeEvents(store.eventsList());
-        assertTrue(Arrays.equals(new String[0], store.events()));
+        store.removeEvents(store.getEventList());
+        assertTrue(Arrays.equals(new String[0], store.getEvents()));
     }
 
     @Test
@@ -131,7 +131,7 @@ public class CountlyStoreTests {
         final String eventKey = "eventKey";
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         store.addEvent(eventKey, null, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
-        final String[] eventJSONStrings = store.events();
+        final String[] eventJSONStrings = store.getEvents();
         final JSONObject eventJSONObj = new JSONObject(eventJSONStrings[0]);
         assertEquals(eventKey, eventJSONObj.getString("key"));
         // this is good enough, we verify the entire JSON content is written in later unit tests
@@ -146,7 +146,7 @@ public class CountlyStoreTests {
 
         instant = UtilsTime.getCurrentInstant();
         store.addEvent(eventKey2, null, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
-        final String[] eventJSONStrs = store.events();
+        final String[] eventJSONStrs = store.getEvents();
         final JSONObject eventJSONObj1 = new JSONObject(eventJSONStrs[0]);
         assertEquals(eventKey1, eventJSONObj1.getString("key"));
         final JSONObject eventJSONObj2 = new JSONObject(eventJSONStrs[1]);
@@ -156,7 +156,7 @@ public class CountlyStoreTests {
 
     @Test
     public void testEventsList_noEvents() {
-        assertEquals(new ArrayList<Event>(0), store.eventsList());
+        assertEquals(new ArrayList<Event>(0), store.getEventList());
     }
 
     @Test
@@ -169,7 +169,7 @@ public class CountlyStoreTests {
         store.addEvent(event1.key, event1.segmentation, null, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
         final List<Event> expected = new ArrayList<>(1);
         expected.add(event1);
-        final List<Event> actual = store.eventsList();
+        final List<Event> actual = store.getEventList();
         assertEquals(expected, actual);
     }
 
@@ -197,7 +197,7 @@ public class CountlyStoreTests {
         expected.add(event2);
         expected.add(event3);
         expected.add(event1);
-        final List<Event> actual = store.eventsList();
+        final List<Event> actual = store.getEventList();
         assertEquals(expected, actual);
     }
 
@@ -225,7 +225,7 @@ public class CountlyStoreTests {
         final List<Event> expected = new ArrayList<>(2);
         expected.add(event1);
         expected.add(event2);
-        final List<Event> actual = store.eventsList();
+        final List<Event> actual = store.getEventList();
         assertEquals(expected, actual);
     }
 
@@ -253,83 +253,83 @@ public class CountlyStoreTests {
         final List<Event> expected = new ArrayList<>(2);
         expected.add(event1);
         expected.add(event2);
-        final List<Event> actual = store.eventsList();
+        final List<Event> actual = store.getEventList();
         assertEquals(expected, actual);
     }
 
     @Test
     public void testIsEmptyConnections_prefIsNull() {
         // the clear() call in setUp ensures the pref is not present
-        assertTrue(store.isEmptyConnections());
+        assertTrue(store.noRequestsAvailable());
     }
 
     @Test
     public void testIsEmptyConnections_prefIsEmpty() {
         // the following two calls will result in the pref being an empty string
         final String connStr = "blah";
-        store.addConnection(connStr);
-        store.removeConnection(connStr);
-        assertTrue(store.isEmptyConnections());
+        store.addRequest(connStr);
+        store.removeRequest(connStr);
+        assertTrue(store.noRequestsAvailable());
     }
 
     @Test
     public void testIsEmptyConnections_prefIsPopulated() {
         final String connStr = "blah";
-        store.addConnection(connStr);
-        assertFalse(store.isEmptyConnections());
+        store.addRequest(connStr);
+        assertFalse(store.noRequestsAvailable());
     }
 
     @Test
     public void testAddConnection_nullStr() {
-        store.addConnection(null);
-        assertTrue(store.isEmptyConnections());
+        store.addRequest(null);
+        assertTrue(store.noRequestsAvailable());
     }
 
     @Test
     public void testAddConnection_emptyStr() {
-        store.addConnection("");
-        assertTrue(store.isEmptyConnections());
+        store.addRequest("");
+        assertTrue(store.noRequestsAvailable());
     }
 
     @Test
     public void testRemoveConnection_nullStr() {
-        store.addConnection("blah");
-        store.removeConnection(null);
-        assertFalse(store.isEmptyConnections());
+        store.addRequest("blah");
+        store.removeRequest(null);
+        assertFalse(store.noRequestsAvailable());
     }
 
     @Test
     public void testRemoveConnection_emptyStr() {
-        store.addConnection("blah");
-        store.removeConnection("");
-        assertFalse(store.isEmptyConnections());
+        store.addRequest("blah");
+        store.removeRequest("");
+        assertFalse(store.noRequestsAvailable());
     }
 
     @Test
     public void testRemoveConnection_firstConn() {
-        store.addConnection("blah");
-        assertFalse(store.isEmptyConnections());
-        store.removeConnection("blah");
-        assertTrue(store.isEmptyConnections());
+        store.addRequest("blah");
+        assertFalse(store.noRequestsAvailable());
+        store.removeRequest("blah");
+        assertTrue(store.noRequestsAvailable());
     }
 
     @Test
     public void testRemoveConnection_notFirstConn() {
-        store.addConnection("blah1");
-        store.addConnection("blah2");
-        assertEquals(2, store.connections().length);
-        store.removeConnection("blah2");
-        assertEquals(1, store.connections().length);
+        store.addRequest("blah1");
+        store.addRequest("blah2");
+        assertEquals(2, store.getRequests().length);
+        store.removeRequest("blah2");
+        assertEquals(1, store.getRequests().length);
     }
 
     @Test
     public void testRemoveConnection_onlyRemovesFirstMatchingOne() {
-        store.addConnection("blah1");
-        store.addConnection("blah2");
-        store.addConnection("blah1");
-        assertEquals(3, store.connections().length);
-        store.removeConnection("blah1");
-        assertTrue(Arrays.equals(new String[] { "blah2", "blah1" }, store.connections()));
+        store.addRequest("blah1");
+        store.addRequest("blah2");
+        store.addRequest("blah1");
+        assertEquals(3, store.getRequests().length);
+        store.removeRequest("blah1");
+        assertTrue(Arrays.equals(new String[] { "blah2", "blah1" }, store.getRequests()));
     }
 
     @Test
@@ -346,7 +346,7 @@ public class CountlyStoreTests {
 
         store.addEvent(event1.key, event1.segmentation, null, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
 
-        final List<Event> addedEvents = store.eventsList();
+        final List<Event> addedEvents = store.getEventList();
         assertEquals(1, addedEvents.size());
         final Event addedEvent = addedEvents.get(0);
         assertEquals(event1, addedEvent);
@@ -375,13 +375,13 @@ public class CountlyStoreTests {
         store.addEvent(event1.key, event1.segmentation, null, null, null, event1.timestamp, event1.hour, event1.dow, event1.count, event1.sum, event1.dur);
         store.addEvent(event2.key, event2.segmentation, null, null, null, event2.timestamp, event2.hour, event2.dow, event2.count, event2.sum, event2.dur);
 
-        final List<Event> eventsToRemove = store.eventsList();
+        final List<Event> eventsToRemove = store.getEventList();
 
         store.addEvent(event3.key, event3.segmentation, null, null, null, event3.timestamp, event3.hour, event3.dow, event3.count, event3.sum, event3.dur);
 
         store.removeEvents(eventsToRemove);
 
-        final List<Event> events = store.eventsList();
+        final List<Event> events = store.getEventList();
         assertEquals(1, events.size());
         assertEquals(event3, events.get(0));
     }
@@ -391,7 +391,7 @@ public class CountlyStoreTests {
         final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
-        store.addConnection("blah");
+        store.addRequest("blah");
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         store.addEvent("eventKey", null, null, null, null, instant.timestampMs, instant.hour, instant.dow, 1, 0.0d, 10.0d);
         assertTrue(prefs.contains("EVENTS"));
@@ -476,53 +476,53 @@ public class CountlyStoreTests {
 
     @Test
     public void removeConnection_nonExisting() {
-        store.addConnection("blah1");
-        store.addConnection("blah2");
-        assertEquals(2, store.connections().length);
-        store.removeConnection("blah3");
-        assertEquals(2, store.connections().length);
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.connections()));
+        store.addRequest("blah1");
+        store.addRequest("blah2");
+        assertEquals(2, store.getRequests().length);
+        store.removeRequest("blah3");
+        assertEquals(2, store.getRequests().length);
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.getRequests()));
     }
 
     @Test
     public void replaceConnections() {
-        store.addConnection("blah1");
-        store.addConnection("blah2");
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.connections()));
-        store.replaceConnections(new String[] { "aa", "bb", "cc" });
-        assertTrue(Arrays.equals(new String[] { "aa", "bb", "cc" }, store.connections()));
+        store.addRequest("blah1");
+        store.addRequest("blah2");
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.getRequests()));
+        store.replaceRequests(new String[] { "aa", "bb", "cc" });
+        assertTrue(Arrays.equals(new String[] { "aa", "bb", "cc" }, store.getRequests()));
 
         List<String> newList = new ArrayList<>();
         newList.add("33");
         newList.add("pp");
-        store.replaceConnectionsList(newList);
-        assertTrue(Arrays.equals(new String[] { "33", "pp" }, store.connections()));
+        store.replaceRequestList(newList);
+        assertTrue(Arrays.equals(new String[] { "33", "pp" }, store.getRequests()));
     }
 
     @Test
     public void deleteOldestConnection() {
-        store.addConnection("blah1");
-        store.addConnection("blah2");
-        store.addConnection("blah3");
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2", "blah3" }, store.connections()));
+        store.addRequest("blah1");
+        store.addRequest("blah2");
+        store.addRequest("blah3");
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2", "blah3" }, store.getRequests()));
         store.deleteOldestRequest();
-        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.connections()));
+        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.getRequests()));
     }
 
     @Test
     public void addConnectionMaxRequests() {
         CountlyStore.MAX_REQUESTS = 2;
-        store.addConnection("blah1");
-        store.addConnection("blah2");
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.connections()));
+        store.addRequest("blah1");
+        store.addRequest("blah2");
+        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.getRequests()));
 
-        store.addConnection("blah3");
-        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.connections()));
+        store.addRequest("blah3");
+        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.getRequests()));
 
-        store.addConnection("123");
-        assertTrue(Arrays.equals(new String[] { "blah3", "123" }, store.connections()));
+        store.addRequest("123");
+        assertTrue(Arrays.equals(new String[] { "blah3", "123" }, store.getRequests()));
 
-        store.addConnection("1qwe");
-        assertTrue(Arrays.equals(new String[] { "123", "1qwe" }, store.connections()));
+        store.addRequest("1qwe");
+        assertTrue(Arrays.equals(new String[] { "123", "1qwe" }, store.getRequests()));
     }
 }

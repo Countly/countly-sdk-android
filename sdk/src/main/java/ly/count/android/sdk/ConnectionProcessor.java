@@ -178,7 +178,7 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         while (true) {
-            final String[] storedEvents = store_.connections();
+            final String[] storedEvents = store_.getRequests();
             int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
 
             if (L.logEnabled()) {
@@ -338,7 +338,7 @@ public class ConnectionProcessor implements Runnable {
                     if (rRes == RequestResult.OK) {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
-                        store_.removeConnection(storedEvents[0]);
+                        store_.removeRequest(storedEvents[0]);
 
                         if (deviceIdChange) {
                             deviceId_.changeToDeveloperProvidedId(store_, newId);
@@ -350,7 +350,7 @@ public class ConnectionProcessor implements Runnable {
                         }
                     } else if (rRes == RequestResult.REMOVE) {
                         //bad request, will be removed
-                        store_.removeConnection(storedEvents[0]);
+                        store_.removeRequest(storedEvents[0]);
                     } else if (rRes == RequestResult.RETRY) {
                         // warning was logged above, stop processing, let next tick take care of retrying
                         break;
@@ -377,7 +377,7 @@ public class ConnectionProcessor implements Runnable {
                 L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedEvents[0]);
 
                 //remove stored data
-                store_.removeConnection(storedEvents[0]);
+                store_.removeRequest(storedEvents[0]);
             }
         }
     }

@@ -50,7 +50,7 @@ public class CountlyStore {
     private static final String PREFERENCES = "COUNTLY_STORE";
     private static final String PREFERENCES_PUSH = "ly.count.android.api.messaging";
     private static final String DELIMITER = ":::";
-    private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
+    private static final String REQUEST_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
@@ -90,15 +90,15 @@ public class CountlyStore {
     /**
      * Returns an unsorted array of the current stored connections.
      */
-    public String[] connections() {
-        final String joinedConnStr = preferences_.getString(CONNECTIONS_PREFERENCE, "");
+    public String[] getRequests() {
+        final String joinedConnStr = preferences_.getString(REQUEST_PREFERENCE, "");
         return joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
     }
 
     /**
      * Returns an unsorted array of the current stored event JSON strings.
      */
-    public String[] events() {
+    public String[] getEvents() {
         final String joinedEventsStr = preferences_.getString(EVENTS_PREFERENCE, "");
         return joinedEventsStr.length() == 0 ? new String[0] : joinedEventsStr.split(DELIMITER);
     }
@@ -106,8 +106,8 @@ public class CountlyStore {
     /**
      * Returns a list of the current stored events, sorted by timestamp from oldest to newest.
      */
-    public List<Event> eventsList() {
-        final String[] array = events();
+    public List<Event> getEventList() {
+        final String[] array = getEvents();
         final List<Event> events = new ArrayList<>(array.length);
         for (String s : array) {
             try {
@@ -131,65 +131,65 @@ public class CountlyStore {
     }
 
     /**
-     * Returns true if no connections are current stored, false otherwise.
+     * Returns true if no requests are current stored, false otherwise.
      */
-    public boolean isEmptyConnections() {
-        return preferences_.getString(CONNECTIONS_PREFERENCE, "").length() == 0;
+    public boolean noRequestsAvailable() {
+        return preferences_.getString(REQUEST_PREFERENCE, "").length() == 0;
     }
 
     /**
      * Adds a connection to the local store.
      *
-     * @param str the connection to be added, ignored if null or empty
+     * @param requestStr the connection to be added, ignored if null or empty
      */
-    public synchronized void addConnection(final String str) {
-        if (str != null && str.length() > 0) {
-            final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
+    public synchronized void addRequest(final String requestStr) {
+        if (requestStr != null && requestStr.length() > 0) {
+            final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
             if (connections.size() < MAX_REQUESTS) {
                 //request under max requests, add as normal
-                connections.add(str);
-                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+                connections.add(requestStr);
+                preferences_.edit().putString(REQUEST_PREFERENCE, join(connections, DELIMITER)).apply();
             } else {
                 //reached the limit, start deleting oldest requests
                 L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
 
                 deleteOldestRequest();
-                addConnection(str);
+                addRequest(requestStr);
             }
         }
     }
 
     synchronized void deleteOldestRequest() {
-        final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
+        final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
         connections.remove(0);
-        preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+        preferences_.edit().putString(REQUEST_PREFERENCE, join(connections, DELIMITER)).apply();
     }
 
     /**
      * Removes a connection from the local store.
      *
-     * @param str the connection to be removed, ignored if null or empty,
+     * @param requestStr the connection to be removed, ignored if null or empty,
      * or if a matching connection cannot be found
      */
-    public synchronized void removeConnection(final String str) {
-        if (str != null && str.length() > 0) {
-            final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
-            if (connections.remove(str)) {
-                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+    public synchronized void removeRequest(final String requestStr) {
+        if (requestStr != null && requestStr.length() > 0) {
+            final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
+            if (connections.remove(requestStr)) {
+                preferences_.edit().putString(REQUEST_PREFERENCE, join(connections, DELIMITER)).apply();
             }
         }
     }
 
-    protected synchronized void replaceConnections(final String[] newConns) {
+    protected synchronized void replaceRequests(final String[] newConns) {
         if (newConns != null) {
             final List<String> connections = new ArrayList<>(Arrays.asList(newConns));
-            replaceConnectionsList(connections);
+            replaceRequestList(connections);
         }
     }
 
-    protected synchronized void replaceConnectionsList(final List<String> newConns) {
+    protected synchronized void replaceRequestList(final List<String> newConns) {
         if (newConns != null) {
-            preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(newConns, DELIMITER)).apply();
+            preferences_.edit().putString(REQUEST_PREFERENCE, join(newConns, DELIMITER)).apply();
         }
     }
 
@@ -199,7 +199,7 @@ public class CountlyStore {
      * @param event event to be added to the local store, must not be null
      */
     void addEvent(final Event event) {
-        final List<Event> events = eventsList();
+        final List<Event> events = getEventList();
         if (events.size() < MAX_EVENTS) {
             events.add(event);
             preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
@@ -287,7 +287,7 @@ public class CountlyStore {
      */
     public synchronized void removeEvents(final Collection<Event> eventsToRemove) {
         if (eventsToRemove != null && eventsToRemove.size() > 0) {
-            final List<Event> events = eventsList();
+            final List<Event> events = getEventList();
             if (events.removeAll(eventsToRemove)) {
                 preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
             }
@@ -392,7 +392,7 @@ public class CountlyStore {
     synchronized void clear() {
         final SharedPreferences.Editor prefsEditor = preferences_.edit();
         prefsEditor.remove(EVENTS_PREFERENCE);
-        prefsEditor.remove(CONNECTIONS_PREFERENCE);
+        prefsEditor.remove(REQUEST_PREFERENCE);
         prefsEditor.clear();
         prefsEditor.apply();
 

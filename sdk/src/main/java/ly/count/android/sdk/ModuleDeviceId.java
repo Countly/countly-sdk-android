@@ -55,7 +55,7 @@ class ModuleDeviceId extends ModuleBase {
         _cly.connectionQueue_.getDeviceId().changeToId(_cly.context_, _cly.connectionQueue_.getCountlyStore(), type, deviceId);
 
         //update stored request for ID change to use this new ID
-        String[] storedRequests = _cly.connectionQueue_.getCountlyStore().connections();
+        String[] storedRequests = _cly.connectionQueue_.getCountlyStore().getRequests();
         String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
         String newIdTag = "&device_id=" + deviceId;
 
@@ -69,7 +69,7 @@ class ModuleDeviceId extends ModuleBase {
         }
 
         if (foundOne) {
-            _cly.connectionQueue_.getCountlyStore().replaceConnections(storedRequests);
+            _cly.connectionQueue_.getCountlyStore().replaceRequests(storedRequests);
         }
 
         //update remote config_ values if automatic update is enabled

@@ -2456,13 +2456,13 @@ public class Countly {
         int count = 0;
 
         while (true) {
-            final String[] storedEvents = store.connections();
+            final String[] storedEvents = store.getRequests();
             if (storedEvents == null || storedEvents.length == 0) {
                 // currently no data to send, we are done for now
                 break;
             }
             //remove stored data
-            store.removeConnection(storedEvents[0]);
+            store.removeRequest(storedEvents[0]);
             count++;
         }
 
@@ -2494,9 +2494,9 @@ public class Countly {
             return;
         }
 
-        List<String> filteredRequests = requestQueueReplaceWithAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
+        List<String> filteredRequests = requestQueueReplaceWithAppKey(connectionQueue_.getCountlyStore().getRequests(), connectionQueue_.getAppKey());
         if (filteredRequests != null) {
-            connectionQueue_.getCountlyStore().replaceConnectionsList(filteredRequests);
+            connectionQueue_.getCountlyStore().replaceRequestList(filteredRequests);
             doStoredRequests();
         }
     }
@@ -2512,8 +2512,8 @@ public class Countly {
             return;
         }
 
-        List<String> filteredRequests = requestQueueRemoveWithoutAppKey(connectionQueue_.getCountlyStore().connections(), connectionQueue_.getAppKey());
-        connectionQueue_.getCountlyStore().replaceConnectionsList(filteredRequests);
+        List<String> filteredRequests = requestQueueRemoveWithoutAppKey(connectionQueue_.getCountlyStore().getRequests(), connectionQueue_.getAppKey());
+        connectionQueue_.getCountlyStore().replaceRequestList(filteredRequests);
         doStoredRequests();
     }
 

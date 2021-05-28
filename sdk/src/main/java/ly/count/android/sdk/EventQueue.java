@@ -54,7 +54,7 @@ public class EventQueue {
      * @return the number of events in the local event queue
      */
     int size() {
-        return countlyStore_.events().length;
+        return countlyStore_.getEvents().length;
     }
 
     /**
@@ -66,7 +66,7 @@ public class EventQueue {
     String events() {
         String result;
 
-        final List<Event> events = countlyStore_.eventsList();
+        final List<Event> events = countlyStore_.getEventList();
 
         final JSONArray eventArray = new JSONArray();
         for (Event e : events) {
