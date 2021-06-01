@@ -29,6 +29,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +38,7 @@ import org.junit.runner.RunWith;
 import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.anyString;
@@ -77,8 +80,14 @@ public class ConnectionProcessorTests {
         assertSame(mockDeviceId, connectionProcessor1.getDeviceId());
     }
 
+    /**
+     * Make sure that a correct url is generated
+     * No salt provided and no custom endpoint
+     * @throws IOException
+     */
     @Test
     public void testUrlConnectionForEventData() throws IOException {
+        ConnectionProcessor.salt = null;
         final String eventData = "blahblahblah";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
         assertEquals(30000, urlConnection.getConnectTimeout());
@@ -87,6 +96,59 @@ public class ConnectionProcessorTests {
         assertTrue(urlConnection.getDoInput());
         assertFalse(urlConnection.getDoOutput());
         assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + null)), urlConnection.getURL());
+    }
+
+    /**
+     * Make sure that a correct url is generated
+     * With salt provided and no custom endpoint
+     * @throws IOException
+     */
+    @Test
+    public void urlConnectionForEventDataWithSalt() throws IOException {
+        final String eventData = "blahblahblahasd";
+        ConnectionProcessor.salt = "123";
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + ConnectionProcessor.salt)), urlConnection.getURL());
+    }
+
+    /**
+     * Make sure that a correct url is generated
+     * With salt provided and custom endpoint
+     * @throws IOException
+     */
+    @Test
+    public void urlConnectionForEventDataWithSaltCustomEndpoint() throws IOException {
+        final String eventData = "blahblahblah123";
+        final String endpoint = "/thisthat";
+        ConnectionProcessor.salt = "456";
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, endpoint);
+        assertEquals(new URL(connectionProcessor.getServerURL() + endpoint + "?" + eventData + "&checksum256=" + sha256Hash(eventData + ConnectionProcessor.salt)), urlConnection.getURL());
+    }
+
+    /**
+     * Making sure that custom header values are set correctly
+     * @throws IOException
+     */
+    @Test
+    public void urlConnectionCustomHeaderValues()  throws IOException {
+        Map<String, String> customValues = new HashMap<>();
+        customValues.put("aa", "bb");
+        customValues.put("dd", "cc");
+        customValues.put("11", "22");
+        customValues.put(null, "33");
+        customValues.put("", "44");
+        customValues.put("5", "");
+        customValues.put("6", null);
+
+        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, customValues, moduleLog);
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest("eventData", null);
+
+        assertEquals("bb", urlConnection.getRequestProperty("aa"));
+        assertEquals("cc", urlConnection.getRequestProperty("dd"));
+        assertEquals("22", urlConnection.getRequestProperty("11"));
+        assertNull(urlConnection.getRequestProperty(""));
+        assertEquals("", urlConnection.getRequestProperty("5"));
+        assertNull(urlConnection.getRequestProperty("33"));
     }
 
     @Test

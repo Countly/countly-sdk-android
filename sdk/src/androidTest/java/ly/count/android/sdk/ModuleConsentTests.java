@@ -148,4 +148,23 @@ public class ModuleConsentTests {
 
         Assert.assertTrue(mCountly.moduleConsent.consentProvider.anyConsentGiven());
     }
+
+    /**
+     * Make sure that feature names are not changed by accident
+     */
+    @Test
+    public void validateFeatureNames() {
+        Assert.assertEquals("sessions", Countly.CountlyFeatureNames.sessions);
+        Assert.assertEquals("events", Countly.CountlyFeatureNames.events);
+        Assert.assertEquals("views", Countly.CountlyFeatureNames.views);
+        Assert.assertEquals("location", Countly.CountlyFeatureNames.location);
+        Assert.assertEquals("crashes", Countly.CountlyFeatureNames.crashes);
+        Assert.assertEquals("attribution", Countly.CountlyFeatureNames.attribution);
+        Assert.assertEquals("users", Countly.CountlyFeatureNames.users);
+        Assert.assertEquals("push", Countly.CountlyFeatureNames.push);
+        Assert.assertEquals("star-rating", Countly.CountlyFeatureNames.starRating);
+        Assert.assertEquals("apm", Countly.CountlyFeatureNames.apm);
+        Assert.assertEquals("feedback", Countly.CountlyFeatureNames.feedback);
+        Assert.assertEquals("remote-config", Countly.CountlyFeatureNames.remoteConfig);
+    }
 }

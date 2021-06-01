@@ -97,17 +97,50 @@ public class DeviceIdTests {
     }
 
     /**
-     * Checking different ways of setting temporary device ID mode
+     * Checking temporary device ID mode is correctly recognised after init if set with "setId"
      */
     @Test
-    public void temporaryIdModeEnabled() {
+    public void temporaryIdModeEnabled_1() {
         DeviceId did = new DeviceId(store, "dsd", mock(ModuleLog.class), null);
+        did.init(getContext());
         assertFalse(did.temporaryIdModeEnabled());
+
         did.setId(DeviceId.Type.OPEN_UDID, DeviceId.temporaryCountlyDeviceId);
         assertTrue(did.temporaryIdModeEnabled());
 
+        did.setId(DeviceId.Type.DEVELOPER_SUPPLIED, "ff");
+        assertEquals("ff", did.getId());
+        assertFalse(did.temporaryIdModeEnabled());
+
+        did.setId(DeviceId.Type.DEVELOPER_SUPPLIED, DeviceId.temporaryCountlyDeviceId);
+        assertTrue(did.temporaryIdModeEnabled());
+
+        did.setId(DeviceId.Type.DEVELOPER_SUPPLIED, "12");
+        assertEquals("12", did.getId());
+        assertFalse(did.temporaryIdModeEnabled());
+
+        did.setId(DeviceId.Type.ADVERTISING_ID, DeviceId.temporaryCountlyDeviceId);
+        assertTrue(did.temporaryIdModeEnabled());
+
+        did.setId(DeviceId.Type.DEVELOPER_SUPPLIED, "34");
+        assertEquals("34", did.getId());
+        assertFalse(did.temporaryIdModeEnabled());
+
+        did.setId(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
+        assertTrue(did.temporaryIdModeEnabled());
+
+    }
+
+    /**
+     * Checking dsetting temporary device ID mode during init
+     */
+    @Test
+    public void temporaryIdModeEnabled_2() {
         DeviceId did2 = new DeviceId(store, DeviceId.temporaryCountlyDeviceId, mock(ModuleLog.class), null);
+        did2.init(getContext());
         assertTrue(did2.temporaryIdModeEnabled());
+
+        //todo needs more work
     }
 
     /**

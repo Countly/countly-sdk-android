@@ -62,8 +62,7 @@ public class ConnectionProcessor implements Runnable {
 
     private enum RequestResult {
         OK,         // success
-        RETRY,      // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
-        REMOVE      // bad request, remove
+        RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
     }
 
     ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
@@ -348,10 +347,8 @@ public class ConnectionProcessor implements Runnable {
                             L.v("[Connection Processor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
                             Countly.sharedInstance().notifyDeviceIdChange();
                         }
-                    } else if (rRes == RequestResult.REMOVE) {
-                        //bad request, will be removed
-                        store_.removeRequest(storedEvents[0]);
-                    } else if (rRes == RequestResult.RETRY) {
+                    } else {
+                        // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
                         break;
                     }

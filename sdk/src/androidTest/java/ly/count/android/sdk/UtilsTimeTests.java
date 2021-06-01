@@ -21,6 +21,14 @@ public class UtilsTimeTests {
     public void tearDown() {
     }
 
+    /**
+     * Test an improper get usage
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidGet() {
+        UtilsTime.Instant.get(-1L);
+    }
+
     @Test
     public void testInstant() {
         UtilsTime.Instant i1 = UtilsTime.Instant.get(1579463653876L);
