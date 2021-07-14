@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Assert;
@@ -93,6 +94,12 @@ public class CountlyConfigTests {
 
         Application app = new Application();
 
+        ConnectionInterceptor interceptor = new ConnectionInterceptor() {
+            @Override public HttpURLConnection intercept(HttpURLConnection connection, byte[] body) {
+                return null;
+            }
+        };
+
         assertDefaultValues(config, true);
 
         config.setServerURL(s[0]);
@@ -142,6 +149,7 @@ public class CountlyConfigTests {
         config.setDisableLocation();
         config.setLocation("CC", "city", "loc", "ip");
         config.setMetricOverride(metricOverride);
+        config.setConnectionInterceptor(interceptor);
 
         Assert.assertEquals(s[0], config.serverURL);
         Assert.assertEquals(c, config.context);
@@ -194,6 +202,7 @@ public class CountlyConfigTests {
         Assert.assertEquals("loc", config.locationLocation);
         Assert.assertEquals("ip", config.locationIpAddress);
         Assert.assertEquals(metricOverride, config.metricOverride);
+        Assert.assertEquals(interceptor, config.interceptor);
 
         config.setLocation("CC", "city", "loc", "ip");
     }
@@ -265,5 +274,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.locationLocation);
         Assert.assertNull(config.locationIpAddress);
         Assert.assertNull(config.metricOverride);
+        Assert.assertNull(config.interceptor);
     }
 }

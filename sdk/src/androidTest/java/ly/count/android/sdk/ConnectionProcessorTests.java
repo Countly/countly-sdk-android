@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -34,6 +35,8 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 import static org.junit.Assert.assertEquals;
@@ -41,6 +44,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.isNull;
@@ -331,6 +336,85 @@ public class ConnectionProcessorTests {
         assertTrue(testInputStream1.closed);
         assertTrue(testInputStream2.closed);
         verify(mockURLConnection, times(2)).disconnect();
+    }
+
+    @Test
+    public void testUrlConnectionUsesInterceptor() throws IOException {
+        final String eventData = "blahblahblah";
+        ConnectionInterceptor interceptor = mock(ConnectionInterceptor.class);
+        when(interceptor.intercept(any(HttpURLConnection.class), nullable(byte[].class))).thenAnswer(new Answer<HttpURLConnection>() {
+            @Override public HttpURLConnection answer(InvocationOnMock invocation) throws Throwable {
+                return invocation.getArgument(0, HttpURLConnection.class);
+            }
+        });
+        connectionProcessor.setConnectionInterceptor(interceptor);
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
+        verify(interceptor).intercept(any(HttpURLConnection.class), nullable(byte[].class));
+        assertEquals(30000, urlConnection.getConnectTimeout());
+        assertEquals(30000, urlConnection.getReadTimeout());
+        assertFalse(urlConnection.getUseCaches());
+        assertTrue(urlConnection.getDoInput());
+        assertFalse(urlConnection.getDoOutput());
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + null)), urlConnection.getURL());
+    }
+
+    @Test
+    public void testUrlConnectionInterceptorCanSetRequestPropertiesOnGet() throws IOException {
+        final String eventData = "blahblahblah";
+        ConnectionInterceptor interceptor = new ConnectionInterceptor() {
+            @Override public HttpURLConnection intercept(HttpURLConnection connection, byte[] body) {
+                connection.setRequestProperty("Prop", "SomeDynamicHeaderValue");
+                return connection;
+            }
+        };
+        connectionProcessor.setConnectionInterceptor(interceptor);
+        URLConnection conn = connectionProcessor.urlConnectionForServerRequest(eventData, null);
+        assertEquals("SomeDynamicHeaderValue", conn.getRequestProperty("Prop"));
+    }
+
+    @Test
+    public void connectionInterceptorCanSetRequestPropertiesOnPost() throws IOException {
+        // Crash data uses http post
+        final String eventData = "blahblahblah&crash=lol";
+        connectionProcessor = new ConnectionProcessor("https://count.ly/", mockStore, mockDeviceId, null, null, moduleLog);
+        ConnectionInterceptor interceptor = new ConnectionInterceptor() {
+            @Override public HttpURLConnection intercept(HttpURLConnection connection, byte[] body) {
+                connection.setRequestProperty("Prop", "SomeDynamicHeaderValue");
+                return connection;
+            }
+        };
+        connectionProcessor.setConnectionInterceptor(interceptor);
+        URLConnection conn = connectionProcessor.urlConnectionForServerRequest(eventData, null);
+        assertEquals("SomeDynamicHeaderValue", conn.getRequestProperty("Prop"));
+    }
+
+    @Test
+    public void testConnectionInterceptorCanSetRequestPropertiesOnPostPicturePath() throws IOException {
+        File picture = File.createTempFile("IconicFinance", ".png");
+        final String eventData = "picturePath="+picture.getPath();
+        connectionProcessor = new ConnectionProcessor("https://count.ly/", mockStore, mockDeviceId, null, null, moduleLog);
+        ConnectionInterceptor interceptor = new ConnectionInterceptor() {
+            @Override public HttpURLConnection intercept(HttpURLConnection connection, byte[] body) {
+                connection.setRequestProperty("Prop", "SomeDynamicHeaderValue");
+                return connection;
+            }
+        };
+        connectionProcessor.setConnectionInterceptor(interceptor);
+        URLConnection conn = connectionProcessor.urlConnectionForServerRequest(eventData, null);
+        assertEquals("SomeDynamicHeaderValue", conn.getRequestProperty("Prop"));
+    }
+
+    @Test
+    public void testUrlConnectionDoesNotUseInterceptorWhenNotAvailable() throws IOException {
+        final String eventData = "blahblahblah";
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
+        assertNull(connectionProcessor.getConnectionInterceptor());
+        assertEquals(30000, urlConnection.getConnectTimeout());
+        assertEquals(30000, urlConnection.getReadTimeout());
+        assertFalse(urlConnection.getUseCaches());
+        assertTrue(urlConnection.getDoInput());
+        assertFalse(urlConnection.getDoOutput());
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + null)), urlConnection.getURL());
     }
 
     private static class TestInputStream2 extends InputStream {

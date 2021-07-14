@@ -22,6 +22,7 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -65,6 +66,8 @@ public class ConnectionProcessor implements Runnable {
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
     }
 
+    private ConnectionInterceptor connectionInterceptor;
+
     ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
         serverURL_ = serverURL;
         store_ = store;
@@ -72,6 +75,38 @@ public class ConnectionProcessor implements Runnable {
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         L = logModule;
+    }
+
+    private void writeMultipartDataToOutput(File binaryFile, String boundary, OutputStream output) throws IOException {
+        // Line separator required by multipart/form-data.
+        String CRLF = "\r\n";
+        String charset = "UTF-8";
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
+        // Send binary file.
+        writer.append("--").append(boundary).append(CRLF);
+        writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
+        writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
+        writer.append("Content-Transfer-Encoding: binary").append(CRLF);
+        writer.append(CRLF).flush();
+        FileInputStream fileInputStream = new FileInputStream(binaryFile);
+        byte[] buffer = new byte[1024];
+        int len;
+        try {
+            while ((len = fileInputStream.read(buffer)) != -1) {
+                output.write(buffer, 0, len);
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        output.flush(); // Important before continuing with writer!
+        writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
+        fileInputStream.close();
+
+        // End of multipart/form-data.
+        writer.append("--").append(boundary).append("--").append(CRLF).flush();
+        writer.close();
+        output.flush();
+        output.close();
     }
 
     synchronized public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
@@ -90,7 +125,7 @@ public class ConnectionProcessor implements Runnable {
             urlStr += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
         }
         final URL url = new URL(urlStr);
-        final HttpURLConnection conn;
+        HttpURLConnection conn;
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
             conn = (HttpURLConnection) url.openConnection();
         } else {
@@ -128,38 +163,20 @@ public class ConnectionProcessor implements Runnable {
             conn.setDoOutput(true);
             // Just generate some unique random value.
             String boundary = Long.toHexString(System.currentTimeMillis());
-            // Line separator required by multipart/form-data.
-            String CRLF = "\r\n";
-            String charset = "UTF-8";
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-            OutputStream output = conn.getOutputStream();
-            PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
-            // Send binary file.
-            writer.append("--").append(boundary).append(CRLF);
-            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
-            writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
-            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-            writer.append(CRLF).flush();
-            FileInputStream fileInputStream = new FileInputStream(binaryFile);
-            byte[] buffer = new byte[1024];
-            int len;
-            try {
-                while ((len = fileInputStream.read(buffer)) != -1) {
-                    output.write(buffer, 0, len);
-                }
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            if (connectionInterceptor != null) {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                writeMultipartDataToOutput(binaryFile, boundary, output);
+                conn = connectionInterceptor.intercept(conn, output.toByteArray());
             }
-            output.flush(); // Important before continuing with writer!
-            writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
-            fileInputStream.close();
-
-            // End of multipart/form-data.
-            writer.append("--").append(boundary).append("--").append(CRLF).flush();
+            writeMultipartDataToOutput(binaryFile, boundary, conn.getOutputStream());
         } else {
             if (usingHttpPost) {
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
+                if (connectionInterceptor != null) {
+                    conn = connectionInterceptor.intercept(conn, requestData.getBytes());
+                }
                 OutputStream os = conn.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
                 writer.write(requestData);
@@ -167,6 +184,9 @@ public class ConnectionProcessor implements Runnable {
                 writer.close();
                 os.close();
             } else {
+                if (connectionInterceptor != null) {
+                    conn = connectionInterceptor.intercept(conn, null);
+                }
                 L.v("[Connection Processor] Using HTTP GET");
                 conn.setDoOutput(false);
             }
@@ -390,5 +410,13 @@ public class ConnectionProcessor implements Runnable {
 
     DeviceId getDeviceId() {
         return deviceId_;
+    }
+
+    public ConnectionInterceptor getConnectionInterceptor() {
+        return connectionInterceptor;
+    }
+
+    public void setConnectionInterceptor(ConnectionInterceptor connectionInterceptor) {
+        this.connectionInterceptor = connectionInterceptor;
     }
 }
