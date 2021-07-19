@@ -55,6 +55,9 @@ public class CountlyStore implements StorageProvider{
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
     private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
+    private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
+    private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
+
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
     private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
@@ -74,7 +77,7 @@ public class CountlyStore implements StorageProvider{
      *
      * @param context used to retrieve storage meta data, must not be null.
      */
-    CountlyStore(final Context context, ModuleLog logModule) {
+    public CountlyStore(final Context context, ModuleLog logModule) {
         if (context == null) {
             throw new IllegalArgumentException("must provide valid context");
         }
@@ -348,22 +351,8 @@ public class CountlyStore implements StorageProvider{
         return sp.getInt(CACHED_PUSH_MESSAGING_PROVIDER, 0);
     }
 
-    /**
-     * Adds a preference to local store.
-     *
-     * @param key the preference key
-     * @param value the preference value, supply null value to remove preference
-     */
-    public synchronized void setPreference(final String key, final String value) {
-        if (value == null) {
-            preferences_.edit().remove(key).apply();
-        } else {
-            preferences_.edit().putString(key, value).apply();
-        }
-    }
-
     // for unit testing
-    synchronized void clear() {
+    public synchronized void clear() {
         final SharedPreferences.Editor prefsEditor = preferences_.edit();
         prefsEditor.remove(EVENTS_PREFERENCE);
         prefsEditor.remove(REQUEST_PREFERENCE);
@@ -373,22 +362,28 @@ public class CountlyStore implements StorageProvider{
         preferencesPush_.edit().clear().apply();
     }
 
-    private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
-    private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
-
     public String getDeviceID() {
-        return getPreference(PREFERENCE_KEY_ID_ID);
+        return preferences_.getString(PREFERENCE_KEY_ID_ID, null);
     }
 
     public String getDeviceIDType() {
-        return getPreference(PREFERENCE_KEY_ID_TYPE);
+        return preferences_.getString(PREFERENCE_KEY_ID_TYPE, null);
     }
 
     public void setDeviceID(String id) {
-        setPreference(PREFERENCE_KEY_ID_ID, id);
+        if (id == null) {
+            preferences_.edit().remove(PREFERENCE_KEY_ID_ID).apply();
+        } else {
+            preferences_.edit().putString(PREFERENCE_KEY_ID_ID, id).apply();
+        }
     }
 
     public void setDeviceIDType(String type) {
-        setPreference(PREFERENCE_KEY_ID_TYPE, type);
+        if (type == null) {
+            preferences_.edit().remove(PREFERENCE_KEY_ID_TYPE).apply();
+        } else {
+            preferences_.edit().putString(PREFERENCE_KEY_ID_TYPE, type).apply();
+        }
+    }
     }
 }

@@ -403,24 +403,6 @@ public class CountlyStoreTests {
     }
 
     @Test
-    // just making sure we can get and set simple string preferences
-    public void setGetPreference() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
-        String keyX = "xxx";
-
-        assertNull(store.getPreference(keyX));
-        store.setPreference(keyX, "asd");
-        assertEquals("asd", store.getPreference(keyX));
-
-        store.setPreference(keyX, "123");
-        assertEquals("123", store.getPreference(keyX));
-
-        store.setPreference(keyX, null);
-        assertNull(store.getPreference(keyX));
-        assertFalse(prefs.contains(keyX));
-    }
-
-    @Test
     public void setGetMessagingProvider() {
         assertEquals(0, CountlyStore.getMessagingProvider(getContext()));
         CountlyStore.storeMessagingProvider(1234, getContext());
@@ -532,8 +514,8 @@ public class CountlyStoreTests {
      */
     @Test
     public void testDeviceIDStorage() {
-        String[] values = new String[] { "aa", "bb", "cc"};
-        String[] values2 = new String[] { "11", "22", "33"};
+        String[] values = new String[] { "aa", null, "bb", "", "cc"};
+        String[] values2 = new String[] { "11", "22", null, "33", ""};
         StorageProvider sp = store;
         store.clear();
 
