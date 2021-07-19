@@ -55,6 +55,7 @@ public class CountlyStore implements StorageProvider{
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
     private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
+    private static final String STORAGE_SCHEMA_VERSION = "SCHEMA_VERSION";
     private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
 
@@ -212,30 +213,30 @@ public class CountlyStore implements StorageProvider{
     /**
      * Set the preferences that are used for the star rating
      */
-    void setStarRatingPreferences(String prefs) {
+    public synchronized void setStarRatingPreferences(String prefs) {
         preferences_.edit().putString(STAR_RATING_PREFERENCE, prefs).apply();
     }
 
     /**
      * Get the preferences that are used for the star rating
      */
-    String getStarRatingPreferences() {
+        public synchronized String getStarRatingPreferences() {
         return preferences_.getString(STAR_RATING_PREFERENCE, "");
     }
 
-    void setRemoteConfigValues(String values) {
+    public synchronized void setRemoteConfigValues(String values) {
         preferences_.edit().putString(REMOTE_CONFIG_VALUES, values).apply();
     }
 
-    String getRemoteConfigValues() {
+    public synchronized String getRemoteConfigValues() {
         return preferences_.getString(REMOTE_CONFIG_VALUES, "");
     }
 
-    void setCachedAdvertisingId(String advertisingId) {
+    public synchronized void setCachedAdvertisingId(String advertisingId) {
         preferences_.edit().putString(CACHED_ADVERTISING_ID, advertisingId).apply();
     }
 
-    String getCachedAdvertisingId() {
+    public synchronized String getCachedAdvertisingId() {
         return preferences_.getString(CACHED_ADVERTISING_ID, "");
     }
 
@@ -385,5 +386,70 @@ public class CountlyStore implements StorageProvider{
             preferences_.edit().putString(PREFERENCE_KEY_ID_TYPE, type).apply();
         }
     }
+
+    public int getDataSchemaVersion() {
+        return preferences_.getInt(STORAGE_SCHEMA_VERSION, -1);
+    }
+
+    public void setDataSchemaVersion(int version) {
+        preferences_.edit().putInt(STORAGE_SCHEMA_VERSION, version).apply();
+    }
+
+    /**
+     * Check all used preferences to see if any one of the has set some data
+     * This would be an indicator that the SDK had been started before
+     *
+     * @return
+     */
+    @Override public boolean anythingSetInStorage() {
+        if(preferences_.getString(REQUEST_PREFERENCE, null) != null) {
+            return true;
+        }
+
+        if(preferences_.getString(EVENTS_PREFERENCE, null) != null) {
+            return true;
+        }
+
+        if(preferences_.getString(STAR_RATING_PREFERENCE, null) != null) {
+            return true;
+        }
+
+        if(preferences_.getString(CACHED_ADVERTISING_ID, null) != null) {
+            return true;
+        }
+
+        if(preferences_.getString(REMOTE_CONFIG_VALUES, null) != null) {
+            return true;
+        }
+
+        if(preferences_.getString(PREFERENCE_KEY_ID_ID, null) != null) {
+            return true;
+        }
+
+        if(preferences_.getString(PREFERENCE_KEY_ID_TYPE, null) != null) {
+            return true;
+        }
+
+        if(preferences_.getInt(STORAGE_SCHEMA_VERSION, -100) != -100) {
+            return true;
+        }
+
+        if(preferencesPush_.getInt(CACHED_PUSH_MESSAGING_MODE, -100) != -100) {
+            return true;
+        }
+
+        if(preferencesPush_.getInt(CACHED_PUSH_MESSAGING_PROVIDER, -100) != -100) {
+            return true;
+        }
+
+        if(preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null) != null) {
+            return true;
+        }
+
+        if(preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null) != null) {
+            return true;
+        }
+
+        return false;
     }
 }

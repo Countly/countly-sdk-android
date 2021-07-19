@@ -5,30 +5,49 @@ import java.util.List;
 import java.util.Map;
 
 interface StorageProvider {
-    public String[] getRequests();
+    String[] getRequests();
 
-    public String[] getEvents();
+    String[] getEvents();
 
-    public List<Event> getEventList();
+    List<Event> getEventList();
 
-    public void addRequest(final String requestStr);
+    void addRequest(final String requestStr);
 
-    public void removeRequest(final String requestStr);
+    void removeRequest(final String requestStr);
 
-    public void replaceRequests(final String[] newConns);
+    void replaceRequests(final String[] newConns);
 
-    public void replaceRequestList(final List<String> newConns);
+    void replaceRequestList(final List<String> newConns);
 
-    public void addEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean,
+    void addEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean,
         final long timestamp, final int hour, final int dow, final int count, final double sum, final double dur);
 
-    public void removeEvents(final Collection<Event> eventsToRemove);
+    void removeEvents(final Collection<Event> eventsToRemove);
 
-    public String getDeviceID();
+    String getDeviceID();
 
-    public String getDeviceIDType();
+    String getDeviceIDType();
 
-    public void setDeviceID(String id);
+    void setDeviceID(String id);
 
-    public void setDeviceIDType(String type);
+    void setDeviceIDType(String type);
+
+    void setStarRatingPreferences(String preferences);//not integrated
+
+    String getStarRatingPreferences();//not integrated
+
+    void setCachedAdvertisingId(String advertisingId);//not integrated
+
+    String getCachedAdvertisingId();//not integrated
+
+    void setRemoteConfigValues(String values);//not integrated
+
+    String getRemoteConfigValues();//not integrated
+
+    //fields for data migration
+    int getDataSchemaVersion();
+
+    void setDataSchemaVersion(int version);
+
+    boolean anythingSetInStorage();
 }

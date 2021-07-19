@@ -445,16 +445,64 @@ public class CountlyStoreTests {
         assertEquals(false, store.getConsentPush());
     }
 
+    /**
+     * Validate that the setter and getter for cached advertising ID is working as expected
+     */
     @Test
     public void setGetAdvertisingId() {
-        store.setCachedAdvertisingId("qwe");
+        StorageProvider sp = store;
+        store.clear();
+
+        assertEquals("", sp.getCachedAdvertisingId());
+
+        sp.setCachedAdvertisingId("qwe");
         assertEquals("qwe", store.getCachedAdvertisingId());
+
+        sp.setCachedAdvertisingId("");
+        assertEquals("", sp.getCachedAdvertisingId());
+
+        sp.setCachedAdvertisingId("123");
+        assertEquals("123", sp.getCachedAdvertisingId());
     }
 
+    /**
+     * Validate that the setter and getter for remote config preferences is working as expected
+     */
     @Test
     public void setGetRemoteConfigValues() {
-        store.setRemoteConfigValues("qwe");
-        assertEquals("qwe", store.getRemoteConfigValues());
+        StorageProvider sp = store;
+        store.clear();
+
+        assertEquals("", sp.getRemoteConfigValues());
+
+        sp.setRemoteConfigValues("qwe");
+        assertEquals("qwe", sp.getRemoteConfigValues());
+
+        sp.setRemoteConfigValues("");
+        assertEquals("", sp.getRemoteConfigValues());
+
+        sp.setRemoteConfigValues("123");
+        assertEquals("123", sp.getRemoteConfigValues());
+    }
+
+    /**
+     * Validate that the setter and getter for star rating preferences is working as expected
+     */
+    @Test
+    public void setGetStarRatingPreferences() {
+        StorageProvider sp = store;
+        store.clear();
+
+        assertEquals("", sp.getStarRatingPreferences());
+
+        sp.setStarRatingPreferences("abc");
+        assertEquals("abc", sp.getStarRatingPreferences());
+
+        sp.setStarRatingPreferences("");
+        assertEquals("", sp.getStarRatingPreferences());
+
+        sp.setStarRatingPreferences("123");
+        assertEquals("123", sp.getStarRatingPreferences());
     }
 
     @Test
@@ -532,5 +580,134 @@ public class CountlyStoreTests {
 
             assertEquals(values[a], sp.getDeviceID());
         }
+    }
+
+    /**
+     * Validating basic functionality of setting and retrieving schema version
+     */
+    @Test
+    public void settingRetrievingSchemaVersion() {
+        store.clear();
+        StorageProvider sp = store;
+
+        //test default
+        assertEquals(-1, sp.getDataSchemaVersion());
+
+        sp.setDataSchemaVersion(0);
+        assertEquals(0, sp.getDataSchemaVersion());
+
+        sp.setDataSchemaVersion(5);
+        assertEquals(5, sp.getDataSchemaVersion());
+
+        sp.setDataSchemaVersion(100);
+        assertEquals(100, sp.getDataSchemaVersion());
+
+    }
+
+    /**
+     * Validating 'anythingSetInStorage' separately
+     */
+    @Test
+    public void validatingAnythingSetInStorageSeparate() {
+        store.clear();
+        StorageProvider sp = store;
+
+        assertFalse(sp.anythingSetInStorage());
+
+        sp.addRequest("234ff");
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        sp.replaceRequestList(new ArrayList<String>());
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        sp.addEvent("dfdf", null, null, null, null, 34545L, 4, 2, 5, 5, 3);
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        sp.setStarRatingPreferences("dfg");
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        sp.setCachedAdvertisingId("iop");
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        sp.setDataSchemaVersion(44);
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        sp.setDeviceID("fdf");
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        sp.setRemoteConfigValues("yui");
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+
+        sp.setDeviceIDType("bb");
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        CountlyStore.cacheLastMessagingMode(789, getContext());
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        CountlyStore.storeMessagingProvider(9623, getContext());
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        CountlyStore.cachePushData("mnc", "uio", getContext());
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+    }
+
+    /**
+     * Validating 'anythingSetInStorage' by adding all possible storage entries
+     */
+    @Test
+    public void validatingAnythingSetInStorageAggregate() {
+        store.clear();
+        StorageProvider sp = store;
+
+        assertFalse(sp.anythingSetInStorage());
+
+        sp.addRequest("234ff");
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.replaceRequestList(new ArrayList<String>());
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.addEvent("dfdf", null, null, null, null, 34545L, 4, 2, 5, 5, 3);
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.setStarRatingPreferences("dfg");
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.setCachedAdvertisingId("iop");
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.setRemoteConfigValues("yui");
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.setDeviceID("fdf");
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.setDeviceIDType("bb");
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.setDataSchemaVersion(44);
+        assertTrue(sp.anythingSetInStorage());
+
+        CountlyStore.cacheLastMessagingMode(789, getContext());
+        assertTrue(sp.anythingSetInStorage());
+
+        CountlyStore.storeMessagingProvider(9623, getContext());
+        assertTrue(sp.anythingSetInStorage());
+
+        CountlyStore.cachePushData("mnc", "uio", getContext());
+        assertTrue(sp.anythingSetInStorage());
     }
 }

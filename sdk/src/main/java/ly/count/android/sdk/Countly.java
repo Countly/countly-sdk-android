@@ -534,6 +534,10 @@ public class Countly {
                 config.locationIpAddress = locationFallback[3];
             }
 
+            //perform data migration if needed
+            MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L);
+            mHelper.doWork();
+
             //initialise modules
             moduleConsent = new ModuleConsent(this, config);
             moduleDeviceId = new ModuleDeviceId(this, config);
