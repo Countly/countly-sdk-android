@@ -175,7 +175,7 @@ public class DeviceId {
 
     @SuppressWarnings("SameParameterValue")
     protected void setId(Type type, String id) {
-        L.w("[DeviceId] Device ID is " + id + " (type " + type + ")");
+        L.v("[DeviceId] setId, Device ID is " + id + " (type " + type + ")");
         this.type = type;
         this.id = id;
     }
@@ -192,6 +192,7 @@ public class DeviceId {
      * @param runInit
      */
     protected void changeToId(Context context, Type type, String deviceId, boolean runInit) {
+        L.v("[DeviceId] changeToId, Device ID is " + id + " (type " + type + "), init:" + runInit);
         setAndStoreId(type, deviceId);
         if(runInit) {
             init(context);

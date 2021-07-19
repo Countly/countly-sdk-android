@@ -324,7 +324,7 @@ public class ModuleViewsTests {
 
         mCountly.views().recordView(viewNames[1]);
         segmS.clear();
-        segmS.put("dur", "1");
+        segmS.put("dur", "1");//todo rework to verify duration better
         segmS.put("segment", "Android");
         segmS.put("name", viewNames[0]);
         verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
@@ -338,7 +338,7 @@ public class ModuleViewsTests {
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2]);
         segmS.clear();
-        segmS.put("dur", "1");
+        segmS.put("dur", "1");//todo rework to verify duration better
         segmS.put("segment", "Android");
         segmS.put("name", viewNames[1]);
         verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);

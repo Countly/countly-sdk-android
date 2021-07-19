@@ -16,8 +16,6 @@
 #   public *;
 #}
 
--keep class org.openudid.** { *; }
-
 -renamesourcefileattribute SourceFile
 -keepattributes SourceFile,LineNumberTable
 

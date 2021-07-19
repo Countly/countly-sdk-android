@@ -4,8 +4,6 @@
   <permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
       android:protectionLevel="signature" />
 
-  <uses-permission android:name="android.permission.INTERNET" />
-
   <application>
     <uses-library android:name="android.test.runner" />
   </application>

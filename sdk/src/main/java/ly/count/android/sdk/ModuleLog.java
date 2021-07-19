@@ -10,10 +10,7 @@ public class ModuleLog {
     public enum LogLevel {Verbose, Debug, Info, Warning, Error}
 
     LogCallback logListener = null;
-
-    ModuleLog() {
-    }
-
+    
     void SetListener(LogCallback logListener) {
         this.logListener = logListener;
     }
