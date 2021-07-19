@@ -295,25 +295,33 @@ public class CountlyPush {
             context.sendBroadcast(closeNotificationsPanel);
 
             if (index == 0) {
-                if (message.link() != null) {
-                    Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given link. Push body. [" + message.link() + "]");
-                    Intent i = new Intent(Intent.ACTION_VIEW, message.link());
+                try {
+                    if (message.link() != null) {
+                        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given link. Push body. [" + message.link() + "]");
+                        Intent i = new Intent(Intent.ACTION_VIEW, message.link());
+                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        i.putExtra(EXTRA_MESSAGE, bundle);
+                        i.putExtra(EXTRA_ACTION_INDEX, index);
+                        context.startActivity(i);
+                    } else {
+                        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity without a link. Push body");
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(intent);
+                    }
+                } catch (Exception ex) {
+                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking on notification body [" + ex.toString() + "]");
+                }
+            } else {
+                try {
+                    Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given button link. [" + (index - 1) + "] [" + message.buttons().get(index - 1).link() + "]");
+                    Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     i.putExtra(EXTRA_MESSAGE, bundle);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
                     context.startActivity(i);
-                } else {
-                    Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity without a link. Push body");
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
+                } catch (Exception ex) {
+                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking on notification button [" + ex.toString() + "]");
                 }
-            } else {
-                Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given button link. [" + (index - 1) + "] [" + message.buttons().get(index - 1).link() + "]");
-                Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra(EXTRA_MESSAGE, bundle);
-                i.putExtra(EXTRA_ACTION_INDEX, index);
-                context.startActivity(i);
             }
         }
     }
@@ -604,10 +612,14 @@ public class CountlyPush {
                                 msg.recordAction(activity, 0);
                                 dialog.dismiss();
 
-                                Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
-                                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                i.putExtra(EXTRA_ACTION_INDEX, 0);// put zero because non 'button' action
-                                activity.startActivity(i);
+                                try {
+                                    Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
+                                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    i.putExtra(EXTRA_ACTION_INDEX, 0);// put zero because non 'button' action
+                                    activity.startActivity(i);
+                                } catch (Exception ex) {
+                                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking 'ok' button in dialog [" + ex.toString() + "]");
+                                }
                             }
                         });
                     }
@@ -641,13 +653,17 @@ public class CountlyPush {
             DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link());
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable(EXTRA_MESSAGE, msg);
-                    intent.putExtra(EXTRA_MESSAGE, bundle);
-                    intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
-                    context.startActivity(intent);
+                    try {
+                        msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
+                        Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link());
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable(EXTRA_MESSAGE, msg);
+                        intent.putExtra(EXTRA_MESSAGE, bundle);
+                        intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
+                        context.startActivity(intent);
+                    } catch (Exception ex) {
+                        Countly.sharedInstance().L.e("[CountlyPush, dialog button onClick] Encountered issue while clicking on button #[" + which + "] [" + ex.toString() + "]");
+                    }
                     dialog.dismiss();
                 }
             };
