@@ -73,6 +73,8 @@ public class CountlyPush {
 
     private static BroadcastReceiver notificationActionReceiver = null, consentReceiver = null;
 
+    static boolean initFinished = false;
+
     /**
      * Message object encapsulating data in {@code RemoteMessage} sent from Countly server.
      */
@@ -398,6 +400,10 @@ public class CountlyPush {
     public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
         Countly.sharedInstance().L.d("[CountlyPush, displayMessage] Displaying push message");
 
+        if(!initFinished) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
+        }
+
         if (msg == null) {
             return null;
         } else if (msg.message() == null) {
@@ -437,6 +443,10 @@ public class CountlyPush {
         }
 
         Countly.sharedInstance().L.d("[CountlyPush, displayNotification] Displaying push notification, additional intent provided:[" + (notificationIntent != null) + "]");
+
+        if(!initFinished) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
+        }
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -530,6 +540,10 @@ public class CountlyPush {
         }
 
         Countly.sharedInstance().L.d("[CountlyPush, displayDialog] Displaying push dialog");
+
+        if(!initFinished) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
+        }
 
         loadImage(activity, msg, new BitmapCallback() {
             @Override
@@ -715,7 +729,7 @@ public class CountlyPush {
         Countly.sharedInstance().L.i("[CountlyPush, init] Initialising Countly Push, App:[" + (application != null) + "], mode:[" + mode + "] provider:[" + preferredProvider + "]");
 
         if (application == null) {
-            throw new IllegalStateException("Non null application must be provided!");
+            throw new IllegalStateException("Non 'null' application must be provided!");
         }
 
         // set preferred push provider
@@ -734,13 +748,13 @@ public class CountlyPush {
 
         // print error in case preferred push provider is not available
         if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
-            Countly.sharedInstance().L.e("No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Countly push didn't initialise. No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
-            Countly.sharedInstance().L.e("No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Countly push didn't initialise. No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == null) {
-            Countly.sharedInstance().L.e("Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Countly push didn't initialise. Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
             return;
         }
 
@@ -810,6 +824,9 @@ public class CountlyPush {
                 }).start();
             }
         }
+
+        //mark this so that sanity checks can be performed in the future
+        initFinished = true;
     }
 
     static boolean getPushConsent(Context context) {
