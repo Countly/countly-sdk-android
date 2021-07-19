@@ -37,7 +37,7 @@ public class Utils {
      * @param separator separator to use
      * @return resulting string
      */
-    static <T> String join(Collection<T> objects, String separator) {
+    static <T> String join(final Collection<T> objects, final String separator) {
         StringBuilder sb = new StringBuilder();
         Iterator<T> iter = objects.iterator();
         while (iter.hasNext()) {
@@ -47,6 +47,24 @@ public class Utils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Joins all the strings in the specified collection into a single string with the specified delimiter.
+     * Used in countlyStore
+     */
+    static String joinCountlyStore(final Collection<String> collection, final String delimiter) {
+        final StringBuilder builder = new StringBuilder();
+
+        int i = 0;
+        for (String s : collection) {
+            builder.append(s);
+            if (++i < collection.size()) {
+                builder.append(delimiter);
+            }
+        }
+
+        return builder.toString();
     }
 
     /**

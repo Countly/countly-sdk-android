@@ -148,7 +148,7 @@ public class CountlyStore implements StorageProvider{
             if (connections.size() < MAX_REQUESTS) {
                 //request under max requests, add as normal
                 connections.add(requestStr);
-                preferences_.edit().putString(REQUEST_PREFERENCE, join(connections, DELIMITER)).apply();
+                preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
             } else {
                 //reached the limit, start deleting oldest requests
                 L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
@@ -162,7 +162,7 @@ public class CountlyStore implements StorageProvider{
     synchronized void deleteOldestRequest() {
         final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
         connections.remove(0);
-        preferences_.edit().putString(REQUEST_PREFERENCE, join(connections, DELIMITER)).apply();
+        preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
     }
 
     /**
@@ -175,7 +175,7 @@ public class CountlyStore implements StorageProvider{
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
             if (connections.remove(requestStr)) {
-                preferences_.edit().putString(REQUEST_PREFERENCE, join(connections, DELIMITER)).apply();
+                preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
             }
         }
     }
@@ -189,7 +189,7 @@ public class CountlyStore implements StorageProvider{
 
     public synchronized void replaceRequestList(final List<String> newConns) {
         if (newConns != null) {
-            preferences_.edit().putString(REQUEST_PREFERENCE, join(newConns, DELIMITER)).apply();
+            preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(newConns, DELIMITER)).apply();
         }
     }
 
@@ -307,7 +307,7 @@ public class CountlyStore implements StorageProvider{
         for (Event e : collection) {
             strings.add(e.toJSON().toString());
         }
-        return join(strings, delimiter);
+        return Utils.joinCountlyStore(strings, delimiter);
     }
 
     public static synchronized void cachePushData(String id_key, String index_key, Context context) {
@@ -346,32 +346,6 @@ public class CountlyStore implements StorageProvider{
     public static int getMessagingProvider(Context context) {
         SharedPreferences sp = createPreferencesPush(context);
         return sp.getInt(CACHED_PUSH_MESSAGING_PROVIDER, 0);
-    }
-
-    /**
-     * Joins all the strings in the specified collection into a single string with the specified delimiter.
-     */
-    static String join(final Collection<String> collection, final String delimiter) {
-        final StringBuilder builder = new StringBuilder();
-
-        int i = 0;
-        for (String s : collection) {
-            builder.append(s);
-            if (++i < collection.size()) {
-                builder.append(delimiter);
-            }
-        }
-
-        return builder.toString();
-    }
-
-    /**
-     * Retrieves a preference from local store.
-     *
-     * @param key the preference key
-     */
-    public synchronized String getPreference(final String key) {
-        return preferences_.getString(key, null);
     }
 
     /**

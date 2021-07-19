@@ -41,6 +41,9 @@ public class UtilsTests {
         Assert.assertTrue(Utils.isNotEmpty("1123āšē"));
     }
 
+    /**
+     * A simple verification that 'join' is performing as expected
+     */
     @Test
     public void testJoin() {
         List<String> a = new ArrayList<>();
@@ -50,6 +53,19 @@ public class UtilsTests {
         String res = Utils.join(a, "-");
 
         Assert.assertEquals(res, "a-b-cd");
+    }
+
+    /**
+     * A simple verification that 'joinCountlyStore' is performing as expected
+     */
+    @Test
+    public void joinCountlyStore() {
+        List<String> a = new ArrayList<>();
+        a.add("a");
+        a.add("11b");
+        a.add("cd22");
+        String res = Utils.joinCountlyStore(a, ";");
+        Assert.assertEquals(res, "a;11b;cd22");
     }
 
     @Test
