@@ -1,5 +1,6 @@
 ## 20.11.9
   * Fixing issue with star rating lowest allowed value. Changing it from 0 to 1.
+  * Increasing default event threshold to 100.
 
 ## 20.11.8
   * Minor tweaks. Changes related to publishing to MavenCentral
