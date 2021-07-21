@@ -7,11 +7,6 @@ import android.util.Log;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.messaging.CountlyPush;
 
-public class DemoHuaweiMessagingService {
-
-}
-
-/*
 import com.huawei.hms.push.HmsMessageService;
 import com.huawei.hms.push.RemoteMessage;
 
@@ -99,4 +94,3 @@ public class DemoHuaweiMessagingService extends HmsMessageService {
         }
     }
 }
-*/
