@@ -388,7 +388,10 @@ public class CountlyPush {
     }
 
     /**
-     * Standard Countly logic for displaying a {@link Message}
+     * Standard Countly logic for displaying a {@link Message}.
+     *
+     * This would display the push message in a dialog if the app was in foreground.
+     * If the app was in background, it would display the push message as a notification.
      *
      * @param context context to run in (supposed to be called from {@code FirebaseMessagingService})
      * @param data {@code RemoteMessage#getData()} result
@@ -400,6 +403,9 @@ public class CountlyPush {
 
     /**
      * Standard Countly logic for displaying a {@link Message}
+     *
+     * This would display the push message in a dialog if the app was in foreground.
+     * If the app was in background, it would display the push message as a notification.
      *
      * @param context context to run in (supposed to be called from {@code FirebaseMessagingService})
      * @param msg {@link Message} instance

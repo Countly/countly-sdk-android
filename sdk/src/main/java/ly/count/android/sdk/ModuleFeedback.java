@@ -511,7 +511,7 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         /**
-         * Present a chosen feedback widget
+         * Present a chosen feedback widget in an alert dialog
          *
          * @param widgetInfo
          * @param context
