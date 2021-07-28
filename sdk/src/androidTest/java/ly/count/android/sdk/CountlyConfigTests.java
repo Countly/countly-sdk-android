@@ -24,7 +24,12 @@ public class CountlyConfigTests {
 
     @Test
     public void constructor() {
-        CountlyConfig config = new CountlyConfig(getContext(), "Som345345", "fsdf7349374");
+        Context ctx = getContext();
+        CountlyConfig config = new CountlyConfig(ctx, "Som345345", "fsdf7349374");
+
+        Assert.assertEquals(ctx, config.context);
+        Assert.assertEquals("Som345345", config.appKey);
+        Assert.assertEquals("fsdf7349374", config.serverURL);
 
         assertDefaultValues(config, false);
     }
@@ -91,6 +96,12 @@ public class CountlyConfigTests {
         metricOverride.put("SomeKey", "123");
         metricOverride.put("_Carrier", "BoneyK");
 
+        ModuleLog.LogCallback logCallback = new ModuleLog.LogCallback() {
+            @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
+
+            }
+        };
+
         Application app = new Application();
 
         assertDefaultValues(config, true);
@@ -142,6 +153,12 @@ public class CountlyConfigTests {
         config.setDisableLocation();
         config.setLocation("CC", "city", "loc", "ip");
         config.setMetricOverride(metricOverride);
+        config.setAppStartTimestampOverride(123L);
+        config.enableManualAppLoadedTrigger();
+        config.enableManualForegroundBackgroundTriggerAPM();
+        config.setLogListener(logCallback);
+
+
 
         Assert.assertEquals(s[0], config.serverURL);
         Assert.assertEquals(c, config.context);
@@ -194,6 +211,10 @@ public class CountlyConfigTests {
         Assert.assertEquals("loc", config.locationLocation);
         Assert.assertEquals("ip", config.locationIpAddress);
         Assert.assertEquals(metricOverride, config.metricOverride);
+        Assert.assertEquals((Long)123l, config.appStartTimestampOverride);
+        Assert.assertTrue(config.appLoadedManualTrigger);
+        Assert.assertTrue(config.manualForegroundBackgroundTrigger);
+        Assert.assertEquals(logCallback, config.providedLogCallback);
 
         config.setLocation("CC", "city", "loc", "ip");
     }
@@ -216,6 +237,7 @@ public class CountlyConfigTests {
             Assert.assertNull(config.context);
             Assert.assertNull(config.serverURL);
             Assert.assertNull(config.appKey);
+            Assert.assertNull(config.application);
         }
 
         Assert.assertNull(config.countlyStore);
@@ -257,7 +279,6 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.starRatingDialogIsCancellable);
         Assert.assertFalse(config.starRatingShownAutomatically);
         Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
-        Assert.assertNull(config.application);
         Assert.assertFalse(config.recordAppStartTime);
         Assert.assertFalse(config.disableLocation);
         Assert.assertNull(config.locationCountyCode);
@@ -265,5 +286,9 @@ public class CountlyConfigTests {
         Assert.assertNull(config.locationLocation);
         Assert.assertNull(config.locationIpAddress);
         Assert.assertNull(config.metricOverride);
+        Assert.assertNull(config.appStartTimestampOverride);
+        Assert.assertFalse(config.appLoadedManualTrigger);
+        Assert.assertFalse(config.manualForegroundBackgroundTrigger);
+        Assert.assertNull(config.providedLogCallback);
     }
 }

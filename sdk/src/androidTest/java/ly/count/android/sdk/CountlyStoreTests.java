@@ -662,6 +662,14 @@ public class CountlyStoreTests {
         CountlyStore.cachePushData("mnc", "uio", getContext());
         assertTrue(sp.anythingSetInStorage());
         store.clear();
+
+        CountlyStore.cachePushData(null, "uio", getContext());
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
+
+        CountlyStore.cachePushData("mnc", null, getContext());
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
     }
 
     /**

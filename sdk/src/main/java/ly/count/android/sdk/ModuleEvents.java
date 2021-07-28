@@ -243,10 +243,10 @@ public class ModuleEvents extends ModuleBase {
          *
          * @param key event key
          * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
-         * @param count how many of these events have occured, default value is "1"
+         * @param count how many of these events have occurred, default value is "1"
          * @param sum set sum if needed, default value is "0"
          * @param dur duration of the event, default value is "0"
-         * @param timestamp unix timestamp in miliseconds of when the event occurred
+         * @param timestamp unix timestamp in milliseconds of when the event occurred
          */
         public void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
             synchronized (_cly) {

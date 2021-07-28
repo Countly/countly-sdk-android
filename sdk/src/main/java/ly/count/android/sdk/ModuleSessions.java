@@ -66,11 +66,6 @@ public class ModuleSessions extends ModuleBase {
     public class Sessions {
         public void beginSession() {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    L.e("Countly.sharedInstance().init must be called before beginSession");
-                    return;
-                }
-
                 L.i("[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {
@@ -84,11 +79,6 @@ public class ModuleSessions extends ModuleBase {
 
         public void updateSession() {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    L.e("Countly.sharedInstance().init must be called before updateSession");
-                    return;
-                }
-
                 L.i("[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {
@@ -104,11 +94,6 @@ public class ModuleSessions extends ModuleBase {
 
         public void endSession() {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    L.e("Countly.sharedInstance().init must be called before endSession");
-                    return;
-                }
-
                 L.i("[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {

@@ -107,14 +107,6 @@ public class EventQueue {
         countlyStore_.addEvent(key, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, timestamp, hour, dow, count, sum, dur);
     }
 
-    void recordEvent(final Event event) {
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-
-        event.hour = instant.hour;
-        event.dow = instant.dow;
-        countlyStore_.addEvent(event);
-    }
-
     // for unit tests
     CountlyStore getCountlyStore() {
         return countlyStore_;
