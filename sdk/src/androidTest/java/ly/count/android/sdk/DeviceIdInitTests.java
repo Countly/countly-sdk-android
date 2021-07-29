@@ -27,6 +27,8 @@ public class DeviceIdInitTests {
     public void tearDown() {
     }
 
+    //first init
+
     /**
      * First init where:
      * Device ID is not provided,
@@ -35,7 +37,7 @@ public class DeviceIdInitTests {
      * SDK should generate OPEN_UDID device ID
      */
     @Test
-    public void firstInitNothingProvided() {
+    public void firstInitProvidedNothing() {
         countlyStore.clear();
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
         Countly countly = new Countly();
@@ -47,13 +49,13 @@ public class DeviceIdInitTests {
 
     /**
      * First init where:
-     * Device ID is provided,
+     * Custom Device ID is provided,
      * Temporary ID mode is not provided
      *
      * SDK should use provided device ID
      */
     @Test
-    public void firstInitProvidedDeviceId() {
+    public void firstInitProvidedCustomId() {
         countlyStore.clear();
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
         cc.setDeviceId("qwe123");
@@ -67,13 +69,13 @@ public class DeviceIdInitTests {
 
     /**
      * First init where:
-     * Device ID is not provided,
+     * Custom Device ID is not provided,
      * Temporary ID mode is  provided
      *
      * SDK should enable temporary device ID mode
      */
     @Test
-    public void firstInitProvidedTempIdMode() {
+    public void firstInitProvidedTempId() {
         countlyStore.clear();
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
@@ -85,24 +87,417 @@ public class DeviceIdInitTests {
         Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, countly.getDeviceIDType());
     }
 
+    //Followup inits
+
     /**
-     * First init where:
-     * Device ID is provided,
-     * Temporary ID mode is also provided
+     * Followup init where previously:
+     * Custom devices ID was set
      *
-     * SDK should use provided device ID as that takes precedence
+     * now:
+     * Device ID is not provided,
+     * Temporary ID mode is not provided
      */
     @Test
-    public void firstInitProvidedDeviceIdAndTempIdMode() {
+    public void followupInitPrevCustomProvidedNothing() {
         countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.setDeviceId("hjk");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertEquals("hjk", cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, cInitial.getDeviceIDType());
+
+        //setup followup state
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
-        cc.setDeviceId("qwe1234");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Custom devices ID was set
+     *
+     * now:
+     * Device ID is provided,
+     * Temporary ID mode is not provided
+     */
+    @Test
+    public void followupInitPrevCustomProvidedCustomId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.setDeviceId("hjk");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertEquals("hjk", cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.setDeviceId("zxc");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Custom devices ID was set
+     *
+     * now:
+     * Device ID is not provided,
+     * Temporary ID mode is provided
+     */
+    @Test
+    public void followupInitPrevCustomProvidedTempId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.setDeviceId("hjk");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertEquals("hjk", cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
 
         Countly countly = new Countly();
         countly.init(cc);
 
-        Assert.assertEquals("qwe1234", countly.getDeviceID());
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Custom devices ID was set
+     *
+     * now:
+     * Device ID is provided,
+     * Temporary ID mode is provided
+     */
+    @Test
+    public void followupInitPrevCustomProvidedCustomIdTempId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.setDeviceId("hjk");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertEquals("hjk", cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.enableTemporaryDeviceIdMode();
+        cc.setDeviceId("890");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Nothing was provided - OPEN_UDID Devices ID was generated
+     *
+     * now:
+     * Device ID is not provided,
+     * Temporary ID mode is not provided
+     */
+    @Test
+    public void followupInitPrevNothingProvidedNothing() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Nothing was provided - OPEN_UDID Devices ID was generated
+     *
+     * now:
+     * Device ID is provided,
+     * Temporary ID mode is not provided
+     */
+    @Test
+    public void followupInitPrevNothingProvidedCustomId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.setDeviceId("1qwe");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Nothing was provided - OPEN_UDID Devices ID was generated
+     *
+     * now:
+     * Device ID is not provided,
+     * Temporary ID mode is provided
+     */
+    @Test
+    public void followupInitPrevNothingProvidedTempId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.enableTemporaryDeviceIdMode();
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Nothing was provided - OPEN_UDID Devices ID was generated
+     *
+     * now:
+     * Device ID is provided,
+     * Temporary ID mode is provided
+     */
+    @Test
+    public void followupInitPrevNothingProvidedCustomIdTempId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.OPEN_UDID, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Temporary ID was provided
+     *
+     * now:
+     * Device ID is not provided,
+     * Temporary ID mode is not provided
+     */
+    @Test
+    public void followupInitPrevTempIdProvidedNothing() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.enableTemporaryDeviceIdMode();
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Temporary ID was provided
+     *
+     * now:
+     * Device ID is provided,
+     * Temporary ID mode is not provided
+     */
+    @Test
+    public void followupInitPrevTempIdProvidedCustomId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.enableTemporaryDeviceIdMode();
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.setDeviceId("uio");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals("uio", countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Temporary ID was provided
+     *
+     * now:
+     * Device ID is not provided,
+     * Temporary ID mode is provided
+     */
+    @Test
+    public void followupInitPrevTempIdProvidedTempId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.enableTemporaryDeviceIdMode();
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.enableTemporaryDeviceIdMode();
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, countly.getDeviceIDType());
+    }
+
+    /**
+     * Followup init where previously:
+     * Temporary ID was provided
+     *
+     * now:
+     * Device ID is provided,
+     * Temporary ID mode is provided
+     */
+    @Test
+    public void followupInitPrevTempIdProvidedCustomIdTempId() {
+        countlyStore.clear();
+
+        //setup initial state
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.enableTemporaryDeviceIdMode();
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.getDeviceID();
+
+        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, cInitial.getDeviceIDType());
+
+        //setup followup state
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.enableTemporaryDeviceIdMode();
+        cc.setDeviceId("frt");
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals("frt", countly.getDeviceID());
         Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
     }
 }

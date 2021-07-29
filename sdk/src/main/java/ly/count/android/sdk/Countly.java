@@ -700,13 +700,13 @@ public class Countly {
                     }
                 });
  */
-
-                for (ModuleBase module : modules) {
-                    module.initFinished(config);
-                }
-
-                L.i("[Init] Finished initialising SDK");
             }
+
+            for (ModuleBase module : modules) {
+                module.initFinished(config);
+            }
+
+            L.i("[Init] Finished initialising SDK");
         } else {
             //if this is not the first time we are calling init
             L.i("[Init] Getting in the 'else' block");

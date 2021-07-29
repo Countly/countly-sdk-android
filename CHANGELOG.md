@@ -1,5 +1,6 @@
 ## 20.11.9
   * Fixing issue with star rating lowest allowed value. Changing it from 0 to 1.
+  * Fixing bug that would prevent certain codepath to be executed if the Application class was not provided during init.
   * Increasing default event threshold to 100.
 
 ## 20.11.8
