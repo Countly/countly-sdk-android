@@ -81,6 +81,8 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
         Map<String, Object> values = Countly.sharedInstance().remoteConfig().getAllValues();
 
+        Countly.sharedInstance().L.d("Get all values test: [" + values.toString() + "]");
+
         //access way #1
         Object value_1 = null;
         Object value_2 = null;

@@ -2506,7 +2506,7 @@ public class Countly {
 
         List<String> filteredRequests = requestQueueReplaceWithAppKey(connectionQueue_.getCountlyStore().getRequests(), connectionQueue_.getAppKey());
         if (filteredRequests != null) {
-            connectionQueue_.getCountlyStore().replaceRequestList(filteredRequests);
+            config_.storageProvider.replaceRequestList(filteredRequests);
             doStoredRequests();
         }
     }
@@ -2523,7 +2523,7 @@ public class Countly {
         }
 
         List<String> filteredRequests = requestQueueRemoveWithoutAppKey(connectionQueue_.getCountlyStore().getRequests(), connectionQueue_.getAppKey());
-        connectionQueue_.getCountlyStore().replaceRequestList(filteredRequests);
+        config_.storageProvider.replaceRequestList(filteredRequests);
         doStoredRequests();
     }
 

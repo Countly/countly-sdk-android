@@ -55,7 +55,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
         _cly.connectionQueue_.getDeviceId().changeToId(_cly.context_, type, deviceId, true);//run init because not clear if types other then dev supplied can be provided
 
         //update stored request for ID change to use this new ID
-        String[] storedRequests = _cly.connectionQueue_.getCountlyStore().getRequests();
+        String[] storedRequests = storageProvider.getRequests();
         String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
         String newIdTag = "&device_id=" + deviceId;
 
@@ -69,7 +69,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
         }
 
         if (foundOne) {
-            _cly.connectionQueue_.getCountlyStore().replaceRequests(storedRequests);
+            storageProvider.replaceRequests(storedRequests);
         }
 
         //update remote config_ values if automatic update is enabled

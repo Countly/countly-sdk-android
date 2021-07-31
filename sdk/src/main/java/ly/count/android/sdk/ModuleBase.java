@@ -6,10 +6,12 @@ import android.content.res.Configuration;
 abstract class ModuleBase {
     final Countly _cly;
     ConsentProvider consentProvider;
+    StorageProvider storageProvider;
 
     ModuleBase(Countly cly, CountlyConfig config) {
         _cly = cly;
         consentProvider = config.consentProvider;
+        storageProvider = config.storageProvider;
     }
 
     void halt() {
