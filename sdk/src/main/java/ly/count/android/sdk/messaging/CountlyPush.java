@@ -71,7 +71,7 @@ public class CountlyPush {
 
     public static boolean useAdditionalIntentRedirectionChecks = false;
 
-    private static BroadcastReceiver notificationActionReceiver = null, consentReceiver = null;
+    private static BroadcastReceiver consentReceiver = null;
 
     static boolean initFinished = false;
 
@@ -469,7 +469,8 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        Intent broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST);
+        Intent broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
+        broadcast.setPackage(context.getApplicationContext().getPackageName());
         broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, 0));
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
@@ -486,17 +487,18 @@ public class CountlyPush {
         }
 
         builder.setAutoCancel(true)
-            .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, 0));
+            .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
 
         builder.setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
 
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST);
+            broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
+            broadcast.setPackage(context.getApplicationContext().getPackageName());
             broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
-            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, 0));
+            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
 
         if (msg.sound() != null) {
@@ -822,11 +824,6 @@ public class CountlyPush {
             application.registerActivityLifecycleCallbacks(callbacks);
 
             IntentFilter filter = new IntentFilter();
-            filter.addAction(SECURE_NOTIFICATION_BROADCAST);
-            notificationActionReceiver = new NotificationBroadcastReceiver();
-            application.registerReceiver(notificationActionReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
-
-            filter = new IntentFilter();
             filter.addAction(Countly.CONSENT_BROADCAST);
             consentReceiver = new ConsentBroadcastReceiver();
             application.registerReceiver(consentReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
