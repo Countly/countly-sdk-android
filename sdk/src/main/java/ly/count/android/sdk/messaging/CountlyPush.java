@@ -71,8 +71,6 @@ public class CountlyPush {
 
     public static boolean useAdditionalIntentRedirectionChecks = false;
 
-    private static BroadcastReceiver consentReceiver = null;
-
     static boolean initFinished = false;
 
     /**
@@ -825,7 +823,7 @@ public class CountlyPush {
 
             IntentFilter filter = new IntentFilter();
             filter.addAction(Countly.CONSENT_BROADCAST);
-            consentReceiver = new ConsentBroadcastReceiver();
+            BroadcastReceiver consentReceiver = new ConsentBroadcastReceiver();
             application.registerReceiver(consentReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
         }
 

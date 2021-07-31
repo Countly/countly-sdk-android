@@ -6,7 +6,8 @@
 
   <application>
     <uses-library android:name="android.test.runner" />
-    <receiver android:name=".messaging.CountlyPush$NotificationBroadcastReceiver" android:exported="false">
+    <receiver android:name=".messaging.CountlyPush$NotificationBroadcastReceiver" android:exported="false"
+        android:permission="${applicationId}.CountlyPush.BROADCAST_PERMISSION">
       <intent-filter>
         <action android:name="ly.count.android.sdk.CountlyPush.SECURE_NOTIFICATION_BROADCAST" />
       </intent-filter>
