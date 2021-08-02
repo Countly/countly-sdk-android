@@ -159,7 +159,7 @@ public class ModuleViews extends ModuleBase {
     void updateOrientation(int newOrientation) {
         L.d("[ModuleViews] Calling [updateOrientation], new orientation:[" + newOrientation + "]");
 
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
             //we don't have consent, just leave
             return;
         }
