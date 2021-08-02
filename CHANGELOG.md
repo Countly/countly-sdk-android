@@ -3,6 +3,7 @@
   * Fixed bug that would prevent certain codepath to be executed if the Application class was not provided during init.
   * Added additional protections in remote config logic to protect against rare crashes
   * Increasing default event threshold to 100.
+  * Printing approximate data usage in logs when sending requests
 
 ## 20.11.8
   * Minor tweaks. Changes related to publishing to MavenCentral

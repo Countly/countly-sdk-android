@@ -32,6 +32,7 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.List;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -82,13 +83,17 @@ public class ConnectionProcessor implements Runnable {
 
         boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced());
 
+        Long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
         if (usingHttpPost) {
             requestData += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
+            approximateDateSize += requestData.length();
         } else {
             urlStr += "?" + requestData;
             urlStr += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
         }
+        approximateDateSize += urlStr.length();
+
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
@@ -118,7 +123,6 @@ public class ConnectionProcessor implements Runnable {
 
         String picturePath = UserData.getPicturePathFromQuery(url);
         L.v("[Connection Processor] Got picturePath: " + picturePath);
-        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
         //Log.v(Countly.TAG, "Used url: " + urlStr);
         if (!picturePath.equals("")) {
             //Uploading files:
@@ -146,6 +150,7 @@ public class ConnectionProcessor implements Runnable {
             try {
                 while ((len = fileInputStream.read(buffer)) != -1) {
                     output.write(buffer, 0, len);
+                    approximateDateSize += len;
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -171,6 +176,19 @@ public class ConnectionProcessor implements Runnable {
                 conn.setDoOutput(false);
             }
         }
+
+        //calculating header field size
+        int headerIndex = 0;
+        while (true) {
+            String key = conn.getHeaderFieldKey(headerIndex);
+            if (key == null) {
+                break;
+            }
+            String value = conn.getHeaderField(headerIndex++);
+            approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
+        }
+
+        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
     }
 
@@ -283,7 +301,7 @@ public class ConnectionProcessor implements Runnable {
                         responseString = Utils.inputStreamToString(connInputStream);
                     }
 
-                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], request: " + eventData);
+                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + eventData);
 
                     final RequestResult rRes;
 
@@ -299,6 +317,7 @@ public class ConnectionProcessor implements Runnable {
                             } catch (JSONException ex) {
                                 //failed to parse, so not a valid json
                                 jsonObject = null;
+                                L.e("[Connection Processor] Failed to parse response [" + responseString + "].");
                             }
 
                             if (jsonObject == null) {
