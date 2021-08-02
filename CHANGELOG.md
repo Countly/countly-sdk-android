@@ -1,4 +1,5 @@
 ## 20.11.9
+  * Moving a push related broadcast receiver decleration to the manifest to comply with 'PendingIntent' checks
   * Fixed issue with star rating lowest allowed value. Changing it from 0 to 1.
   * Fixed bug that would prevent certain codepath to be executed if the Application class was not provided during init.
   * Added additional protections in remote config logic to protect against rare crashes
