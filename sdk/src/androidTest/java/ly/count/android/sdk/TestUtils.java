@@ -27,4 +27,12 @@ public class TestUtils {
 
         return mRes;
     }
+
+    public static void setStorageProviderToMock(Countly countly, StorageProvider sp) {
+        for (ModuleBase module:countly.modules) {
+            module.storageProvider = sp;
+        }
+
+        countly.config_.storageProvider = sp;
+    }
 }

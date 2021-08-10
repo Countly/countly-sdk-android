@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -49,7 +51,7 @@ import org.json.JSONObject;
 public class CountlyStore implements StorageProvider{
     private static final String PREFERENCES = "COUNTLY_STORE";
     private static final String PREFERENCES_PUSH = "ly.count.android.api.messaging";
-    private static final String DELIMITER = ":::";
+    static final String DELIMITER = ":::";
     private static final String REQUEST_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
@@ -135,6 +137,44 @@ public class CountlyStore implements StorageProvider{
     }
 
     /**
+     * Returns the number of events in the local event queue.
+     *
+     * @return the number of events in the local event queue
+     */
+    public synchronized int getEventQueueSize() {
+        return getEvents().length;
+    }
+
+    /**
+     * Removes all current events from the local queue and returns them as a
+     * URL-encoded JSON string that can be submitted to a ConnectionQueue.
+     *
+     * @return URL-encoded JSON string of event data from the local event queue
+     */
+    public synchronized String getEventsForRequestAndEmptyEventQueue() {
+        String result;
+
+        final List<Event> events = getEventList();
+
+        final JSONArray eventArray = new JSONArray();
+        for (Event e : events) {
+            eventArray.put(e.toJSON());
+        }
+
+        result = eventArray.toString();
+
+        removeEvents(events);
+
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        return result;
+    }
+
+    /**
      * Returns true if no requests are current stored, false otherwise.
      */
     public synchronized boolean noRequestsAvailable() {
@@ -206,8 +246,16 @@ public class CountlyStore implements StorageProvider{
         final List<Event> events = getEventList();
         if (events.size() < MAX_EVENTS) {
             events.add(event);
-            preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
+            setEventData(joinEvents(events, DELIMITER));
         }
+    }
+
+    /**
+     * set the new value in event data storage
+     * @param eventData
+     */
+    void setEventData(String eventData) {
+        preferences_.edit().putString(EVENTS_PREFERENCE, eventData).apply();
     }
 
     /**

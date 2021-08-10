@@ -128,9 +128,10 @@ public class Countly {
     ConnectionQueue connectionQueue_;
     private final ScheduledExecutorService timerService_;
     private ScheduledFuture<?> timerFuture = null;
-    EventQueue eventQueue_;
     private int activityCount_;
     boolean disableUpdateSessionRequests_ = false;//todo, move to module after 'setDisableUpdateSessionRequests' is removed
+
+    boolean sdkIsInitialised = false;
 
     //w - warnings
     //e - errors
@@ -464,7 +465,7 @@ public class Countly {
             L.e("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
             return this;
         }
-        if (eventQueue_ != null && (!connectionQueue_.getServerURL().equals(config.serverURL) ||
+        if (sdkIsInitialised && (!connectionQueue_.getServerURL().equals(config.serverURL) ||
             !connectionQueue_.getAppKey().equals(config.appKey) ||
             !DeviceId.deviceIDEqualsNullSafe(config.deviceID, config.idMode, connectionQueue_.getDeviceId()))) {
             //not sure if this needed
@@ -501,7 +502,7 @@ public class Countly {
 
         // if we get here and eventQueue_ != null, init is being called again with the same values,
         // so there is nothing to do, because we are already initialized with those values
-        if (eventQueue_ == null) {
+        if (!sdkIsInitialised) {
             L.d("[Init] About to init internal systems");
 
             config_ = config;
@@ -567,6 +568,11 @@ public class Countly {
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
 
+            //add missing providers
+            moduleConsent.eventProvider = config.eventProvider;
+            moduleDeviceId.eventProvider = config.eventProvider;
+            moduleCrash.eventProvider = config.eventProvider;
+
             L.i("[Init] Finished initialising modules");
 
             //init other things
@@ -614,7 +620,7 @@ public class Countly {
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
 
-            eventQueue_ = new EventQueue(config.storageProvider);
+            sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
 
             //set global application listeners
@@ -728,7 +734,7 @@ public class Countly {
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public synchronized boolean isInitialized() {
-        return eventQueue_ != null;
+        return sdkIsInitialised;
     }
 
     /**
@@ -738,7 +744,7 @@ public class Countly {
      */
     public synchronized void halt() {
         L.i("Halting Countly!");
-        eventQueue_ = null;
+        sdkIsInitialised = false;
         L.SetListener(null);
 
         if (connectionQueue_ != null) {
@@ -1529,9 +1535,9 @@ public class Countly {
      * Immediately sends all stored events
      */
     protected void sendEventsForced() {
-        if (eventQueue_.size() > 0) {
+        if (config_.storageProvider.getEventQueueSize() > 0) {
             //only send events if there is anything to send
-            connectionQueue_.recordEvents(eventQueue_.events());
+            connectionQueue_.recordEvents(config_.storageProvider.getEventsForRequestAndEmptyEventQueue());
         }
     }
 
@@ -2721,14 +2727,6 @@ public class Countly {
 
     ExecutorService getTimerService() {
         return timerService_;
-    }
-
-    EventQueue getEventQueue() {
-        return eventQueue_;
-    }
-
-    void setEventQueue(final EventQueue eventQueue) {
-        eventQueue_ = eventQueue;
     }
 
     long getPrevSessionDurationStartTime() {

@@ -7,11 +7,13 @@ abstract class ModuleBase {
     final Countly _cly;
     ConsentProvider consentProvider;
     StorageProvider storageProvider;
+    EventProvider eventProvider;
 
     ModuleBase(Countly cly, CountlyConfig config) {
         _cly = cly;
         consentProvider = config.consentProvider;
         storageProvider = config.storageProvider;
+        eventProvider = config.eventProvider;
     }
 
     void halt() {

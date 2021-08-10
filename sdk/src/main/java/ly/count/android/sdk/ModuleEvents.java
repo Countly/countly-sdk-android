@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
 
-public class ModuleEvents extends ModuleBase {
+public class ModuleEvents extends ModuleBase implements EventProvider, EventQueueProvider{
     static final Map<String, Event> timedEvents = new HashMap<>();
     static final String[] reservedSegmentationKeys = new String[] { "aaaaaaaaaaaaaaaaaaaaCountly" };//just a test key that no one should realistically use
 
@@ -13,12 +13,24 @@ public class ModuleEvents extends ModuleBase {
 
     ModuleLog L;
 
+    EventQueueProvider eventQueueProvider;
+
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly, config);
+        eventProvider = this;
+        config.eventProvider = this;
 
         L = cly.L;
 
         L.v("[ModuleEvents] Initialising");
+
+        //if a custom queue provider (for tests) is provided, use that
+        if(config.eventQueueProvider != null) {
+            L.d("[ModuleEvents] Custom event queue provider was provided");
+            eventQueueProvider = config.eventQueueProvider;
+        } else {
+            eventQueueProvider = this;
+        }
 
         eventsInterface = new Events();
     }
@@ -53,7 +65,7 @@ public class ModuleEvents extends ModuleBase {
      * @param instant
      * @param processedSegmentation if segmentation has been processed and reserved keywords should not be removed
      */
-    synchronized void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, boolean processedSegmentation) {
+    public void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, boolean processedSegmentation) {
         L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
@@ -117,38 +129,50 @@ public class ModuleEvents extends ModuleBase {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsForced();
                 }
                 break;
             case ModuleRatings.STAR_RATING_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsIfNeeded();
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsIfNeeded();
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsIfNeeded();
                 }
                 break;
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
                     _cly.sendEventsIfNeeded();
                 }
                 break;
         }
     }
 
-    synchronized boolean startEventInternal(final String key) {
+    public void recordEventToEventQueue(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean, final int count,
+        final double sum, final double dur, UtilsTime.Instant instant) {
+        if (instant == null) {
+            instant = UtilsTime.getCurrentInstant();
+        }
+
+        final long timestamp = instant.timestampMs;
+        final int hour = instant.hour;
+        final int dow = instant.dow;
+        storageProvider.addEvent(key, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, timestamp, hour, dow, count, sum, dur);
+    }
+
+    boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
             L.e("[ModuleEvents] Can't start event with a null or empty key");
             return false;
@@ -161,7 +185,7 @@ public class ModuleEvents extends ModuleBase {
         return true;
     }
 
-    synchronized boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
+    boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
         L.d("[ModuleEvents] Ending event: [" + key + "]");
 
         if (key == null || key.length() == 0) {
@@ -195,7 +219,7 @@ public class ModuleEvents extends ModuleBase {
         }
     }
 
-    synchronized boolean cancelEventInternal(final String key) {
+    boolean cancelEventInternal(final String key) {
         if (key == null || key.length() == 0) {
             L.e("[ModuleEvents] Can't cancel event with a null or empty key");
             return false;

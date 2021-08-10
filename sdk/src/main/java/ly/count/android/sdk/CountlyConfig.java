@@ -21,6 +21,11 @@ public class CountlyConfig {
      */
     protected StorageProvider storageProvider = null;
 
+    protected EventProvider eventProvider = null;
+
+    protected EventQueueProvider eventQueueProvider = null;
+
+
     protected boolean checkForNativeCrashDumps = true;
 
     //used to deliver this object to connection queue

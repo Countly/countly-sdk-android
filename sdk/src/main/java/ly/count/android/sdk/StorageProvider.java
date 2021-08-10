@@ -24,6 +24,10 @@ interface StorageProvider {
 
     void removeEvents(final Collection<Event> eventsToRemove);
 
+    int getEventQueueSize();
+
+    String getEventsForRequestAndEmptyEventQueue();
+
     String getDeviceID();
 
     String getDeviceIDType();

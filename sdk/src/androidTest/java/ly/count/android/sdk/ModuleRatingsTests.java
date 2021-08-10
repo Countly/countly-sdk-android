@@ -36,8 +36,7 @@ public class ModuleRatingsTests {
 
     @Test
     public void recordManualRating() {
-        EventQueue mockEventQueue = mock(EventQueue.class);
-        mCountly.setEventQueue(mockEventQueue);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         String[] vals = new String[] { "aa", "bb", "cc" };
         mCountly.ratings().recordManualRating(vals[0], 3, vals[1], vals[2], true);
@@ -56,29 +55,26 @@ public class ModuleRatingsTests {
 
         segmB.put("contactMe", true);
 
-        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         //validate lower bound
-        mockEventQueue = mock(EventQueue.class);
-        mCountly.setEventQueue(mockEventQueue);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
         mCountly.ratings().recordManualRating(vals[0], -12, vals[1], vals[2], true);
         segmS.put("rating", "" + 1);
-        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         //validate upper bound
-        mockEventQueue = mock(EventQueue.class);
-        mCountly.setEventQueue(mockEventQueue);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
         mCountly.ratings().recordManualRating(vals[0], 12, vals[1], vals[2], true);
         segmS.put("rating", "" + 5);
-        verify(mockEventQueue).recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
-        mockEventQueue = mock(EventQueue.class);
-        mCountly.setEventQueue(mockEventQueue);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
         mCountly.moduleRatings.recordManualRatingInternal(null, 12, vals[1], vals[2], true);
-        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         mCountly.moduleRatings.recordManualRatingInternal("", 12, vals[1], vals[2], true);
-        verify(mockEventQueue, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 
     @Test(expected = IllegalStateException.class)

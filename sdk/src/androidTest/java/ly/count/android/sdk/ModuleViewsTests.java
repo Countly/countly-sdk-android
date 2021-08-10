@@ -29,14 +29,12 @@ import static org.mockito.Mockito.verify;
 @RunWith(AndroidJUnit4.class)
 public class ModuleViewsTests {
     //Countly mCountly;
+    CountlyStore countlyStore;
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
-
-        //mCountly = new Countly();
-        //mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @After
@@ -56,8 +54,7 @@ public class ModuleViewsTests {
     void activityStartedViewTracking(boolean shortNames) {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         Activity act = mock(Activity.class);
         mCountly.moduleViews.onActivityStarted(act);
@@ -77,7 +74,7 @@ public class ModuleViewsTests {
             segmS.put("name", act.getClass().getName());
         }
 
-        verify(evQ).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
     }
 
     @Test
@@ -100,12 +97,11 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames).setAutoTrackingExceptions(new Class[] { act1.getClass() });
         mCountly.init(config);
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         mCountly.moduleViews.onActivityStarted(act1);
 
-        verify(evQ, never()).recordEvent(anyString(), any(Map.class), any(Map.class), any(Map.class), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
+        verify(mCountly.moduleEvents.eventQueueProvider, never()).recordEventToEventQueue(anyString(), any(Map.class), any(Map.class), any(Map.class), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
 
         mCountly.moduleViews.onActivityStarted(act2);
 
@@ -124,7 +120,7 @@ public class ModuleViewsTests {
             segmS.put("name", act2.getClass().getName());
         }
 
-        verify(evQ).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
     }
 
     @Test
@@ -132,14 +128,12 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         Activity act = mock(Activity.class);
         mCountly.moduleViews.onActivityStarted(act);
 
-        verify(evQ, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 
     @Test
@@ -147,9 +141,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(true);
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         Activity act = mock(Activity.class);
 
@@ -168,7 +160,7 @@ public class ModuleViewsTests {
 
         segmS.put("mode", "portrait");
 
-        verify(evQ).recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleViews.ORIENTATION_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
 
         Assert.assertEquals(Configuration.ORIENTATION_PORTRAIT, mView.currentOrientation);
     }
@@ -178,9 +170,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         Configuration conf = new Configuration();
 
@@ -191,7 +181,7 @@ public class ModuleViewsTests {
         Assert.assertEquals(-1, mView.currentOrientation);
         mCountly.moduleViews.onConfigurationChanged(conf);
 
-        verify(evQ, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         Assert.assertEquals(-1, mView.currentOrientation);
     }
@@ -201,9 +191,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(true);
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         Configuration conf = new Configuration();
 
@@ -221,7 +209,7 @@ public class ModuleViewsTests {
 
         segmS.put("mode", "landscape");
 
-        verify(evQ).recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleViews.ORIENTATION_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
 
         Assert.assertEquals(Configuration.ORIENTATION_LANDSCAPE, mView.currentOrientation);
     }
@@ -230,13 +218,11 @@ public class ModuleViewsTests {
     public void onActivityStopped() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true));
-        EventQueue evQ = mock(EventQueue.class);
-
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         mCountly.moduleViews.onActivityStopped();
 
-        verify(evQ, never()).recordEvent(anyString(), any(Map.class), any(Map.class), any(Map.class), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
+        verify(mCountly.moduleEvents.eventQueueProvider, never()).recordEventToEventQueue(anyString(), any(Map.class), any(Map.class), any(Map.class), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
     }
 
     @Test
@@ -253,9 +239,7 @@ public class ModuleViewsTests {
 
         config.setAutomaticViewSegmentation(segms);
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         Activity act = mock(Activity.class);
 
@@ -284,7 +268,7 @@ public class ModuleViewsTests {
         segmD.put("2", 234.0d);
         segmB.put("3", true);
 
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
 
         segmS.clear();
         segmI.clear();
@@ -295,15 +279,14 @@ public class ModuleViewsTests {
         segmS.put("segment", "Android");
         segmS.put("name", act.getClass().getSimpleName());
 
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
     }
 
     @Test
     public void recordViewNoSegm() throws InterruptedException {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
 
@@ -319,7 +302,7 @@ public class ModuleViewsTests {
 
         mCountly.views().recordView(viewNames[0]);
 
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1]);
@@ -327,13 +310,13 @@ public class ModuleViewsTests {
         segmS.put("dur", "1");//todo rework to verify duration better
         segmS.put("segment", "Android");
         segmS.put("name", viewNames[0]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         segmS.clear();
         segmS.put("segment", "Android");
         segmS.put("visit", "1");
         segmS.put("name", viewNames[1]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2]);
@@ -341,13 +324,13 @@ public class ModuleViewsTests {
         segmS.put("dur", "1");//todo rework to verify duration better
         segmS.put("segment", "Android");
         segmS.put("name", viewNames[1]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         segmS.clear();
         segmS.put("segment", "Android");
         segmS.put("visit", "1");
         segmS.put("name", viewNames[2]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
     }
 
     @Test
@@ -387,8 +370,7 @@ public class ModuleViewsTests {
 
         config.setAutomaticViewSegmentation(segms);
         mCountly.init(config);
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
 
@@ -403,7 +385,7 @@ public class ModuleViewsTests {
         segmS.put("start", "1");
         segmS.put("visit", "1");
         segmS.put("name", viewNames[0]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1], cSegm2);
@@ -414,7 +396,7 @@ public class ModuleViewsTests {
         segmS.put("dur", "1");
         segmS.put("segment", "Android");
         segmS.put("name", viewNames[0]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         segmS.clear();
         segmI.clear();
@@ -428,7 +410,7 @@ public class ModuleViewsTests {
         segmI.put("big", 1337);
         segmD.put("candy", 954.33d);
         segmB.put("calling", false);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2], cSegm3);
@@ -439,7 +421,7 @@ public class ModuleViewsTests {
         segmS.put("dur", "1");
         segmS.put("segment", "Android");
         segmS.put("name", viewNames[1]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
 
         segmS.clear();
         segmI.clear();
@@ -456,15 +438,14 @@ public class ModuleViewsTests {
         segmI.put("biffg", 132137);
         segmD.put("cannndy", 9534.33d);
         segmB.put("calaaling", true);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(mCountly.moduleEvents.eventQueueProvider, times(1)).recordEventToEventQueue(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
     }
 
     @Test
     public void recordViewNullViewName() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         ModuleEvents mEvents = mock(ModuleEvents.class);
         mCountly.moduleEvents = mEvents;
@@ -491,8 +472,7 @@ public class ModuleViewsTests {
     public void recordViewEmptyViewName() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         ModuleEvents mEvents = mock(ModuleEvents.class);
         mCountly.moduleEvents = mEvents;
@@ -520,9 +500,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
             .setViewTracking(true).setAutoTrackingUseShortName(true).setRequiresConsent(true));
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         ModuleEvents mEvents = mock(ModuleEvents.class);
         mCountly.moduleEvents = mEvents;

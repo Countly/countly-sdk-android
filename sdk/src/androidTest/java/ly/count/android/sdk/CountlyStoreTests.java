@@ -24,6 +24,8 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +47,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
 public class CountlyStoreTests {
@@ -699,5 +703,54 @@ public class CountlyStoreTests {
 
         CountlyStore.cachePushData("mnc", "uio", getContext());
         assertTrue(sp.anythingSetInStorage());
+    }
+
+    /**
+     * Testing 'getEventQueueSize' in a scenario where the event queue is an empty string
+     */
+    @Test
+    public void getEventQueueSizeEmpty() {
+        store.setEventData("");
+        assertEquals(0, sp.getEventQueueSize());
+    }
+
+    /**
+     * Testing 'getEventQueueSize' in a scenario where the event queue contains 2 "events"
+     */
+    @Test
+    public void getEventQueueSizeSimple() {
+        store.setEventData("a" + CountlyStore.DELIMITER + "b");
+        assertEquals(2, sp.getEventQueueSize());
+    }
+
+    /**
+     * Validate 'getEventsForRequestAndEmptyEventQueue' in a situation where there are no events
+     * @throws UnsupportedEncodingException
+     */
+    @Test
+    public void getEventsForRequestAndEmptyEventQueueWithNoEvents() throws UnsupportedEncodingException {
+        store.setEventData("");
+        final String expected = URLEncoder.encode("[]", "UTF-8");
+        assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
+        Assert.assertEquals(0, sp.getEventQueueSize());
+    }
+
+    /**
+     * Validate 'getEventsForRequestAndEmptyEventQueue' in a situation where there are 2 events
+     * @throws UnsupportedEncodingException
+     */
+    @Test
+    public void getEventsForRequestAndEmptyEventQueueWithSimpleEvents() throws UnsupportedEncodingException {
+        final Event event1 = new Event();
+        event1.key = "event1Key";
+        store.addEvent(event1);
+        final Event event2 = new Event();
+        event2.key = "event2Key";
+        store.addEvent(event2);
+
+        final String jsonToEncode = "[" + event1.toJSON().toString() + "," + event2.toJSON().toString() + "]";
+        final String expected = URLEncoder.encode(jsonToEncode, "UTF-8");
+        assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
+        Assert.assertEquals(0, sp.getEventQueueSize());
     }
 }

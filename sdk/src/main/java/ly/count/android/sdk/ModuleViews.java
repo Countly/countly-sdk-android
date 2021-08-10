@@ -84,7 +84,7 @@ public class ModuleViews extends ModuleBase {
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
-            _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, true);
+            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, true);
             lastView = null;
             lastViewStart = 0;
         }
@@ -151,7 +151,7 @@ public class ModuleViews extends ModuleBase {
             viewSegmentation.put("start", "1");
         }
 
-        _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, true);
+        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, true);
 
         return _cly;
     }
