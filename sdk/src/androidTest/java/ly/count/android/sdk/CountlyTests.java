@@ -201,7 +201,7 @@ public class CountlyTests {
         assertSame(getContext().getApplicationContext(), mUninitedCountly.getConnectionQueue().getContext());
         assertEquals(serverURL, mUninitedCountly.getConnectionQueue().getServerURL());
         assertEquals(appKey, mUninitedCountly.getConnectionQueue().getAppKey());
-        assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.getEventQueue().getCountlyStore());
+        assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.countlyStore);
     }
 
     @Test
@@ -264,7 +264,7 @@ public class CountlyTests {
         assertEquals(appKey, mUninitedCountly.getConnectionQueue().getAppKey());
         assertNotNull(mUninitedCountly.getConnectionQueue().getCountlyStore());
         assertNotNull(mUninitedCountly.getEventQueue());
-        assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.getEventQueue().getCountlyStore());
+        assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.countlyStore);
     }
 
     @Test

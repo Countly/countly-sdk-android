@@ -55,7 +55,7 @@ public class EventQueueTests {
 
     @Test
     public void testConstructor() {
-        assertSame(mMockCountlyStore, mEventQueue.getCountlyStore());
+        assertSame(mMockCountlyStore, mEventQueue.storageProvider);
     }
 
     @Test

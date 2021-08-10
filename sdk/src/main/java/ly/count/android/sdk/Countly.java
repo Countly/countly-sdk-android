@@ -154,6 +154,9 @@ public class Countly {
     ModuleLocation moduleLocation = null;
     ModuleFeedback moduleFeedback = null;
 
+    //reference to countly store
+    CountlyStore countlyStore;
+
     //user data access
     public static UserData userData;
 
@@ -509,7 +512,7 @@ public class Countly {
                 startTimerService(timerService_, timerFuture, config.sessionUpdateTimerDelay);
             }
 
-            final CountlyStore countlyStore;
+            //set or create the CountlyStore
             if (config.countlyStore != null) {
                 //we are running a test and using a mock object
                 countlyStore = config.countlyStore;
@@ -611,7 +614,7 @@ public class Countly {
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
 
-            eventQueue_ = new EventQueue(countlyStore);
+            eventQueue_ = new EventQueue(config.storageProvider);
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
 
             //set global application listeners

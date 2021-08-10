@@ -105,8 +105,8 @@ public class ModuleRatingsTests {
 
         Assert.assertEquals(0, mCountly.ratings().getCurrentVersionsSessionCount());
 
-        mCountly.moduleRatings.registerAppSession(getContext(), mCountly.eventQueue_.getCountlyStore(), null);
-        mCountly.moduleRatings.registerAppSession(getContext(), mCountly.eventQueue_.getCountlyStore(), null);
+        mCountly.moduleRatings.registerAppSession(getContext(), mCountly.countlyStore, null);
+        mCountly.moduleRatings.registerAppSession(getContext(), mCountly.countlyStore, null);
 
         Assert.assertEquals(2, mCountly.ratings().getCurrentVersionsSessionCount());
 

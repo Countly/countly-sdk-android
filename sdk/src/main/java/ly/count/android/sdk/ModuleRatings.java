@@ -144,7 +144,7 @@ public class ModuleRatings extends ModuleBase {
     }
 
     boolean getIfStarRatingShouldBeShownAutomatically() {
-        StarRatingPreferences srp = loadStarRatingPreferences(_cly.eventQueue_.getCountlyStore());
+        StarRatingPreferences srp = loadStarRatingPreferences(_cly.countlyStore);
         return srp.automaticRatingShouldBeShown;
     }
 

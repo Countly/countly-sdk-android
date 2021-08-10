@@ -37,15 +37,15 @@ import org.json.JSONArray;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class EventQueue {
-    private final CountlyStore countlyStore_;
+    final StorageProvider storageProvider;
 
     /**
      * Constructs an EventQueue.
      *
-     * @param countlyStore backing store to be used for local event queue persistence
+     * @param givenStorageProvider backing store to be used for local event queue persistence
      */
-    EventQueue(final CountlyStore countlyStore) {
-        countlyStore_ = countlyStore;
+    EventQueue(final StorageProvider givenStorageProvider) {
+        storageProvider = givenStorageProvider;
     }
 
     /**
@@ -54,7 +54,7 @@ public class EventQueue {
      * @return the number of events in the local event queue
      */
     int size() {
-        return countlyStore_.getEvents().length;
+        return storageProvider.getEvents().length;
     }
 
     /**
@@ -66,7 +66,7 @@ public class EventQueue {
     String events() {
         String result;
 
-        final List<Event> events = countlyStore_.getEventList();
+        final List<Event> events = storageProvider.getEventList();
 
         final JSONArray eventArray = new JSONArray();
         for (Event e : events) {
@@ -75,7 +75,7 @@ public class EventQueue {
 
         result = eventArray.toString();
 
-        countlyStore_.removeEvents(events);
+        storageProvider.removeEvents(events);
 
         try {
             result = java.net.URLEncoder.encode(result, "UTF-8");
@@ -104,11 +104,6 @@ public class EventQueue {
         final long timestamp = instant.timestampMs;
         final int hour = instant.hour;
         final int dow = instant.dow;
-        countlyStore_.addEvent(key, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, timestamp, hour, dow, count, sum, dur);
-    }
-
-    // for unit tests
-    CountlyStore getCountlyStore() {
-        return countlyStore_;
+        storageProvider.addEvent(key, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, timestamp, hour, dow, count, sum, dur);
     }
 }
