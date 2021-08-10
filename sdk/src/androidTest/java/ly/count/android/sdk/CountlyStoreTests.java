@@ -48,6 +48,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(AndroidJUnit4.class)
 public class CountlyStoreTests {
     CountlyStore store;
+    StorageProvider sp;
     final String countlyStoreName = "COUNTLY_STORE";
     final String countlyStoreNamePush = "ly.count.android.api.messaging";
 
@@ -55,6 +56,7 @@ public class CountlyStoreTests {
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
         store = new CountlyStore(getContext(), mock(ModuleLog.class));
+        sp = store;
         store.clear();
     }
 
@@ -450,9 +452,6 @@ public class CountlyStoreTests {
      */
     @Test
     public void setGetAdvertisingId() {
-        StorageProvider sp = store;
-        store.clear();
-
         assertEquals("", sp.getCachedAdvertisingId());
 
         sp.setCachedAdvertisingId("qwe");
@@ -470,9 +469,6 @@ public class CountlyStoreTests {
      */
     @Test
     public void setGetRemoteConfigValues() {
-        StorageProvider sp = store;
-        store.clear();
-
         assertEquals("", sp.getRemoteConfigValues());
 
         sp.setRemoteConfigValues("qwe");
@@ -490,9 +486,6 @@ public class CountlyStoreTests {
      */
     @Test
     public void setGetStarRatingPreferences() {
-        StorageProvider sp = store;
-        store.clear();
-
         assertEquals("", sp.getStarRatingPreferences());
 
         sp.setStarRatingPreferences("abc");
@@ -564,8 +557,6 @@ public class CountlyStoreTests {
     public void testDeviceIDStorage() {
         String[] values = new String[] { "aa", null, "bb", "", "cc"};
         String[] values2 = new String[] { "11", "22", null, "33", ""};
-        StorageProvider sp = store;
-        store.clear();
 
         assertNull(sp.getDeviceID());
         assertNull(sp.getDeviceIDType());
@@ -587,9 +578,6 @@ public class CountlyStoreTests {
      */
     @Test
     public void settingRetrievingSchemaVersion() {
-        store.clear();
-        StorageProvider sp = store;
-
         //test default
         assertEquals(-1, sp.getDataSchemaVersion());
 
@@ -609,9 +597,6 @@ public class CountlyStoreTests {
      */
     @Test
     public void validatingAnythingSetInStorageSeparate() {
-        store.clear();
-        StorageProvider sp = store;
-
         assertFalse(sp.anythingSetInStorage());
 
         sp.addRequest("234ff");
@@ -677,9 +662,6 @@ public class CountlyStoreTests {
      */
     @Test
     public void validatingAnythingSetInStorageAggregate() {
-        store.clear();
-        StorageProvider sp = store;
-
         assertFalse(sp.anythingSetInStorage());
 
         sp.addRequest("234ff");

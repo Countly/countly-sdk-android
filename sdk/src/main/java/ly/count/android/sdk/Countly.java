@@ -1517,20 +1517,11 @@ public class Countly {
     }
 
     /**
-     * Send events if any of them are stored
-     */
-    protected void sendEventsIfExist() {
-        if (eventQueue_.size() > 0) {
-            connectionQueue_.recordEvents(eventQueue_.events());
-        }
-    }
-
-    /**
      * Submits all of the locally queued events to the server if there are more than 10 of them.
      */
     protected void sendEventsIfNeeded() {
-        if (eventQueue_.size() >= EVENT_QUEUE_SIZE_THRESHOLD) {
-            connectionQueue_.recordEvents(eventQueue_.events());
+        if (config_.storageProvider.getEventQueueSize() >= EVENT_QUEUE_SIZE_THRESHOLD) {
+            connectionQueue_.recordEvents(config_.storageProvider.getEventsForRequestAndEmptyEventQueue());
         }
     }
 

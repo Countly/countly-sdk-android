@@ -9,7 +9,6 @@ public class CountlyConfig {
     /**
      * Internal fields and fields for testing
      */
-
     protected CountlyStore countlyStore = null;
 
     /**
@@ -17,7 +16,10 @@ public class CountlyConfig {
      */
     protected ConsentProvider consentProvider = null;
 
-    StorageProvider storageProvider = null;
+    /**
+     * Used to pass the storage provider to all modules and features
+     */
+    protected StorageProvider storageProvider = null;
 
     protected boolean checkForNativeCrashDumps = true;
 
