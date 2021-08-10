@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.webkit.WebView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -229,57 +230,82 @@ public class ModuleFeedback extends ModuleBase {
             //WebView.setWebContentsDebuggingEnabled(true);
         }
 
+        final boolean useAlertDialog = true;
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
                 L.d("[ModuleFeedback] Calling on main thread");
 
-                ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
-                webView.getSettings().setJavaScriptEnabled(true);
-                webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
-                webView.loadUrl(preparedWidgetUrl);
-                webView.requestFocus();
+                try {
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                builder.setView(webView);
-                builder.setCancelable(false);
+                    ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
+                    webView.getSettings().setJavaScriptEnabled(true);
+                    webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
+                    webView.loadUrl(preparedWidgetUrl);
+                    webView.requestFocus();
 
-                String usedCloseButtonText = closeButtonText;
-                if (closeButtonText == null || closeButtonText.isEmpty()) {
-                    usedCloseButtonText = "Close";
-                }
+                    AlertDialog.Builder builder = prepareAlertDialog(context, webView, closeButtonText, widgetInfo);
 
-                builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface dialogInterface, int i) {
-                        L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
+                    if (useAlertDialog) {
+                        // use alert dialog to host the webView
+                        L.d("[ModuleFeedback] Creating standalone Alert dialog");
+                        builder.show();
+                    } else {
+                        // use dialog fragment to host the webView
+                        L.d("[ModuleFeedback] Creating Alert dialog in dialogFragment");
 
-                        if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                            Map<String, Object> segm = new HashMap<>();
-                            segm.put("platform", "android");
-                            segm.put("app_version", DeviceInfo.getAppVersion(context));
-                            segm.put("widget_id", "" + widgetInfo.widgetId);
-                            segm.put("closed", "1");
-
-                            final String key;
-
-                            if (widgetInfo.type == FeedbackWidgetType.survey) {
-                                key = SURVEY_EVENT_KEY;
-                            } else {
-                                key = NPS_EVENT_KEY;
-                            }
-
-                            _cly.moduleEvents.recordEventInternal(key, segm, 1, 0, 0, null, false);
-                        }
+                        //CountlyDialogFragment newFragment = CountlyDialogFragment.newInstance(builder);
+                        //newFragment.show(fragmentManager, "CountlyFragmentDialog");
                     }
-                });
 
-                builder.show();
-
-                if (devCallback != null) {
-                    devCallback.onFinished(null);
+                    if (devCallback != null) {
+                        devCallback.onFinished(null);
+                    }
+                } catch (Exception ex) {
+                    L.e("[ModuleFeedback] Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
+                    if (devCallback != null) {
+                        devCallback.onFinished("Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
+                    }
                 }
             }
         });
+    }
+
+    AlertDialog.Builder prepareAlertDialog(final Context context, WebView webView, String closeButtonText, final CountlyFeedbackWidget widgetInfo) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setView(webView);
+        builder.setCancelable(false);
+        String usedCloseButtonText = closeButtonText;
+        if (closeButtonText == null || closeButtonText.isEmpty()) {
+            usedCloseButtonText = "Close";
+        }
+        builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface dialogInterface, int i) {
+                L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
+                reportFeedbackWidgetCancelButton(widgetInfo, DeviceInfo.getAppVersion(context));
+            }
+        });
+        return builder;
+    }
+
+    void reportFeedbackWidgetCancelButton(CountlyFeedbackWidget widgetInfo, String appVersion) {
+        L.d("[reportFeedbackWidgetCancelButton] Cancel button event");
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
+            final Map<String, Object> segm = new HashMap<>();
+            segm.put("platform", "android");
+            segm.put("app_version", appVersion);
+            segm.put("widget_id", "" + widgetInfo.widgetId);
+            segm.put("closed", "1");
+            final String key;
+
+            if (widgetInfo.type == FeedbackWidgetType.survey) {
+                key = SURVEY_EVENT_KEY;
+            } else {
+                key = NPS_EVENT_KEY;
+            }
+
+            _cly.moduleEvents.recordEventInternal(key, segm, 1, 0, 0, null, false);
+        }
     }
 
     /**
@@ -520,7 +546,7 @@ public class ModuleFeedback extends ModuleBase {
          */
         public void presentFeedbackWidget(CountlyFeedbackWidget widgetInfo, Context context, String closeButtonText, FeedbackCallback devCallback) {
             synchronized (_cly) {
-                L.i("[Feedback] Trying to present feedback widget");
+                L.i("[Feedback] Trying to present feedback widget in an alert dialog");
 
                 presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
             }
