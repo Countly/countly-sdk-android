@@ -637,34 +637,6 @@ public class CountlyTests {
         }
     }
 
-    @Test
-    public void testRecordEvent() {
-        final String eventKey = "eventKey";
-        final int count = 42;
-        final double sum = 3.0d;
-        final double dur = 10.0d;
-        final HashMap<String, Object> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "segvalue1");
-        final HashMap<String, String> segmS = new HashMap<>();
-        segmS.put("segkey1", "segvalue1");
-        final HashMap<String, Double> segmD = new HashMap<>();
-        final HashMap<String, Integer> segmI = new HashMap<>();
-        final HashMap<String, Boolean> segmB = new HashMap<>();
-
-        //create a spied countly class
-        final Countly countly = spy(mCountly);
-        countly.moduleEvents = new ModuleEvents(countly, countly.config_);
-        countly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
-
-        doNothing().when(countly).sendEventsIfNeeded();
-        doReturn(true).when(countly).isInitialized();
-
-        countly.events().recordEvent(eventKey, segmentation, count, sum, dur);
-
-        verify(countly.moduleEvents.eventQueueProvider).recordEventToEventQueue(eventKey, segmS, segmI, segmD, segmB, count, sum, dur, null);
-        verify(countly).sendEventsIfNeeded();
-    }
-
     /**
      * There are no events in the event queue.
      * Make sure that no event requests is created when 'sendEventsIfNeeded' is called.

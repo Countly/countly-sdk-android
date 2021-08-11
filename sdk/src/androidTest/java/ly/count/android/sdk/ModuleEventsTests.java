@@ -16,7 +16,10 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -83,20 +86,23 @@ public class ModuleEventsTests {
 
     @Test
     public void recordEvent_1() {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.events().recordEvent(eventKey);
-        verify(eventQueueProvider).recordEventToEventQueue(eventKey, null, null, null, null, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(eventKey, null, 1, 0.0, 0.0, null);
     }
 
     @Test
     public void recordEvent_2() {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.events().recordEvent(eventKey, 657);
-        verify(eventQueueProvider).recordEventToEventQueue(eventKey, null, null, null, null, 657, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(eventKey, null, 657, 0.0, 0.0, null);
     }
 
     @Test
     public void recordEvent_3() {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.events().recordEvent(eventKey, 657, 884.213d);
-        verify(eventQueueProvider).recordEventToEventQueue(eventKey, null, null, null, null, 657, 884.213d, 0.0, null);
+        verify(ep).recordEventInternal(eventKey, null, 657, 884.213d, 0.0, null);
     }
 
     @Test
@@ -120,81 +126,80 @@ public class ModuleEventsTests {
     }
 
     void eventWithSegmentation(Integer count, Double sum, Double dur, Long timestamp) {
-        Map<String, Object> segm = new HashMap<>();
-        segm.put("aa", "dd");
-        segm.put("aa1", "dda");
-        segm.put("1", 1234);
-        segm.put("2", 1234.55d);
-        segm.put("3", true);
-        segm.put("4", 45.4f);
-        segm.put("41", new Object());
+        EventQueueProvider eqp = TestUtils.setEventQueueProviderToMock(mCountly, mock(EventQueueProvider.class));
+
+        Map<String, Object> segmUsed = new HashMap<>();
+        segmUsed.put("aa", "dd");
+        segmUsed.put("aa1", "dda");
+        segmUsed.put("1", 1234);
+        segmUsed.put("2", 1234.55d);
+        segmUsed.put("3", true);
+        segmUsed.put("4", 45.4f);
+        segmUsed.put("41", new Object());
 
         if (timestamp == null) {
             if (count == null && sum == null && dur == null) {
-                mCountly.events().recordEvent(eventKey, segm);
+                mCountly.events().recordEvent(eventKey, segmUsed);
             } else if (count != null && sum == null && dur == null) {
-                mCountly.events().recordEvent(eventKey, segm, count);
+                mCountly.events().recordEvent(eventKey, segmUsed, count);
             } else if (count != null && sum != null && dur == null) {
-                mCountly.events().recordEvent(eventKey, segm, count, sum);
+                mCountly.events().recordEvent(eventKey, segmUsed, count, sum);
             } else if (count != null && sum != null && dur != null) {
-                mCountly.events().recordEvent(eventKey, segm, count, sum, dur);
+                mCountly.events().recordEvent(eventKey, segmUsed, count, sum, dur);
             } else {
                 Assert.fail("You should not get here");
             }
         } else {
             if (count == null && sum == null && dur == null) {
-                mCountly.events().recordPastEvent(eventKey, segm, timestamp);
+                mCountly.events().recordPastEvent(eventKey, segmUsed, timestamp);
             } else if (count != null && sum != null && dur != null) {
-                mCountly.events().recordPastEvent(eventKey, segm, count, sum, dur, timestamp);
+                mCountly.events().recordPastEvent(eventKey, segmUsed, count, sum, dur, timestamp);
             } else {
                 Assert.fail("You should not get here");
             }
         }
 
-        final Map<String, String> segmS = new HashMap<>();
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
+        final Map<String, Object> segm = new HashMap<>();
 
-        segmS.put("aa", "dd");
-        segmS.put("aa1", "dda");
-        segmI.put("1", 1234);
-        segmD.put("2", 1234.55d);
-        segmB.put("3", true);
+        segm.put("aa", "dd");
+        segm.put("aa1", "dda");
+        segm.put("1", 1234);
+        segm.put("2", 1234.55d);
+        segm.put("3", true);
 
-        if (timestamp == null) {
-            if (count == null && sum == null && dur == null) {
-                verify(eventQueueProvider).recordEventToEventQueue(eventKey, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
-            } else if (count != null && sum == null && dur == null) {
-                verify(eventQueueProvider).recordEventToEventQueue(eventKey, segmS, segmI, segmD, segmB, count, 0.0, 0.0, null);
-            } else if (count != null && sum != null && dur == null) {
-                verify(eventQueueProvider).recordEventToEventQueue(eventKey, segmS, segmI, segmD, segmB, count, sum, 0.0, null);
-            } else if (count != null && sum != null && dur != null) {
-                verify(eventQueueProvider).recordEventToEventQueue(eventKey, segmS, segmI, segmD, segmB, count, sum, dur, null);
-            } else {
-                Assert.fail("You should not get here");
-            }
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+
+        ArgumentCaptor<Integer> arg1 = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Double> arg2 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> arg3 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Long> arg4 = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Integer> arg5 = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Integer> arg6 = ArgumentCaptor.forClass(Integer.class);
+
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+
+        if(count != null) {
+            Assert.assertEquals(count, arg1.getValue());
+        }
+
+        if(sum != null) {
+            Assert.assertEquals(sum, arg2.getValue());
+        }
+
+        if(dur != null) {
+            Assert.assertEquals(dur, arg3.getValue());
+        }
+
+        if(timestamp == null) {
+            Assert.assertNotNull(arg4.getValue());
+            Assert.assertNotNull(arg5.getValue());
+            Assert.assertNotNull(arg6.getValue());
         } else {
-            UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
-            ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
-
-            if (count == null && sum == null && dur == null) {
-                verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), eq(segmS), eq(segmI), eq(segmD), eq(segmB), eq(1), eq(0.0), eq(0.0), arg.capture());
-                UtilsTime.Instant captV = arg.getValue();
-                Assert.assertEquals(instant.hour, captV.hour);
-                Assert.assertEquals(instant.dow, captV.dow);
-                Assert.assertEquals(instant.timestampMs, captV.timestampMs);
-                Assert.assertEquals(timestamp.longValue(), captV.timestampMs);
-            } else if (count != null && sum != null && dur != null) {
-                verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), eq(segmS), eq(segmI), eq(segmD), eq(segmB), eq(count), eq(sum), eq(dur), arg.capture());
-                UtilsTime.Instant captV = arg.getValue();
-                Assert.assertEquals(instant.hour, captV.hour);
-                Assert.assertEquals(instant.dow, captV.dow);
-                Assert.assertEquals(instant.timestampMs, captV.timestampMs);
-                Assert.assertEquals(timestamp.longValue(), captV.timestampMs);
-            } else {
-                Assert.fail("You should not get here");
-            }
+            UtilsTime.Instant instantTimestamp = UtilsTime.Instant.get(timestamp);
+            Assert.assertEquals(instantTimestamp.timestampMs, (long) arg4.getValue());
+            Assert.assertEquals(instantTimestamp.hour, (int) arg5.getValue());
+            Assert.assertEquals(instantTimestamp.dow, (int) arg6.getValue());
+            Assert.assertEquals(timestamp.longValue(), (long) arg4.getValue());
         }
     }
 
@@ -212,7 +217,7 @@ public class ModuleEventsTests {
     public void startEndEvent_noSegments() throws InterruptedException {
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -224,14 +229,15 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
 
-        ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<Long> arg1 = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), isNull(Map.class), isNull(Map.class), isNull(Map.class), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture());
+        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture());
 
-        UtilsTime.Instant captV = arg.getValue();
-        Assert.assertEquals(startEvent.hour, captV.hour);
-        Assert.assertEquals(startEvent.dow, captV.dow);
-        Assert.assertEquals(startEvent.timestamp, captV.timestampMs);
+        Assert.assertEquals(startEvent.timestamp, (long) arg1.getValue());
+        Assert.assertEquals(startEvent.hour, (int) arg2.getValue());
+        Assert.assertEquals(startEvent.dow, (int) arg3.getValue());
 
         Double captD = argD.getValue();
         Assert.assertEquals(1, captD, 0.1d);
@@ -239,9 +245,10 @@ public class ModuleEventsTests {
 
     @Test
     public void startEndEvent_withSegments() throws InterruptedException {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -255,26 +262,21 @@ public class ModuleEventsTests {
         segm.put("1", 1234);
         segm.put("2", 1234.55d);
         segm.put("3", true);
-        segm.put("4", 45.4f);
-        segm.put("41", new Object());
 
         res = mCountly.events().endEvent(eventKey, segm, 6372, 5856.34d);
         Assert.assertTrue(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
 
-        final Map<String, String> segmS = new HashMap<>();
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
-        segmS.put("aa", "dd");
-        segmS.put("aa1", "dda");
-        segmI.put("1", 1234);
-        segmD.put("2", 1234.55d);
-        segmB.put("3", true);
+        final Map<String, Object> segmVals = new HashMap<>();
+        segmVals.put("aa", "dd");
+        segmVals.put("aa1", "dda");
+        segmVals.put("1", 1234);
+        segmVals.put("2", 1234.55d);
+        segmVals.put("3", true);
 
         ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), eq(segmS), eq(segmI), eq(segmD), eq(segmB), eq(6372), eq(5856.34d), argD.capture(), arg.capture());
+        verify(ep).recordEventInternal(eq(eventKey), eq(segmVals), eq(6372), eq(5856.34d), argD.capture(), arg.capture());
 
         UtilsTime.Instant captV = arg.getValue();
         Assert.assertEquals(startEvent.hour, captV.hour);
@@ -287,9 +289,10 @@ public class ModuleEventsTests {
 
     @Test
     public void startCancelEndEvent() {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -298,19 +301,20 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
 
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertFalse(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 
     @Test
     public void startCancelStartEndEvent() throws InterruptedException {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -318,13 +322,13 @@ public class ModuleEventsTests {
         res = mCountly.events().cancelEvent(eventKey);
         Assert.assertTrue(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         // finished first start and cancel
 
         res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -338,7 +342,7 @@ public class ModuleEventsTests {
 
         ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), isNull(Map.class), isNull(Map.class), isNull(Map.class), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture());
+        verify(ep).recordEventInternal(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture());
 
         UtilsTime.Instant captV = arg.getValue();
         Assert.assertEquals(startEvent.hour, captV.hour);
@@ -351,16 +355,10 @@ public class ModuleEventsTests {
 
     @Test
     public void recordEventInternalProcessedTest() {
+        EventQueueProvider eqp = TestUtils.setEventQueueProviderToMock(mCountly, mock(EventQueueProvider.class));
         Map<String, Object> segm1 = new HashMap<>();
 
-        final Map<String, String> segmS = new HashMap<>();
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
-
-        for (String it : ModuleEvents.reservedSegmentationKeys) {
-            segm1.put(it, it);
-        }
+        final Map<String, Object> segm2 = new HashMap<>();
 
         segm1.put("4", 45.4f);
         segm1.put("41", new Object());
@@ -370,85 +368,46 @@ public class ModuleEventsTests {
         segm1.put("2", 1234.55d);
         segm1.put("3", true);
 
-        segmS.put("asd", "123");
-        segmI.put("1", 1234);
-        segmD.put("2", 1234.55d);
-        segmB.put("3", true);
+        segm2.put("asd", "123");
+        segm2.put("1", 1234);
+        segm2.put("2", 1234.55d);
+        segm2.put("3", true);
 
-        Map<String, Object> segm2 = new HashMap<>(segm1);
-        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm2, 123, 321.22d, 342.32d, null, false);
+        Map<String, Object> segm3 = new HashMap<>(segm1);
+        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null);
 
-        verify(eventQueueProvider).recordEventToEventQueue(eventKey, segmS, segmI, segmD, segmB, 123, 321.22d, 342.32d, null);
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm2), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class));
+        eqp = TestUtils.setEventQueueProviderToMock(mCountly, mock(EventQueueProvider.class));
 
-        segm2.clear();
-        segm2.putAll(segm1);
+        segm3.clear();
+        segm3.putAll(segm1);
 
-        for (String it : ModuleEvents.reservedSegmentationKeys) {
-            segmS.put(it, it);
-        }
-
-        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm2, 123, 321.22d, 342.32d, null, true);
-        verify(eventQueueProvider).recordEventToEventQueue(eventKey, segmS, segmI, segmD, segmB, 123, 321.22d, 342.32d, null);
+        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null);
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class));
     }
 
-    /**
-     * Verifying the functionality for `recordEventToEventQueue` of the `eventQueueProvider`
-     * Providing the 'current' event, with no timestamp/instant
-     */
     @Test
     public void testRecordEvent() {
-        ModuleEvents moduleEvents = mCountly.moduleEvents;
-        moduleEvents.storageProvider = mock(StorageProvider.class);
-        moduleEvents.eventQueueProvider = moduleEvents;
-
         final String eventKey = "eventKey";
         final int count = 42;
         final double sum = 3.0d;
         final double dur = 10.0d;
-        final Map<String, String> segmentation = new HashMap<>(1);
-        final Map<String, Integer> segmentationInt = new HashMap<>(2);
-        final Map<String, Double> segmentationDouble = new HashMap<>(3);
-        final Map<String, Boolean> segmentationBoolean = new HashMap<>(4);
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        final long timestamp = instant.timestampMs;
-        final int hour = instant.hour;
-        final int dow = instant.dow;
-        final ArgumentCaptor<Long> arg = ArgumentCaptor.forClass(Long.class);
+        final HashMap<String, Object> segmentation = new HashMap<>(1);
+        segmentation.put("segkey1", "segvalue1");
+        final HashMap<String, Object> segm = new HashMap<>();
+        segm.put("segkey1", "segvalue1");
 
-        moduleEvents.eventQueueProvider.recordEventToEventQueue(eventKey, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, null);
-        verify(moduleEvents.storageProvider).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), eq(segmentationBoolean), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
+        //create a spied countly class
+        final Countly countly = spy(mCountly);
+        countly.moduleEvents = new ModuleEvents(countly, countly.config_);
+        countly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
-        //used timestamp is withing a couple of ms
-        assertTrue((arg.getValue() - timestamp) <= 4);
-    }
+        doNothing().when(countly).sendEventsIfNeeded();
+        doReturn(true).when(countly).isInitialized();
 
-    /**
-     * Verifying the functionality for `recordEventToEventQueue` of the `eventQueueProvider`
-     * Trying to record a past event
-     * Providing the 'current' event, with a custom timestamp/instant
-     */
-    @Test
-    public void testRecordPastEvent() {
-        ModuleEvents moduleEvents = mCountly.moduleEvents;
-        moduleEvents.storageProvider = mock(StorageProvider.class);
-        moduleEvents.eventQueueProvider = moduleEvents;
+        countly.events().recordEvent(eventKey, segmentation, count, sum, dur);
 
-        final String eventKey = "eventKey";
-        final int count = 42;
-        final double sum = 3.0d;
-        final double dur = 10.0d;
-        final Map<String, String> segmentation = new HashMap<>(1);
-        final Map<String, Integer> segmentationInt = new HashMap<>(2);
-        final Map<String, Double> segmentationDouble = new HashMap<>(3);
-        final Map<String, Boolean> segmentationBoolean = new HashMap<>(4);
-        UtilsTime.Instant instant = UtilsTime.Instant.get(123456789);
-        final long timestamp = instant.timestampMs;
-        final int hour = instant.hour;
-        final int dow = instant.dow;
-        final ArgumentCaptor<Long> arg = ArgumentCaptor.forClass(Long.class);
-
-        moduleEvents.eventQueueProvider.recordEventToEventQueue(eventKey, segmentation, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
-        verify(moduleEvents.storageProvider).addEvent(eq(eventKey), eq(segmentation), eq(segmentationInt), eq(segmentationDouble), eq(segmentationBoolean), arg.capture(), eq(hour), eq(dow), eq(count), eq(sum), eq(dur));
-        assertEquals(timestamp, (long) arg.getValue());
+        verify(countly.moduleEvents.eventQueueProvider).recordEventToEventQueue(eq(eventKey), eq(segm), eq(count), eq(sum), eq(dur), any(Long.class), any(Integer.class), any(Integer.class));
+        verify(countly).sendEventsIfNeeded();
     }
 }

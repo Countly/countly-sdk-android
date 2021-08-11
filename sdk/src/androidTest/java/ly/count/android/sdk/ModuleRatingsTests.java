@@ -13,6 +13,7 @@ import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -36,45 +37,41 @@ public class ModuleRatingsTests {
 
     @Test
     public void recordManualRating() {
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         String[] vals = new String[] { "aa", "bb", "cc" };
         mCountly.ratings().recordManualRating(vals[0], 3, vals[1], vals[2], true);
 
-        final Map<String, String> segmS = new HashMap<>(6);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>(1);
+        final Map<String, Object> segm = new HashMap<>();
 
-        segmS.put("platform", "android");
-        segmS.put("app_version", "1.0");
-        segmS.put("rating", "" + 3);
-        segmS.put("widget_id", vals[0]);
-        segmS.put("email", vals[1]);
-        segmS.put("comment", vals[2]);
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("rating", "" + 3);
+        segm.put("widget_id", vals[0]);
+        segm.put("email", vals[1]);
+        segm.put("comment", vals[2]);
+        segm.put("contactMe", true);
 
-        segmB.put("contactMe", true);
-
-        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null);
 
         //validate lower bound
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.ratings().recordManualRating(vals[0], -12, vals[1], vals[2], true);
-        segmS.put("rating", "" + 1);
-        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.put("rating", "" + 1);
+        verify(ep).recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null);
 
         //validate upper bound
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.ratings().recordManualRating(vals[0], 12, vals[1], vals[2], true);
-        segmS.put("rating", "" + 5);
-        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleRatings.STAR_RATING_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.put("rating", "" + 5);
+        verify(ep).recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null);
 
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.moduleRatings.recordManualRatingInternal(null, 12, vals[1], vals[2], true);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         mCountly.moduleRatings.recordManualRatingInternal("", 12, vals[1], vals[2], true);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 
     @Test(expected = IllegalStateException.class)

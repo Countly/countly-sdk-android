@@ -525,6 +525,14 @@ public class Countly {
             if(config.storageProvider == null) {
                 // outside of tests this should be null
                 config.storageProvider = config.countlyStore;
+            } else {
+                L.d("[Init] Custom event storage provider was provided");
+            }
+
+            if (config.eventQueueProvider == null) {
+                config.eventQueueProvider = countlyStore;
+            } else {
+                L.d("[Init] Custom event queue provider was provided");
             }
 
 
@@ -1226,7 +1234,6 @@ public class Countly {
         }
 
         if (segments != null) {
-            Utils.removeKeysFromMap(segments, ModuleEvents.reservedSegmentationKeys);
             Utils.removeUnsupportedDataTypes(segments);
             CrashDetails.setCustomSegments(segments);
         }

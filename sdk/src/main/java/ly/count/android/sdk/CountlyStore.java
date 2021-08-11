@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -48,7 +49,7 @@ import org.json.JSONObject;
  * NOTE: This class is only public to facilitate unit testing, because
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
-public class CountlyStore implements StorageProvider{
+public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String PREFERENCES = "COUNTLY_STORE";
     private static final String PREFERENCES_PUSH = "ly.count.android.api.messaging";
     static final String DELIMITER = ":::";
@@ -252,6 +253,7 @@ public class CountlyStore implements StorageProvider{
 
     /**
      * set the new value in event data storage
+     *
      * @param eventData
      */
     void setEventData(String eventData) {
@@ -268,7 +270,7 @@ public class CountlyStore implements StorageProvider{
     /**
      * Get the preferences that are used for the star rating
      */
-        public synchronized String getStarRatingPreferences() {
+    public synchronized String getStarRatingPreferences() {
         return preferences_.getString(STAR_RATING_PREFERENCE, "");
     }
 
@@ -313,11 +315,25 @@ public class CountlyStore implements StorageProvider{
      * @param sum sum associated with the custom event, if not used, pass zero.
      * NaN and infinity values will be quietly ignored.
      */
-    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean,
-        final long timestamp, final int hour, final int dow, final int count, final double sum, final double dur) {
+    public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow) {
+        Map<String, String> segmentationString = null;
+        Map<String, Integer> segmentationInt = null;
+        Map<String, Double> segmentationDouble = null;
+        Map<String, Boolean> segmentationBoolean = null;
+
+        if (segmentation != null && segmentation.size() > 0) {
+            segmentationString = new HashMap<>();
+            segmentationInt = new HashMap<>();
+            segmentationDouble = new HashMap<>();
+            segmentationBoolean = new HashMap<>();
+            Map<String, Object> segmentationReminder = new HashMap<>();
+
+            Utils.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
+        }
+
         final Event event = new Event();
         event.key = key;
-        event.segmentation = segmentation;
+        event.segmentation = segmentationString;
         event.segmentationDouble = segmentationDouble;
         event.segmentationInt = segmentationInt;
         event.segmentationBoolean = segmentationBoolean;
@@ -450,51 +466,51 @@ public class CountlyStore implements StorageProvider{
      * @return
      */
     @Override public boolean anythingSetInStorage() {
-        if(preferences_.getString(REQUEST_PREFERENCE, null) != null) {
+        if (preferences_.getString(REQUEST_PREFERENCE, null) != null) {
             return true;
         }
 
-        if(preferences_.getString(EVENTS_PREFERENCE, null) != null) {
+        if (preferences_.getString(EVENTS_PREFERENCE, null) != null) {
             return true;
         }
 
-        if(preferences_.getString(STAR_RATING_PREFERENCE, null) != null) {
+        if (preferences_.getString(STAR_RATING_PREFERENCE, null) != null) {
             return true;
         }
 
-        if(preferences_.getString(CACHED_ADVERTISING_ID, null) != null) {
+        if (preferences_.getString(CACHED_ADVERTISING_ID, null) != null) {
             return true;
         }
 
-        if(preferences_.getString(REMOTE_CONFIG_VALUES, null) != null) {
+        if (preferences_.getString(REMOTE_CONFIG_VALUES, null) != null) {
             return true;
         }
 
-        if(preferences_.getString(PREFERENCE_KEY_ID_ID, null) != null) {
+        if (preferences_.getString(PREFERENCE_KEY_ID_ID, null) != null) {
             return true;
         }
 
-        if(preferences_.getString(PREFERENCE_KEY_ID_TYPE, null) != null) {
+        if (preferences_.getString(PREFERENCE_KEY_ID_TYPE, null) != null) {
             return true;
         }
 
-        if(preferences_.getInt(STORAGE_SCHEMA_VERSION, -100) != -100) {
+        if (preferences_.getInt(STORAGE_SCHEMA_VERSION, -100) != -100) {
             return true;
         }
 
-        if(preferencesPush_.getInt(CACHED_PUSH_MESSAGING_MODE, -100) != -100) {
+        if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_MODE, -100) != -100) {
             return true;
         }
 
-        if(preferencesPush_.getInt(CACHED_PUSH_MESSAGING_PROVIDER, -100) != -100) {
+        if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_PROVIDER, -100) != -100) {
             return true;
         }
 
-        if(preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null) != null) {
+        if (preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null) != null) {
             return true;
         }
 
-        if(preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null) != null) {
+        if (preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null) != null) {
             return true;
         }
 

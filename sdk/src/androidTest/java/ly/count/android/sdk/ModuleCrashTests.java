@@ -121,10 +121,6 @@ public class ModuleCrashTests {
         segm.put("41", new Object());
         segm.put("42", new int[] { 1, 2 });
 
-        for (String it : ModuleEvents.reservedSegmentationKeys) {
-            segm.put(it, it);
-        }
-
         cConfig.setCustomCrashSegment(segm);
 
         countly.init(cConfig);

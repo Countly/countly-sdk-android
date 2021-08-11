@@ -157,18 +157,6 @@ public class Utils {
         return sbRes.toString();
     }
 
-    static Map<String, Object> removeKeysFromMap(Map<String, Object> data, String[] keys) {
-        if (data == null || keys == null) {
-            return data;
-        }
-
-        for (String key : keys) {
-            data.remove(key);
-        }
-
-        return data;
-    }
-
     /**
      * Removes unsupported data types
      *
@@ -187,12 +175,7 @@ public class Utils {
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            if (key == null || key.isEmpty()) {
-
-            }
-
-            if (key == null || key.isEmpty() ||
-                !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
+            if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
                 //found unsupported data type or null key or value, removing
                 it.remove();
                 removed = true;
@@ -200,7 +183,7 @@ public class Utils {
         }
 
         if (removed) {
-            Countly.sharedInstance().L.w("Unsupported data types were removed from provided segmentation");
+            Countly.sharedInstance().L.w("[Utils] Unsupported data types were removed from provided segmentation");
         }
 
         return removed;

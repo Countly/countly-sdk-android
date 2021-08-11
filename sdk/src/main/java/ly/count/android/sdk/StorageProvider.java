@@ -19,9 +19,6 @@ interface StorageProvider {
 
     void replaceRequestList(final List<String> newConns);
 
-    void addEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean,
-        final long timestamp, final int hour, final int dow, final int count, final double sum, final double dur);
-
     void removeEvents(final Collection<Event> eventsToRemove);
 
     int getEventQueueSize();

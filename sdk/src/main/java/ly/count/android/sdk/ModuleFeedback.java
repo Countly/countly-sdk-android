@@ -304,7 +304,7 @@ public class ModuleFeedback extends ModuleBase {
                 key = NPS_EVENT_KEY;
             }
 
-            eventProvider.recordEventInternal(key, segm, 1, 0, 0, null, false);
+            eventProvider.recordEventInternal(key, segm, 1, 0, 0, null);
         }
     }
 
@@ -509,7 +509,7 @@ public class ModuleFeedback extends ModuleBase {
             }
         }
 
-        eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null, false);
+        eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null);
     }
 
     @Override

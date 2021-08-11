@@ -45,8 +45,7 @@ public class ModuleFeedbackTests {
 
     @Test
     public void parseFeedbackList() throws JSONException {
-        String requestJson =
-            "{\"result\":[{\"_id\":\"5f8c6f959627f99e8e7de746\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"sdfsdfdsf\"},{\"_id\":\"5f8c6fd81ac8659e8846acf4\",\"type\":\"nps\",\"name\":\"fdsfsd\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"}]}";
+        String requestJson = "{\"result\":[{\"_id\":\"5f8c6f959627f99e8e7de746\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"sdfsdfdsf\"},{\"_id\":\"5f8c6fd81ac8659e8846acf4\",\"type\":\"nps\",\"name\":\"fdsfsd\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"}]}";
 
         JSONObject jObj = new JSONObject(requestJson);
 
@@ -69,7 +68,7 @@ public class ModuleFeedbackTests {
 
     @Test
     public void reportFeedbackWidgetManuallyNPSReported() {
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
         widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
@@ -82,35 +81,30 @@ public class ModuleFeedbackTests {
 
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
 
-        final Map<String, String> segmS = new HashMap<>(5);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("widget_id", widgetInfo.widgetId);
+        segm.put("rating", 4);
+        segm.put("comment", "123456");
 
-        segmS.put("platform", "android");
-        segmS.put("app_version", "1.0");
-        segmS.put("widget_id", widgetInfo.widgetId);
-
-        segmI.put("rating", 4);
-        segmS.put("comment", "123456");
-
-        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleFeedback.NPS_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null);
 
         //report without a "null" comment
         mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         segmRes.put("rating", 10);
         segmRes.put("comment", null);
-        segmI.put("rating", 10);
-        segmS.remove("comment");
+        segm.put("rating", 10);
+        segm.remove("comment");
 
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleFeedback.NPS_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null);
     }
 
     @Test
     public void reportFeedbackWidgetManuallyNPSClosed() {
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
         widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
@@ -119,22 +113,18 @@ public class ModuleFeedbackTests {
 
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, null);
 
-        final Map<String, String> segmS = new HashMap<>(4);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>(0);
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("widget_id", widgetInfo.widgetId);
+        segm.put("closed", "1");
 
-        segmS.put("platform", "android");
-        segmS.put("app_version", "1.0");
-        segmS.put("widget_id", widgetInfo.widgetId);
-        segmS.put("closed", "1");
-
-        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleFeedback.NPS_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null);
     }
 
     @Test
     public void reportFeedbackWidgetManuallyNPSBadResult_1() {
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
         widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
@@ -145,7 +135,7 @@ public class ModuleFeedbackTests {
 
         //just an empty result map
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         //result map with unrelated fields
         JSONObject emptyJObj = new JSONObject();
@@ -153,12 +143,12 @@ public class ModuleFeedbackTests {
         segmRes.put("11", null);
         segmRes.put(null, "gf");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 
     @Test
     public void reportFeedbackWidgetManuallyNPSBadResult_2() {
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
         widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
@@ -170,38 +160,38 @@ public class ModuleFeedbackTests {
         //result map with unrelated fields
         segmRes.put("rating", "gg");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         segmRes.put("rating", "");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         segmRes.put("rating", null);
         segmRes.put("comment", "123456");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         segmRes.put("rating", "5.5");
         JSONObject emptyJObj = new JSONObject();
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         segmRes.put("rating", "6.0");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         segmRes.put("rating", "0.0");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
 
         segmRes.put("rating", "10.0f");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(mCountly.moduleEvents.eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 
     @Test
     public void reportFeedbackWidgetManuallySurveyClosed() {
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
         widgetInfo.type = ModuleFeedback.FeedbackWidgetType.survey;
@@ -210,16 +200,12 @@ public class ModuleFeedbackTests {
 
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, null);
 
-        final Map<String, String> segmS = new HashMap<>(4);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>(0);
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("widget_id", widgetInfo.widgetId);
+        segm.put("closed", "1");
 
-        segmS.put("platform", "android");
-        segmS.put("app_version", "1.0");
-        segmS.put("widget_id", widgetInfo.widgetId);
-        segmS.put("closed", "1");
-
-        verify(mCountly.moduleEvents.eventQueueProvider).recordEventToEventQueue(ModuleFeedback.SURVEY_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.SURVEY_EVENT_KEY, segm, 1, 0, 0, null);
     }
 }

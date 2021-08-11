@@ -55,8 +55,6 @@ public class ModuleViews extends ModuleBase {
                 L.w("[ModuleViews] You have provided a unsupported type for automatic View Segmentation");
             }
 
-            Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
-
             automaticViewSegmentation.putAll(segmentation);
         }
     }
@@ -84,7 +82,7 @@ public class ModuleViews extends ModuleBase {
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
-            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, true);
+            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
             lastView = null;
             lastViewStart = 0;
         }
@@ -138,8 +136,6 @@ public class ModuleViews extends ModuleBase {
 
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
-            Utils.removeUnsupportedDataTypes(customViewSegmentation);
-            Utils.removeKeysFromMap(customViewSegmentation, ModuleEvents.reservedSegmentationKeys);
             viewSegmentation.putAll(customViewSegmentation);
         }
 
@@ -151,7 +147,7 @@ public class ModuleViews extends ModuleBase {
             viewSegmentation.put("start", "1");
         }
 
-        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, true);
+        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null);
 
         return _cly;
     }
@@ -167,7 +163,7 @@ public class ModuleViews extends ModuleBase {
         if (currentOrientation != newOrientation) {
             currentOrientation = newOrientation;
 
-            Map<String, String> segm = new HashMap<>();
+            Map<String, Object> segm = new HashMap<>();
 
             if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
                 segm.put("mode", "portrait");
@@ -175,7 +171,7 @@ public class ModuleViews extends ModuleBase {
                 segm.put("mode", "landscape");
             }
 
-            _cly.recordEvent(ORIENTATION_EVENT_KEY, segm, 1);
+            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null);
         }
     }
 
