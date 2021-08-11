@@ -95,7 +95,7 @@ public class ModuleFeedback extends ModuleBase {
 
                 devCallback.onFinished(feedbackEntries, null);
             }
-        }, _cly.L);
+        }, L);
     }
 
     static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
@@ -375,7 +375,7 @@ public class ModuleFeedback extends ModuleBase {
 
                 devCallback.onFinished(checkResponse, null);
             }
-        }, _cly.L);
+        }, L);
     }
 
     /**

@@ -22,10 +22,10 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
         if (config.deviceID != null) {
             //if the developer provided a ID
             //or it's a temporary ID
-            config.deviceIdInstance = new DeviceId(config.storageProvider, config.deviceID, _cly.L, this);
+            config.deviceIdInstance = new DeviceId(config.storageProvider, config.deviceID, L, this);
         } else {
             //the dev provided only a type and the SDK should generate a appropriate ID
-            config.deviceIdInstance = new DeviceId(config.storageProvider, config.idMode, _cly.L, this);
+            config.deviceIdInstance = new DeviceId(config.storageProvider, config.idMode, L, this);
         }
 
         //initialise the set device ID value

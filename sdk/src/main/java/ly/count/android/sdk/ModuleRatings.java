@@ -534,7 +534,7 @@ public class ModuleRatings extends ModuleBase {
                     L.e("[ModuleRatings] Encountered a issue while trying to parse the results of the widget config", e);
                 }
             }
-        }, _cly.L);
+        }, L);
     }
 
     static class RatingDialogWebView extends WebView {
