@@ -554,14 +554,14 @@ public class ModuleRatings extends ModuleBase {
     static class FeedbackDialogWebViewClient extends WebViewClient {
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            Countly.sharedInstance().L.i("attempting to load resource: " + url);
+            //Countly.sharedInstance().L.i("attempting to load resource: " + url);
             return null;
         }
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
+                //Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
             }
             return null;
         }
