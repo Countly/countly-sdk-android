@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.Random;
 
 public class TestUtils {
+    //Useful call:
+    //mockingDetails(mockObj).printInvocations()
+    //
 
     public static String[] createStringArray(int count) {
         String[] sArr = new String[count];

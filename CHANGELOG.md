@@ -1,3 +1,6 @@
+## 20.11.10
+  * Fixed bug that would close manually recorded views early when automatic view recording is disabled
+
 ## 20.11.9
   * Moving a push related broadcast receiver decleration to the manifest to comply with 'PendingIntent' checks
   * Fixed issue with star rating lowest allowed value. Changing it from 0 to 1.

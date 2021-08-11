@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
@@ -396,82 +397,80 @@ public class ModuleViewsTests {
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
     }
 
-    @Test
-    public void recordViewNullViewName() {
-        Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
-
-        ModuleEvents mEvents = mock(ModuleEvents.class);
-        mCountly.moduleEvents = mEvents;
-
-        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
-        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
-
-        mCountly.views().recordView(null);
-
-        String mockInv = mockingDetails(mEvents).printInvocations();
-        System.out.println(mockInv);
-
-        System.out.println(mockingDetails(mEvents).getInvocations());
-
-        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture());
-    }
-
+    /**
+     * Make sure that, when recording an event with an empty string key, that no event is creted
+     */
     @Test
     public void recordViewEmptyViewName() {
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
-
-        ModuleEvents mEvents = mock(ModuleEvents.class);
-        mCountly.moduleEvents = mEvents;
-
-        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
-        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).setViewTracking(true));
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("");
-
-        String mockInv = mockingDetails(mEvents).printInvocations();
-        System.out.println(mockInv);
-
-        System.out.println(mockingDetails(mEvents).getInvocations());
-
-        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture());
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
     }
 
+    /**
+     * Make sure that no view event is created when recording an event with no consent
+     */
     @Test
     public void recordViewWithoutConsent() {
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
-            .setViewTracking(true).setAutoTrackingUseShortName(true).setRequiresConsent(true));
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
-
-        ModuleEvents mEvents = mock(ModuleEvents.class);
-        mCountly.moduleEvents = mEvents;
-
-        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
-        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true)
+            .setViewTracking(true).setRequiresConsent(true));
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView(null);
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+    }
 
-        String mockInv = mockingDetails(mEvents).printInvocations();
-        System.out.println(mockInv);
+    /**
+     * Automatic view tracking is not enabled.
+     * Changing activities should not record view events
+     */
+    @Test
+    public void noViewRecordedWithAutomaticTurnedOffActChange(){
+        CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
+        cc.setDeviceId("1234").setLoggingEnabled(true).setViewTracking(false).setEventQueueSizeToSend(100);
 
-        System.out.println(mockingDetails(mEvents).getInvocations());
+        Countly mCountly = new Countly();
+        mCountly.init(cc);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture());
+        Activity act = mock(Activity.class);
+        Activity2 act2 = mock(Activity2.class);
+
+        //go from one activity to another in the expected way and then "go to background"
+        mCountly.onStart(act);
+        mCountly.onStart(act2);
+        mCountly.onStop();
+        mCountly.onStop();
+
+        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+    }
+
+    @Test
+    public void recordViewWithActivitiesAfterwardsAutoDisabled() {
+        CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
+        cc.setDeviceId("1234").setLoggingEnabled(true).setViewTracking(false).setEventQueueSizeToSend(100);
+
+        Countly mCountly = new Countly();
+        mCountly.init(cc);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        mCountly.views().recordView("abcd");
+        verify(ep, times(1)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Activity act = mock(Activity.class);
+        Activity act2 = mock(Activity2.class);
+
+        //go from one activity to another in the expected way and then "go to background"
+        mCountly.onStart(act);
+        mCountly.onStart(act2);
+        mCountly.onStop();
+        mCountly.onStop();
+
+        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 }

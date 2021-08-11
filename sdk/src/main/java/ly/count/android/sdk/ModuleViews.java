@@ -63,7 +63,7 @@ public class ModuleViews extends ModuleBase {
      * Reports duration of last view
      */
     void reportViewDuration() {
-        L.d("[ModuleViews] View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "], current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
+        L.d("[ModuleViews] View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "] ms, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
 
         if (lastView != null && lastViewStart <= 0) {
             L.e("[ModuleViews] Last view start value is not normal: [" + lastViewStart + "]");
@@ -77,6 +77,7 @@ public class ModuleViews extends ModuleBase {
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (lastView != null && lastViewStart > 0) {
+            L.d("[ModuleViews] Recording view duration: [" + lastView + "]");
             HashMap<String, Object> segments = new HashMap<>();
 
             segments.put("name", lastView);
@@ -187,8 +188,10 @@ public class ModuleViews extends ModuleBase {
 
     @Override
     void onActivityStopped() {
-        //report current view duration
-        reportViewDuration();
+        if(_cly.autoViewTracker) {
+            //report current view duration
+            reportViewDuration();
+        }
     }
 
     @Override
