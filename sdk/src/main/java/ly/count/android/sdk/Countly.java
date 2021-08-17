@@ -1530,20 +1530,14 @@ public class Countly {
     }
 
     /**
-     * Submits all of the locally queued events to the server if there are more than 10 of them.
+     * Check if events from event queue need to be added to the request queue
+     * They will be sent either if the exceed the Threshold size or if their sending is forced
      */
-    protected void sendEventsIfNeeded() {
-        if (config_.storageProvider.getEventQueueSize() >= EVENT_QUEUE_SIZE_THRESHOLD) {
-            connectionQueue_.recordEvents(config_.storageProvider.getEventsForRequestAndEmptyEventQueue());
-        }
-    }
+    protected void sendEventsIfNeeded(boolean forceSendingEvents) {
+        int eventsInEventQueue = config_.storageProvider.getEventQueueSize();
+        L.v("[Countly] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
 
-    /**
-     * Immediately sends all stored events
-     */
-    protected void sendEventsForced() {
-        if (config_.storageProvider.getEventQueueSize() > 0) {
-            //only send events if there is anything to send
+        if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= EVENT_QUEUE_SIZE_THRESHOLD) {
             connectionQueue_.recordEvents(config_.storageProvider.getEventsForRequestAndEmptyEventQueue());
         }
     }
@@ -1561,10 +1555,10 @@ public class Countly {
                 if (!moduleSessions.manualSessionControlEnabled) {
                     moduleSessions.updateSessionInternal();
                 }
-
-                sendEventsForced();
             }
 
+            //on every timer tick we collect all events and attempt to send requests
+            sendEventsIfNeeded(true);
             connectionQueue_.tick();
         }
     }

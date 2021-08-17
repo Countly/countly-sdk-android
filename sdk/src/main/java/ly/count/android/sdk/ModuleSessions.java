@@ -42,7 +42,7 @@ public class ModuleSessions extends ModuleBase {
      */
     void endSessionInternal(String deviceIdOverride) {
         L.d("[ModuleSessions] 'endSessionInternal'");
-        _cly.sendEventsForced();
+        _cly.sendEventsIfNeeded(true);
 
         _cly.connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
         prevSessionDurationStartTime_ = 0;

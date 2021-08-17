@@ -402,12 +402,12 @@ public class ModuleEventsTests {
         countly.moduleEvents = new ModuleEvents(countly, countly.config_);
         countly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
-        doNothing().when(countly).sendEventsIfNeeded();
+        doNothing().when(countly).sendEventsIfNeeded(false);
         doReturn(true).when(countly).isInitialized();
 
         countly.events().recordEvent(eventKey, segmentation, count, sum, dur);
 
         verify(countly.moduleEvents.eventQueueProvider).recordEventToEventQueue(eq(eventKey), eq(segm), eq(count), eq(sum), eq(dur), any(Long.class), any(Integer.class), any(Integer.class));
-        verify(countly).sendEventsIfNeeded();
+        verify(countly).sendEventsIfNeeded(false);
     }
 }
