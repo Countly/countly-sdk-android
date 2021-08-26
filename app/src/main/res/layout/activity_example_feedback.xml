@@ -44,6 +44,13 @@
         android:text="Show NPS"
         />
     <Button
+        android:id="@+id/btnAvailableWidgets"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickShowAvailableFeedbackWidgets"
+        android:text="Available feedback widgets"
+        />
+    <Button
         android:id="@+id/button61"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

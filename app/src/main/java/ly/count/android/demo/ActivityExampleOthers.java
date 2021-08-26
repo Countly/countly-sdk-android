@@ -53,11 +53,11 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().crashes().recordUnhandledException(new Throwable("A really secret exception"));
     }
 
-    public void onClickRemoveAllConsent(View v){
+    public void onClickRemoveAllConsent(View v) {
         Countly.sharedInstance().consent().removeConsentAll();
     }
 
-    public void onClickGiveAllConsent(View v){
+    public void onClickGiveAllConsent(View v) {
         Countly.sharedInstance().consent().giveConsentAll();
     }
 
@@ -68,28 +68,26 @@ public class ActivityExampleOthers extends AppCompatActivity {
         final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
 
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
-                .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
-                .setRequiresConsent(false);
+            .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
+            .setRequiresConsent(false);
 
         Countly.sharedInstance().init(config);
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

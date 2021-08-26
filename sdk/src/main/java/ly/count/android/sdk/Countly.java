@@ -1512,7 +1512,7 @@ public class Countly {
                 mainClassName = launchIntent.getComponent().getClassName();
             }
 
-            sharedInstance().L.d("Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
+            sharedInstance().L.d("[onCreate] Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
         }
 
         Intent intent = activity.getIntent();

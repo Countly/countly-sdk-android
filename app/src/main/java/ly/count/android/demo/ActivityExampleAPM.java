@@ -13,18 +13,16 @@ import ly.count.android.sdk.Countly;
 
 public class ActivityExampleAPM extends AppCompatActivity {
 
-    int[] successCodes = new int[]{100, 101, 200, 201, 202, 205, 300, 301, 303, 305};
-    int[] failureCodes = new int[]{400, 402, 405, 408, 500, 501, 502, 505};
+    int[] successCodes = new int[] { 100, 101, 200, 201, 202, 205, 300, 301, 303, 305 };
+    int[] failureCodes = new int[] { 400, 402, 405, 408, 500, 501, 502, 505 };
 
     Random rnd = new Random();
-
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_apm);
         Countly.onCreate(this);
-
     }
 
     @Override
@@ -72,7 +70,7 @@ public class ActivityExampleAPM extends AppCompatActivity {
     public void onClickEndNetworkTrace_1(View v) {
         // network trace of a succeeding request
         int requestBytes = rnd.nextInt(700) + 200;
-        int responseBytes= rnd.nextInt(700) + 200;
+        int responseBytes = rnd.nextInt(700) + 200;
 
         int responseCode = successCodes[rnd.nextInt(successCodes.length)];
 
@@ -86,7 +84,7 @@ public class ActivityExampleAPM extends AppCompatActivity {
     public void onClickEndNetworkTrace_2(View v) {
         // network trace of a failing request
         int requestBytes = rnd.nextInt(700) + 250;
-        int responseBytes= rnd.nextInt(700) + 250;
+        int responseBytes = rnd.nextInt(700) + 250;
 
         int responseCode = failureCodes[rnd.nextInt(failureCodes.length)];
 

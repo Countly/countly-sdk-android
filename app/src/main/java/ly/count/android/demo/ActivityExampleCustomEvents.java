@@ -19,7 +19,6 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
         Countly.onCreate(this);
-
     }
 
     public void onClickRecordEvent01(View v) {
@@ -64,7 +63,7 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
         segmentationDouble.put("area", new Random().nextDouble());
         segmentationDouble.put("volume", new Random().nextDouble());
 
-        Countly.sharedInstance().recordEvent("Custom event 7", segmentation, segmentationInt, segmentationDouble,25, 10, 0);
+        Countly.sharedInstance().recordEvent("Custom event 7", segmentation, segmentationInt, segmentationDouble, 25, 10, 0);
     }
 
     public void onClickRecordEvent08(View v) {
@@ -95,21 +94,19 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

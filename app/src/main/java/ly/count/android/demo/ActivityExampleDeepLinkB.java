@@ -23,28 +23,26 @@ public class ActivityExampleDeepLinkB extends AppCompatActivity {
         Bundle bun = intent.getBundleExtra(CountlyPush.EXTRA_MESSAGE);
         CountlyPush.Message message;
 
-        if(bun != null) {
+        if (bun != null) {
             message = bun.getParcelable(CountlyPush.EXTRA_MESSAGE);
         }
         int actionIndex = intent.getIntExtra(CountlyPush.EXTRA_ACTION_INDEX, -100);
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

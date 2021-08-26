@@ -15,23 +15,22 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_crash_reporting);
         Countly.onCreate(this);
-
     }
 
     @SuppressWarnings("unused")
-    void EmptyFunction_1(){
+    void EmptyFunction_1() {
         //keep this here, it's for proguard testing
     }
 
     @SuppressWarnings("unused")
-    void EmptyFunction_2(){
-        //keep this here, it's for proguard testing
-    }
-    @SuppressWarnings("unused")
-    void EmptyFunction_3(){
+    void EmptyFunction_2() {
         //keep this here, it's for proguard testing
     }
 
+    @SuppressWarnings("unused")
+    void EmptyFunction_3() {
+        //keep this here, it's for proguard testing
+    }
 
     public void onClickCrashReporting01(View v) {
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Unrecognized selector crash");
@@ -40,7 +39,7 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
     public void onClickCrashReporting02(View v) {
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Out of bounds crash");
         //noinspection MismatchedReadAndWriteOfArray
-        int[] data = new int[]{};
+        int[] data = new int[] {};
         data[0] = 9;
     }
 
@@ -70,7 +69,7 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Adding some custom crash log");
 
         //noinspection UnusedAssignment,divzero
-        @SuppressWarnings("NumericOverflow") int test = 10/0;
+        @SuppressWarnings("NumericOverflow") int test = 10 / 0;
     }
 
     public void onClickCrashReporting08(View v) {
@@ -84,8 +83,9 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
         throw new Exception("A unhandled exception");
     }
 
-    public void onClickCrashReporting13(View v){
-        String largeCrumb = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+    public void onClickCrashReporting13(View v) {
+        String largeCrumb =
+            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
         Countly.sharedInstance().crashes().addCrashBreadcrumb(largeCrumb);
     }
 
@@ -97,20 +97,20 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
         recursiveDeepCall(3);
     }
 
-    void deepFunctionCall_1() throws Exception{
+    void deepFunctionCall_1() throws Exception {
         deepFunctionCall_2();
     }
 
-    void deepFunctionCall_2() throws Exception{
+    void deepFunctionCall_2() throws Exception {
         deepFunctionCall_3();
     }
 
-    void deepFunctionCall_3() throws Exception{
+    void deepFunctionCall_3() throws Exception {
         Utility.DeepCall_a();
     }
 
     void recursiveDeepCall(int depthLeft) {
-        if(depthLeft > 0){
+        if (depthLeft > 0) {
             recursiveDeepCall(depthLeft - 1);
         } else {
             Utility.AnotherRecursiveCall(3);
@@ -118,21 +118,19 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

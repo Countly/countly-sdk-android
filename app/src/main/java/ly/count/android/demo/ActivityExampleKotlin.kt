@@ -13,7 +13,7 @@ class ActivityExampleKotlin : AppCompatActivity() {
     Countly.sharedInstance().consent().checkAllConsent();
     Countly.sharedInstance().crashes().addCrashBreadcrumb("ddd");
     Countly.sharedInstance().events().recordEvent("ddd");
-    val count : Int = Countly.sharedInstance().ratings().getAutomaticStarRatingSessionLimit();
+    val count: Int = Countly.sharedInstance().ratings().getAutomaticStarRatingSessionLimit();
     Countly.sharedInstance().remoteConfig().allValues;
     Countly.sharedInstance().sessions().beginSession()
     Countly.sharedInstance().views().isAutomaticViewTrackingEnabled;

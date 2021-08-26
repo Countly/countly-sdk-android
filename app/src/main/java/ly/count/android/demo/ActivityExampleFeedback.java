@@ -30,15 +30,13 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
@@ -64,7 +62,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         Countly.sharedInstance().ratings().showFeedbackPopup(widgetId, "Close", ActivityExampleFeedback.this, new FeedbackRatingCallback() {
             @Override
             public void callback(String error) {
-                if(error != null){
+                if (error != null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Encountered error while showing feedback dialog: [" + error + "]", Toast.LENGTH_LONG).show();
                 }
             }
@@ -80,32 +78,32 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickShowSurvey(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(error != null) {
+                if (error != null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
                     return;
                 }
 
-                if(retrievedWidgets == null) {
+                if (retrievedWidgets == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
                     return;
                 }
 
                 CountlyFeedbackWidget chosenWidget = null;
-                for(CountlyFeedbackWidget widget:retrievedWidgets) {
-                    if(widget.type == FeedbackWidgetType.survey) {
+                for (CountlyFeedbackWidget widget : retrievedWidgets) {
+                    if (widget.type == FeedbackWidgetType.survey) {
                         chosenWidget = widget;
                         break;
                     }
                 }
 
-                if(chosenWidget == null) {
+                if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available Survey widget", Toast.LENGTH_LONG).show();
                     return;
                 }
 
                 Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new FeedbackCallback() {
                     @Override public void onFinished(String error) {
-                        if(error != null) {
+                        if (error != null) {
                             Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
                         }
                     }
@@ -117,32 +115,32 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickShowNPS(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(error != null) {
+                if (error != null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
                     return;
                 }
 
-                if(retrievedWidgets == null) {
+                if (retrievedWidgets == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
                     return;
                 }
 
                 CountlyFeedbackWidget chosenWidget = null;
-                for(CountlyFeedbackWidget widget:retrievedWidgets) {
-                    if(widget.type == FeedbackWidgetType.nps) {
+                for (CountlyFeedbackWidget widget : retrievedWidgets) {
+                    if (widget.type == FeedbackWidgetType.nps) {
                         chosenWidget = widget;
                         break;
                     }
                 }
 
-                if(chosenWidget == null) {
+                if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available NPS widget", Toast.LENGTH_LONG).show();
                     return;
                 }
 
                 Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new FeedbackCallback() {
                     @Override public void onFinished(String error) {
-                        if(error != null) {
+                        if (error != null) {
                             Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
                         }
                     }
@@ -151,28 +149,52 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         });
     }
 
+    public void onClickShowAvailableFeedbackWidgets(View v) {
+        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
+            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
+                if (error != null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                if (retrievedWidgets == null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                StringBuilder sb = new StringBuilder();
+
+                for (CountlyFeedbackWidget widget : retrievedWidgets) {
+                    sb.append("[" + widget.widgetId + " " + widget.name + " " + widget.type + "]\n");
+                }
+
+                Toast.makeText(ActivityExampleFeedback.this, sb.toString(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
     public void onClickReportNPSManually(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(error != null) {
+                if (error != null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets for manual nps report: [" + error + "]", Toast.LENGTH_LONG).show();
                     return;
                 }
 
-                if(retrievedWidgets == null) {
+                if (retrievedWidgets == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
                     return;
                 }
 
                 CountlyFeedbackWidget chosenWidget = null;
-                for(CountlyFeedbackWidget widget:retrievedWidgets) {
-                    if(widget.type == FeedbackWidgetType.nps) {
+                for (CountlyFeedbackWidget widget : retrievedWidgets) {
+                    if (widget.type == FeedbackWidgetType.nps) {
                         chosenWidget = widget;
                         break;
                     }
                 }
 
-                if(chosenWidget == null) {
+                if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available NPS widget for manual reporting", Toast.LENGTH_LONG).show();
                     return;
                 }
@@ -181,7 +203,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
 
                 Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
                     @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
-                        if(error != null) {
+                        if (error != null) {
                             Toast.makeText(ActivityExampleFeedback.this, "Encountered error while reporting nps feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
                             return;
                         }
@@ -262,7 +284,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                                 case "multi":
                                     StringBuilder sb = new StringBuilder();
 
-                                    for(int b = 0 ; b < choices.length() ; b++) {
+                                    for (int b = 0; b < choices.length(); b++) {
                                         if (b % 2 == 0) {
                                             if (b != 0) {
                                                 sb.append(",");
@@ -274,7 +296,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                                     break;
                                 //radio buttons
                                 case "radio":
-                                //dropdown value selector
+                                    //dropdown value selector
                                 case "dropdown":
                                     int pick = rnd.nextInt(choices.length());
                                     segm.put(answerKey, choices.optJSONObject(pick).optString("key"));//pick the key of random choice
@@ -300,7 +322,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

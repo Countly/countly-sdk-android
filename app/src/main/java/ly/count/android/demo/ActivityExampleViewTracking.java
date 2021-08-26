@@ -10,7 +10,7 @@ import java.util.Map;
 
 import ly.count.android.sdk.Countly;
 
-@SuppressWarnings({"UnusedParameters", "unused"})
+@SuppressWarnings({ "UnusedParameters", "unused" })
 public class ActivityExampleViewTracking extends AppCompatActivity {
 
     @Override
@@ -18,7 +18,6 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_view_tracking);
         Countly.onCreate(this);
-
     }
 
     public void onClickRecordViewA(View v) {
@@ -68,21 +67,19 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

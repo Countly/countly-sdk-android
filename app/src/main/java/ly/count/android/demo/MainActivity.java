@@ -115,8 +115,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, ActivityExampleFeedback.class));
     }
 
-
-    public void enableCrashTracking(){
+    public void enableCrashTracking() {
         //add some custom segments, like dependency library versions
         HashMap<String, String> data = new HashMap<>();
         data.put("Facebook", "3.5");
@@ -126,23 +125,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
-
 }
