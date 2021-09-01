@@ -45,10 +45,11 @@ public class MigrationHelperTests {
 
     @Before
     public void setUp() {
+        mockLog = mock(ModuleLog.class);
+
         cs = new CountlyStore(getContext(), mockLog);
         sp = cs;
 
-        mockLog = mock(ModuleLog.class);
         final CountlyStore countlyStore = new CountlyStore(getContext(), mockLog);
         countlyStore.clear();
     }

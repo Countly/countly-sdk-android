@@ -4,6 +4,7 @@ import android.util.Log;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.ModuleLog;
 
 /**
  * Utility class
@@ -12,8 +13,8 @@ import ly.count.android.sdk.Countly;
 public class UtilsMessaging {
     private static final UtilsMessaging utils = new UtilsMessaging();
 
-    static boolean reflectiveClassExists(String cls) {
-        return utils._reflectiveClassExists(cls);
+    static boolean reflectiveClassExists(String cls, ModuleLog L) {
+        return utils._reflectiveClassExists(cls, L);
     }
 
     /**
@@ -22,12 +23,12 @@ public class UtilsMessaging {
      * @param cls Class name to check
      * @return true if class exists, false otherwise
      */
-    public boolean _reflectiveClassExists(String cls) {
+    public boolean _reflectiveClassExists(String cls, ModuleLog L) {
         try {
             Class.forName(cls);
             return true;
         } catch (ClassNotFoundException e) {
-            Log.d(Countly.TAG, "Class " + cls + " not found");
+            L.d("Class " + cls + " not found");
             return false;
         }
     }
@@ -41,13 +42,13 @@ public class UtilsMessaging {
      * @param args optional arguments to pass to that method
      * @return false in case of failure, method result otherwise
      */
-    static Object reflectiveCall(String className, Object instance, String methodName, Object... args) {
-        return utils._reflectiveCall(className, instance, methodName, args);
+    static Object reflectiveCall(String className, Object instance, String methodName, ModuleLog L, Object... args) {
+        return utils._reflectiveCall(className, instance, methodName, L, args);
     }
 
-    public Object _reflectiveCall(String className, Object instance, String methodName, Object... args) {
+    public Object _reflectiveCall(String className, Object instance, String methodName, ModuleLog L, Object... args) {
         try {
-            Log.d(Countly.TAG, "cls " + className + ", inst " + instance);
+            L.d("cls " + className + ", inst " + instance);
             className = className == null && instance != null ? instance.getClass().getName() : className;
             Class<?> cls = instance == null ? Class.forName(className) : instance.getClass();
             Class<?>[] types = null;
@@ -62,16 +63,16 @@ public class UtilsMessaging {
             Method method = cls.getDeclaredMethod(methodName, types);
             return method.invoke(instance, args);
         } catch (ClassNotFoundException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (NoSuchMethodException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (IllegalAccessException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (InvocationTargetException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         }
     }
@@ -85,15 +86,15 @@ public class UtilsMessaging {
      * @param args optional arguments to pass to that method in the form arg1, arg1class, arg2, arg2class
      * @return false in case of failure, method result otherwise
      */
-    static Object reflectiveCallStrict(String className, Object instance, String methodName, Object... args) {
-        return utils._reflectiveCallStrict(className, instance, methodName, args);
+    static Object reflectiveCallStrict(String className, Object instance, String methodName, ModuleLog L, Object... args) {
+        return utils._reflectiveCallStrict(className, instance, methodName, L, args);
     }
 
-    public Object _reflectiveCallStrict(String className, Object instance, String methodName, Object... arguments) {
+    public Object _reflectiveCallStrict(String className, Object instance, String methodName, ModuleLog L, Object... arguments) {
         try {
             Log.d(Countly.TAG, "cls " + className + ", inst " + instance);
             if (arguments != null && arguments.length % 2 != 0) {
-                Log.wtf(Countly.TAG, "wrong arguments passed to reflectiveCallStrict");
+                L.w("wrong arguments passed to reflectiveCallStrict");
                 return null;
             }
             className = className == null && instance != null ? instance.getClass().getName() : className;
@@ -110,16 +111,16 @@ public class UtilsMessaging {
             Method method = cls.getDeclaredMethod(methodName, types);
             return method.invoke(instance, args);
         } catch (ClassNotFoundException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (NoSuchMethodException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (IllegalAccessException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         } catch (InvocationTargetException t) {
-            Log.w(Countly.TAG, "Cannot call " + methodName + " of " + className, t);
+            L.w("Cannot call " + methodName + " of " + className, t);
             return false;
         }
     }

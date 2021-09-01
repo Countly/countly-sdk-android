@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
+import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.Utils;
 
 /**
@@ -331,7 +332,7 @@ public class CountlyPush {
         @Override
         public void onReceive(Context context, Intent broadcast) {
             if (mode != null && provider != null && getPushConsent(context)) {
-                String token = getToken(context, provider);
+                String token = getToken(context, provider, Countly.sharedInstance().L);
                 if (token != null && !"".equals(token)) {
                     onTokenRefresh(token, provider);
                 }
@@ -344,36 +345,36 @@ public class CountlyPush {
      *
      * @return token string or null if no token is currently available.
      */
-    private static String getToken(Context context, Countly.CountlyMessagingProvider prov) {
+    private static String getToken(Context context, Countly.CountlyMessagingProvider prov, ModuleLog L) {
         if (prov == Countly.CountlyMessagingProvider.FCM) {
             try {
-                Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
-                return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
+                Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance", L);
+                return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken", L);
             } catch (Throwable logged) {
                 Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
                 return null;
             }
         } else if (prov == Countly.CountlyMessagingProvider.HMS) {
             try {
-                Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", context, Context.class);
+                Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", L, context, Context.class);
                 if (config == null) {
                     Countly.sharedInstance().L.e("No Huawei Config");
                     return null;
                 }
 
-                Object appId = UtilsMessaging.reflectiveCall(HUAWEI_CONFIG_CLASS, config, "getString", "client/app_id");
+                Object appId = UtilsMessaging.reflectiveCall(HUAWEI_CONFIG_CLASS, config, "getString", L, "client/app_id");
                 if (appId == null || "".equals(appId)) {
                     Countly.sharedInstance().L.e("No Huawei app id in config");
                     return null;
                 }
 
-                Object instanceId = UtilsMessaging.reflectiveCallStrict(HUAWEI_INSTANCEID_CLASS, null, "getInstance", context, Context.class);
+                Object instanceId = UtilsMessaging.reflectiveCallStrict(HUAWEI_INSTANCEID_CLASS, null, "getInstance", L, context, Context.class);
                 if (instanceId == null) {
                     Countly.sharedInstance().L.e("No Huawei instance id class");
                     return null;
                 }
 
-                Object token = UtilsMessaging.reflectiveCall(HUAWEI_INSTANCEID_CLASS, instanceId, "getToken", appId, "HCM");
+                Object token = UtilsMessaging.reflectiveCall(HUAWEI_INSTANCEID_CLASS, instanceId, "getToken", L, appId, "HCM");
                 return (String) token;
             } catch (Throwable logged) {
                 Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly huawei push kit", logged);
@@ -757,22 +758,22 @@ public class CountlyPush {
         // set preferred push provider
         CountlyPush.provider = preferredProvider;
         if (provider == null) {
-            if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+            if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
                 provider = Countly.CountlyMessagingProvider.FCM;
-            } else if (UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+            } else if (UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
                 provider = Countly.CountlyMessagingProvider.HMS;
             }
-        } else if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+        } else if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             provider = Countly.CountlyMessagingProvider.HMS;
-        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             provider = Countly.CountlyMessagingProvider.FCM;
         }
 
         // print error in case preferred push provider is not available
-        if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+        if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             Countly.sharedInstance().L.e("Countly push didn't initialise. No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
-        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             Countly.sharedInstance().L.e("Countly push didn't initialise. No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == null) {
@@ -833,7 +834,7 @@ public class CountlyPush {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        String token = getToken(application, Countly.CountlyMessagingProvider.HMS);
+                        String token = getToken(application, Countly.CountlyMessagingProvider.HMS, Countly.sharedInstance().L);
                         if (token != null && !"".equals(token)) {
                             onTokenRefresh(token, Countly.CountlyMessagingProvider.HMS);
                         }
