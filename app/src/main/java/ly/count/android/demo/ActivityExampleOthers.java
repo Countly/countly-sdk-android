@@ -62,6 +62,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
     }
 
     public void onClickHaltAndInit(View v) {
+        //this will destroy all currently stored data
         Countly.sharedInstance().halt();
 
         final String COUNTLY_SERVER_URL = "YOUR_SERVER";

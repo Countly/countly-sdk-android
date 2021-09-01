@@ -93,6 +93,10 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
         Countly.sharedInstance().events().recordEvent("Custom event 9", segmentation, 4, 34);
     }
 
+    public void onClickTriggerSendingEvents(View v) {
+        Countly.sharedInstance().doStoredRequests();
+    }
+
     @Override
     public void onStart() {
         super.onStart();

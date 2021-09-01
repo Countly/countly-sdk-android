@@ -749,6 +749,8 @@ public class Countly {
      * Immediately disables session &amp; event tracking and clears any stored session &amp; event data.
      * This API is useful if your app has a tracking opt-out switch, and you want to immediately
      * disable tracking when a user opts out.
+     *
+     * This will destroy all stored data
      */
     public synchronized void halt() {
         L.i("Halting Countly!");
@@ -2481,7 +2483,8 @@ public class Countly {
     }
 
     /**
-     * Countly will attempt to fulfill all stored requests on demand
+     * Combine all events in event queue into a request and
+     * attempt to process stored requests on demand
      */
     public void doStoredRequests() {
         L.i("[Countly] Calling doStoredRequests");
@@ -2491,6 +2494,10 @@ public class Countly {
             return;
         }
 
+        //combine all available events into a request
+        sendEventsIfNeeded(true);
+
+        //trigger the processing of the request queue
         connectionQueue_.tick();
     }
 
