@@ -321,6 +321,75 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         });
     }
 
+    public void onClickRetrieveSurveyDataManually(View v) {
+        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
+            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
+                if (error != null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets for manual survey report: [" + error + "]", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                if (retrievedWidgets == null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                CountlyFeedbackWidget chosenWidget = null;
+                for (CountlyFeedbackWidget widget : retrievedWidgets) {
+                    if (widget.type == FeedbackWidgetType.survey) {
+                        chosenWidget = widget;
+                        break;
+                    }
+                }
+
+                if (chosenWidget == null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "No available survey widget for manual reporting", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                final CountlyFeedbackWidget widgetToReport = chosenWidget;
+
+                Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
+                    @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
+                        if (error != null) {
+                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while reporting survey feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        Log.d(Countly.TAG, "Retrieved survey widget data: " + retrievedWidgetData.toString());
+/*
+                        JSONArray questions = retrievedWidgetData.optJSONArray("questions");
+
+                        if (questions == null) {
+                            Toast.makeText(ActivityExampleFeedback.this, "No questions found in retrieved survey data", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
+                        Map<String, Object> segm = new HashMap<>();
+                        Random rnd = new Random();
+
+                        //iterate over all questions and set random answers
+                        for (int a = 0; a < questions.length(); a++) {
+                            JSONObject question = null;
+                            try {
+                                question = questions.getJSONObject(a);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            String wType = question.optString("type");
+                            String questionId = question.optString("id");
+                            String answerKey = "answ-" + questionId;
+                            JSONArray choices = question.optJSONArray("choices");
+
+
+                        }
+*/
+                        Toast.makeText(ActivityExampleFeedback.this, "Survey data retrieved: " + retrievedWidgetData, Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
+    }
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
