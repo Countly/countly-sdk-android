@@ -450,21 +450,31 @@ public class Countly {
             //device ID is provided but it's a empty string
             throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
         }
+
         if (config.idMode == DeviceId.Type.TEMPORARY_ID) {
             throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
         }
+
         if (config.deviceID == null && config.idMode == null) {
             //device ID was not provided and no preferred mode specified. Choosing default
             config.idMode = DeviceId.Type.OPEN_UDID;
         }
+
         if (config.idMode == DeviceId.Type.DEVELOPER_SUPPLIED && config.deviceID == null) {
             throw new IllegalArgumentException("Valid device ID has to be provided with the Developer_Supplied device ID type");
         }
+
         if (config.deviceID == null && config.idMode == DeviceId.Type.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
             //choosing advertising ID as type, but it's available on this device
             L.e("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
             return this;
         }
+
+        if (isLoggingEnabled()) {
+            String halfAppKey = config.appKey.substring(0, config.appKey.length() / 2);
+            L.d("[Init] SDK initialised with the URL:[" + config.serverURL + "] and first half of the appKey:[" + halfAppKey + "]");
+        }
+
         if (sdkIsInitialised && (!connectionQueue_.getServerURL().equals(config.serverURL) ||
             !connectionQueue_.getAppKey().equals(config.appKey) ||
             !DeviceId.deviceIDEqualsNullSafe(config.deviceID, config.idMode, connectionQueue_.getDeviceId()))) {
@@ -522,7 +532,7 @@ public class Countly {
                 config.setCountlyStore(countlyStore);
             }
 
-            if(config.storageProvider == null) {
+            if (config.storageProvider == null) {
                 // outside of tests this should be null
                 config.storageProvider = config.countlyStore;
             } else {
@@ -534,7 +544,6 @@ public class Countly {
             } else {
                 L.d("[Init] Custom event queue provider was provided");
             }
-
 
             //check legacy access methods
             if (locationFallback != null && config.locationCountyCode == null && config.locationCity == null && config.locationLocation == null && config.locationIpAddress == null) {
