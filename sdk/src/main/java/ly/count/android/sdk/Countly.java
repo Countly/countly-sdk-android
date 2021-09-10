@@ -928,6 +928,7 @@ public class Countly {
      *
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
+     * @deprecated use 'changeDeviceIdWithoutMerge' that doesn't use a type
      */
     public void changeDeviceIdWithoutMerge(DeviceId.Type type, String deviceId) {
         L.d("Calling [changeDeviceIdWithoutMerge] with type and ID");
@@ -938,6 +939,23 @@ public class Countly {
         }
 
         moduleDeviceId.changeDeviceIdWithoutMerge(type, deviceId);
+    }
+
+    /**
+     * Changes current device id to the one specified in parameter. Closes current session and
+     * reopens new one with new id. Doesn't merge user profiles on the server
+     *
+     * @param deviceId New device ID
+     */
+    public void changeDeviceIdWithoutMerge(String deviceId) {
+        L.d("Calling [changeDeviceIdWithoutMerge] with ID");
+
+        if (!isInitialized()) {
+            L.e("init must be called before changeDeviceIdWithoutMerge");
+            return;
+        }
+
+        moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.DEVELOPER_SUPPLIED, deviceId);
     }
 
     /**
@@ -962,7 +980,7 @@ public class Countly {
      *
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
-     * @deprecated use 'changeDeviceIdWithoutMerge'
+     * @deprecated use 'changeDeviceIdWithoutMerge' that doesn't use a type field
      */
     public void changeDeviceId(DeviceId.Type type, String deviceId) {
         L.d("Calling [changeDeviceId] with type and ID");
