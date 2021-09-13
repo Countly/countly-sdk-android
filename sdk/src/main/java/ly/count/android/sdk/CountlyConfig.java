@@ -116,7 +116,7 @@ public class CountlyConfig {
 
     protected Integer eventQueueSizeThreshold = null;
 
-    protected boolean trackOrientationChange = false;
+    protected boolean trackOrientationChange = true;
 
     protected boolean manualSessionControlEnabled = false;
 
