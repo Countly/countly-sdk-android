@@ -120,6 +120,11 @@ public class App extends Application {
         metricOverride.put("SomeKey", "123");
         metricOverride.put("_carrier", "BoneyK");
 
+        //add some custom segments, like dependency library versions
+        HashMap<String, Object> customCrashSegmentation = new HashMap<>();
+        customCrashSegmentation.put("EarBook", "3.5");
+        customCrashSegmentation.put("AdGiver", "6.5");
+
         Countly.sharedInstance().setLoggingEnabled(true);
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
             .enableCrashReporting().setLoggingEnabled(false).setLogListener(new ModuleLog.LogCallback() {
@@ -144,7 +149,8 @@ public class App extends Application {
                     }
                 }
             })
-            .enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)//.enableTemporaryDeviceIdMode()
+            .enableCrashReporting().setCustomCrashSegment(customCrashSegmentation)
+            .setViewTracking(true).setAutoTrackingUseShortName(true)//.enableTemporaryDeviceIdMode()
             .setRequiresConsent(true).setConsentEnabled(new String[] {
                 Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
                 Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,

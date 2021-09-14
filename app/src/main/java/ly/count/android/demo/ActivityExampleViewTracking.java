@@ -49,7 +49,7 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
     }
 
     public void onClickRecordViewC(View v) {
-        Countly.sharedInstance().recordView("View C", null);
+        Countly.sharedInstance().views().recordView("View C", null);
     }
 
     public void onClickRecordViewWithSegmentationC(View v) {

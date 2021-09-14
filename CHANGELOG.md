@@ -8,6 +8,7 @@
   * Removed the deprecated "setViewTracking" method
   * Removed the deprecated "isViewTrackingEnabled" method
   * Removed the deprecated "recordView" methods
+  * Removed the deprecated "setCustomCrashSegments" method
 
 ## 20.11.10
   * Fixed bug that would close manually recorded views early when automatic view recording is disabled

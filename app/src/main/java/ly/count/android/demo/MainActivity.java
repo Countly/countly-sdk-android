@@ -115,15 +115,6 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, ActivityExampleFeedback.class));
     }
 
-    public void enableCrashTracking() {
-        //add some custom segments, like dependency library versions
-        HashMap<String, String> data = new HashMap<>();
-        data.put("Facebook", "3.5");
-        data.put("Admob", "6.5");
-        Countly.sharedInstance().setCustomCrashSegments(data);
-        Countly.sharedInstance().enableCrashReporting();
-    }
-
     @Override
     public void onStart() {
         super.onStart();

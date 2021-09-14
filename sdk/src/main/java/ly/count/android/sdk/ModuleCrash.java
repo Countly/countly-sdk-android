@@ -35,7 +35,7 @@ public class ModuleCrash extends ModuleBase {
 
         recordAllThreads = config.recordAllThreadsWithCrash;
 
-        _cly.setCustomCrashSegmentsInternal(config.customCrashSegment);
+        setCustomCrashSegmentsInternal(config.customCrashSegment);
 
         crashesInterface = new Crashes();
     }
@@ -106,6 +106,25 @@ public class ModuleCrash extends ModuleBase {
 
         //record crash
         _cly.connectionQueue_.sendCrashReport(dumpString, false, true, null);
+    }
+
+    /**
+     * Sets custom segments to be reported with crash reports
+     * In custom segments you can provide any string key values to segments crashes by
+     *
+     * @param segments Map&lt;String, Object&gt; key segments and their values
+     */
+    void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
+        L.d("[ModuleCrash] Calling setCustomCrashSegmentsInternal");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
+            return;
+        }
+
+        if (segments != null) {
+            Utils.removeUnsupportedDataTypes(segments);
+            CrashDetails.setCustomSegments(segments);
+        }
     }
 
     void setCrashFilterCallback(CrashFilterCallback callback) {
