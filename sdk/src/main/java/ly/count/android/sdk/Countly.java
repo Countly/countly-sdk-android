@@ -504,12 +504,19 @@ public class Countly {
             }
 
             if(config.pushIntentAddMetadata) {
-                L.d("[Countly] Enabling push intent metadata");
+                L.d("[Init] Enabling push intent metadata");
                 addMetadataToPushIntents = config.pushIntentAddMetadata;
             }
 
             if (config.eventQueueSizeThreshold != null) {
-                setEventQueueSizeToSend(config.eventQueueSizeThreshold);
+                L.d("[Init] Setting event queue size: [" + config.eventQueueSizeThreshold + "]");
+
+                if (config.eventQueueSizeThreshold < 1) {
+                    L.d("[Init] queue size can't be less than zero");
+                    config.eventQueueSizeThreshold = 1;
+                }
+
+                EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
             }
 
             if (config.publicKeyPinningCertificates != null) {
@@ -523,13 +530,13 @@ public class Countly {
             }
 
             if (config.enableAttribution != null) {
-                L.d("[Countly] Enabling attribution");
+                L.d("[Init] Enabling attribution");
                 isAttributionEnabled = config.enableAttribution;
             }
 
             //app crawler check
             if (config.shouldIgnoreAppCrawlers) {
-                L.d("[Countly] Ignoring app crawlers");
+                L.d("[Init] Ignoring app crawlers");
                 shouldIgnoreCrawlers = config.shouldIgnoreAppCrawlers;
             }
 
@@ -965,23 +972,6 @@ public class Countly {
         return calledAtLeastOnceOnStart;
     }
 
-    /**
-     * @param size
-     * @return
-     * @deprecated use countly config to set this
-     */
-    public synchronized Countly setEventQueueSizeToSend(int size) {
-        L.d("Setting event queue size: [" + size + "]");
-
-        if (size < 1) {
-            L.d("[setEventQueueSizeToSend] queue size can't be less than zero");
-            size = 1;
-        }
-
-        EVENT_QUEUE_SIZE_THRESHOLD = size;
-        return this;
-    }
-
     public static void onCreate(Activity activity) {
         Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
 
@@ -1041,179 +1031,6 @@ public class Countly {
             sendEventsIfNeeded(true);
             connectionQueue_.tick();
         }
-    }
-
-    /**
-     * Shows the star rating dialog
-     *
-     * @param activity the activity that will own the dialog
-     * @param callback callback for the star rating dialog "rate" and "dismiss" events
-     * @deprecated call this trough 'Countly.sharedInstance().remoteConfig()'
-     */
-    public void showStarRating(Activity activity, final CountlyStarRating.RatingCallback callback) {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return;
-        }
-
-        if (callback == null) {
-            ratings().showStarRating(activity, null);
-        } else {
-            ratings().showStarRating(activity, new StarRatingCallback() {
-                @Override
-                public void onRate(int rating) {
-                    callback.onRate(rating);
-                }
-
-                @Override
-                public void onDismiss() {
-                    callback.onDismiss();
-                }
-            });
-        }
-    }
-
-    /**
-     * Set's the text's for the different fields in the star rating dialog. Set value null if for some field you want to keep the old value
-     *
-     * @param starRatingTextTitle dialog's title text
-     * @param starRatingTextMessage dialog's message text
-     * @param starRatingTextDismiss dialog's dismiss buttons text
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setStarRatingDialogTexts(String starRatingTextTitle, String starRatingTextMessage, String starRatingTextDismiss) {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return this;
-        }
-
-        L.d("Setting star rating texts");
-
-        moduleRatings.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), -1, starRatingTextTitle, starRatingTextMessage, starRatingTextDismiss);
-
-        return this;
-    }
-
-    /**
-     * Set if the star rating should be shown automatically
-     *
-     * @param IsShownAutomatically set it true if you want to show the app star rating dialog automatically for each new version after the specified session amount
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setIfStarRatingShownAutomatically(boolean IsShownAutomatically) {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return this;
-        }
-
-        L.d("Setting to show star rating automatically: [" + IsShownAutomatically + "]");
-
-        moduleRatings.setShowDialogAutomatically(connectionQueue_.getCountlyStore(), IsShownAutomatically);
-
-        return this;
-    }
-
-    /**
-     * Set if the star rating is shown only once per app lifetime
-     *
-     * @param disableAsking set true if you want to disable asking the app rating for each new app version (show it only once per apps lifetime)
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setStarRatingDisableAskingForEachAppVersion(boolean disableAsking) {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return this;
-        }
-
-        L.d("Setting to disable showing of star rating for each app version:[" + disableAsking + "]");
-
-        moduleRatings.setStarRatingDisableAskingForEachAppVersion(connectionQueue_.getCountlyStore(), disableAsking);
-
-        return this;
-    }
-
-    /**
-     * Set after how many sessions the automatic star rating will be shown for each app version
-     *
-     * @param limit app session amount for the limit
-     * @return Returns link to Countly for call chaining
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setAutomaticStarRatingSessionLimit(int limit) {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return this;
-        }
-
-        L.d("Setting automatic star rating session limit: [" + limit + "]");
-        moduleRatings.setStarRatingInitConfig(connectionQueue_.getCountlyStore(), limit, null, null, null);
-
-        return this;
-    }
-
-    /**
-     * Returns the session limit set for automatic star rating
-     *
-     * @deprecated use 'Countly.sharedInstance().ratings().getAutomaticStarRatingSessionLimit()'
-     */
-    public int getAutomaticStarRatingSessionLimit() {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return -1;
-        }
-
-        int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(connectionQueue_.getCountlyStore());
-
-        L.d("Getting automatic star rating session limit: [" + sessionLimit + "]");
-
-        return sessionLimit;
-    }
-
-    /**
-     * Returns how many sessions has star rating counted internally for the current apps version
-     *
-     * @deprecated use 'Countly.sharedInstance().ratings().getCurrentVersionsSessionCount()'
-     */
-    public int getStarRatingsCurrentVersionsSessionCount() {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return -1;
-        }
-
-        return ratings().getCurrentVersionsSessionCount();
-    }
-
-    /**
-     * Set the automatic star rating session count back to 0
-     *
-     * @deprecated use 'Countly.sharedInstance().ratings().getCurrentVersionsSessionCount()' to get achieve this
-     */
-    public void clearAutomaticStarRatingSessionCount() {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return;
-        }
-
-        ratings().clearAutomaticStarRatingSessionCount();
-    }
-
-    /**
-     * Set if the star rating dialog is cancellable
-     *
-     * @param isCancellable set this true if it should be cancellable
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setIfStarRatingDialogIsCancellable(boolean isCancellable) {
-        if (!isInitialized()) {
-            L.e("Can't call this function before init has been called");
-            return this;
-        }
-
-        L.d("Setting if star rating is cancellable: [" + isCancellable + "]");
-
-        moduleRatings.setIfRatingDialogIsCancellableInternal(connectionQueue_.getCountlyStore(), isCancellable);
-
-        return this;
     }
 
     /**

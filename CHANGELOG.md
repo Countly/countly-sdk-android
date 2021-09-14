@@ -21,6 +21,15 @@
   * Removed the deprecated "enableCertificatePinning" method
   * Removed the deprecated "setPushIntentAddMetadata" method
   * Removed the deprecated "setEnableAttribution" method
+  * Removed the deprecated "setEventQueueSizeToSend" method
+  * Removed the deprecated "setStarRatingDialogTexts" method
+  * Removed the deprecated "setIfStarRatingShownAutomatically" method
+  * Removed the deprecated "setStarRatingDisableAskingForEachAppVersion" method
+  * Removed the deprecated "setAutomaticStarRatingSessionLimit" method
+  * Removed the deprecated "getAutomaticStarRatingSessionLimit" method
+  * Removed the deprecated "getStarRatingsCurrentVersionsSessionCount" method
+  * Removed the deprecated "clearAutomaticStarRatingSessionCount" method
+  * Removed the deprecated "setIfStarRatingDialogIsCancellable" method
 
 
 ## 20.11.10
