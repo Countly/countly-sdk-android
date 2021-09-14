@@ -133,7 +133,7 @@ public class ModuleCrash extends ModuleBase {
     }
 
     void enableCrashReporting() {
-        L.d("Enabling unhandled crash reporting");
+        L.d("[ModuleCrash] Enabling unhandled crash reporting");
         //get default handler
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 
@@ -141,7 +141,7 @@ public class ModuleCrash extends ModuleBase {
 
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                L.d("Uncaught crash handler triggered");
+                L.d("[ModuleCrash] Uncaught crash handler triggered");
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
 
                     StringWriter sw = new StringWriter();

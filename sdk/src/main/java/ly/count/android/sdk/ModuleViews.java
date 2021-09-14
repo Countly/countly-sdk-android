@@ -36,8 +36,15 @@ public class ModuleViews extends ModuleBase {
 
         L.v("[ModuleViews] Initialising");
 
-        autoViewTracker = config.enableViewTracking;
-        automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
+        if (config.enableViewTracking) {
+            L.d("[ModuleViews] Enabling automatic view tracking");
+            autoViewTracker = config.enableViewTracking;
+        }
+
+        if(config.autoTrackingUseShortName) {
+            L.d("[ModuleViews] Enabling automatic view tracking short names");
+            automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
+        }
 
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
         autoTrackingActivityExceptions = config.autoTrackingExceptions;

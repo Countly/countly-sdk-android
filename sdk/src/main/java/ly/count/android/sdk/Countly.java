@@ -96,8 +96,8 @@ public class Countly {
      */
     private static final long TIMER_DELAY_IN_SECONDS = 60;
 
-    protected static List<String> publicKeyPinCertificates;
-    protected static List<String> certificatePinCertificates;
+    protected static String[] publicKeyPinCertificates;
+    protected static String[] certificatePinCertificates;
 
     /**
      * Enum used in Countly.initMessaging() method which controls what kind of
@@ -497,28 +497,42 @@ public class Countly {
 
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
             setHttpPostForced(config.httpPostForced);
-            ConnectionProcessor.salt = config.tamperingProtectionSalt;
 
-            setPushIntentAddMetadata(config.pushIntentAddMetadata);
+            if(config.tamperingProtectionSalt != null) {
+                L.d("[Init] Enabling tamper protection");
+                ConnectionProcessor.salt = config.tamperingProtectionSalt;
+            }
+
+            if(config.pushIntentAddMetadata) {
+                L.d("[Countly] Enabling push intent metadata");
+                addMetadataToPushIntents = config.pushIntentAddMetadata;
+            }
 
             if (config.eventQueueSizeThreshold != null) {
                 setEventQueueSizeToSend(config.eventQueueSizeThreshold);
             }
 
             if (config.publicKeyPinningCertificates != null) {
-                enablePublicKeyPinning(Arrays.asList(config.publicKeyPinningCertificates));
+                sharedInstance().L.i("[Init] Enabling public key pinning");
+                publicKeyPinCertificates = config.publicKeyPinningCertificates;
             }
 
             if (config.certificatePinningCertificates != null) {
-                enableCertificatePinning(Arrays.asList(config.certificatePinningCertificates));
+                Countly.sharedInstance().L.i("[Init] Enabling certificate pinning");
+                certificatePinCertificates = config.certificatePinningCertificates;
             }
 
             if (config.enableAttribution != null) {
-                setEnableAttribution(config.enableAttribution);
+                L.d("[Countly] Enabling attribution");
+                isAttributionEnabled = config.enableAttribution;
             }
 
             //app crawler check
-            shouldIgnoreCrawlers = config.shouldIgnoreAppCrawlers;
+            if (config.shouldIgnoreAppCrawlers) {
+                L.d("[Countly] Ignoring app crawlers");
+                shouldIgnoreCrawlers = config.shouldIgnoreAppCrawlers;
+            }
+
             if (config.appCrawlerNames != null) {
                 Collections.addAll(Arrays.asList(config.appCrawlerNames));
             }

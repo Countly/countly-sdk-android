@@ -29,8 +29,8 @@ public final class CertificateTrustManager implements X509TrustManager {
     // DER encoded certificates
     private final List<byte[]> certificates;
 
-    public CertificateTrustManager(List<String> keys, List<String> certs) throws CertificateException {
-        if ((keys == null || keys.size() == 0) && (certs == null || certs.size() == 0)) {
+    public CertificateTrustManager(String[] keys, String[] certs) throws CertificateException {
+        if ((keys == null || keys.length == 0) && (certs == null || certs.length == 0)) {
             throw new IllegalArgumentException("You must specify non-empty keys list or certs list");
         }
 

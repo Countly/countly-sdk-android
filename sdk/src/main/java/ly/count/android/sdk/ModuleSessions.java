@@ -17,7 +17,11 @@ public class ModuleSessions extends ModuleBase {
         L.v("[ModuleSessions] Initialising");
 
         manualSessionControlEnabled = config.manualSessionControlEnabled;
-        _cly.disableUpdateSessionRequests_ = config.disableUpdateSessionRequests;
+
+        if (config.disableUpdateSessionRequests) {
+            L.d("[ModuleSessions] Disabling periodic session time updates");
+            _cly.disableUpdateSessionRequests_ = config.disableUpdateSessionRequests;
+        }
 
         sessionInterface = new Sessions();
     }
