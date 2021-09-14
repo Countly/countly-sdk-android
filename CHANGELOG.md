@@ -3,6 +3,11 @@
   * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
   * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
   * Removed the deprecated "init" methods
+  * Removed the deprecated "recordEvent" methods
+  * Removed the deprecated "changeDeviceId" methods
+  * Removed the deprecated "setViewTracking" method
+  * Removed the deprecated "isViewTrackingEnabled" method
+  * Removed the deprecated "recordView" methods
 
 ## 20.11.10
   * Fixed bug that would close manually recorded views early when automatic view recording is disabled

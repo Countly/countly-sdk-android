@@ -16,6 +16,9 @@ public class ModuleViews extends ModuleBase {
 
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
+    boolean autoViewTracker = false;
+    boolean automaticTrackingShouldUseShortName = false;//flag for using short names
+
     //track orientation changes
     boolean trackOrientationChanges = false;
     int currentOrientation = -1;
@@ -33,8 +36,8 @@ public class ModuleViews extends ModuleBase {
 
         L.v("[ModuleViews] Initialising");
 
-        _cly.setViewTracking(config.enableViewTracking);
-        _cly.setAutoTrackingUseShortName(config.autoTrackingUseShortName);
+        autoViewTracker = config.enableViewTracking;
+        automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
 
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
         autoTrackingActivityExceptions = config.autoTrackingExceptions;
@@ -188,7 +191,7 @@ public class ModuleViews extends ModuleBase {
 
     @Override
     void onActivityStopped() {
-        if(_cly.autoViewTracker) {
+        if(autoViewTracker) {
             //report current view duration
             reportViewDuration();
         }
@@ -197,19 +200,19 @@ public class ModuleViews extends ModuleBase {
     @Override
     void onActivityStarted(Activity activity) {
         //automatic view tracking
-        if (_cly.autoViewTracker) {
+        if (autoViewTracker) {
             if (!isActivityInExceptionList(activity)) {
                 String usedActivityName = "NULL ACTIVITY";
 
                 if (activity != null) {
-                    if (_cly.automaticTrackingShouldUseShortName) {
+                    if (automaticTrackingShouldUseShortName) {
                         usedActivityName = activity.getClass().getSimpleName();
                     } else {
                         usedActivityName = activity.getClass().getName();
                     }
                 }
 
-                _cly.recordView(usedActivityName, automaticViewSegmentation);
+                recordViewInternal(usedActivityName, automaticViewSegmentation);
             } else {
                 L.d("[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
             }
@@ -276,7 +279,7 @@ public class ModuleViews extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Views] Calling isAutomaticViewTrackingEnabled");
 
-                return _cly.autoViewTracker;
+                return autoViewTracker;
             }
         }
 

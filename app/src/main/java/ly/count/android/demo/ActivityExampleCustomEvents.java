@@ -44,26 +44,22 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     public void onClickRecordEvent06(View v) {
-        Map<String, String> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "red");
-        Map<String, Integer> segmentationInt = new HashMap<>();
-        segmentationInt.put("flowers", 3);
-        Map<String, Double> segmentationDouble = new HashMap<>();
-        segmentationDouble.put("area", 1.23);
-        segmentationDouble.put("volume", 7.88);
-        Countly.sharedInstance().recordEvent("Custom event 6", segmentation, segmentationInt, segmentationDouble, 15, 0, 0);
+        segmentation.put("flowers", 3);
+        segmentation.put("area", 1.23);
+        segmentation.put("volume", 7.88);
+        Countly.sharedInstance().events().recordEvent("Custom event 6", segmentation, 15, 0, 0);
     }
 
     public void onClickRecordEvent07(View v) {
-        Map<String, String> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "blue");
-        Map<String, Integer> segmentationInt = new HashMap<>();
-        segmentationInt.put("flowers", new Random().nextInt());
-        Map<String, Double> segmentationDouble = new HashMap<>();
-        segmentationDouble.put("area", new Random().nextDouble());
-        segmentationDouble.put("volume", new Random().nextDouble());
+        segmentation.put("flowers", new Random().nextInt());
+        segmentation.put("area", new Random().nextDouble());
+        segmentation.put("volume", new Random().nextDouble());
 
-        Countly.sharedInstance().recordEvent("Custom event 7", segmentation, segmentationInt, segmentationDouble, 25, 10, 0);
+        Countly.sharedInstance().events().recordEvent("Custom event 7", segmentation, 25, 10, 0);
     }
 
     public void onClickRecordEvent08(View v) {

@@ -161,10 +161,6 @@ public class Countly {
     //user data access
     public static UserData userData;
 
-    //view related things
-    boolean autoViewTracker = false;//todo, move to module after "setViewTracking" is removed
-    boolean automaticTrackingShouldUseShortName = false;//flag for using short names | todo, move to module after setter is removed
-
     //if set to true, it will automatically download remote configs on module startup
     boolean remoteConfigAutomaticUpdateEnabled = false;//todo, move to module after setter is removed
     RemoteConfigCallback remoteConfigInitCallback = null;//todo, move to module after setter is removed
@@ -880,102 +876,6 @@ public class Countly {
         }
 
         moduleDeviceId.changeDeviceIdWithMerge(deviceId);
-    }
-
-    /**
-     * Changes current device id type to the one specified in parameter. Closes current session and
-     * reopens new one with new id. Doesn't merge user profiles on the server
-     *
-     * @param type Device ID type to change to
-     * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
-     * @deprecated use 'changeDeviceIdWithoutMerge' that doesn't use a type field
-     */
-    public void changeDeviceId(DeviceId.Type type, String deviceId) {
-        L.d("Calling [changeDeviceId] with type and ID");
-
-        if (!isInitialized()) {
-            L.e("init must be called before changeDeviceId");
-            return;
-        }
-
-        moduleDeviceId.changeDeviceIdWithoutMerge(type, deviceId);
-    }
-
-    /**
-     * Changes current device id to the one specified in parameter. Merges user profile with new id
-     * (if any) with old profile.
-     *
-     * @param deviceId new device id
-     * @deprecated use 'changeDeviceIdWithMerge'
-     */
-    public void changeDeviceId(String deviceId) {
-        L.d("Calling [changeDeviceId] only with ID");
-        if (!isInitialized()) {
-            L.e("init must be called before changeDeviceId");
-            return;
-        }
-
-        moduleDeviceId.changeDeviceIdWithMerge(deviceId);
-    }
-
-    /**
-     * Enable or disable automatic view tracking
-     *
-     * @param enable boolean for the state of automatic view tracking
-     * @return Returns link to Countly for call chaining
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setViewTracking(boolean enable) {
-        L.d("Enabling automatic view tracking");
-        autoViewTracker = enable;
-        return this;
-    }
-
-    /**
-     * Check state of automatic view tracking
-     *
-     * @return boolean - true if enabled, false if disabled
-     * @deprecated use 'Countly.sharedInstance().views().isAutomaticViewTrackingEnabled()'
-     */
-    public synchronized boolean isViewTrackingEnabled() {
-        return autoViewTracker;
-    }
-
-    /**
-     * Record a view manually, without automatic tracking
-     * or track view that is not automatically tracked
-     * like fragment, Message box or transparent Activity
-     *
-     * @param viewName String - name of the view
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().views().recordView()'
-     */
-    public synchronized Countly recordView(String viewName) {
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before recordView");
-            return this;
-        }
-
-        return recordView(viewName, null);
-    }
-
-    /**
-     * Record a view manually, without automatic tracking
-     * or track view that is not automatically tracked
-     * like fragment, Message box or transparent Activity
-     *
-     * @param viewName String - name of the view
-     * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().views().recordView()'
-     */
-    public synchronized Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before recordView");
-            return this;
-        }
-
-        return moduleViews.recordViewInternal(viewName, viewSegmentation);
     }
 
     /**
@@ -1715,18 +1615,6 @@ public class Countly {
     public synchronized Countly setPushIntentAddMetadata(boolean shouldAddMetadata) {
         L.d("[Countly] Setting if adding metadata to push intents: [" + shouldAddMetadata + "]");
         addMetadataToPushIntents = shouldAddMetadata;
-        return this;
-    }
-
-    /**
-     * Set if automatic activity tracking should use short names
-     *
-     * @param shouldUseShortName set true if you want short names
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setAutoTrackingUseShortName(boolean shouldUseShortName) {
-        L.d("[Countly] Setting if automatic view tracking should use short names: [" + shouldUseShortName + "]");
-        automaticTrackingShouldUseShortName = shouldUseShortName;
         return this;
     }
 

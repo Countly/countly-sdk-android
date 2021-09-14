@@ -306,6 +306,11 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set if automatic activity tracking should use short names
+     * @param enable set true if you want short names
+     * @return
+     */
     public CountlyConfig setAutoTrackingUseShortName(boolean enable) {
         this.autoTrackingUseShortName = enable;
         return this;
