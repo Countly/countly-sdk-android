@@ -226,10 +226,10 @@ public class ModulePush {
         @Override
         public void recordAction(Context context, int buttonIndex) {
             if (Countly.sharedInstance().isInitialized()) {
-                Map<String, String> map = new HashMap<>();
+                Map<String, Object> map = new HashMap<>();
                 map.put(PUSH_EVENT_ACTION_ID_KEY, id);
                 map.put(PUSH_EVENT_ACTION_INDEX_KEY, String.valueOf(buttonIndex));
-                Countly.sharedInstance().recordEvent(PUSH_EVENT_ACTION, map, 1);
+                Countly.sharedInstance().events().recordEvent(PUSH_EVENT_ACTION, map, 1);
             } else {
                 //we're not initialised, cache the data
                 CountlyStore.cachePushData(id, String.valueOf(buttonIndex), context);

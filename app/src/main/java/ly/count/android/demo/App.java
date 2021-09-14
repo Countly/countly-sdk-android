@@ -164,7 +164,6 @@ public class App extends Application {
             .setParameterTamperingProtectionSalt("SampleSalt")
             .setAutomaticViewSegmentation(automaticViewSegmentation)
             .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
-            .setTrackOrientationChanges(true)
             .setRecordAllThreadsWithCrash()
             .setCrashFilterCallback(new CrashFilterCallback() {
                 @Override

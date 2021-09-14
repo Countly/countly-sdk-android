@@ -186,7 +186,6 @@ public class CountlyConfig {
     }
 
     public CountlyConfig(Application application, String appKey, String serverURL) {
-        setContext(application.getApplicationContext());
         setAppKey(appKey);
         setServerURL(serverURL);
         setApplication(application);

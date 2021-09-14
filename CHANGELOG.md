@@ -1,6 +1,8 @@
 ## 20.11.11
+  * Orientation tracking is not enabled by default. Can be turned off during init.
   * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
   * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
+  * Removed the deprecated "init" methods
 
 ## 20.11.10
   * Fixed bug that would close manually recorded views early when automatic view recording is disabled

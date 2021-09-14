@@ -105,7 +105,7 @@ public class CountlyTests {
     @Test
     public void testInit_nullContext() {
         try {
-            mUninitedCountly.init(null, "http://test.count.ly", "appkey", "1234");
+            mUninitedCountly.init(new CountlyConfig(null, "appkey", "http://test.count.ly"));
             fail("expected null context to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -205,13 +205,13 @@ public class CountlyTests {
 
     @Test
     public void testInit_twiceWithDifferentContext() {
-        mUninitedCountly.init(getContext(), "http://test.count.ly", "appkey", "1234");
+        mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly"));
         // changing context is okay since SharedPrefs are global singletons
 
         Context mContext = mock(Context.class);
         when(mContext.getCacheDir()).thenReturn(getContext().getCacheDir());
 
-        mUninitedCountly.init(mContext, "http://test.count.ly", "appkey", "1234");
+        mUninitedCountly.init(new CountlyConfig(mContext, "appkey", "http://test.count.ly"));
     }
 
     @Test
@@ -446,195 +446,6 @@ public class CountlyTests {
         assertEquals(prevSessionDurationStartTime, mCountly.getPrevSessionDurationStartTime());
         verify(mockConnectionQueue, times(0)).endSession(anyInt());
         verify(mockConnectionQueue, times(0)).recordEvents(anyString());
-    }
-
-    @Test
-    public void testRecordEvent_keyOnly() {
-        final String eventKey = "eventKey";
-        final Countly countly = spy(mCountly);
-        doNothing().when(countly).recordEvent(eventKey, null, 1, 0.0d);
-        countly.recordEvent(eventKey);
-        verify(countly).recordEvent(eventKey, null, 1, 0.0d);
-    }
-
-    @Test
-    public void testRecordEvent_keyAndCount() {
-        final String eventKey = "eventKey";
-        final int count = 42;
-        final Countly countly = spy(mCountly);
-
-        doNothing().when(countly).recordEvent(eventKey, null, count, 0.0d);
-        countly.recordEvent(eventKey, null, count, 0.0d);
-        verify(countly).recordEvent(eventKey, null, count, 0.0d);
-    }
-
-    @Test
-    public void testRecordEvent_keyAndCountAndSum() {
-        final String eventKey = "eventKey";
-        final int count = 42;
-        final double sum = 3.0d;
-        final Countly countly = spy(mCountly);
-        doNothing().when(countly).recordEvent(eventKey, null, count, sum);
-        countly.recordEvent(eventKey, count, sum);
-        verify(countly).recordEvent(eventKey, null, count, sum);
-    }
-
-    @Test
-    public void testRecordEvent_keyAndSegmentationAndCount() {
-        final String eventKey = "eventKey";
-        final int count = 42;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "segvalue1");
-        final Countly countly = spy(mCountly);
-        doNothing().when(countly).recordEvent(eventKey, segmentation, count, 0.0d);
-        countly.recordEvent(eventKey, segmentation, count);
-        verify(countly).recordEvent(eventKey, segmentation, count, 0.0d);
-    }
-
-    @Test
-    public void testRecordEvent_initNotCalled() {
-        final String eventKey = "eventKey";
-        final int count = 42;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "segvalue1");
-
-        try {
-            mUninitedCountly.recordEvent(eventKey, segmentation, count, sum);
-            // success
-            // should not throw a exception anymore
-        } catch (IllegalStateException ignored) {
-            fail("expected IllegalStateException when recordEvent called before init");
-        }
-    }
-
-    @Test
-    public void testRecordEvent_nullKey() {
-        final String eventKey = null;
-        final int count = 42;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "segvalue1");
-
-        try {
-            //noinspection ConstantConditions
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with null key");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void testRecordEvent_emptyKey() {
-        final String eventKey = "";
-        final int count = 42;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "segvalue1");
-
-        try {
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with empty key");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void testRecordEvent_countIsZero() {
-        final String eventKey = "";
-        final int count = 0;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "segvalue1");
-
-        try {
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with count=0");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void testRecordEvent_countIsNegative() {
-        final String eventKey = "";
-        final int count = -1;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "segvalue1");
-
-        try {
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with a negative count");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void testRecordEvent_segmentationHasNullKey() {
-        final String eventKey = "";
-        final int count = 1;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put(null, "segvalue1");
-
-        try {
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with segmentation with null key");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void testRecordEvent_segmentationHasEmptyKey() {
-        final String eventKey = "";
-        final int count = 1;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("", "segvalue1");
-
-        try {
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with segmentation with empty key");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void testRecordEvent_segmentationHasNullValue() {
-        final String eventKey = "";
-        final int count = 1;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", null);
-
-        try {
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with segmentation with null value");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
-    }
-
-    @Test
-    public void testRecordEvent_segmentationHasEmptyValue() {
-        final String eventKey = "";
-        final int count = 1;
-        final double sum = 3.0d;
-        final HashMap<String, String> segmentation = new HashMap<>(1);
-        segmentation.put("segkey1", "");
-
-        try {
-            mCountly.recordEvent(eventKey, segmentation, count, sum);
-            fail("expected IllegalArgumentException when recordEvent called with segmentation with empty value");
-        } catch (IllegalArgumentException ignored) {
-            // success
-        }
     }
 
     /**

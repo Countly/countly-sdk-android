@@ -410,12 +410,12 @@ public class ModuleRatings extends ModuleBase {
                 int rating = (int) v;
 
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
-                    Map<String, String> segm = new HashMap<>();
+                    Map<String, Object> segm = new HashMap<>();
                     segm.put("platform", "android");
                     segm.put("app_version", DeviceInfo.getAppVersion(context));
                     segm.put("rating", "" + rating);
 
-                    Countly.sharedInstance().recordEvent(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1);
+                    eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null);
                 }
 
                 dialog.dismiss();

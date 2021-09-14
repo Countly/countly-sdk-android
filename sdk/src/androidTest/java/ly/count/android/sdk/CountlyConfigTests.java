@@ -133,7 +133,7 @@ public class CountlyConfigTests {
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
         config.setAutoTrackingExceptions(act);
-        config.setTrackOrientationChanges(true);
+        config.setTrackOrientationChanges(false);
         config.setEventQueueSizeToSend(1337);
         config.enableManualSessionControl();
         config.setRecordAllThreadsWithCrash();
@@ -188,7 +188,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.automaticViewSegmentation);
         Assert.assertArrayEquals(act, config.autoTrackingExceptions);
-        Assert.assertTrue(config.trackOrientationChange);
+        Assert.assertFalse(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
         Assert.assertTrue(config.manualSessionControlEnabled);
         Assert.assertTrue(config.recordAllThreadsWithCrash);
@@ -265,7 +265,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.tamperingProtectionSalt);
         Assert.assertNull(config.automaticViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);
-        Assert.assertFalse(config.trackOrientationChange);
+        Assert.assertTrue(config.trackOrientationChange);
         Assert.assertFalse(config.manualSessionControlEnabled);
         Assert.assertFalse(config.recordAllThreadsWithCrash);
         Assert.assertFalse(config.disableUpdateSessionRequests);
