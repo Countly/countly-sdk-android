@@ -9,6 +9,10 @@
   * Removed the deprecated "isViewTrackingEnabled" method
   * Removed the deprecated "recordView" methods
   * Removed the deprecated "setCustomCrashSegments" method
+  * Removed the deprecated "addCrashBreadcrumb" method
+  * Removed the deprecated "recordHandledException" methods
+  * Removed the deprecated "recordUnhandledException" methods
+  * Removed the deprecated "enableCrashReporting" method
 
 ## 20.11.10
   * Fixed bug that would close manually recorded views early when automatic view recording is disabled

@@ -31,6 +31,11 @@ public class ModuleCrash extends ModuleBase {
 
         L.v("[ModuleCrash] Initialising");
 
+        //enable unhandled crash reporting
+        if (config.enableUnhandledCrashReporting) {
+            enableCrashReporting();
+        }
+
         setCrashFilterCallback(config.crashFilterCallback);
 
         recordAllThreads = config.recordAllThreadsWithCrash;
@@ -125,6 +130,46 @@ public class ModuleCrash extends ModuleBase {
             Utils.removeUnsupportedDataTypes(segments);
             CrashDetails.setCustomSegments(segments);
         }
+    }
+
+    void enableCrashReporting() {
+        L.d("Enabling unhandled crash reporting");
+        //get default handler
+        final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                L.d("Uncaught crash handler triggered");
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
+
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    e.printStackTrace(pw);
+
+                    //add other threads
+                    if (recordAllThreads) {
+                        addAllThreadInformationToCrash(pw);
+                    }
+
+                    String exceptionString = sw.toString();
+
+                    //check if it passes the crash filter
+                    if (!crashFilterCheck(exceptionString)) {
+                        Countly.sharedInstance().connectionQueue_.sendCrashReport(exceptionString, false, false, null);
+                    }
+                }
+
+                //if there was another handler before
+                if (oldHandler != null) {
+                    //notify it also
+                    oldHandler.uncaughtException(t, e);
+                }
+            }
+        };
+
+        Thread.setDefaultUncaughtExceptionHandler(handler);
     }
 
     void setCrashFilterCallback(CrashFilterCallback callback) {

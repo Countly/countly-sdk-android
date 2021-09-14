@@ -322,11 +322,6 @@ public class Countly {
             throw new IllegalArgumentException("valid serverURL is required");
         }
 
-        //enable unhandled crash reporting
-        if (config.enableUnhandledCrashReporting) {
-            enableCrashReporting();
-        }
-
         //react to given consent
         if (config.shouldRequireConsent) {
             setRequiresConsent(true);
@@ -922,108 +917,6 @@ public class Countly {
             locationFallback = new String[] { country_code, city, gpsCoordinates, ipAddress };
         }
 
-        return this;
-    }
-
-    /**
-     * Add crash breadcrumb like log record to the log that will be send together with crash report
-     *
-     * @param record String a bread crumb for the crash report
-     * @return Returns link to Countly for call chaining
-     * @deprecated use crashes().addCrashBreadcrumb
-     */
-    public synchronized Countly addCrashBreadcrumb(String record) {
-        return crashes().addCrashBreadcrumb(record);
-    }
-
-    /**
-     * Log handled exception to report it to server as non fatal crash
-     *
-     * @param exception Exception to log
-     * @return Returns link to Countly for call chaining
-     * @deprecated use crashes().recordHandledException
-     */
-    public synchronized Countly recordHandledException(Exception exception) {
-        return moduleCrash.recordExceptionInternal(exception, true, null);
-    }
-
-    /**
-     * Log handled exception to report it to server as non fatal crash
-     *
-     * @param exception Throwable to log
-     * @return Returns link to Countly for call chaining
-     * @deprecated use crashes().recordHandledException
-     */
-    public synchronized Countly recordHandledException(Throwable exception) {
-        return moduleCrash.recordExceptionInternal(exception, true, null);
-    }
-
-    /**
-     * Log unhandled exception to report it to server as fatal crash
-     *
-     * @param exception Exception to log
-     * @return Returns link to Countly for call chaining
-     * @deprecated use crashes().recordUnhandledException
-     */
-    public synchronized Countly recordUnhandledException(Exception exception) {
-        return moduleCrash.recordExceptionInternal(exception, false, null);
-    }
-
-    /**
-     * Log unhandled exception to report it to server as fatal crash
-     *
-     * @param exception Throwable to log
-     * @return Returns link to Countly for call chaining
-     * @deprecated use crashes().recordUnhandledException
-     */
-    public synchronized Countly recordUnhandledException(Throwable exception) {
-        return moduleCrash.recordExceptionInternal(exception, false, null);
-    }
-
-    /**
-     * Enable crash reporting to send unhandled crash reports to server
-     *
-     * @return Returns link to Countly for call chaining
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly enableCrashReporting() {
-        L.d("Enabling unhandled crash reporting");
-        //get default handler
-        final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
-
-        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
-
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                L.d("Uncaught crash handler triggered");
-                if (getConsent(CountlyFeatureNames.crashes)) {
-
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    e.printStackTrace(pw);
-
-                    //add other threads
-                    if (moduleCrash.recordAllThreads) {
-                        moduleCrash.addAllThreadInformationToCrash(pw);
-                    }
-
-                    String exceptionString = sw.toString();
-
-                    //check if it passes the crash filter
-                    if (!moduleCrash.crashFilterCheck(exceptionString)) {
-                        Countly.sharedInstance().connectionQueue_.sendCrashReport(exceptionString, false, false, null);
-                    }
-                }
-
-                //if there was another handler before
-                if (oldHandler != null) {
-                    //notify it also
-                    oldHandler.uncaughtException(t, e);
-                }
-            }
-        };
-
-        Thread.setDefaultUncaughtExceptionHandler(handler);
         return this;
     }
 
