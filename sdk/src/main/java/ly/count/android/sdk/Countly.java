@@ -497,7 +497,7 @@ public class Countly {
 
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
             setHttpPostForced(config.httpPostForced);
-            enableParameterTamperingProtectionInternal(config.tamperingProtectionSalt);
+            ConnectionProcessor.salt = config.tamperingProtectionSalt;
 
             setPushIntentAddMetadata(config.pushIntentAddMetadata);
 
@@ -921,97 +921,6 @@ public class Countly {
     }
 
     /**
-     * Start timed event with a specified key
-     *
-     * @param key name of the custom event, required, must not be the empty string or null
-     * @return true if no event with this key existed before and event is started, false otherwise
-     * @deprecated use events().startEvent
-     */
-    public synchronized boolean startEvent(final String key) {
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before recordEvent");
-            return false;
-        }
-
-        return events().startEvent(key);
-    }
-
-    /**
-     * End timed event with a specified key
-     *
-     * @param key name of the custom event, required, must not be the empty string or null
-     * @return true if event with this key has been previously started, false otherwise
-     * @deprecated use events().endEvent
-     */
-    public synchronized boolean endEvent(final String key) {
-        return endEvent(key, null, 1, 0);
-    }
-
-    /**
-     * End timed event with a specified key
-     *
-     * @param key name of the custom event, required, must not be the empty string
-     * @param segmentation segmentation dictionary to associate with the event, can be null
-     * @param count count to associate with the event, should be more than zero
-     * @param sum sum to associate with the event
-     * @return true if event with this key has been previously started, false otherwise
-     * segmentation contains null or empty keys or values
-     * @deprecated use events().endEvent
-     */
-    public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final int count, final double sum) {
-        return endEvent(key, segmentation, null, null, count, sum);
-    }
-
-    /**
-     * End timed event with a specified key
-     *
-     * @param key name of the custom event, required, must not be the empty string
-     * @param segmentation segmentation dictionary to associate with the event, can be null
-     * @param count count to associate with the event, should be more than zero
-     * @param sum sum to associate with the event
-     * @return true if event with this key has been previously started, false otherwise
-     * segmentation contains null or empty keys or values
-     * @deprecated use events().endEvent
-     */
-    public synchronized boolean endEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final int count, final double sum) {
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before recordEvent");
-            return false;
-        }
-
-        Map<String, Object> segmentationGroup = new HashMap<>();
-        if (segmentation != null) {
-            segmentationGroup.putAll(segmentation);
-        }
-
-        if (segmentationInt != null) {
-            segmentationGroup.putAll(segmentationInt);
-        }
-
-        if (segmentationDouble != null) {
-            segmentationGroup.putAll(segmentationDouble);
-        }
-
-        return events().endEvent(key, segmentationGroup, count, sum);
-    }
-
-    /**
-     * Disable periodic session time updates.
-     * By default, Countly will send a request to the server each 30 seconds with a small update
-     * containing session duration time. This method allows you to disable such behavior.
-     * Note that event updates will still be sent every 10 events or 30 seconds after event recording.
-     *
-     * @param disable whether or not to disable session time updates
-     * @return Countly instance for easy method chaining
-     * @deprecated set through countlyConfig
-     */
-    public synchronized Countly setDisableUpdateSessionRequests(final boolean disable) {
-        L.d("Disabling periodic session time updates");
-        disableUpdateSessionRequests_ = disable;
-        return this;
-    }
-
-    /**
      * Sets whether debug logging is turned on or off. Logging is disabled by default.
      *
      * @param enableLogging true to enable logging, false to disable logging
@@ -1031,28 +940,6 @@ public class Countly {
      */
     public synchronized boolean isLoggingEnabled() {
         return enableLogging_;
-    }
-
-    /**
-     * @param salt
-     * @return
-     * @deprecated use CountlyConfig (setParameterTamperingProtectionSalt) during init to set this
-     */
-    public synchronized Countly enableParameterTamperingProtection(String salt) {
-        L.d("Enabling tamper protection");
-
-        enableParameterTamperingProtectionInternal(salt);
-
-        return this;
-    }
-
-    /**
-     * Use by both the external call and config call
-     *
-     * @param salt
-     */
-    private synchronized void enableParameterTamperingProtectionInternal(String salt) {
-        ConnectionProcessor.salt = salt;
     }
 
     /**
@@ -1140,38 +1027,6 @@ public class Countly {
             sendEventsIfNeeded(true);
             connectionQueue_.tick();
         }
-    }
-
-    /**
-     * Allows public key pinning.
-     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
-     * along with server URL starting with "https://". Countly will only accept connections to the server
-     * if public key of SSL certificate provided by the server matches one provided to this method or by {@link #enableCertificatePinning(List)}.
-     *
-     * @param certificates List of SSL public keys
-     * @return Countly instance
-     * @deprecated set this through CountlyConfig
-     */
-    public static Countly enablePublicKeyPinning(List<String> certificates) {
-        sharedInstance().L.i("Enabling public key pinning");
-        publicKeyPinCertificates = certificates;
-        return Countly.sharedInstance();
-    }
-
-    /**
-     * Allows certificate pinning.
-     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
-     * along with server URL starting with "https://". Countly will only accept connections to the server
-     * if certificate provided by the server matches one provided to this method or by {@link #enablePublicKeyPinning(List)}.
-     *
-     * @param certificates List of SSL certificates
-     * @return Countly instance
-     * @deprecated set this through CountlyConfig
-     */
-    public static Countly enableCertificatePinning(List<String> certificates) {
-        Countly.sharedInstance().L.i("Enabling certificate pinning");
-        certificatePinCertificates = certificates;
-        return Countly.sharedInstance();
     }
 
     /**
@@ -1455,29 +1310,6 @@ public class Countly {
         L.d("[Countly] Calling 'getDeviceIDType'");
 
         return connectionQueue_.getDeviceId().getType();
-    }
-
-    /**
-     * @param shouldAddMetadata
-     * @return
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setPushIntentAddMetadata(boolean shouldAddMetadata) {
-        L.d("[Countly] Setting if adding metadata to push intents: [" + shouldAddMetadata + "]");
-        addMetadataToPushIntents = shouldAddMetadata;
-        return this;
-    }
-
-    /**
-     * Set if attribution should be enabled
-     *
-     * @param shouldEnableAttribution set true if you want to enable it, set false if you want to disable it
-     * @deprecated use CountlyConfig to set this
-     */
-    public synchronized Countly setEnableAttribution(boolean shouldEnableAttribution) {
-        L.d("[Countly] Setting if attribution should be enabled");
-        isAttributionEnabled = shouldEnableAttribution;
-        return this;
     }
 
     /**

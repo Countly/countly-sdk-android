@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Application;
 import android.content.Context;
+import java.util.List;
 import java.util.Map;
 
 public class CountlyConfig {
@@ -408,16 +409,39 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set if attribution should be enabled
+     *
+     * @param enableAttribution set true if you want to enable it, set false if you want to disable it
+     */
     public CountlyConfig setEnableAttribution(boolean enableAttribution) {
         this.enableAttribution = enableAttribution;
         return this;
     }
 
+    /**
+     * Allows public key pinning.
+     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
+     * along with server URL starting with "https://". Countly will only accept connections to the server
+     * if public key of SSL certificate provided by the server matches one provided to this method or by {@link #enableCertificatePinning(List)}.
+     *
+     * @param certificates List of SSL public keys
+     * @return
+     */
     public CountlyConfig enablePublicKeyPinning(String[] certificates) {
         publicKeyPinningCertificates = certificates;
         return this;
     }
 
+    /**
+     * Allows certificate pinning.
+     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
+     * along with server URL starting with "https://". Countly will only accept connections to the server
+     * if certificate provided by the server matches one provided to this method or by {@link #enablePublicKeyPinning(List)}.
+     *
+     * @param certificates List of SSL certificates
+     * @return
+     */
     public CountlyConfig enableCertificatePinning(String[] certificates) {
         certificatePinningCertificates = certificates;
         return this;
@@ -484,6 +508,15 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Disable periodic session time updates.
+     * By default, Countly will send a request to the server each 60 seconds with a small update
+     * containing session duration time. This method allows you to disable such behavior.
+     * Note that event updates will still be sent every 100 events or 60 seconds after event recording.
+     *
+     * @param disable whether or not to disable session time updates
+     * @return
+     */
     protected CountlyConfig setDisableUpdateSessionRequests(boolean disable) {
         disableUpdateSessionRequests = disable;
         return this;

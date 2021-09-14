@@ -13,6 +13,15 @@
   * Removed the deprecated "recordHandledException" methods
   * Removed the deprecated "recordUnhandledException" methods
   * Removed the deprecated "enableCrashReporting" method
+  * Removed the deprecated "startEvent" method
+  * Removed the deprecated "endEvent" methods
+  * Removed the deprecated "setDisableUpdateSessionRequests" method
+  * Removed the deprecated "enableParameterTamperingProtection" method
+  * Removed the deprecated "enablePublicKeyPinning" method
+  * Removed the deprecated "enableCertificatePinning" method
+  * Removed the deprecated "setPushIntentAddMetadata" method
+  * Removed the deprecated "setEnableAttribution" method
+
 
 ## 20.11.10
   * Fixed bug that would close manually recorded views early when automatic view recording is disabled
