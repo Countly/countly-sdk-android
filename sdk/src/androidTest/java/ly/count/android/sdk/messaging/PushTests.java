@@ -16,7 +16,6 @@ public class PushTests {
 
     @Before
     public void setUp() {
-        Countly.sharedInstance().setLoggingEnabled(true);
     }
 
     @After

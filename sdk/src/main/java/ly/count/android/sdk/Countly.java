@@ -912,17 +912,9 @@ public class Countly {
         return this;
     }
 
-    /**
-     * Sets whether debug logging is turned on or off. Logging is disabled by default.
-     *
-     * @param enableLogging true to enable logging, false to disable logging
-     * @return Countly instance for easy method chaining
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setLoggingEnabled(final boolean enableLogging) {
+    void setLoggingEnabled(final boolean enableLogging) {
         enableLogging_ = enableLogging;
         L.d("Enabling logging");
-        return this;
     }
 
     /**

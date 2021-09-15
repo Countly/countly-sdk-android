@@ -125,9 +125,8 @@ public class App extends Application {
         customCrashSegmentation.put("EarBook", "3.5");
         customCrashSegmentation.put("AdGiver", "6.5");
 
-        Countly.sharedInstance().setLoggingEnabled(true);
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
-            .enableCrashReporting().setLoggingEnabled(false).setLogListener(new ModuleLog.LogCallback() {
+            .enableCrashReporting().setLoggingEnabled(true).setLogListener(new ModuleLog.LogCallback() {
                 @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
                     //duplicated countly logs
                     switch (logLevel) {

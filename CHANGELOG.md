@@ -52,6 +52,7 @@
   * Removed the deprecated "getRemoteConfigValueForKey" method
   * Removed the deprecated "remoteConfigClearValues" method
   * Removed the deprecated "addCustomNetworkRequestHeaders" method
+  * Removed the deprecated "setLoggingEnabled" method
 
 
 ## 20.11.10
