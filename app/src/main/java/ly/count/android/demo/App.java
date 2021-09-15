@@ -29,7 +29,7 @@ import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
 import ly.count.android.sdk.DeviceId;
 import ly.count.android.sdk.ModuleLog;
-import ly.count.android.sdk.RemoteConfig;
+import ly.count.android.sdk.RemoteConfigCallback;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 import static ly.count.android.sdk.Countly.TAG;

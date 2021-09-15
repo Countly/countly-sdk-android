@@ -137,8 +137,8 @@ public class ModuleConsentTests {
         for (int a = 0; a < usedFeatureNames.length; a++) {
             mCountly.consent().giveConsent(new String[] { usedFeatureNames[a] });
 
-            for(int b = 0 ; b < usedFeatureNames.length; b++) {
-                if(b <= a) {
+            for (int b = 0; b < usedFeatureNames.length; b++) {
+                if (b <= a) {
                     Assert.assertTrue(mCountly.consent().getConsent(usedFeatureNames[b]));
                 } else {
                     Assert.assertFalse(mCountly.consent().getConsent(usedFeatureNames[b]));

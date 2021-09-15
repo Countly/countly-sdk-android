@@ -54,7 +54,7 @@ public class ModuleLogTests {
      * Validate that the log listener is working during simple operation
      */
     @Test
-    public void checkListenerSimple(){
+    public void checkListenerSimple() {
 
     }
 }

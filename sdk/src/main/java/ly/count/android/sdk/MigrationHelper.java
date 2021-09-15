@@ -21,11 +21,11 @@ class MigrationHelper {
     /**
      * Called from SDK side to perform the required steps to check if the migration is required and then execute it if it is.
      */
-    public void doWork(){
+    public void doWork() {
         L.v("[MigrationHelper] doWork");
         int currentVersion = getCurrentSchemaVersion();
 
-        if(currentVersion < 0) {
+        if (currentVersion < 0) {
             L.e("[MigrationHelper] doWork, returned schema version is negative, encountered serious issue");
             return;
         }
@@ -40,12 +40,13 @@ class MigrationHelper {
     /**
      * Return the current schema version.
      * If no schema version is stored, the initial version will be acquired
+     *
      * @return
      */
     int getCurrentSchemaVersion() {
         int currentVersion = storage.getDataSchemaVersion();
 
-        if(currentVersion == -1) {
+        if (currentVersion == -1) {
             //no schema version set
             setInitialSchemaVersion();
             currentVersion = storage.getDataSchemaVersion();
@@ -56,6 +57,7 @@ class MigrationHelper {
 
     /**
      * Perform migration from the provided version to the next one
+     *
      * @param currentVersion
      */
     void performMigrationStep(int currentVersion) {
@@ -76,7 +78,7 @@ class MigrationHelper {
         }
 
         //assuming that the required migration steps are performed, increasing current schema version
-        if(newVersion != currentVersion) {
+        if (newVersion != currentVersion) {
             storage.setDataSchemaVersion(newVersion);
         }
     }
@@ -88,10 +90,9 @@ class MigrationHelper {
      * In that case set the current version to the latest available one
      *
      * If something is in storage, assume that the SDK had been run before and migration is required.
-     *
      */
     void setInitialSchemaVersion() {
-        if(storage.anythingSetInStorage()) {
+        if (storage.anythingSetInStorage()) {
             //we are on a legacy version
             storage.setDataSchemaVersion(0);
             return;

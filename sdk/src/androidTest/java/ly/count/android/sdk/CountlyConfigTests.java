@@ -165,8 +165,6 @@ public class CountlyConfigTests {
         config.enableManualForegroundBackgroundTriggerAPM();
         config.setLogListener(logCallback);
 
-
-
         Assert.assertEquals(s[0], config.serverURL);
         Assert.assertEquals(c, config.context);
         Assert.assertEquals(s[1], config.appKey);
@@ -219,7 +217,7 @@ public class CountlyConfigTests {
         Assert.assertEquals("loc", config.locationLocation);
         Assert.assertEquals("ip", config.locationIpAddress);
         Assert.assertEquals(metricOverride, config.metricOverride);
-        Assert.assertEquals((Long)123l, config.appStartTimestampOverride);
+        Assert.assertEquals((Long) 123l, config.appStartTimestampOverride);
         Assert.assertTrue(config.appLoadedManualTrigger);
         Assert.assertTrue(config.manualForegroundBackgroundTrigger);
         Assert.assertEquals(logCallback, config.providedLogCallback);

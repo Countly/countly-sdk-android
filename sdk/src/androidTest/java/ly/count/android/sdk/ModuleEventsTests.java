@@ -178,19 +178,19 @@ public class ModuleEventsTests {
 
         verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
 
-        if(count != null) {
+        if (count != null) {
             Assert.assertEquals(count, arg1.getValue());
         }
 
-        if(sum != null) {
+        if (sum != null) {
             Assert.assertEquals(sum, arg2.getValue());
         }
 
-        if(dur != null) {
+        if (dur != null) {
             Assert.assertEquals(dur, arg3.getValue());
         }
 
-        if(timestamp == null) {
+        if (timestamp == null) {
             Assert.assertNotNull(arg4.getValue());
             Assert.assertNotNull(arg5.getValue());
             Assert.assertNotNull(arg6.getValue());

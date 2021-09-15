@@ -1,5 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: "com.vanniktech.maven.publish"//for publishing
+apply plugin: "com.vanniktech.maven.publish" //for publishing
 
 //Plugin for generating test coverage reports.
 //This plugin required android build tools 3.6.4 and gradle 5.6.4
@@ -14,7 +14,7 @@ buildscript {
   }
   dependencies {
     //classpath 'com.dicedmelon.gradle:jacoco-android:0.1.4'
-    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2'//for publishing
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2' //for publishing
   }
 }
 

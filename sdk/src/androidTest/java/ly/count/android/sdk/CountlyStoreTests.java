@@ -560,13 +560,13 @@ public class CountlyStoreTests {
      */
     @Test
     public void testDeviceIDStorage() {
-        String[] values = new String[] { "aa", null, "bb", "", "cc"};
-        String[] values2 = new String[] { "11", "22", null, "33", ""};
+        String[] values = new String[] { "aa", null, "bb", "", "cc" };
+        String[] values2 = new String[] { "11", "22", null, "33", "" };
 
         assertNull(sp.getDeviceID());
         assertNull(sp.getDeviceIDType());
 
-        for (int a = 0 ; a <  values.length ; a++) {
+        for (int a = 0; a < values.length; a++) {
             sp.setDeviceID(values[a]);
             assertEquals(values[a], sp.getDeviceID());
             assertNotEquals(values[a], sp.getDeviceIDType());
@@ -594,7 +594,6 @@ public class CountlyStoreTests {
 
         sp.setDataSchemaVersion(100);
         assertEquals(100, sp.getDataSchemaVersion());
-
     }
 
     /**
@@ -635,7 +634,6 @@ public class CountlyStoreTests {
         sp.setRemoteConfigValues("yui");
         assertTrue(sp.anythingSetInStorage());
         store.clear();
-
 
         sp.setDeviceIDType("bb");
         assertTrue(sp.anythingSetInStorage());
@@ -726,6 +724,7 @@ public class CountlyStoreTests {
 
     /**
      * Validate 'getEventsForRequestAndEmptyEventQueue' in a situation where there are no events
+     *
      * @throws UnsupportedEncodingException
      */
     @Test
@@ -738,6 +737,7 @@ public class CountlyStoreTests {
 
     /**
      * Validate 'getEventsForRequestAndEmptyEventQueue' in a situation where there are 2 events
+     *
      * @throws UnsupportedEncodingException
      */
     @Test

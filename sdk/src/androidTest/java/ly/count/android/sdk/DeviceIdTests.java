@@ -128,7 +128,6 @@ public class DeviceIdTests {
 
         did.setId(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
         assertTrue(did.temporaryIdModeEnabled());
-
     }
 
     /**
@@ -197,7 +196,6 @@ public class DeviceIdTests {
         did.changeToId(getContext(), DeviceId.Type.DEVELOPER_SUPPLIED, "123", false);
         assertEquals("123", did.getId());
         assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, did.getType());
-
 
         did.changeToId(getContext(), DeviceId.Type.DEVELOPER_SUPPLIED, "456", true);
         assertEquals("456", did.getId());
@@ -324,6 +322,5 @@ public class DeviceIdTests {
         did.init(getContext());
         assertEquals(initialValue, did.getId());
         assertEquals(DeviceId.Type.OPEN_UDID, did.getType());
-
     }
 }

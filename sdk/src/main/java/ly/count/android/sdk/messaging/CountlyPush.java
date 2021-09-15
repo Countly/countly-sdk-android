@@ -413,7 +413,7 @@ public class CountlyPush {
     public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
         Countly.sharedInstance().L.d("[CountlyPush, displayMessage] Displaying push message");
 
-        if(!initFinished) {
+        if (!initFinished) {
             Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
         }
 
@@ -457,7 +457,7 @@ public class CountlyPush {
 
         Countly.sharedInstance().L.d("[CountlyPush, displayNotification] Displaying push notification, additional intent provided:[" + (notificationIntent != null) + "]");
 
-        if(!initFinished) {
+        if (!initFinished) {
             Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
         }
 
@@ -556,7 +556,7 @@ public class CountlyPush {
 
         Countly.sharedInstance().L.d("[CountlyPush, displayDialog] Displaying push dialog");
 
-        if(!initFinished) {
+        if (!initFinished) {
             Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
         }
 

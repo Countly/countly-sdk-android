@@ -1,12 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ly.count.android.sdk">
 
-  <permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
+  <permission
+      android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
       android:protectionLevel="signature" />
 
   <application>
     <uses-library android:name="android.test.runner" />
-    <receiver android:name=".messaging.CountlyPush$NotificationBroadcastReceiver" android:exported="false"
+    <receiver
+        android:name=".messaging.CountlyPush$NotificationBroadcastReceiver"
+        android:exported="false"
         android:permission="${applicationId}.CountlyPush.BROADCAST_PERMISSION">
       <intent-filter>
         <action android:name="ly.count.android.sdk.CountlyPush.SECURE_NOTIFICATION_BROADCAST" />

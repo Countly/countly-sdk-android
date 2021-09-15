@@ -83,6 +83,7 @@ public class ConnectionProcessorTests {
     /**
      * Make sure that a correct url is generated
      * No salt provided and no custom endpoint
+     *
      * @throws IOException
      */
     @Test
@@ -101,6 +102,7 @@ public class ConnectionProcessorTests {
     /**
      * Make sure that a correct url is generated
      * With salt provided and no custom endpoint
+     *
      * @throws IOException
      */
     @Test
@@ -114,6 +116,7 @@ public class ConnectionProcessorTests {
     /**
      * Make sure that a correct url is generated
      * With salt provided and custom endpoint
+     *
      * @throws IOException
      */
     @Test
@@ -127,10 +130,11 @@ public class ConnectionProcessorTests {
 
     /**
      * Making sure that custom header values are set correctly
+     *
      * @throws IOException
      */
     @Test
-    public void urlConnectionCustomHeaderValues()  throws IOException {
+    public void urlConnectionCustomHeaderValues() throws IOException {
         Map<String, String> customValues = new HashMap<>();
         customValues.put("aa", "bb");
         customValues.put("dd", "cc");

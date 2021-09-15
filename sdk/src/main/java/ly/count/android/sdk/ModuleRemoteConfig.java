@@ -25,12 +25,12 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         L.v("[ModuleRemoteConfig] Initialising");
 
-        if(config.enableRemoteConfigAutomaticDownload) {
+        if (config.enableRemoteConfigAutomaticDownload) {
             L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownload);
 
             remoteConfigAutomaticUpdateEnabled = config.enableRemoteConfigAutomaticDownload;
 
-            if(config.remoteConfigCallbackNew != null) {
+            if (config.remoteConfigCallbackNew != null) {
                 remoteConfigInitCallback = config.remoteConfigCallbackNew;
             } else if (config.remoteConfigCallbackOld != null) {
                 remoteConfigInitCallback = new RemoteConfigCallback() {
@@ -114,6 +114,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     /**
      * Merge the values acquired from the server into the current values.
      * Clear if needed.
+     *
      * @throws Exception it throws an exception so that it is escalated upwards
      */
     void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, JSONObject checkResponse) throws Exception {
@@ -133,7 +134,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     String[] prepareKeysIncludeExclude(final String[] keysOnly, final String[] keysExcept) {
-        String[] res = new  String[2];//0 - include, 1 - exclude
+        String[] res = new String[2];//0 - include, 1 - exclude
 
         try {
             if (keysOnly != null && keysOnly.length > 0) {
@@ -174,7 +175,6 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     /**
-     *
      * @return
      * @throws Exception For some reason this might be throwing an exception
      */
@@ -193,7 +193,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
             return rcvs.getAllValues();
-        } catch (Exception ex){
+        } catch (Exception ex) {
             Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
             return null;
         }

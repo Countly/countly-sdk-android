@@ -454,7 +454,7 @@ public class Countly {
             L.d("[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
             AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
 
-            if(config.customNetworkRequestHeaders != null) {
+            if (config.customNetworkRequestHeaders != null) {
                 L.i("[Countly] Calling addCustomNetworkRequestHeaders");
                 requestHeaderCustomValues = config.customNetworkRequestHeaders;
                 if (connectionQueue_ != null) {
@@ -462,17 +462,17 @@ public class Countly {
                 }
             }
 
-            if(config.httpPostForced) {
+            if (config.httpPostForced) {
                 L.d("[Init] Setting HTTP POST to be forced");
                 isHttpPostForced = config.httpPostForced;
             }
 
-            if(config.tamperingProtectionSalt != null) {
+            if (config.tamperingProtectionSalt != null) {
                 L.d("[Init] Enabling tamper protection");
                 ConnectionProcessor.salt = config.tamperingProtectionSalt;
             }
 
-            if(config.pushIntentAddMetadata) {
+            if (config.pushIntentAddMetadata) {
                 L.d("[Init] Enabling push intent metadata");
                 addMetadataToPushIntents = config.pushIntentAddMetadata;
             }

@@ -1,6 +1,6 @@
 package ly.count.android.sdk;
 
-class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
+class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
     boolean exitTempIdAfterInit = false;
 
     ModuleLog L;

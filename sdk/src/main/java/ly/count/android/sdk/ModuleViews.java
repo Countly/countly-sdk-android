@@ -41,7 +41,7 @@ public class ModuleViews extends ModuleBase {
             autoViewTracker = config.enableViewTracking;
         }
 
-        if(config.autoTrackingUseShortName) {
+        if (config.autoTrackingUseShortName) {
             L.d("[ModuleViews] Enabling automatic view tracking short names");
             automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
         }
@@ -198,7 +198,7 @@ public class ModuleViews extends ModuleBase {
 
     @Override
     void onActivityStopped() {
-        if(autoViewTracker) {
+        if (autoViewTracker) {
             //report current view duration
             reportViewDuration();
         }

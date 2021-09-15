@@ -107,15 +107,14 @@ public class DeviceId {
             type = storedType;
         }
 
-        if(type == null){
+        if (type == null) {
             L.e("[DeviceId] init, device id type currently is null, falling back to OPEN_UDID");
             type = Type.OPEN_UDID;
         }
 
         String storedID = storageProvider.getDeviceID();
 
-
-        if(storedID == null) {
+        if (storedID == null) {
             //id value will be regenerated only if the values isn't already set
             //this is to prevent the device id to change in case the underlying mechanism for openUDID or advertising ID changes
             switch (type) {
@@ -144,6 +143,7 @@ public class DeviceId {
 
     /**
      * Retrieved stored device ID type
+     *
      * @return
      */
     private Type retrieveType() {
@@ -186,6 +186,7 @@ public class DeviceId {
 
     /**
      * If a value is provided, it will take precedence and will not used no matter what the type is
+     *
      * @param context
      * @param type
      * @param deviceId
@@ -194,7 +195,7 @@ public class DeviceId {
     protected void changeToId(Context context, Type type, String deviceId, boolean runInit) {
         L.v("[DeviceId] changeToId, Device ID is " + id + " (type " + type + "), init:" + runInit);
         setAndStoreId(type, deviceId);
-        if(runInit) {
+        if (runInit) {
             init(context);
         }
     }

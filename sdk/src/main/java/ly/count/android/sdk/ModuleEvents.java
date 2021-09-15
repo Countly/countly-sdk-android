@@ -70,7 +70,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
 
-        if(segmentation != null) {
+        if (segmentation != null) {
             Utils.removeUnsupportedDataTypes(segmentation);
         }
 

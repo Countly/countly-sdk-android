@@ -26,7 +26,6 @@ public class CountlyConfig {
 
     protected EventQueueProvider eventQueueProvider = null;
 
-
     protected boolean checkForNativeCrashDumps = true;
 
     //used to deliver this object to connection queue
@@ -310,6 +309,7 @@ public class CountlyConfig {
 
     /**
      * Set if automatic activity tracking should use short names
+     *
      * @param enable set true if you want short names
      * @return
      */
@@ -360,8 +360,8 @@ public class CountlyConfig {
      *
      * @param enabled set true for enabling it
      * @param callback callback called after the update was done
-     * @deprecated use the other version of this call that uses a different callback
      * @return
+     * @deprecated use the other version of this call that uses a different callback
      */
     public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownload = enabled;

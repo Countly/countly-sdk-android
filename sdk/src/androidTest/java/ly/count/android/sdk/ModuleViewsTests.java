@@ -150,7 +150,7 @@ public class ModuleViewsTests {
         final Map<String, Object> segm = new HashMap<>();
         segm.put("mode", "portrait");
 
-        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm,1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null);
 
         Assert.assertEquals(Configuration.ORIENTATION_PORTRAIT, mView.currentOrientation);
     }
@@ -429,7 +429,7 @@ public class ModuleViewsTests {
      * Changing activities should not record view events
      */
     @Test
-    public void noViewRecordedWithAutomaticTurnedOffActChange(){
+    public void noViewRecordedWithAutomaticTurnedOffActChange() {
         CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
         cc.setDeviceId("1234").setLoggingEnabled(true).setViewTracking(false).setEventQueueSizeToSend(100);
 

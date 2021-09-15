@@ -25,6 +25,7 @@ public class ModuleRemoteConfigTests {
 
     /**
      * Basic serialization / deserialization test
+     *
      * @throws JSONException
      */
     @Test
@@ -71,6 +72,7 @@ public class ModuleRemoteConfigTests {
     /**
      * A more complicated "dataFromString" test case
      * It also validates serialization and getAllValues call
+     *
      * @throws JSONException
      */
     @Test
@@ -131,6 +133,7 @@ public class ModuleRemoteConfigTests {
 
     /**
      * Simple test for value merging
+     *
      * @throws JSONException
      */
     @Test
@@ -167,17 +170,17 @@ public class ModuleRemoteConfigTests {
         Assert.assertNull(res[1]);
 
         //setting first
-        res = countly.moduleRemoteConfig.prepareKeysIncludeExclude(new String[]{"a", "b"}, null);
+        res = countly.moduleRemoteConfig.prepareKeysIncludeExclude(new String[] { "a", "b" }, null);
         Assert.assertEquals("[\"a\",\"b\"]", res[0]);
         Assert.assertNull(res[1]);
 
         //setting second
-        res = countly.moduleRemoteConfig.prepareKeysIncludeExclude(null, new String[]{"c", "d"});
+        res = countly.moduleRemoteConfig.prepareKeysIncludeExclude(null, new String[] { "c", "d" });
         Assert.assertNull(res[0]);
         Assert.assertEquals("[\"c\",\"d\"]", res[1]);
 
         //setting both (include takes precedence)
-        res = countly.moduleRemoteConfig.prepareKeysIncludeExclude(new String[]{"e", "f"}, new String[]{"g", "h"});
+        res = countly.moduleRemoteConfig.prepareKeysIncludeExclude(new String[] { "e", "f" }, new String[] { "g", "h" });
         Assert.assertEquals("[\"e\",\"f\"]", res[0]);
         Assert.assertNull(res[1]);
     }
@@ -187,7 +190,7 @@ public class ModuleRemoteConfigTests {
      * Simulating a few data updates, with and without clearing
      */
     @Test
-    public void validateMergeReceivedResponse() throws Exception{
+    public void validateMergeReceivedResponse() throws Exception {
         countlyStore.clear();
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
         Countly countly = new Countly();

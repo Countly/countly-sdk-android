@@ -32,7 +32,7 @@ public class TestUtils {
     }
 
     public static StorageProvider setStorageProviderToMock(Countly countly, StorageProvider sp) {
-        for (ModuleBase module:countly.modules) {
+        for (ModuleBase module : countly.modules) {
             module.storageProvider = sp;
         }
         countly.config_.storageProvider = sp;
@@ -41,7 +41,7 @@ public class TestUtils {
     }
 
     public static EventProvider setEventProviderToMock(Countly countly, EventProvider ep) {
-        for (ModuleBase module:countly.modules) {
+        for (ModuleBase module : countly.modules) {
             module.eventProvider = ep;
         }
         countly.config_.eventProvider = ep;
@@ -62,25 +62,25 @@ public class TestUtils {
     public static Map<String, Object> combineSegmentation(Map<String, String> sString, Map<String, Integer> sInteger, Map<String, Double> sDouble, Map<String, Boolean> sBoolean) {
         Map<String, Object> res = new HashMap<>();
 
-        if(sString != null) {
+        if (sString != null) {
             for (Map.Entry<String, String> pair : sString.entrySet()) {
                 res.put(pair.getKey(), pair.getValue());
             }
         }
 
-        if(sInteger != null) {
+        if (sInteger != null) {
             for (Map.Entry<String, Integer> pair : sInteger.entrySet()) {
                 res.put(pair.getKey(), pair.getValue());
             }
         }
 
-        if(sDouble != null) {
+        if (sDouble != null) {
             for (Map.Entry<String, Double> pair : sDouble.entrySet()) {
                 res.put(pair.getKey(), pair.getValue());
             }
         }
 
-        if(sBoolean != null) {
+        if (sBoolean != null) {
             for (Map.Entry<String, Boolean> pair : sBoolean.entrySet()) {
                 res.put(pair.getKey(), pair.getValue());
             }

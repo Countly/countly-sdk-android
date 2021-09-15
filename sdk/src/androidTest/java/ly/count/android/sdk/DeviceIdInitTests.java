@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 @RunWith(AndroidJUnit4.class)
 public class DeviceIdInitTests {
     CountlyStore countlyStore;
+
     @Before
     public void setUp() {
         countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
