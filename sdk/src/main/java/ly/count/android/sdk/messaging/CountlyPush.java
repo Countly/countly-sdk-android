@@ -850,8 +850,8 @@ public class CountlyPush {
     static boolean getPushConsent(Context context) {
         if (Countly.sharedInstance().isInitialized() || context == null) {
             //todo currently this is also used when context is null and might result in unintended consequences
-            //if SDK is initialised, used the stored value
-            return Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push);
+            //if SDK is initialised, use the stored value
+            return Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push);
         } else {
             //if the SDK is not initialised, use the cached value
             return CountlyStore.getConsentPushNoInit(context);

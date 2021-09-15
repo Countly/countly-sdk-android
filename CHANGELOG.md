@@ -1,7 +1,9 @@
 ## 20.11.11
   * Orientation tracking is not enabled by default. Can be turned off during init.
+  * Device ID can now be changed when no consent is given
   * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
   * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
+
   * Removed the deprecated "init" methods
   * Removed the deprecated "recordEvent" methods
   * Removed the deprecated "changeDeviceId" methods
@@ -30,6 +32,19 @@
   * Removed the deprecated "getStarRatingsCurrentVersionsSessionCount" method
   * Removed the deprecated "clearAutomaticStarRatingSessionCount" method
   * Removed the deprecated "setIfStarRatingDialogIsCancellable" method
+  * Removed the deprecated "setHttpPostForced" method
+  * Removed the deprecated "setShouldIgnoreCrawlers" method
+  * Removed the deprecated "addAppCrawlerName" method
+  * Removed the deprecated "setRequiresConsent" method
+  * Removed the deprecated "createFeatureGroup" method
+  * Removed the deprecated "setConsentFeatureGroup" method
+  * Removed the deprecated "setConsent" method
+  * Removed the deprecated "giveConsent" method
+  * Removed the deprecated "removeConsent" method
+  * Removed the deprecated "removeConsentAll" method
+  * Removed the deprecated "getConsent" method
+  * Removed the deprecated "checkAllConsent" method
+  * Removed the deprecated "getConsent" method
 
 
 ## 20.11.10

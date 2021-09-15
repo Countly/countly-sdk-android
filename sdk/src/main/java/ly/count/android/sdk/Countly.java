@@ -190,16 +190,6 @@ public class Countly {
 
     static long applicationStart = System.currentTimeMillis();
 
-    //GDPR
-    protected boolean requiresConsent = false;
-
-    final Map<String, Boolean> featureConsentValues = new HashMap<>();
-    private final Map<String, String[]> groupedFeatures = new HashMap<>();
-    final List<String> collectedConsentChanges = new ArrayList<>();
-
-    Boolean delayedPushConsent = null;//if this is set, consent for push has to be set before finishing init and sending push changes
-    boolean delayedLocationErasure = false;//if location needs to be cleared at the end of init
-
     String[] locationFallback;//temporary used until location can't be set before init
 
     private boolean appLaunchDeepLink = true;
@@ -224,22 +214,6 @@ public class Countly {
         public static final String remoteConfig = "remote-config";
         //public static final String accessoryDevices = "accessory-devices";
     }
-
-    //a list of valid feature names that are used for checking
-    protected final String[] validFeatureNames = new String[] {
-        CountlyFeatureNames.sessions,
-        CountlyFeatureNames.events,
-        CountlyFeatureNames.views,
-        CountlyFeatureNames.location,
-        CountlyFeatureNames.crashes,
-        CountlyFeatureNames.attribution,
-        CountlyFeatureNames.users,
-        CountlyFeatureNames.push,
-        CountlyFeatureNames.starRating,
-        CountlyFeatureNames.remoteConfig,
-        CountlyFeatureNames.apm,
-        CountlyFeatureNames.feedback
-    };
 
     /**
      * Returns the Countly singleton.
@@ -322,16 +296,6 @@ public class Countly {
             throw new IllegalArgumentException("valid serverURL is required");
         }
 
-        //react to given consent
-        if (config.shouldRequireConsent) {
-            setRequiresConsent(true);
-            if (config.enabledFeatureNames == null) {
-                L.i("[Init] Consent has been required but no consent was given during init");
-            } else {
-                setConsentInternal(config.enabledFeatureNames, true);
-            }
-        }
-
         if (config.serverURL.charAt(config.serverURL.length() - 1) == '/') {
             L.v("[Init] Removing trailing '/' from provided server url");
             config.serverURL = config.serverURL.substring(0, config.serverURL.length() - 1);//removing trailing '/' from server url
@@ -384,7 +348,6 @@ public class Countly {
 
         if (L.logEnabled()) {
             L.i("[Init] Checking init parameters");
-            L.i("[Init] Is consent required? [" + requiresConsent + "]");
 
             // Context class hierarchy
             // Context
@@ -496,7 +459,11 @@ public class Countly {
             AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
 
             addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
-            setHttpPostForced(config.httpPostForced);
+
+            if(config.httpPostForced) {
+                L.d("[Init] Setting HTTP POST to be forced");
+                isHttpPostForced = config.httpPostForced;
+            }
 
             if(config.tamperingProtectionSalt != null) {
                 L.d("[Init] Enabling tamper protection");
@@ -541,7 +508,8 @@ public class Countly {
             }
 
             if (config.appCrawlerNames != null) {
-                Collections.addAll(Arrays.asList(config.appCrawlerNames));
+                L.d("[Init] Adding app crawlers names");
+                appCrawlerNames.addAll(Arrays.asList(config.appCrawlerNames));
             }
 
             checkIfDeviceIsAppCrawler();
@@ -835,7 +803,8 @@ public class Countly {
      * DON'T USE THIS!!!!
      */
     public void onRegistrationId(String registrationId, CountlyMessagingMode mode, CountlyMessagingProvider provider) {
-        if (!getConsent(CountlyFeatureNames.push)) {
+        //if this call is done by CountlyPush, it is assumed that the SDK is already initialised
+        if (!config_.consentProvider.getConsent(CountlyFeatureNames.push)) {
             return;
         }
 
@@ -1034,19 +1003,6 @@ public class Countly {
     }
 
     /**
-     * Set the override for forcing to use HTTP POST for all connections to the server
-     *
-     * @param isItForced the flag for the new status, set "true" if you want it to be forced
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setHttpPostForced(boolean isItForced) {
-        L.d("Setting if HTTP POST is forced: [" + isItForced + "]");
-
-        isHttpPostForced = isItForced;
-        return this;
-    }
-
-    /**
      * Get the status of the override for HTTP POST
      *
      * @return return "true" if HTTP POST ir forced
@@ -1063,31 +1019,6 @@ public class Countly {
                 deviceIsAppCrawler = true;
                 return;
             }
-        }
-    }
-
-    /**
-     * Set if Countly SDK should ignore app crawlers
-     *
-     * @param shouldIgnore if crawlers should be ignored
-     * @deprecated use CountlyConfig to set this
-     */
-    public synchronized Countly setShouldIgnoreCrawlers(boolean shouldIgnore) {
-        L.d("Setting if should ignore app crawlers: [" + shouldIgnore + "]");
-        shouldIgnoreCrawlers = shouldIgnore;
-        return this;
-    }
-
-    /**
-     * Add app crawler device name to the list of names that should be ignored
-     *
-     * @param crawlerName the name to be ignored
-     * @deprecated use CountlyConfig to set this
-     */
-    public void addAppCrawlerName(String crawlerName) {
-        L.d("Adding app crawler name: [" + crawlerName + "]");
-        if (crawlerName != null && !crawlerName.isEmpty()) {
-            appCrawlerNames.add(crawlerName);
         }
     }
 
@@ -1141,369 +1072,6 @@ public class Countly {
         L.d("[Countly] Calling 'getDeviceIDType'");
 
         return connectionQueue_.getDeviceId().getType();
-    }
-
-    /**
-     * @param shouldRequireConsent
-     * @return
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setRequiresConsent(boolean shouldRequireConsent) {
-        L.d("[Countly] Setting if consent should be required, [" + shouldRequireConsent + "]");
-        requiresConsent = shouldRequireConsent;
-        return this;
-    }
-
-    /**
-     * Special things needed to be done during setting push consent
-     *
-     * @param consentValue The value of push consent
-     */
-    void doPushConsentSpecialAction(boolean consentValue) {
-        L.d("[Countly] Doing push consent special action: [" + consentValue + "]");
-        connectionQueue_.getCountlyStore().setConsentPush(consentValue);
-    }
-
-    /**
-     * Actions needed to be done for the consent related location erasure
-     */
-    void doLocationConsentSpecialErasure() {
-        moduleLocation.resetLocationValues();
-        connectionQueue_.sendLocation(true, null, null, null, null);
-    }
-
-    /**
-     * Check if the given name is a valid feature name
-     *
-     * @param name the name of the feature to be tested if it is valid
-     * @return returns true if value is contained in feature name array
-     */
-    private boolean isValidFeatureName(String name) {
-        for (String fName : validFeatureNames) {
-            if (fName.equals(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Prepare features into json format
-     *
-     * @param features the names of features that are about to be changed
-     * @param consentValue the value for the new consent
-     * @return provided consent changes in json format
-     */
-    private String formatConsentChanges(String[] features, boolean consentValue) {
-        StringBuilder preparedConsent = new StringBuilder();
-        preparedConsent.append("{");
-
-        for (int a = 0; a < features.length; a++) {
-            if (a != 0) {
-                preparedConsent.append(",");
-            }
-            preparedConsent.append('"');
-            preparedConsent.append(features[a]);
-            preparedConsent.append('"');
-            preparedConsent.append(':');
-            preparedConsent.append(consentValue);
-        }
-
-        preparedConsent.append("}");
-
-        return preparedConsent.toString();
-    }
-
-    /**
-     * Group multiple features into a feature group
-     *
-     * @param groupName name of the consent group
-     * @param features array of feature to be added to the consent group
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().consent().createFeatureGroup'
-     */
-    public synchronized Countly createFeatureGroup(String groupName, String[] features) {
-        L.d("[Countly] Creating a feature group with the name: [" + groupName + "]");
-
-        if (!isInitialized()) {
-            L.w("[Countly] Calling 'createFeatureGroup' before initialising the SDK is deprecated!");
-        }
-
-        groupedFeatures.put(groupName, features);
-        return this;
-    }
-
-    /**
-     * Set the consent of a feature group
-     *
-     * @param groupName name of the consent group
-     * @param isConsentGiven the value that should be set for this consent group
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().consent().setConsent'
-     */
-    public synchronized Countly setConsentFeatureGroup(String groupName, boolean isConsentGiven) {
-        L.v("[Countly] Setting consent for feature group: [" + groupName + "] with value: [" + isConsentGiven + "]");
-
-        if (!isInitialized()) {
-            L.w("[Countly] Calling 'setConsentFeatureGroup' before initialising the SDK is deprecated!");
-        }
-
-        if (!groupedFeatures.containsKey(groupName)) {
-            L.d("[Countly] Trying to set consent for a unknown feature group: [" + groupName + "]");
-
-            return this;
-        }
-
-        setConsentInternal(groupedFeatures.get(groupName), isConsentGiven);
-
-        return this;
-    }
-
-    /**
-     * Set the consent of a feature
-     *
-     * @param featureNames feature names for which consent should be changed
-     * @param isConsentGiven the consent value that should be set
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().consent().setConsent' or set consent through CountlyConfig
-     */
-    public synchronized Countly setConsent(String[] featureNames, boolean isConsentGiven) {
-        if (!isInitialized()) {
-            L.w("[Countly] Calling 'setConsent' before initialising the SDK is deprecated!");
-        }
-
-        return setConsentInternal(featureNames, isConsentGiven);
-    }
-
-    Countly setConsentInternal(String[] featureNames, boolean isConsentGiven) {
-        final boolean isInit = isInitialized();//is the SDK initialized
-
-        if (!requiresConsent) {
-            //if consent is not required, ignore all calls to it
-            return this;
-        }
-
-        if (featureNames == null) {
-            L.w("[Countly] Calling setConsent with null featureNames!");
-            return this;
-        }
-
-        boolean previousSessionsConsent = false;
-        if (featureConsentValues.containsKey(CountlyFeatureNames.sessions)) {
-            previousSessionsConsent = featureConsentValues.get(CountlyFeatureNames.sessions);
-        }
-
-        boolean previousLocationConsent = false;
-        if (featureConsentValues.containsKey(CountlyFeatureNames.location)) {
-            previousLocationConsent = featureConsentValues.get(CountlyFeatureNames.location);
-        }
-
-        boolean currentSessionConsent = previousSessionsConsent;
-
-        for (String featureName : featureNames) {
-            L.d("[Countly] Setting consent for feature: [" + featureName + "] with value: [" + isConsentGiven + "]");
-
-            if (!isValidFeatureName(featureName)) {
-                L.w("[Countly] Given feature: [" + featureName + "] is not a valid name, ignoring it");
-                continue;
-            }
-
-            featureConsentValues.put(featureName, isConsentGiven);
-
-            //special actions for each feature
-            switch (featureName) {
-                case CountlyFeatureNames.push:
-                    if (isInit) {
-                        //if the SDK is already initialized, do the special action now
-                        doPushConsentSpecialAction(isConsentGiven);
-                    } else {
-                        //do the special action later
-                        delayedPushConsent = isConsentGiven;
-                    }
-                    break;
-                case CountlyFeatureNames.sessions:
-                    currentSessionConsent = isConsentGiven;
-                    break;
-                case CountlyFeatureNames.location:
-                    if (previousLocationConsent && !isConsentGiven) {
-                        //if consent is about to be removed
-                        if (isInit) {
-                            doLocationConsentSpecialErasure();
-                        } else {
-                            delayedLocationErasure = true;
-                        }
-                    }
-                    break;
-                case CountlyFeatureNames.apm:
-                    if (!isConsentGiven) {
-                        //in case APM consent is removed, clear custom and network traces
-                        moduleAPM.clearNetworkTraces();
-                        moduleAPM.cancelAllTracesInternal();
-                    }
-            }
-        }
-
-        String formattedChanges = formatConsentChanges(featureNames, isConsentGiven);
-
-        if (isInit && (collectedConsentChanges.size() == 0)) {
-            //if countly is initialized and collected changes are already sent, send consent now
-            connectionQueue_.sendConsentChanges(formattedChanges);
-
-            context_.sendBroadcast(new Intent(CONSENT_BROADCAST));
-
-            //if consent has changed and it was set to true
-            if ((previousSessionsConsent != currentSessionConsent) && currentSessionConsent) {
-                //if consent was given, we need to begin the session
-                if (isBeginSessionSent) {
-                    //if the first timing for a beginSession call was missed, send it again
-                    if (!moduleSessions.manualSessionControlEnabled) {
-                        moduleSessions.beginSessionInternal();
-                    }
-                }
-            }
-
-            //if consent was changed and set to false
-            if ((previousSessionsConsent != currentSessionConsent) && !currentSessionConsent) {
-                if (!isBeginSessionSent) {
-                    //if session consent was removed and first begins session was not sent
-                    //that means that we might not have sent the initially given location information
-
-                    if (moduleLocation.anyValidLocation()) {
-                        moduleLocation.sendCurrentLocation();
-                    }
-                }
-            }
-        } else {
-            // if countly is not initialized, collect and send it after it is
-
-            collectedConsentChanges.add(formattedChanges);
-        }
-
-        return this;
-    }
-
-    /**
-     * Give the consent to a feature
-     *
-     * @param featureNames the names of features for which consent should be given
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().consent().giveConsent(featureNames)' or set consent through CountlyConfig
-     */
-    public synchronized Countly giveConsent(String[] featureNames) {
-        L.i("[Countly] Giving consent for features named: [" + Arrays.toString(featureNames) + "]");
-
-        if (!isInitialized()) {
-            L.w("[Countly] Calling 'giveConsent' before initialising the SDK is deprecated!");
-        }
-
-        setConsentInternal(featureNames, true);
-
-        return this;
-    }
-
-    /**
-     * Remove the consent of a feature
-     *
-     * @param featureNames the names of features for which consent should be removed
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().consent().removeConsent(featureNames)'
-     */
-    public synchronized Countly removeConsent(String[] featureNames) {
-        L.d("[Countly] Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
-
-        if (!isInitialized()) {
-            L.w("Calling 'removeConsent' before initialising the SDK is deprecated!");
-        }
-
-        setConsentInternal(featureNames, false);
-
-        return this;
-    }
-
-    /**
-     * Remove consent for all features
-     *
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().consent().removeConsentAll()'
-     */
-    public synchronized Countly removeConsentAll() {
-        L.d("[Countly] Removing consent for all features");
-
-        if (!isInitialized()) {
-            L.w("Calling 'removeConsentAll' before initialising the SDK is deprecated!");
-        }
-
-        removeConsent(validFeatureNames);
-
-        return this;
-    }
-
-    /**
-     * Get the current consent state of a feature
-     *
-     * @param featureName the name of a feature for which consent should be checked
-     * @return the consent value
-     * @deprecated use 'Countly.sharedInstance().consent().getConsent(featureName)'
-     */
-    public synchronized boolean getConsent(String featureName) {
-        if (!requiresConsent) {
-            //return true silently
-            return true;
-        }
-
-        Boolean returnValue = featureConsentValues.get(featureName);
-
-        if (returnValue == null) {
-            returnValue = false;
-        }
-
-        L.v("[Countly] Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
-
-        return returnValue;
-    }
-
-    /**
-     * Print the consent values of all features
-     *
-     * @return Returns link to Countly for call chaining
-     * @deprecated use 'Countly.sharedInstance().consent().checkAllConsent()'
-     */
-    public synchronized Countly checkAllConsent() {
-        L.d("[Countly] Checking and printing consent for All features");
-        L.d("[Countly] Is consent required? [" + requiresConsent + "]");
-
-        //make sure push consent has been added to the feature map
-        getConsent(CountlyFeatureNames.push);
-
-        StringBuilder sb = new StringBuilder();
-
-        for (String key : featureConsentValues.keySet()) {
-            sb.append("Feature named [").append(key).append("], consent value: [").append(featureConsentValues.get(key)).append("]\n");
-        }
-
-        L.d(sb.toString());
-
-        return this;
-    }
-
-    /**
-     * Returns true if any consent has been given
-     *
-     * @return true - any consent has been given, false - no consent has been given
-     * todo move to module
-     */
-    protected boolean anyConsentGiven() {
-        if (!requiresConsent) {
-            //no consent required - all consent given
-            return true;
-        }
-
-        for (String key : featureConsentValues.keySet()) {
-            if (featureConsentValues.get(key)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

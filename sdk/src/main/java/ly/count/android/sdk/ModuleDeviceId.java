@@ -74,7 +74,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
 
         //update remote config_ values if automatic update is enabled
         _cly.remoteConfigClearValues();
-        if (_cly.remoteConfigAutomaticUpdateEnabled && _cly.anyConsentGiven()) {
+        if (_cly.remoteConfigAutomaticUpdateEnabled && consentProvider.anyConsentGiven()) {
             _cly.moduleRemoteConfig.updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, null);
         }
 
@@ -96,12 +96,6 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
 
         if (type == DeviceId.Type.DEVELOPER_SUPPLIED && deviceId == null) {
             L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, When type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
-            return;
-        }
-
-        if (!_cly.anyConsentGiven() && type != DeviceId.Type.TEMPORARY_ID) {
-            //if we are not trying to set a temporary id, consent has to be given
-            L.e("[ModuleDeviceId] Can't change Device ID if no consent is given");
             return;
         }
 
@@ -147,11 +141,6 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
     void changeDeviceIdWithMerge(String deviceId) {
         if (deviceId == null || "".equals(deviceId)) {
             throw new IllegalStateException("deviceId cannot be null or empty");
-        }
-
-        if (!_cly.anyConsentGiven()) {
-            L.e("[ModuleDeviceId] Can't change Device ID if no consent is given");
-            return;
         }
 
         if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {

@@ -379,6 +379,11 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set the override for forcing to use HTTP POST for all connections to the server
+     *
+     * @param isForced the flag for the new status, set "true" if you want it to be forced
+     */
     public CountlyConfig setHttpPostForced(boolean isForced) {
         httpPostForced = isForced;
         return this;
@@ -447,11 +452,21 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set if Countly SDK should ignore app crawlers
+     *
+     * @param shouldIgnore if crawlers should be ignored
+     */
     public CountlyConfig setShouldIgnoreAppCrawlers(boolean shouldIgnore) {
         shouldIgnoreAppCrawlers = shouldIgnore;
         return this;
     }
 
+    /**
+     * List of app crawler names that should be ignored
+     *
+     * @param appCrawlerNames the names to be ignored
+     */
     public CountlyConfig setAppCrawlerNames(String[] appCrawlerNames) {
         this.appCrawlerNames = appCrawlerNames;
         return this;

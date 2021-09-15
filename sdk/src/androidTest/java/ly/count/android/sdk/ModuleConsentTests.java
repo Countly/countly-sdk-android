@@ -43,10 +43,10 @@ public class ModuleConsentTests {
     @Test
     public void usingValidFeatureList() {
         Countly mCountly = new Countly();
-        Assert.assertEquals(usedFeatureNames.length, mCountly.validFeatureNames.length);
+        Assert.assertEquals(usedFeatureNames.length, ModuleConsent.validFeatureNames.length);
 
         for (int a = 0; a < usedFeatureNames.length; a++) {
-            Assert.assertEquals(usedFeatureNames[a], mCountly.validFeatureNames[a]);
+            Assert.assertEquals(usedFeatureNames[a], ModuleConsent.validFeatureNames[a]);
         }
     }
 
