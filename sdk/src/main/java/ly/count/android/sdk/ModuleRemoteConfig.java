@@ -14,14 +14,33 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     ModuleLog L;
 
-    ModuleRemoteConfig(Countly cly, CountlyConfig config) {
+    //if set to true, it will automatically download remote configs on module startup
+    boolean remoteConfigAutomaticUpdateEnabled = false;
+    RemoteConfigCallback remoteConfigInitCallback = null;
+
+    ModuleRemoteConfig(Countly cly, final CountlyConfig config) {
         super(cly, config);
 
         L = cly.L;
 
         L.v("[ModuleRemoteConfig] Initialising");
 
-        _cly.setRemoteConfigAutomaticDownload(config.enableRemoteConfigAutomaticDownload, config.remoteConfigCallback);
+        if(config.enableRemoteConfigAutomaticDownload) {
+            L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownload);
+
+            remoteConfigAutomaticUpdateEnabled = config.enableRemoteConfigAutomaticDownload;
+
+            if(config.remoteConfigCallbackNew != null) {
+                remoteConfigInitCallback = config.remoteConfigCallbackNew;
+            } else if (config.remoteConfigCallbackOld != null) {
+                remoteConfigInitCallback = new RemoteConfigCallback() {
+                    @Override
+                    public void callback(String error) {
+                        config.remoteConfigCallbackOld.callback(error);
+                    }
+                };
+            }
+        }
 
         remoteConfigInterface = new RemoteConfig();
     }
@@ -251,7 +270,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
         clearValueStoreInternal();
-        if (_cly.remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
         }
     }
@@ -269,9 +288,9 @@ public class ModuleRemoteConfig extends ModuleBase {
     @Override
     public void initFinished(CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-        if (_cly.remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
             L.d("[Init] Automatically updating remote config values");
-            updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, _cly.remoteConfigInitCallback);
+            updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, remoteConfigInitCallback);
         }
     }
 

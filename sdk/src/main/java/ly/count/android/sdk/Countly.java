@@ -161,10 +161,6 @@ public class Countly {
     //user data access
     public static UserData userData;
 
-    //if set to true, it will automatically download remote configs on module startup
-    boolean remoteConfigAutomaticUpdateEnabled = false;//todo, move to module after setter is removed
-    RemoteConfigCallback remoteConfigInitCallback = null;//todo, move to module after setter is removed
-
     //overrides
     private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
 
@@ -458,7 +454,13 @@ public class Countly {
             L.d("[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
             AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
 
-            addCustomNetworkRequestHeaders(config.customNetworkRequestHeaders);
+            if(config.customNetworkRequestHeaders != null) {
+                L.i("[Countly] Calling addCustomNetworkRequestHeaders");
+                requestHeaderCustomValues = config.customNetworkRequestHeaders;
+                if (connectionQueue_ != null) {
+                    connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
+                }
+            }
 
             if(config.httpPostForced) {
                 L.d("[Init] Setting HTTP POST to be forced");
@@ -1072,179 +1074,6 @@ public class Countly {
         L.d("[Countly] Calling 'getDeviceIDType'");
 
         return connectionQueue_.getDeviceId().getType();
-    }
-
-    /**
-     * Show the rating dialog to the user
-     *
-     * @param widgetId ID that identifies this dialog
-     * @return
-     * @deprecated use 'Countly.sharedInstance().ratings().showFeedbackPopup'
-     */
-    public synchronized Countly showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final CountlyStarRating.FeedbackRatingCallback feedbackCallback) {
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before showFeedbackPopup");
-            return this;
-        }
-
-        if (feedbackCallback == null) {
-            ratings().showFeedbackPopup(widgetId, closeButtonText, activity, null);
-        } else {
-            ratings().showFeedbackPopup(widgetId, closeButtonText, activity, new FeedbackRatingCallback() {
-                @Override
-                public void callback(String error) {
-                    feedbackCallback.callback(error);
-                }
-            });
-        }
-
-        return this;
-    }
-
-    /**
-     * If enable, will automatically download newest remote config_ values on init.
-     *
-     * @param enabled set true for enabling it
-     * @param feedbackCallback callback called after the update was done
-     * @return
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public synchronized Countly setRemoteConfigAutomaticDownload(boolean enabled, final RemoteConfig.RemoteConfigCallback feedbackCallback) {
-        L.d("[Countly] Setting if remote config Automatic download will be enabled, " + enabled);
-
-        remoteConfigAutomaticUpdateEnabled = enabled;
-
-        if (feedbackCallback != null) {
-            remoteConfigInitCallback = new RemoteConfigCallback() {
-                @Override
-                public void callback(String error) {
-                    feedbackCallback.callback(error);
-                }
-            };
-        }
-        return this;
-    }
-
-    /**
-     * Manually update remote config_ values
-     *
-     * @param providedCallback
-     * @deprecated use 'Countly.sharedInstance().remoteConfig().update(callback)'
-     */
-    public void remoteConfigUpdate(final RemoteConfig.RemoteConfigCallback providedCallback) {
-        L.d("[Countly] Manually calling to updateRemoteConfig");
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before remoteConfigUpdate");
-            return;
-        }
-
-        if (providedCallback == null) {
-            remoteConfig().update(null);
-        } else {
-            remoteConfig().update(new RemoteConfigCallback() {
-                @Override
-                public void callback(String error) {
-                    providedCallback.callback(error);
-                }
-            });
-        }
-    }
-
-    /**
-     * Manual remote config_ update call. Will only update the keys provided.
-     *
-     * @param keysToInclude
-     * @param providedCallback
-     * @deprecated use 'Countly.sharedInstance().remoteConfig().updateForKeysOnly(keys, callback)'
-     */
-    public void updateRemoteConfigForKeysOnly(String[] keysToInclude, final RemoteConfig.RemoteConfigCallback providedCallback) {
-        L.d("[Countly] Manually calling to updateRemoteConfig with include keys");
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before updateRemoteConfigForKeysOnly");
-            return;
-        }
-
-        if (providedCallback == null) {
-            remoteConfig().updateForKeysOnly(keysToInclude, null);
-        } else {
-            remoteConfig().updateForKeysOnly(keysToInclude, new RemoteConfigCallback() {
-                @Override
-                public void callback(String error) {
-                    providedCallback.callback(error);
-                }
-            });
-        }
-    }
-
-    /**
-     * Manual remote config_ update call. Will update all keys except the ones provided
-     *
-     * @param keysToExclude
-     * @param providedCallback
-     * @deprecated use 'Countly.sharedInstance().remoteConfig().updateExceptKeys(keys, callback)'
-     */
-    public void updateRemoteConfigExceptKeys(String[] keysToExclude, final RemoteConfig.RemoteConfigCallback providedCallback) {
-        L.i("[Countly] Manually calling to updateRemoteConfig with exclude keys");
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before updateRemoteConfigExceptKeys");
-            return;
-        }
-
-        if (providedCallback == null) {
-            remoteConfig().updateExceptKeys(keysToExclude, null);
-        } else {
-            remoteConfig().updateExceptKeys(keysToExclude, new RemoteConfigCallback() {
-                @Override
-                public void callback(String error) {
-                    providedCallback.callback(error);
-                }
-            });
-        }
-    }
-
-    /**
-     * Get the stored value for the provided remote config_ key
-     *
-     * @param key
-     * @return
-     * @deprecated use 'Countly.sharedInstance().remoteConfig().getValueForKey(key)'
-     */
-    public Object getRemoteConfigValueForKey(String key) {
-        L.i("[Countly] Calling remoteConfigValueForKey");
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before remoteConfigValueForKey");
-            return null;
-        }
-
-        return remoteConfig().getValueForKey(key);
-    }
-
-    /**
-     * Clear all stored remote config_ values
-     *
-     * @deprecated use 'Countly.sharedInstance().remoteConfig().clearStoredValues();'
-     */
-    public void remoteConfigClearValues() {
-        L.i("[Countly] Calling remoteConfigClearValues");
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before remoteConfigClearValues");
-            return;
-        }
-
-        remoteConfig().clearStoredValues();
-    }
-
-    /**
-     * Allows you to add custom header key/value pairs to each request
-     *
-     * @deprecated use CountlyConfig during init to set this
-     */
-    public void addCustomNetworkRequestHeaders(Map<String, String> headerValues) {
-        L.i("[Countly] Calling addCustomNetworkRequestHeaders");
-        requestHeaderCustomValues = headerValues;
-        if (connectionQueue_ != null) {
-            connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
-        }
     }
 
     /**

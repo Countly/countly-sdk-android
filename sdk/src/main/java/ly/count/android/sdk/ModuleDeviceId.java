@@ -73,8 +73,8 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider{
         }
 
         //update remote config_ values if automatic update is enabled
-        _cly.remoteConfigClearValues();
-        if (_cly.remoteConfigAutomaticUpdateEnabled && consentProvider.anyConsentGiven()) {
+        _cly.moduleRemoteConfig.clearValueStoreInternal();
+        if (_cly.moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && consentProvider.anyConsentGiven()) {
             _cly.moduleRemoteConfig.updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, null);
         }
 

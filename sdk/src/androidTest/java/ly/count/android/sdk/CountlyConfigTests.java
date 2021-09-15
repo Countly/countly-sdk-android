@@ -60,6 +60,12 @@ public class CountlyConfigTests {
             }
         };
 
+        RemoteConfigCallback rcc2 = new RemoteConfigCallback() {
+            @Override public void callback(String error) {
+
+            }
+        };
+
         Map<String, String> hv = new HashMap<>();
         hv.put("11", "22");
         hv.put("1331", "2332");
@@ -125,6 +131,7 @@ public class CountlyConfigTests {
         config.addCustomNetworkRequestHeaders(hv);
         config.setPushIntentAddMetadata(true);
         config.setRemoteConfigAutomaticDownload(true, rcc);
+        config.setRemoteConfigAutomaticDownload(true, rcc2);
         config.setRequiresConsent(true);
         config.setConsentEnabled(fn);
         config.setHttpPostForced(true);
@@ -179,7 +186,8 @@ public class CountlyConfigTests {
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
         Assert.assertTrue(config.pushIntentAddMetadata);
         Assert.assertTrue(config.enableRemoteConfigAutomaticDownload);
-        Assert.assertEquals(rcc, config.remoteConfigCallback);
+        Assert.assertEquals(rcc, config.remoteConfigCallbackOld);
+        Assert.assertEquals(rcc2, config.remoteConfigCallbackNew);
         Assert.assertTrue(config.shouldRequireConsent);
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
@@ -256,7 +264,8 @@ public class CountlyConfigTests {
         Assert.assertNull(config.customNetworkRequestHeaders);
         Assert.assertFalse(config.pushIntentAddMetadata);
         Assert.assertFalse(config.enableRemoteConfigAutomaticDownload);
-        Assert.assertNull(config.remoteConfigCallback);
+        Assert.assertNull(config.remoteConfigCallbackOld);
+        Assert.assertNull(config.remoteConfigCallbackNew);
         Assert.assertFalse(config.shouldRequireConsent);
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);

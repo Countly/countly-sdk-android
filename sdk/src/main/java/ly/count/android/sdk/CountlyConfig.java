@@ -104,7 +104,8 @@ public class CountlyConfig {
     protected boolean pushIntentAddMetadata = false;
 
     protected boolean enableRemoteConfigAutomaticDownload = false;
-    protected RemoteConfig.RemoteConfigCallback remoteConfigCallback = null;
+    protected RemoteConfig.RemoteConfigCallback remoteConfigCallbackOld = null;
+    protected RemoteConfigCallback remoteConfigCallbackNew = null;
 
     protected boolean shouldRequireConsent = false;
     protected String[] enabledFeatureNames = null;
@@ -341,6 +342,9 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Allows you to add custom header key/value pairs to each request
+     */
     public CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
         this.customNetworkRequestHeaders = customHeaderValues;
         return this;
@@ -351,9 +355,30 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * If enable, will automatically download newest remote config values.
+     *
+     * @param enabled set true for enabling it
+     * @param callback callback called after the update was done
+     * @deprecated use the other version of this call that uses a different callback
+     * @return
+     */
     public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownload = enabled;
-        remoteConfigCallback = callback;
+        remoteConfigCallbackOld = callback;
+        return this;
+    }
+
+    /**
+     * If enable, will automatically download newest remote config values.
+     *
+     * @param enabled set true for enabling it
+     * @param callback callback called after the update was done
+     * @return
+     */
+    public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
+        enableRemoteConfigAutomaticDownload = enabled;
+        remoteConfigCallbackNew = callback;
         return this;
     }
 

@@ -44,7 +44,14 @@
   * Removed the deprecated "removeConsentAll" method
   * Removed the deprecated "getConsent" method
   * Removed the deprecated "checkAllConsent" method
-  * Removed the deprecated "getConsent" method
+  * Removed the deprecated "showFeedbackPopup" method
+  * Removed the deprecated "setRemoteConfigAutomaticDownload" method
+  * Removed the deprecated "remoteConfigUpdate" method
+  * Removed the deprecated "updateRemoteConfigForKeysOnly" method
+  * Removed the deprecated "updateRemoteConfigExceptKeys" method
+  * Removed the deprecated "getRemoteConfigValueForKey" method
+  * Removed the deprecated "remoteConfigClearValues" method
+  * Removed the deprecated "addCustomNetworkRequestHeaders" method
 
 
 ## 20.11.10
