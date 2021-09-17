@@ -44,14 +44,15 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             ReferrerDetails response = referrerClient.getInstallReferrer();
 
+                            //you would retrieve the referrer url
                             String referrerUrl = response.getInstallReferrer();
 
-                            HashMap<String, Object> custom = new HashMap<>();
-                            custom.put("install_referrer_url", referrerUrl);
+                            //and then you would parse it and retrieve the required field to identify the campaign id and user id
+                            String campaignId = "someId";
+                            String userId = "someUserId";
 
-                            JSONObject jsonObject = new JSONObject(custom);
-                            Countly.userData.setProperty("custom_referrer", jsonObject.toString(1));
-                            Countly.userData.save();
+                            //you would then pass those retrieved values as manual attribution:
+                            //Countly.sharedInstance().attribution().recordCampaign(campaignId, userId);
 
                             referrerClient.endConnection();
                         } catch (Exception e) {

@@ -60,6 +60,13 @@
         android:text="Give All Consent" />
 
     <Button
+        android:id="@+id/button67"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickReportAttribution"
+        android:text="Report attribution" />
+
+    <Button
         android:id="@+id/button41"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

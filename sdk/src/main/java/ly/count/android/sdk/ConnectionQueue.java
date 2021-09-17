@@ -360,8 +360,7 @@ public class ConnectionQueue {
         String userdata = UserData.getDataForRequest();
 
         if (!userdata.equals("")) {
-            String data = prepareCommonRequestData()
-                + userdata;
+            String data = prepareCommonRequestData() + userdata;
             store_.addRequest(data);
 
             tick();
@@ -376,7 +375,7 @@ public class ConnectionQueue {
      */
     void sendReferrerData(String referrer) {
         checkInternalState();
-        L.d("[Connection Queue] checkInternalState");
+        L.d("[Connection Queue] sendReferrerData");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             L.d("[Connection Queue] request ignored, consent not given");
@@ -384,12 +383,40 @@ public class ConnectionQueue {
         }
 
         if (referrer != null) {
-            String data = prepareCommonRequestData()
-                + referrer;
+            String data = prepareCommonRequestData() + referrer;
             store_.addRequest(data);
 
             tick();
         }
+    }
+
+    void sendReferrerDataManual(String campaignID, String userID) {
+        checkInternalState();
+        L.d("[Connection Queue] sendReferrerDataManual");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            L.d("[Connection Queue] request ignored, consent not given");
+            return;
+        }
+
+        String res = "";
+
+        if (campaignID != null) {
+            res += "&campaign_id=" + UtilsNetworking.urlEncodeString(campaignID);
+        }
+        if (userID != null) {
+            res += "&campaign_user=" + UtilsNetworking.urlEncodeString(userID);
+        }
+
+        if(res.length() == 0) {
+            L.w("[Connection Queue] sendReferrerDataManual, attribution not sent, both campaign ID and user ID are either null or empty");
+            return;
+        }
+
+        String data = prepareCommonRequestData() + res;
+        store_.addRequest(data);
+
+        tick();
     }
 
     /**

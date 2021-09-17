@@ -60,6 +60,10 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().consent().giveConsentAll();
     }
 
+    public void onClickReportAttribution(View v) {
+        Countly.sharedInstance().attribution().recordCampaign("yourCampaignId", "yourUserId");
+    }
+
     public void onClickHaltAndInit(View v) {
         //this will destroy all currently stored data
         Countly.sharedInstance().halt();
