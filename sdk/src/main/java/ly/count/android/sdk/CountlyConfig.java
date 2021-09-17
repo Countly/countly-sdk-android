@@ -453,7 +453,7 @@ public class CountlyConfig {
      * Allows public key pinning.
      * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
      * along with server URL starting with "https://". Countly will only accept connections to the server
-     * if public key of SSL certificate provided by the server matches one provided to this method or by {@link #enableCertificatePinning(List)}.
+     * if public key of SSL certificate provided by the server matches one provided to this method.
      *
      * @param certificates List of SSL public keys
      * @return
@@ -467,7 +467,7 @@ public class CountlyConfig {
      * Allows certificate pinning.
      * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
      * along with server URL starting with "https://". Countly will only accept connections to the server
-     * if certificate provided by the server matches one provided to this method or by {@link #enablePublicKeyPinning(List)}.
+     * if certificate provided by the server matches one provided to this method.
      *
      * @param certificates List of SSL certificates
      * @return

@@ -93,6 +93,7 @@ public class Utils {
      * @param version
      * @return
      */
+    @androidx.annotation.ChecksSdkIntAtLeast(parameter = 0)
     public static boolean API(int version) {
         return Build.VERSION.SDK_INT >= version;
     }

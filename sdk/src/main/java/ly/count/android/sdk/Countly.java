@@ -49,12 +49,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.11";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.11";
 
     /**
      * Used as request meta data on every request
      */
-    private String DEFAULT_COUNTLY_SDK_NAME = "java-native-android";
+    private final String DEFAULT_COUNTLY_SDK_NAME = "java-native-android";
 
     /**
      * Current version of the Count.ly Android SDK as a displayable string.

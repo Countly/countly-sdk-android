@@ -315,7 +315,7 @@ public class ModuleAPM extends ModuleBase {
         if (startTimestamp > endTimestamp) {
             L.e("[ModuleAPM] End timestamp is smaller than start timestamp, switching values");
 
-            Long tmp = startTimestamp;
+            long tmp = startTimestamp;
             startTimestamp = endTimestamp;
             endTimestamp = tmp;
         }

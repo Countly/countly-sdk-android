@@ -27,6 +27,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import androidx.annotation.DrawableRes;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -260,7 +261,7 @@ public class CountlyPush {
                     return;
                 }
 
-                if (!intentClassName.startsWith(intentPackageName)) {
+                if (intentPackageName == null || !intentClassName.startsWith(intentPackageName)) {
                     Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] intent class name and intent package names do not match");
                     return;
                 }
@@ -396,7 +397,7 @@ public class CountlyPush {
      * @param data {@code RemoteMessage#getData()} result
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if no Countly message is found in {@code data}
      */
-    public static Boolean displayMessage(Context context, final Map<String, String> data, final int notificationSmallIcon, final Intent notificationIntent) {
+    public static Boolean displayMessage(Context context, final Map<String, String> data, @DrawableRes final int notificationSmallIcon, final Intent notificationIntent) {
         return displayMessage(context, decodeMessage(data), notificationSmallIcon, notificationIntent);
     }
 
@@ -410,7 +411,7 @@ public class CountlyPush {
      * @param msg {@link Message} instance
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if no Countly message is found in {@code data}
      */
-    public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
+    public static Boolean displayMessage(final Context context, final Message msg, @DrawableRes final int notificationSmallIcon, final Intent notificationIntent) {
         Countly.sharedInstance().L.d("[CountlyPush, displayMessage] Displaying push message");
 
         if (!initFinished) {
@@ -442,7 +443,7 @@ public class CountlyPush {
      * @param notificationIntent activity-starting intent to send when user taps on {@link Notification} or one of its {@link android.app.Notification.Action}s. Pass {@code null} to go with main activity.
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if message is not displayable as {@link Notification}
      */
-    public static Boolean displayNotification(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
+    public static Boolean displayNotification(final Context context, final Message msg, @DrawableRes final int notificationSmallIcon, final Intent notificationIntent) {
         if (!getPushConsent(context)) {
             return null;
         }

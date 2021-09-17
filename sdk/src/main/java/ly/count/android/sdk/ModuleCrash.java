@@ -255,37 +255,6 @@ public class ModuleCrash extends ModuleBase {
         return _cly;
     }
 
-    @SuppressWarnings("InfiniteRecursion")
-    public void stackOverflow() {
-        this.stackOverflow();
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    public synchronized Countly crashTest(int crashNumber) {
-
-        if (crashNumber == 1) {
-            L.d("Running crashTest 1");
-
-            stackOverflow();
-        } else if (crashNumber == 2) {
-            L.d("Running crashTest 2");
-
-            // noinspection divzero
-            @SuppressWarnings("NumericOverflow") int test = 10 / 0;
-        } else if (crashNumber == 3) {
-            L.d("Running crashTest 3");
-
-            throw new RuntimeException("This is a crash");
-        } else {
-            L.d("Running crashTest 4");
-
-            String test = null;
-            //noinspection ResultOfMethodCallIgnored
-            test.charAt(1);
-        }
-        return Countly.sharedInstance();
-    }
-
     @Override
     void initFinished(CountlyConfig config) {
         //check for previous native crash dumps

@@ -32,6 +32,7 @@ public class ModuleLocation extends ModuleBase {
         locationIpAddress = null;
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     boolean anyValidLocation() {
         L.d("[ModuleLocation] Calling 'anyValidLocation'");
 

@@ -88,4 +88,27 @@ public class TestUtils {
 
         return res;
     }
+
+    @SuppressWarnings("InfiniteRecursion")
+    public static void stackOverflow() {
+        stackOverflow();
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public static Countly crashTest(int crashNumber) {
+
+        if (crashNumber == 1) {
+            stackOverflow();
+        } else if (crashNumber == 2) {
+            // noinspection divzero
+            @SuppressWarnings("NumericOverflow") int test = 10 / 0;
+        } else if (crashNumber == 3) {
+            throw new RuntimeException("This is a crash");
+        } else {
+            String test = null;
+            //noinspection ResultOfMethodCallIgnored
+            test.charAt(1);
+        }
+        return Countly.sharedInstance();
+    }
 }

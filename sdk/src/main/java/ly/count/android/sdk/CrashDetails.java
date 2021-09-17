@@ -129,7 +129,7 @@ class CrashDetails {
         int recordLength = record.length();
         if (recordLength > maxBreadcrumbSize) {
             Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbSize + "]");
-            record = record.substring(0, Math.min(maxBreadcrumbSize, recordLength));
+            record = record.substring(0, maxBreadcrumbSize);
         }
 
         logs.add(record);

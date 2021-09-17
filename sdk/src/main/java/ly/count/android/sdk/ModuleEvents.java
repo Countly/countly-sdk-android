@@ -195,7 +195,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          *
          * @param key event key
          * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
-         * @param timestamp unix timestamp in miliseconds of when the event occurred
+         * @param timestamp unix timestamp in milliseconds of when the event occurred
          */
         public void recordPastEvent(final String key, final Map<String, Object> segmentation, long timestamp) {
             synchronized (_cly) {

@@ -251,7 +251,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             //if countly is initialized and collected changes are already sent, send consent now
             _cly.connectionQueue_.sendConsentChanges(formattedChanges);
 
-            _cly.context_.sendBroadcast(new Intent(_cly.CONSENT_BROADCAST));
+            _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
 
             //if consent has changed and it was set to true
             if ((previousSessionsConsent != currentSessionConsent) && currentSessionConsent) {

@@ -206,21 +206,21 @@ public class ModuleCrashTests {
 
     @Test(expected = StackOverflowError.class)
     public void crashTest_1() {
-        mCountly.moduleCrash.crashTest(1);
+        TestUtils.crashTest(1);
     }
 
     @Test(expected = ArithmeticException.class)
     public void crashTest_2() {
-        mCountly.moduleCrash.crashTest(2);
+        TestUtils.crashTest(2);
     }
 
     @Test(expected = RuntimeException.class)
     public void crashTest_4() {
-        mCountly.moduleCrash.crashTest(3);
+        TestUtils.crashTest(3);
     }
 
     @Test(expected = NullPointerException.class)
     public void crashTest_5() {
-        mCountly.moduleCrash.crashTest(4);
+        TestUtils.crashTest(4);
     }
 }

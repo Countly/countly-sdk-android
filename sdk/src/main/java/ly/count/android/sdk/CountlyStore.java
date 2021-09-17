@@ -510,6 +510,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return true;
         }
 
+        //noinspection RedundantIfStatement
         if (preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null) != null) {
             return true;
         }

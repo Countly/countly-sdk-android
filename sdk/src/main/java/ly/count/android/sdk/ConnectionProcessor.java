@@ -83,7 +83,7 @@ public class ConnectionProcessor implements Runnable {
 
         boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced());
 
-        Long approximateDateSize = 0L;
+        long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
         if (usingHttpPost) {
             requestData += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);

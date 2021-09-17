@@ -16,7 +16,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
     /**
      * Used for callback from async task
      */
-    protected static interface InternalFeedbackRatingCallback {
+    protected interface InternalFeedbackRatingCallback {
         void callback(JSONObject checkResponse);
     }
 
