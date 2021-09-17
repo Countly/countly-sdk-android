@@ -22,13 +22,8 @@ public class ModuleCrash extends ModuleBase {
     //interface for SDK users
     final Crashes crashesInterface;
 
-    ModuleLog L;
-
     ModuleCrash(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleCrash] Initialising");
 
         //enable unhandled crash reporting

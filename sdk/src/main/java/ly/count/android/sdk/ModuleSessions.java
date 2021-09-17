@@ -7,13 +7,8 @@ public class ModuleSessions extends ModuleBase {
 
     final Sessions sessionInterface;
 
-    ModuleLog L;
-
     ModuleSessions(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleSessions] Initialising");
 
         manualSessionControlEnabled = config.manualSessionControlEnabled;

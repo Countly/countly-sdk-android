@@ -27,13 +27,8 @@ public class ModuleViews extends ModuleBase {
     //interface for SDK users
     final Views viewsInterface;
 
-    ModuleLog L;
-
     ModuleViews(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleViews] Initialising");
 
         if (config.enableViewTracking) {

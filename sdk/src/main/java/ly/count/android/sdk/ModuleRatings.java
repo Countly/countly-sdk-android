@@ -28,13 +28,8 @@ public class ModuleRatings extends ModuleBase {
 
     final Ratings ratingsInterface;
 
-    ModuleLog L;
-
     ModuleRatings(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleRatings] Initialising");
 
         starRatingCallback_ = config.starRatingCallback;

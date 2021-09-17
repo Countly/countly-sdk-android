@@ -3,12 +3,8 @@ package ly.count.android.sdk;
 class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
     boolean exitTempIdAfterInit = false;
 
-    ModuleLog L;
-
     ModuleDeviceId(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
         L.v("[ModuleDeviceId] Initialising");
 
         boolean customIDWasProvided = (config.deviceID != null);

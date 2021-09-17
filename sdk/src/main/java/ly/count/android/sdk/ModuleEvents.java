@@ -10,13 +10,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     //interface for SDK users
     final Events eventsInterface;
 
-    ModuleLog L;
-
     EventQueueProvider eventQueueProvider;
 
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly, config);
-        L = cly.L;
         L.v("[ModuleEvents] Initialising");
 
         eventProvider = this;

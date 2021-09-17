@@ -5,12 +5,14 @@ import android.content.res.Configuration;
 
 abstract class ModuleBase {
     final Countly _cly;
+    ModuleLog L;
     ConsentProvider consentProvider;
     StorageProvider storageProvider;
     EventProvider eventProvider;
 
     ModuleBase(Countly cly, CountlyConfig config) {
         _cly = cly;
+        L = cly.L;
         consentProvider = config.consentProvider;
         storageProvider = config.storageProvider;
         eventProvider = config.eventProvider;

@@ -28,13 +28,8 @@ public class ModuleAPM extends ModuleBase {
     boolean manualForegroundBackgroundTriggers = false;
     boolean manualOverrideInForeground = false;//app starts in background
 
-    ModuleLog L;
-
     ModuleAPM(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleAPM] Initialising");
 
         codeTraces = new HashMap<>();

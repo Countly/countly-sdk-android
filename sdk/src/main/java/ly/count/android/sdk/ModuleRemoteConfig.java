@@ -12,17 +12,12 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     RemoteConfig remoteConfigInterface = null;
 
-    ModuleLog L;
-
     //if set to true, it will automatically download remote configs on module startup
     boolean remoteConfigAutomaticUpdateEnabled = false;
     RemoteConfigCallback remoteConfigInitCallback = null;
 
     ModuleRemoteConfig(Countly cly, final CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleRemoteConfig] Initialising");
 
         if (config.enableRemoteConfigAutomaticDownload) {

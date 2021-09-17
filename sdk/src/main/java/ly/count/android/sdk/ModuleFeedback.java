@@ -32,13 +32,8 @@ public class ModuleFeedback extends ModuleBase {
 
     Feedback feedbackInterface = null;
 
-    ModuleLog L;
-
     ModuleFeedback(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleFeedback] Initialising");
 
         cachedAppVersion = DeviceInfo.getAppVersion(config.context);

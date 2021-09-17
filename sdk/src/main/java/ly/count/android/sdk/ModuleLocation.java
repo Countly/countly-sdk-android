@@ -13,13 +13,8 @@ public class ModuleLocation extends ModuleBase {
     boolean sendLocationPostInit;
     boolean postInitReached = false;//todo this looks like something that can be removed
 
-    ModuleLog L;
-
     ModuleLocation(Countly cly, CountlyConfig config) {
         super(cly, config);
-
-        L = cly.L;
-
         L.v("[ModuleLocation] Initialising");
 
         locationInterface = new ModuleLocation.Location();

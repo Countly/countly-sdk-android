@@ -8,10 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ModuleConsent extends ModuleBase implements ConsentProvider {
-
     Consent consentInterface = null;
-
-    ModuleLog L;
 
     //a list of valid feature names that are used for checking
     protected static final String[] validFeatureNames = new String[] {
@@ -42,9 +39,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         super(cly, config);
         consentProvider = this;
         config.consentProvider = this;
-
-        L = cly.L;
-
         L.v("[ModuleConsent] Initialising");
         L.i("[ModuleConsent] Is consent required? [" + config.shouldRequireConsent + "]");
 
