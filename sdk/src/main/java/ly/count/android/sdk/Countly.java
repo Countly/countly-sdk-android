@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 public class Countly {
 
     private String DEFAULT_COUNTLY_SDK_VERSION_STRING = "20.11.11";
+
     /**
      * Used as request meta data on every request
      */
@@ -59,15 +60,18 @@ public class Countly {
      * Current version of the Count.ly Android SDK as a displayable string.
      */
     public String COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
+
     /**
      * Used as request meta data on every request
      */
     public String COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
+
     /**
      * Default string used in the begin session metrics if the
      * app version cannot be found.
      */
     protected static final String DEFAULT_APP_VERSION = "1.0";
+
     /**
      * Tag used in all logging in the Count.ly SDK.
      */
@@ -91,8 +95,9 @@ public class Countly {
      * an attempt is made to submit them to a Count.ly server.
      */
     private static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
+
     /**
-     * How often onTimer() is called.
+     * How often onTimer() is called. This is the default value.
      */
     private static final long TIMER_DELAY_IN_SECONDS = 60;
 
@@ -794,6 +799,54 @@ public class Countly {
         }
     }
 
+    public static void onCreate(Activity activity) {
+        Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
+
+        if (sharedInstance().L.logEnabled()) {
+
+            String mainClassName = "[VALUE NULL]";
+            if (launchIntent != null && launchIntent.getComponent() != null) {
+                mainClassName = launchIntent.getComponent().getClassName();
+            }
+
+            sharedInstance().L.d("[onCreate] Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
+        }
+
+        Intent intent = activity.getIntent();
+        if (intent != null) {
+            Uri data = intent.getData();
+            if (data != null) {
+                if (sharedInstance().L.logEnabled()) {
+                    sharedInstance().L.d("Data in activity created intent: " + data + " (appLaunchDeepLink " + sharedInstance().appLaunchDeepLink + ") ");
+                }
+                if (sharedInstance().appLaunchDeepLink) {
+                    DeviceInfo.deepLink = data.toString();
+                }
+            }
+        }
+    }
+
+    /**
+     * Called every 60 seconds to send a session heartbeat to the server. Does nothing if there
+     * is not an active application session.
+     */
+    synchronized void onTimer() {
+        L.v("[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
+
+        if (isInitialized()) {
+            final boolean hasActiveSession = activityCount_ > 0;
+            if (hasActiveSession) {
+                if (!moduleSessions.manualSessionControlEnabled) {
+                    moduleSessions.updateSessionInternal();
+                }
+            }
+
+            //on every timer tick we collect all events and attempt to send requests
+            sendEventsIfNeeded(true);
+            connectionQueue_.tick();
+        }
+    }
+
     /**
      * DON'T USE THIS!!!!
      */
@@ -866,6 +919,56 @@ public class Countly {
     }
 
     /**
+     * Returns the device id used by countly for this device
+     *
+     * @return device ID
+     */
+    public synchronized String getDeviceID() {
+        if (!isInitialized()) {
+            L.e("init must be called before getDeviceID");
+            return null;
+        }
+
+        L.d("[Countly] Calling 'getDeviceID'");
+
+        return connectionQueue_.getDeviceId().getId();
+    }
+
+    /**
+     * Returns the type of the device ID used by countly for this device.
+     *
+     * @return device ID type
+     */
+    public synchronized DeviceId.Type getDeviceIDType() {
+        if (!isInitialized()) {
+            L.e("init must be called before getDeviceID");
+            return null;
+        }
+
+        L.d("[Countly] Calling 'getDeviceIDType'");
+
+        return connectionQueue_.getDeviceId().getType();
+    }
+
+    /**
+     * Go into temporary device ID mode
+     *
+     * @return
+     */
+    public Countly enableTemporaryIdMode() {
+        L.i("[Countly] Calling enableTemporaryIdMode");
+
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before enableTemporaryIdMode");
+            return this;
+        }
+
+        moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
+
+        return this;
+    }
+
+    /**
      * Disable sending of location data
      *
      * @return Returns link to Countly for call chaining
@@ -935,33 +1038,6 @@ public class Countly {
         return calledAtLeastOnceOnStart;
     }
 
-    public static void onCreate(Activity activity) {
-        Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
-
-        if (sharedInstance().L.logEnabled()) {
-
-            String mainClassName = "[VALUE NULL]";
-            if (launchIntent != null && launchIntent.getComponent() != null) {
-                mainClassName = launchIntent.getComponent().getClassName();
-            }
-
-            sharedInstance().L.d("[onCreate] Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
-        }
-
-        Intent intent = activity.getIntent();
-        if (intent != null) {
-            Uri data = intent.getData();
-            if (data != null) {
-                if (sharedInstance().L.logEnabled()) {
-                    sharedInstance().L.d("Data in activity created intent: " + data + " (appLaunchDeepLink " + sharedInstance().appLaunchDeepLink + ") ");
-                }
-                if (sharedInstance().appLaunchDeepLink) {
-                    DeviceInfo.deepLink = data.toString();
-                }
-            }
-        }
-    }
-
     /**
      * Check if events from event queue need to be added to the request queue
      * They will be sent either if the exceed the Threshold size or if their sending is forced
@@ -972,27 +1048,6 @@ public class Countly {
 
         if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= EVENT_QUEUE_SIZE_THRESHOLD) {
             connectionQueue_.recordEvents(config_.storageProvider.getEventsForRequestAndEmptyEventQueue());
-        }
-    }
-
-    /**
-     * Called every 60 seconds to send a session heartbeat to the server. Does nothing if there
-     * is not an active application session.
-     */
-    synchronized void onTimer() {
-        L.v("[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
-
-        if (isInitialized()) {
-            final boolean hasActiveSession = activityCount_ > 0;
-            if (hasActiveSession) {
-                if (!moduleSessions.manualSessionControlEnabled) {
-                    moduleSessions.updateSessionInternal();
-                }
-            }
-
-            //on every timer tick we collect all events and attempt to send requests
-            sendEventsIfNeeded(true);
-            connectionQueue_.tick();
         }
     }
 
@@ -1034,38 +1089,6 @@ public class Countly {
             return false;
         }
         return shouldIgnoreCrawlers;
-    }
-
-    /**
-     * Returns the device id used by countly for this device
-     *
-     * @return device ID
-     */
-    public synchronized String getDeviceID() {
-        if (!isInitialized()) {
-            L.e("init must be called before getDeviceID");
-            return null;
-        }
-
-        L.d("[Countly] Calling 'getDeviceID'");
-
-        return connectionQueue_.getDeviceId().getId();
-    }
-
-    /**
-     * Returns the type of the device ID used by countly for this device.
-     *
-     * @return device ID type
-     */
-    public synchronized DeviceId.Type getDeviceIDType() {
-        if (!isInitialized()) {
-            L.e("init must be called before getDeviceID");
-            return null;
-        }
-
-        L.d("[Countly] Calling 'getDeviceIDType'");
-
-        return connectionQueue_.getDeviceId().getType();
     }
 
     /**
@@ -1228,24 +1251,6 @@ public class Countly {
         }
 
         return filteredRequests;
-    }
-
-    /**
-     * Go into temporary device ID mode
-     *
-     * @return
-     */
-    public Countly enableTemporaryIdMode() {
-        L.i("[Countly] Calling enableTemporaryIdMode");
-
-        if (!isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before enableTemporaryIdMode");
-            return this;
-        }
-
-        moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
-
-        return this;
     }
 
     public ModuleCrash.Crashes crashes() {
