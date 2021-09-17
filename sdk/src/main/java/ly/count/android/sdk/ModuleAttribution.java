@@ -18,5 +18,12 @@ public class ModuleAttribution extends ModuleBase {
 
     public class Attribution {
 
+        public void recordCampaign(String campaignId) {
+
+        }
+
+        public void recordCampaign(String campaignId, String campaignUserId) {
+
+        }
     }
 }

@@ -74,7 +74,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
             _cly.moduleRemoteConfig.updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, null);
         }
 
-        _cly.doStoredRequests();
+        _cly.requestQueue().attemptToSendStoredRequests();
     }
 
     /**

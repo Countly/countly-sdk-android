@@ -46,7 +46,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
 
     public void onClickViewOther10(View v) {
         //Doing internally stored requests
-        Countly.sharedInstance().doStoredRequests();
+        Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
     }
 
     public void onClickTestcrashFilterSample(View v) {

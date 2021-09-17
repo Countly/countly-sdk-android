@@ -156,6 +156,7 @@ public class Countly {
     ModuleFeedback moduleFeedback = null;
     ModuleRequestQueue moduleRequestQueue = null;
     ModuleAttribution moduleAttribution = null;
+    ModuleUserProfile moduleUserProfile = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -425,6 +426,7 @@ public class Countly {
             moduleLocation = new ModuleLocation(this, config);
             moduleFeedback = new ModuleFeedback(this, config);
             moduleAttribution = new ModuleAttribution(this, config);
+            moduleUserProfile = new ModuleUserProfile(this, config);
 
             modules.clear();
             modules.add(moduleRequestQueue);
@@ -440,6 +442,7 @@ public class Countly {
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
+            modules.add(moduleUserProfile);
 
             //add missing providers
             moduleRequestQueue.consentProvider = config.consentProvider;
@@ -780,6 +783,9 @@ public class Countly {
         }
     }
 
+    /**
+     * @deprecated the usage of this callback is deprecated and it will be removed
+     */
     public static void onCreate(Activity activity) {
 
     }

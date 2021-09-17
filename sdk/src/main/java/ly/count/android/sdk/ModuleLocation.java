@@ -8,16 +8,16 @@ public class ModuleLocation extends ModuleBase {
     String locationGpsCoordinates = null;
     String locationIpAddress = null;
 
-    Location locationInterface = null;
-
     boolean sendLocationPostInit;
     boolean postInitReached = false;//todo this looks like something that can be removed
+
+    Location locationInterface = null;
 
     ModuleLocation(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleLocation] Initialising");
 
-        locationInterface = new ModuleLocation.Location();
+        locationInterface = new Location();
     }
 
     void resetLocationValues() {

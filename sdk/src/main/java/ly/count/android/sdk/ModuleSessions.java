@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 public class ModuleSessions extends ModuleBase {
-
     boolean manualSessionControlEnabled = false;
     long prevSessionDurationStartTime_ = 0;
 
