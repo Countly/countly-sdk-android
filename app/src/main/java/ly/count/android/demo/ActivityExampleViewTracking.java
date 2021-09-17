@@ -17,7 +17,6 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_view_tracking);
-        Countly.onCreate(this);
     }
 
     public void onClickRecordViewA(View v) {

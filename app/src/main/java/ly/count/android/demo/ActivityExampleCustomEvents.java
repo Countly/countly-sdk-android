@@ -18,7 +18,6 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
-        Countly.onCreate(this);
     }
 
     public void onClickRecordEvent01(View v) {

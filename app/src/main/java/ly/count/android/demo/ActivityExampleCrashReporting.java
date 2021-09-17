@@ -14,7 +14,6 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_crash_reporting);
-        Countly.onCreate(this);
     }
 
     @SuppressWarnings("unused")

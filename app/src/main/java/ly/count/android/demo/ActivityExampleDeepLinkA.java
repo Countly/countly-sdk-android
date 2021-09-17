@@ -14,7 +14,6 @@ public class ActivityExampleDeepLinkA extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_deep_link_a);
-        Countly.onCreate(this);
 
         Intent intent = getIntent();
         String action = intent.getAction();

@@ -20,7 +20,6 @@ public class ActivityExampleOthers extends AppCompatActivity {
         activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_others);
-        Countly.onCreate(this);
     }
 
     public void onClickViewOther05(View v) {

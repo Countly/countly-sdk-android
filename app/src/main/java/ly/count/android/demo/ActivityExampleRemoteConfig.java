@@ -21,7 +21,6 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_remote_config);
-        Countly.onCreate(this);
     }
 
     public void onClickRemoteConfigUpdate(View v) {

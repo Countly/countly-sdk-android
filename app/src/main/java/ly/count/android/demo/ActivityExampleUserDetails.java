@@ -16,7 +16,6 @@ public class ActivityExampleUserDetails extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_user_details);
-        Countly.onCreate(this);
     }
 
     public void onClickUserData01(View v) {

@@ -16,7 +16,6 @@ public class ActivityExampleDeviceId extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_device_id);
-        Countly.onCreate(this);
     }
 
     public void onClickDeviceId01(View v) {

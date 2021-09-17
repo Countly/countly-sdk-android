@@ -11,7 +11,6 @@ public class ActivityExampleMultiThreading extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
-        Countly.onCreate(this);
     }
 
     @Override
