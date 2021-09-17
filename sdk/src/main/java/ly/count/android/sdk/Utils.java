@@ -4,6 +4,7 @@ import android.app.UiModeManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
+import androidx.annotation.NonNull;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class Utils {
      * @param separator separator to use
      * @return resulting string
      */
-    static <T> String join(final Collection<T> objects, final String separator) {
+    static <T> String join(final Collection<T> objects, @NonNull final String separator) {
         StringBuilder sb = new StringBuilder();
         Iterator<T> iter = objects.iterator();
         while (iter.hasNext()) {

@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -58,7 +59,7 @@ class Event {
     Event() {
     }
 
-    Event(String key) {
+    Event(@NonNull String key) {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
         this.key = key;
@@ -133,7 +134,7 @@ class Event {
      * @return Event object built from the data in the JSON or null if the "key" value is not
      * present or the empty string, or if a JSON exception occurs
      */
-    static Event fromJSON(final JSONObject json) {
+    static Event fromJSON(@NonNull final JSONObject json) {
         Event event = new Event();
 
         try {
