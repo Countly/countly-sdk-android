@@ -480,6 +480,10 @@ public class CountlyPush {
             .setContentTitle(msg.title())
             .setContentText(msg.message());
 
+        if (msg.badge() != null) {
+            builder.setNumber(msg.badge());
+        }
+
         if (android.os.Build.VERSION.SDK_INT > 21) {
             if (notificationAccentColor != null) {
                 builder.setColor(notificationAccentColor);
