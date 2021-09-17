@@ -155,6 +155,7 @@ public class Countly {
     ModuleLocation moduleLocation = null;
     ModuleFeedback moduleFeedback = null;
     ModuleRequestQueue moduleRequestQueue = null;
+    ModuleAttribution moduleAttribution = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -182,8 +183,6 @@ public class Countly {
     static long applicationStart = System.currentTimeMillis();
 
     String[] locationFallback;//temporary used until location can't be set before init
-
-    private boolean appLaunchDeepLink = true;
 
     CountlyConfig config_ = null;
 
@@ -413,6 +412,7 @@ public class Countly {
             mHelper.doWork();
 
             //initialise modules
+            moduleRequestQueue = new ModuleRequestQueue(this, config);
             moduleConsent = new ModuleConsent(this, config);
             moduleDeviceId = new ModuleDeviceId(this, config);
             moduleCrash = new ModuleCrash(this, config);
@@ -424,9 +424,10 @@ public class Countly {
             moduleAPM = new ModuleAPM(this, config);
             moduleLocation = new ModuleLocation(this, config);
             moduleFeedback = new ModuleFeedback(this, config);
-            moduleRequestQueue = new ModuleRequestQueue(this, config);
+            moduleAttribution = new ModuleAttribution(this, config);
 
             modules.clear();
+            modules.add(moduleRequestQueue);
             modules.add(moduleConsent);
             modules.add(moduleDeviceId);
             modules.add(moduleCrash);
@@ -438,9 +439,10 @@ public class Countly {
             modules.add(moduleAPM);
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
-            modules.add(moduleRequestQueue);
+            modules.add(moduleAttribution);
 
             //add missing providers
+            moduleRequestQueue.consentProvider = config.consentProvider;
             moduleConsent.eventProvider = config.eventProvider;
             moduleDeviceId.eventProvider = config.eventProvider;
             moduleCrash.eventProvider = config.eventProvider;
@@ -701,7 +703,6 @@ public class Countly {
             L.d("Countly onStart called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
         }
 
-        appLaunchDeepLink = false;
         if (!isInitialized()) {
             L.e("init must be called before onStart");
             return;
@@ -780,30 +781,7 @@ public class Countly {
     }
 
     public static void onCreate(Activity activity) {
-        Intent launchIntent = activity.getPackageManager().getLaunchIntentForPackage(activity.getPackageName());
 
-        if (sharedInstance().L.logEnabled()) {
-
-            String mainClassName = "[VALUE NULL]";
-            if (launchIntent != null && launchIntent.getComponent() != null) {
-                mainClassName = launchIntent.getComponent().getClassName();
-            }
-
-            sharedInstance().L.d("[onCreate] Activity created: " + activity.getClass().getName() + " ( main is " + mainClassName + ")");
-        }
-
-        Intent intent = activity.getIntent();
-        if (intent != null) {
-            Uri data = intent.getData();
-            if (data != null) {
-                if (sharedInstance().L.logEnabled()) {
-                    sharedInstance().L.d("Data in activity created intent: " + data + " (appLaunchDeepLink " + sharedInstance().appLaunchDeepLink + ") ");
-                }
-                if (sharedInstance().appLaunchDeepLink) {
-                    DeviceInfo.deepLink = data.toString();
-                }
-            }
-        }
     }
 
     /**
@@ -1218,6 +1196,15 @@ public class Countly {
         }
 
         return moduleRequestQueue.requestQueueInterface;
+    }
+
+    public ModuleAttribution.Attribution attribution() {
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before accessing attribution");
+            return null;
+        }
+
+        return moduleAttribution.attributionInterface;
     }
 
     public static void applicationOnCreate() {
