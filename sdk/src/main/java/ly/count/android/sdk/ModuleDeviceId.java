@@ -1,7 +1,11 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+
 class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
     boolean exitTempIdAfterInit = false;
+
+    DeviceId deviceIdInterface = null;
 
     ModuleDeviceId(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -11,17 +15,17 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         if (config.temporaryDeviceIdEnabled && !customIDWasProvided) {
             //if we want to use temporary ID mode and no developer custom ID is provided
             //then we override that custom ID to set the temporary mode
-            config.deviceID = DeviceId.temporaryCountlyDeviceId;
+            config.deviceID = ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId;
         }
 
         //choose what kind of device ID will be used
         if (config.deviceID != null) {
             //if the developer provided a ID
             //or it's a temporary ID
-            config.deviceIdInstance = new DeviceId(config.storageProvider, config.deviceID, L, this);
+            config.deviceIdInstance = new ly.count.android.sdk.DeviceId(config.storageProvider, config.deviceID, L, this);
         } else {
             //the dev provided only a type and the SDK should generate a appropriate ID
-            config.deviceIdInstance = new DeviceId(config.storageProvider, config.idMode, L, this);
+            config.deviceIdInstance = new ly.count.android.sdk.DeviceId(config.storageProvider, config.idMode, L, this);
         }
 
         //initialise the set device ID value
@@ -38,9 +42,11 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
 
             exitTempIdAfterInit = true;
         }
+
+        deviceIdInterface = new DeviceId();
     }
 
-    void exitTemporaryIdMode(DeviceId.Type type, String deviceId) {
+    void exitTemporaryIdMode(DeviceIdType type, String deviceId) {
         L.d("[ModuleDeviceId] Calling exitTemporaryIdMode");
 
         if (!_cly.isInitialized()) {
@@ -52,7 +58,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
 
         //update stored request for ID change to use this new ID
         String[] storedRequests = storageProvider.getRequests();
-        String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
+        String temporaryIdTag = "&device_id=" + ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId;
         String newIdTag = "&device_id=" + deviceId;
 
         boolean foundOne = false;
@@ -84,20 +90,20 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
      */
-    void changeDeviceIdWithoutMerge(DeviceId.Type type, String deviceId) {
+    void changeDeviceIdWithoutMerge(DeviceIdType type, String deviceId) {
         if (type == null) {
             L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, type cannot be null");
             return;
         }
 
-        if (type == DeviceId.Type.DEVELOPER_SUPPLIED && deviceId == null) {
+        if (type == DeviceIdType.DEVELOPER_SUPPLIED && deviceId == null) {
             L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, When type is 'DEVELOPER_SUPPLIED', provided deviceId cannot be null");
             return;
         }
 
-        DeviceId currentDeviceId = _cly.connectionQueue_.getDeviceId();
+        ly.count.android.sdk.DeviceId currentDeviceId = _cly.connectionQueue_.getDeviceId();
 
-        if (currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(DeviceId.temporaryCountlyDeviceId))) {
+        if (currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId))) {
             // we already are in temporary mode and we want to set temporary mode
             // in this case we just ignore the request since nothing has to be done
             return;
@@ -143,7 +149,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
             //if we are in temporary ID mode or
             //at some moment have enabled temporary mode
 
-            if (deviceId.equals(DeviceId.temporaryCountlyDeviceId)) {
+            if (deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId)) {
                 //if we want to enter temporary ID mode
                 //just exit, nothing to do
 
@@ -154,7 +160,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
 
             // if a developer supplied ID is provided
             //we just exit this mode and set the id to the provided one
-            exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, deviceId);
+            exitTemporaryIdMode(DeviceIdType.DEVELOPER_SUPPLIED, deviceId);
         } else {
             //we are not in temporary mode, nothing special happens
             // we are either making a simple ID change or entering temporary mode
@@ -167,11 +173,41 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         }
     }
 
+    static DeviceIdType fromOldDeviceIdToNew(@NonNull ly.count.android.sdk.DeviceId.Type oldType) {
+        switch (oldType) {
+            case ADVERTISING_ID:
+                return DeviceIdType.ADVERTISING_ID;
+            case OPEN_UDID:
+                return DeviceIdType.OPEN_UDID;
+            case TEMPORARY_ID:
+                return DeviceIdType.TEMPORARY_ID;
+            case DEVELOPER_SUPPLIED:
+                return DeviceIdType.DEVELOPER_SUPPLIED;
+        }
+        //should not reach this far, but in that case say it's developer supplied
+        return DeviceIdType.DEVELOPER_SUPPLIED;
+    }
+
+    static ly.count.android.sdk.DeviceId.Type fromNewDeviceIdToOld(@NonNull DeviceIdType newType) {
+        switch (newType) {
+            case ADVERTISING_ID:
+                return ly.count.android.sdk.DeviceId.Type.ADVERTISING_ID;
+            case OPEN_UDID:
+                return ly.count.android.sdk.DeviceId.Type.OPEN_UDID;
+            case TEMPORARY_ID:
+                return ly.count.android.sdk.DeviceId.Type.TEMPORARY_ID;
+            case DEVELOPER_SUPPLIED:
+                return ly.count.android.sdk.DeviceId.Type.DEVELOPER_SUPPLIED;
+        }
+        //should not reach this far, but in that case say it's developer supplied
+        return ly.count.android.sdk.DeviceId.Type.DEVELOPER_SUPPLIED;
+    }
+
     @Override
     public void initFinished(CountlyConfig config) {
         if (exitTempIdAfterInit) {
             L.i("[ModuleDeviceId, initFinished] Exiting temp ID at the end of init");
-            exitTemporaryIdMode(DeviceId.Type.DEVELOPER_SUPPLIED, config.deviceID);
+            exitTemporaryIdMode(DeviceIdType.DEVELOPER_SUPPLIED, config.deviceID);
         }
     }
 
@@ -183,5 +219,74 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
     @Override public String getOpenUDID() {
         OpenUDIDAdapter.sync(_cly.context_);
         return OpenUDIDAdapter.OpenUDID;
+    }
+
+    public class DeviceId {
+        /**
+         * Changes current device id to the one specified in parameter. Closes current session and
+         * reopens new one with new id. Doesn't merge user profiles on the server
+         *
+         * @param deviceId New device ID
+         */
+        public void changeWithoutMerge(String deviceId) {
+            synchronized (_cly) {
+                L.d("[DeviceId] Calling 'changeDeviceIdWithoutMerge'");
+
+                ModuleDeviceId.this.changeDeviceIdWithoutMerge(DeviceIdType.DEVELOPER_SUPPLIED, deviceId);
+            }
+        }
+
+        /**
+         * Changes current device id to the one specified in parameter. Merges user profile with new id
+         * (if any) with old profile.
+         *
+         * @param deviceId new device id
+         */
+        public void changeWithMerge(String deviceId) {
+            synchronized (_cly) {
+                L.d("[DeviceId] Calling 'changeDeviceIdWithMerge'");
+
+                ModuleDeviceId.this.changeDeviceIdWithMerge(deviceId);
+            }
+        }
+
+        /**
+         * Returns the device id used by countly for this device
+         *
+         * @return device ID
+         */
+        public String getID() {
+            synchronized (_cly) {
+                L.d("[DeviceId] Calling 'getDeviceID'");
+
+                return _cly.connectionQueue_.getDeviceId().getId();
+            }
+        }
+
+        /**
+         * Returns the type of the device ID used by countly for this device.
+         *
+         * @return device ID type
+         */
+        public DeviceIdType getType() {
+            synchronized (_cly) {
+                L.d("[DeviceId] Calling 'getDeviceIDType'");
+
+                return _cly.connectionQueue_.getDeviceId().getType();
+            }
+        }
+
+        /**
+         * Go into temporary device ID mode
+         *
+         * @return
+         */
+        public void enableTemporaryIdMode() {
+            synchronized (_cly) {
+                L.i("[DeviceId] Calling 'enableTemporaryIdMode'");
+
+                ModuleDeviceId.this.changeDeviceIdWithoutMerge(DeviceIdType.TEMPORARY_ID, ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
+            }
+        }
     }
 }

@@ -84,8 +84,8 @@ public class DeviceIdInitTests {
         Countly countly = new Countly();
         countly.init(cc);
 
-        Assert.assertEquals(DeviceId.temporaryCountlyDeviceId, countly.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, countly.getDeviceIDType());
+        Assert.assertEquals(DeviceId.temporaryCountlyDeviceId, countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.TEMPORARY_ID, countly.deviceId().getType());
     }
 
     //Followup inits
@@ -120,8 +120,8 @@ public class DeviceIdInitTests {
         Countly countly = new Countly();
         countly.init(cc);
 
-        Assert.assertEquals(initialDId, countly.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+        Assert.assertEquals(initialDId, countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, countly.deviceId().getType());
     }
 
     /**
@@ -155,8 +155,8 @@ public class DeviceIdInitTests {
         Countly countly = new Countly();
         countly.init(cc);
 
-        Assert.assertEquals(initialDId, countly.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+        Assert.assertEquals(initialDId, countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, countly.deviceId().getType());
     }
 
     /**
@@ -178,10 +178,10 @@ public class DeviceIdInitTests {
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
 
-        String initialDId = cInitial.getDeviceID();
+        String initialDId = cInitial.deviceId().getID();
 
-        Assert.assertEquals("hjk", cInitial.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, cInitial.getDeviceIDType());
+        Assert.assertEquals("hjk", cInitial.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, cInitial.deviceId().getType());
 
         //setup followup state
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
@@ -248,9 +248,9 @@ public class DeviceIdInitTests {
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
 
-        String initialDId = cInitial.getDeviceID();
+        String initialDId = cInitial.deviceId().getID();
 
-        Assert.assertNotNull(cInitial.getDeviceID());
+        Assert.assertNotNull(cInitial.deviceId().getID());
         Assert.assertEquals(DeviceId.Type.OPEN_UDID, cInitial.getDeviceIDType());
 
         //setup followup state
@@ -349,10 +349,10 @@ public class DeviceIdInitTests {
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
 
-        String initialDId = cInitial.getDeviceID();
+        String initialDId = cInitial.deviceId().getID();
 
-        Assert.assertNotNull(cInitial.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.OPEN_UDID, cInitial.getDeviceIDType());
+        Assert.assertNotNull(cInitial.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, cInitial.deviceId().getType());
 
         //setup followup state
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
@@ -360,8 +360,8 @@ public class DeviceIdInitTests {
         Countly countly = new Countly();
         countly.init(cc);
 
-        Assert.assertEquals(initialDId, countly.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.OPEN_UDID, countly.getDeviceIDType());
+        Assert.assertEquals(initialDId, countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
 
     /**
@@ -417,8 +417,8 @@ public class DeviceIdInitTests {
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
 
-        Assert.assertNotNull(cInitial.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, cInitial.getDeviceIDType());
+        Assert.assertNotNull(cInitial.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.TEMPORARY_ID, cInitial.deviceId().getType());
 
         //setup followup state
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
@@ -427,8 +427,8 @@ public class DeviceIdInitTests {
         Countly countly = new Countly();
         countly.init(cc);
 
-        Assert.assertEquals("uio", countly.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+        Assert.assertEquals("uio", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, countly.deviceId().getType());
     }
 
     /**
@@ -485,10 +485,10 @@ public class DeviceIdInitTests {
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
 
-        String initialDId = cInitial.getDeviceID();
+        String initialDId = cInitial.deviceId().getID();
 
-        Assert.assertNotNull(cInitial.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.TEMPORARY_ID, cInitial.getDeviceIDType());
+        Assert.assertNotNull(cInitial.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.TEMPORARY_ID, cInitial.deviceId().getType());
 
         //setup followup state
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
@@ -498,7 +498,7 @@ public class DeviceIdInitTests {
         Countly countly = new Countly();
         countly.init(cc);
 
-        Assert.assertEquals("frt", countly.getDeviceID());
-        Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
+        Assert.assertEquals("frt", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, countly.deviceId().getType());
     }
 }

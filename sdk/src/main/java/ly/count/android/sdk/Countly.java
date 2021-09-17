@@ -305,20 +305,20 @@ public class Countly {
             throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
         }
 
-        if (config.idMode == DeviceId.Type.TEMPORARY_ID) {
+        if (config.idMode == DeviceIdType.TEMPORARY_ID) {
             throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
         }
 
         if (config.deviceID == null && config.idMode == null) {
             //device ID was not provided and no preferred mode specified. Choosing default
-            config.idMode = DeviceId.Type.OPEN_UDID;
+            config.idMode = DeviceIdType.OPEN_UDID;
         }
 
-        if (config.idMode == DeviceId.Type.DEVELOPER_SUPPLIED && config.deviceID == null) {
+        if (config.idMode == DeviceIdType.DEVELOPER_SUPPLIED && config.deviceID == null) {
             throw new IllegalArgumentException("Valid device ID has to be provided with the Developer_Supplied device ID type");
         }
 
-        if (config.deviceID == null && config.idMode == DeviceId.Type.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
+        if (config.deviceID == null && config.idMode == DeviceIdType.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
             //choosing advertising ID as type, but it's available on this device
             L.e("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
             return this;
@@ -836,7 +836,7 @@ public class Countly {
      *
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
-     * @deprecated use 'changeDeviceIdWithoutMerge' that doesn't use a type
+     * @deprecated use 'Countly.sharedInstance().deviceId().changeWithoutMerge("newDeviceId");'. Changing deviceId to an ID that is not developer supplied is deprecated.
      */
     public void changeDeviceIdWithoutMerge(DeviceId.Type type, String deviceId) {
         L.d("Calling [changeDeviceIdWithoutMerge] with type and ID");
@@ -846,24 +846,7 @@ public class Countly {
             return;
         }
 
-        moduleDeviceId.changeDeviceIdWithoutMerge(type, deviceId);
-    }
-
-    /**
-     * Changes current device id to the one specified in parameter. Closes current session and
-     * reopens new one with new id. Doesn't merge user profiles on the server
-     *
-     * @param deviceId New device ID
-     */
-    public void changeDeviceIdWithoutMerge(String deviceId) {
-        L.d("Calling [changeDeviceIdWithoutMerge] with ID");
-
-        if (!isInitialized()) {
-            L.e("init must be called before changeDeviceIdWithoutMerge");
-            return;
-        }
-
-        moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.DEVELOPER_SUPPLIED, deviceId);
+        moduleDeviceId.changeDeviceIdWithoutMerge(ModuleDeviceId.fromOldDeviceIdToNew(type), deviceId);
     }
 
     /**
@@ -871,6 +854,7 @@ public class Countly {
      * (if any) with old profile.
      *
      * @param deviceId new device id
+     * @deprecated Use 'Countly.sharedInstance().deviceId().changeWithMerge("newDeviceId");'
      */
     public void changeDeviceIdWithMerge(String deviceId) {
         L.d("Calling [changeDeviceIdWithMerge] only with ID");
@@ -879,13 +863,14 @@ public class Countly {
             return;
         }
 
-        moduleDeviceId.changeDeviceIdWithMerge(deviceId);
+        deviceId().changeWithMerge(deviceId);
     }
 
     /**
      * Returns the device id used by countly for this device
      *
      * @return device ID
+     * @deprecated Use 'Countly.sharedInstance().deviceId().getID();'
      */
     public synchronized String getDeviceID() {
         if (!isInitialized()) {
@@ -894,14 +879,14 @@ public class Countly {
         }
 
         L.d("[Countly] Calling 'getDeviceID'");
-
-        return connectionQueue_.getDeviceId().getId();
+        return deviceId().getID();
     }
 
     /**
      * Returns the type of the device ID used by countly for this device.
      *
      * @return device ID type
+     * @deprecated Use 'Countly.sharedInstance().deviceId().getType();'
      */
     public synchronized DeviceId.Type getDeviceIDType() {
         if (!isInitialized()) {
@@ -910,14 +895,14 @@ public class Countly {
         }
 
         L.d("[Countly] Calling 'getDeviceIDType'");
-
-        return connectionQueue_.getDeviceId().getType();
+        return ModuleDeviceId.fromNewDeviceIdToOld(deviceId().getType());
     }
 
     /**
      * Go into temporary device ID mode
      *
      * @return
+     * @deprecated Use 'Countly.sharedInstance().deviceId().enableTemporaryIdMode();'
      */
     public Countly enableTemporaryIdMode() {
         L.i("[Countly] Calling enableTemporaryIdMode");
@@ -926,8 +911,7 @@ public class Countly {
             L.e("Countly.sharedInstance().init must be called before enableTemporaryIdMode");
             return this;
         }
-
-        moduleDeviceId.changeDeviceIdWithoutMerge(DeviceId.Type.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId);
+        deviceId().enableTemporaryIdMode();
 
         return this;
     }
@@ -1032,6 +1016,7 @@ public class Countly {
 
     /**
      * Return if the countly sdk should ignore app crawlers
+     *
      * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().ifShouldIgnoreCrawlers()"
      */
     public boolean ifShouldIgnoreCrawlers() {
@@ -1046,6 +1031,7 @@ public class Countly {
      * Deletes all stored requests to server.
      * This includes events, crashes, views, sessions, etc
      * Call only if you don't need that information
+     *
      * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().flushQueues()"
      */
     public void flushRequestQueues() {
@@ -1062,6 +1048,7 @@ public class Countly {
     /**
      * Combine all events in event queue into a request and
      * attempt to process stored requests on demand
+     *
      * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().attemptToSendStoredRequests()"
      */
     public void doStoredRequests() {
@@ -1077,6 +1064,7 @@ public class Countly {
 
     /**
      * Go through the request queue and replace the appKey of all requests with the current appKey
+     *
      * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().overwriteAppKeys()"
      */
     public void requestQueueOverwriteAppKeys() {
@@ -1092,6 +1080,7 @@ public class Countly {
 
     /**
      * Go through the request queue and delete all requests that don't have the current application key
+     *
      * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().eraseWrongAppKeyRequests()"
      */
     public void requestQueueEraseAppKeysRequests() {
@@ -1211,6 +1200,15 @@ public class Countly {
         }
 
         return moduleAttribution.attributionInterface;
+    }
+
+    public ModuleDeviceId.DeviceId deviceId() {
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before accessing deviceId");
+            return null;
+        }
+
+        return moduleDeviceId.deviceIdInterface;
     }
 
     public static void applicationOnCreate() {

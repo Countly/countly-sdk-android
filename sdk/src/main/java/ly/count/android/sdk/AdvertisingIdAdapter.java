@@ -21,7 +21,7 @@ public class AdvertisingIdAdapter {
             @Override
             public void run() {
                 try {
-                    deviceId.setId(DeviceId.Type.ADVERTISING_ID, getAdvertisingId(context));
+                    deviceId.setId(DeviceIdType.ADVERTISING_ID, getAdvertisingId(context));
                 } catch (Throwable t) {
                     if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesAvailabilityException")) {
                         // recoverable, let device ID be null, which will result in storing all requests to Countly server

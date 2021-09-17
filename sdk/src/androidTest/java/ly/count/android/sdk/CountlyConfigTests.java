@@ -171,7 +171,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(cs, config.countlyStore);
         Assert.assertFalse(config.checkForNativeCrashDumps);
         Assert.assertEquals(s[2], config.deviceID);
-        Assert.assertEquals(DeviceId.Type.ADVERTISING_ID, config.idMode);
+        Assert.assertEquals(DeviceIdType.ADVERTISING_ID, config.idMode);
         Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
         Assert.assertEquals(s[3], config.starRatingTextDismiss);

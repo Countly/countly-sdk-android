@@ -1,6 +1,6 @@
 package ly.count.android.sdk;
 
-public class ModuleUserProfile extends ModuleBase{
+public class ModuleUserProfile extends ModuleBase {
 
     UserProfile userProfileInterface = null;
 

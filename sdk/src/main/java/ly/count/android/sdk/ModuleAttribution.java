@@ -26,6 +26,7 @@ public class ModuleAttribution extends ModuleBase {
 
         /**
          * Report user attribution manually
+         *
          * @param campaignId
          */
         public void recordCampaign(String campaignId) {
@@ -38,6 +39,7 @@ public class ModuleAttribution extends ModuleBase {
 
         /**
          * Report user attribution manually
+         *
          * @param campaignId
          */
         public void recordCampaign(String campaignId, String campaignUserId) {

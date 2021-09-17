@@ -16,7 +16,7 @@ public class DeviceId {
     protected final static String temporaryCountlyDeviceId = "CLYTemporaryDeviceID";
 
     private String id = null;
-    private Type type;
+    private DeviceIdType type;
 
     ModuleLog L;
 
@@ -28,10 +28,10 @@ public class DeviceId {
      *
      * @param type type of ID generation strategy
      */
-    protected DeviceId(StorageProvider givenStorageProvider, Type type, ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
+    protected DeviceId(StorageProvider givenStorageProvider, DeviceIdType type, ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
         if (type == null) {
             throw new IllegalStateException("Please specify DeviceId.Type, that is which type of device ID generation you want to use");
-        } else if (type == Type.DEVELOPER_SUPPLIED) {
+        } else if (type == DeviceIdType.DEVELOPER_SUPPLIED) {
             throw new IllegalStateException("Please use another DeviceId constructor for device IDs supplied by developer");
         }
         storageProvider = givenStorageProvider;
@@ -41,7 +41,7 @@ public class DeviceId {
         this.type = type;
         L = moduleLog;
 
-        L.d("[DeviceId] initialising with no values, provided type:[" + this.type + "]");
+        L.d("[DeviceId-int] initialising with no values, provided type:[" + this.type + "]");
 
         //check if there wasn't a value set before
         retrieveId();
@@ -60,11 +60,11 @@ public class DeviceId {
         this.openUDIDProvider = openUDIDProvider;
 
         //setup the preferred device ID type
-        this.type = Type.DEVELOPER_SUPPLIED;
+        this.type = DeviceIdType.DEVELOPER_SUPPLIED;
         this.id = developerSuppliedId;
         L = moduleLog;
 
-        L.d("[DeviceId] initialising with values, device ID:[" + this.id + "] type:[" + this.type + "]");
+        L.d("[DeviceId-int] initialising with values, device ID:[" + this.id + "] type:[" + this.type + "]");
 
         //check if there wasn't a value set before
         retrieveId();
@@ -81,9 +81,9 @@ public class DeviceId {
             this.id = storedId;
             this.type = retrieveType();
 
-            L.d("[DeviceId] retrieveId, Retrieving a previously set device ID:[" + this.id + "] type:[" + this.type + "]");
+            L.d("[DeviceId-int] retrieveId, Retrieving a previously set device ID:[" + this.id + "] type:[" + this.type + "]");
         } else {
-            L.d("[DeviceId] retrieveId, no previous ID stored");
+            L.d("[DeviceId-int] retrieveId, no previous ID stored");
         }
     }
 
@@ -97,19 +97,19 @@ public class DeviceId {
      * @param context Context to use
      */
     protected void init(Context context) {
-        Type storedType = retrieveType();
-        L.d("[DeviceId] init, current type:[" + type + "] overriddenType:[" + storedType + "]");
+        DeviceIdType storedType = retrieveType();
+        L.d("[DeviceId-int] init, current type:[" + type + "] overriddenType:[" + storedType + "]");
 
         // Some time ago some ID generation strategy was not available and SDK fell back to
         // some other strategy. We still have to use that strategy.
         if (storedType != null && storedType != type) {
-            L.i("[DeviceId] init, Overridden device ID generation strategy detected: " + storedType + ", using it instead of " + this.type);
+            L.i("[DeviceId-int] init, Overridden device ID generation strategy detected: " + storedType + ", using it instead of " + this.type);
             type = storedType;
         }
 
         if (type == null) {
-            L.e("[DeviceId] init, device id type currently is null, falling back to OPEN_UDID");
-            type = Type.OPEN_UDID;
+            L.e("[DeviceId-int] init, device id type currently is null, falling back to OPEN_UDID");
+            type = DeviceIdType.OPEN_UDID;
         }
 
         String storedID = storageProvider.getDeviceID();
@@ -121,19 +121,19 @@ public class DeviceId {
                 case DEVELOPER_SUPPLIED:
                     // no initialization for developer id
                     // we just store the provided value so that it's
-                    setAndStoreId(Type.DEVELOPER_SUPPLIED, id);
+                    setAndStoreId(DeviceIdType.DEVELOPER_SUPPLIED, id);
                     break;
                 case OPEN_UDID:
-                    L.i("[DeviceId] Using OpenUDID");
+                    L.i("[DeviceId-int] Using OpenUDID");
                     fallbackToOpenUDID();
                     break;
                 case ADVERTISING_ID:
                     if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
-                        L.i("[DeviceId] Using Advertising ID");
+                        L.i("[DeviceId-int] Using Advertising ID");
                         AdvertisingIdAdapter.setAdvertisingId(context, this);
                     } else {
                         // Fall back to OpenUDID on devices without google play services set up
-                        L.i("[DeviceId] Advertising ID is not available, falling back to OpenUDID");
+                        L.i("[DeviceId-int] Advertising ID is not available, falling back to OpenUDID");
                         fallbackToOpenUDID();
                     }
                     break;
@@ -146,27 +146,27 @@ public class DeviceId {
      *
      * @return
      */
-    private Type retrieveType() {
+    private DeviceIdType retrieveType() {
         // Using strings is safer when it comes to extending Enum values list
         String typeString = storageProvider.getDeviceIDType();
         if (typeString == null) {
             return null;
-        } else if (typeString.equals(Type.DEVELOPER_SUPPLIED.toString())) {
-            return Type.DEVELOPER_SUPPLIED;
-        } else if (typeString.equals(Type.OPEN_UDID.toString())) {
-            return Type.OPEN_UDID;
-        } else if (typeString.equals(Type.ADVERTISING_ID.toString())) {
-            return Type.ADVERTISING_ID;
-        } else if (typeString.equals(Type.TEMPORARY_ID.toString())) {
-            return Type.TEMPORARY_ID;
+        } else if (typeString.equals(DeviceIdType.DEVELOPER_SUPPLIED.toString())) {
+            return DeviceIdType.DEVELOPER_SUPPLIED;
+        } else if (typeString.equals(DeviceIdType.OPEN_UDID.toString())) {
+            return DeviceIdType.OPEN_UDID;
+        } else if (typeString.equals(DeviceIdType.ADVERTISING_ID.toString())) {
+            return DeviceIdType.ADVERTISING_ID;
+        } else if (typeString.equals(DeviceIdType.TEMPORARY_ID.toString())) {
+            return DeviceIdType.TEMPORARY_ID;
         } else {
-            L.e("[DeviceId] device ID type can't be determined");
+            L.e("[DeviceId-int] device ID type can't be determined");
             return null;
         }
     }
 
     protected String getId() {
-        if (id == null && type == Type.OPEN_UDID) {
+        if (id == null && type == DeviceIdType.OPEN_UDID) {
             //using openUDID as a fallback
             id = OpenUDIDAdapter.OpenUDID;
         }
@@ -174,14 +174,14 @@ public class DeviceId {
     }
 
     @SuppressWarnings("SameParameterValue")
-    protected void setId(Type type, String id) {
-        L.v("[DeviceId] setId, Device ID is " + id + " (type " + type + ")");
+    protected void setId(DeviceIdType type, String id) {
+        L.v("[DeviceId-int] setId, Device ID is " + id + " (type " + type + ")");
         this.type = type;
         this.id = id;
     }
 
     protected void fallbackToOpenUDID() {
-        setAndStoreId(Type.OPEN_UDID, openUDIDProvider.getOpenUDID());
+        setAndStoreId(DeviceIdType.OPEN_UDID, openUDIDProvider.getOpenUDID());
     }
 
     /**
@@ -192,15 +192,15 @@ public class DeviceId {
      * @param deviceId
      * @param runInit
      */
-    protected void changeToId(Context context, Type type, String deviceId, boolean runInit) {
-        L.v("[DeviceId] changeToId, Device ID is " + id + " (type " + type + "), init:" + runInit);
+    protected void changeToId(Context context, DeviceIdType type, String deviceId, boolean runInit) {
+        L.v("[DeviceId-int] changeToId, Device ID is " + id + " (type " + type + "), init:" + runInit);
         setAndStoreId(type, deviceId);
         if (runInit) {
             init(context);
         }
     }
 
-    void setAndStoreId(Type type, String deviceId) {
+    void setAndStoreId(DeviceIdType type, String deviceId) {
         this.id = deviceId;
         this.type = type;
 
@@ -213,9 +213,9 @@ public class DeviceId {
      *
      * @return
      */
-    protected Type getType() {
+    protected DeviceIdType getType() {
         if (temporaryIdModeEnabled()) {
-            return Type.TEMPORARY_ID;
+            return DeviceIdType.TEMPORARY_ID;
         }
         return type;
     }
@@ -239,8 +239,8 @@ public class DeviceId {
      *
      * @return true if supplied device ID equal to the one registered before
      */
-    static boolean deviceIDEqualsNullSafe(final String id, Type type, final DeviceId deviceId) {
-        if (type == null || type == Type.DEVELOPER_SUPPLIED) {
+    static boolean deviceIDEqualsNullSafe(final String id, DeviceIdType type, final DeviceId deviceId) {
+        if (type == null || type == DeviceIdType.DEVELOPER_SUPPLIED) {
             //going here if no type is provided or type is developer supplied
             final String deviceIdId = deviceId == null ? null : deviceId.getId();
             return (deviceIdId == null && id == null) || (deviceIdId != null && deviceIdId.equals(id));

@@ -408,7 +408,7 @@ public class ConnectionQueue {
             res += "&campaign_user=" + UtilsNetworking.urlEncodeString(userID);
         }
 
-        if(res.length() == 0) {
+        if (res.length() == 0) {
             L.w("[Connection Queue] sendReferrerDataManual, attribution not sent, both campaign ID and user ID are either null or empty");
             return;
         }

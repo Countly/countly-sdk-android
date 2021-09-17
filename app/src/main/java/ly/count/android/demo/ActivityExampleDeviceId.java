@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.Random;
 
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.DeviceId;
 
 public class ActivityExampleDeviceId extends AppCompatActivity {
 
@@ -20,17 +19,18 @@ public class ActivityExampleDeviceId extends AppCompatActivity {
 
     public void onClickDeviceId01(View v) {
         //set device id without merge
-        Countly.sharedInstance().changeDeviceIdWithoutMerge("New Device ID" + (new Random().nextInt()));
+        Countly.sharedInstance().deviceId().changeWithoutMerge("New Device ID" + (new Random().nextInt()));
     }
 
     public void onClickDeviceId02(View v) {
         //set device id with merge
-        Countly.sharedInstance().changeDeviceIdWithMerge("New Device ID!" + (new Random().nextInt()));
+        Countly.sharedInstance().deviceId().changeWithMerge("New Device ID!" + (new Random().nextInt()));
+
     }
 
     public void onClickDeviceId03(View v) {
         //Entering temporary id mode
-        Countly.sharedInstance().enableTemporaryIdMode();
+        Countly.sharedInstance().deviceId().enableTemporaryIdMode();
     }
 
     @Override

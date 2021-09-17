@@ -59,7 +59,7 @@ public class CountlyConfig {
     /**
      * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
      */
-    protected DeviceId.Type idMode = null;
+    protected DeviceIdType idMode = null;
 
     /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
@@ -229,8 +229,18 @@ public class CountlyConfig {
 
     /**
      * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
+     *
+     * @deprecated use this call with the other type override. The new type has the same values so a simple substitution is enough
      */
     public CountlyConfig setIdMode(DeviceId.Type idMode) {
+        this.idMode = ModuleDeviceId.fromOldDeviceIdToNew(idMode);
+        return this;
+    }
+
+    /**
+     * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
+     */
+    public CountlyConfig setIdMode(DeviceIdType idMode) {
         this.idMode = idMode;
         return this;
     }
