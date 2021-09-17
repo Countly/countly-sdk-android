@@ -86,31 +86,31 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             case ModuleFeedback.SURVEY_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
-                    _cly.sendEventsIfNeeded(true);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
             case ModuleRatings.STAR_RATING_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
-                    _cly.sendEventsIfNeeded(false);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
-                    _cly.sendEventsIfNeeded(false);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
-                    _cly.sendEventsIfNeeded(false);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
-                    _cly.sendEventsIfNeeded(false);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
         }

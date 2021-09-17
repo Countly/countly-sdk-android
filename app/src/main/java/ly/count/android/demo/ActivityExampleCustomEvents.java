@@ -90,7 +90,7 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     public void onClickTriggerSendingEvents(View v) {
-        Countly.sharedInstance().doStoredRequests();
+        Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
     }
 
     @Override

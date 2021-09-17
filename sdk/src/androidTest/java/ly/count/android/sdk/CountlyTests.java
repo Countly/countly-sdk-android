@@ -460,7 +460,7 @@ public class CountlyTests {
 
         when(mCountly.moduleEvents.storageProvider.getEventQueueSize()).thenReturn(0);
 
-        mCountly.sendEventsIfNeeded(false);
+        mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
         verifyZeroInteractions(mockConnectionQueue);
@@ -478,7 +478,7 @@ public class CountlyTests {
 
         when(mCountly.moduleEvents.storageProvider.getEventQueueSize()).thenReturn(9);
 
-        mCountly.sendEventsIfNeeded(false);
+        mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
         verifyZeroInteractions(mockConnectionQueue);
@@ -489,12 +489,13 @@ public class CountlyTests {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
         mCountly.config_.storageProvider = mock(StorageProvider.class);
+        mCountly.moduleRequestQueue.storageProvider = mCountly.config_.storageProvider;
 
         when(mCountly.config_.storageProvider.getEventQueueSize()).thenReturn(100);
         final String eventData = "blahblahblah";
         when(mCountly.config_.storageProvider.getEventsForRequestAndEmptyEventQueue()).thenReturn(eventData);
 
-        mCountly.sendEventsIfNeeded(false);
+        mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.config_.storageProvider, times(1)).getEventsForRequestAndEmptyEventQueue();
         verify(mockConnectionQueue, times(1)).recordEvents(eventData);
@@ -505,12 +506,13 @@ public class CountlyTests {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
         mCountly.config_.storageProvider = mock(StorageProvider.class);
+        mCountly.moduleRequestQueue.storageProvider = mCountly.config_.storageProvider;
 
         when(mCountly.config_.storageProvider.getEventQueueSize()).thenReturn(120);
         final String eventData = "blahblahblah";
         when(mCountly.config_.storageProvider.getEventsForRequestAndEmptyEventQueue()).thenReturn(eventData);
 
-        mCountly.sendEventsIfNeeded(false);
+        mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.config_.storageProvider, times(1)).getEventsForRequestAndEmptyEventQueue();
         verify(mockConnectionQueue, times(1)).recordEvents(eventData);
@@ -548,6 +550,7 @@ public class CountlyTests {
         final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
         mCountly.setConnectionQueue(mockConnectionQueue);
         mCountly.config_.storageProvider = mock(StorageProvider.class);
+        mCountly.moduleRequestQueue.storageProvider = mCountly.config_.storageProvider;
 
         when(mCountly.config_.storageProvider.getEventQueueSize()).thenReturn(1);
         final String eventData = "blahblahblah";

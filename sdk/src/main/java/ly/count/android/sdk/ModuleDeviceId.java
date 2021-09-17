@@ -115,7 +115,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
         //force flush events so that they are associated correctly
-        _cly.sendEventsIfNeeded(true);
+        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
         //update remote config_ values after id change if automatic update is enabled
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();

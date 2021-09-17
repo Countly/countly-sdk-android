@@ -29,12 +29,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -94,7 +89,7 @@ public class Countly {
      * Determines how many custom events can be queued locally before
      * an attempt is made to submit them to a Count.ly server.
      */
-    private static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
+    static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
 
     /**
      * How often onTimer() is called. This is the default value.
@@ -159,6 +154,7 @@ public class Countly {
     ModuleDeviceId moduleDeviceId = null;
     ModuleLocation moduleLocation = null;
     ModuleFeedback moduleFeedback = null;
+    ModuleRequestQueue moduleRequestQueue = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -167,13 +163,7 @@ public class Countly {
     public static UserData userData;
 
     //overrides
-    private boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
-
-    //app crawlers
-    private boolean shouldIgnoreCrawlers = true;//ignore app crawlers by default
-    private boolean deviceIsAppCrawler = false;//by default assume that device is not a app crawler
-    @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
-    private final List<String> appCrawlerNames = new ArrayList<>(Arrays.asList("Calypso AppCrawler"));//List against which device name is checked to determine if device is app crawler
+    boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
 
     //push related
     private boolean addMetadataToPushIntents = false;// a flag that indicates if metadata should be added to push notification intents
@@ -434,6 +424,7 @@ public class Countly {
             moduleAPM = new ModuleAPM(this, config);
             moduleLocation = new ModuleLocation(this, config);
             moduleFeedback = new ModuleFeedback(this, config);
+            moduleRequestQueue = new ModuleRequestQueue(this, config);
 
             modules.clear();
             modules.add(moduleConsent);
@@ -447,6 +438,7 @@ public class Countly {
             modules.add(moduleAPM);
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
+            modules.add(moduleRequestQueue);
 
             //add missing providers
             moduleConsent.eventProvider = config.eventProvider;
@@ -507,19 +499,6 @@ public class Countly {
                 L.d("[Init] Enabling attribution");
                 isAttributionEnabled = config.enableAttribution;
             }
-
-            //app crawler check
-            if (config.shouldIgnoreAppCrawlers) {
-                L.d("[Init] Ignoring app crawlers");
-                shouldIgnoreCrawlers = config.shouldIgnoreAppCrawlers;
-            }
-
-            if (config.appCrawlerNames != null) {
-                L.d("[Init] Adding app crawlers names");
-                appCrawlerNames.addAll(Arrays.asList(config.appCrawlerNames));
-            }
-
-            checkIfDeviceIsAppCrawler();
 
             //initialize networking queues
             connectionQueue_.L = L;
@@ -691,6 +670,7 @@ public class Countly {
         moduleDeviceId = null;
         moduleLocation = null;
         moduleFeedback = null;
+        moduleRequestQueue = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
@@ -842,7 +822,7 @@ public class Countly {
             }
 
             //on every timer tick we collect all events and attempt to send requests
-            sendEventsIfNeeded(true);
+            moduleRequestQueue.sendEventsIfNeeded(true);
             connectionQueue_.tick();
         }
     }
@@ -1039,62 +1019,50 @@ public class Countly {
     }
 
     /**
-     * Check if events from event queue need to be added to the request queue
-     * They will be sent either if the exceed the Threshold size or if their sending is forced
-     */
-    protected void sendEventsIfNeeded(boolean forceSendingEvents) {
-        int eventsInEventQueue = config_.storageProvider.getEventQueueSize();
-        L.v("[Countly] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
-
-        if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= EVENT_QUEUE_SIZE_THRESHOLD) {
-            connectionQueue_.recordEvents(config_.storageProvider.getEventsForRequestAndEmptyEventQueue());
-        }
-    }
-
-    /**
      * Get the status of the override for HTTP POST
      *
      * @return return "true" if HTTP POST ir forced
+     * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().isHttpPostForced()"
      */
     public boolean isHttpPostForced() {
-        return isHttpPostForced;
-    }
-
-    private void checkIfDeviceIsAppCrawler() {
-        String deviceName = DeviceInfo.getDevice();
-
-        for (int a = 0; a < appCrawlerNames.size(); a++) {
-            if (deviceName.equals(appCrawlerNames.get(a))) {
-                deviceIsAppCrawler = true;
-                return;
-            }
+        if (!isInitialized()) {
+            L.e("init must be called before isHttpPostForced");
+            return false;
         }
+        return moduleRequestQueue.requestQueueInterface.isHttpPostForced();
     }
 
     /**
      * Return if current device is detected as a app crawler
      *
      * @return returns if devices is detected as a app crawler
+     * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().isDeviceAppCrawler()"
      */
     public boolean isDeviceAppCrawler() {
-        return deviceIsAppCrawler;
+        if (!isInitialized()) {
+            L.e("init must be called before isDeviceAppCrawler");
+            return false;
+        }
+        return moduleRequestQueue.requestQueueInterface.isDeviceAppCrawler();
     }
 
     /**
      * Return if the countly sdk should ignore app crawlers
+     * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().ifShouldIgnoreCrawlers()"
      */
     public boolean ifShouldIgnoreCrawlers() {
         if (!isInitialized()) {
             L.e("init must be called before ifShouldIgnoreCrawlers");
             return false;
         }
-        return shouldIgnoreCrawlers;
+        return moduleRequestQueue.requestQueueInterface.ifShouldIgnoreCrawlers();
     }
 
     /**
      * Deletes all stored requests to server.
      * This includes events, crashes, views, sessions, etc
      * Call only if you don't need that information
+     * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().flushQueues()"
      */
     public void flushRequestQueues() {
         L.i("[Countly] Calling flushRequestQueues");
@@ -1104,27 +1072,13 @@ public class Countly {
             return;
         }
 
-        CountlyStore store = connectionQueue_.getCountlyStore();
-
-        int count = 0;
-
-        while (true) {
-            final String[] storedEvents = store.getRequests();
-            if (storedEvents == null || storedEvents.length == 0) {
-                // currently no data to send, we are done for now
-                break;
-            }
-            //remove stored data
-            store.removeRequest(storedEvents[0]);
-            count++;
-        }
-
-        L.d("[Countly] flushRequestQueues removed [" + count + "] requests");
+        moduleRequestQueue.requestQueueInterface.flushQueues();
     }
 
     /**
      * Combine all events in event queue into a request and
      * attempt to process stored requests on demand
+     * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().attemptToSendStoredRequests()"
      */
     public void doStoredRequests() {
         L.i("[Countly] Calling doStoredRequests");
@@ -1134,17 +1088,14 @@ public class Countly {
             return;
         }
 
-        //combine all available events into a request
-        sendEventsIfNeeded(true);
-
-        //trigger the processing of the request queue
-        connectionQueue_.tick();
+        moduleRequestQueue.requestQueueInterface.attemptToSendStoredRequests();
     }
 
     /**
      * Go through the request queue and replace the appKey of all requests with the current appKey
+     * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().overwriteAppKeys()"
      */
-    synchronized public void requestQueueOverwriteAppKeys() {
+    public void requestQueueOverwriteAppKeys() {
         L.i("[Countly] Calling requestQueueOverwriteAppKeys");
 
         if (!isInitialized()) {
@@ -1152,17 +1103,14 @@ public class Countly {
             return;
         }
 
-        List<String> filteredRequests = requestQueueReplaceWithAppKey(connectionQueue_.getCountlyStore().getRequests(), connectionQueue_.getAppKey());
-        if (filteredRequests != null) {
-            config_.storageProvider.replaceRequestList(filteredRequests);
-            doStoredRequests();
-        }
+        requestQueue().overwriteAppKeys();
     }
 
     /**
      * Go through the request queue and delete all requests that don't have the current application key
+     * @deprecated Change your current implementation to use "Countly.sharedInstance().requestQueue().eraseWrongAppKeyRequests()"
      */
-    synchronized public void requestQueueEraseAppKeysRequests() {
+    public void requestQueueEraseAppKeysRequests() {
         L.i("[Countly] Calling requestQueueEraseAppKeysRequests");
 
         if (!isInitialized()) {
@@ -1170,87 +1118,7 @@ public class Countly {
             return;
         }
 
-        List<String> filteredRequests = requestQueueRemoveWithoutAppKey(connectionQueue_.getCountlyStore().getRequests(), connectionQueue_.getAppKey());
-        config_.storageProvider.replaceRequestList(filteredRequests);
-        doStoredRequests();
-    }
-
-    synchronized List<String> requestQueueReplaceWithAppKey(String[] storedRequests, String targetAppKey) {
-        try {
-            List<String> filteredRequests = new ArrayList<>();
-
-            if (storedRequests == null || targetAppKey == null) {
-                //early abort
-                return filteredRequests;
-            }
-
-            String replacementPart = "app_key=" + UtilsNetworking.urlEncodeString(targetAppKey);
-
-            for (String storedRequest : storedRequests) {
-                if (storedRequest == null) {
-                    continue;
-                }
-
-                boolean found = false;
-                String[] parts = storedRequest.split("&");
-
-                for (int b = 0; b < parts.length; b++) {
-                    if (parts[b].contains("app_key=")) {
-                        parts[b] = replacementPart;
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (found) {
-                    //recombine and add
-                    StringBuilder stringBuilder = new StringBuilder(storedRequest.length());
-
-                    for (int c = 0; c < parts.length; c++) {
-                        if (c != 0) {
-                            stringBuilder.append("&");
-                        }
-                        stringBuilder.append(parts[c]);
-                    }
-                    filteredRequests.add(stringBuilder.toString());
-                } else {
-                    //pass through the old one
-                    filteredRequests.add(storedRequest);
-                }
-            }
-
-            return filteredRequests;
-        } catch (Exception ex) {
-            //in case of failure, abort
-            L.e("[Countly] Failed while overwriting appKeys, " + ex.toString());
-
-            return null;
-        }
-    }
-
-    synchronized List<String> requestQueueRemoveWithoutAppKey(String[] storedRequests, String targetAppKey) {
-        List<String> filteredRequests = new ArrayList<>();
-
-        if (storedRequests == null || targetAppKey == null) {
-            //early abort
-            return filteredRequests;
-        }
-
-        String searchablePart = "app_key=" + targetAppKey;
-
-        for (String storedRequest : storedRequests) {
-            if (storedRequest == null) {
-                continue;
-            }
-
-            if (!storedRequest.contains(searchablePart)) {
-                L.d("[requestQueueEraseAppKeysRequests] Found a entry to remove: [" + storedRequest + "]");
-            } else {
-                filteredRequests.add(storedRequest);
-            }
-        }
-
-        return filteredRequests;
+        requestQueue().eraseWrongAppKeyRequests();
     }
 
     public ModuleCrash.Crashes crashes() {
@@ -1341,6 +1209,15 @@ public class Countly {
         }
 
         return moduleFeedback.feedbackInterface;
+    }
+
+    public ModuleRequestQueue.RequestQueue requestQueue() {
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before accessing request queue");
+            return null;
+        }
+
+        return moduleRequestQueue.requestQueueInterface;
     }
 
     public static void applicationOnCreate() {
