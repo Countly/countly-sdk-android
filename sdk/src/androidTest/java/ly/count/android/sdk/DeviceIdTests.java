@@ -149,7 +149,11 @@ public class DeviceIdTests {
     public void getType() {
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, new DeviceId(store, "dsd", mock(ModuleLog.class), null).getType());
         assertEquals(DeviceIdType.TEMPORARY_ID, new DeviceId(store, DeviceId.temporaryCountlyDeviceId, mock(ModuleLog.class), null).getType());
-        assertEquals(DeviceIdType.OPEN_UDID, new DeviceId(store, DeviceIdType.OPEN_UDID, mock(ModuleLog.class), null).getType());
+        assertEquals(DeviceIdType.OPEN_UDID, new DeviceId(store, DeviceIdType.OPEN_UDID, mock(ModuleLog.class), new OpenUDIDProvider() {
+            @Override public String getOpenUDID() {
+                return "abc";
+            }
+        }).getType());
         assertEquals(DeviceIdType.ADVERTISING_ID, new DeviceId(store, DeviceIdType.ADVERTISING_ID, mock(ModuleLog.class), null).getType());
     }
 

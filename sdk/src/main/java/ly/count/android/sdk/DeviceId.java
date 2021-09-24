@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class DeviceId {
     /**
@@ -15,12 +17,16 @@ public class DeviceId {
 
     protected final static String temporaryCountlyDeviceId = "CLYTemporaryDeviceID";
 
+    @Nullable
     private String id = null;
     private DeviceIdType type;
 
     ModuleLog L;
 
+    @NonNull
     StorageProvider storageProvider;
+
+    @NonNull
     OpenUDIDProvider openUDIDProvider;
 
     /**
@@ -28,7 +34,7 @@ public class DeviceId {
      *
      * @param type type of ID generation strategy
      */
-    protected DeviceId(StorageProvider givenStorageProvider, DeviceIdType type, ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
+    protected DeviceId(@NonNull StorageProvider givenStorageProvider, DeviceIdType type, @NonNull ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
         if (type == null) {
             throw new IllegalStateException("Please specify DeviceId.Type, that is which type of device ID generation you want to use");
         } else if (type == DeviceIdType.DEVELOPER_SUPPLIED) {
@@ -52,7 +58,7 @@ public class DeviceId {
      *
      * @param developerSuppliedId Device ID string supplied by developer
      */
-    protected DeviceId(StorageProvider givenStorageProvider, String developerSuppliedId, ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
+    protected DeviceId(@NonNull StorageProvider givenStorageProvider, String developerSuppliedId, @NonNull ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
         if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
             throw new IllegalStateException("Please make sure that device ID is not null or empty");
         }
@@ -168,7 +174,7 @@ public class DeviceId {
     protected String getId() {
         if (id == null && type == DeviceIdType.OPEN_UDID) {
             //using openUDID as a fallback
-            id = OpenUDIDAdapter.OpenUDID;
+            id = openUDIDProvider.getOpenUDID();
         }
         return id;
     }
