@@ -501,4 +501,36 @@ public class DeviceIdInitTests {
         Assert.assertEquals("frt", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, countly.deviceId().getType());
     }
+
+    /**
+     * Usage of Advertising_ID is deprecated
+     * if that type is used during the first init, it should be replaced with OPEN_UDID
+     */
+    @Test
+    public void advertIdReplacedWithOpenUDID() {
+        countlyStore.clear();
+
+        //first init where advertising id mode is chosen. It should be replaced with open_udid
+        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.setIdMode(DeviceIdType.ADVERTISING_ID);
+
+        Countly cInitial = new Countly();
+        cInitial.init(configInitial);
+
+        String initialDId = cInitial.deviceId().getID();
+
+        Assert.assertNotNull(cInitial.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, cInitial.deviceId().getType());
+
+
+        //setup followup init. Adv id is still provided, id and type should be returned the same as befor
+        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        configInitial.setIdMode(DeviceIdType.ADVERTISING_ID);
+
+        Countly countly = new Countly();
+        countly.init(cc);
+
+        Assert.assertEquals(initialDId, countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
 }

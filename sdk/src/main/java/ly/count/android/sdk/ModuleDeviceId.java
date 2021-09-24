@@ -34,7 +34,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         }
 
         //initialise the set device ID value
-        config.deviceIdInstance.init(config.context);
+        config.deviceIdInstance.init();
 
         boolean temporaryDeviceIdIsCurrentlyEnabled = config.deviceIdInstance.temporaryIdModeEnabled();
         L.d("[ModuleDeviceId] [TemporaryDeviceId] Temp ID should be enabled[" + config.temporaryDeviceIdEnabled + "] Currently enabled: [" + temporaryDeviceIdIsCurrentlyEnabled + "]");
@@ -59,7 +59,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         }
 
         //start by changing stored ID
-        _cly.connectionQueue_.getDeviceId().changeToId(_cly.context_, type, deviceId, true);//run init because not clear if types other then dev supplied can be provided
+        _cly.connectionQueue_.getDeviceId().changeToId(type, deviceId, true);//run init because not clear if types other then dev supplied can be provided
 
         //update stored request for ID change to use this new ID
         String[] storedRequests = storageProvider.getRequests();
@@ -106,6 +106,11 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
             return;
         }
 
+        if (type == DeviceIdType.ADVERTISING_ID) {
+            L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, the usage of the type 'ADVERTISING_ID' is deprecated. It will be repleced with 'OPEN_UDID'.");
+            type = DeviceIdType.OPEN_UDID;
+        }
+
         ly.count.android.sdk.DeviceId currentDeviceId = _cly.connectionQueue_.getDeviceId();
 
         if (currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId))) {
@@ -132,7 +137,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
         _cly.moduleSessions.endSessionInternal(currentDeviceId.getId());
-        currentDeviceId.changeToId(_cly.context_, type, deviceId, true);
+        currentDeviceId.changeToId(type, deviceId, true);
         _cly.moduleSessions.beginSessionInternal();
 
         //clear automated star rating session values because now we have a new user

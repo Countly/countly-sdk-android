@@ -308,6 +308,11 @@ public class Countly {
             throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
         }
 
+        if (config.idMode == DeviceIdType.ADVERTISING_ID) {
+            L.w("The use of 'ADVERTISING_ID' as device ID generation strategy is deprecated. It will be replaced with 'OPEN_UDID'.");
+            config.idMode = DeviceIdType.OPEN_UDID;
+        }
+
         if (config.idMode == DeviceIdType.TEMPORARY_ID) {
             throw new IllegalArgumentException("Temporary_ID type can't be provided during init");
         }
@@ -319,12 +324,6 @@ public class Countly {
 
         if (config.idMode == DeviceIdType.DEVELOPER_SUPPLIED && config.deviceID == null) {
             throw new IllegalArgumentException("Valid device ID has to be provided with the Developer_Supplied device ID type");
-        }
-
-        if (config.deviceID == null && config.idMode == DeviceIdType.ADVERTISING_ID && !AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
-            //choosing advertising ID as type, but it's available on this device
-            L.e("valid deviceID is required because Advertising ID is not available (you need to include Google Play services 4.0+ into your project)");
-            return this;
         }
 
         if (isLoggingEnabled()) {

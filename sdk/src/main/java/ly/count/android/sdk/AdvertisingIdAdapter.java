@@ -16,30 +16,6 @@ public class AdvertisingIdAdapter {
         return advertisingIdAvailable;
     }
 
-    public static void setAdvertisingId(final Context context, final DeviceId deviceId) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    deviceId.setId(DeviceIdType.ADVERTISING_ID, getAdvertisingId(context));
-                } catch (Throwable t) {
-                    if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesAvailabilityException")) {
-                        // recoverable, let device ID be null, which will result in storing all requests to Countly server
-                        // and rerunning them whenever Advertising ID becomes available
-                        Countly.sharedInstance().L.i("[AdvertisingIdAdapter] Advertising ID cannot be determined yet");
-                    } else if (t.getCause() != null && t.getCause().getClass().toString().contains("GooglePlayServicesNotAvailableException")) {
-                        // non-recoverable, fallback to OpenUDID
-                        Countly.sharedInstance().L.w("[AdvertisingIdAdapter] Advertising ID cannot be determined because Play Services are not available");
-                        deviceId.fallbackToOpenUDID();
-                    } else {
-                        // unexpected, might recover in the future
-                        Countly.sharedInstance().L.e("[AdvertisingIdAdapter] Couldn't get advertising ID", t);
-                    }
-                }
-            }
-        }).start();
-    }
-
     private static String getAdvertisingId(final Context context) throws Throwable {
         final Class<?> cls = Class.forName(ADVERTISING_ID_CLIENT_CLASS_NAME);
         final Method getAdvertisingIdInfo = cls.getMethod("getAdvertisingIdInfo", Context.class);

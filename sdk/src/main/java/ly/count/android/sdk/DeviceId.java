@@ -7,10 +7,14 @@ import androidx.annotation.Nullable;
 public class DeviceId {
     /**
      * Enum used throughout Countly which controls what kind of ID Countly should use.
+     * @deprecated Replace this type with "DeviceIdType"
      */
     public enum Type {
         DEVELOPER_SUPPLIED,//custom value provided by the developer
         OPEN_UDID,//OPEN_UDID generated UDID
+        /**
+         * @deprecated The usage of this device_ID type is deprecated. It will be removed in the future
+         */
         ADVERTISING_ID,//id provided by the android OS
         TEMPORARY_ID,//temporary device ID mode
     }
@@ -99,10 +103,8 @@ public class DeviceId {
      * In some cases, Countly can override ID generation strategy to other one, for example when
      * Google Play Services are not available and user chose Advertising ID strategy, it will fall
      * back to OpenUDID
-     *
-     * @param context Context to use
      */
-    protected void init(Context context) {
+    protected void init() {
         DeviceIdType storedType = retrieveType();
         L.d("[DeviceId-int] init, current type:[" + type + "] overriddenType:[" + storedType + "]");
 
@@ -134,14 +136,9 @@ public class DeviceId {
                     fallbackToOpenUDID();
                     break;
                 case ADVERTISING_ID:
-                    if (AdvertisingIdAdapter.isAdvertisingIdAvailable()) {
-                        L.i("[DeviceId-int] Using Advertising ID");
-                        AdvertisingIdAdapter.setAdvertisingId(context, this);
-                    } else {
-                        // Fall back to OpenUDID on devices without google play services set up
-                        L.i("[DeviceId-int] Advertising ID is not available, falling back to OpenUDID");
-                        fallbackToOpenUDID();
-                    }
+                    // Fall back to OpenUDID on devices without google play services set up
+                    L.i("[DeviceId-int] Use of Advertising ID is deprecated, falling back to OpenUDID");
+                    fallbackToOpenUDID();
                     break;
             }
         }
@@ -193,16 +190,15 @@ public class DeviceId {
     /**
      * If a value is provided, it will take precedence and will not used no matter what the type is
      *
-     * @param context
      * @param type
      * @param deviceId
      * @param runInit
      */
-    protected void changeToId(Context context, DeviceIdType type, String deviceId, boolean runInit) {
+    protected void changeToId(DeviceIdType type, String deviceId, boolean runInit) {
         L.v("[DeviceId-int] changeToId, Device ID is " + id + " (type " + type + "), init:" + runInit);
         setAndStoreId(type, deviceId);
         if (runInit) {
-            init(context);
+            init();
         }
     }
 

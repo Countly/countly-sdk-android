@@ -118,7 +118,7 @@ public class CountlyConfigTests {
         config.setCountlyStore(cs);
         config.checkForNativeCrashDumps(false);
         config.setDeviceId(s[2]);
-        config.setIdMode(DeviceId.Type.ADVERTISING_ID);
+        config.setIdMode(DeviceId.Type.TEMPORARY_ID);
         config.setStarRatingSessionLimit(1335);
         config.setStarRatingCallback(rc);
         config.setStarRatingTextDismiss(s[3]);
@@ -171,7 +171,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(cs, config.countlyStore);
         Assert.assertFalse(config.checkForNativeCrashDumps);
         Assert.assertEquals(s[2], config.deviceID);
-        Assert.assertEquals(DeviceIdType.ADVERTISING_ID, config.idMode);
+        Assert.assertEquals(DeviceIdType.TEMPORARY_ID, config.idMode);
         Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
         Assert.assertEquals(s[3], config.starRatingTextDismiss);
