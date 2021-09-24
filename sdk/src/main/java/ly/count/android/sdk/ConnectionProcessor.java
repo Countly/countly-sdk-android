@@ -121,7 +121,7 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        String picturePath = UserData.getPicturePathFromQuery(url);
+        String picturePath = ModuleUserProfile.getPicturePathFromQuery(url);
         L.v("[Connection Processor] Got picturePath: " + picturePath);
         //Log.v(Countly.TAG, "Used url: " + urlStr);
         if (!picturePath.equals("")) {

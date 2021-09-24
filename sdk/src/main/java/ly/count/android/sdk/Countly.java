@@ -161,7 +161,10 @@ public class Countly {
     //reference to countly store
     CountlyStore countlyStore;
 
-    //user data access
+    /**
+     * user data access
+     * @deprecated This user data access method will be removed. Use 'Countly.sharedInstance().userProfile();' to access the required functionality.
+     */
     public static UserData userData;
 
     //overrides
@@ -1209,6 +1212,15 @@ public class Countly {
         }
 
         return moduleDeviceId.deviceIdInterface;
+    }
+
+    public ModuleUserProfile.UserProfile userProfile() {
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before accessing user profile");
+            return null;
+        }
+
+        return moduleUserProfile.userProfileInterface;
     }
 
     public static void applicationOnCreate() {

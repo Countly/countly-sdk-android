@@ -357,7 +357,7 @@ public class ConnectionQueue {
             return;
         }
 
-        String userdata = UserData.getDataForRequest();
+        String userdata = ModuleUserProfile.getDataForRequest();
 
         if (!userdata.equals("")) {
             String data = prepareCommonRequestData() + userdata;
@@ -672,6 +672,11 @@ public class ConnectionQueue {
     void tick() {
         L.v("[Connection Queue] tick, Not empty:[" + !store_.noRequestsAvailable() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
             || connectionProcessorFuture_.isDone()) + "]");
+
+        if(!Countly.sharedInstance().isInitialized()) {
+            //attempting to tick when the SDK is not initialized
+            return;
+        }
 
         if (!store_.noRequestsAvailable() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
