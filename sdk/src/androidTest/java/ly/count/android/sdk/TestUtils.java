@@ -55,6 +55,15 @@ public class TestUtils {
         return eqp;
     }
 
+    public static RequestQueueProvider setRequestQueueProviderToMock(Countly countly, RequestQueueProvider rqp) {
+        for (ModuleBase module : countly.modules) {
+            module.requestQueueProvider = rqp;
+        }
+        countly.config_.requestQueueProvider = rqp;
+
+        return rqp;
+    }
+
     public static Map<String, Object> combineSegmentation(Event event) {
         return combineSegmentation(event.segmentation, event.segmentationInt, event.segmentationDouble, event.segmentationBoolean);
     }

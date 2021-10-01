@@ -105,7 +105,7 @@ public class ModuleCrash extends ModuleBase {
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         //record crash
-        _cly.connectionQueue_.sendCrashReport(dumpString, false, true, null);
+        requestQueueProvider.sendCrashReport(dumpString, false, true, null);
     }
 
     /**
@@ -152,7 +152,7 @@ public class ModuleCrash extends ModuleBase {
 
                     //check if it passes the crash filter
                     if (!crashFilterCheck(exceptionString)) {
-                        Countly.sharedInstance().connectionQueue_.sendCrashReport(exceptionString, false, false, null);
+                        requestQueueProvider.sendCrashReport(exceptionString, false, false, null);
                     }
                 }
 
@@ -245,7 +245,7 @@ public class ModuleCrash extends ModuleBase {
         if (crashFilterCheck(exceptionString)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
-            _cly.connectionQueue_.sendCrashReport(exceptionString, itIsHandled, false, customSegmentation);
+            requestQueueProvider.sendCrashReport(exceptionString, itIsHandled, false, customSegmentation);
         }
         return _cly;
     }

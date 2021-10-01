@@ -101,7 +101,7 @@ public class ModuleAPM extends ModuleBase {
 
                 traceKey = validateAndModifyTraceKey(traceKey);
 
-                _cly.connectionQueue_.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp, metricString);
+                requestQueueProvider.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp, metricString);
             }
         } else {
             L.w("[ModuleAPM] endTraceInternal, trying to end trace which was not started");
@@ -319,7 +319,7 @@ public class ModuleAPM extends ModuleBase {
         networkTraceKey = validateAndModifyTraceKey(networkTraceKey);
 
         Long responseTimeMs = endTimestamp - startTimestamp;
-        _cly.connectionQueue_.sendAPMNetworkTrace(networkTraceKey, responseTimeMs, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, endTimestamp);
+        requestQueueProvider.sendAPMNetworkTrace(networkTraceKey, responseTimeMs, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, endTimestamp);
     }
 
     void clearNetworkTraces() {
@@ -338,7 +338,7 @@ public class ModuleAPM extends ModuleBase {
                 return;
             }
 
-            _cly.connectionQueue_.sendAPMAppStart(durationMs, appStartTimestamp, appLoadedTimestamp);
+            requestQueueProvider.sendAPMAppStart(durationMs, appStartTimestamp, appLoadedTimestamp);
         }
     }
 
@@ -363,10 +363,10 @@ public class ModuleAPM extends ModuleBase {
 
                 if (goingToForeground) {
                     // coming from a background mode to the foreground
-                    _cly.connectionQueue_.sendAPMScreenTime(false, durationMs, lastScreenSwitchTime, currentTimeMs);
+                    requestQueueProvider.sendAPMScreenTime(false, durationMs, lastScreenSwitchTime, currentTimeMs);
                 } else if (goingToBackground) {
                     // going form the foreground to the background
-                    _cly.connectionQueue_.sendAPMScreenTime(true, durationMs, lastScreenSwitchTime, currentTimeMs);
+                    requestQueueProvider.sendAPMScreenTime(true, durationMs, lastScreenSwitchTime, currentTimeMs);
                 }
             } else {
                 L.d("[ModuleAPM] 'doForegroundBackgroundCalculations' last screen switch time was '-1', doing nothing");

@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 public class ModuleCrashTests {
     Countly mCountly;
     CountlyConfig config;
-    ConnectionQueue connectionQueue;
+    RequestQueueProvider requestQueueProvider;
 
     @Before
     public void setUp() {
@@ -33,8 +33,7 @@ public class ModuleCrashTests {
         config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
-        connectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(connectionQueue);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
     }
 
     @After
@@ -77,26 +76,26 @@ public class ModuleCrashTests {
         });
 
         countly.init(cConfig);
-        countly.setConnectionQueue(connectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
 
         Exception exception = new Exception("Secret message");
 
         countly.crashes().recordHandledException(exception);
 
-        verify(connectionQueue, never()).sendCrashReport(any(String.class), any(boolean.class), any(boolean.class), isNull(Map.class));
+        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(boolean.class), any(boolean.class), isNull(Map.class));
 
         Throwable throwable = new Throwable("Secret message");
 
         countly.crashes().recordUnhandledException(throwable);
 
-        verify(connectionQueue, never()).sendCrashReport(any(String.class), any(boolean.class), any(boolean.class), isNull(Map.class));
+        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(boolean.class), any(boolean.class), isNull(Map.class));
 
         exception = new Exception("Reasonable message");
 
         countly.crashes().recordHandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connectionQueue).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
 
         Assert.assertTrue(arg.getValue().startsWith("java.lang.Exception: Reasonable message\n" +
             "\tat ly.count.android.sdk.ModuleCrashTests.crashFilterTest(ModuleCrashTests.java:"));
@@ -153,7 +152,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordHandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connectionQueue).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
 
         Assert.assertTrue(arg.getValue().startsWith("java.lang.Exception: Some message\n" +
             "\tat ly.count.android.sdk.ModuleCrashTests.recordHandledExceptionException(ModuleCrashTests.java:"));
@@ -166,7 +165,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordHandledException(throwable);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connectionQueue).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
 
         String crash = arg.getValue();
 
@@ -181,7 +180,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordUnhandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connectionQueue).sendCrashReport(arg.capture(), eq(false), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(false), eq(false), isNull(Map.class));
 
         String crash = arg.getValue();
 
@@ -196,7 +195,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordUnhandledException(throwable);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(connectionQueue).sendCrashReport(arg.capture(), eq(false), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(false), eq(false), isNull(Map.class));
 
         String crash = arg.getValue();
 

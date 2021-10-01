@@ -118,7 +118,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      */
     void doPushConsentSpecialAction(boolean consentValue) {
         L.d("[Countly] Doing push consent special action: [" + consentValue + "]");
-        _cly.connectionQueue_.getCountlyStore().setConsentPush(consentValue);
+        _cly.countlyStore.setConsentPush(consentValue);
     }
 
     /**
@@ -126,7 +126,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      */
     void doLocationConsentSpecialErasure() {
         _cly.moduleLocation.resetLocationValues();
-        _cly.connectionQueue_.sendLocation(true, null, null, null, null);
+        requestQueueProvider.sendLocation(true, null, null, null, null);
     }
 
     /**
@@ -243,7 +243,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         if (isInit && (collectedConsentChanges.size() == 0)) {
             //if countly is initialized and collected changes are already sent, send consent now
-            _cly.connectionQueue_.sendConsentChanges(formattedChanges);
+            requestQueueProvider.sendConsentChanges(formattedChanges);
 
             _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
 
@@ -324,7 +324,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             //send collected consent changes that were made before initialization
             if (collectedConsentChanges.size() != 0) {
                 for (String changeItem : collectedConsentChanges) {
-                    _cly.connectionQueue_.sendConsentChanges(changeItem);
+                    requestQueueProvider.sendConsentChanges(changeItem);
                 }
                 collectedConsentChanges.clear();
             }

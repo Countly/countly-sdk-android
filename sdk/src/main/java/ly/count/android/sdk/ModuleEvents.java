@@ -176,7 +176,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
     @Override
     void initFinished(CountlyConfig config) {
-        checkCachedPushData(_cly.connectionQueue_.getCountlyStore());
+        checkCachedPushData(_cly.countlyStore);
     }
 
     @Override

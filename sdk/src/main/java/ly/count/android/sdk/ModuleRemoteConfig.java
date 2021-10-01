@@ -48,10 +48,10 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
      * @param callback called after the update is done
      */
-    void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
+    void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
         L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
 
-        if (connectionQueue_.getDeviceId().getCurrentId() == null) {
+        if (deviceIdProvider.getDeviceId() == null) {
             //device ID is null, abort
             L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
 
@@ -62,7 +62,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             return;
         }
 
-        if (connectionQueue_.getDeviceId().isTemporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()) {
+        if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
             //temporary id mode enabled, abort
             L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
 
@@ -74,10 +74,10 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
-        String requestData = connectionQueue_.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1]);
+        String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1]);
         L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
-        ConnectionProcessor cp = connectionQueue_.createConnectionProcessor();
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 
         (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, requestShouldBeDelayed, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
             @Override
@@ -276,16 +276,16 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         if (updateRemoteConfigAfterIdChange) {
             updateRemoteConfigAfterIdChange = false;
-            updateRemoteConfigValues(null, null, _cly.connectionQueue_, true, null);
+            updateRemoteConfigValues(null, null, true, null);
         }
     }
 
     @Override
     public void initFinished(CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().isTemporaryIdModeEnabled()) {
+        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !deviceIdProvider.isTemporaryIdEnabled()) {
             L.d("[Init] Automatically updating remote config values");
-            updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, remoteConfigInitCallback);
+            updateRemoteConfigValues(null, null, false, remoteConfigInitCallback);
         }
     }
 
@@ -355,7 +355,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToExclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
-                updateRemoteConfigValues(null, keysToExclude, _cly.connectionQueue_, false, callback);
+                updateRemoteConfigValues(null, keysToExclude, false, callback);
             }
         }
 
@@ -377,7 +377,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
-                updateRemoteConfigValues(keysToInclude, null, _cly.connectionQueue_, false, callback);
+                updateRemoteConfigValues(keysToInclude, null, false, callback);
             }
         }
 
@@ -394,7 +394,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, callback);
+                updateRemoteConfigValues(null, null, false, callback);
             }
         }
     }

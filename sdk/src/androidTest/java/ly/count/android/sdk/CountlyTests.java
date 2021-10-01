@@ -76,8 +76,7 @@ public class CountlyTests {
     public void testConstructor() {
         assertNotNull(mUninitedCountly.getConnectionQueue());
         assertNull(mUninitedCountly.getConnectionQueue().getContext());
-        assertNull(mUninitedCountly.getConnectionQueue().getServerURL());
-        assertNull(mUninitedCountly.getConnectionQueue().getAppKey());
+        assertNull(mUninitedCountly.getConnectionQueue().baseInfoProvider);
         assertNull(mUninitedCountly.getConnectionQueue().getCountlyStore());
         assertNotNull(mUninitedCountly.getTimerService());
         assertEquals(0, mUninitedCountly.getActivityCount());
@@ -198,8 +197,8 @@ public class CountlyTests {
         assertSame(expectedConnectionQueue, mUninitedCountly.getConnectionQueue());
         assertSame(expectedCountlyStore, mUninitedCountly.getConnectionQueue().getCountlyStore());
         assertSame(getContext().getApplicationContext(), mUninitedCountly.getConnectionQueue().getContext());
-        assertEquals(serverURL, mUninitedCountly.getConnectionQueue().getServerURL());
-        assertEquals(appKey, mUninitedCountly.getConnectionQueue().getAppKey());
+        assertEquals(serverURL, mUninitedCountly.getConnectionQueue().baseInfoProvider.getServerURL());
+        assertEquals(appKey, mUninitedCountly.getConnectionQueue().baseInfoProvider.getAppKey());
         assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.countlyStore);
     }
 
@@ -259,8 +258,8 @@ public class CountlyTests {
         mUninitedCountly.init((new CountlyConfig(getContext(), appKey, serverURL)).setDeviceId(deviceID));
 
         assertSame(getContext().getApplicationContext(), mUninitedCountly.getConnectionQueue().getContext());
-        assertEquals(serverURL, mUninitedCountly.getConnectionQueue().getServerURL());
-        assertEquals(appKey, mUninitedCountly.getConnectionQueue().getAppKey());
+        assertEquals(serverURL, mUninitedCountly.getConnectionQueue().baseInfoProvider.getServerURL());
+        assertEquals(appKey, mUninitedCountly.getConnectionQueue().baseInfoProvider.getAppKey());
         assertNotNull(mUninitedCountly.getConnectionQueue().getCountlyStore());
         Assert.assertTrue(mCountly.isInitialized());
         assertSame(mUninitedCountly.getConnectionQueue().getCountlyStore(), mUninitedCountly.countlyStore);
@@ -271,8 +270,7 @@ public class CountlyTests {
         mUninitedCountly.halt();
         assertNotNull(mUninitedCountly.getConnectionQueue());
         assertNull(mUninitedCountly.getConnectionQueue().getContext());
-        assertNull(mUninitedCountly.getConnectionQueue().getServerURL());
-        assertNull(mUninitedCountly.getConnectionQueue().getAppKey());
+        assertNull(mUninitedCountly.getConnectionQueue().baseInfoProvider);
         assertNull(mUninitedCountly.getConnectionQueue().getCountlyStore());
         assertNotNull(mUninitedCountly.getTimerService());
         Assert.assertTrue(mCountly.isInitialized());
@@ -292,8 +290,8 @@ public class CountlyTests {
         assertTrue(0 != mCountly.getActivityCount());
         Assert.assertTrue(mCountly.isInitialized());
         assertNotNull(mCountly.getConnectionQueue().getContext());
-        assertNotNull(mCountly.getConnectionQueue().getServerURL());
-        assertNotNull(mCountly.getConnectionQueue().getAppKey());
+        assertNotNull(mCountly.getConnectionQueue().baseInfoProvider.getServerURL());
+        assertNotNull(mCountly.getConnectionQueue().baseInfoProvider.getAppKey());
         assertNotNull(mCountly.getConnectionQueue().getContext());
 
         assertNotEquals(0, mCountly.modules.size());
@@ -313,8 +311,7 @@ public class CountlyTests {
         verify(mockCountlyStore).clear();
         assertNotNull(mCountly.getConnectionQueue());
         assertNull(mCountly.getConnectionQueue().getContext());
-        assertNull(mCountly.getConnectionQueue().getServerURL());
-        assertNull(mCountly.getConnectionQueue().getAppKey());
+        assertNull(mCountly.getConnectionQueue().baseInfoProvider);
         assertNull(mCountly.getConnectionQueue().getCountlyStore());
         assertNotNull(mCountly.getTimerService());
         Assert.assertFalse(mCountly.isInitialized());
@@ -341,8 +338,7 @@ public class CountlyTests {
 
     @Test
     public void testOnStart_firstCall() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(null);
 
@@ -350,13 +346,12 @@ public class CountlyTests {
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
         assertTrue(prevSessionDurationStartTime > 0);
         assertTrue(prevSessionDurationStartTime <= System.nanoTime());
-        verify(mockConnectionQueue).beginSession(false, null, null, null, null);
+        verify(requestQueueProvider).beginSession(false, null, null, null, null);
     }
 
     @Test
     public void testOnStart_subsequentCall() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(null); // first call to onStart
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
@@ -364,7 +359,7 @@ public class CountlyTests {
 
         assertEquals(2, mCountly.getActivityCount());
         assertEquals(prevSessionDurationStartTime, mCountly.getPrevSessionDurationStartTime());
-        verify(mockConnectionQueue).beginSession(false, null, null, null, null);
+        verify(requestQueueProvider).beginSession(false, null, null, null, null);
     }
 
     @Test
@@ -392,16 +387,15 @@ public class CountlyTests {
 
     @Test
     public void testOnStop_reallyStopping_emptyEventQueue() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(null);
         mCountly.onStop();
 
         assertEquals(0, mCountly.getActivityCount());
         assertEquals(0, mCountly.getPrevSessionDurationStartTime());
-        verify(mockConnectionQueue).endSession(0, null);
-        verify(mockConnectionQueue, times(0)).recordEvents(anyString());
+        verify(requestQueueProvider).endSession(0, null);
+        verify(requestQueueProvider, times(0)).recordEvents(anyString());
     }
 
     /**
@@ -411,8 +405,7 @@ public class CountlyTests {
      */
     @Test
     public void testOnStop_reallyStopping_nonEmptyEventQueue() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
@@ -428,14 +421,13 @@ public class CountlyTests {
 
         assertEquals(0, mCountly.getActivityCount());
         assertEquals(0, mCountly.getPrevSessionDurationStartTime());
-        verify(mockConnectionQueue).endSession(0, null);
-        verify(mockConnectionQueue).recordEvents(eventStr);
+        verify(requestQueueProvider).endSession(0, null);
+        verify(requestQueueProvider).recordEvents(eventStr);
     }
 
     @Test
     public void testOnStop_notStopping() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(null);
         mCountly.onStart(null);
@@ -444,8 +436,8 @@ public class CountlyTests {
 
         assertEquals(1, mCountly.getActivityCount());
         assertEquals(prevSessionDurationStartTime, mCountly.getPrevSessionDurationStartTime());
-        verify(mockConnectionQueue, times(0)).endSession(anyInt());
-        verify(mockConnectionQueue, times(0)).recordEvents(anyString());
+        verify(requestQueueProvider, times(0)).endSession(anyInt());
+        verify(requestQueueProvider, times(0)).recordEvents(anyString());
     }
 
     /**
@@ -454,8 +446,7 @@ public class CountlyTests {
      */
     @Test
     public void testSendEventsIfNeeded_emptyQueue() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
         mCountly.moduleEvents.storageProvider = mock(StorageProvider.class);
 
         when(mCountly.moduleEvents.storageProvider.getEventQueueSize()).thenReturn(0);
@@ -463,7 +454,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
-        verifyZeroInteractions(mockConnectionQueue);
+        verifyZeroInteractions(requestQueueProvider);
     }
 
     /**
@@ -472,8 +463,7 @@ public class CountlyTests {
      */
     @Test
     public void testSendEventsIfNeeded_lessThanThreshold() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
         mCountly.moduleEvents.storageProvider = mock(StorageProvider.class);
 
         when(mCountly.moduleEvents.storageProvider.getEventQueueSize()).thenReturn(9);
@@ -481,13 +471,12 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
-        verifyZeroInteractions(mockConnectionQueue);
+        verifyZeroInteractions(requestQueueProvider);
     }
 
     @Test
     public void testSendEventsIfNeeded_equalToThreshold() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
         mCountly.config_.storageProvider = mock(StorageProvider.class);
         mCountly.moduleRequestQueue.storageProvider = mCountly.config_.storageProvider;
 
@@ -498,13 +487,12 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.config_.storageProvider, times(1)).getEventsForRequestAndEmptyEventQueue();
-        verify(mockConnectionQueue, times(1)).recordEvents(eventData);
+        verify(requestQueueProvider, times(1)).recordEvents(eventData);
     }
 
     @Test
     public void testSendEventsIfNeeded_moreThanThreshold() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
         mCountly.config_.storageProvider = mock(StorageProvider.class);
         mCountly.moduleRequestQueue.storageProvider = mCountly.config_.storageProvider;
 
@@ -515,7 +503,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.config_.storageProvider, times(1)).getEventsForRequestAndEmptyEventQueue();
-        verify(mockConnectionQueue, times(1)).recordEvents(eventData);
+        verify(requestQueueProvider, times(1)).recordEvents(eventData);
     }
 
     @Test
@@ -532,8 +520,7 @@ public class CountlyTests {
 
     @Test
     public void testOnTimer_activeSession_emptyEventQueue() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
         mCountly.config_.storageProvider = mock(StorageProvider.class);
 
         when(mCountly.config_.storageProvider.getEventQueueSize()).thenReturn(0);
@@ -541,14 +528,13 @@ public class CountlyTests {
         mCountly.onStart(null);
         mCountly.onTimer();
 
-        verify(mockConnectionQueue).updateSession(0);
-        verify(mockConnectionQueue, times(0)).recordEvents(anyString());
+        verify(requestQueueProvider).updateSession(0);
+        verify(requestQueueProvider, times(0)).recordEvents(anyString());
     }
 
     @Test
     public void testOnTimer_activeSession_nonEmptyEventQueue() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
         mCountly.config_.storageProvider = mock(StorageProvider.class);
         mCountly.moduleRequestQueue.storageProvider = mCountly.config_.storageProvider;
 
@@ -559,8 +545,8 @@ public class CountlyTests {
         mCountly.onStart(null);
         mCountly.onTimer();
 
-        verify(mockConnectionQueue).updateSession(0);
-        verify(mockConnectionQueue).recordEvents(eventData);
+        verify(requestQueueProvider).updateSession(0);
+        verify(requestQueueProvider).recordEvents(eventData);
     }
 
     @Test

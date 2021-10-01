@@ -24,14 +24,14 @@ public class ModuleSessions extends ModuleBase {
         L.d("[ModuleSessions] 'beginSessionInternal'");
 
         prevSessionDurationStartTime_ = System.nanoTime();
-        _cly.connectionQueue_.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);
+        requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);
     }
 
     void updateSessionInternal() {
         L.d("[ModuleSessions] 'updateSessionInternal'");
 
         if (!_cly.disableUpdateSessionRequests_) {
-            _cly.connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+            requestQueueProvider.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
         }
     }
 
@@ -42,7 +42,7 @@ public class ModuleSessions extends ModuleBase {
         L.d("[ModuleSessions] 'endSessionInternal'");
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
-        _cly.connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
+        requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
         prevSessionDurationStartTime_ = 0;
     }
 

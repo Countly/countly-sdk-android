@@ -1,11 +1,15 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ModuleRequestQueue extends ModuleBase {
+public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
+
+    @NonNull String appKey;
+    @NonNull String serverURL;
 
     //app crawlers
     private boolean shouldIgnoreCrawlers = true;//ignore app crawlers by default
@@ -16,6 +20,12 @@ public class ModuleRequestQueue extends ModuleBase {
     ModuleRequestQueue(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleRequestQueue] Initialising");
+
+        config.baseInfoProvider = this;
+        baseInfoProvider = this;
+
+        appKey = config.appKey;
+        serverURL = config.serverURL;
 
         //app crawler check
         if (config.shouldIgnoreAppCrawlers) {
@@ -31,6 +41,14 @@ public class ModuleRequestQueue extends ModuleBase {
         checkIfDeviceIsAppCrawler();
 
         requestQueueInterface = new RequestQueue();
+    }
+
+    @Override public @NonNull String getAppKey() {
+        return appKey;
+    }
+
+    @Override public @NonNull String getServerURL() {
+        return serverURL;
     }
 
     synchronized List<String> requestQueueReplaceWithAppKey(String[] storedRequests, String targetAppKey) {
@@ -120,7 +138,7 @@ public class ModuleRequestQueue extends ModuleBase {
         L.v("[Countly] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
 
         if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= Countly.EVENT_QUEUE_SIZE_THRESHOLD) {
-            _cly.connectionQueue_.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue());
+            requestQueueProvider.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue());
         }
     }
 
@@ -148,7 +166,7 @@ public class ModuleRequestQueue extends ModuleBase {
     }
 
     public void flushQueuesInternal() {
-        CountlyStore store = _cly.connectionQueue_.getCountlyStore();
+        CountlyStore store = _cly.countlyStore;
 
         int count = 0;
 
@@ -177,7 +195,7 @@ public class ModuleRequestQueue extends ModuleBase {
         sendEventsIfNeeded(true);
 
         //trigger the processing of the request queue
-        _cly.connectionQueue_.tick();
+        requestQueueProvider.tick();
     }
 
     /**
@@ -186,7 +204,7 @@ public class ModuleRequestQueue extends ModuleBase {
     synchronized public void requestQueueOverwriteAppKeysInternal() {
         L.i("[Countly] Calling requestQueueOverwriteAppKeys");
 
-        List<String> filteredRequests = requestQueueReplaceWithAppKey(storageProvider.getRequests(), _cly.connectionQueue_.getAppKey());
+        List<String> filteredRequests = requestQueueReplaceWithAppKey(storageProvider.getRequests(), baseInfoProvider.getAppKey());
         if (filteredRequests != null) {
             storageProvider.replaceRequestList(filteredRequests);
             attemptToSendStoredRequestsInternal();
@@ -199,7 +217,7 @@ public class ModuleRequestQueue extends ModuleBase {
     synchronized public void requestQueueEraseAppKeysRequestsInternal() {
         L.i("[Countly] Calling requestQueueEraseAppKeysRequests");
 
-        List<String> filteredRequests = requestQueueRemoveWithoutAppKey(storageProvider.getRequests(), _cly.connectionQueue_.getAppKey());
+        List<String> filteredRequests = requestQueueRemoveWithoutAppKey(storageProvider.getRequests(), baseInfoProvider.getAppKey());
         storageProvider.replaceRequestList(filteredRequests);
         attemptToSendStoredRequestsInternal();
     }

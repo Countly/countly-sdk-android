@@ -9,6 +9,9 @@ abstract class ModuleBase {
     ConsentProvider consentProvider;
     StorageProvider storageProvider;
     EventProvider eventProvider;
+    RequestQueueProvider requestQueueProvider;
+    DeviceIdProvider deviceIdProvider;
+    BaseInfoProvider baseInfoProvider;
 
     ModuleBase(Countly cly, CountlyConfig config) {
         _cly = cly;
@@ -16,6 +19,9 @@ abstract class ModuleBase {
         consentProvider = config.consentProvider;
         storageProvider = config.storageProvider;
         eventProvider = config.eventProvider;
+        requestQueueProvider = config.requestQueueProvider;
+        deviceIdProvider = config.deviceIdProvider;
+        baseInfoProvider = config.baseInfoProvider;
     }
 
     void halt() {

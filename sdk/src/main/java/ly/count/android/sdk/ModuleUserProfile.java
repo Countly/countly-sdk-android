@@ -273,7 +273,6 @@ public class ModuleUserProfile extends ModuleBase {
             return;
         }
 
-
         Map<String, Object> dataNamedFields = new HashMap<>();
         Map<String, Object> dataCustomFields = new HashMap<>();
 
@@ -298,11 +297,13 @@ public class ModuleUserProfile extends ModuleBase {
     }
 
     void saveInternal() {
-
+        Countly.sharedInstance().L.w("[ModuleUserProfile] saveInternal");
+        Countly.userData.save();
     }
 
     void clearInternal() {
-        //dataStore.
+        Countly.sharedInstance().L.w("[ModuleUserProfile] clearInternal");
+        Countly.userData.clear();
     }
 
     @Override
@@ -401,6 +402,11 @@ public class ModuleUserProfile extends ModuleBase {
 
         }
 
+        /**
+         * Set a single user property. It can be either a custom one or one of the predefined ones.
+         * @param key the key for the user property
+         * @param value the value for the user property to be set. The value should be the allowed data type.
+         */
         public void setProperty(String key, Object value) {
             synchronized (_cly) {
                 L.i("[UserProfile] Calling 'setProperty'");
@@ -412,6 +418,11 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
+        /**
+         * Provide a map of user properties to set.
+         * Those can be either custom user properties or predefined user properties
+         * @param data
+         */
         public void setProperties(Map<String, Object> data) {
             synchronized (_cly) {
                 L.i("[UserProfile] Calling 'setProperties'");
@@ -430,7 +441,7 @@ public class ModuleUserProfile extends ModuleBase {
         public void save() {
             synchronized (_cly) {
                 L.i("[UserProfile] Calling 'save'");
-                Countly.userData.save();
+                saveInternal();
             }
         }
 
@@ -440,7 +451,7 @@ public class ModuleUserProfile extends ModuleBase {
         public void clear() {
             synchronized (_cly) {
                 L.i("[UserProfile] Calling 'clear'");
-                Countly.userData.clear();
+                clearInternal();
             }
         }
     }

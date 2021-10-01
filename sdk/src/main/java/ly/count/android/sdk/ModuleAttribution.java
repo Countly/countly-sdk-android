@@ -14,7 +14,7 @@ public class ModuleAttribution extends ModuleBase {
     void recordCampaignInternal(String campaignId, String campaignUserId) {
         L.d("[ModuleAttribution] recordCampaignInternal, campaign id:[" + campaignId + "], user id:[" + campaignUserId + "]");
 
-        _cly.connectionQueue_.sendReferrerDataManual(campaignId, campaignUserId);
+        requestQueueProvider.sendReferrerDataManual(campaignId, campaignUserId);
     }
 
     @Override

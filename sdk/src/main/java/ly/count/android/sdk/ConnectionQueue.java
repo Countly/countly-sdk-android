@@ -41,15 +41,14 @@ import javax.net.ssl.TrustManager;
  * NOTE: This class is only public to facilitate unit testing, because
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
-public class ConnectionQueue {
+class ConnectionQueue implements RequestQueueProvider {
     private CountlyStore store_;
     private ExecutorService executor_;
-    private String appKey_;
     private Context context_;
-    private String serverURL_;
     private Future<?> connectionProcessorFuture_;
     private DeviceId deviceId_;
     private SSLContext sslContext_;
+    BaseInfoProvider baseInfoProvider;
 
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
@@ -57,13 +56,8 @@ public class ConnectionQueue {
     protected ModuleLog L;
     protected ConsentProvider consentProvider;//link to the consent module
 
-    // Getters are for unit testing
-    String getAppKey() {
-        return appKey_;
-    }
-
-    void setAppKey(final String appKey) {
-        appKey_ = appKey;
+    void setBaseInfoProvider(BaseInfoProvider bip) {
+        baseInfoProvider = bip;
     }
 
     Context getContext() {
@@ -74,13 +68,7 @@ public class ConnectionQueue {
         context_ = context;
     }
 
-    String getServerURL() {
-        return serverURL_;
-    }
-
-    void setServerURL(final String serverURL) {
-        serverURL_ = serverURL;
-
+    void setupSSLContext() {
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
             sslContext_ = null;
         } else {
@@ -138,16 +126,16 @@ public class ConnectionQueue {
         if (context_ == null) {
             throw new IllegalStateException("context has not been set");
         }
-        if (appKey_ == null || appKey_.length() == 0) {
+        if (baseInfoProvider.getAppKey() == null || baseInfoProvider.getAppKey().length() == 0) {
             throw new IllegalStateException("app key has not been set");
         }
         if (store_ == null) {
             throw new IllegalStateException("countly store has not been set");
         }
-        if (serverURL_ == null || !UtilsNetworking.isValidURL(serverURL_)) {
+        if (baseInfoProvider.getServerURL() == null || !UtilsNetworking.isValidURL(baseInfoProvider.getServerURL())) {
             throw new IllegalStateException("server URL is not valid");
         }
-        if (Countly.publicKeyPinCertificates != null && !serverURL_.startsWith("https")) {
+        if (Countly.publicKeyPinCertificates != null && !baseInfoProvider.getServerURL().startsWith("https")) {
             throw new IllegalStateException("server must start with https once you specified public keys");
         }
     }
@@ -157,7 +145,7 @@ public class ConnectionQueue {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void beginSession(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
+    public void beginSession(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         checkInternalState();
         L.d("[Connection Queue] beginSession");
 
@@ -205,7 +193,7 @@ public class ConnectionQueue {
      * @param duration duration in seconds to extend the current app session, should be more than zero
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void updateSession(final int duration) {
+    public void updateSession(final int duration) {
         checkInternalState();
         L.d("[Connection Queue] updateSession");
 
@@ -296,11 +284,11 @@ public class ConnectionQueue {
      * @param duration duration in seconds to extend the current app session
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void endSession(final int duration) {
+    public void endSession(final int duration) {
         endSession(duration, null);
     }
 
-    void endSession(final int duration, String deviceIdOverride) {
+    public void endSession(final int duration, String deviceIdOverride) {
         checkInternalState();
         L.d("[Connection Queue] endSession");
 
@@ -330,7 +318,7 @@ public class ConnectionQueue {
     /**
      * Send user location
      */
-    void sendLocation(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
+    public void sendLocation(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         checkInternalState();
         L.d("[Connection Queue] sendLocation");
 
@@ -348,7 +336,7 @@ public class ConnectionQueue {
      *
      * @throws java.lang.IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void sendUserData() {
+    public void sendUserData(String userdata) {
         checkInternalState();
         L.d("[Connection Queue] sendUserData");
 
@@ -356,8 +344,6 @@ public class ConnectionQueue {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
-
-        String userdata = ModuleUserProfile.getDataForRequest();
 
         if (!userdata.equals("")) {
             String data = prepareCommonRequestData() + userdata;
@@ -373,7 +359,7 @@ public class ConnectionQueue {
      * @param referrer query parameters
      * @throws java.lang.IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void sendReferrerData(String referrer) {
+    public void sendReferrerData(String referrer) {
         checkInternalState();
         L.d("[Connection Queue] sendReferrerData");
 
@@ -390,7 +376,7 @@ public class ConnectionQueue {
         }
     }
 
-    void sendReferrerDataManual(String campaignID, String userID) {
+    public void sendReferrerDataManual(String campaignID, String userID) {
         checkInternalState();
         L.d("[Connection Queue] sendReferrerDataManual");
 
@@ -424,7 +410,7 @@ public class ConnectionQueue {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
+    public void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
         checkInternalState();
         L.d("[Connection Queue] sendCrashReport");
 
@@ -452,7 +438,7 @@ public class ConnectionQueue {
      * @param events URL-encoded JSON string of event data
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void recordEvents(final String events) {
+    public void recordEvents(final String events) {
         checkInternalState();
         L.d("[Connection Queue] sendConsentChanges");
 
@@ -467,7 +453,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    void sendConsentChanges(String formattedConsentChanges) {
+    public void sendConsentChanges(String formattedConsentChanges) {
         checkInternalState();
         L.d("[Connection Queue] sendConsentChanges");
 
@@ -479,7 +465,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs, String customMetrics) {
+    public void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs, String customMetrics) {
         checkInternalState();
 
         L.d("[Connection Queue] sendAPMCustomTrace");
@@ -504,7 +490,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    void sendAPMNetworkTrace(String networkTraceKey, Long responseTimeMs, int responseCode, int requestPayloadSize, int responsePayloadSize, Long startMs, Long endMs) {
+    public void sendAPMNetworkTrace(String networkTraceKey, Long responseTimeMs, int responseCode, int requestPayloadSize, int responsePayloadSize, Long startMs, Long endMs) {
         checkInternalState();
 
         L.d("[Connection Queue] sendAPMNetworkTrace");
@@ -530,7 +516,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    void sendAPMAppStart(long durationMs, Long startMs, Long endMs) {
+    public void sendAPMAppStart(long durationMs, Long startMs, Long endMs) {
         checkInternalState();
 
         L.d("[Connection Queue] sendAPMAppStart");
@@ -553,7 +539,7 @@ public class ConnectionQueue {
         tick();
     }
 
-    void sendAPMScreenTime(boolean recordForegroundTime, long durationMs, Long startMs, Long endMs) {
+    public void sendAPMScreenTime(boolean recordForegroundTime, long durationMs, Long startMs, Long endMs) {
         checkInternalState();
 
         L.d("[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
@@ -579,7 +565,7 @@ public class ConnectionQueue {
     String prepareCommonRequestData() {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
-        return "app_key=" + UtilsNetworking.urlEncodeString(appKey_)
+        return "app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
             + "&timestamp=" + instant.timestampMs
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
@@ -619,7 +605,7 @@ public class ConnectionQueue {
         return data;
     }
 
-    String prepareRemoteConfigRequest(String keysInclude, String keysExclude) {
+    public String prepareRemoteConfigRequest(String keysInclude, String keysExclude) {
         String data = prepareCommonRequestData()
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
@@ -639,14 +625,14 @@ public class ConnectionQueue {
         return data;
     }
 
-    String prepareRatingWidgetRequest(String widgetId) {
+    public String prepareRatingWidgetRequest(String widgetId) {
         String data = prepareCommonRequestData()
             + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
         return data;
     }
 
-    String prepareFeedbackListRequest() {
+    public String prepareFeedbackListRequest() {
         String data = prepareCommonRequestData()
             + "&method=feedback"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
@@ -669,7 +655,7 @@ public class ConnectionQueue {
      * Does nothing if there is connection queue data or if a ConnectionProcessor
      * is already running.
      */
-    void tick() {
+    public void tick() {
         L.v("[Connection Queue] tick, Not empty:[" + !store_.noRequestsAvailable() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
             || connectionProcessorFuture_.isDone()) + "]");
 
@@ -685,7 +671,7 @@ public class ConnectionQueue {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues, L);
+        return new ConnectionProcessor(baseInfoProvider.getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues, L);
     }
 
     public boolean queueContainsTemporaryIdItems() {

@@ -26,10 +26,16 @@ public class CountlyConfig {
 
     protected EventQueueProvider eventQueueProvider = null;
 
+    protected RequestQueueProvider requestQueueProvider = null;
+
+    protected DeviceIdProvider deviceIdProvider = null;
+
+    protected BaseInfoProvider baseInfoProvider = null;
+
     protected boolean checkForNativeCrashDumps = true;
 
     //used to deliver this object to connection queue
-    protected DeviceId deviceIdInstance = null;
+    //protected DeviceId deviceIdInstance = null;
 
     // Fields used for SDK configuration during init
 

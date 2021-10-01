@@ -25,9 +25,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.Configuration;
-import android.net.Uri;
 import android.os.Bundle;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,6 +130,8 @@ public class Countly {
     boolean disableUpdateSessionRequests_ = false;//todo, move to module after 'setDisableUpdateSessionRequests' is removed
 
     boolean sdkIsInitialised = false;
+
+    BaseInfoProvider baseInfoProvider;
 
     //w - warnings
     //e - errors
@@ -331,8 +331,8 @@ public class Countly {
             L.d("[Init] SDK initialised with the URL:[" + config.serverURL + "] and first half of the appKey:[" + halfAppKey + "]");
         }
 
-        if (sdkIsInitialised && (!connectionQueue_.getServerURL().equals(config.serverURL) ||
-            !connectionQueue_.getAppKey().equals(config.appKey) ||
+        if (sdkIsInitialised && (!baseInfoProvider.getServerURL().equals(config.serverURL) ||
+            !baseInfoProvider.getAppKey().equals(config.appKey) ||
             !DeviceId.deviceIDEqualsNullSafe(config.deviceID, config.idMode, connectionQueue_.getDeviceId()))) {
             //not sure if this needed
             L.e("Countly cannot be reinitialized with different values");
@@ -400,6 +400,12 @@ public class Countly {
                 L.d("[Init] Custom event queue provider was provided");
             }
 
+            if (config.requestQueueProvider == null) {
+                config.requestQueueProvider = connectionQueue_;
+            } else {
+                L.d("[Init] Custom request queue provider was provided");
+            }
+
             //check legacy access methods
             if (locationFallback != null && config.locationCountyCode == null && config.locationCity == null && config.locationLocation == null && config.locationIpAddress == null) {
                 //if the fallback was set and config did not contain any location, use the fallback info
@@ -448,9 +454,13 @@ public class Countly {
 
             //add missing providers
             moduleRequestQueue.consentProvider = config.consentProvider;
+            moduleRequestQueue.deviceIdProvider = config.deviceIdProvider;
             moduleConsent.eventProvider = config.eventProvider;
+            moduleConsent.deviceIdProvider = config.deviceIdProvider;
             moduleDeviceId.eventProvider = config.eventProvider;
             moduleCrash.eventProvider = config.eventProvider;
+
+            baseInfoProvider = config.baseInfoProvider;
 
             L.i("[Init] Finished initialising modules");
 
@@ -510,10 +520,10 @@ public class Countly {
             //initialize networking queues
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;
-            connectionQueue_.setServerURL(config.serverURL);
-            connectionQueue_.setAppKey(config.appKey);
+            connectionQueue_.setupSSLContext();
+            connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
             connectionQueue_.setCountlyStore(countlyStore);
-            connectionQueue_.setDeviceId(config.deviceIdInstance);
+            connectionQueue_.setDeviceId(config.deviceIdProvider.getDeviceIdInstance());
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
@@ -653,8 +663,6 @@ public class Countly {
                 countlyStore.clear();
             }
             connectionQueue_.setContext(null);
-            connectionQueue_.setServerURL(null);
-            connectionQueue_.setAppKey(null);
             connectionQueue_.setCountlyStore(null);
             connectionQueue_ = null;
         }

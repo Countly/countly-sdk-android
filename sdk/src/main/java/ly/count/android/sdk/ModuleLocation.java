@@ -44,7 +44,7 @@ public class ModuleLocation extends ModuleBase {
 
     void sendCurrentLocation() {
         L.d("[ModuleLocation] Calling 'sendCurrentLocation'");
-        _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+        requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
     }
 
     void disableLocationInternal() {
@@ -57,7 +57,7 @@ public class ModuleLocation extends ModuleBase {
 
         resetLocationValues();
         locationDisabled = true;
-        _cly.connectionQueue_.sendLocation(true, null, null, null, null);
+        requestQueueProvider.sendLocation(true, null, null, null, null);
     }
 
     void setLocationInternal(String country_code, String city, String gpsCoordinates, String ipAddress) {
@@ -86,7 +86,7 @@ public class ModuleLocation extends ModuleBase {
             //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
             if (postInitReached) {
-                _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+                requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
             } else {
                 //if we are still in init, send it at the end so that the SDK finished initialisation
                 sendLocationPostInit = true;
@@ -112,7 +112,7 @@ public class ModuleLocation extends ModuleBase {
         postInitReached = true;
         if (sendLocationPostInit) {
             L.d("[ModuleLocation] Sending location post init");
-            _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
         }
     }
 

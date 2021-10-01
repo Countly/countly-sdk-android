@@ -84,17 +84,14 @@ public class ConnectionQueueTests {
     public void testConstructor() {
         assertNull(freshConnQ.getCountlyStore());
         assertNull(freshConnQ.getDeviceId());
-        assertNull(freshConnQ.getAppKey());
+        assertNull(freshConnQ.baseInfoProvider);
         assertNull(freshConnQ.getContext());
-        assertNull(freshConnQ.getServerURL());
         assertNull(freshConnQ.getExecutor());
     }
 
     @Test
     public void testAppKey() {
-        final String appKey = "blahblahblah";
-        freshConnQ.setAppKey(appKey);
-        assertEquals(appKey, freshConnQ.getAppKey());
+        assertEquals(appKey, connQ.baseInfoProvider.getAppKey());
     }
 
     @Test
@@ -106,8 +103,7 @@ public class ConnectionQueueTests {
     @Test
     public void testServerURL() {
         final String serverURL = "http://countly.coupons.com";
-        freshConnQ.setServerURL(serverURL);
-        assertEquals(serverURL, freshConnQ.getServerURL());
+        assertEquals(serverURL, connQ.baseInfoProvider.getServerURL());
     }
 
     @Test
@@ -135,7 +131,7 @@ public class ConnectionQueueTests {
     @Test
     public void testCheckInternalState_nullAppKey() {
         connQ.checkInternalState(); // shouldn't throw
-        connQ.setAppKey(null);
+        Countly.sharedInstance().moduleRequestQueue.appKey = null;
         try {
             freshConnQ.checkInternalState();
             fail("expected IllegalStateException when internal state is not set up");
@@ -147,7 +143,7 @@ public class ConnectionQueueTests {
     @Test
     public void testCheckInternalState_emptyAppKey() {
         connQ.checkInternalState(); // shouldn't throw
-        connQ.setAppKey("");
+        Countly.sharedInstance().moduleRequestQueue.appKey = "";
         try {
             freshConnQ.checkInternalState();
             fail("expected IllegalStateException when internal state is not set up");
@@ -183,7 +179,7 @@ public class ConnectionQueueTests {
     @Test
     public void testCheckInternalState_nullServerURL() {
         connQ.checkInternalState(); // shouldn't throw
-        connQ.setServerURL(null);
+        Countly.sharedInstance().moduleRequestQueue.serverURL = null;
         try {
             freshConnQ.checkInternalState();
             fail("expected IllegalStateException when internal state is not set up");
@@ -195,7 +191,7 @@ public class ConnectionQueueTests {
     @Test
     public void testCheckInternalState_invalidServerURL() {
         connQ.checkInternalState(); // shouldn't throw
-        connQ.setServerURL("blahblahblah.com");
+        Countly.sharedInstance().moduleRequestQueue.serverURL = "blahblahblah.com";
         try {
             freshConnQ.checkInternalState();
             fail("expected IllegalStateException when internal state is not set up");
@@ -224,7 +220,7 @@ public class ConnectionQueueTests {
         // verify query parameters
         final String queryStr = arg.getValue();
         final Map<String, String> queryParams = parseQueryParams(queryStr);
-        assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
+        assertEquals(connQ.baseInfoProvider.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
@@ -276,7 +272,7 @@ public class ConnectionQueueTests {
         // verify query parameters
         final String queryStr = arg.getValue();
         final Map<String, String> queryParams = parseQueryParams(queryStr);
-        assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
+        assertEquals(connQ.baseInfoProvider.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long actualTimestamp = Long.parseLong(queryParams.get("timestamp"));
@@ -305,7 +301,7 @@ public class ConnectionQueueTests {
         // verify query parameters
         final String queryStr = arg.getValue();
         final Map<String, String> queryParams = parseQueryParams(queryStr);
-        assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
+        assertEquals(connQ.baseInfoProvider.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
@@ -327,7 +323,7 @@ public class ConnectionQueueTests {
         // verify query parameters
         final String queryStr = arg.getValue();
         final Map<String, String> queryParams = parseQueryParams(queryStr);
-        assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
+        assertEquals(connQ.baseInfoProvider.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
@@ -349,7 +345,7 @@ public class ConnectionQueueTests {
         // verify query parameters
         final String queryStr = arg.getValue();
         final Map<String, String> queryParams = parseQueryParams(queryStr);
-        assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
+        assertEquals(connQ.baseInfoProvider.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
@@ -382,7 +378,7 @@ public class ConnectionQueueTests {
         // verify query parameters
         final String queryStr = arg.getValue();
         final Map<String, String> queryParams = parseQueryParams(queryStr);
-        assertEquals(connQ.getAppKey(), queryParams.get("app_key"));
+        assertEquals(connQ.baseInfoProvider.getAppKey(), queryParams.get("app_key"));
         assertNull(queryParams.get("device_id"));
         final long curTimestamp = UtilsTime.currentTimestampMs();
         final long curTimestampBelow = curTimestamp - timestampAllowance;
@@ -440,7 +436,7 @@ public class ConnectionQueueTests {
         final ArgumentCaptor<Runnable> arg = ArgumentCaptor.forClass(Runnable.class);
         when(connQ.getExecutor().submit(arg.capture())).thenReturn(null);
         connQ.tick();
-        assertEquals(((ConnectionProcessor) arg.getValue()).getServerURL(), connQ.getServerURL());
+        assertEquals(((ConnectionProcessor) arg.getValue()).getServerURL(), connQ.baseInfoProvider.getServerURL());
         assertSame(((ConnectionProcessor) arg.getValue()).getCountlyStore(), connQ.getCountlyStore());
     }
 

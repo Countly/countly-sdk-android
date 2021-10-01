@@ -297,7 +297,7 @@ public class ModuleViewsTests {
         segm.put("dur", "1");//todo rework to verify duration better
         segm.put("segment", "Android");
         segm.put("name", viewNames[1]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);//todo this test has issues sometimes
 
         segm.clear();
         segm.put("segment", "Android");

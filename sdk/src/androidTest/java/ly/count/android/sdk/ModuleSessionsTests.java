@@ -35,12 +35,11 @@ public class ModuleSessionsTests {
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
 
         mCountly.init(config);
-        ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(connectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
 
-        verify(connectionQueue, times(1)).beginSession(false, null, null, null, null);
+        verify(requestQueueProvider, times(1)).beginSession(false, null, null, null, null);
     }
 
     @Test
@@ -49,19 +48,18 @@ public class ModuleSessionsTests {
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
 
         mCountly.init(config);
-        ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(connectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
-        verify(connectionQueue, times(1)).beginSession(false, null, null, null, null);
+        verify(requestQueueProvider, times(1)).beginSession(false, null, null, null, null);
 
         Thread.sleep(1000);
         mCountly.sessions().updateSession();
 
-        verify(connectionQueue, times(1)).updateSession(1);
+        verify(requestQueueProvider, times(1)).updateSession(1);
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        verify(connectionQueue, times(1)).endSession(2, null);
+        verify(requestQueueProvider, times(1)).endSession(2, null);
     }
 
     @Test
@@ -110,16 +108,15 @@ public class ModuleSessionsTests {
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
 
         mCountly.init(config);
-        ConnectionQueue connectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(connectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(null);
 
-        verify(connectionQueue, times(1)).beginSession(false, null, null, null, null);
+        verify(requestQueueProvider, times(1)).beginSession(false, null, null, null, null);
         Thread.sleep(1000);
 
         mCountly.onStop();
 
-        verify(connectionQueue, times(1)).endSession(1, null);
+        verify(requestQueueProvider, times(1)).endSession(1, null);
     }
 }

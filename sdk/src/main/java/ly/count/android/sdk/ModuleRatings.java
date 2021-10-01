@@ -464,14 +464,14 @@ public class ModuleRatings extends ModuleBase {
             deviceIsPhone = false;
         }
 
-        String requestData = _cly.connectionQueue_.prepareRatingWidgetRequest(widgetId);
-        final String ratingWidgetUrl = _cly.connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId +
-            "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getCurrentId()) +
-            "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
+        String requestData = requestQueueProvider.prepareRatingWidgetRequest(widgetId);
+        final String ratingWidgetUrl = baseInfoProvider.getServerURL() + "/feedback?widget_id=" + widgetId +
+            "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider.getDeviceId()) +
+            "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey());
 
         L.d("[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
 
-        ConnectionProcessor cp = _cly.connectionQueue_.createConnectionProcessor();
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 
         (new ImmediateRequestMaker()).execute(requestData, "/o/feedback/widget", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
             @Override
@@ -565,7 +565,7 @@ public class ModuleRatings extends ModuleBase {
     @Override
     void callbackOnActivityResumed(Activity activity) {
         if (showStarRatingDialogOnFirstActivity) {
-            CountlyStore cs = _cly.connectionQueue_.getCountlyStore();
+            CountlyStore cs = _cly.countlyStore;
             StarRatingPreferences srp = loadStarRatingPreferences(cs);
             srp.isShownForCurrentVersion = true;
             srp.automaticHasBeenShown = true;
@@ -640,7 +640,7 @@ public class ModuleRatings extends ModuleBase {
                     return;
                 }
 
-                showStarRatingInternal(activity, _cly.connectionQueue_.getCountlyStore(), callback);
+                showStarRatingInternal(activity, _cly.countlyStore, callback);
             }
         }
 
@@ -651,7 +651,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public int getCurrentVersionsSessionCount() {
             synchronized (_cly) {
-                int sessionCount = getCurrentVersionsSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
+                int sessionCount = getCurrentVersionsSessionCountInternal(_cly.countlyStore);
 
                 L.i("[Ratings] Getting star rating current version session count: [" + sessionCount + "]");
 
@@ -666,7 +666,7 @@ public class ModuleRatings extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Ratings] Clearing star rating session count");
 
-                clearAutomaticStarRatingSessionCountInternal(_cly.connectionQueue_.getCountlyStore());
+                clearAutomaticStarRatingSessionCountInternal(_cly.countlyStore);
             }
         }
 
@@ -675,7 +675,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public int getAutomaticStarRatingSessionLimit() {
             synchronized (_cly) {
-                int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.connectionQueue_.getCountlyStore());
+                int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.countlyStore);
 
                 L.i("[Ratings] Getting automatic star rating session limit: [" + sessionLimit + "]");
 
