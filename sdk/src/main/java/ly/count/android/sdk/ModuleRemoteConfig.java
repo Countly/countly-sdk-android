@@ -51,7 +51,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final ConnectionQueue connectionQueue_, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
         L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
 
-        if (connectionQueue_.getDeviceId().getId() == null) {
+        if (connectionQueue_.getDeviceId().getCurrentId() == null) {
             //device ID is null, abort
             L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
 
@@ -62,7 +62,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             return;
         }
 
-        if (connectionQueue_.getDeviceId().temporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()) {
+        if (connectionQueue_.getDeviceId().isTemporaryIdModeEnabled() || connectionQueue_.queueContainsTemporaryIdItems()) {
             //temporary id mode enabled, abort
             L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
 
@@ -283,7 +283,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     @Override
     public void initFinished(CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !_cly.connectionQueue_.getDeviceId().isTemporaryIdModeEnabled()) {
             L.d("[Init] Automatically updating remote config values");
             updateRemoteConfigValues(null, null, _cly.connectionQueue_, false, remoteConfigInitCallback);
         }

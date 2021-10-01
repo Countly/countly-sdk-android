@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -22,7 +21,9 @@ public class DeviceId {
     protected final static String temporaryCountlyDeviceId = "CLYTemporaryDeviceID";
 
     @Nullable
-    private String id = null;
+    private String id;
+
+    @Nullable
     private DeviceIdType type;
 
     ModuleLog L;
@@ -33,63 +34,43 @@ public class DeviceId {
     @NonNull
     OpenUDIDProvider openUDIDProvider;
 
-    /**
-     * Initialize DeviceId with Type of OPEN_UDID or ADVERTISING_ID
-     *
-     * @param type type of ID generation strategy
-     */
-    protected DeviceId(@NonNull StorageProvider givenStorageProvider, DeviceIdType type, @NonNull ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
-        if (type == null) {
-            throw new IllegalStateException("Please specify DeviceId.Type, that is which type of device ID generation you want to use");
-        } else if (type == DeviceIdType.DEVELOPER_SUPPLIED) {
-            throw new IllegalStateException("Please use another DeviceId constructor for device IDs supplied by developer");
+    protected DeviceId(@NonNull DeviceIdType type, @Nullable String developerSuppliedId, @NonNull StorageProvider givenStorageProvider, @NonNull ModuleLog moduleLog, @NonNull OpenUDIDProvider openUDIDProvider) {
+        if(type == DeviceIdType.DEVELOPER_SUPPLIED) {
+            if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
+                throw new IllegalStateException("If using developer supplied type, a valid device ID should be provided, [" + developerSuppliedId + "]");
+            }
+        } else if(type == DeviceIdType.TEMPORARY_ID) {
+            if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
+                throw new IllegalStateException("If using temporary ID type, a valid device ID should be provided, [" + developerSuppliedId + "]");
+            }
+
+            if(!developerSuppliedId.equals(temporaryCountlyDeviceId)) {
+                throw new IllegalStateException("If using temporary ID type, the device ID value should be the required one, [" + developerSuppliedId + "]");
+            }
+
+        } else if(type == DeviceIdType.OPEN_UDID || type == DeviceIdType.ADVERTISING_ID){
+
+        } else {
+            throw new IllegalStateException("Null device ID type is not allowed");
         }
+
         storageProvider = givenStorageProvider;
         this.openUDIDProvider = openUDIDProvider;
 
         //setup the preferred device ID type
         this.type = type;
-        L = moduleLog;
-
-        L.d("[DeviceId-int] initialising with no values, provided type:[" + this.type + "]");
-
-        //check if there wasn't a value set before
-        retrieveId();
-    }
-
-    /**
-     * Initialize DeviceId with Developer-supplied id string
-     *
-     * @param developerSuppliedId Device ID string supplied by developer
-     */
-    protected DeviceId(@NonNull StorageProvider givenStorageProvider, String developerSuppliedId, @NonNull ModuleLog moduleLog, OpenUDIDProvider openUDIDProvider) {
-        if (developerSuppliedId == null || "".equals(developerSuppliedId)) {
-            throw new IllegalStateException("Please make sure that device ID is not null or empty");
-        }
-        storageProvider = givenStorageProvider;
-        this.openUDIDProvider = openUDIDProvider;
-
-        //setup the preferred device ID type
-        this.type = DeviceIdType.DEVELOPER_SUPPLIED;
         this.id = developerSuppliedId;
         L = moduleLog;
+
 
         L.d("[DeviceId-int] initialising with values, device ID:[" + this.id + "] type:[" + this.type + "]");
 
         //check if there wasn't a value set before
-        retrieveId();
-    }
-
-    /**
-     * Used during setup to retrieve the previously saved value
-     */
-    private void retrieveId() {
-        //check if there is some stored value
         String storedId = storageProvider.getDeviceID();
         if (storedId != null) {
             //if there was a value saved previously, set it and it's type. Overwrite the in constructor set ones
             this.id = storedId;
-            this.type = retrieveType();
+            this.type = retrieveStoredType();
 
             L.d("[DeviceId-int] retrieveId, Retrieving a previously set device ID:[" + this.id + "] type:[" + this.type + "]");
         } else {
@@ -105,7 +86,7 @@ public class DeviceId {
      * back to OpenUDID
      */
     protected void init() {
-        DeviceIdType storedType = retrieveType();
+        DeviceIdType storedType = retrieveStoredType();
         L.d("[DeviceId-int] init, current type:[" + type + "] overriddenType:[" + storedType + "]");
 
         // Some time ago some ID generation strategy was not available and SDK fell back to
@@ -149,7 +130,7 @@ public class DeviceId {
      *
      * @return
      */
-    private DeviceIdType retrieveType() {
+    private DeviceIdType retrieveStoredType() {
         // Using strings is safer when it comes to extending Enum values list
         String typeString = storageProvider.getDeviceIDType();
         if (typeString == null) {
@@ -168,7 +149,7 @@ public class DeviceId {
         }
     }
 
-    protected String getId() {
+    protected String getCurrentId() {
         if (id == null && type == DeviceIdType.OPEN_UDID) {
             //using openUDID as a fallback
             id = openUDIDProvider.getOpenUDID();
@@ -176,6 +157,11 @@ public class DeviceId {
         return id;
     }
 
+    /**
+     * Used only for tests
+     * @param type
+     * @param id
+     */
     @SuppressWarnings("SameParameterValue")
     protected void setId(DeviceIdType type, String id) {
         L.v("[DeviceId-int] setId, Device ID is " + id + " (type " + type + ")");
@@ -216,7 +202,7 @@ public class DeviceId {
      * @return
      */
     protected DeviceIdType getType() {
-        if (temporaryIdModeEnabled()) {
+        if (isTemporaryIdModeEnabled()) {
             return DeviceIdType.TEMPORARY_ID;
         }
         return type;
@@ -227,8 +213,8 @@ public class DeviceId {
      *
      * @return
      */
-    protected boolean temporaryIdModeEnabled() {
-        String id = getId();
+    protected boolean isTemporaryIdModeEnabled() {
+        String id = getCurrentId();
         if (id == null) {
             return false;
         }
@@ -244,7 +230,7 @@ public class DeviceId {
     static boolean deviceIDEqualsNullSafe(final String id, DeviceIdType type, final DeviceId deviceId) {
         if (type == null || type == DeviceIdType.DEVELOPER_SUPPLIED) {
             //going here if no type is provided or type is developer supplied
-            final String deviceIdId = deviceId == null ? null : deviceId.getId();
+            final String deviceIdId = deviceId == null ? null : deviceId.getCurrentId();
             return (deviceIdId == null && id == null) || (deviceIdId != null && deviceIdId.equals(id));
         } else {
             //if type is provided, but it is not developer supplied

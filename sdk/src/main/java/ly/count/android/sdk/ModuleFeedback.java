@@ -66,7 +66,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+        if (_cly.connectionQueue_.getDeviceId().isTemporaryIdModeEnabled()) {
             L.e("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             devCallback.onFinished(null, "[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             return;
@@ -182,7 +182,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+        if (_cly.connectionQueue_.getDeviceId().isTemporaryIdModeEnabled()) {
             L.e("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             devCallback.onFinished("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
             return;
@@ -207,7 +207,7 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         widgetListUrl.append("&device_id=");
-        widgetListUrl.append(UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()));
+        widgetListUrl.append(UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getCurrentId()));
         widgetListUrl.append("&app_key=");
         widgetListUrl.append(UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey()));
         widgetListUrl.append("&sdk_version=");
@@ -322,7 +322,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+        if (_cly.connectionQueue_.getDeviceId().isTemporaryIdModeEnabled()) {
             L.e("[ModuleFeedback] Feedback widget data can't be retrieved when in temporary device ID mode");
             devCallback.onFinished(null, "[ModuleFeedback] Feedback widget data can't be retrieved when in temporary device ID mode");
             return;
@@ -393,7 +393,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled()) {
+        if (_cly.connectionQueue_.getDeviceId().isTemporaryIdModeEnabled()) {
             L.e("[ModuleFeedback] feedback widget result can't be reported when in temporary device ID mode");
             return;
         }

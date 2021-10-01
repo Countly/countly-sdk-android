@@ -371,6 +371,7 @@ public class DeviceIdInitTests {
      * now:
      * Device ID is not provided,
      * Temporary ID mode is not provided
+     * Device should remain in temp ID mode
      */
     @Test
     public void followupInitPrevTempIdProvidedNothing() {
@@ -379,6 +380,7 @@ public class DeviceIdInitTests {
         //setup initial state
         CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
         configInitial.enableTemporaryDeviceIdMode();
+        configInitial.setLoggingEnabled(true);
 
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
@@ -390,6 +392,7 @@ public class DeviceIdInitTests {
 
         //setup followup state
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        cc.setLoggingEnabled(true);
 
         Countly countly = new Countly();
         countly.init(cc);

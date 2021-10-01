@@ -622,7 +622,7 @@ public class ConnectionQueue {
     String prepareRemoteConfigRequest(String keysInclude, String keysExclude) {
         String data = prepareCommonRequestData()
             + "&method=fetch_remote_config"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
 
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
@@ -642,14 +642,14 @@ public class ConnectionQueue {
     String prepareRatingWidgetRequest(String widgetId) {
         String data = prepareCommonRequestData()
             + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
         return data;
     }
 
     String prepareFeedbackListRequest() {
         String data = prepareCommonRequestData()
             + "&method=feedback"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
 
         return data;
     }

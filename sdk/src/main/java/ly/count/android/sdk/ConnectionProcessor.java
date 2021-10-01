@@ -32,7 +32,6 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.List;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -213,7 +212,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // get first event from collection
-            if (deviceId_.getId() == null) {
+            if (deviceId_.getCurrentId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
                 L.i("[Connection Processor] No Device ID available yet, skipping request " + storedEvents[0]);
@@ -224,12 +223,12 @@ public class ConnectionProcessor implements Runnable {
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
             boolean containsTemporaryIdOverride = storedEvents[0].contains(temporaryIdOverrideTag);
             boolean containsTemporaryId = storedEvents[0].contains(temporaryIdTag);
-            if (containsTemporaryIdOverride || containsTemporaryId || deviceId_.temporaryIdModeEnabled()) {
+            if (containsTemporaryIdOverride || containsTemporaryId || deviceId_.isTemporaryIdModeEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
 
                 //abort and wait for exiting temporary mode
-                L.i("[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceId_.temporaryIdModeEnabled() + "]");
+                L.i("[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceId_.isTemporaryIdModeEnabled() + "]");
                 break;
             }
 
@@ -254,7 +253,7 @@ public class ConnectionProcessor implements Runnable {
                     final int endOfDeviceIdTag = storedEvents[0].indexOf("&device_id=") + "&device_id=".length();
                     newId = UtilsNetworking.urlDecodeString(storedEvents[0].substring(endOfDeviceIdTag));
 
-                    if (newId.equals(deviceId_.getId())) {
+                    if (newId.equals(deviceId_.getCurrentId())) {
                         // If the new device_id is the same as previous,
                         // we don't do anything to change it
 
@@ -264,14 +263,14 @@ public class ConnectionProcessor implements Runnable {
                         L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                     } else {
                         //new device_id provided, make sure it will be merged
-                        eventData = storedEvents[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+                        eventData = storedEvents[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
                     }
                 } else {
                     // this branch will be used in almost all requests.
                     // This just adds the device_id to them
 
                     newId = null;
-                    eventData = storedEvents[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+                    eventData = storedEvents[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
                 }
             }
 

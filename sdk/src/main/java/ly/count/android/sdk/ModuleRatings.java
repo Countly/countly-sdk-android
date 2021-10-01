@@ -466,7 +466,7 @@ public class ModuleRatings extends ModuleBase {
 
         String requestData = _cly.connectionQueue_.prepareRatingWidgetRequest(widgetId);
         final String ratingWidgetUrl = _cly.connectionQueue_.getServerURL() + "/feedback?widget_id=" + widgetId +
-            "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getId()) +
+            "&device_id=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getDeviceId().getCurrentId()) +
             "&app_key=" + UtilsNetworking.urlEncodeString(_cly.connectionQueue_.getAppKey());
 
         L.d("[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");

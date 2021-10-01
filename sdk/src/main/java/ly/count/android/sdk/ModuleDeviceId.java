@@ -17,26 +17,28 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         L.v("[ModuleDeviceId] Initialising");
 
         boolean customIDWasProvided = (config.deviceID != null);
+
+        if (customIDWasProvided) {
+            //if a custom ID was provided, set the correct type
+            config.idMode = DeviceIdType.DEVELOPER_SUPPLIED;
+        }
+
         if (config.temporaryDeviceIdEnabled && !customIDWasProvided) {
             //if we want to use temporary ID mode and no developer custom ID is provided
             //then we override that custom ID to set the temporary mode
             config.deviceID = ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId;
+
+            //change also the type to indicate that we will go into the temp ID mode
+            //type is dev supplied even for temp ID
+            config.idMode = DeviceIdType.DEVELOPER_SUPPLIED;
         }
 
-        //choose what kind of device ID will be used
-        if (config.deviceID != null) {
-            //if the developer provided a ID
-            //or it's a temporary ID
-            config.deviceIdInstance = new ly.count.android.sdk.DeviceId(config.storageProvider, config.deviceID, L, this);
-        } else {
-            //the dev provided only a type and the SDK should generate a appropriate ID
-            config.deviceIdInstance = new ly.count.android.sdk.DeviceId(config.storageProvider, config.idMode, L, this);
-        }
+        config.deviceIdInstance = new ly.count.android.sdk.DeviceId(config.idMode, config.deviceID, config.storageProvider, L, this);
 
         //initialise the set device ID value
         config.deviceIdInstance.init();
 
-        boolean temporaryDeviceIdIsCurrentlyEnabled = config.deviceIdInstance.temporaryIdModeEnabled();
+        boolean temporaryDeviceIdIsCurrentlyEnabled = config.deviceIdInstance.isTemporaryIdModeEnabled();
         L.d("[ModuleDeviceId] [TemporaryDeviceId] Temp ID should be enabled[" + config.temporaryDeviceIdEnabled + "] Currently enabled: [" + temporaryDeviceIdIsCurrentlyEnabled + "]");
 
         if (temporaryDeviceIdIsCurrentlyEnabled && customIDWasProvided) {
@@ -113,13 +115,13 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
 
         ly.count.android.sdk.DeviceId currentDeviceId = _cly.connectionQueue_.getDeviceId();
 
-        if (currentDeviceId.temporaryIdModeEnabled() && (deviceId != null && deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId))) {
+        if (currentDeviceId.isTemporaryIdModeEnabled() && (deviceId != null && deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId))) {
             // we already are in temporary mode and we want to set temporary mode
             // in this case we just ignore the request since nothing has to be done
             return;
         }
 
-        if (currentDeviceId.temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {
+        if (currentDeviceId.isTemporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {
             // we are about to exit temporary ID mode
             // because of the previous check, we know that the new type is a different one
             // we just call our method for exiting it
@@ -136,7 +138,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
         //update remote config_ values after id change if automatic update is enabled
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
-        _cly.moduleSessions.endSessionInternal(currentDeviceId.getId());
+        _cly.moduleSessions.endSessionInternal(currentDeviceId.getCurrentId());
         currentDeviceId.changeToId(type, deviceId, true);
         _cly.moduleSessions.beginSessionInternal();
 
@@ -155,7 +157,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
             throw new IllegalStateException("deviceId cannot be null or empty");
         }
 
-        if (_cly.connectionQueue_.getDeviceId().temporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {
+        if (_cly.connectionQueue_.getDeviceId().isTemporaryIdModeEnabled() || _cly.connectionQueue_.queueContainsTemporaryIdItems()) {
             //if we are in temporary ID mode or
             //at some moment have enabled temporary mode
 
@@ -296,7 +298,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider {
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'getDeviceID'");
 
-                return _cly.connectionQueue_.getDeviceId().getId();
+                return _cly.connectionQueue_.getDeviceId().getCurrentId();
             }
         }
 
