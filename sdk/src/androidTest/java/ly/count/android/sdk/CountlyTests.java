@@ -508,14 +508,13 @@ public class CountlyTests {
 
     @Test
     public void testOnTimer_noActiveSession() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
         mCountly.config_.storageProvider = mock(StorageProvider.class);
         mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
 
         mCountly.onTimer();
 
-        verify(mockConnectionQueue).tick();
+        verify(requestQueueProvider).tick();
     }
 
     @Test

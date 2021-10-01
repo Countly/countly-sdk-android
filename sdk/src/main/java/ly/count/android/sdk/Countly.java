@@ -132,6 +132,7 @@ public class Countly {
     boolean sdkIsInitialised = false;
 
     BaseInfoProvider baseInfoProvider;
+    RequestQueueProvider requestQueueProvider;
 
     //w - warnings
     //e - errors
@@ -461,6 +462,7 @@ public class Countly {
             moduleCrash.eventProvider = config.eventProvider;
 
             baseInfoProvider = config.baseInfoProvider;
+            requestQueueProvider = config.requestQueueProvider;
 
             L.i("[Init] Finished initialising modules");
 
@@ -817,7 +819,7 @@ public class Countly {
 
             //on every timer tick we collect all events and attempt to send requests
             moduleRequestQueue.sendEventsIfNeeded(true);
-            connectionQueue_.tick();
+            requestQueueProvider.tick();
         }
     }
 
@@ -1236,10 +1238,6 @@ public class Countly {
     // for unit testing
     ConnectionQueue getConnectionQueue() {
         return connectionQueue_;
-    }
-
-    void setConnectionQueue(final ConnectionQueue connectionQueue) {
-        connectionQueue_ = connectionQueue;
     }
 
     ExecutorService getTimerService() {

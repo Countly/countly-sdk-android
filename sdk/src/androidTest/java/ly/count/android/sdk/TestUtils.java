@@ -60,6 +60,7 @@ public class TestUtils {
             module.requestQueueProvider = rqp;
         }
         countly.config_.requestQueueProvider = rqp;
+        countly.requestQueueProvider = rqp;
 
         return rqp;
     }
