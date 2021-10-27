@@ -126,7 +126,7 @@ public class App extends Application {
         customCrashSegmentation.put("AdGiver", "6.5");
 
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
-            .enableCrashReporting().setLoggingEnabled(true).setLogListener(new ModuleLog.LogCallback() {
+            .setLoggingEnabled(true).setLogListener(new ModuleLog.LogCallback() {
                 @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
                     //duplicated countly logs
                     switch (logLevel) {

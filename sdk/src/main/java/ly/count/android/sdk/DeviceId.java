@@ -180,7 +180,7 @@ public class DeviceId {
      * @param deviceId
      * @param runInit
      */
-    protected void changeToId(DeviceIdType type, String deviceId, boolean runInit) {
+    protected void changeToId(@NonNull DeviceIdType type, @Nullable String deviceId, boolean runInit) {
         L.v("[DeviceId-int] changeToId, Device ID is " + id + " (type " + type + "), init:" + runInit);
         setAndStoreId(type, deviceId);
         if (runInit) {

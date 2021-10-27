@@ -175,6 +175,8 @@ public class CountlyConfig {
 
     boolean manualForegroundBackgroundTrigger = false;
 
+    int maxRequestQueueSize = 1000;
+
     ModuleLog.LogCallback providedLogCallback;
 
     public CountlyConfig() {
@@ -707,6 +709,16 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setLogListener(ModuleLog.LogCallback logCallback) {
         providedLogCallback = logCallback;
+        return this;
+    }
+
+    /**
+     * Set's the new maximum size for the request queue.
+     * @param newMaxSize Minimum value is "1".
+     * @return
+     */
+    public synchronized CountlyConfig setMaxRequestQueueSize(int newMaxSize) {
+        maxRequestQueueSize = newMaxSize;
         return this;
     }
 }

@@ -17,7 +17,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
     private final List<String> appCrawlerNames = new ArrayList<>(Arrays.asList("Calypso AppCrawler"));//List against which device name is checked to determine if device is app crawler
 
-    ModuleRequestQueue(Countly cly, CountlyConfig config) {
+    ModuleRequestQueue(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleRequestQueue] Initialising");
 

@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import androidx.annotation.NonNull;
 
 abstract class ModuleBase {
     final Countly _cly;
@@ -13,7 +14,7 @@ abstract class ModuleBase {
     DeviceIdProvider deviceIdProvider;
     BaseInfoProvider baseInfoProvider;
 
-    ModuleBase(Countly cly, CountlyConfig config) {
+    ModuleBase(@NonNull Countly cly, @NonNull CountlyConfig config) {
         _cly = cly;
         L = cly.L;
         consentProvider = config.consentProvider;

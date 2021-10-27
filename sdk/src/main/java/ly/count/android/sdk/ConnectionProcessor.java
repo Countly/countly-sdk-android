@@ -49,7 +49,7 @@ public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
 
-    private final CountlyStore store_;
+    private final StorageProvider storageProvider_;
     private final DeviceId deviceId_;
     private final String serverURL_;
     private final SSLContext sslContext_;
@@ -65,9 +65,9 @@ public class ConnectionProcessor implements Runnable {
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
     }
 
-    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
+    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
         serverURL_ = serverURL;
-        store_ = store;
+        storageProvider_ = storageProvider;
         deviceId_ = deviceId;
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
@@ -194,7 +194,7 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         while (true) {
-            final String[] storedEvents = store_.getRequests();
+            final String[] storedEvents = storageProvider_.getRequests();
             int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
 
             if (L.logEnabled()) {
@@ -355,7 +355,7 @@ public class ConnectionProcessor implements Runnable {
                     if (rRes == RequestResult.OK) {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
-                        store_.removeRequest(storedEvents[0]);
+                        storageProvider_.removeRequest(storedEvents[0]);
 
                         if (deviceIdChange) {
                             deviceId_.changeToId(DeviceIdType.DEVELOPER_SUPPLIED, newId, false);
@@ -392,7 +392,7 @@ public class ConnectionProcessor implements Runnable {
                 L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedEvents[0]);
 
                 //remove stored data
-                store_.removeRequest(storedEvents[0]);
+                storageProvider_.removeRequest(storedEvents[0]);
             }
         }
     }
@@ -402,8 +402,8 @@ public class ConnectionProcessor implements Runnable {
         return serverURL_;
     }
 
-    CountlyStore getCountlyStore() {
-        return store_;
+    StorageProvider getCountlyStore() {
+        return storageProvider_;
     }
 
     DeviceId getDeviceId() {

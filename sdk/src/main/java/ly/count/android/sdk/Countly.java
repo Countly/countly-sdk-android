@@ -90,6 +90,11 @@ public class Countly {
     static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
 
     /**
+     * Maximum amount of requests allowed in the request queue
+     */
+    int maxRequestQueueSize = 1000;
+
+    /**
      * How often onTimer() is called. This is the default value.
      */
     private static final long TIMER_DELAY_IN_SECONDS = 60;
@@ -388,6 +393,12 @@ public class Countly {
                 config.setCountlyStore(countlyStore);
             }
 
+            if(config.maxRequestQueueSize < 1) {
+                L.e("[Init] provided request queue size is less than 1. Replacing it with 1.");
+                config.maxRequestQueueSize = 1;
+            }
+            countlyStore.setLimits(config.maxRequestQueueSize);
+
             if (config.storageProvider == null) {
                 // outside of tests this should be null
                 config.storageProvider = config.countlyStore;
@@ -522,9 +533,9 @@ public class Countly {
             //initialize networking queues
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;
+            connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
-            connectionQueue_.setCountlyStore(countlyStore);
             connectionQueue_.setDeviceId(config.deviceIdProvider.getDeviceIdInstance());
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
@@ -660,12 +671,10 @@ public class Countly {
         L.SetListener(null);
 
         if (connectionQueue_ != null) {
-            final CountlyStore countlyStore = connectionQueue_.getCountlyStore();
-            if (countlyStore != null) {
+            if(countlyStore != null) {
                 countlyStore.clear();
             }
             connectionQueue_.setContext(null);
-            connectionQueue_.setCountlyStore(null);
             connectionQueue_ = null;
         }
 

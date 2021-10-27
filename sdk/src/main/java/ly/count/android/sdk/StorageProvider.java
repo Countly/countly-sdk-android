@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,8 @@ interface StorageProvider {
     String[] getEvents();
 
     List<Event> getEventList();
+
+    @NonNull String getRequestQueueRaw();
 
     void addRequest(final String requestStr);
 

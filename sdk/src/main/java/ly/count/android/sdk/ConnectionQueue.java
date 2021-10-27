@@ -42,7 +42,6 @@ import javax.net.ssl.TrustManager;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 class ConnectionQueue implements RequestQueueProvider {
-    private CountlyStore store_;
     private ExecutorService executor_;
     private Context context_;
     private Future<?> connectionProcessorFuture_;
@@ -55,9 +54,18 @@ class ConnectionQueue implements RequestQueueProvider {
 
     protected ModuleLog L;
     protected ConsentProvider consentProvider;//link to the consent module
+    StorageProvider storageProvider;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
+    }
+
+    void setStorageProvider(StorageProvider sp) {
+        storageProvider = sp;
+    }
+
+    StorageProvider getStorageProvider() {
+        return storageProvider;
     }
 
     Context getContext() {
@@ -80,14 +88,6 @@ class ConnectionQueue implements RequestQueueProvider {
                 throw new IllegalStateException(e);
             }
         }
-    }
-
-    CountlyStore getCountlyStore() {
-        return store_;
-    }
-
-    void setCountlyStore(final CountlyStore countlyStore) {
-        store_ = countlyStore;
     }
 
     DeviceId getDeviceId() {
@@ -129,8 +129,8 @@ class ConnectionQueue implements RequestQueueProvider {
         if (baseInfoProvider.getAppKey() == null || baseInfoProvider.getAppKey().length() == 0) {
             throw new IllegalStateException("app key has not been set");
         }
-        if (store_ == null) {
-            throw new IllegalStateException("countly store has not been set");
+        if (storageProvider == null) {
+            throw new IllegalStateException("countly storage provider has not been set");
         }
         if (baseInfoProvider.getServerURL() == null || !UtilsNetworking.isValidURL(baseInfoProvider.getServerURL())) {
             throw new IllegalStateException("server URL is not valid");
@@ -168,7 +168,7 @@ class ConnectionQueue implements RequestQueueProvider {
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             //add attribution data if consent given
             if (Countly.sharedInstance().isAttributionEnabled) {
-                String cachedAdId = store_.getCachedAdvertisingId();
+                String cachedAdId = storageProvider.getCachedAdvertisingId();
 
                 if (!cachedAdId.isEmpty()) {
                     data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
@@ -181,7 +181,7 @@ class ConnectionQueue implements RequestQueueProvider {
         Countly.sharedInstance().isBeginSessionSent = true;
 
         if (dataAvailable) {
-            store_.addRequest(data);
+            addRequestToQueue(data);
             tick();
         }
     }
@@ -208,7 +208,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
             if (consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
                 if (Countly.sharedInstance().isAttributionEnabled) {
-                    String cachedAdId = store_.getCachedAdvertisingId();
+                    String cachedAdId = storageProvider.getCachedAdvertisingId();
 
                     if (!cachedAdId.isEmpty()) {
                         data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
@@ -218,7 +218,7 @@ class ConnectionQueue implements RequestQueueProvider {
             }
 
             if (dataAvailable) {
-                store_.addRequest(data);
+                addRequestToQueue(data);
                 tick();
             }
         }
@@ -243,7 +243,7 @@ class ConnectionQueue implements RequestQueueProvider {
         // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGING BREAKS !!!!!
         data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceId);
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
         tick();
     }
 
@@ -271,7 +271,7 @@ class ConnectionQueue implements RequestQueueProvider {
             @Override
             public void run() {
                 L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
-                store_.addRequest(data);
+                addRequestToQueue(data);
                 tick();
             }
         }, 10, TimeUnit.SECONDS);
@@ -310,7 +310,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         if (dataAvailable) {
-            store_.addRequest(data);
+            addRequestToQueue(data);
             tick();
         }
     }
@@ -326,7 +326,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         data += prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -345,12 +345,14 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        if (!userdata.equals("")) {
-            String data = prepareCommonRequestData() + userdata;
-            store_.addRequest(data);
-
-            tick();
+        if (userdata.equals("")) {
+            L.d("[Connection Queue] No user data to send, skipping");
+            return;
         }
+
+        String data = prepareCommonRequestData() + userdata;
+        addRequestToQueue(data);
+        tick();
     }
 
     /**
@@ -368,12 +370,14 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        if (referrer != null) {
-            String data = prepareCommonRequestData() + referrer;
-            store_.addRequest(data);
-
-            tick();
+        if (referrer == null) {
+            L.d("[Connection Queue] No referrer data to send, skipping");
+            return;
         }
+
+        String data = prepareCommonRequestData() + referrer;
+        addRequestToQueue(data);
+        tick();
     }
 
     public void sendReferrerDataManual(String campaignID, String userID) {
@@ -400,7 +404,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + res;
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -427,7 +431,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&crash=" + UtilsNetworking.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash, customSegmentation));
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -449,7 +453,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&events=" + events;
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
         tick();
     }
 
@@ -460,7 +464,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&consent=" + UtilsNetworking.urlEncodeString(formattedConsentChanges);
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -485,7 +489,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -511,7 +515,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -534,7 +538,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -557,7 +561,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        store_.addRequest(data);
+        addRequestToQueue(data);
 
         tick();
     }
@@ -656,7 +660,7 @@ class ConnectionQueue implements RequestQueueProvider {
      * is already running.
      */
     public void tick() {
-        L.v("[Connection Queue] tick, Not empty:[" + !store_.noRequestsAvailable() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
+        L.v("[Connection Queue] tick, Not empty:[" + !isRequestQueueEmpty() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
             || connectionProcessorFuture_.isDone()) + "]");
 
         if(!Countly.sharedInstance().isInitialized()) {
@@ -664,18 +668,18 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        if (!store_.noRequestsAvailable() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
+        if (!isRequestQueueEmpty() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
         }
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(baseInfoProvider.getServerURL(), store_, deviceId_, sslContext_, requestHeaderCustomValues, L);
+        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceId_, sslContext_, requestHeaderCustomValues, L);
     }
 
     public boolean queueContainsTemporaryIdItems() {
-        String[] storedRequests = getCountlyStore().getRequests();
+        String[] storedRequests = storageProvider.getRequests();
         String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
 
         for (String storedRequest : storedRequests) {
@@ -685,6 +689,22 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         return false;
+    }
+
+    void addRequestToQueue(String requestData) {
+        storageProvider.addRequest(requestData);
+    }
+
+    /**
+     * Returns true if no requests are current stored, false otherwise.
+     */
+    boolean isRequestQueueEmpty() {
+        String rawRequestQueue = storageProvider.getRequestQueueRaw();
+        if (rawRequestQueue.length() > 0) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     // for unit testing

@@ -14,6 +14,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.RatingBar;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONException;
@@ -33,10 +35,10 @@ public class ModuleRatings extends ModuleBase {
         L.v("[ModuleRatings] Initialising");
 
         starRatingCallback_ = config.starRatingCallback;
-        setStarRatingInitConfig(config.countlyStore, config.starRatingSessionLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
-        setIfRatingDialogIsCancellableInternal(config.countlyStore, config.starRatingDialogIsCancellable);
-        setShowDialogAutomatically(config.countlyStore, config.starRatingShownAutomatically);
-        setStarRatingDisableAskingForEachAppVersion(config.countlyStore, config.starRatingDisableAskingForEachAppVersion);
+        setStarRatingInitConfig(config.starRatingSessionLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
+        setIfRatingDialogIsCancellableInternal(config.starRatingDialogIsCancellable);
+        setShowDialogAutomatically(config.starRatingShownAutomatically);
+        setStarRatingDisableAskingForEachAppVersion(config.starRatingDisableAskingForEachAppVersion);
 
         ratingsInterface = new Ratings();
     }
@@ -93,8 +95,8 @@ public class ModuleRatings extends ModuleBase {
      *
      * @param srp
      */
-    private void saveStarRatingPreferences(final CountlyStore cs, final StarRatingPreferences srp) {
-        cs.setStarRatingPreferences(srp.toJSON().toString());
+    private void saveStarRatingPreferences(final StarRatingPreferences srp) {
+        storageProvider.setStarRatingPreferences(srp.toJSON().toString());
     }
 
     /**
@@ -105,8 +107,8 @@ public class ModuleRatings extends ModuleBase {
      * @param starRatingTextMessage provided message
      * @param starRatingTextDismiss provided dismiss text
      */
-    void setStarRatingInitConfig(final CountlyStore cs, final int limit, final String starRatingTextTitle, final String starRatingTextMessage, final String starRatingTextDismiss) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    void setStarRatingInitConfig(final int limit, final String starRatingTextTitle, final String starRatingTextMessage, final String starRatingTextDismiss) {
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
 
         if (limit >= 0) {
             srp.sessionLimit = limit;
@@ -124,7 +126,7 @@ public class ModuleRatings extends ModuleBase {
             srp.dialogTextDismiss = starRatingTextDismiss;
         }
 
-        saveStarRatingPreferences(cs, srp);
+        saveStarRatingPreferences(srp);
     }
 
     /**
@@ -132,10 +134,10 @@ public class ModuleRatings extends ModuleBase {
      *
      * @param shouldShow
      */
-    void setShowDialogAutomatically(final CountlyStore cs, final boolean shouldShow) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    void setShowDialogAutomatically(final boolean shouldShow) {
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
         srp.automaticRatingShouldBeShown = shouldShow;
-        saveStarRatingPreferences(cs, srp);
+        saveStarRatingPreferences(srp);
     }
 
     boolean getIfStarRatingShouldBeShownAutomatically() {
@@ -150,10 +152,10 @@ public class ModuleRatings extends ModuleBase {
      *
      * @param disableAsking if set true, will not show star rating for every new app version
      */
-    void setStarRatingDisableAskingForEachAppVersion(final CountlyStore cs, final boolean disableAsking) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    void setStarRatingDisableAskingForEachAppVersion(final boolean disableAsking) {
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
         srp.disabledAutomaticForNewVersions = disableAsking;
-        saveStarRatingPreferences(cs, srp);
+        saveStarRatingPreferences(srp);
     }
 
     /**
@@ -162,8 +164,8 @@ public class ModuleRatings extends ModuleBase {
      * @param context android context
      * @param starRatingCallback
      */
-    void registerAppSession(final Context context, final CountlyStore cs, final StarRatingCallback starRatingCallback) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    void registerAppSession(final Context context, final StarRatingCallback starRatingCallback) {
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
 
         String currentAppVersion = DeviceInfo.getAppVersion(context);
 
@@ -180,14 +182,14 @@ public class ModuleRatings extends ModuleBase {
             showStarRatingDialogOnFirstActivity = true;
         }
 
-        saveStarRatingPreferences(cs, srp);
+        saveStarRatingPreferences(srp);
     }
 
     /**
      * Returns the session limit set for automatic star rating
      */
-    static int getAutomaticStarRatingSessionLimitInternal(final CountlyStore cs) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    static int getAutomaticStarRatingSessionLimitInternal(final StorageProvider sp) {
+        StarRatingPreferences srp = loadStarRatingPreferences(sp);
         return srp.sessionLimit;
     }
 
@@ -196,18 +198,18 @@ public class ModuleRatings extends ModuleBase {
      *
      * @return
      */
-    int getCurrentVersionsSessionCountInternal(final CountlyStore cs) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    int getCurrentVersionsSessionCountInternal(final StorageProvider sp) {
+        StarRatingPreferences srp = loadStarRatingPreferences(sp);
         return srp.sessionAmount;
     }
 
     /**
      * Set the automatic star rating session count back to 0
      */
-    void clearAutomaticStarRatingSessionCountInternal(final CountlyStore cs) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    void clearAutomaticStarRatingSessionCountInternal() {
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
         srp.sessionAmount = 0;
-        saveStarRatingPreferences(cs, srp);
+        saveStarRatingPreferences(srp);
     }
 
     /**
@@ -215,10 +217,10 @@ public class ModuleRatings extends ModuleBase {
      *
      * @param isCancellable
      */
-    void setIfRatingDialogIsCancellableInternal(final CountlyStore cs, final boolean isCancellable) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    void setIfRatingDialogIsCancellableInternal(final boolean isCancellable) {
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
         srp.isDialogCancellable = isCancellable;
-        saveStarRatingPreferences(cs, srp);
+        saveStarRatingPreferences(srp);
     }
 
     /**
@@ -323,18 +325,18 @@ public class ModuleRatings extends ModuleBase {
      * @param context android context
      * @param callback
      */
-    void showStarRatingInternal(final Context context, final CountlyStore cs, final StarRatingCallback callback) {
-        StarRatingPreferences srp = loadStarRatingPreferences(cs);
+    void showStarRatingInternal(final Context context, final StarRatingCallback callback) {
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
         showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
 
     /**
      * Returns a object with the loaded preferences
-     *
+     * TODO make this non static
      * @return
      */
-    static StarRatingPreferences loadStarRatingPreferences(final CountlyStore cs) {
-        String srpString = cs.getStarRatingPreferences();
+    static StarRatingPreferences loadStarRatingPreferences(final StorageProvider sp) {
+        String srpString = sp.getStarRatingPreferences();
         StarRatingPreferences srp;
 
         if (!srpString.equals("")) {
@@ -362,7 +364,7 @@ public class ModuleRatings extends ModuleBase {
      * @param isCancellable
      * @param callback
      */
-    void showStarRatingCustom(final Context context, final String title, final String message, final String cancelText, final boolean isCancellable, final StarRatingCallback callback) {
+    void showStarRatingCustom(@NonNull final Context context, final String title, final String message, final String cancelText, final boolean isCancellable, @Nullable final StarRatingCallback callback) {
         if (!(context instanceof Activity)) {
             L.e("[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
 
@@ -423,7 +425,7 @@ public class ModuleRatings extends ModuleBase {
 
     /// Countly webDialog user rating
 
-    synchronized void showFeedbackPopupInternal(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback devCallback) {
+    synchronized void showFeedbackPopupInternal(@Nullable final String widgetId, @Nullable  final String closeButtonText, @Nullable  final Activity activity, @Nullable  final FeedbackRatingCallback devCallback) {
         L.d("[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
 
         if (widgetId == null || widgetId.isEmpty()) {
@@ -565,23 +567,22 @@ public class ModuleRatings extends ModuleBase {
     @Override
     void callbackOnActivityResumed(Activity activity) {
         if (showStarRatingDialogOnFirstActivity) {
-            CountlyStore cs = _cly.countlyStore;
-            StarRatingPreferences srp = loadStarRatingPreferences(cs);
+            StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
             srp.isShownForCurrentVersion = true;
             srp.automaticHasBeenShown = true;
 
-            showStarRatingInternal(activity, cs, starRatingCallback_);
+            showStarRatingInternal(activity, starRatingCallback_);
 
-            saveStarRatingPreferences(cs, srp);
+            saveStarRatingPreferences(srp);
             showStarRatingDialogOnFirstActivity = false;
         }
     }
 
     @Override
-    void initFinished(CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
         //do star rating related things
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
-            registerAppSession(config.context, config.countlyStore, starRatingCallback_);
+            registerAppSession(config.context, starRatingCallback_);
         }
     }
 
@@ -640,7 +641,7 @@ public class ModuleRatings extends ModuleBase {
                     return;
                 }
 
-                showStarRatingInternal(activity, _cly.countlyStore, callback);
+                showStarRatingInternal(activity, callback);
             }
         }
 
@@ -666,7 +667,7 @@ public class ModuleRatings extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Ratings] Clearing star rating session count");
 
-                clearAutomaticStarRatingSessionCountInternal(_cly.countlyStore);
+                clearAutomaticStarRatingSessionCountInternal();
             }
         }
 

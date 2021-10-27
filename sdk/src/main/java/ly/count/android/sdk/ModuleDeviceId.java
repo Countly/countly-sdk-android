@@ -58,7 +58,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
         deviceIdInterface = new DeviceId();
     }
 
-    void exitTemporaryIdMode(DeviceIdType type, String deviceId) {
+    void exitTemporaryIdMode(@NonNull DeviceIdType type, @Nullable String deviceId) {
         L.d("[ModuleDeviceId] Calling exitTemporaryIdMode");
 
         if (!_cly.isInitialized()) {
@@ -102,7 +102,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
      */
-    void changeDeviceIdWithoutMerge(DeviceIdType type, String deviceId) {
+    void changeDeviceIdWithoutMerge(DeviceIdType type, @Nullable String deviceId) {
         if (type == null) {
             L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, type cannot be null");
             return;
@@ -142,11 +142,14 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
         _cly.moduleSessions.endSessionInternal(getDeviceId());
+
+        //TODO should clear current consent here
+
         deviceIdInstance.changeToId(type, deviceId, true);
         _cly.moduleSessions.beginSessionInternal();
 
         //clear automated star rating session values because now we have a new user
-        _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal(_cly.countlyStore);
+        _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal();
     }
 
     /**
@@ -155,7 +158,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
      *
      * @param deviceId new device id
      */
-    void changeDeviceIdWithMerge(String deviceId) {
+    void changeDeviceIdWithMerge(@Nullable String deviceId) {
         if (deviceId == null || "".equals(deviceId)) {
             throw new IllegalStateException("deviceId cannot be null or empty");
         }
@@ -282,7 +285,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
          *
          * @param deviceId New device ID
          */
-        public void changeWithoutMerge(String deviceId) {
+        public void changeWithoutMerge(@Nullable String deviceId) {
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithoutMerge'");
 
@@ -296,7 +299,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
          *
          * @param deviceId new device id
          */
-        public void changeWithMerge(String deviceId) {
+        public void changeWithMerge(@Nullable String deviceId) {
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithMerge'");
 

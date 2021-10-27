@@ -67,7 +67,6 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
     private static final String CACHED_PUSH_MESSAGING_PROVIDER = "PUSH_MESSAGING_PROVIDER";
     private static final int MAX_EVENTS = 100;
-    static int MAX_REQUESTS = 1000;//value is configurable for tests
 
     private final SharedPreferences preferences_;
     private final SharedPreferences preferencesPush_;
@@ -75,6 +74,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
     ModuleLog L;
+
+    int maxRequestQueueSize = 1000;
 
     /**
      * Constructs a CountlyStore object.
@@ -88,6 +89,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         preferences_ = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
         preferencesPush_ = createPreferencesPush(context);
         L = logModule;
+    }
+
+    public void setLimits(final int maxRequestQueueSize) {
+        this.maxRequestQueueSize = maxRequestQueueSize;
     }
 
     static SharedPreferences createPreferencesPush(Context context) {
@@ -175,11 +180,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         return result;
     }
 
-    /**
-     * Returns true if no requests are current stored, false otherwise.
-     */
-    public synchronized boolean noRequestsAvailable() {
-        return preferences_.getString(REQUEST_PREFERENCE, "").length() == 0;
+    public synchronized String getRequestQueueRaw() {
+        return preferences_.getString(REQUEST_PREFERENCE, "");
     }
 
     /**
