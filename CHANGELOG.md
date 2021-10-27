@@ -1,9 +1,11 @@
-## 20.11.11
+## 21.11.0
   * Deprecating "ADVERTISING_ID" as device ID generation strategy. SDK will fall back to 'OPEN_UDID'.
+  * Feedback widget callback not has an additional callback. This will cause a compilation error that is trivial to fix by adding the override for the missing call.
   * Orientation tracking is not enabled by default. Can be turned off during init.
   * Device ID can now be changed when no consent is given
   * Push notification now display/use the sent badge number. It's visualization depends on the launcher.
   * Added a manual way to report attribution.
+
   * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
   * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
 

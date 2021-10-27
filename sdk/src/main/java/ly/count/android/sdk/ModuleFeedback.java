@@ -7,6 +7,8 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,6 +52,7 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     public interface FeedbackCallback {
+        void onClosed();
         void onFinished(String error);
     }
 
@@ -155,7 +158,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(final CountlyFeedbackWidget widgetInfo, final Context context, final String closeButtonText, final FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final String closeButtonText, @Nullable final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
             L.e("[ModuleFeedback] Can't present widget with null widget info");
 
@@ -184,7 +187,9 @@ public class ModuleFeedback extends ModuleBase {
 
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.e("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
-            devCallback.onFinished("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
+            if (devCallback != null) {
+                devCallback.onFinished("[ModuleFeedback] available feedback widget list can't be retrieved when in temporary device ID mode");
+            }
             return;
         }
 
@@ -239,7 +244,7 @@ public class ModuleFeedback extends ModuleBase {
                     webView.loadUrl(preparedWidgetUrl);
                     webView.requestFocus();
 
-                    AlertDialog.Builder builder = prepareAlertDialog(context, webView, closeButtonText, widgetInfo);
+                    AlertDialog.Builder builder = prepareAlertDialog(context, webView, closeButtonText, widgetInfo, devCallback);
 
                     if (useAlertDialog) {
                         // use alert dialog to host the webView
@@ -266,7 +271,7 @@ public class ModuleFeedback extends ModuleBase {
         });
     }
 
-    AlertDialog.Builder prepareAlertDialog(final Context context, WebView webView, String closeButtonText, final CountlyFeedbackWidget widgetInfo) {
+    AlertDialog.Builder prepareAlertDialog(@NonNull final Context context, @NonNull WebView webView, @Nullable String closeButtonText, @NonNull final CountlyFeedbackWidget widgetInfo, @Nullable final FeedbackCallback devCallback) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setView(webView);
         builder.setCancelable(false);
@@ -278,12 +283,16 @@ public class ModuleFeedback extends ModuleBase {
             @Override public void onClick(DialogInterface dialogInterface, int i) {
                 L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
                 reportFeedbackWidgetCancelButton(widgetInfo, DeviceInfo.getAppVersion(context));
+
+                if(devCallback != null) {
+                    devCallback.onClosed();
+                }
             }
         });
         return builder;
     }
 
-    void reportFeedbackWidgetCancelButton(CountlyFeedbackWidget widgetInfo, String appVersion) {
+    void reportFeedbackWidgetCancelButton(@NonNull CountlyFeedbackWidget widgetInfo, @NonNull String appVersion) {
         L.d("[reportFeedbackWidgetCancelButton] Cancel button event");
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             final Map<String, Object> segm = new HashMap<>();
@@ -309,16 +318,21 @@ public class ModuleFeedback extends ModuleBase {
      * @param widgetInfo identifies the specific widget for which you want to download widget data
      * @param devCallback mandatory callback in which the downloaded data will be returned
      */
-    void getFeedbackWidgetDataInternal(CountlyFeedbackWidget widgetInfo, final RetrieveFeedbackWidgetData devCallback) {
+    void getFeedbackWidgetDataInternal(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable final RetrieveFeedbackWidgetData devCallback) {
         L.d("[ModuleFeedback] calling 'getFeedbackWidgetDataInternal', callback set:[" + (devCallback != null) + "]");
-
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-            devCallback.onFinished(null, "Consent is not granted");
-            return;
-        }
 
         if (devCallback == null) {
             L.e("[ModuleFeedback] Feedback widget data can't be retrieved without a callback");
+            return;
+        }
+
+        if(widgetInfo == null) {
+            L.e("[ModuleFeedback] Feedback widget data if provided widget is 'null'");
+            return;
+        }
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
+            devCallback.onFinished(null, "Consent is not granted");
             return;
         }
 
@@ -380,7 +394,7 @@ public class ModuleFeedback extends ModuleBase {
      * @param widgetData widget data for this specific widget
      * @param widgetResult segmentation of the filled out feedback. If this segmentation is null, it will be assumed that the survey was closed before completion and mark it appropriately
      */
-    void reportFeedbackWidgetManuallyInternal(CountlyFeedbackWidget widgetInfo, JSONObject widgetData, Map<String, Object> widgetResult) {
+    void reportFeedbackWidgetManuallyInternal(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable JSONObject widgetData, @Nullable Map<String, Object> widgetResult) {
         if (widgetInfo == null) {
             L.e("[ModuleFeedback] Can't report feedback widget data manually with 'null' widget info");
             return;
@@ -523,7 +537,7 @@ public class ModuleFeedback extends ModuleBase {
          *
          * @param callback
          */
-        public void getAvailableFeedbackWidgets(RetrieveFeedbackWidgets callback) {
+        public void getAvailableFeedbackWidgets(@Nullable RetrieveFeedbackWidgets callback) {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to retrieve feedback widget list");
 
@@ -539,7 +553,7 @@ public class ModuleFeedback extends ModuleBase {
          * @param closeButtonText if this is null, no "close" button will be shown
          * @param devCallback
          */
-        public void presentFeedbackWidget(CountlyFeedbackWidget widgetInfo, Context context, String closeButtonText, FeedbackCallback devCallback) {
+        public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable String closeButtonText, @Nullable FeedbackCallback devCallback) {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to present feedback widget in an alert dialog");
 
@@ -554,7 +568,7 @@ public class ModuleFeedback extends ModuleBase {
          * @param widgetInfo
          * @param callback
          */
-        public void getFeedbackWidgetData(CountlyFeedbackWidget widgetInfo, RetrieveFeedbackWidgetData callback) {
+        public void getFeedbackWidgetData(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable RetrieveFeedbackWidgetData callback) {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to retrieve feedback widget data");
 
@@ -570,7 +584,7 @@ public class ModuleFeedback extends ModuleBase {
          * @param widgetData
          * @param widgetResult
          */
-        public void reportFeedbackWidgetManually(CountlyFeedbackWidget widgetInfo, JSONObject widgetData, Map<String, Object> widgetResult) {
+        public void reportFeedbackWidgetManually(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable JSONObject widgetData, @Nullable Map<String, Object> widgetResult) {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to report feedback widget manually");
 

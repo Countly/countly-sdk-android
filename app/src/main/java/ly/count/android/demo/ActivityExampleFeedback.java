@@ -101,6 +101,10 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                 }
 
                 Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new FeedbackCallback() {
+                    @Override public void onClosed() {
+                        Toast.makeText(ActivityExampleFeedback.this, "The feedback widget was closed", Toast.LENGTH_LONG).show();
+                    }
+
                     @Override public void onFinished(String error) {
                         if (error != null) {
                             Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
@@ -138,6 +142,10 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                 }
 
                 Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new FeedbackCallback() {
+                    @Override public void onClosed() {
+                        Toast.makeText(ActivityExampleFeedback.this, "The feedback widget was closed", Toast.LENGTH_LONG).show();
+                    }
+
                     @Override public void onFinished(String error) {
                         if (error != null) {
                             Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
