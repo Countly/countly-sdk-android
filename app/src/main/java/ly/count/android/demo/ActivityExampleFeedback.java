@@ -284,7 +284,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                                     StringBuilder sb = new StringBuilder();
 
                                     for (int b = 0; b < choices.length(); b++) {
-                                        if (b % 2 == 0) {
+                                        if (b % 2 == 0) {//pick every other choice
                                             if (b != 0) {
                                                 sb.append(",");
                                             }
@@ -295,7 +295,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                                     break;
                                 //radio buttons
                                 case "radio":
-                                    //dropdown value selector
+                                //dropdown value selector
                                 case "dropdown":
                                     int pick = rnd.nextInt(choices.length());
                                     segm.put(answerKey, choices.optJSONObject(pick).optString("key"));//pick the key of random choice

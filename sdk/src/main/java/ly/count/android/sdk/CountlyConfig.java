@@ -515,7 +515,7 @@ public class CountlyConfig {
 
     /**
      * Set the threshold for event grouping. Event count that is bellow the
-     * threshold will be send on update ticks.
+     * threshold will be sent on update ticks.
      *
      * @param threshold
      * @return
