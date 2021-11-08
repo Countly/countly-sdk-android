@@ -71,5 +71,12 @@
         android:onClick="onClickRetrieveSurveyDataManually"
         android:text="Retrieve survey data manually"
         />
+    <Button
+        android:id="@+id/button35"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickRetrieveNPSDataManually"
+        android:text="Retrieve nps data manually"
+        />
 
 </LinearLayout>

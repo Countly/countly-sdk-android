@@ -329,6 +329,14 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     }
 
     public void onClickRetrieveSurveyDataManually(View v) {
+        getAndPrintRetrievedFeedbackWidgetData(FeedbackWidgetType.survey);
+    }
+
+    public void onClickRetrieveNPSDataManually(View v) {
+        getAndPrintRetrievedFeedbackWidgetData(FeedbackWidgetType.nps);
+    }
+
+    void getAndPrintRetrievedFeedbackWidgetData(final FeedbackWidgetType widgetType) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
                 if (error != null) {
@@ -343,7 +351,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
 
                 CountlyFeedbackWidget chosenWidget = null;
                 for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == FeedbackWidgetType.survey) {
+                    if (widget.type == widgetType) {
                         chosenWidget = widget;
                         break;
                     }
@@ -354,8 +362,6 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                     return;
                 }
 
-                final CountlyFeedbackWidget widgetToReport = chosenWidget;
-
                 Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
                     @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
                         if (error != null) {
@@ -363,33 +369,6 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                             return;
                         }
                         Log.d(Countly.TAG, "Retrieved survey widget data: " + retrievedWidgetData.toString());
-/*
-                        JSONArray questions = retrievedWidgetData.optJSONArray("questions");
-
-                        if (questions == null) {
-                            Toast.makeText(ActivityExampleFeedback.this, "No questions found in retrieved survey data", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-
-                        Map<String, Object> segm = new HashMap<>();
-                        Random rnd = new Random();
-
-                        //iterate over all questions and set random answers
-                        for (int a = 0; a < questions.length(); a++) {
-                            JSONObject question = null;
-                            try {
-                                question = questions.getJSONObject(a);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            String wType = question.optString("type");
-                            String questionId = question.optString("id");
-                            String answerKey = "answ-" + questionId;
-                            JSONArray choices = question.optJSONArray("choices");
-
-
-                        }
-*/
                         Toast.makeText(ActivityExampleFeedback.this, "Survey data retrieved: " + retrievedWidgetData, Toast.LENGTH_LONG).show();
                     }
                 });
