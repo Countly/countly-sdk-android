@@ -63,8 +63,15 @@
         android:id="@+id/button67"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="onClickReportAttribution"
-        android:text="Report attribution" />
+        android:onClick="onClickReportDirectAttribution"
+        android:text="Report direct attribution" />
+
+    <Button
+        android:id="@+id/button68"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickReportIndirectAttribution"
+        android:text="Report indirect attribution" />
 
     <Button
         android:id="@+id/button41"

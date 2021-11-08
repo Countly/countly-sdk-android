@@ -477,10 +477,6 @@ public class Countly {
 
             L.i("[Init] Finished initialising modules");
 
-            //init other things
-            L.d("[Init] Currently cached advertising ID [" + countlyStore.getCachedAdvertisingId() + "]");
-            AdvertisingIdAdapter.cacheAdvertisingID(config.context, countlyStore);
-
             if (config.customNetworkRequestHeaders != null) {
                 L.i("[Countly] Calling addCustomNetworkRequestHeaders");
                 requestHeaderCustomValues = config.customNetworkRequestHeaders;
@@ -739,14 +735,6 @@ public class Countly {
             //begin a session
 
             moduleSessions.beginSessionInternal();
-        }
-
-        //check if there is an install referrer data
-        String referrer = ReferrerReceiver.getReferrer(context_);
-        L.d("Checking referrer: " + referrer);
-        if (referrer != null) {
-            connectionQueue_.sendReferrerData(referrer);
-            ReferrerReceiver.deleteReferrer(context_);
         }
 
         CrashDetails.inForeground();

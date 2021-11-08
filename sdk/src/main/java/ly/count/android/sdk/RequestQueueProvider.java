@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.util.Map;
 
 interface RequestQueueProvider {
@@ -11,8 +12,8 @@ interface RequestQueueProvider {
     void endSession(final int duration, String deviceIdOverride);
     void sendLocation(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress);
     void sendUserData(String userdata);
-    void sendReferrerData(String referrer);
-    void sendReferrerDataManual(String campaignID, String userID);
+    void sendIndirectAttribution(@NonNull String attributionId);
+    void sendDirectAttribution(@NonNull String campaignID, String userID);
     void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation);
     void recordEvents(final String events);
     void sendConsentChanges(String formattedConsentChanges);

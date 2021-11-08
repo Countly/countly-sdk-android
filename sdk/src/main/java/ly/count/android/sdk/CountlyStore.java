@@ -192,7 +192,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized void addRequest(final String requestStr) {
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
-            if (connections.size() < MAX_REQUESTS) {
+            if (connections.size() < maxRequestQueueSize) {
                 //request under max requests, add as normal
                 connections.add(requestStr);
                 preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();

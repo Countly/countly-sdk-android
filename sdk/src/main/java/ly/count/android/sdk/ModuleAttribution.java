@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.Nullable;
+
 public class ModuleAttribution extends ModuleBase {
 
     Attribution attributionInterface;
@@ -11,10 +13,26 @@ public class ModuleAttribution extends ModuleBase {
         attributionInterface = new ModuleAttribution.Attribution();
     }
 
-    void recordCampaignInternal(String campaignId, String campaignUserId) {
-        L.d("[ModuleAttribution] recordCampaignInternal, campaign id:[" + campaignId + "], user id:[" + campaignUserId + "]");
+    void recordDirectAttributionInternal(@Nullable String campaignId, @Nullable String campaignUserId) {
+        L.d("[ModuleAttribution] recordDirectAttributionInternal, campaign id:[" + campaignId + "], user id:[" + campaignUserId + "]");
 
-        requestQueueProvider.sendReferrerDataManual(campaignId, campaignUserId);
+        if (campaignId == null || campaignId.isEmpty()) {
+            L.e("[ModuleAttribution] recordDirectAttributionInternal, provided campaign id value is not valid. Execution will be aborted.");
+            return;
+        }
+
+        requestQueueProvider.sendDirectAttribution(campaignId, campaignUserId);
+    }
+
+    void recordIndirectAttributionInternal(@Nullable String attributionId) {
+        L.d("[ModuleAttribution] recordIndirectAttributionInternal, attribution id:[" + attributionId + "]");
+
+        if (attributionId == null || attributionId.isEmpty()) {
+            L.e("[ModuleAttribution] recordIndirectAttributionInternal, provided id value is not valid. Execution will be aborted.");
+            return;
+        }
+
+        requestQueueProvider.sendIndirectAttribution(attributionId);
     }
 
     @Override
@@ -29,24 +47,37 @@ public class ModuleAttribution extends ModuleBase {
          *
          * @param campaignId
          */
-        public void recordCampaign(String campaignId) {
+        public void recordDirectAttribution(String campaignId) {
             synchronized (_cly) {
                 L.i("[Attribution] calling 'recordCampaign'");
 
-                recordCampaignInternal(campaignId, null);
+                recordDirectAttributionInternal(campaignId, null);
             }
         }
 
         /**
-         * Report user attribution manually
+         * Report direct user attribution
          *
          * @param campaignId
          */
-        public void recordCampaign(String campaignId, String campaignUserId) {
+        public void recordDirectAttribution(String campaignId, String campaignUserId) {
             synchronized (_cly) {
                 L.i("[Attribution] calling 'recordCampaign'");
 
-                recordCampaignInternal(campaignId, campaignUserId);
+                recordDirectAttributionInternal(campaignId, campaignUserId);
+            }
+        }
+
+        /**
+         * Report indirect user attribution
+         *
+         * @param attributionId
+         */
+        public void recordIndirectAttribution(String attributionId) {
+            synchronized (_cly) {
+                L.i("[Attribution] calling 'recordIndirectAttribution'");
+
+                recordIndirectAttributionInternal(attributionId);
             }
         }
     }

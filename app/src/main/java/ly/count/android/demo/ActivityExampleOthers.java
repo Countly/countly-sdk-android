@@ -60,8 +60,12 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().consent().giveConsentAll();
     }
 
-    public void onClickReportAttribution(View v) {
-        Countly.sharedInstance().attribution().recordCampaign("yourCampaignId", "yourUserId");
+    public void onClickReportDirectAttribution(View v) {
+        Countly.sharedInstance().attribution().recordDirectAttribution("yourCampaignId", "yourUserId");
+    }
+
+    public void onClickReportIndirectAttribution(View v) {
+        Countly.sharedInstance().attribution().recordIndirectAttribution("attribution ID");
     }
 
     public void onClickHaltAndInit(View v) {

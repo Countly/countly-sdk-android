@@ -22,6 +22,7 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -165,19 +166,6 @@ class ConnectionQueue implements RequestQueueProvider {
             dataAvailable = true;
         }
 
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-            //add attribution data if consent given
-            if (Countly.sharedInstance().isAttributionEnabled) {
-                String cachedAdId = storageProvider.getCachedAdvertisingId();
-
-                if (!cachedAdId.isEmpty()) {
-                    data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
-
-                    dataAvailable = true;
-                }
-            }
-        }
-
         Countly.sharedInstance().isBeginSessionSent = true;
 
         if (dataAvailable) {
@@ -204,17 +192,6 @@ class ConnectionQueue implements RequestQueueProvider {
             if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
                 data += "&session_duration=" + duration;
                 dataAvailable = true;
-            }
-
-            if (consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-                if (Countly.sharedInstance().isAttributionEnabled) {
-                    String cachedAdId = storageProvider.getCachedAdvertisingId();
-
-                    if (!cachedAdId.isEmpty()) {
-                        data += "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + cachedAdId + "\"}");
-                        dataAvailable = true;
-                    }
-                }
             }
 
             if (dataAvailable) {
@@ -355,34 +332,30 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
-    /**
-     * Attribute installation to Countly server.
-     *
-     * @param referrer query parameters
-     * @throws java.lang.IllegalStateException if context, app key, store, or server URL have not been set
-     */
-    public void sendReferrerData(String referrer) {
+    public void sendIndirectAttribution(@NonNull String attributionId) {
         checkInternalState();
-        L.d("[Connection Queue] sendReferrerData");
+        L.d("[Connection Queue] sendIndirectAttribution");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             L.d("[Connection Queue] request ignored, consent not given");
             return;
         }
 
-        if (referrer == null) {
-            L.d("[Connection Queue] No referrer data to send, skipping");
-            return;
+        if(attributionId.isEmpty()) {
+            L.e("[Connection Queue] provided attribution ID is not valid, aborting");
         }
 
-        String data = prepareCommonRequestData() + referrer;
+        String param = "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + attributionId + "\"}");
+
+        String data = prepareCommonRequestData() + param;
         addRequestToQueue(data);
+
         tick();
     }
 
-    public void sendReferrerDataManual(String campaignID, String userID) {
+    public void sendDirectAttribution(@NonNull String campaignID, String userID) {
         checkInternalState();
-        L.d("[Connection Queue] sendReferrerDataManual");
+        L.d("[Connection Queue] sendDirectAttribution");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             L.d("[Connection Queue] request ignored, consent not given");
@@ -391,15 +364,15 @@ class ConnectionQueue implements RequestQueueProvider {
 
         String res = "";
 
-        if (campaignID != null) {
+        if (!campaignID.isEmpty()) {
             res += "&campaign_id=" + UtilsNetworking.urlEncodeString(campaignID);
         }
-        if (userID != null) {
+        if (userID != null && !userID.isEmpty()) {
             res += "&campaign_user=" + UtilsNetworking.urlEncodeString(userID);
         }
 
         if (res.length() == 0) {
-            L.w("[Connection Queue] sendReferrerDataManual, attribution not sent, both campaign ID and user ID are either null or empty");
+            L.w("[Connection Queue] sendDirectAttribution, attribution not sent, both campaign ID and user ID are either null or empty");
             return;
         }
 

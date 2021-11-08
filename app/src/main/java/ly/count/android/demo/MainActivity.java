@@ -3,12 +3,14 @@ package ly.count.android.demo;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
+import java.net.URLDecoder;
 import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
@@ -48,11 +50,28 @@ public class MainActivity extends AppCompatActivity {
                             String referrerUrl = response.getInstallReferrer();
 
                             //and then you would parse it and retrieve the required field to identify the campaign id and user id
-                            String campaignId = "someId";
+                            String campaignId = "someCampaignId";
                             String userId = "someUserId";
 
+                            // The string is usually URL Encoded, so we need to decode it.
+                            String referrer = URLDecoder.decode(referrerUrl, "UTF-8");
+
+                            // Log the referrer string.
+                            Log.d(Countly.TAG, "Received Referrer url: " + referrer);
+
+                            //retrieve specific parts from the referrer url
+                            String[] parts = referrer.split("&");
+                            for (String part : parts) {
+                                if (part.startsWith("countly_cid")) {
+                                    campaignId = part.replace("countly_cid=", "").trim();
+                                }
+                                if (part.startsWith("countly_cuid")) {
+                                    userId = part.replace("countly_cuid=", "").trim();
+                                }
+                            }
+
                             //you would then pass those retrieved values as manual attribution:
-                            //Countly.sharedInstance().attribution().recordCampaign(campaignId, userId);
+                            Countly.sharedInstance().attribution().recordDirectAttribution(campaignId, userId);
 
                             referrerClient.endConnection();
                         } catch (Exception e) {
