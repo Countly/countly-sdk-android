@@ -180,12 +180,12 @@ public class App extends Application {
             })
           
             .setHttpPostForced(false)
-            .setParameterTamperingProtectionSalt("SampleSalt")
+            .setParameterTamperingProtectionSalt("test-salt-checksum")
             .addCustomNetworkRequestHeaders(customHeaderValues)
             //.enableCertificatePinning(certificates)
             //.enablePublicKeyPinning(certificates)
 
-            .setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
+            .setRemoteConfigAutomaticDownload(true, new RemoteConfigCallback() {
                 @Override
                 public void callback(String error) {
                     if (error == null) {
