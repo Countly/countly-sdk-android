@@ -1,12 +1,14 @@
 package ly.count.android.demo;
 
 import android.annotation.SuppressLint;
+import android.app.Service;
 import android.content.Intent;
 import android.util.Log;
-import com.huawei.hms.push.HmsMessageService;
-import com.huawei.hms.push.RemoteMessage;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.messaging.CountlyPush;
+
+import com.huawei.hms.push.HmsMessageService;
+import com.huawei.hms.push.RemoteMessage;
 
 public class DemoHuaweiMessagingService extends HmsMessageService {
     private static final String TAG = "DemoHuaweiMessagingService";

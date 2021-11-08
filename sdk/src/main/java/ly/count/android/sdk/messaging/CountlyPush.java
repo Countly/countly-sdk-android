@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -21,12 +22,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
-import android.util.Log;
 import android.view.Gravity;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import androidx.annotation.DrawableRes;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
+import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.Utils;
 
 /**
@@ -69,8 +71,9 @@ public class CountlyPush {
      */
     static int MEDIA_DOWNLOAD_ATTEMPTS = 3;
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private static BroadcastReceiver notificationActionReceiver = null, consentReceiver = null;
+    public static boolean useAdditionalIntentRedirectionChecks = false;
+
+    static boolean initFinished = false;
 
     /**
      * Message object encapsulating data in {@code RemoteMessage} sent from Countly server.
@@ -247,6 +250,25 @@ public class CountlyPush {
                 return;
             }
 
+            if (useAdditionalIntentRedirectionChecks) {
+                ComponentName componentName = intent.getComponent();
+                String intentPackageName = componentName.getPackageName();
+                String intentClassName = componentName.getClassName();
+                String contextPackageName = context.getPackageName();
+
+                if (intentPackageName != null && !intentPackageName.equals(contextPackageName)) {
+                    Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
+                    return;
+                }
+
+                if (intentPackageName == null || !intentClassName.startsWith(intentPackageName)) {
+                    Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] intent class name and intent package names do not match");
+                    return;
+                }
+            }
+
+            Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Push broadcast, after filtering");
+
             intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
             int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
@@ -273,22 +295,33 @@ public class CountlyPush {
             context.sendBroadcast(closeNotificationsPanel);
 
             if (index == 0) {
-                if (message.link() != null) {
-                    Intent i = new Intent(Intent.ACTION_VIEW, message.link());
+                try {
+                    if (message.link() != null) {
+                        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given link. Push body. [" + message.link() + "]");
+                        Intent i = new Intent(Intent.ACTION_VIEW, message.link());
+                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        i.putExtra(EXTRA_MESSAGE, bundle);
+                        i.putExtra(EXTRA_ACTION_INDEX, index);
+                        context.startActivity(i);
+                    } else {
+                        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity without a link. Push body");
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(intent);
+                    }
+                } catch (Exception ex) {
+                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking on notification body [" + ex.toString() + "]");
+                }
+            } else {
+                try {
+                    Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given button link. [" + (index - 1) + "] [" + message.buttons().get(index - 1).link() + "]");
+                    Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     i.putExtra(EXTRA_MESSAGE, bundle);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
                     context.startActivity(i);
-                } else {
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
+                } catch (Exception ex) {
+                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking on notification button [" + ex.toString() + "]");
                 }
-            } else {
-                Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra(EXTRA_MESSAGE, bundle);
-                i.putExtra(EXTRA_ACTION_INDEX, index);
-                context.startActivity(i);
             }
         }
     }
@@ -300,7 +333,7 @@ public class CountlyPush {
         @Override
         public void onReceive(Context context, Intent broadcast) {
             if (mode != null && provider != null && getPushConsent(context)) {
-                String token = getToken(context, provider);
+                String token = getToken(context, provider, Countly.sharedInstance().L);
                 if (token != null && !"".equals(token)) {
                     onTokenRefresh(token, provider);
                 }
@@ -313,61 +346,77 @@ public class CountlyPush {
      *
      * @return token string or null if no token is currently available.
      */
-    private static String getToken(Context context, Countly.CountlyMessagingProvider prov) {
-        try {
-            if (prov == Countly.CountlyMessagingProvider.FCM) {
-                Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance");
-                return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken");
-            } else if (prov == Countly.CountlyMessagingProvider.HMS) {
-                Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", context, Context.class);
+    private static String getToken(Context context, Countly.CountlyMessagingProvider prov, ModuleLog L) {
+        if (prov == Countly.CountlyMessagingProvider.FCM) {
+            try {
+                Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance", L);
+                return (String) UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, instance, "getToken", L);
+            } catch (Throwable logged) {
+                Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
+                return null;
+            }
+        } else if (prov == Countly.CountlyMessagingProvider.HMS) {
+            try {
+                Object config = UtilsMessaging.reflectiveCallStrict(HUAWEI_CONFIG_CLASS, null, "fromContext", L, context, Context.class);
                 if (config == null) {
                     Countly.sharedInstance().L.e("No Huawei Config");
                     return null;
                 }
 
-                Object appId = UtilsMessaging.reflectiveCall(HUAWEI_CONFIG_CLASS, config, "getString", "client/app_id");
+                Object appId = UtilsMessaging.reflectiveCall(HUAWEI_CONFIG_CLASS, config, "getString", L, "client/app_id");
                 if (appId == null || "".equals(appId)) {
                     Countly.sharedInstance().L.e("No Huawei app id in config");
                     return null;
                 }
 
-                Object instanceId = UtilsMessaging.reflectiveCallStrict(HUAWEI_INSTANCEID_CLASS, null, "getInstance", context, Context.class);
+                Object instanceId = UtilsMessaging.reflectiveCallStrict(HUAWEI_INSTANCEID_CLASS, null, "getInstance", L, context, Context.class);
                 if (instanceId == null) {
                     Countly.sharedInstance().L.e("No Huawei instance id class");
                     return null;
                 }
 
-                Object token = UtilsMessaging.reflectiveCall(HUAWEI_INSTANCEID_CLASS, instanceId, "getToken", appId, "HCM");
+                Object token = UtilsMessaging.reflectiveCall(HUAWEI_INSTANCEID_CLASS, instanceId, "getToken", L, appId, "HCM");
                 return (String) token;
-            } else {
+            } catch (Throwable logged) {
+                Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly huawei push kit", logged);
                 return null;
             }
-        } catch (Throwable logged) {
-            Countly.sharedInstance().L.e("[CountlyPush, getToken] Couldn't get token for Countly FCM", logged);
+        } else {
+            Countly.sharedInstance().L.e("[CountlyPush, getToken] Message provider is neither FCM or HMS, aborting");
             return null;
         }
     }
 
     /**
-     * Standard Countly logic for displaying a {@link Message}
+     * Standard Countly logic for displaying a {@link Message}.
+     *
+     * This would display the push message in a dialog if the app was in foreground.
+     * If the app was in background, it would display the push message as a notification.
      *
      * @param context context to run in (supposed to be called from {@code FirebaseMessagingService})
      * @param data {@code RemoteMessage#getData()} result
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if no Countly message is found in {@code data}
      */
-    public static Boolean displayMessage(Context context, final Map<String, String> data, final int notificationSmallIcon, final Intent notificationIntent) {
+    public static Boolean displayMessage(Context context, final Map<String, String> data, @DrawableRes final int notificationSmallIcon, final Intent notificationIntent) {
         return displayMessage(context, decodeMessage(data), notificationSmallIcon, notificationIntent);
     }
 
     /**
      * Standard Countly logic for displaying a {@link Message}
      *
+     * This would display the push message in a dialog if the app was in foreground.
+     * If the app was in background, it would display the push message as a notification.
+     *
      * @param context context to run in (supposed to be called from {@code FirebaseMessagingService})
      * @param msg {@link Message} instance
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if no Countly message is found in {@code data}
      */
-    public static Boolean displayMessage(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
+    public static Boolean displayMessage(final Context context, final Message msg, @DrawableRes final int notificationSmallIcon, final Intent notificationIntent) {
         Countly.sharedInstance().L.d("[CountlyPush, displayMessage] Displaying push message");
+
+        if (!initFinished) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
+        }
 
         if (msg == null) {
             return null;
@@ -394,26 +443,34 @@ public class CountlyPush {
      * @param notificationIntent activity-starting intent to send when user taps on {@link Notification} or one of its {@link android.app.Notification.Action}s. Pass {@code null} to go with main activity.
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if message is not displayable as {@link Notification}
      */
-    public static Boolean displayNotification(final Context context, final Message msg, final int notificationSmallIcon, final Intent notificationIntent) {
+    public static Boolean displayNotification(final Context context, final Message msg, @DrawableRes final int notificationSmallIcon, final Intent notificationIntent) {
         if (!getPushConsent(context)) {
             return null;
         }
 
         if (msg == null) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayNotification] Message is 'null', can't display a notification");
             return null;
         } else if (msg.title() == null && msg.message() == null) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayNotification] Message title and message body is 'null', can't display a notification");
             return null;
         }
 
-        Countly.sharedInstance().L.d("[CountlyPush, displayNotification] Displaying push notification");
+        Countly.sharedInstance().L.d("[CountlyPush, displayNotification] Displaying push notification, additional intent provided:[" + (notificationIntent != null) + "]");
+
+        if (!initFinished) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
+        }
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (manager == null) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayNotification] Retrieved notification manager is 'null', can't display notification");
             return Boolean.FALSE;
         }
 
-        Intent broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST);
+        Intent broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
+        broadcast.setPackage(context.getApplicationContext().getPackageName());
         broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, 0));
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
@@ -423,6 +480,10 @@ public class CountlyPush {
             .setContentTitle(msg.title())
             .setContentText(msg.message());
 
+        if (msg.badge() != null) {
+            builder.setNumber(msg.badge());
+        }
+
         if (android.os.Build.VERSION.SDK_INT > 21) {
             if (notificationAccentColor != null) {
                 builder.setColor(notificationAccentColor);
@@ -430,17 +491,18 @@ public class CountlyPush {
         }
 
         builder.setAutoCancel(true)
-            .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, 0));
+            .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
 
         builder.setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
 
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST);
+            broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
+            broadcast.setPackage(context.getApplicationContext().getPackageName());
             broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
-            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, 0));
+            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
 
         if (msg.sound() != null) {
@@ -498,6 +560,10 @@ public class CountlyPush {
         }
 
         Countly.sharedInstance().L.d("[CountlyPush, displayDialog] Displaying push dialog");
+
+        if (!initFinished) {
+            Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
+        }
 
         loadImage(activity, msg, new BitmapCallback() {
             @Override
@@ -558,10 +624,14 @@ public class CountlyPush {
                                 msg.recordAction(activity, 0);
                                 dialog.dismiss();
 
-                                Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
-                                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                i.putExtra(EXTRA_ACTION_INDEX, 0);// put zero because non 'button' action
-                                activity.startActivity(i);
+                                try {
+                                    Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
+                                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    i.putExtra(EXTRA_ACTION_INDEX, 0);// put zero because non 'button' action
+                                    activity.startActivity(i);
+                                } catch (Exception ex) {
+                                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking 'ok' button in dialog [" + ex.toString() + "]");
+                                }
                             }
                         });
                     }
@@ -595,13 +665,17 @@ public class CountlyPush {
             DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link());
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable(EXTRA_MESSAGE, msg);
-                    intent.putExtra(EXTRA_MESSAGE, bundle);
-                    intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
-                    context.startActivity(intent);
+                    try {
+                        msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
+                        Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link());
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable(EXTRA_MESSAGE, msg);
+                        intent.putExtra(EXTRA_MESSAGE, bundle);
+                        intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
+                        context.startActivity(intent);
+                    } catch (Exception ex) {
+                        Countly.sharedInstance().L.e("[CountlyPush, dialog button onClick] Encountered issue while clicking on button #[" + which + "] [" + ex.toString() + "]");
+                    }
                     dialog.dismiss();
                 }
             };
@@ -667,7 +741,6 @@ public class CountlyPush {
      * @param mode whether to mark push token as test or as production one
      * @throws IllegalStateException
      */
-    @SuppressWarnings("unchecked")
     public static void init(final Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
         init(application, mode, null);
     }
@@ -680,41 +753,38 @@ public class CountlyPush {
      * @param preferredProvider prefer specified push provider, {@code null} means use FCM first, then fallback to Huawei
      * @throws IllegalStateException
      */
-    @SuppressWarnings("unchecked")
     public static void init(final Application application, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
-        if (application == null) {
-            throw new IllegalStateException("Non null application must be provided!");
-        }
+        Countly.sharedInstance().L.i("[CountlyPush, init] Initialising Countly Push, App:[" + (application != null) + "], mode:[" + mode + "] provider:[" + preferredProvider + "]");
 
-        //Log.e(Countly.TAG, "CURRENT PUSH CONSENT " + getPushConsent(application));
+        if (application == null) {
+            throw new IllegalStateException("Non 'null' application must be provided!");
+        }
 
         // set preferred push provider
         CountlyPush.provider = preferredProvider;
         if (provider == null) {
-            if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+            if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
                 provider = Countly.CountlyMessagingProvider.FCM;
-            } else if (UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+            } else if (UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
                 provider = Countly.CountlyMessagingProvider.HMS;
             }
-        } else if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
+        } else if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             provider = Countly.CountlyMessagingProvider.HMS;
-        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
+        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             provider = Countly.CountlyMessagingProvider.FCM;
         }
 
         // print error in case preferred push provider is not available
-        if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS)) {
-            Countly.sharedInstance().L.e("No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+        if (provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
+            Countly.sharedInstance().L.e("Countly push didn't initialise. No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
-        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS)) {
-            Countly.sharedInstance().L.e("No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+        } else if (provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
+            Countly.sharedInstance().L.e("Countly push didn't initialise. No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (provider == null) {
-            Countly.sharedInstance().L.e("Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Countly push didn't initialise. Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
             return;
         }
-
-        Countly.sharedInstance().L.i("[CountlyPush] Initializing Countly FCM push with mode: [" + mode + "] and [" + provider + "]");
 
         CountlyPush.mode = mode;
         CountlyStore.cacheLastMessagingMode(mode == Countly.CountlyMessagingMode.TEST ? 0 : 1, application);
@@ -758,13 +828,8 @@ public class CountlyPush {
             application.registerActivityLifecycleCallbacks(callbacks);
 
             IntentFilter filter = new IntentFilter();
-            filter.addAction(SECURE_NOTIFICATION_BROADCAST);
-            notificationActionReceiver = new NotificationBroadcastReceiver();
-            application.registerReceiver(notificationActionReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
-
-            filter = new IntentFilter();
             filter.addAction(Countly.CONSENT_BROADCAST);
-            consentReceiver = new ConsentBroadcastReceiver();
+            BroadcastReceiver consentReceiver = new ConsentBroadcastReceiver();
             application.registerReceiver(consentReceiver, filter, application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
         }
 
@@ -774,7 +839,7 @@ public class CountlyPush {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        String token = getToken(application, Countly.CountlyMessagingProvider.HMS);
+                        String token = getToken(application, Countly.CountlyMessagingProvider.HMS, Countly.sharedInstance().L);
                         if (token != null && !"".equals(token)) {
                             onTokenRefresh(token, Countly.CountlyMessagingProvider.HMS);
                         }
@@ -782,18 +847,20 @@ public class CountlyPush {
                 }).start();
             }
         }
+
+        //mark this so that sanity checks can be performed in the future
+        initFinished = true;
     }
 
     static boolean getPushConsent(Context context) {
-        if(Countly.sharedInstance().isInitialized() || context == null) {
+        if (Countly.sharedInstance().isInitialized() || context == null) {
             //todo currently this is also used when context is null and might result in unintended consequences
-            //if SDK is initialised, used the stored value
-            return Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.push);
+            //if SDK is initialised, use the stored value
+            return Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push);
         } else {
             //if the SDK is not initialised, use the cached value
             return CountlyStore.getConsentPushNoInit(context);
         }
-
     }
 
     private static String getEMUIVersion() {
@@ -917,4 +984,3 @@ public class CountlyPush {
         });
     }
 }
-

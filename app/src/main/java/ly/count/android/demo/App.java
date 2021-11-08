@@ -29,7 +29,7 @@ import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
 import ly.count.android.sdk.DeviceId;
 import ly.count.android.sdk.ModuleLog;
-import ly.count.android.sdk.RemoteConfig;
+import ly.count.android.sdk.RemoteConfigCallback;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 import static ly.count.android.sdk.Countly.TAG;
@@ -119,6 +119,11 @@ public class App extends Application {
         Map<String, String> metricOverride = new HashMap<>();
         metricOverride.put("SomeKey", "123");
         metricOverride.put("_carrier", "BoneyK");
+      
+        //add some custom segments, like dependency library versions
+        HashMap<String, Object> customCrashSegmentation = new HashMap<>();
+        customCrashSegmentation.put("EarBook", "3.5");
+        customCrashSegmentation.put("AdGiver", "6.5");
 
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
             .setLoggingEnabled(true)
@@ -127,7 +132,7 @@ public class App extends Application {
                     //duplicated countly logs
                     switch (logLevel) {
                         case Verbose:
-                            //.v("Countly Duplicate", logMessage);
+                            //Log.v("Countly Duplicate", logMessage);
                             break;
                         case Debug:
                             //Log.d("Countly Duplicate", logMessage);
@@ -144,32 +149,36 @@ public class App extends Application {
                     }
                 }
             })
-
+          
             .enableCrashReporting()
             .setRecordAllThreadsWithCrash()
+            .setCustomCrashSegment(customCrashSegmentation)
             .setCrashFilterCallback(new CrashFilterCallback() {
                 @Override
                 public boolean filterCrash(String crash) {
                     return crash.contains("crash");
                 }
             })
-
+          
             .setViewTracking(true)
             .setAutoTrackingUseShortName(true)
             .setAutomaticViewSegmentation(automaticViewSegmentation)
             .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
-
+                   
             .setPushIntentAddMetadata(true)
-            .setLocation("us", "Böston", "-23.8043604,-46.6718331", "10.2.33.12")
+          
+            .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
             //.setDisableLocation()
-
+          
+            //.enableTemporaryDeviceIdMode()
+          
             .setRequiresConsent(true).setConsentEnabled(new String[] {
                 Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
                 Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
                 Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
                 Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
             })
-
+          
             .setHttpPostForced(false)
             .setParameterTamperingProtectionSalt("SampleSalt")
             .addCustomNetworkRequestHeaders(customHeaderValues)
@@ -188,8 +197,10 @@ public class App extends Application {
             })
 
             .setTrackOrientationChanges(true)
+
             .setRecordAppStartTime(true)
             .setAppStartTimestampOverride(applicationStartTimestamp)
+
             //.setMetricOverride(metricOverride)
 
             .setEnableAttribution(true);
@@ -197,6 +208,7 @@ public class App extends Application {
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
+        CountlyPush.useAdditionalIntentRedirectionChecks = false;
         CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION, Countly.CountlyMessagingProvider.FCM);
         CountlyPush.setNotificationAccentColor(255, 213, 89, 134);
 
@@ -205,7 +217,7 @@ public class App extends Application {
                 @Override
                 public void onComplete(@NonNull Task<InstanceIdResult> task) {
                     if (!task.isSuccessful()) {
-                        Log.w(TAG, "getInstanceId failed", task.getException());
+                        Log.e(TAG, "getInstanceId failed", task.getException());
                         return;
                     }
 
@@ -215,7 +227,7 @@ public class App extends Application {
                 }
             });
 
-        /* Register for broadcast action if you need to be notified when Countly message received */
+        /* Register for broadcast action if you need to be notified when Countly message clicked */
         messageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {

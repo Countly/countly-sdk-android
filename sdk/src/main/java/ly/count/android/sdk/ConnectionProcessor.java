@@ -21,7 +21,6 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.util.Log;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,7 +49,7 @@ public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
 
-    private final CountlyStore store_;
+    private final StorageProvider storageProvider_;
     private final DeviceId deviceId_;
     private final String serverURL_;
     private final SSLContext sslContext_;
@@ -63,13 +62,12 @@ public class ConnectionProcessor implements Runnable {
 
     private enum RequestResult {
         OK,         // success
-        RETRY,      // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
-        REMOVE      // bad request, remove
+        RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
     }
 
-    ConnectionProcessor(final String serverURL, final CountlyStore store, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
+    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceId deviceId, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
         serverURL_ = serverURL;
-        store_ = store;
+        storageProvider_ = storageProvider;
         deviceId_ = deviceId;
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
@@ -84,13 +82,17 @@ public class ConnectionProcessor implements Runnable {
 
         boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced());
 
+        long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
         if (usingHttpPost) {
             requestData += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
+            approximateDateSize += requestData.length();
         } else {
             urlStr += "?" + requestData;
             urlStr += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
         }
+        approximateDateSize += urlStr.length();
+
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
@@ -118,9 +120,8 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        String picturePath = UserData.getPicturePathFromQuery(url);
+        String picturePath = ModuleUserProfile.getPicturePathFromQuery(url);
         L.v("[Connection Processor] Got picturePath: " + picturePath);
-        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "]");
         //Log.v(Countly.TAG, "Used url: " + urlStr);
         if (!picturePath.equals("")) {
             //Uploading files:
@@ -148,6 +149,7 @@ public class ConnectionProcessor implements Runnable {
             try {
                 while ((len = fileInputStream.read(buffer)) != -1) {
                     output.write(buffer, 0, len);
+                    approximateDateSize += len;
                 }
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -173,13 +175,26 @@ public class ConnectionProcessor implements Runnable {
                 conn.setDoOutput(false);
             }
         }
+
+        //calculating header field size
+        int headerIndex = 0;
+        while (true) {
+            String key = conn.getHeaderFieldKey(headerIndex);
+            if (key == null) {
+                break;
+            }
+            String value = conn.getHeaderField(headerIndex++);
+            approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
+        }
+
+        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
     }
 
     @Override
     public void run() {
         while (true) {
-            final String[] storedEvents = store_.connections();
+            final String[] storedEvents = storageProvider_.getRequests();
             int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
 
             if (L.logEnabled()) {
@@ -197,7 +212,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // get first event from collection
-            if (deviceId_.getId() == null) {
+            if (deviceId_.getCurrentId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
                 L.i("[Connection Processor] No Device ID available yet, skipping request " + storedEvents[0]);
@@ -208,12 +223,12 @@ public class ConnectionProcessor implements Runnable {
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
             boolean containsTemporaryIdOverride = storedEvents[0].contains(temporaryIdOverrideTag);
             boolean containsTemporaryId = storedEvents[0].contains(temporaryIdTag);
-            if (containsTemporaryIdOverride || containsTemporaryId || deviceId_.temporaryIdModeEnabled()) {
+            if (containsTemporaryIdOverride || containsTemporaryId || deviceId_.isTemporaryIdModeEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
 
                 //abort and wait for exiting temporary mode
-                L.i("[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceId_.temporaryIdModeEnabled() + "]");
+                L.i("[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceId_.isTemporaryIdModeEnabled() + "]");
                 break;
             }
 
@@ -238,7 +253,7 @@ public class ConnectionProcessor implements Runnable {
                     final int endOfDeviceIdTag = storedEvents[0].indexOf("&device_id=") + "&device_id=".length();
                     newId = UtilsNetworking.urlDecodeString(storedEvents[0].substring(endOfDeviceIdTag));
 
-                    if (newId.equals(deviceId_.getId())) {
+                    if (newId.equals(deviceId_.getCurrentId())) {
                         // If the new device_id is the same as previous,
                         // we don't do anything to change it
 
@@ -248,14 +263,14 @@ public class ConnectionProcessor implements Runnable {
                         L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                     } else {
                         //new device_id provided, make sure it will be merged
-                        eventData = storedEvents[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+                        eventData = storedEvents[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
                     }
                 } else {
                     // this branch will be used in almost all requests.
                     // This just adds the device_id to them
 
                     newId = null;
-                    eventData = storedEvents[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getId());
+                    eventData = storedEvents[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
                 }
             }
 
@@ -285,7 +300,7 @@ public class ConnectionProcessor implements Runnable {
                         responseString = Utils.inputStreamToString(connInputStream);
                     }
 
-                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], request: " + eventData);
+                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + eventData);
 
                     final RequestResult rRes;
 
@@ -301,6 +316,7 @@ public class ConnectionProcessor implements Runnable {
                             } catch (JSONException ex) {
                                 //failed to parse, so not a valid json
                                 jsonObject = null;
+                                L.e("[Connection Processor] Failed to parse response [" + responseString + "].");
                             }
 
                             if (jsonObject == null) {
@@ -334,27 +350,25 @@ public class ConnectionProcessor implements Runnable {
                         rRes = RequestResult.RETRY;
                     }
 
-                    switch (rRes) {
-                        case OK:
-                            // successfully submitted event data to Count.ly server, so remove
-                            // this one from the stored events collection
-                            store_.removeConnection(storedEvents[0]);
+                    // an 'if' needs to be used here so that a 'switch' statement does not 'eat' the 'break' call
+                    // that is used to get out of the request loop
+                    if (rRes == RequestResult.OK) {
+                        // successfully submitted event data to Count.ly server, so remove
+                        // this one from the stored events collection
+                        storageProvider_.removeRequest(storedEvents[0]);
 
-                            if (deviceIdChange) {
-                                deviceId_.changeToDeveloperProvidedId(store_, newId);
-                            }
+                        if (deviceIdChange) {
+                            deviceId_.changeToId(DeviceIdType.DEVELOPER_SUPPLIED, newId, false);
+                        }
 
-                            if (deviceIdChange || deviceIdOverride) {
-                                Countly.sharedInstance().notifyDeviceIdChange();
-                            }
-                            break;
-                        case REMOVE:
-                            //bad request, will be removed
-                            store_.removeConnection(storedEvents[0]);
-                            break;
-                        case RETRY:
-                            // warning was logged above, stop processing, let next tick take care of retrying
-                            break;
+                        if (deviceIdChange || deviceIdOverride) {
+                            L.v("[Connection Processor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
+                            Countly.sharedInstance().notifyDeviceIdChange();
+                        }
+                    } else {
+                        // will retry later
+                        // warning was logged above, stop processing, let next tick take care of retrying
+                        break;
                     }
                 } catch (Exception e) {
                     L.w("[Connection Processor] Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
@@ -378,7 +392,7 @@ public class ConnectionProcessor implements Runnable {
                 L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedEvents[0]);
 
                 //remove stored data
-                store_.removeConnection(storedEvents[0]);
+                storageProvider_.removeRequest(storedEvents[0]);
             }
         }
     }
@@ -388,8 +402,8 @@ public class ConnectionProcessor implements Runnable {
         return serverURL_;
     }
 
-    CountlyStore getCountlyStore() {
-        return store_;
+    StorageProvider getCountlyStore() {
+        return storageProvider_;
     }
 
     DeviceId getDeviceId() {

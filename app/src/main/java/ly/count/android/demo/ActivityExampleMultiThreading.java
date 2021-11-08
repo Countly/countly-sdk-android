@@ -11,26 +11,22 @@ public class ActivityExampleMultiThreading extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
-        Countly.onCreate(this);
-
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

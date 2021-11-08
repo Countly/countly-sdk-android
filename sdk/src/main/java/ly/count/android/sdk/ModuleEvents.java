@@ -1,25 +1,24 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
 
-public class ModuleEvents extends ModuleBase {
+public class ModuleEvents extends ModuleBase implements EventProvider {
     static final Map<String, Event> timedEvents = new HashMap<>();
-    static final String[] reservedSegmentationKeys = new String[] { "aaaaaaaaaaaaaaaaaaaaCountly" };//just a test key that no one should realistically use
 
     //interface for SDK users
     final Events eventsInterface;
 
-    ModuleLog L;
+    EventQueueProvider eventQueueProvider;
 
     ModuleEvents(Countly cly, CountlyConfig config) {
-        super(cly);
-
-        L = cly.L;
-
+        super(cly, config);
         L.v("[ModuleEvents] Initialising");
+
+        eventProvider = this;
+        config.eventProvider = this;
+        eventQueueProvider = config.eventQueueProvider;
 
         eventsInterface = new Events();
     }
@@ -36,7 +35,7 @@ public class ModuleEvents extends ModuleBase {
             Map<String, Object> map = new HashMap<>();
             map.put(ModulePush.PUSH_EVENT_ACTION_ID_KEY, cachedData[0]);
             map.put(ModulePush.PUSH_EVENT_ACTION_INDEX_KEY, cachedData[1]);
-            recordEventInternal(ModulePush.PUSH_EVENT_ACTION, map, 1, 0, 0, null, false);
+            recordEventInternal(ModulePush.PUSH_EVENT_ACTION, map, 1, 0, 0, null);
         }
 
         if (cachedData != null && (cachedData[0] != null || cachedData[1] != null)) {
@@ -52,9 +51,8 @@ public class ModuleEvents extends ModuleBase {
      * @param sum
      * @param dur
      * @param instant
-     * @param processedSegmentation if segmentation has been processed and reserved keywords should not be removed
      */
-    synchronized void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, boolean processedSegmentation) {
+    public void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
         L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
@@ -69,87 +67,56 @@ public class ModuleEvents extends ModuleBase {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
         }
 
-        Map<String, String> segmentationString = null;
-        Map<String, Integer> segmentationInt = null;
-        Map<String, Double> segmentationDouble = null;
-        Map<String, Boolean> segmentationBoolean = null;
-
         if (segmentation != null) {
-            segmentationString = new HashMap<>();
-            segmentationInt = new HashMap<>();
-            segmentationDouble = new HashMap<>();
-            segmentationBoolean = new HashMap<>();
-            Map<String, Object> segmentationReminder = new HashMap<>();
-
             Utils.removeUnsupportedDataTypes(segmentation);
-            if (!processedSegmentation) {
-                Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
-            }
-            Utils.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
-
-            if (segmentationReminder.size() > 0) {
-                if (L.logEnabled()) {
-                    L.w("[ModuleEvents] Event contains events segments with unsupported types:");
-
-                    for (String k : segmentationReminder.keySet()) {
-                        if (k != null) {
-                            Object obj = segmentationReminder.get(k);
-                            if (obj != null) {
-                                L.w("[ModuleEvents] Event segmentation key:[" + k + "], value type:[" + obj.getClass().getCanonicalName() + "]");
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (String k : segmentationString.keySet()) {
-                if (k == null || k.length() == 0) {
-                    L.e("[ModuleEvents] Countly event segmentation key cannot be null or empty, skipping");
-                    continue;
-                }
-                if (segmentationString.get(k) == null) {
-                    L.e("[ModuleEvents] Countly event segmentation value cannot be null, skipping");
-                    continue;
-                }
-            }
         }
+
+        //record the current event timestamps
+        //if a past event is recorded, instant value will not be null
+        if (instant == null) {
+            instant = UtilsTime.getCurrentInstant();
+        }
+
+        final long timestamp = instant.timestampMs;
+        final int hour = instant.hour;
+        final int dow = instant.dow;
 
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
-                    _cly.sendEventsForced();
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
             case ModuleRatings.STAR_RATING_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.starRating)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
-                    _cly.sendEventsIfNeeded();
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.views)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
-                    _cly.sendEventsIfNeeded();
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.users)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
-                    _cly.sendEventsIfNeeded();
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             default:
-                if (Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.events)) {
-                    _cly.eventQueue_.recordEvent(key, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, count, sum, dur, instant);
-                    _cly.sendEventsIfNeeded();
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
         }
     }
 
-    synchronized boolean startEventInternal(final String key) {
+    boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
             L.e("[ModuleEvents] Can't start event with a null or empty key");
             return false;
@@ -157,12 +124,12 @@ public class ModuleEvents extends ModuleBase {
         if (timedEvents.containsKey(key)) {
             return false;
         }
-        L.d( "[ModuleEvents] Starting event: [" + key + "]");
+        L.d("[ModuleEvents] Starting event: [" + key + "]");
         timedEvents.put(key, new Event(key));
         return true;
     }
 
-    synchronized boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
+    boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
         L.d("[ModuleEvents] Ending event: [" + key + "]");
 
         if (key == null || key.length() == 0) {
@@ -173,7 +140,7 @@ public class ModuleEvents extends ModuleBase {
         Event event = timedEvents.remove(key);
 
         if (event != null) {
-            if (!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
                 return true;
             }
 
@@ -189,14 +156,14 @@ public class ModuleEvents extends ModuleBase {
             double duration = (currentTimestamp - event.timestamp) / 1000.0;
             UtilsTime.Instant instant = new UtilsTime.Instant(event.timestamp, event.hour, event.dow);
 
-            recordEventInternal(key, segmentation, count, sum, duration, instant, false);
+            eventProvider.recordEventInternal(key, segmentation, count, sum, duration, instant);
             return true;
         } else {
             return false;
         }
     }
 
-    synchronized boolean cancelEventInternal(final String key) {
+    boolean cancelEventInternal(final String key) {
         if (key == null || key.length() == 0) {
             L.e("[ModuleEvents] Can't cancel event with a null or empty key");
             return false;
@@ -209,7 +176,7 @@ public class ModuleEvents extends ModuleBase {
 
     @Override
     void initFinished(CountlyConfig config) {
-        checkCachedPushData(_cly.connectionQueue_.getCountlyStore());
+        checkCachedPushData(_cly.countlyStore);
     }
 
     @Override
@@ -225,7 +192,7 @@ public class ModuleEvents extends ModuleBase {
          *
          * @param key event key
          * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
-         * @param timestamp unix timestamp in miliseconds of when the event occurred
+         * @param timestamp unix timestamp in milliseconds of when the event occurred
          */
         public void recordPastEvent(final String key, final Map<String, Object> segmentation, long timestamp) {
             synchronized (_cly) {
@@ -244,10 +211,10 @@ public class ModuleEvents extends ModuleBase {
          *
          * @param key event key
          * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
-         * @param count how many of these events have occured, default value is "1"
+         * @param count how many of these events have occurred, default value is "1"
          * @param sum set sum if needed, default value is "0"
          * @param dur duration of the event, default value is "0"
-         * @param timestamp unix timestamp in miliseconds of when the event occurred
+         * @param timestamp unix timestamp in milliseconds of when the event occurred
          */
         public void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
             synchronized (_cly) {
@@ -258,7 +225,7 @@ public class ModuleEvents extends ModuleBase {
                 }
 
                 UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
-                recordEventInternal(key, segmentation, count, sum, dur, instant, false);
+                recordEventInternal(key, segmentation, count, sum, dur, instant);
             }
         }
 
@@ -305,10 +272,6 @@ public class ModuleEvents extends ModuleBase {
             synchronized (_cly) {
                 if (!_cly.isInitialized()) {
                     throw new IllegalStateException("Countly.sharedInstance().init must be called before endEvent");
-                }
-
-                if (segmentation != null) {
-                    Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
                 }
 
                 return endEventInternal(key, segmentation, count, sum);
@@ -434,7 +397,7 @@ public class ModuleEvents extends ModuleBase {
 
                 L.i("[Events] Calling recordEvent: [" + key + "]");
 
-                recordEventInternal(key, segmentation, count, sum, dur, null, false);
+                eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null);
             }
         }
     }

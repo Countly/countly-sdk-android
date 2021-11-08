@@ -6,8 +6,8 @@
               android:gravity="center_vertical"
               android:paddingLeft="@dimen/activity_horizontal_margin"
               android:paddingRight="@dimen/activity_horizontal_margin"
-              android:paddingTop="@dimen/activity_vertical_margin"
-              android:paddingBottom="@dimen/activity_vertical_margin" >
+              android:paddingTop="32dp"
+              android:paddingBottom="32dp" >
 
     <Button
         android:id="@+id/button"
@@ -28,7 +28,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickViewOther08"
-        android:text="flush request queue" />
+        android:text="Clear request queue"
+        />
 
     <Button
         android:id="@+id/button60"
@@ -57,6 +58,20 @@
         android:layout_height="wrap_content"
         android:onClick="onClickGiveAllConsent"
         android:text="Give All Consent" />
+
+    <Button
+        android:id="@+id/button67"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickReportDirectAttribution"
+        android:text="Report direct attribution" />
+
+    <Button
+        android:id="@+id/button68"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickReportIndirectAttribution"
+        android:text="Report indirect attribution" />
 
     <Button
         android:id="@+id/button41"

@@ -40,7 +40,7 @@ public class RequestQueueTests {
 
         Assert.assertEquals(6, sampleRequests.length);
 
-        List<String> resRequests = mCountly.requestQueueRemoveWithoutAppKey(sampleRequests, "12345qer");
+        List<String> resRequests = mCountly.moduleRequestQueue.requestQueueRemoveWithoutAppKey(sampleRequests, "12345qer");
 
         Assert.assertEquals(resRequests.size(), sampleRequests.length - 2);
 
@@ -57,10 +57,10 @@ public class RequestQueueTests {
 
     @Test
     public void testRequestQueueRemoveWithoutAppKey_empty() {
-        List<String> resRequests = mCountly.requestQueueRemoveWithoutAppKey(null, "12345qer");
-        List<String> resRequests2 = mCountly.requestQueueRemoveWithoutAppKey(new String[] {}, "12345qer");
-        List<String> resRequests3 = mCountly.requestQueueRemoveWithoutAppKey(new String[] {}, null);
-        List<String> resRequests4 = mCountly.requestQueueRemoveWithoutAppKey(new String[] {}, "");
+        List<String> resRequests = mCountly.moduleRequestQueue.requestQueueRemoveWithoutAppKey(null, "12345qer");
+        List<String> resRequests2 = mCountly.moduleRequestQueue.requestQueueRemoveWithoutAppKey(new String[] {}, "12345qer");
+        List<String> resRequests3 = mCountly.moduleRequestQueue.requestQueueRemoveWithoutAppKey(new String[] {}, null);
+        List<String> resRequests4 = mCountly.moduleRequestQueue.requestQueueRemoveWithoutAppKey(new String[] {}, "");
         Assert.assertNotNull(resRequests);
         Assert.assertNotNull(resRequests2);
         Assert.assertNotNull(resRequests3);
@@ -69,10 +69,10 @@ public class RequestQueueTests {
 
     @Test
     public void testRequestQueueReplaceWithAppKey_empty() {
-        List<String> resRequests = mCountly.requestQueueReplaceWithAppKey(null, "12345qer");
-        List<String> resRequests2 = mCountly.requestQueueReplaceWithAppKey(new String[] {}, "12345qer");
-        List<String> resRequests3 = mCountly.requestQueueReplaceWithAppKey(new String[] {}, null);
-        List<String> resRequests4 = mCountly.requestQueueReplaceWithAppKey(new String[] {}, "");
+        List<String> resRequests = mCountly.moduleRequestQueue.requestQueueReplaceWithAppKey(null, "12345qer");
+        List<String> resRequests2 = mCountly.moduleRequestQueue.requestQueueReplaceWithAppKey(new String[] {}, "12345qer");
+        List<String> resRequests3 = mCountly.moduleRequestQueue.requestQueueReplaceWithAppKey(new String[] {}, null);
+        List<String> resRequests4 = mCountly.moduleRequestQueue.requestQueueReplaceWithAppKey(new String[] {}, "");
         Assert.assertNotNull(resRequests);
         Assert.assertNotNull(resRequests2);
         Assert.assertNotNull(resRequests3);
@@ -93,7 +93,7 @@ public class RequestQueueTests {
 
         Assert.assertEquals(6, sampleRequests.length);
 
-        List<String> resRequests = mCountly.requestQueueReplaceWithAppKey(sampleRequests, "12345qer");
+        List<String> resRequests = mCountly.moduleRequestQueue.requestQueueReplaceWithAppKey(sampleRequests, "12345qer");
 
         Assert.assertEquals(sampleRequests.length, resRequests.size());
 
@@ -121,7 +121,7 @@ public class RequestQueueTests {
 
         Assert.assertEquals(4, sampleRequests.length);
 
-        List<String> resRequests = mCountly.requestQueueRemoveWithoutAppKey(sampleRequests, "12345qer");
+        List<String> resRequests = mCountly.moduleRequestQueue.requestQueueRemoveWithoutAppKey(sampleRequests, "12345qer");
 
         Assert.assertEquals(1, resRequests.size());
 
@@ -144,7 +144,7 @@ public class RequestQueueTests {
 
         Assert.assertEquals(4, sampleRequests.length);
 
-        List<String> resRequests = mCountly.requestQueueReplaceWithAppKey(sampleRequests, "12345qer");
+        List<String> resRequests = mCountly.moduleRequestQueue.requestQueueReplaceWithAppKey(sampleRequests, "12345qer");
 
         Assert.assertEquals(3, resRequests.size());
 

@@ -98,10 +98,10 @@ public class UserDataTests {
 
     @Test
     public void testCustomModifiers() throws JSONException {
-        UserData.modifyCustomData("key_inc", 1, "$inc");
-        UserData.modifyCustomData("key_mul", 2, "$mul");
-        UserData.modifyCustomData("key_set", "test1", "$addToSet");
-        UserData.modifyCustomData("key_set", "test2", "$addToSet");
+        ModuleUserProfile.modifyCustomData("key_inc", 1, "$inc");
+        ModuleUserProfile.modifyCustomData("key_mul", 2, "$mul");
+        ModuleUserProfile.modifyCustomData("key_set", "test1", "$addToSet");
+        ModuleUserProfile.modifyCustomData("key_set", "test2", "$addToSet");
 
         assertEquals(1, UserData.customMods.get("key_inc").getInt("$inc"));
         assertEquals(2, UserData.customMods.get("key_mul").getInt("$mul"));
@@ -151,12 +151,12 @@ public class UserDataTests {
         UserData.setCustomData(customdata);
 
         UserData.setCustomProperty("key_prop", "value_prop");
-        UserData.modifyCustomData("key_inc", 1, "$inc");
-        UserData.modifyCustomData("key_mul", 2, "$mul");
-        UserData.modifyCustomData("key_set", "test1", "$addToSet");
-        UserData.modifyCustomData("key_set", "test2", "$addToSet");
+        ModuleUserProfile.modifyCustomData("key_inc", 1, "$inc");
+        ModuleUserProfile.modifyCustomData("key_mul", 2, "$mul");
+        ModuleUserProfile.modifyCustomData("key_set", "test1", "$addToSet");
+        ModuleUserProfile.modifyCustomData("key_set", "test2", "$addToSet");
 
-        JSONObject json = UserData.toJSON();
+        JSONObject json = ModuleUserProfile.toJSON();
         assertEquals("Test Test", json.getString("name"));
         assertEquals("test", json.getString("username"));
         assertEquals("test@gmail.com", json.getString("email"));
@@ -188,12 +188,12 @@ public class UserDataTests {
         assertGivenValues(data);
         assertGivenCustomValues(customData);
 
-        JSONObject json = UserData.toJSON();
+        JSONObject json = ModuleUserProfile.toJSON();
 
         UserData.clear();
         assertAllValuesNull();
 
-        UserData.fromJSON(json);
+        ModuleUserProfile.fromJSON(json);
 
         assertGivenValues(data);
         assertGivenCustomValues(customData);
@@ -204,19 +204,19 @@ public class UserDataTests {
         UserData.clear();
         assertAllValuesNull();
 
-        JSONObject json = UserData.toJSON();
+        JSONObject json = ModuleUserProfile.toJSON();
 
         UserData.clear();
         assertAllValuesNull();
 
-        UserData.fromJSON(json);
+        ModuleUserProfile.fromJSON(json);
         assertAllValuesNull();
     }
 
     @Test
     public void testPicturePath() throws MalformedURLException {
         String path = "http://test.com/?key1=val1&picturePath=%2Fmnt%2Fsdcard%2Fpic.jpg&key2=val2";
-        String picturePath = UserData.getPicturePathFromQuery(new URL(path));
+        String picturePath = ModuleUserProfile.getPicturePathFromQuery(new URL(path));
         assertEquals("/mnt/sdcard/pic.jpg", picturePath);
     }
 
@@ -231,7 +231,7 @@ public class UserDataTests {
         UserData.setData(data);
         UserData.setCustomData(customData);
 
-        String req = UserData.getDataForRequest();
+        String req = ModuleUserProfile.getDataForRequest();
 
         Assert.assertTrue(req.contains("&user_details="));
         Assert.assertTrue(req.contains("username"));

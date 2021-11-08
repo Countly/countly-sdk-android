@@ -1,29 +1,28 @@
 apply plugin: 'com.android.library'
-apply plugin: 'bintray-release'
+apply plugin: "com.vanniktech.maven.publish"
 
 buildscript {
     repositories {
         jcenter()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:0.9.1'
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2'
     }
 }
 
 android {
-    compileSdkVersion 29
-
+    compileSdkVersion 31
 
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 29
+        targetSdkVersion 31
         versionCode 1
-        versionName "20.11.2"
+        versionName "21.11.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
-
 
     buildTypes {
         release {
@@ -37,8 +36,8 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.3.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
 
@@ -51,14 +50,4 @@ tasks.whenTaskAdded { task ->
     if (task.name.startsWith('assemble')) {
         task.dependsOn('copyLibs')
     }
-}
-
-publish {
-    userOrg = 'countly'
-    groupId = 'ly.count.android'
-    artifactId = 'sdk-native'
-    publishVersion = '20.11.2'
-    desc = 'Countly Android Native Crash Support'
-    website = 'https://github.com/Countly/countly-sdk-android'
-    autoPublish = false
 }

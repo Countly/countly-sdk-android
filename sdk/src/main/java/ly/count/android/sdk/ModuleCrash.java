@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.util.Base64;
-import android.util.Log;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,20 +22,20 @@ public class ModuleCrash extends ModuleBase {
     //interface for SDK users
     final Crashes crashesInterface;
 
-    ModuleLog L;
-
     ModuleCrash(Countly cly, CountlyConfig config) {
-        super(cly);
-
-        L = cly.L;
-
+        super(cly, config);
         L.v("[ModuleCrash] Initialising");
+
+        //enable unhandled crash reporting
+        if (config.enableUnhandledCrashReporting) {
+            enableCrashReporting();
+        }
 
         setCrashFilterCallback(config.crashFilterCallback);
 
         recordAllThreads = config.recordAllThreadsWithCrash;
 
-        _cly.setCustomCrashSegmentsInternal(config.customCrashSegment);
+        setCustomCrashSegmentsInternal(config.customCrashSegment);
 
         crashesInterface = new Crashes();
     }
@@ -84,7 +83,7 @@ public class ModuleCrash extends ModuleBase {
         L.d("[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
 
         //check for consent
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return;
         }
 
@@ -106,7 +105,66 @@ public class ModuleCrash extends ModuleBase {
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         //record crash
-        _cly.connectionQueue_.sendCrashReport(dumpString, false, true, null);
+        requestQueueProvider.sendCrashReport(dumpString, false, true, null);
+    }
+
+    /**
+     * Sets custom segments to be reported with crash reports
+     * In custom segments you can provide any string key values to segments crashes by
+     *
+     * @param segments Map&lt;String, Object&gt; key segments and their values
+     */
+    void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
+        L.d("[ModuleCrash] Calling setCustomCrashSegmentsInternal");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
+            return;
+        }
+
+        if (segments != null) {
+            Utils.removeUnsupportedDataTypes(segments);
+            CrashDetails.setCustomSegments(segments);
+        }
+    }
+
+    void enableCrashReporting() {
+        L.d("[ModuleCrash] Enabling unhandled crash reporting");
+        //get default handler
+        final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                L.d("[ModuleCrash] Uncaught crash handler triggered");
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
+
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    e.printStackTrace(pw);
+
+                    //add other threads
+                    if (recordAllThreads) {
+                        addAllThreadInformationToCrash(pw);
+                    }
+
+                    String exceptionString = sw.toString();
+
+                    //check if it passes the crash filter
+                    if (!crashFilterCheck(exceptionString)) {
+                        requestQueueProvider.sendCrashReport(exceptionString, false, false, null);
+                    }
+                }
+
+                //if there was another handler before
+                if (oldHandler != null) {
+                    //notify it also
+                    oldHandler.uncaughtException(t, e);
+                }
+            }
+        };
+
+        Thread.setDefaultUncaughtExceptionHandler(handler);
     }
 
     void setCrashFilterCallback(CrashFilterCallback callback) {
@@ -144,8 +202,8 @@ public class ModuleCrash extends ModuleBase {
 
             pw.println();
             pw.println("Thread " + thread.getName());
-            for (int a = 0; a < val.length; a++) {
-                pw.println(val[a].toString());
+            for (StackTraceElement stackTraceElement : val) {
+                pw.println(stackTraceElement.toString());
             }
         }
     }
@@ -164,7 +222,7 @@ public class ModuleCrash extends ModuleBase {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recording exceptions");
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return _cly;
         }
 
@@ -187,40 +245,9 @@ public class ModuleCrash extends ModuleBase {
         if (crashFilterCheck(exceptionString)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
-            _cly.connectionQueue_.sendCrashReport(exceptionString, itIsHandled, false, customSegmentation);
+            requestQueueProvider.sendCrashReport(exceptionString, itIsHandled, false, customSegmentation);
         }
         return _cly;
-    }
-
-    @SuppressWarnings("InfiniteRecursion")
-    public void stackOverflow() {
-        this.stackOverflow();
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    public synchronized Countly crashTest(int crashNumber) {
-
-        if (crashNumber == 1) {
-            L.d("Running crashTest 1");
-
-            stackOverflow();
-        } else if (crashNumber == 2) {
-            L.d("Running crashTest 2");
-
-            //noinspection UnusedAssignment,divzero
-            @SuppressWarnings("NumericOverflow") int test = 10 / 0;
-        } else if (crashNumber == 3) {
-            L.d("Running crashTest 3");
-
-            throw new RuntimeException("This is a crash");
-        } else {
-            L.d("Running crashTest 4");
-
-            String test = null;
-            //noinspection ResultOfMethodCallIgnored
-            test.charAt(1);
-        }
-        return Countly.sharedInstance();
     }
 
     @Override
@@ -248,7 +275,7 @@ public class ModuleCrash extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Crashes] Adding crash breadcrumb");
 
-                if (!_cly.getConsent(Countly.CountlyFeatureNames.crashes)) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
                     return _cly;
                 }
 

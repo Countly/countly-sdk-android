@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
-import android.util.Log;
+import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -59,7 +59,7 @@ class Event {
     Event() {
     }
 
-    Event(String key) {
+    Event(@NonNull String key) {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
         this.key = key;
@@ -133,9 +133,8 @@ class Event {
      * @param json JSON object to extract event data from
      * @return Event object built from the data in the JSON or null if the "key" value is not
      * present or the empty string, or if a JSON exception occurs
-     * @throws NullPointerException if JSONObject is null
      */
-    static Event fromJSON(final JSONObject json) {
+    static Event fromJSON(@NonNull final JSONObject json) {
         Event event = new Event();
 
         try {
@@ -193,7 +192,7 @@ class Event {
 
     @Override
     public boolean equals(final Object o) {
-        if (o == null || !(o instanceof Event)) {
+        if (!(o instanceof Event)) {
             return false;
         }
 

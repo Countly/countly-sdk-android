@@ -23,14 +23,16 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -47,21 +49,24 @@ import org.json.JSONObject;
  * NOTE: This class is only public to facilitate unit testing, because
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
-public class CountlyStore {
+public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String PREFERENCES = "COUNTLY_STORE";
     private static final String PREFERENCES_PUSH = "ly.count.android.api.messaging";
-    private static final String DELIMITER = ":::";
-    private static final String CONNECTIONS_PREFERENCE = "CONNECTIONS";
+    static final String DELIMITER = ":::";
+    private static final String REQUEST_PREFERENCE = "CONNECTIONS";
     private static final String EVENTS_PREFERENCE = "EVENTS";
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
     private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
+    private static final String STORAGE_SCHEMA_VERSION = "SCHEMA_VERSION";
+    private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
+    private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
+
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
     private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
     private static final String CACHED_PUSH_MESSAGING_PROVIDER = "PUSH_MESSAGING_PROVIDER";
     private static final int MAX_EVENTS = 100;
-    static int MAX_REQUESTS = 1000;//value is configurable for tests
 
     private final SharedPreferences preferences_;
     private final SharedPreferences preferencesPush_;
@@ -69,19 +74,25 @@ public class CountlyStore {
     private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
     ModuleLog L;
+
+    int maxRequestQueueSize = 1000;
+
     /**
      * Constructs a CountlyStore object.
      *
      * @param context used to retrieve storage meta data, must not be null.
-     * @throws IllegalArgumentException if context is null
      */
-    CountlyStore(final Context context, ModuleLog logModule) {
+    public CountlyStore(final Context context, ModuleLog logModule) {
         if (context == null) {
             throw new IllegalArgumentException("must provide valid context");
         }
         preferences_ = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
         preferencesPush_ = createPreferencesPush(context);
         L = logModule;
+    }
+
+    public void setLimits(final int maxRequestQueueSize) {
+        this.maxRequestQueueSize = maxRequestQueueSize;
     }
 
     static SharedPreferences createPreferencesPush(Context context) {
@@ -91,15 +102,15 @@ public class CountlyStore {
     /**
      * Returns an unsorted array of the current stored connections.
      */
-    public String[] connections() {
-        final String joinedConnStr = preferences_.getString(CONNECTIONS_PREFERENCE, "");
+    public synchronized String[] getRequests() {
+        final String joinedConnStr = preferences_.getString(REQUEST_PREFERENCE, "");
         return joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
     }
 
     /**
      * Returns an unsorted array of the current stored event JSON strings.
      */
-    public String[] events() {
+    public synchronized String[] getEvents() {
         final String joinedEventsStr = preferences_.getString(EVENTS_PREFERENCE, "");
         return joinedEventsStr.length() == 0 ? new String[0] : joinedEventsStr.split(DELIMITER);
     }
@@ -107,8 +118,8 @@ public class CountlyStore {
     /**
      * Returns a list of the current stored events, sorted by timestamp from oldest to newest.
      */
-    public List<Event> eventsList() {
-        final String[] array = events();
+    public synchronized List<Event> getEventList() {
+        final String[] array = getEvents();
         final List<Event> events = new ArrayList<>(array.length);
         for (String s : array) {
             try {
@@ -132,65 +143,100 @@ public class CountlyStore {
     }
 
     /**
-     * Returns true if no connections are current stored, false otherwise.
+     * Returns the number of events in the local event queue.
+     *
+     * @return the number of events in the local event queue
      */
-    public boolean isEmptyConnections() {
-        return preferences_.getString(CONNECTIONS_PREFERENCE, "").length() == 0;
+    public synchronized int getEventQueueSize() {
+        return getEvents().length;
+    }
+
+    /**
+     * Removes all current events from the local queue and returns them as a
+     * URL-encoded JSON string that can be submitted to a ConnectionQueue.
+     *
+     * @return URL-encoded JSON string of event data from the local event queue
+     */
+    public synchronized String getEventsForRequestAndEmptyEventQueue() {
+        String result;
+
+        final List<Event> events = getEventList();
+
+        final JSONArray eventArray = new JSONArray();
+        for (Event e : events) {
+            eventArray.put(e.toJSON());
+        }
+
+        result = eventArray.toString();
+
+        removeEvents(events);
+
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        return result;
+    }
+
+    public synchronized String getRequestQueueRaw() {
+        return preferences_.getString(REQUEST_PREFERENCE, "");
     }
 
     /**
      * Adds a connection to the local store.
      *
-     * @param str the connection to be added, ignored if null or empty
+     * @param requestStr the connection to be added, ignored if null or empty
      */
-    public synchronized void addConnection(final String str) {
-        if (str != null && str.length() > 0) {
-            final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
-            if (connections.size() < MAX_REQUESTS) {
+    public synchronized void addRequest(final String requestStr) {
+        if (requestStr != null && requestStr.length() > 0) {
+            final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
+            if (connections.size() < maxRequestQueueSize) {
                 //request under max requests, add as normal
-                connections.add(str);
-                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+                connections.add(requestStr);
+                preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
             } else {
                 //reached the limit, start deleting oldest requests
                 L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
 
                 deleteOldestRequest();
-                addConnection(str);
+                addRequest(requestStr);
             }
         }
     }
 
     synchronized void deleteOldestRequest() {
-        final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
+        final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
         connections.remove(0);
-        preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+        preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
     }
 
     /**
      * Removes a connection from the local store.
      *
-     * @param str the connection to be removed, ignored if null or empty,
+     * @param requestStr the connection to be removed, ignored if null or empty,
      * or if a matching connection cannot be found
      */
-    public synchronized void removeConnection(final String str) {
-        if (str != null && str.length() > 0) {
-            final List<String> connections = new ArrayList<>(Arrays.asList(connections()));
-            if (connections.remove(str)) {
-                preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(connections, DELIMITER)).apply();
+    public synchronized void removeRequest(final String requestStr) {
+        if (requestStr != null && requestStr.length() > 0) {
+            final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
+            if (connections.remove(requestStr)) {
+                preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
             }
         }
     }
 
-    protected synchronized void replaceConnections(final String[] newConns) {
+    public synchronized void replaceRequests(final String[] newConns) {
         if (newConns != null) {
             final List<String> connections = new ArrayList<>(Arrays.asList(newConns));
-            replaceConnectionsList(connections);
+            replaceRequestList(connections);
         }
     }
 
-    protected synchronized void replaceConnectionsList(final List<String> newConns) {
+    public synchronized void replaceRequestList(final List<String> newConns) {
         if (newConns != null) {
-            preferences_.edit().putString(CONNECTIONS_PREFERENCE, join(newConns, DELIMITER)).apply();
+            preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(newConns, DELIMITER)).apply();
         }
     }
 
@@ -200,40 +246,49 @@ public class CountlyStore {
      * @param event event to be added to the local store, must not be null
      */
     void addEvent(final Event event) {
-        final List<Event> events = eventsList();
+        final List<Event> events = getEventList();
         if (events.size() < MAX_EVENTS) {
             events.add(event);
-            preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
+            setEventData(joinEvents(events, DELIMITER));
         }
+    }
+
+    /**
+     * set the new value in event data storage
+     *
+     * @param eventData
+     */
+    void setEventData(String eventData) {
+        preferences_.edit().putString(EVENTS_PREFERENCE, eventData).apply();
     }
 
     /**
      * Set the preferences that are used for the star rating
      */
-    void setStarRatingPreferences(String prefs) {
+    public synchronized void setStarRatingPreferences(String prefs) {
         preferences_.edit().putString(STAR_RATING_PREFERENCE, prefs).apply();
     }
 
     /**
      * Get the preferences that are used for the star rating
      */
-    String getStarRatingPreferences() {
+    public synchronized String getStarRatingPreferences() {
         return preferences_.getString(STAR_RATING_PREFERENCE, "");
     }
 
-    void setRemoteConfigValues(String values) {
+    public synchronized void setRemoteConfigValues(String values) {
         preferences_.edit().putString(REMOTE_CONFIG_VALUES, values).apply();
     }
 
-    String getRemoteConfigValues() {
+    public synchronized String getRemoteConfigValues() {
         return preferences_.getString(REMOTE_CONFIG_VALUES, "");
     }
 
-    void setCachedAdvertisingId(String advertisingId) {
+    public synchronized void setCachedAdvertisingId(String advertisingId) {
         preferences_.edit().putString(CACHED_ADVERTISING_ID, advertisingId).apply();
     }
 
-    String getCachedAdvertisingId() {
+    public synchronized String getCachedAdvertisingId() {
         return preferences_.getString(CACHED_ADVERTISING_ID, "");
     }
 
@@ -245,7 +300,7 @@ public class CountlyStore {
         return preferencesPush_.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
-    public static Boolean getConsentPushNoInit(Context context) {
+    public synchronized static Boolean getConsentPushNoInit(Context context) {
         SharedPreferences sp = createPreferencesPush(context);
         return sp.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
@@ -262,11 +317,25 @@ public class CountlyStore {
      * @param sum sum associated with the custom event, if not used, pass zero.
      * NaN and infinity values will be quietly ignored.
      */
-    public synchronized void addEvent(final String key, final Map<String, String> segmentation, final Map<String, Integer> segmentationInt, final Map<String, Double> segmentationDouble, final Map<String, Boolean> segmentationBoolean,
-        final long timestamp, final int hour, final int dow, final int count, final double sum, final double dur) {
+    public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow) {
+        Map<String, String> segmentationString = null;
+        Map<String, Integer> segmentationInt = null;
+        Map<String, Double> segmentationDouble = null;
+        Map<String, Boolean> segmentationBoolean = null;
+
+        if (segmentation != null && segmentation.size() > 0) {
+            segmentationString = new HashMap<>();
+            segmentationInt = new HashMap<>();
+            segmentationDouble = new HashMap<>();
+            segmentationBoolean = new HashMap<>();
+            Map<String, Object> segmentationReminder = new HashMap<>();
+
+            Utils.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
+        }
+
         final Event event = new Event();
         event.key = key;
-        event.segmentation = segmentation;
+        event.segmentation = segmentationString;
         event.segmentationDouble = segmentationDouble;
         event.segmentationInt = segmentationInt;
         event.segmentationBoolean = segmentationBoolean;
@@ -288,7 +357,7 @@ public class CountlyStore {
      */
     public synchronized void removeEvents(final Collection<Event> eventsToRemove) {
         if (eventsToRemove != null && eventsToRemove.size() > 0) {
-            final List<Event> events = eventsList();
+            final List<Event> events = getEventList();
             if (events.removeAll(eventsToRemove)) {
                 preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
             }
@@ -308,7 +377,7 @@ public class CountlyStore {
         for (Event e : collection) {
             strings.add(e.toJSON().toString());
         }
-        return join(strings, delimiter);
+        return Utils.joinCountlyStore(strings, delimiter);
     }
 
     public static synchronized void cachePushData(String id_key, String index_key, Context context) {
@@ -349,54 +418,105 @@ public class CountlyStore {
         return sp.getInt(CACHED_PUSH_MESSAGING_PROVIDER, 0);
     }
 
-    /**
-     * Joins all the strings in the specified collection into a single string with the specified delimiter.
-     */
-    static String join(final Collection<String> collection, final String delimiter) {
-        final StringBuilder builder = new StringBuilder();
-
-        int i = 0;
-        for (String s : collection) {
-            builder.append(s);
-            if (++i < collection.size()) {
-                builder.append(delimiter);
-            }
-        }
-
-        return builder.toString();
-    }
-
-    /**
-     * Retrieves a preference from local store.
-     *
-     * @param key the preference key
-     */
-    public synchronized String getPreference(final String key) {
-        return preferences_.getString(key, null);
-    }
-
-    /**
-     * Adds a preference to local store.
-     *
-     * @param key the preference key
-     * @param value the preference value, supply null value to remove preference
-     */
-    public synchronized void setPreference(final String key, final String value) {
-        if (value == null) {
-            preferences_.edit().remove(key).apply();
-        } else {
-            preferences_.edit().putString(key, value).apply();
-        }
-    }
-
     // for unit testing
-    synchronized void clear() {
+    public synchronized void clear() {
         final SharedPreferences.Editor prefsEditor = preferences_.edit();
         prefsEditor.remove(EVENTS_PREFERENCE);
-        prefsEditor.remove(CONNECTIONS_PREFERENCE);
+        prefsEditor.remove(REQUEST_PREFERENCE);
         prefsEditor.clear();
         prefsEditor.apply();
 
         preferencesPush_.edit().clear().apply();
+    }
+
+    public String getDeviceID() {
+        return preferences_.getString(PREFERENCE_KEY_ID_ID, null);
+    }
+
+    public String getDeviceIDType() {
+        return preferences_.getString(PREFERENCE_KEY_ID_TYPE, null);
+    }
+
+    public void setDeviceID(String id) {
+        if (id == null) {
+            preferences_.edit().remove(PREFERENCE_KEY_ID_ID).apply();
+        } else {
+            preferences_.edit().putString(PREFERENCE_KEY_ID_ID, id).apply();
+        }
+    }
+
+    public void setDeviceIDType(String type) {
+        if (type == null) {
+            preferences_.edit().remove(PREFERENCE_KEY_ID_TYPE).apply();
+        } else {
+            preferences_.edit().putString(PREFERENCE_KEY_ID_TYPE, type).apply();
+        }
+    }
+
+    public int getDataSchemaVersion() {
+        return preferences_.getInt(STORAGE_SCHEMA_VERSION, -1);
+    }
+
+    public void setDataSchemaVersion(int version) {
+        preferences_.edit().putInt(STORAGE_SCHEMA_VERSION, version).apply();
+    }
+
+    /**
+     * Check all used preferences to see if any one of the has set some data
+     * This would be an indicator that the SDK had been started before
+     *
+     * @return
+     */
+    @Override public boolean anythingSetInStorage() {
+        if (preferences_.getString(REQUEST_PREFERENCE, null) != null) {
+            return true;
+        }
+
+        if (preferences_.getString(EVENTS_PREFERENCE, null) != null) {
+            return true;
+        }
+
+        if (preferences_.getString(STAR_RATING_PREFERENCE, null) != null) {
+            return true;
+        }
+
+        if (preferences_.getString(CACHED_ADVERTISING_ID, null) != null) {
+            return true;
+        }
+
+        if (preferences_.getString(REMOTE_CONFIG_VALUES, null) != null) {
+            return true;
+        }
+
+        if (preferences_.getString(PREFERENCE_KEY_ID_ID, null) != null) {
+            return true;
+        }
+
+        if (preferences_.getString(PREFERENCE_KEY_ID_TYPE, null) != null) {
+            return true;
+        }
+
+        if (preferences_.getInt(STORAGE_SCHEMA_VERSION, -100) != -100) {
+            return true;
+        }
+
+        if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_MODE, -100) != -100) {
+            return true;
+        }
+
+        if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_PROVIDER, -100) != -100) {
+            return true;
+        }
+
+        if (preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null) != null) {
+            return true;
+        }
+
+        //noinspection RedundantIfStatement
+        if (preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null) != null) {
+            return true;
+        }
+
+        return false;
     }
 }

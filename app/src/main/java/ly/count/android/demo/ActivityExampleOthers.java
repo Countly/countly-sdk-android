@@ -20,7 +20,6 @@ public class ActivityExampleOthers extends AppCompatActivity {
         activity = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_others);
-        Countly.onCreate(this);
     }
 
     public void onClickViewOther05(View v) {
@@ -46,50 +45,57 @@ public class ActivityExampleOthers extends AppCompatActivity {
 
     public void onClickViewOther10(View v) {
         //Doing internally stored requests
-        Countly.sharedInstance().doStoredRequests();
+        Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
     }
 
     public void onClickTestcrashFilterSample(View v) {
         Countly.sharedInstance().crashes().recordUnhandledException(new Throwable("A really secret exception"));
     }
 
-    public void onClickRemoveAllConsent(View v){
+    public void onClickRemoveAllConsent(View v) {
         Countly.sharedInstance().consent().removeConsentAll();
     }
 
-    public void onClickGiveAllConsent(View v){
+    public void onClickGiveAllConsent(View v) {
         Countly.sharedInstance().consent().giveConsentAll();
     }
 
+    public void onClickReportDirectAttribution(View v) {
+        Countly.sharedInstance().attribution().recordDirectAttribution("yourCampaignId", "yourUserId");
+    }
+
+    public void onClickReportIndirectAttribution(View v) {
+        Countly.sharedInstance().attribution().recordIndirectAttribution("attribution ID");
+    }
+
     public void onClickHaltAndInit(View v) {
+        //this will destroy all currently stored data
         Countly.sharedInstance().halt();
 
         final String COUNTLY_SERVER_URL = "YOUR_SERVER";
         final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
 
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
-                .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
-                .setRequiresConsent(false);
+            .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
+            .setRequiresConsent(false);
 
         Countly.sharedInstance().init(config);
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

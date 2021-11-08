@@ -23,9 +23,9 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 import java.io.UnsupportedEncodingException;
@@ -65,7 +65,10 @@ class DeviceInfo {
         return android.os.Build.MODEL;
     }
 
-    static String deepLink;
+    @SuppressWarnings("SameReturnValue")
+    static String getManufacturer() {
+        return Build.MANUFACTURER;
+    }
 
     /**
      * Returns the non-scaled pixel resolution of the current default display being used by the
@@ -242,7 +245,7 @@ class DeviceInfo {
             "_locale", getLocale(),
             "_app_version", getAppVersion(context),
             "_store", getStore(context),
-            "_deep_link", deepLink,
+            "_manufacturer", getManufacturer(),
             "_device_type", getDeviceType(context));
 
         //override metric values

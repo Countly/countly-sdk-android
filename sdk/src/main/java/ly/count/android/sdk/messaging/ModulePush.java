@@ -4,7 +4,6 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.util.Log;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -95,7 +94,7 @@ public class ModulePush {
 
             @Override
             public boolean equals(Object obj) {
-                if (obj == null || !(obj instanceof Button)) {
+                if (!(obj instanceof Button)) {
                     return false;
                 }
                 Button b = (Button) obj;
@@ -227,10 +226,10 @@ public class ModulePush {
         @Override
         public void recordAction(Context context, int buttonIndex) {
             if (Countly.sharedInstance().isInitialized()) {
-                Map<String, String> map = new HashMap<>();
+                Map<String, Object> map = new HashMap<>();
                 map.put(PUSH_EVENT_ACTION_ID_KEY, id);
                 map.put(PUSH_EVENT_ACTION_INDEX_KEY, String.valueOf(buttonIndex));
-                Countly.sharedInstance().recordEvent(PUSH_EVENT_ACTION, map, 1);
+                Countly.sharedInstance().events().recordEvent(PUSH_EVENT_ACTION, map, 1);
             } else {
                 //we're not initialised, cache the data
                 CountlyStore.cachePushData(id, String.valueOf(buttonIndex), context);

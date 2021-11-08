@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Application;
 import android.content.Context;
+import java.util.List;
 import java.util.Map;
 
 public class CountlyConfig {
@@ -9,13 +10,34 @@ public class CountlyConfig {
     /**
      * Internal fields and fields for testing
      */
-
     protected CountlyStore countlyStore = null;
+
+    /**
+     * Used to pass the consent provider to all modules and features
+     */
+    protected ConsentProvider consentProvider = null;
+
+    /**
+     * Used to pass the storage provider to all modules and features
+     */
+    protected StorageProvider storageProvider = null;
+
+    protected EventProvider eventProvider = null;
+
+    protected EventQueueProvider eventQueueProvider = null;
+
+    protected RequestQueueProvider requestQueueProvider = null;
+
+    protected DeviceIdProvider deviceIdProvider = null;
+
+    protected BaseInfoProvider baseInfoProvider = null;
 
     protected boolean checkForNativeCrashDumps = true;
 
     //used to deliver this object to connection queue
-    protected DeviceId deviceIdInstance = null;
+    //protected DeviceId deviceIdInstance = null;
+
+    // Fields used for SDK configuration during init
 
     /**
      * Android context.
@@ -43,7 +65,7 @@ public class CountlyConfig {
     /**
      * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
      */
-    protected DeviceId.Type idMode = null;
+    protected DeviceIdType idMode = null;
 
     /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
@@ -87,7 +109,8 @@ public class CountlyConfig {
     protected boolean pushIntentAddMetadata = false;
 
     protected boolean enableRemoteConfigAutomaticDownload = false;
-    protected RemoteConfig.RemoteConfigCallback remoteConfigCallback = null;
+    protected RemoteConfig.RemoteConfigCallback remoteConfigCallbackOld = null;
+    protected RemoteConfigCallback remoteConfigCallbackNew = null;
 
     protected boolean shouldRequireConsent = false;
     protected String[] enabledFeatureNames = null;
@@ -100,7 +123,7 @@ public class CountlyConfig {
 
     protected Integer eventQueueSizeThreshold = null;
 
-    protected boolean trackOrientationChange = false;
+    protected boolean trackOrientationChange = true;
 
     protected boolean manualSessionControlEnabled = false;
 
@@ -152,6 +175,8 @@ public class CountlyConfig {
 
     boolean manualForegroundBackgroundTrigger = false;
 
+    int maxRequestQueueSize = 1000;
+
     ModuleLog.LogCallback providedLogCallback;
 
     public CountlyConfig() {
@@ -170,7 +195,6 @@ public class CountlyConfig {
     }
 
     public CountlyConfig(Application application, String appKey, String serverURL) {
-        setContext(application.getApplicationContext());
         setAppKey(appKey);
         setServerURL(serverURL);
         setApplication(application);
@@ -213,8 +237,18 @@ public class CountlyConfig {
 
     /**
      * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
+     *
+     * @deprecated use this call with the other type override. The new type has the same values so a simple substitution is enough
      */
     public CountlyConfig setIdMode(DeviceId.Type idMode) {
+        this.idMode = ModuleDeviceId.fromOldDeviceIdToNew(idMode);
+        return this;
+    }
+
+    /**
+     * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
+     */
+    public CountlyConfig setIdMode(DeviceIdType idMode) {
         this.idMode = idMode;
         return this;
     }
@@ -261,6 +295,7 @@ public class CountlyConfig {
 
     /**
      * Set to true of you want to enable countly internal debugging logs
+     * Those logs will be printed to the console
      *
      * @param enabled
      */
@@ -271,6 +306,7 @@ public class CountlyConfig {
 
     /**
      * Call to enable uncaught crash reporting
+     *
      * @return
      */
     public CountlyConfig enableCrashReporting() {
@@ -280,6 +316,7 @@ public class CountlyConfig {
 
     /**
      * Set if automatic view tracking should be enabled
+     *
      * @param enable
      * @return
      */
@@ -288,6 +325,12 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set if automatic activity tracking should use short names
+     *
+     * @param enable set true if you want short names
+     * @return
+     */
     public CountlyConfig setAutoTrackingUseShortName(boolean enable) {
         this.autoTrackingUseShortName = enable;
         return this;
@@ -306,8 +349,8 @@ public class CountlyConfig {
      */
     public CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
         if (exceptions != null) {
-            for (int a = 0; a < exceptions.length; a++) {
-                if (exceptions[a] == null) {
+            for (Class exception : exceptions) {
+                if (exception == null) {
                     throw new IllegalArgumentException("setAutoTrackingExceptions() does not accept 'null' activities");
                 }
             }
@@ -317,6 +360,9 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Allows you to add custom header key/value pairs to each request
+     */
     public CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
         this.customNetworkRequestHeaders = customHeaderValues;
         return this;
@@ -327,9 +373,30 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * If enable, will automatically download newest remote config values.
+     *
+     * @param enabled set true for enabling it
+     * @param callback callback called after the update was done
+     * @return
+     * @deprecated use the other version of this call that uses a different callback
+     */
     public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownload = enabled;
-        remoteConfigCallback = callback;
+        remoteConfigCallbackOld = callback;
+        return this;
+    }
+
+    /**
+     * If enable, will automatically download newest remote config values.
+     *
+     * @param enabled set true for enabling it
+     * @param callback callback called after the update was done
+     * @return
+     */
+    public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
+        enableRemoteConfigAutomaticDownload = enabled;
+        remoteConfigCallbackNew = callback;
         return this;
     }
 
@@ -355,6 +422,11 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set the override for forcing to use HTTP POST for all connections to the server
+     *
+     * @param isForced the flag for the new status, set "true" if you want it to be forced
+     */
     public CountlyConfig setHttpPostForced(boolean isForced) {
         httpPostForced = isForced;
         return this;
@@ -385,31 +457,71 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set if attribution should be enabled
+     *
+     * @param enableAttribution set true if you want to enable it, set false if you want to disable it
+     */
     public CountlyConfig setEnableAttribution(boolean enableAttribution) {
         this.enableAttribution = enableAttribution;
         return this;
     }
 
+    /**
+     * Allows public key pinning.
+     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
+     * along with server URL starting with "https://". Countly will only accept connections to the server
+     * if public key of SSL certificate provided by the server matches one provided to this method.
+     *
+     * @param certificates List of SSL public keys
+     * @return
+     */
     public CountlyConfig enablePublicKeyPinning(String[] certificates) {
         publicKeyPinningCertificates = certificates;
         return this;
     }
 
+    /**
+     * Allows certificate pinning.
+     * Supply list of SSL certificates (base64-encoded strings between "-----BEGIN CERTIFICATE-----" and "-----END CERTIFICATE-----" without end-of-line)
+     * along with server URL starting with "https://". Countly will only accept connections to the server
+     * if certificate provided by the server matches one provided to this method.
+     *
+     * @param certificates List of SSL certificates
+     * @return
+     */
     public CountlyConfig enableCertificatePinning(String[] certificates) {
         certificatePinningCertificates = certificates;
         return this;
     }
 
+    /**
+     * Set if Countly SDK should ignore app crawlers
+     *
+     * @param shouldIgnore if crawlers should be ignored
+     */
     public CountlyConfig setShouldIgnoreAppCrawlers(boolean shouldIgnore) {
         shouldIgnoreAppCrawlers = shouldIgnore;
         return this;
     }
 
+    /**
+     * List of app crawler names that should be ignored
+     *
+     * @param appCrawlerNames the names to be ignored
+     */
     public CountlyConfig setAppCrawlerNames(String[] appCrawlerNames) {
         this.appCrawlerNames = appCrawlerNames;
         return this;
     }
 
+    /**
+     * Set the threshold for event grouping. Event count that is bellow the
+     * threshold will be sent on update ticks.
+     *
+     * @param threshold
+     * @return
+     */
     public CountlyConfig setEventQueueSizeToSend(int threshold) {
         eventQueueSizeThreshold = threshold;
         return this;
@@ -420,6 +532,12 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Set custom crash segmentation which will be added to all recorded crashes
+     *
+     * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
+     * @return
+     */
     public CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
         customCrashSegment = crashSegment;
         return this;
@@ -431,7 +549,7 @@ public class CountlyConfig {
     }
 
     /**
-     * Sets the interval for the automatic update calls
+     * Sets the interval for the automatic session update calls
      * min value 1 (1 second),
      * max value 600 (10 minutes)
      *
@@ -448,6 +566,15 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Disable periodic session time updates.
+     * By default, Countly will send a request to the server each 60 seconds with a small update
+     * containing session duration time. This method allows you to disable such behavior.
+     * Note that event updates will still be sent every 100 events or 60 seconds after event recording.
+     *
+     * @param disable whether or not to disable session time updates
+     * @return
+     */
     protected CountlyConfig setDisableUpdateSessionRequests(boolean disable) {
         disableUpdateSessionRequests = disable;
         return this;
@@ -485,6 +612,7 @@ public class CountlyConfig {
 
     /**
      * Set the link to the application class
+     *
      * @param application
      * @return
      */
@@ -495,6 +623,7 @@ public class CountlyConfig {
 
     /**
      * Enable the recording of the app start time
+     *
      * @param recordAppStartTime
      * @return
      */
@@ -505,6 +634,7 @@ public class CountlyConfig {
 
     /**
      * Disable location tracking
+     *
      * @return
      */
     public synchronized CountlyConfig setDisableLocation() {
@@ -530,6 +660,7 @@ public class CountlyConfig {
 
     /**
      * Set the metrics you want to override or additional custom metrics you want to provide
+     *
      * @param providedMetricOverride
      * @return
      */
@@ -540,6 +671,7 @@ public class CountlyConfig {
 
     /**
      * Override the app start timestamp in case you have a more precise way to measure it
+     *
      * @param appStartTimestampOverride
      * @return
      */
@@ -550,6 +682,7 @@ public class CountlyConfig {
 
     /**
      * Set to manually trigger the moment when the app has finished loading
+     *
      * @return
      */
     public synchronized CountlyConfig enableManualAppLoadedTrigger() {
@@ -559,6 +692,7 @@ public class CountlyConfig {
 
     /**
      * Set this in case you want to control these triggers manually
+     *
      * @return
      */
     public synchronized CountlyConfig enableManualForegroundBackgroundTriggerAPM() {
@@ -566,8 +700,25 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Add a log callback that will duplicate all logs done by the SDK.
+     * For each message you will receive the message string and it's targeted log level.
+     *
+     * @param logCallback
+     * @return
+     */
     public synchronized CountlyConfig setLogListener(ModuleLog.LogCallback logCallback) {
         providedLogCallback = logCallback;
+        return this;
+    }
+
+    /**
+     * Set's the new maximum size for the request queue.
+     * @param newMaxSize Minimum value is "1".
+     * @return
+     */
+    public synchronized CountlyConfig setMaxRequestQueueSize(int newMaxSize) {
+        maxRequestQueueSize = newMaxSize;
         return this;
     }
 }

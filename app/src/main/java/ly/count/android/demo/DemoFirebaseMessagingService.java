@@ -113,7 +113,6 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
         } else {
             Log.i(TAG, "Message wasn't handled by Countly SDK because API level is too low for Notification support or because currentActivity is null (not enough lifecycle method calls)");
         }
-
     }
 
     @Override

@@ -41,6 +41,9 @@ public class UtilsTests {
         Assert.assertTrue(Utils.isNotEmpty("1123āšē"));
     }
 
+    /**
+     * A simple verification that 'join' is performing as expected
+     */
     @Test
     public void testJoin() {
         List<String> a = new ArrayList<>();
@@ -52,6 +55,19 @@ public class UtilsTests {
         Assert.assertEquals(res, "a-b-cd");
     }
 
+    /**
+     * A simple verification that 'joinCountlyStore' is performing as expected
+     */
+    @Test
+    public void joinCountlyStore() {
+        List<String> a = new ArrayList<>();
+        a.add("a");
+        a.add("11b");
+        a.add("cd22");
+        String res = Utils.joinCountlyStore(a, ";");
+        Assert.assertEquals(res, "a;11b;cd22");
+    }
+
     @Test
     public void testAPI() {
         Assert.assertTrue(Utils.API(28));
@@ -59,46 +75,6 @@ public class UtilsTests {
         Assert.assertTrue(Utils.API(15));
 
         Assert.assertFalse(Utils.API(32));
-    }
-
-    @Test
-    public void removeKeysFromMapNullBoth() {
-        Map<String, Object> res = Utils.removeKeysFromMap(null, null);
-        Assert.assertNull(res);
-    }
-
-    @Test
-    public void removeKeysFromMapNullKeys() {
-        Map<String, Object> res = Utils.removeKeysFromMap(null, new String[] { "1", "2" });
-        Assert.assertNull(res);
-    }
-
-    @Test
-    public void removeKeysFromMapNullData() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("1", "ff");
-        map.put("2", "ee");
-        map.put("3", "kk");
-        map.put("4", "fer");
-
-        Map<String, Object> res = Utils.removeKeysFromMap(map, null);
-        Assert.assertEquals(map, res);
-    }
-
-    @Test
-    public void removeKeysFromMap() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("1", "ff");
-        map.put("2", "ee");
-        map.put("3", "kk");
-        map.put("4", "fer");
-
-        String[] keys = new String[] { "1", "3" };
-
-        Map<String, Object> res = Utils.removeKeysFromMap(map, keys);
-        Assert.assertEquals(2, res.size());
-        Assert.assertTrue(res.containsKey("2"));
-        Assert.assertTrue(res.containsKey("4"));
     }
 
     @Test

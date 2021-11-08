@@ -2,12 +2,27 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import androidx.annotation.NonNull;
 
 abstract class ModuleBase {
     final Countly _cly;
+    ModuleLog L;
+    ConsentProvider consentProvider;
+    StorageProvider storageProvider;
+    EventProvider eventProvider;
+    RequestQueueProvider requestQueueProvider;
+    DeviceIdProvider deviceIdProvider;
+    BaseInfoProvider baseInfoProvider;
 
-    ModuleBase(Countly cly) {
+    ModuleBase(@NonNull Countly cly, @NonNull CountlyConfig config) {
         _cly = cly;
+        L = cly.L;
+        consentProvider = config.consentProvider;
+        storageProvider = config.storageProvider;
+        eventProvider = config.eventProvider;
+        requestQueueProvider = config.requestQueueProvider;
+        deviceIdProvider = config.deviceIdProvider;
+        baseInfoProvider = config.baseInfoProvider;
     }
 
     void halt() {

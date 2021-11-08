@@ -21,14 +21,13 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_remote_config);
-        Countly.onCreate(this);
     }
 
     public void onClickRemoteConfigUpdate(View v) {
         Countly.sharedInstance().remoteConfig().update(new RemoteConfigCallback() {
             @Override
             public void callback(String error) {
-                if(error == null) {
+                if (error == null) {
                     Toast.makeText(getApplicationContext(), "Update finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
@@ -39,18 +38,18 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
     public void onClickRemoteConfigGetValue(View v) {
         Object value = Countly.sharedInstance().remoteConfig().getValueForKey("aa");
-        if(value != null){
-            Toast.makeText(getApplicationContext(), "Stored Remote Config Value with key 'a': [" + (int)value+ "]", Toast.LENGTH_SHORT).show();
+        if (value != null) {
+            Toast.makeText(getApplicationContext(), "Stored Remote Config Value with key 'a': [" + (int) value + "]", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(getApplicationContext(), "No value stored for this key", Toast.LENGTH_SHORT).show();
         }
     }
 
     public void onClickRemoteConfigGetValueInclusion(View v) {
-        Countly.sharedInstance().remoteConfig().updateForKeysOnly(new String[]{"aa", "dd"}, new RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().updateForKeysOnly(new String[] { "aa", "dd" }, new RemoteConfigCallback() {
             @Override
             public void callback(String error) {
-                if(error == null) {
+                if (error == null) {
                     Toast.makeText(getApplicationContext(), "Update with inclusion finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
@@ -60,7 +59,7 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigGetValueExclusion(View v) {
-        Countly.sharedInstance().remoteConfig().updateExceptKeys(new String[]{"aa", "dd"}, new RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().updateExceptKeys(new String[] { "aa", "dd" }, new RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 if (error == null) {
@@ -81,12 +80,14 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
         Map<String, Object> values = Countly.sharedInstance().remoteConfig().getAllValues();
 
+        Countly.sharedInstance().L.d("Get all values test: [" + values.toString() + "]");
+
         //access way #1
         Object value_1 = null;
         Object value_2 = null;
         Object value_3 = null;
 
-        if(values != null) {
+        if (values != null) {
             value_1 = values.get("aa");
             value_2 = values.get("bb");
             value_3 = values.get("cc");
@@ -98,54 +99,52 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
         String printValues = "";
 
-        if(value_1 != null){
+        if (value_1 != null) {
             //int value
-            printValues += (int)value_1;
+            printValues += (int) value_1;
         }
 
-        if(value_2 != null){
+        if (value_2 != null) {
             //float value
-            printValues += "| " + (double)value_2;
+            printValues += "| " + (double) value_2;
         }
 
-        if(value_3!= null){
+        if (value_3 != null) {
             //String value
-            printValues += "| " + (String)value_3;
+            printValues += "| " + (String) value_3;
         }
 
-        if(value_4 != null) {
+        if (value_4 != null) {
             //array
             JSONArray jArray = (JSONArray) value_4;
             printValues += "| " + jArray.toString();
         }
 
-        if(value_5 != null) {
+        if (value_5 != null) {
             //json object
             JSONObject jobj = (JSONObject) value_5;
             printValues += "| " + jobj.toString();
         }
 
         Toast t = Toast.makeText(getApplicationContext(), "Stored Remote Config Values: [" + printValues + "]", Toast.LENGTH_LONG);
-        t.setGravity(Gravity.BOTTOM, 0,0);
+        t.setGravity(Gravity.BOTTOM, 0, 0);
         t.show();
     }
 
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

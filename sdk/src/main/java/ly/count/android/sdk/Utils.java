@@ -4,7 +4,7 @@ import android.app.UiModeManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
-import android.util.Log;
+import androidx.annotation.NonNull;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,7 +38,7 @@ public class Utils {
      * @param separator separator to use
      * @return resulting string
      */
-    static <T> String join(Collection<T> objects, String separator) {
+    static <T> String join(final Collection<T> objects, @NonNull final String separator) {
         StringBuilder sb = new StringBuilder();
         Iterator<T> iter = objects.iterator();
         while (iter.hasNext()) {
@@ -48,6 +48,24 @@ public class Utils {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Joins all the strings in the specified collection into a single string with the specified delimiter.
+     * Used in countlyStore
+     */
+    static String joinCountlyStore(final Collection<String> collection, final String delimiter) {
+        final StringBuilder builder = new StringBuilder();
+
+        int i = 0;
+        for (String s : collection) {
+            builder.append(s);
+            if (++i < collection.size()) {
+                builder.append(delimiter);
+            }
+        }
+
+        return builder.toString();
     }
 
     /**
@@ -76,6 +94,7 @@ public class Utils {
      * @param version
      * @return
      */
+    @androidx.annotation.ChecksSdkIntAtLeast(parameter = 0)
     public static boolean API(int version) {
         return Build.VERSION.SDK_INT >= version;
     }
@@ -140,18 +159,6 @@ public class Utils {
         return sbRes.toString();
     }
 
-    static Map<String, Object> removeKeysFromMap(Map<String, Object> data, String[] keys) {
-        if (data == null || keys == null) {
-            return data;
-        }
-
-        for (String key : keys) {
-            data.remove(key);
-        }
-
-        return data;
-    }
-
     /**
      * Removes unsupported data types
      *
@@ -170,12 +177,7 @@ public class Utils {
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            if (key == null || key.isEmpty()) {
-
-            }
-
-            if (key == null || key.isEmpty() ||
-                !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
+            if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
                 //found unsupported data type or null key or value, removing
                 it.remove();
                 removed = true;
@@ -183,7 +185,7 @@ public class Utils {
         }
 
         if (removed) {
-            Countly.sharedInstance().L.w("Unsupported data types were removed from provided segmentation");
+            Countly.sharedInstance().L.w("[Utils] Unsupported data types were removed from provided segmentation");
         }
 
         return removed;

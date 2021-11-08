@@ -1,21 +1,36 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.huawei.agconnect'
+
+//required for huawei push
+//apply plugin: 'com.huawei.agconnect'
 
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
-repositories {
-    maven {
-        url  "http://dl.bintray.com/countly/maven"
+/*
+//for automatic symbol upload
+apply plugin: ly.count.android.plugins.UploadSymbolsPlugin
+
+buildscript {
+    repositories {
+        mavenCentral()
     }
+    dependencies {
+        classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '20.11.8'
+    }
+}
+*/
+
+repositories {
+    mavenCentral()
+
+    //required for huawei push
     maven {
         url "https://developer.huawei.com/repo/"
     }
-    mavenCentral()
 }
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 31
 
     signingConfigs {
         release {
@@ -31,7 +46,7 @@ android {
     defaultConfig {
         applicationId "ly.count.android.demo"
         minSdkVersion 17
-        targetSdkVersion 29
+        targetSdkVersion 31
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -51,6 +66,13 @@ android {
     lintOptions {
         abortOnError false
     }
+
+    /*
+    //for automatic symbol upload
+    afterEvaluate {
+        assembleRelease.finalizedBy(uploadJavaSymbols)
+    }
+     */
 }
 
 dependencies {
@@ -58,21 +80,32 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation project(':sdk')
 
-    implementation 'com.google.firebase:firebase-messaging:21.0.0'
-    implementation 'com.google.android.material:material:1.3.0-alpha03'
+    implementation 'com.google.firebase:firebase-messaging:21.1.0'
+    implementation 'com.google.android.material:material:1.4.0-alpha02'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation 'androidx.annotation:annotation:1.1.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:core:1.2.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation  'androidx.test.espresso:espresso-core:3.2.0'
-    implementation "androidx.core:core-ktx:+"
+    implementation 'androidx.annotation:annotation:1.2.0'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test:runner:1.3.0'
+    androidTestImplementation 'androidx.test:core:1.3.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    implementation 'androidx.core:core-ktx:1.3.2'
 
-    implementation 'com.huawei.hms:push:4.0.3.301'
+    //required for huawei push
+    implementation 'com.huawei.hms:push:5.3.0.304'
 
-    //implementation 'ly.count.android:sdk:20.04.5'
+    implementation 'com.android.installreferrer:installreferrer:2.2'
+    //implementation 'ly.count.android:sdk:20.11.9'
+    //implementation 'ly.count.android:sdk-plugin:20.11.9'
 }
+
+/*
+//for automatic symbol upload
+countly {
+    server "https://YOUR_SERVER",
+    app_key "YOUR_APP_KEY"
+}
+*/
 
 apply plugin: 'com.google.gms.google-services'

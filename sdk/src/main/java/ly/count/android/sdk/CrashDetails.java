@@ -35,7 +35,6 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
-import android.util.Log;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -130,7 +129,7 @@ class CrashDetails {
         int recordLength = record.length();
         if (recordLength > maxBreadcrumbSize) {
             Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbSize + "]");
-            record = record.substring(0, Math.min(maxBreadcrumbSize, recordLength));
+            record = record.substring(0, maxBreadcrumbSize);
         }
 
         logs.add(record);

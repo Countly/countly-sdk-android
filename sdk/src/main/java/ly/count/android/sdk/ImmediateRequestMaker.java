@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import android.os.AsyncTask;
-import android.util.Log;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +16,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
     /**
      * Used for callback from async task
      */
-    protected static interface InternalFeedbackRatingCallback {
+    protected interface InternalFeedbackRatingCallback {
         void callback(JSONObject checkResponse);
     }
 

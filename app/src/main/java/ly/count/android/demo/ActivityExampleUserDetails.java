@@ -16,8 +16,6 @@ public class ActivityExampleUserDetails extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_user_details);
-        Countly.onCreate(this);
-
     }
 
     public void onClickUserData01(View v) {
@@ -52,7 +50,7 @@ public class ActivityExampleUserDetails extends AppCompatActivity {
 
     }
 
-    public void setUserData(){
+    public void setUserData() {
         HashMap<String, String> data = new HashMap<>();
         data.put("name", "First name Last name");
         data.put("username", "nickname");
@@ -90,22 +88,21 @@ public class ActivityExampleUserDetails extends AppCompatActivity {
 
         Countly.userData.save();
     }
+
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }

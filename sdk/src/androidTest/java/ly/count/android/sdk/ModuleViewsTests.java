@@ -1,8 +1,8 @@
 package ly.count.android.sdk;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import android.app.Activity;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
@@ -29,14 +30,12 @@ import static org.mockito.Mockito.verify;
 @RunWith(AndroidJUnit4.class)
 public class ModuleViewsTests {
     //Countly mCountly;
+    CountlyStore countlyStore;
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
-
-        //mCountly = new Countly();
-        //mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @After
@@ -56,28 +55,23 @@ public class ModuleViewsTests {
     void activityStartedViewTracking(boolean shortNames) {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
         mCountly.moduleViews.onActivityStarted(act);
 
-        final Map<String, String> segmS = new HashMap<>(4);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
-
-        segmS.put("segment", "Android");
-        segmS.put("start", "1");
-        segmS.put("visit", "1");
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("segment", "Android");
+        segm.put("start", "1");
+        segm.put("visit", "1");
 
         if (shortNames) {
-            segmS.put("name", act.getClass().getSimpleName());
+            segm.put("name", act.getClass().getSimpleName());
         } else {
-            segmS.put("name", act.getClass().getName());
+            segm.put("name", act.getClass().getName());
         }
 
-        verify(evQ).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
     }
 
     @Test
@@ -100,31 +94,27 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames).setAutoTrackingExceptions(new Class[] { act1.getClass() });
         mCountly.init(config);
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.moduleViews.onActivityStarted(act1);
 
-        verify(evQ, never()).recordEvent(anyString(), any(Map.class), any(Map.class), any(Map.class), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
+        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
 
         mCountly.moduleViews.onActivityStarted(act2);
 
-        final Map<String, String> segmS = new HashMap<>(4);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
+        final Map<String, Object> segm = new HashMap<>();
 
-        segmS.put("segment", "Android");
-        segmS.put("start", "1");
-        segmS.put("visit", "1");
+        segm.put("segment", "Android");
+        segm.put("start", "1");
+        segm.put("visit", "1");
 
         if (shortNames) {
-            segmS.put("name", act2.getClass().getSimpleName());
+            segm.put("name", act2.getClass().getSimpleName());
         } else {
-            segmS.put("name", act2.getClass().getName());
+            segm.put("name", act2.getClass().getName());
         }
 
-        verify(evQ).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
     }
 
     @Test
@@ -132,14 +122,12 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
         mCountly.moduleViews.onActivityStarted(act);
 
-        verify(evQ, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
     }
 
     @Test
@@ -147,9 +135,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(true);
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
 
@@ -161,14 +147,10 @@ public class ModuleViewsTests {
 
         mCountly.moduleViews.onActivityStarted(act);
 
-        final Map<String, String> segmS = new HashMap<>(1);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("mode", "portrait");
 
-        segmS.put("mode", "portrait");
-
-        verify(evQ).recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null);
 
         Assert.assertEquals(Configuration.ORIENTATION_PORTRAIT, mView.currentOrientation);
     }
@@ -176,11 +158,9 @@ public class ModuleViewsTests {
     @Test
     public void onConfigurationChangedOrientationDisabled() {
         Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(false);
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Configuration conf = new Configuration();
 
@@ -191,7 +171,7 @@ public class ModuleViewsTests {
         Assert.assertEquals(-1, mView.currentOrientation);
         mCountly.moduleViews.onConfigurationChanged(conf);
 
-        verify(evQ, times(0)).recordEvent(any(String.class), any(Map.class), any(Map.class), any(Map.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
 
         Assert.assertEquals(-1, mView.currentOrientation);
     }
@@ -201,9 +181,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(true);
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Configuration conf = new Configuration();
 
@@ -214,29 +192,26 @@ public class ModuleViewsTests {
         Assert.assertEquals(-1, mView.currentOrientation);
         mCountly.moduleViews.onConfigurationChanged(conf);
 
-        final Map<String, String> segmS = new HashMap<>(1);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("mode", "landscape");
 
-        segmS.put("mode", "landscape");
-
-        verify(evQ).recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null);
 
         Assert.assertEquals(Configuration.ORIENTATION_LANDSCAPE, mView.currentOrientation);
     }
 
+    /**
+     * Verify that when calling "onStop" without calling "onStart", no event is created
+     */
     @Test
     public void onActivityStopped() {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true));
-        EventQueue evQ = mock(EventQueue.class);
-
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.moduleViews.onActivityStopped();
 
-        verify(evQ, never()).recordEvent(anyString(), any(Map.class), any(Map.class), any(Map.class), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
+        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
     }
 
     @Test
@@ -253,101 +228,82 @@ public class ModuleViewsTests {
 
         config.setAutomaticViewSegmentation(segms);
         mCountly.init(config);
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
 
         int start = UtilsTime.currentTimestampSeconds();
-
         mCountly.moduleViews.onActivityStarted(act);
-
         Thread.sleep(100);
-
         mCountly.moduleViews.onActivityStopped();
         String dur = String.valueOf(UtilsTime.currentTimestampSeconds() - start);
 
-        final Map<String, String> segmS = new HashMap<>(4);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("segment", "Android");
+        segm.put("start", "1");
+        segm.put("visit", "1");
+        segm.put("name", act.getClass().getSimpleName());
+        segm.put("aa", "11");
+        segm.put("aagfg", "1133");
+        segm.put("1", 123);
+        segm.put("2", 234.0d);
+        segm.put("3", true);
 
-        segmS.put("segment", "Android");
-        segmS.put("start", "1");
-        segmS.put("visit", "1");
-        segmS.put("name", act.getClass().getSimpleName());
-        segmS.put("aa", "11");
-        segmS.put("aagfg", "1133");
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
 
-        segmI.put("1", 123);
-        segmD.put("2", 234.0d);
-        segmB.put("3", true);
+        segm.clear();
+        segm.put("dur", dur);
+        segm.put("segment", "Android");
+        segm.put("name", act.getClass().getSimpleName());
 
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
-
-        segmS.clear();
-        segmI.clear();
-        segmD.clear();
-        segmB.clear();
-
-        segmS.put("dur", dur);
-        segmS.put("segment", "Android");
-        segmS.put("name", act.getClass().getSimpleName());
-
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0.0, 0.0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
     }
 
     @Test
     public void recordViewNoSegm() throws InterruptedException {
         Countly mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
 
-        final Map<String, String> segmS = new HashMap<>(4);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
-
-        segmS.put("segment", "Android");
-        segmS.put("start", "1");
-        segmS.put("visit", "1");
-        segmS.put("name", viewNames[0]);
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("segment", "Android");
+        segm.put("start", "1");
+        segm.put("visit", "1");
+        segm.put("name", viewNames[0]);
 
         mCountly.views().recordView(viewNames[0]);
 
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1]);
-        segmS.clear();
-        segmS.put("dur", "1");
-        segmS.put("segment", "Android");
-        segmS.put("name", viewNames[0]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("dur", "1");//todo rework to verify duration better
+        segm.put("segment", "Android");
+        segm.put("name", viewNames[0]);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
-        segmS.clear();
-        segmS.put("segment", "Android");
-        segmS.put("visit", "1");
-        segmS.put("name", viewNames[1]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("segment", "Android");
+        segm.put("visit", "1");
+        segm.put("name", viewNames[1]);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2]);
-        segmS.clear();
-        segmS.put("dur", "1");
-        segmS.put("segment", "Android");
-        segmS.put("name", viewNames[1]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("dur", "1");//todo rework to verify duration better
+        segm.put("segment", "Android");
+        segm.put("name", viewNames[1]);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);//todo this test has issues sometimes
 
-        segmS.clear();
-        segmS.put("segment", "Android");
-        segmS.put("visit", "1");
-        segmS.put("name", viewNames[2]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("segment", "Android");
+        segm.put("visit", "1");
+        segm.put("name", viewNames[2]);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
     }
 
     @Test
@@ -375,7 +331,6 @@ public class ModuleViewsTests {
         cSegm2.put("calling", false);
 
         Map<String, Object> cSegm3 = new HashMap<>();
-        cSegm3.put("aaaaaaaaaaaaaaaaaaaaCountly", "33");
         cSegm3.put("exit", "33");
         cSegm3.put("view", "33");
         cSegm3.put("domain", "33");
@@ -387,161 +342,135 @@ public class ModuleViewsTests {
 
         config.setAutomaticViewSegmentation(segms);
         mCountly.init(config);
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
-
-        final Map<String, String> segmS = new HashMap<>(4);
-        final Map<String, Integer> segmI = new HashMap<>();
-        final Map<String, Double> segmD = new HashMap<>();
-        final Map<String, Boolean> segmB = new HashMap<>();
+        final Map<String, Object> segm = new HashMap<>();
 
         mCountly.views().recordView(viewNames[0], cSegm1);
 
-        segmS.put("segment", "Android");
-        segmS.put("start", "1");
-        segmS.put("visit", "1");
-        segmS.put("name", viewNames[0]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.put("segment", "Android");
+        segm.put("start", "1");
+        segm.put("visit", "1");
+        segm.put("name", viewNames[0]);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1], cSegm2);
-        segmS.clear();
-        segmI.clear();
-        segmD.clear();
-        segmB.clear();
-        segmS.put("dur", "1");
-        segmS.put("segment", "Android");
-        segmS.put("name", viewNames[0]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("dur", "1");
+        segm.put("segment", "Android");
+        segm.put("name", viewNames[0]);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
-        segmS.clear();
-        segmI.clear();
-        segmD.clear();
-        segmB.clear();
-        segmS.put("segment", "Android");
-        segmS.put("visit", "1");
-        segmS.put("name", viewNames[1]);
-        segmS.put("start", "33");
-        segmS.put("donker", "mag");
-        segmI.put("big", 1337);
-        segmD.put("candy", 954.33d);
-        segmB.put("calling", false);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("segment", "Android");
+        segm.put("visit", "1");
+        segm.put("name", viewNames[1]);
+        segm.put("start", "33");
+        segm.put("donker", "mag");
+        segm.put("big", 1337);
+        segm.put("candy", 954.33d);
+        segm.put("calling", false);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2], cSegm3);
-        segmS.clear();
-        segmI.clear();
-        segmD.clear();
-        segmB.clear();
-        segmS.put("dur", "1");
-        segmS.put("segment", "Android");
-        segmS.put("name", viewNames[1]);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("dur", "1");
+        segm.put("segment", "Android");
+        segm.put("name", viewNames[1]);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
-        segmS.clear();
-        segmI.clear();
-        segmD.clear();
-        segmB.clear();
-        segmS.put("segment", "Android");
-        segmS.put("visit", "1");
-        segmS.put("name", viewNames[2]);
-        segmS.put("doddnker", "m123ag");
-        segmS.put("exit", "33");
-        segmS.put("view", "33");
-        segmS.put("domain", "33");
-        segmS.put("dur", "33");
-        segmI.put("biffg", 132137);
-        segmD.put("cannndy", 9534.33d);
-        segmB.put("calaaling", true);
-        verify(evQ, times(1)).recordEvent(ModuleViews.VIEW_EVENT_KEY, segmS, segmI, segmD, segmB, 1, 0, 0, null);
+        segm.clear();
+        segm.put("segment", "Android");
+        segm.put("visit", "1");
+        segm.put("name", viewNames[2]);
+        segm.put("doddnker", "m123ag");
+        segm.put("exit", "33");
+        segm.put("view", "33");
+        segm.put("domain", "33");
+        segm.put("dur", "33");
+        segm.put("biffg", 132137);
+        segm.put("cannndy", 9534.33d);
+        segm.put("calaaling", true);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
     }
 
-    @Test
-    public void recordViewNullViewName() {
-        Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
-
-        ModuleEvents mEvents = mock(ModuleEvents.class);
-        mCountly.moduleEvents = mEvents;
-
-        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
-        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Boolean> argB = ArgumentCaptor.forClass(Boolean.class);
-        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
-
-        mCountly.views().recordView(null);
-
-        String mockInv = mockingDetails(mEvents).printInvocations();
-        System.out.println(mockInv);
-
-        System.out.println(mockingDetails(mEvents).getInvocations());
-
-        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture(), argB.capture());
-    }
-
+    /**
+     * Make sure that, when recording an event with an empty string key, that no event is creted
+     */
     @Test
     public void recordViewEmptyViewName() {
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
-
-        ModuleEvents mEvents = mock(ModuleEvents.class);
-        mCountly.moduleEvents = mEvents;
-
-        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
-        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Boolean> argB = ArgumentCaptor.forClass(Boolean.class);
-        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).setViewTracking(true));
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("");
-
-        String mockInv = mockingDetails(mEvents).printInvocations();
-        System.out.println(mockInv);
-
-        System.out.println(mockingDetails(mEvents).getInvocations());
-
-        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture(), argB.capture());
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
     }
 
+    /**
+     * Make sure that no view event is created when recording an event with no consent
+     */
     @Test
     public void recordViewWithoutConsent() {
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
-            .setViewTracking(true).setAutoTrackingUseShortName(true).setRequiresConsent(true));
-
-        EventQueue evQ = mock(EventQueue.class);
-        mCountly.setEventQueue(evQ);
-
-        ModuleEvents mEvents = mock(ModuleEvents.class);
-        mCountly.moduleEvents = mEvents;
-
-        ArgumentCaptor<UtilsTime.Instant> argInst = ArgumentCaptor.forClass(UtilsTime.Instant.class);
-        ArgumentCaptor<String> argS = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<Integer> argI = ArgumentCaptor.forClass(Integer.class);
-        ArgumentCaptor<Double> argD1 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Double> argD2 = ArgumentCaptor.forClass(Double.class);
-        ArgumentCaptor<Boolean> argB = ArgumentCaptor.forClass(Boolean.class);
-        ArgumentCaptor<Map<String, Object>> argM = ArgumentCaptor.forClass(Map.class);
+        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true)
+            .setViewTracking(true).setRequiresConsent(true));
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView(null);
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+    }
 
-        String mockInv = mockingDetails(mEvents).printInvocations();
-        System.out.println(mockInv);
+    /**
+     * Automatic view tracking is not enabled.
+     * Changing activities should not record view events
+     */
+    @Test
+    public void noViewRecordedWithAutomaticTurnedOffActChange() {
+        CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
+        cc.setDeviceId("1234").setLoggingEnabled(true).setViewTracking(false).setEventQueueSizeToSend(100);
 
-        System.out.println(mockingDetails(mEvents).getInvocations());
+        Countly mCountly = new Countly();
+        mCountly.init(cc);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        verify(mEvents, times(0)).recordEventInternal(argS.capture(), argM.capture(), argI.capture(), argD1.capture(), argD2.capture(), argInst.capture(), argB.capture());
+        Activity act = mock(Activity.class);
+        Activity2 act2 = mock(Activity2.class);
+
+        //go from one activity to another in the expected way and then "go to background"
+        mCountly.onStart(act);
+        mCountly.onStart(act2);
+        mCountly.onStop();
+        mCountly.onStop();
+
+        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+    }
+
+    @Test
+    public void recordViewWithActivitiesAfterwardsAutoDisabled() {
+        CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
+        cc.setDeviceId("1234").setLoggingEnabled(true).setViewTracking(false).setEventQueueSizeToSend(100);
+
+        Countly mCountly = new Countly();
+        mCountly.init(cc);
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        mCountly.views().recordView("abcd");
+        verify(ep, times(1)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Activity act = mock(Activity.class);
+        Activity act2 = mock(Activity2.class);
+
+        //go from one activity to another in the expected way and then "go to background"
+        mCountly.onStart(act);
+        mCountly.onStart(act2);
+        mCountly.onStop();
+        mCountly.onStop();
+
+        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
     }
 }

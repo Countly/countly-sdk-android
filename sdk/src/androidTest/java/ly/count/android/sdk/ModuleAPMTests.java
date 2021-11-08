@@ -18,7 +18,8 @@ import static org.mockito.Mockito.verify;
 @RunWith(AndroidJUnit4.class)
 public class ModuleAPMTests {
     Countly mCountly;
-    ConnectionQueue connectionQueue;
+
+    RequestQueueProvider requestQueueProvider;
 
     @Before
     public void setUp() {
@@ -28,8 +29,7 @@ public class ModuleAPMTests {
         mCountly = new Countly();
         mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
 
-        connectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(connectionQueue);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
     }
 
     @After
@@ -109,19 +109,19 @@ public class ModuleAPMTests {
     public void recordNetworkTraceBasic() {
         //ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
         mCountly.apm().recordNetworkTrace("aaa", 234, 123, 456, 7654, 8765);
-        verify(connectionQueue).sendAPMNetworkTrace("aaa", (8765L - 7654L), 234, 123, 456, 7654L, 8765L);
+        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", (8765L - 7654L), 234, 123, 456, 7654L, 8765L);
     }
 
     @Test
     public void recordNetworkTraceFalseValues_1() {
         mCountly.apm().recordNetworkTrace("aaa", -100, -123, 456, 7654, 8765);
-        verify(connectionQueue).sendAPMNetworkTrace("aaa", (8765L - 7654L), 0, 0, 456, 7654L, 8765L);
+        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", (8765L - 7654L), 0, 0, 456, 7654L, 8765L);
     }
 
     @Test
     public void recordNetworkTraceFalseValues_2() {
         mCountly.apm().recordNetworkTrace("aaa", 999, 123, -456, 8765, 7654);
-        verify(connectionQueue).sendAPMNetworkTrace("aaa", (8765L - 7654L), 0, 123, 0, 7654L, 8765L);
+        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", (8765L - 7654L), 0, 123, 0, 7654L, 8765L);
     }
 
     @Test
@@ -140,7 +140,7 @@ public class ModuleAPMTests {
 
         Assert.assertFalse(mCountly.moduleAPM.networkTraces.containsKey(internalTraceKey));
 
-        verify(connectionQueue).sendAPMNetworkTrace(eq("abc"), duration.capture(), eq(345), eq(222), eq(555), start.capture(), stop.capture());
+        verify(requestQueueProvider).sendAPMNetworkTrace(eq("abc"), duration.capture(), eq(345), eq(222), eq(555), start.capture(), stop.capture());
 
         Assert.assertEquals(starVal, start.getValue());
         Assert.assertTrue(stop.getValue() > start.getValue());
@@ -164,7 +164,7 @@ public class ModuleAPMTests {
         ArgumentCaptor<Long> start = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Long> stop = ArgumentCaptor.forClass(Long.class);
 
-        verify(connectionQueue).sendAPMCustomTrace(eq(key), duration.capture(), start.capture(), stop.capture(), eq(""));
+        verify(requestQueueProvider).sendAPMCustomTrace(eq(key), duration.capture(), start.capture(), stop.capture(), eq(""));
 
         Assert.assertEquals(keyTs, start.getValue());
         Assert.assertTrue(stop.getValue() > start.getValue());

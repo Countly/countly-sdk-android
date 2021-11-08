@@ -1,7 +1,5 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
-
 public class ModuleLocation extends ModuleBase {
 
     boolean locationDisabled = false;
@@ -10,32 +8,16 @@ public class ModuleLocation extends ModuleBase {
     String locationGpsCoordinates = null;
     String locationIpAddress = null;
 
+    boolean sendLocationPostInit;
+    boolean postInitReached = false;//todo this looks like something that can be removed
+
     Location locationInterface = null;
 
-    boolean sendLocationPostInit;
-    boolean postInitReached = false;
-
-    ModuleLog L;
-
     ModuleLocation(Countly cly, CountlyConfig config) {
-        super(cly);
-
-        L = cly.L;
-
+        super(cly, config);
         L.v("[ModuleLocation] Initialising");
 
-        //do location related things
-        if (config.disableLocation) {
-            locationDisabled = true;
-            disableLocationInternal();
-        } else {
-            //if we are not disabling location, check for other set values
-            if (config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
-                setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
-            }
-        }
-
-        locationInterface = new ModuleLocation.Location();
+        locationInterface = new Location();
     }
 
     void resetLocationValues() {
@@ -45,6 +27,7 @@ public class ModuleLocation extends ModuleBase {
         locationIpAddress = null;
     }
 
+    @SuppressWarnings("RedundantIfStatement")
     boolean anyValidLocation() {
         L.d("[ModuleLocation] Calling 'anyValidLocation'");
 
@@ -61,20 +44,20 @@ public class ModuleLocation extends ModuleBase {
 
     void sendCurrentLocation() {
         L.d("[ModuleLocation] Calling 'sendCurrentLocation'");
-        _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+        requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
     }
 
     void disableLocationInternal() {
         L.d("[ModuleLocation] Calling 'disableLocationInternal'");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.location)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
             //can't send disable location request if no consent given
             return;
         }
 
         resetLocationValues();
         locationDisabled = true;
-        _cly.connectionQueue_.sendLocation(true, null, null, null, null);
+        requestQueueProvider.sendLocation(true, null, null, null, null);
     }
 
     void setLocationInternal(String country_code, String city, String gpsCoordinates, String ipAddress) {
@@ -82,7 +65,7 @@ public class ModuleLocation extends ModuleBase {
 
         L.d("[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.location)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
             return;
         }
 
@@ -99,11 +82,11 @@ public class ModuleLocation extends ModuleBase {
             locationDisabled = false;
         }
 
-        if (_cly.isBeginSessionSent || !Countly.sharedInstance().getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (_cly.isBeginSessionSent || !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
-            if(postInitReached) {
-                _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            if (postInitReached) {
+                requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
             } else {
                 //if we are still in init, send it at the end so that the SDK finished initialisation
                 sendLocationPostInit = true;
@@ -111,17 +94,25 @@ public class ModuleLocation extends ModuleBase {
         } else {
             //will be sent a part of begin session
         }
-
-        return;
     }
 
     @Override
     void initFinished(CountlyConfig config) {
-        postInitReached = true;
+        //do location related things
+        if (config.disableLocation) {
+            locationDisabled = true;
+            disableLocationInternal();
+        } else {
+            //if we are not disabling location, check for other set values
+            if (config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
+                setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
+            }
+        }
 
-        if(sendLocationPostInit) {
+        postInitReached = true;
+        if (sendLocationPostInit) {
             L.d("[ModuleLocation] Sending location post init");
-            _cly.connectionQueue_.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
         }
     }
 

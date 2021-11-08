@@ -1,25 +1,21 @@
 package ly.count.android.sdk;
 
-import android.util.Log;
-
 public class ModuleSessions extends ModuleBase {
-
     boolean manualSessionControlEnabled = false;
     long prevSessionDurationStartTime_ = 0;
 
     final Sessions sessionInterface;
 
-    ModuleLog L;
-
     ModuleSessions(Countly cly, CountlyConfig config) {
-        super(cly);
-
-        L = cly.L;
-
+        super(cly, config);
         L.v("[ModuleSessions] Initialising");
 
         manualSessionControlEnabled = config.manualSessionControlEnabled;
-        _cly.disableUpdateSessionRequests_ = config.disableUpdateSessionRequests;
+
+        if (config.disableUpdateSessionRequests) {
+            L.d("[ModuleSessions] Disabling periodic session time updates");
+            _cly.disableUpdateSessionRequests_ = config.disableUpdateSessionRequests;
+        }
 
         sessionInterface = new Sessions();
     }
@@ -28,14 +24,14 @@ public class ModuleSessions extends ModuleBase {
         L.d("[ModuleSessions] 'beginSessionInternal'");
 
         prevSessionDurationStartTime_ = System.nanoTime();
-        _cly.connectionQueue_.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);
+        requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);
     }
 
     void updateSessionInternal() {
         L.d("[ModuleSessions] 'updateSessionInternal'");
 
         if (!_cly.disableUpdateSessionRequests_) {
-            _cly.connectionQueue_.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
+            requestQueueProvider.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
         }
     }
 
@@ -44,11 +40,10 @@ public class ModuleSessions extends ModuleBase {
      */
     void endSessionInternal(String deviceIdOverride) {
         L.d("[ModuleSessions] 'endSessionInternal'");
+        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
-        _cly.connectionQueue_.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
+        requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
         prevSessionDurationStartTime_ = 0;
-
-        _cly.sendEventsIfExist();
     }
 
     /**
@@ -69,10 +64,6 @@ public class ModuleSessions extends ModuleBase {
     public class Sessions {
         public void beginSession() {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before beginSession");
-                }
-
                 L.i("[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {
@@ -86,10 +77,6 @@ public class ModuleSessions extends ModuleBase {
 
         public void updateSession() {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before updateSession");
-                }
-
                 L.i("[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {
@@ -105,10 +92,6 @@ public class ModuleSessions extends ModuleBase {
 
         public void endSession() {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before endSession");
-                }
-
                 L.i("[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
 
                 if (!manualSessionControlEnabled) {

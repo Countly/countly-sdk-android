@@ -24,12 +24,14 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".DemoFirebaseMessagingService">
+        <service android:name=".DemoFirebaseMessagingService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
+        <!--
         <service
             android:name=".DemoHuaweiMessagingService"
             android:exported="false">
@@ -37,7 +39,7 @@
                 <action android:name="com.huawei.push.action.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-
+-->
         <activity
             android:name=".ActivityExampleAPM"
             android:label="@string/activity_name_apm"
@@ -131,13 +133,6 @@
             </intent-filter>
         </activity>
         <activity android:name=".ActivityExampleKotlin" />
-
-        <receiver android:name="ly.count.android.sdk.ReferrerReceiver" android:exported="true">
-            <intent-filter>
-                <action android:name="com.android.vending.INSTALL_REFERRER" />
-            </intent-filter>
-        </receiver>
-
     </application>
 
 </manifest>

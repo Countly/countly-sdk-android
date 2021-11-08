@@ -1,4 +1,100 @@
+## 21.11.0
+  * Deprecating "ADVERTISING_ID" as device ID generation strategy. SDK will fall back to 'OPEN_UDID'.
+  * Feedback widget callback not has an additional callback. This will cause a compilation error that is trivial to fix by adding the override for the missing call.
+  * Automatic "AdvertisingId" attribution has been removed from the SDK. A call is added for recording provided attribution values.
+  * Automatic install referrer attribution in play stores has been removed. A call is added for recording such provided values.
+  * Orientation tracking is now enabled by default. Can be turned off during init.
+
+  * Device ID can now be changed when no consent is given
+  * Push notification now display/use the sent badge number. It's visualization depends on the launcher.
+  * Added a manual way to report attribution.
+  * Adding an init time configuration option to set the maximum request queue size
+
+  * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
+  * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
+
+  * Removed the deprecated "init" methods
+  * Removed the deprecated "recordEvent" methods
+  * Removed the deprecated "changeDeviceId" methods
+  * Removed the deprecated "setViewTracking" method
+  * Removed the deprecated "isViewTrackingEnabled" method
+  * Removed the deprecated "recordView" methods
+  * Removed the deprecated "setCustomCrashSegments" method
+  * Removed the deprecated "addCrashBreadcrumb" method
+  * Removed the deprecated "recordHandledException" methods
+  * Removed the deprecated "recordUnhandledException" methods
+  * Removed the deprecated "enableCrashReporting" method
+  * Removed the deprecated "startEvent" method
+  * Removed the deprecated "endEvent" methods
+  * Removed the deprecated "setDisableUpdateSessionRequests" method
+  * Removed the deprecated "enableParameterTamperingProtection" method
+  * Removed the deprecated "enablePublicKeyPinning" method
+  * Removed the deprecated "enableCertificatePinning" method
+  * Removed the deprecated "setPushIntentAddMetadata" method
+  * Removed the deprecated "setEnableAttribution" method
+  * Removed the deprecated "setEventQueueSizeToSend" method
+  * Removed the deprecated "setStarRatingDialogTexts" method
+  * Removed the deprecated "setIfStarRatingShownAutomatically" method
+  * Removed the deprecated "setStarRatingDisableAskingForEachAppVersion" method
+  * Removed the deprecated "setAutomaticStarRatingSessionLimit" method
+  * Removed the deprecated "getAutomaticStarRatingSessionLimit" method
+  * Removed the deprecated "getStarRatingsCurrentVersionsSessionCount" method
+  * Removed the deprecated "clearAutomaticStarRatingSessionCount" method
+  * Removed the deprecated "setIfStarRatingDialogIsCancellable" method
+  * Removed the deprecated "setHttpPostForced" method
+  * Removed the deprecated "setShouldIgnoreCrawlers" method
+  * Removed the deprecated "addAppCrawlerName" method
+  * Removed the deprecated "setRequiresConsent" method
+  * Removed the deprecated "createFeatureGroup" method
+  * Removed the deprecated "setConsentFeatureGroup" method
+  * Removed the deprecated "setConsent" method
+  * Removed the deprecated "giveConsent" method
+  * Removed the deprecated "removeConsent" method
+  * Removed the deprecated "removeConsentAll" method
+  * Removed the deprecated "getConsent" method
+  * Removed the deprecated "checkAllConsent" method
+  * Removed the deprecated "showFeedbackPopup" method
+  * Removed the deprecated "setRemoteConfigAutomaticDownload" method
+  * Removed the deprecated "remoteConfigUpdate" method
+  * Removed the deprecated "updateRemoteConfigForKeysOnly" method
+  * Removed the deprecated "updateRemoteConfigExceptKeys" method
+  * Removed the deprecated "getRemoteConfigValueForKey" method
+  * Removed the deprecated "remoteConfigClearValues" method
+  * Removed the deprecated "addCustomNetworkRequestHeaders" method
+  * Removed the deprecated "setLoggingEnabled" method
+
+
+## 20.11.10
+  * Fixed bug that would close manually recorded views early when automatic view recording is disabled
+
+## 20.11.9
+  * Moving a push related broadcast receiver decleration to the manifest to comply with 'PendingIntent' checks
+  * Fixed issue with star rating lowest allowed value. Changing it from 0 to 1.
+  * Fixed bug that would prevent certain codepath to be executed if the Application class was not provided during init.
+  * Added additional protections in remote config logic to protect against rare crashes
+  * Increasing default event threshold to 100.
+  * Printing approximate data usage in logs when sending requests
+
+## 20.11.8
+  * Minor tweaks. Changes related to publishing to MavenCentral
+
+## 20.11.7
+  * Adding metric for the device manufacturer.
+  * Fixing potential issues by sending all available events before the "end session" request
+  
+## 20.11.6
+  * Fixed init time bug where the context from the provided application class was not used.
+  * Fixed init time bug which happened when location was disabled during init.
+
+## 20.11.5
+  * Added option to enable additional push redirection protections
+
+## 20.11.4
+  * Added a way to retrieve feedback widget data and manually report them
+  * Fixed bug where network request were retried too soon after a failed request
+
 ## 20.11.3
+  * Removed thrown exceptions in places where that is possible
 
 ## 20.11.2
   * Added SDK log listener

@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,6 +16,9 @@ public class ModuleViews extends ModuleBase {
 
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
+    boolean autoViewTracker = false;
+    boolean automaticTrackingShouldUseShortName = false;//flag for using short names
+
     //track orientation changes
     boolean trackOrientationChanges = false;
     int currentOrientation = -1;
@@ -25,17 +27,19 @@ public class ModuleViews extends ModuleBase {
     //interface for SDK users
     final Views viewsInterface;
 
-    ModuleLog L;
-
     ModuleViews(Countly cly, CountlyConfig config) {
-        super(cly);
-
-        L = cly.L;
-
+        super(cly, config);
         L.v("[ModuleViews] Initialising");
 
-        _cly.setViewTracking(config.enableViewTracking);
-        _cly.setAutoTrackingUseShortName(config.autoTrackingUseShortName);
+        if (config.enableViewTracking) {
+            L.d("[ModuleViews] Enabling automatic view tracking");
+            autoViewTracker = config.enableViewTracking;
+        }
+
+        if (config.autoTrackingUseShortName) {
+            L.d("[ModuleViews] Enabling automatic view tracking short names");
+            automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
+        }
 
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
         autoTrackingActivityExceptions = config.autoTrackingExceptions;
@@ -56,8 +60,6 @@ public class ModuleViews extends ModuleBase {
                 L.w("[ModuleViews] You have provided a unsupported type for automatic View Segmentation");
             }
 
-            Utils.removeKeysFromMap(segmentation, ModuleEvents.reservedSegmentationKeys);
-
             automaticViewSegmentation.putAll(segmentation);
         }
     }
@@ -66,13 +68,13 @@ public class ModuleViews extends ModuleBase {
      * Reports duration of last view
      */
     void reportViewDuration() {
-        L.d("[ModuleViews] View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "], current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
+        L.d("[ModuleViews] View [" + lastView + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - lastViewStart) + "] ms, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + lastViewStart + "]");
 
         if (lastView != null && lastViewStart <= 0) {
             L.e("[ModuleViews] Last view start value is not normal: [" + lastViewStart + "]");
         }
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.views)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
             return;
         }
 
@@ -80,12 +82,13 @@ public class ModuleViews extends ModuleBase {
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (lastView != null && lastViewStart > 0) {
+            L.d("[ModuleViews] Recording view duration: [" + lastView + "]");
             HashMap<String, Object> segments = new HashMap<>();
 
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
-            _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, true);
+            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
             lastView = null;
             lastViewStart = 0;
         }
@@ -116,7 +119,8 @@ public class ModuleViews extends ModuleBase {
      */
     synchronized Countly recordViewInternal(String viewName, Map<String, Object> customViewSegmentation) {
         if (!_cly.isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+            L.e("Countly.sharedInstance().init must be called before recordView");
+            return _cly;
         }
 
         if (viewName == null || viewName.isEmpty()) {
@@ -138,8 +142,6 @@ public class ModuleViews extends ModuleBase {
 
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
-            Utils.removeUnsupportedDataTypes(customViewSegmentation);
-            Utils.removeKeysFromMap(customViewSegmentation, ModuleEvents.reservedSegmentationKeys);
             viewSegmentation.putAll(customViewSegmentation);
         }
 
@@ -151,7 +153,7 @@ public class ModuleViews extends ModuleBase {
             viewSegmentation.put("start", "1");
         }
 
-        _cly.moduleEvents.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, true);
+        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null);
 
         return _cly;
     }
@@ -159,7 +161,7 @@ public class ModuleViews extends ModuleBase {
     void updateOrientation(int newOrientation) {
         L.d("[ModuleViews] Calling [updateOrientation], new orientation:[" + newOrientation + "]");
 
-        if (!_cly.getConsent(Countly.CountlyFeatureNames.events)) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
             //we don't have consent, just leave
             return;
         }
@@ -167,7 +169,7 @@ public class ModuleViews extends ModuleBase {
         if (currentOrientation != newOrientation) {
             currentOrientation = newOrientation;
 
-            Map<String, String> segm = new HashMap<>();
+            Map<String, Object> segm = new HashMap<>();
 
             if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
                 segm.put("mode", "portrait");
@@ -175,7 +177,7 @@ public class ModuleViews extends ModuleBase {
                 segm.put("mode", "landscape");
             }
 
-            _cly.recordEvent(ORIENTATION_EVENT_KEY, segm, 1);
+            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null);
         }
     }
 
@@ -191,26 +193,28 @@ public class ModuleViews extends ModuleBase {
 
     @Override
     void onActivityStopped() {
-        //report current view duration
-        reportViewDuration();
+        if (autoViewTracker) {
+            //report current view duration
+            reportViewDuration();
+        }
     }
 
     @Override
     void onActivityStarted(Activity activity) {
         //automatic view tracking
-        if (_cly.autoViewTracker) {
+        if (autoViewTracker) {
             if (!isActivityInExceptionList(activity)) {
                 String usedActivityName = "NULL ACTIVITY";
 
                 if (activity != null) {
-                    if (_cly.automaticTrackingShouldUseShortName) {
+                    if (automaticTrackingShouldUseShortName) {
                         usedActivityName = activity.getClass().getSimpleName();
                     } else {
                         usedActivityName = activity.getClass().getName();
                     }
                 }
 
-                _cly.recordView(usedActivityName, automaticViewSegmentation);
+                recordViewInternal(usedActivityName, automaticViewSegmentation);
             } else {
                 L.d("[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
             }
@@ -277,7 +281,7 @@ public class ModuleViews extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Views] Calling isAutomaticViewTrackingEnabled");
 
-                return _cly.autoViewTracker;
+                return autoViewTracker;
             }
         }
 
@@ -307,7 +311,8 @@ public class ModuleViews extends ModuleBase {
         public Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before recordView");
+                    L.e("Countly.sharedInstance().init must be called before recordView");
+                    return _cly;
                 }
 
                 L.i("[Views] Calling recordView [" + viewName + "]");

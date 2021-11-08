@@ -18,8 +18,6 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_custom_events);
-        Countly.onCreate(this);
-
     }
 
     public void onClickRecordEvent01(View v) {
@@ -45,26 +43,22 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     public void onClickRecordEvent06(View v) {
-        Map<String, String> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "red");
-        Map<String, Integer> segmentationInt = new HashMap<>();
-        segmentationInt.put("flowers", 3);
-        Map<String, Double> segmentationDouble = new HashMap<>();
-        segmentationDouble.put("area", 1.23);
-        segmentationDouble.put("volume", 7.88);
-        Countly.sharedInstance().recordEvent("Custom event 6", segmentation, segmentationInt, segmentationDouble, 15, 0, 0);
+        segmentation.put("flowers", 3);
+        segmentation.put("area", 1.23);
+        segmentation.put("volume", 7.88);
+        Countly.sharedInstance().events().recordEvent("Custom event 6", segmentation, 15, 0, 0);
     }
 
     public void onClickRecordEvent07(View v) {
-        Map<String, String> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("wall", "blue");
-        Map<String, Integer> segmentationInt = new HashMap<>();
-        segmentationInt.put("flowers", new Random().nextInt());
-        Map<String, Double> segmentationDouble = new HashMap<>();
-        segmentationDouble.put("area", new Random().nextDouble());
-        segmentationDouble.put("volume", new Random().nextDouble());
+        segmentation.put("flowers", new Random().nextInt());
+        segmentation.put("area", new Random().nextDouble());
+        segmentation.put("volume", new Random().nextDouble());
 
-        Countly.sharedInstance().recordEvent("Custom event 7", segmentation, segmentationInt, segmentationDouble,25, 10, 0);
+        Countly.sharedInstance().events().recordEvent("Custom event 7", segmentation, 25, 10, 0);
     }
 
     public void onClickRecordEvent08(View v) {
@@ -94,22 +88,24 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
         Countly.sharedInstance().events().recordEvent("Custom event 9", segmentation, 4, 34);
     }
 
+    public void onClickTriggerSendingEvents(View v) {
+        Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
+    }
+
     @Override
-    public void onStart()
-    {
+    public void onStart() {
         super.onStart();
         Countly.sharedInstance().onStart(this);
     }
 
     @Override
-    public void onStop()
-    {
+    public void onStop() {
         Countly.sharedInstance().onStop();
         super.onStop();
     }
 
     @Override
-    public void onConfigurationChanged (Configuration newConfig){
+    public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
