@@ -119,14 +119,15 @@ public class App extends Application {
         Map<String, String> metricOverride = new HashMap<>();
         metricOverride.put("SomeKey", "123");
         metricOverride.put("_carrier", "BoneyK");
-
+      
         //add some custom segments, like dependency library versions
         HashMap<String, Object> customCrashSegmentation = new HashMap<>();
         customCrashSegmentation.put("EarBook", "3.5");
         customCrashSegmentation.put("AdGiver", "6.5");
 
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
-            .setLoggingEnabled(true).setLogListener(new ModuleLog.LogCallback() {
+            .setLoggingEnabled(true)
+            .setLogListener(new ModuleLog.LogCallback() {
                 @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
                     //duplicated countly logs
                     switch (logLevel) {
@@ -148,15 +149,43 @@ public class App extends Application {
                     }
                 }
             })
-            .enableCrashReporting().setCustomCrashSegment(customCrashSegmentation)
-            .setViewTracking(true).setAutoTrackingUseShortName(true)//.enableTemporaryDeviceIdMode()
+          
+            .enableCrashReporting()
+            .setRecordAllThreadsWithCrash()
+            .setCustomCrashSegment(customCrashSegmentation)
+            .setCrashFilterCallback(new CrashFilterCallback() {
+                @Override
+                public boolean filterCrash(String crash) {
+                    return crash.contains("crash");
+                }
+            })
+          
+            .setViewTracking(true)
+            .setAutoTrackingUseShortName(true)
+            .setAutomaticViewSegmentation(automaticViewSegmentation)
+            .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
+                   
+            .setPushIntentAddMetadata(true)
+          
+            .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
+            //.setDisableLocation()
+          
+            //.enableTemporaryDeviceIdMode()
+          
             .setRequiresConsent(true).setConsentEnabled(new String[] {
                 Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
                 Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
                 Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
                 Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
             })
-            .addCustomNetworkRequestHeaders(customHeaderValues).setPushIntentAddMetadata(true).setRemoteConfigAutomaticDownload(true, new RemoteConfigCallback() {
+          
+            .setHttpPostForced(false)
+            .setParameterTamperingProtectionSalt("SampleSalt")
+            .addCustomNetworkRequestHeaders(customHeaderValues)
+            //.enableCertificatePinning(certificates)
+            //.enablePublicKeyPinning(certificates)
+
+            .setRemoteConfigAutomaticDownload(true, new RemoteConfig.RemoteConfigCallback() {
                 @Override
                 public void callback(String error) {
                     if (error == null) {
@@ -166,25 +195,14 @@ public class App extends Application {
                     }
                 }
             })
-            .setParameterTamperingProtectionSalt("SampleSalt")
-            .setAutomaticViewSegmentation(automaticViewSegmentation)
-            .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
-            .setRecordAllThreadsWithCrash()
-            .setCrashFilterCallback(new CrashFilterCallback() {
-                @Override
-                public boolean filterCrash(String crash) {
-                    return crash.contains("crash");
-                }
-            })
-            .setRecordAppStartTime(true)
-            .setHttpPostForced(false)
-            .setAppStartTimestampOverride(applicationStartTimestamp)
-            //.enableCertificatePinning(certificates)
-            //.enablePublicKeyPinning(certificates)
 
-            //.setDisableLocation()
-            .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
+            .setTrackOrientationChanges(true)
+
+            .setRecordAppStartTime(true)
+            .setAppStartTimestampOverride(applicationStartTimestamp)
+
             //.setMetricOverride(metricOverride)
+
             .setEnableAttribution(true);
 
         Countly.sharedInstance().init(config);
