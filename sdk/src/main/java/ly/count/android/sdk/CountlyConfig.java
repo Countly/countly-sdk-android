@@ -179,6 +179,10 @@ public class CountlyConfig {
 
     ModuleLog.LogCallback providedLogCallback;
 
+    String daCampaignId = null;
+    String daCampaignUserId = null;
+    String iaAttributionId = null;
+
     public CountlyConfig() {
     }
 
@@ -719,6 +723,27 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setMaxRequestQueueSize(int newMaxSize) {
         maxRequestQueueSize = newMaxSize;
+        return this;
+    }
+
+    /**
+     * Report direct user attribution
+     *
+     * @param campaignId
+     */
+    public synchronized CountlyConfig setDirectAttribution(String campaignId, String campaignUserId) {
+        daCampaignId = campaignId;
+        daCampaignUserId = campaignUserId;
+        return this;
+    }
+
+    /**
+     * Report indirect user attribution
+     *
+     * @param attributionId
+     */
+    public synchronized CountlyConfig setIndirectAttribution(String attributionId) {
+        iaAttributionId = attributionId;
         return this;
     }
 }
