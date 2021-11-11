@@ -1,14 +1,17 @@
 ## 21.11.0
-  * Deprecating "ADVERTISING_ID" as device ID generation strategy. SDK will fall back to 'OPEN_UDID'.
-  * Feedback widget callback not has an additional callback. This will cause a compilation error that is trivial to fix by adding the override for the missing call.
-  * Automatic "AdvertisingId" attribution has been removed from the SDK. A call is added for recording provided attribution values.
-  * Automatic install referrer attribution in play stores has been removed. A call is added for recording such provided values.
-  * Orientation tracking is now enabled by default. Can be turned off during init.
+  * !! Major breaking change !! Deprecating "ADVERTISING_ID" as device ID generation strategy. SDK will fall back to 'OPEN_UDID'.
+  * ! Minor breaking change ! Feedback widget callback not has an additional callback. This will cause a compilation error that is trivial to fix by adding the override for the missing call.
+  * ! Minor breaking change ! Automatic "AdvertisingId" attribution has been removed from the SDK. A call is added for recording provided attribution values.
+  * ! Minor breaking change ! Automatic install referrer attribution in play stores has been removed. A call is added for recording such provided values.
+  * ! Minor breaking change ! Orientation tracking is now enabled by default. Can be turned off during init.
 
   * Device ID can now be changed when no consent is given
   * Push notification now display/use the sent badge number. It's visualization depends on the launcher.
   * Added new calls to report attribution.
   * Adding an init time configuration option to set the maximum request queue size
+  * Updating the "compileSdkVersion" and "targetSdkVersion" to "31".
+  * Updating the "buildToolsVersion" to "31.0.0".
+
 
   * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
   * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
