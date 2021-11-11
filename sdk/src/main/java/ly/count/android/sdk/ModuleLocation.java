@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.Nullable;
+
 public class ModuleLocation extends ModuleBase {
 
     boolean locationDisabled = false;
@@ -27,24 +29,16 @@ public class ModuleLocation extends ModuleBase {
         locationIpAddress = null;
     }
 
-    @SuppressWarnings("RedundantIfStatement")
-    boolean anyValidLocation() {
-        L.d("[ModuleLocation] Calling 'anyValidLocation'");
+    void sendCurrentLocationIfValid() {
+        L.d("[ModuleLocation] Calling 'sendCurrentLocationIfValid'");
 
         if (locationDisabled) {
-            return false;
+            return;
         }
 
         if (locationCountryCode != null || locationCity != null || locationIpAddress != null || locationGpsCoordinates != null) {
-            return true;
+            requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
         }
-
-        return false;
-    }
-
-    void sendCurrentLocation() {
-        L.d("[ModuleLocation] Calling 'sendCurrentLocation'");
-        requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
     }
 
     void disableLocationInternal() {
@@ -60,7 +54,7 @@ public class ModuleLocation extends ModuleBase {
         requestQueueProvider.sendLocation(true, null, null, null, null);
     }
 
-    void setLocationInternal(String country_code, String city, String gpsCoordinates, String ipAddress) {
+    void setLocationInternal(@Nullable String country_code, @Nullable String city, @Nullable String gpsCoordinates, @Nullable String ipAddress) {
         L.d("[ModuleLocation] Calling 'setLocationInternal'");
 
         L.d("[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
@@ -144,7 +138,7 @@ public class ModuleLocation extends ModuleBase {
          * @param ipAddress ipAddress like "192.168.88.33"
          * @return Returns link to Countly for call chaining
          */
-        public void setLocation(String countryCode, String city, String gpsCoordinates, String ipAddress) {
+        public void setLocation(@Nullable String countryCode, @Nullable String city, @Nullable String gpsCoordinates, @Nullable String ipAddress) {
             synchronized (_cly) {
                 L.i("[Location] Calling 'setLocation'");
 

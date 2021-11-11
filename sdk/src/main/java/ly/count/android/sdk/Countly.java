@@ -855,7 +855,7 @@ public class Countly {
             return;
         }
 
-        moduleDeviceId.changeDeviceIdWithoutMerge(ModuleDeviceId.fromOldDeviceIdToNew(type), deviceId);
+        moduleDeviceId.changeDeviceIdWithoutMergeInternal(ModuleDeviceId.fromOldDeviceIdToNew(type), deviceId);
     }
 
     /**

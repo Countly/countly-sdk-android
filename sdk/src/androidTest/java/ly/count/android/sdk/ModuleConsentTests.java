@@ -27,6 +27,8 @@ public class ModuleConsentTests {
         Countly.CountlyFeatureNames.remoteConfig,
         Countly.CountlyFeatureNames.apm,
         Countly.CountlyFeatureNames.feedback,
+        Countly.CountlyFeatureNames.clicks,
+        Countly.CountlyFeatureNames.scrolls,
     };
 
     @Before

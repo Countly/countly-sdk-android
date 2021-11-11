@@ -73,6 +73,6 @@ abstract class ModuleBase {
     void deviceIdChanged() {
     }
 
-    void initFinished(CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
     }
 }

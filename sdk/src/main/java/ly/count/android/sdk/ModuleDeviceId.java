@@ -102,7 +102,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
      * @param type Device ID type to change to
      * @param deviceId Optional device ID for a case when type = DEVELOPER_SPECIFIED
      */
-    void changeDeviceIdWithoutMerge(DeviceIdType type, @Nullable String deviceId) {
+    void changeDeviceIdWithoutMergeInternal(DeviceIdType type, @Nullable String deviceId) {
         if (type == null) {
             L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, type cannot be null");
             return;
@@ -158,7 +158,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
      *
      * @param deviceId new device id
      */
-    void changeDeviceIdWithMerge(@Nullable String deviceId) {
+    void changeDeviceIdWithMergeInternal(@Nullable String deviceId) {
         if (deviceId == null || "".equals(deviceId)) {
             throw new IllegalStateException("deviceId cannot be null or empty");
         }
@@ -289,7 +289,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithoutMerge'");
 
-                ModuleDeviceId.this.changeDeviceIdWithoutMerge(DeviceIdType.DEVELOPER_SUPPLIED, deviceId);
+                changeDeviceIdWithoutMergeInternal(DeviceIdType.DEVELOPER_SUPPLIED, deviceId);
             }
         }
 
@@ -303,7 +303,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithMerge'");
 
-                ModuleDeviceId.this.changeDeviceIdWithMerge(deviceId);
+                changeDeviceIdWithMergeInternal(deviceId);
             }
         }
 
@@ -342,7 +342,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
             synchronized (_cly) {
                 L.i("[DeviceId] Calling 'enableTemporaryIdMode'");
 
-                ModuleDeviceId.this.changeDeviceIdWithoutMerge(DeviceIdType.TEMPORARY_ID, ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
+                changeDeviceIdWithoutMergeInternal(DeviceIdType.TEMPORARY_ID, ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
             }
         }
     }
