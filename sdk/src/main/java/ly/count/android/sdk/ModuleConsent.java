@@ -23,7 +23,9 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         Countly.CountlyFeatureNames.starRating,
         Countly.CountlyFeatureNames.remoteConfig,
         Countly.CountlyFeatureNames.apm,
-        Countly.CountlyFeatureNames.feedback
+        Countly.CountlyFeatureNames.feedback,
+        Countly.CountlyFeatureNames.clicks,
+        Countly.CountlyFeatureNames.scrolls
     };
 
     protected boolean requiresConsent = false;

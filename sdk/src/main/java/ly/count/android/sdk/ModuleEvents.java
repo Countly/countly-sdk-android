@@ -7,6 +7,8 @@ import ly.count.android.sdk.messaging.ModulePush;
 public class ModuleEvents extends ModuleBase implements EventProvider {
     static final Map<String, Event> timedEvents = new HashMap<>();
 
+    final String ACTION_EVENT_KEY = "[CLY]_action";
+
     //interface for SDK users
     final Events eventsInterface;
 
@@ -103,6 +105,18 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                }
+                break;
+            case ModulePush.PUSH_EVENT_ACTION:
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                }
+                break;
+            case ACTION_EVENT_KEY:
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.clicks) || consentProvider.getConsent(Countly.CountlyFeatureNames.scrolls)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }

@@ -200,8 +200,8 @@ public class Countly {
         public static final String sessions = "sessions";
         public static final String events = "events";
         public static final String views = "views";
-        //public static final String scrolls = "scrolls";
-        //public static final String clicks = "clicks";
+        public static final String scrolls = "scrolls";
+        public static final String clicks = "clicks";
         //public static final String forms = "forms";
         public static final String location = "location";
         public static final String crashes = "crashes";
