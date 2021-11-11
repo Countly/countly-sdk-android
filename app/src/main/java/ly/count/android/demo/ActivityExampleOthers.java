@@ -30,17 +30,17 @@ public class ActivityExampleOthers extends AppCompatActivity {
         String longitude = "-95.220255";
         String ipAddress = null;
 
-        Countly.sharedInstance().setLocation(countryCode, city, latitude + "," + longitude, ipAddress);
+        Countly.sharedInstance().location().setLocation(countryCode, city, latitude + "," + longitude, ipAddress);
     }
 
     public void onClickViewOther06(View v) {
         //disable location
-        Countly.sharedInstance().disableLocation();
+        Countly.sharedInstance().location().disableLocation();
     }
 
     public void onClickViewOther08(View v) {
         //Clearing request queue
-        Countly.sharedInstance().flushRequestQueues();
+        Countly.sharedInstance().requestQueue().flushQueues();
     }
 
     public void onClickViewOther10(View v) {

@@ -58,7 +58,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickViewOther07(View v) {
         //show rating widget
         String widgetId = "5f8c8cfd69ecabb38ed3677a";
-        Countly.sharedInstance().ratings().showFeedbackPopup(widgetId, "Close", ActivityExampleFeedback.this, new FeedbackRatingCallback() {
+        Countly.sharedInstance().ratings().presentRatingWidgetWithID(widgetId, "Close", ActivityExampleFeedback.this, new FeedbackRatingCallback() {
             @Override
             public void callback(String error) {
                 if (error != null) {
@@ -71,7 +71,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickSendManualRating(View v) {
         //record rating manually without showing any UI
         String widgetId = "5f15c01425f83c169c33cb65";
-        Countly.sharedInstance().ratings().recordManualRating(widgetId, 3, "foo@bar.garr", "Ragnaros should watch out", true);
+        Countly.sharedInstance().ratings().recordRatingWidgetWithID(widgetId, 3, "foo@bar.garr", "Ragnaros should watch out", true);
     }
 
     public void onClickShowSurvey(View v) {

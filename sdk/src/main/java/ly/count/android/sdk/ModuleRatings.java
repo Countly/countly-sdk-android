@@ -51,12 +51,12 @@ public class ModuleRatings extends ModuleBase {
         }
 
         if (widgetId == null) {
-            L.d("[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
+            L.e("[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
             return;
         }
 
         if (widgetId.isEmpty()) {
-            L.d("[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
+            L.e("[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
             return;
         }
 
@@ -593,7 +593,22 @@ public class ModuleRatings extends ModuleBase {
 
     public class Ratings {
         /**
-         * Record user rating manually without showing any message dialog.
+         * Record user rating widget manually without showing any message dialog.
+         *
+         * @param widgetId widget ID to which this rating will be tied. You get it from the dashboard
+         * @param rating value from 1 to 5 that will be set as the rating value
+         * @param email email of the user
+         * @param comment comment set by the user
+         * @param userCanBeContacted set true if the user wants you to contact him
+         *
+         * @deprecated use 'recordRatingWidgetWithID' in place of this call
+         */
+        public void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
+            L.i("[Ratings] Calling recordManualRating");
+            recordRatingWidgetWithID(widgetId, rating, email, comment, userCanBeContacted);
+        }
+        /**
+         * Record user rating widget manually without showing any message dialog.
          *
          * @param widgetId widget ID to which this rating will be tied. You get it from the dashboard
          * @param rating value from 1 to 5 that will be set as the rating value
@@ -601,9 +616,9 @@ public class ModuleRatings extends ModuleBase {
          * @param comment comment set by the user
          * @param userCanBeContacted set true if the user wants you to contact him
          */
-        public void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
+        public void recordRatingWidgetWithID(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
             synchronized (_cly) {
-                L.i("[Ratings] Calling recordManualRating");
+                L.i("[Ratings] Calling recordRatingWidgetWithID");
 
                 if (widgetId == null || widgetId.isEmpty()) {
                     throw new IllegalStateException("A valid widgetID must be provided. The current one is either null or empty");
@@ -617,11 +632,23 @@ public class ModuleRatings extends ModuleBase {
          * Show the rating dialog to the user
          *
          * @param widgetId ID that identifies this dialog
+         * @deprecated use 'presentRatingWidgetWithID' in place of this call
          * @return
          */
         public void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
+            L.i("[Ratings] Calling showFeedbackPopup");
+            presentRatingWidgetWithID(widgetId, closeButtonText, activity, callback);
+        }
+
+        /**
+         * Show the rating widget dialog to the user
+         *
+         * @param widgetId ID that identifies this dialog
+         * @return
+         */
+        public void presentRatingWidgetWithID(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
             synchronized (_cly) {
-                L.i("[Ratings] Calling showFeedbackPopup");
+                L.i("[Ratings] Calling presentRatingWidgetWithID");
 
                 showFeedbackPopupInternal(widgetId, closeButtonText, activity, callback);
             }
