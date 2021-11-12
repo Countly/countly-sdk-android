@@ -355,7 +355,7 @@ public class ModuleFeedback extends ModuleBase {
         requestData.append("&sdk_name=");
         requestData.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
         requestData.append("&platform=android");
-        requestData.append("app_version");
+        requestData.append("&app_version=");
         requestData.append(cachedAppVersion);
 
         ConnectionProcessor cp = _cly.connectionQueue_.createConnectionProcessor();

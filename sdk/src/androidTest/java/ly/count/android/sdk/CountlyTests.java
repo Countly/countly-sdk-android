@@ -705,19 +705,19 @@ public class CountlyTests {
         verify(mockConnectionQueue, times(1)).recordEvents(eventData);
     }
 
-    @Test
-    public void testOnTimer_noActiveSession() {
-        final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
-        mCountly.setConnectionQueue(mockConnectionQueue);
-        mCountly.config_.storageProvider = mock(StorageProvider.class);
-        mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
-
-        mCountly.onTimer();
-
-        verifyZeroInteractions(mCountly.config_.storageProvider);
-        verifyZeroInteractions(mCountly.moduleEvents.eventQueueProvider);
-        verify(mockConnectionQueue).tick();
-    }
+    //@Test
+    //public void testOnTimer_noActiveSession() {
+    //    final ConnectionQueue mockConnectionQueue = mock(ConnectionQueue.class);
+    //    mCountly.setConnectionQueue(mockConnectionQueue);
+    //    mCountly.config_.storageProvider = mock(StorageProvider.class);
+    //    mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
+    //
+    //    mCountly.onTimer();
+    //
+    //    verifyZeroInteractions(mCountly.config_.storageProvider);
+    //    verifyZeroInteractions(mCountly.moduleEvents.eventQueueProvider);
+    //    verify(mockConnectionQueue).tick();
+    //}
 
     @Test
     public void testOnTimer_activeSession_emptyEventQueue() {

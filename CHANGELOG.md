@@ -1,3 +1,7 @@
+## 20.11.11
+  * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
+  * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget data
+
 ## 20.11.10
   * Fixed bug that would close manually recorded views early when automatic view recording is disabled
 
