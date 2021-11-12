@@ -15,6 +15,7 @@
 
   * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
   * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
+  * Fixed a bug with the consent API that could have produced an infinite loop
 
   * Removed the deprecated "init" methods
   * Removed the deprecated "recordEvent" methods

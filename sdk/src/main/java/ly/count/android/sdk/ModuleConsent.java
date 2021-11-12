@@ -34,7 +34,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     final Map<String, Boolean> featureConsentValues = new HashMap<>();
     private final Map<String, String[]> groupedFeatures = new HashMap<>();
-    String collectedConsentChanges;
 
     ModuleConsent(@NonNull final Countly cly, @NonNull final CountlyConfig config) {
         super(cly, config);
@@ -43,13 +42,22 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         L.v("[ModuleConsent] Initialising");
         L.i("[ModuleConsent] Is consent required? [" + config.shouldRequireConsent + "]");
 
+        //setup initial consent data structure
+        //initialize all features to "false"
+        for(String featureName : validFeatureNames) {
+            featureConsentValues.put(featureName, false);
+        }
+
         //react to given consent
         if (config.shouldRequireConsent) {
             requiresConsent = config.shouldRequireConsent;
             if (config.enabledFeatureNames == null) {
                 L.i("[Init] Consent has been required but no consent was given during init");
             } else {
-                setConsentInternal(config.enabledFeatureNames, true);
+                //set provided consent values
+                for(String providedFeature : config.enabledFeatureNames){
+                    featureConsentValues.put(providedFeature, true);
+                }
             }
         }
 
@@ -80,23 +88,14 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             return false;
         }
 
-        boolean returnValue = getConsentSilent(featureName);
-        L.v("[ModuleConsent] Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
-        return returnValue;
-    }
-
-    /**
-     * Should be used when not log message should be produced
-     * @param featureName
-     * @return
-     */
-    private boolean getConsentSilent(@NonNull final String featureName) {
         if (!requiresConsent) {
             //return true silently
             return true;
         }
 
-        return getConsentTrue(featureName);
+        boolean returnValue = getConsentTrue(featureName);
+        L.v("[ModuleConsent] Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
+        return returnValue;
     }
 
     /**
@@ -210,24 +209,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         String formattedChanges = formatConsentChanges(featureNames, isConsentGiven);
 
-        if(!isInit) {
-            //if SDK is not initialized then just set the values and send them at the end
-            for (String featureName : featureNames) {
-                L.d("[ModuleConsent] Setting consent for feature: [" + featureName + "] with value: [" + isConsentGiven + "]");
-
-                if (!isValidFeatureName(featureName)) {
-                    L.w("[ModuleConsent] Given feature: [" + featureName + "] is not a valid name, ignoring it");
-                    continue;
-                }
-
-                featureConsentValues.put(featureName, isConsentGiven);
-            }
-
-            collectedConsentChanges = formattedChanges;
-
-            return;
-        }
-
         List<String> consentThatWillChange = new ArrayList<>(featureNames.length);
 
         for (String featureName : featureNames) {
@@ -238,7 +219,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
                 continue;
             }
 
-            if(getConsentSilent(featureName) != isConsentGiven) {
+            if(getConsentTrue(featureName) != isConsentGiven) {
                 //if the current consent does not match the one give, add it to the list
                 consentThatWillChange.add(featureName);
 
@@ -323,17 +304,17 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             //do appropriate action regarding the current consent state
 
             //remove persistent push flag if no push consent was set
-            doPushConsentSpecialAction(getConsentSilent(Countly.CountlyFeatureNames.push));
+            doPushConsentSpecialAction(getConsentTrue(Countly.CountlyFeatureNames.push));
 
             //do delayed location erasure, if needed consent was not given during init
-            if(!getConsentSilent(Countly.CountlyFeatureNames.location)) {
+            if(!getConsentTrue(Countly.CountlyFeatureNames.location)) {
                 doLocationConsentSpecialErasure();
             }
 
             //send collected consent changes that were made before initialization
-            if(collectedConsentChanges != null) {
+            if(config.enabledFeatureNames != null) {
+                String collectedConsentChanges = formatConsentChanges(config.enabledFeatureNames, true);
                 requestQueueProvider.sendConsentChanges(collectedConsentChanges);
-                collectedConsentChanges = null;
             }
 
             _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
