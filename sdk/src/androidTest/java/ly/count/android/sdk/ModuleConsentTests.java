@@ -173,6 +173,6 @@ public class ModuleConsentTests {
         Assert.assertEquals("feedback", Countly.CountlyFeatureNames.feedback);
         Assert.assertEquals("remote-config", Countly.CountlyFeatureNames.remoteConfig);
         Assert.assertEquals("scrolls", Countly.CountlyFeatureNames.scrolls);
-        Assert.assertEquals("clocks", Countly.CountlyFeatureNames.clicks);
+        Assert.assertEquals("clicks", Countly.CountlyFeatureNames.clicks);
     }
 }
