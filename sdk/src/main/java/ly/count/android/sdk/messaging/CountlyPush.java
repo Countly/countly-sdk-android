@@ -177,7 +177,7 @@ public class CountlyPush {
          * @param context Context to record action in
          * @param buttonIndex index of button to record Action on: first button has index 1, second one is 2 (0 is reserved for notification-wide action)
          * @see Button#index()
-         * @see Button#recordAction(Context);
+         * @see Button#recordAction(Context)
          */
         void recordAction(Context context, int buttonIndex);
     }

@@ -128,7 +128,7 @@ public class DeviceId {
     /**
      * Retrieved stored device ID type
      *
-     * @return
+     * @return The currently stored data type
      */
     private DeviceIdType retrieveStoredType() {
         // Using strings is safer when it comes to extending Enum values list
@@ -199,7 +199,7 @@ public class DeviceId {
     /**
      * Returns the current type which would be returned to the developer
      *
-     * @return
+     * @return Currently used device ID type
      */
     protected DeviceIdType getType() {
         if (isTemporaryIdModeEnabled()) {

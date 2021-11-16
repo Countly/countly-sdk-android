@@ -8,6 +8,7 @@
   * Device ID can now be changed when no consent is given
   * Push notification now display/use the sent badge number. It's visualization depends on the launcher.
   * Added new calls to report attribution.
+  * When recording internal events with 'recordEvent', the respective feature consent will now be checked instead of the 'events' consent. 
   * Adding an init time configuration option to set the maximum request queue size
   * Updating the "compileSdkVersion" and "targetSdkVersion" to "31".
   * Updating the "buildToolsVersion" to "31.0.0".
