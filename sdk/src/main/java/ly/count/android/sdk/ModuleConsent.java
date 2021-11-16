@@ -48,7 +48,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             featureConsentValues.put(featureName, false);
         }
 
-        //react to given consent
+        //react to given consent during init
         if (config.shouldRequireConsent) {
             requiresConsent = config.shouldRequireConsent;
             if (config.enabledFeatureNames == null) {

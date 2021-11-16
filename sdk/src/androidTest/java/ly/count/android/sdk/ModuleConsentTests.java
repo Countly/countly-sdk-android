@@ -54,6 +54,7 @@ public class ModuleConsentTests {
 
     /**
      * Test scenario were consent is required but no consent given on init
+     * This should create a scenario where "getConsent" returns "false" for all features
      */
     @Test
     public void enableConsentWithoutConsentGiven() {
@@ -68,6 +69,7 @@ public class ModuleConsentTests {
 
     /**
      * Test scenario were consent is required and consent for all features is given during init
+     * This should create a scenario where "getConsent" returns "true" for all features
      */
     @Test
     public void enableConsentGiveAll() {
@@ -83,6 +85,7 @@ public class ModuleConsentTests {
 
     /**
      * Give consent to all features during init and remove them all afterwards
+     * Make sure that giving all and removing all correctly toggles the feature state
      */
     @Test
     public void enableConsentRemoveAfter() {
@@ -127,6 +130,7 @@ public class ModuleConsentTests {
 
     /**
      * Set all consent values setting them one by one after init
+     * Validate "anyConsentGiven" in a couple of scenarios
      */
     @Test
     public void checkSettingConsentAfterInit() {
@@ -168,5 +172,7 @@ public class ModuleConsentTests {
         Assert.assertEquals("apm", Countly.CountlyFeatureNames.apm);
         Assert.assertEquals("feedback", Countly.CountlyFeatureNames.feedback);
         Assert.assertEquals("remote-config", Countly.CountlyFeatureNames.remoteConfig);
+        Assert.assertEquals("scrolls", Countly.CountlyFeatureNames.scrolls);
+        Assert.assertEquals("clocks", Countly.CountlyFeatureNames.clicks);
     }
 }

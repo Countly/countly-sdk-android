@@ -12,11 +12,6 @@
   * Updating the "compileSdkVersion" and "targetSdkVersion" to "31".
   * Updating the "buildToolsVersion" to "31.0.0".
 
-
-  * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
-  * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget list
-  * Fixed a bug with the consent API that could have produced an infinite loop
-
   * Removed the deprecated "init" methods
   * Removed the deprecated "recordEvent" methods
   * Removed the deprecated "changeDeviceId" methods
@@ -67,6 +62,9 @@
   * Removed the deprecated "addCustomNetworkRequestHeaders" method
   * Removed the deprecated "setLoggingEnabled" method
 
+## 20.11.11
+  * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
+  * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget data
 
 ## 20.11.10
   * Fixed bug that would close manually recorded views early when automatic view recording is disabled
