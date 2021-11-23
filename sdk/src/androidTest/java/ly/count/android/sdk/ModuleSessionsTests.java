@@ -117,4 +117,6 @@ public class ModuleSessionsTests {
 
         verify(requestQueueProvider, times(1)).endSession(1, null);
     }
+
+    //TODO add tests that make sure that init time consent is handled correctly
 }

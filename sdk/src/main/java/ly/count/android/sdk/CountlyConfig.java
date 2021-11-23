@@ -32,6 +32,8 @@ public class CountlyConfig {
 
     protected BaseInfoProvider baseInfoProvider = null;
 
+    protected ModuleBase testModuleListener = null;
+
     protected boolean checkForNativeCrashDumps = true;
 
     //used to deliver this object to connection queue

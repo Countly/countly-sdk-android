@@ -194,7 +194,7 @@ public class Countly {
 
     String[] locationFallback;//temporary used until location can't be set before init
 
-    CountlyConfig config_ = null;
+    protected CountlyConfig config_ = null;
 
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
@@ -463,6 +463,10 @@ public class Countly {
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
             modules.add(moduleUserProfile);
+
+            if(config.testModuleListener != null) {
+                modules.add(config.testModuleListener);
+            }
 
             //add missing providers
             moduleRequestQueue.consentProvider = config.consentProvider;

@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import android.app.Application;
+import androidx.test.core.app.ApplicationProvider;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -8,6 +10,21 @@ public class TestUtils {
     //Useful call:
     //mockingDetails(mockObj).printInvocations()
     //
+
+    public final static String commonURL = "http://test.count.ly";
+    public final static String commonAppKey = "appkey";
+    public final static String commonDeviceId = "1234";
+
+    public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener) {
+        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+            .setDeviceId(commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableCrashReporting()
+            .setRequiresConsent(requiresConsent)
+            .setConsentEnabled(givenConsent);
+        cc.testModuleListener = testModuleListener;
+        return cc;
+    }
 
     public static String[] createStringArray(int count) {
         String[] sArr = new String[count];

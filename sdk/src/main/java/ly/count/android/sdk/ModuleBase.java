@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
+import java.util.List;
 
 abstract class ModuleBase {
     final Countly _cly;
@@ -72,6 +73,8 @@ abstract class ModuleBase {
 
     void deviceIdChanged() {
     }
+
+    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {}
 
     void initFinished(@NonNull CountlyConfig config) {
     }

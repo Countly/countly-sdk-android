@@ -1,5 +1,8 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import java.util.List;
+
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
     long prevSessionDurationStartTime_ = 0;
@@ -54,6 +57,25 @@ public class ModuleSessions extends ModuleBase {
         final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
         prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
         return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
+    }
+
+    @Override
+    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {
+        if(consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
+            if(newConsent) {
+                //if consent was just given and manual sessions sessions are not enabled, start a session
+                if (!manualSessionControlEnabled) {
+                    beginSessionInternal();
+                }
+            } else {
+                if (!_cly.isBeginSessionSent) {
+                    //if session consent was removed and first begins session was not sent
+                    //that means that we might not have sent the initially given location information
+
+                    _cly.moduleLocation.sendCurrentLocationIfValid();
+                }
+            }
+        }
     }
 
     @Override

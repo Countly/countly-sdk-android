@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import android.app.Application;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,12 +41,17 @@ public class ModuleConsentTests {
     public void tearDown() {
     }
 
+
+
+    Countly helperCreateAndInitCountly(){
+        return null;
+    }
+
     /**
      * Make sure that all used feature names are valid
      */
     @Test
     public void usingValidFeatureList() {
-        Countly mCountly = new Countly();
         Assert.assertEquals(usedFeatureNames.length, ModuleConsent.validFeatureNames.length);
 
         for (int a = 0; a < usedFeatureNames.length; a++) {
@@ -58,9 +65,7 @@ public class ModuleConsentTests {
      */
     @Test
     public void enableConsentWithoutConsentGiven() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true);
-        mCountly.init(config);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, null, null));
 
         for (int a = 0; a < usedFeatureNames.length; a++) {
             Assert.assertFalse(mCountly.consent().getConsent(usedFeatureNames[a]));
@@ -73,10 +78,7 @@ public class ModuleConsentTests {
      */
     @Test
     public void enableConsentGiveAll() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true)
-            .setConsentEnabled(usedFeatureNames);
-        mCountly.init(config);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, usedFeatureNames, null));
 
         for (int a = 0; a < usedFeatureNames.length; a++) {
             Assert.assertTrue(mCountly.consent().getConsent(usedFeatureNames[a]));
@@ -89,10 +91,7 @@ public class ModuleConsentTests {
      */
     @Test
     public void enableConsentRemoveAfter() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true)
-            .setConsentEnabled(usedFeatureNames);
-        mCountly.init(config);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, usedFeatureNames, null));
 
         for (int a = 0; a < usedFeatureNames.length; a++) {
             Assert.assertTrue(mCountly.consent().getConsent(usedFeatureNames[a]));
@@ -116,16 +115,14 @@ public class ModuleConsentTests {
      */
     @Test
     public void checkIfConsentProviderSet() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true);
-        mCountly.init(config);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, null, null));
 
         for (ModuleBase module : mCountly.modules) {
             Assert.assertEquals(mCountly.moduleConsent, module.consentProvider);
         }
 
         Assert.assertEquals(mCountly.moduleConsent, mCountly.connectionQueue_.consentProvider);
-        Assert.assertEquals(mCountly.moduleConsent, config.consentProvider);
+        Assert.assertEquals(mCountly.moduleConsent, mCountly.config_.consentProvider);
     }
 
     /**
@@ -134,9 +131,7 @@ public class ModuleConsentTests {
      */
     @Test
     public void checkSettingConsentAfterInit() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setRequiresConsent(true);
-        mCountly.init(config);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, null, null));
 
         Assert.assertFalse(mCountly.moduleConsent.consentProvider.anyConsentGiven());
 
@@ -175,4 +170,9 @@ public class ModuleConsentTests {
         Assert.assertEquals("scrolls", Countly.CountlyFeatureNames.scrolls);
         Assert.assertEquals("clicks", Countly.CountlyFeatureNames.clicks);
     }
+
+    // TODO test that makes sure that the consent change request is created correctly
+    // TODO test that makes sure that the consent change request is not created for duplicate triggers
+    // TODO make sure that the consent request is correctly created after init
+    // TODO test that consent given / removed triggers are played correctly
 }

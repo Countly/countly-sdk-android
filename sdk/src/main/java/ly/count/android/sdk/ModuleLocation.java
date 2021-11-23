@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.List;
 
 public class ModuleLocation extends ModuleBase {
 
@@ -9,9 +11,6 @@ public class ModuleLocation extends ModuleBase {
     String locationCity = null;
     String locationGpsCoordinates = null;
     String locationIpAddress = null;
-
-    boolean sendLocationPostInit;
-    boolean postInitReached = false;//todo this looks like something that can be removed
 
     Location locationInterface = null;
 
@@ -49,8 +48,12 @@ public class ModuleLocation extends ModuleBase {
             return;
         }
 
-        resetLocationValues();
         locationDisabled = true;
+        performLocationErasure();
+    }
+
+    void performLocationErasure() {
+        resetLocationValues();
         requestQueueProvider.sendLocation(true, null, null, null, null);
     }
 
@@ -79,12 +82,7 @@ public class ModuleLocation extends ModuleBase {
         if (_cly.isBeginSessionSent || !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
-            if (postInitReached) {
-                requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
-            } else {
-                //if we are still in init, send it at the end so that the SDK finished initialisation
-                sendLocationPostInit = true;
-            }
+            requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
         } else {
             //will be sent a part of begin session
         }
@@ -92,21 +90,31 @@ public class ModuleLocation extends ModuleBase {
 
     @Override
     void initFinished(CountlyConfig config) {
-        //do location related things
-        if (config.disableLocation) {
-            locationDisabled = true;
-            disableLocationInternal();
+        //check first if consent is even given
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
+            //if no consent is given, perform location erasure
+            performLocationErasure();
         } else {
-            //if we are not disabling location, check for other set values
-            if (config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
-                setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
+            //if consent is given, check if location isn't disabled
+            if (config.disableLocation) {
+                //disable location if needed
+                disableLocationInternal();
+            } else {
+                //if we are not disabling location, check for other set values
+                if (config.locationIpAddress != null || config.locationLocation != null || config.locationCity != null || config.locationCountyCode != null) {
+                    setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
+                }
             }
         }
+    }
 
-        postInitReached = true;
-        if (sendLocationPostInit) {
-            L.d("[ModuleLocation] Sending location post init");
-            requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+    @Override
+    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {
+        if(consentChangeDelta.contains(Countly.CountlyFeatureNames.location)) {
+            if (!newConsent) {
+                //if consent is about to be removed
+                performLocationErasure();
+            }
         }
     }
 

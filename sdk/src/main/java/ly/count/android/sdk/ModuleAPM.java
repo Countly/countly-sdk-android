@@ -1,8 +1,10 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class ModuleAPM extends ModuleBase {
@@ -442,6 +444,17 @@ public class ModuleAPM extends ModuleBase {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
         }
         activitiesOpen--;
+    }
+
+    @Override
+    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {
+        if(consentChangeDelta.contains(Countly.CountlyFeatureNames.apm)) {
+            if (!newConsent) {
+                //in case APM consent is removed, clear custom and network traces
+                _cly.moduleAPM.clearNetworkTraces();
+                _cly.moduleAPM.cancelAllTracesInternal();
+            }
+        }
     }
 
     public class Apm {

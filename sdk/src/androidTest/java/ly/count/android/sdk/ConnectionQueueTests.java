@@ -501,7 +501,7 @@ public class ConnectionQueueTests {
                         break;
                     case "sdk_version":
                         if (a == 0) {
-                            Assert.assertTrue(pair[1].equals("21.11.0-RC2"));
+                            Assert.assertTrue(pair[1].equals("21.11.0-RC3"));
                         } else if (a == 1) {
                             Assert.assertTrue(pair[1].equals("123sdf.v-213"));
                         }

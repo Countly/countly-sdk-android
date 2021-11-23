@@ -142,14 +142,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     void doPushConsentSpecialAction(final boolean consentValue) {
         L.d("[ModuleConsent] Doing push consent special action: [" + consentValue + "]");
         _cly.countlyStore.setConsentPush(consentValue);
-    }
-
-    /**
-     * Actions needed to be done for the consent related location erasure
-     */
-    void doLocationConsentSpecialErasure() {
-        _cly.moduleLocation.resetLocationValues();
-        requestQueueProvider.sendLocation(true, null, null, null, null);
+        _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
     }
 
     /**
@@ -228,47 +221,12 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             }
         }
 
-        for(String featureName : consentThatWillChange) {
-            //special actions for each feature
-            switch (featureName) {
-                case Countly.CountlyFeatureNames.push:
-                    doPushConsentSpecialAction(isConsentGiven);
-                    break;
-                case Countly.CountlyFeatureNames.sessions:
-                    if(isConsentGiven) {
-                        //if consent was just given and manual sessions sessions are not enabled, start a session
-                        if (!_cly.moduleSessions.manualSessionControlEnabled) {
-                            _cly.moduleSessions.beginSessionInternal();
-                        }
-                    } else {
-                        if (!_cly.isBeginSessionSent) {
-                            //if session consent was removed and first begins session was not sent
-                            //that means that we might not have sent the initially given location information
-
-                            _cly.moduleLocation.sendCurrentLocationIfValid();
-                        }
-                    }
-
-                    break;
-                case Countly.CountlyFeatureNames.location:
-                    if (!isConsentGiven) {
-                        //if consent is about to be removed
-                        doLocationConsentSpecialErasure();
-                    }
-                    break;
-                case Countly.CountlyFeatureNames.apm:
-                    if (!isConsentGiven) {
-                        //in case APM consent is removed, clear custom and network traces
-                        _cly.moduleAPM.clearNetworkTraces();
-                        _cly.moduleAPM.cancelAllTracesInternal();
-                    }
-            }
+        for(ModuleBase module:_cly.modules) {
+            module.onConsentChanged(consentThatWillChange, isConsentGiven);
         }
 
-        //if countly is initialized and collected changes are already sent, send consent now
+        //send consent changes
         requestQueueProvider.sendConsentChanges(formattedChanges);
-
-        _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
     }
 
     /**
@@ -306,23 +264,24 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             //remove persistent push flag if no push consent was set
             doPushConsentSpecialAction(getConsentTrue(Countly.CountlyFeatureNames.push));
 
-            //do delayed location erasure, if needed consent was not given during init
-            if(!getConsentTrue(Countly.CountlyFeatureNames.location)) {
-                doLocationConsentSpecialErasure();
-            }
-
             //send collected consent changes that were made before initialization
             if(config.enabledFeatureNames != null) {
                 String collectedConsentChanges = formatConsentChanges(config.enabledFeatureNames, true);
                 requestQueueProvider.sendConsentChanges(collectedConsentChanges);
             }
 
-            _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
-
             if (L.logEnabled()) {
                 L.d("[ModuleConsent] [Init] Countly is initialized with the current consent state:");
                 checkAllConsentInternal();
             }
+        }
+    }
+
+    @Override
+    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {
+        if(consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
+            //handle push consent changes
+            doPushConsentSpecialAction(newConsent);
         }
     }
 
