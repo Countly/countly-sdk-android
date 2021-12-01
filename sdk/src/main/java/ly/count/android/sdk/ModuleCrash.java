@@ -26,11 +26,6 @@ public class ModuleCrash extends ModuleBase {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
 
-        //enable unhandled crash reporting
-        if (config.enableUnhandledCrashReporting) {
-            enableCrashReporting();
-        }
-
         setCrashFilterCallback(config.crashFilterCallback);
 
         recordAllThreads = config.recordAllThreadsWithCrash;
@@ -252,6 +247,11 @@ public class ModuleCrash extends ModuleBase {
 
     @Override
     void initFinished(CountlyConfig config) {
+        //enable unhandled crash reporting
+        if (config.enableUnhandledCrashReporting) {
+            enableCrashReporting();
+        }
+
         //check for previous native crash dumps
         if (config.checkForNativeCrashDumps) {
             //flag so that this can be turned off during testing
