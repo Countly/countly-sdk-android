@@ -2,9 +2,13 @@ package ly.count.android.sdk;
 
 import android.app.Application;
 import androidx.test.core.app.ApplicationProvider;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.junit.Assert;
+import org.junit.runner.Request;
 
 public class TestUtils {
     //Useful call:
@@ -23,6 +27,20 @@ public class TestUtils {
             .setRequiresConsent(requiresConsent)
             .setConsentEnabled(givenConsent);
         cc.testModuleListener = testModuleListener;
+        return cc;
+    }
+
+    public static CountlyConfig createAttributionCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp, String daType,String daValue, Map<String, String> iaValues) {
+        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+            .setDeviceId(commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableCrashReporting()
+            .setDirectAttribution(daType, daValue)
+            .setIndirectAttribution(iaValues)
+            .setRequiresConsent(requiresConsent)
+            .setConsentEnabled(givenConsent);
+        cc.testModuleListener = testModuleListener;
+        cc.requestQueueProvider = rqp;
         return cc;
     }
 
@@ -137,5 +155,41 @@ public class TestUtils {
             test.charAt(1);
         }
         return Countly.sharedInstance();
+    }
+
+    public static List<String> getRequestsWithParam(String[] requests, String param) {
+        List<String> filteredRequests = new ArrayList<>();
+        String targetParamValue = "&" + param + "=";
+
+        for (String entry : requests) {
+            if (entry.contains(targetParamValue)) {
+                filteredRequests.add(entry);
+            }
+        }
+
+        return filteredRequests;
+    }
+
+    public static String getParamValueFromRequest(String request, String param) {
+        String[] params = request.split("&");
+
+        for(String entry:params) {
+            String[] pair = entry.split("=");
+            if(pair[0].equals(param)) {
+                return pair[1];
+            }
+        }
+
+        return null;
+    }
+
+    public static void validateThatRQContainsCorrectEntry(CountlyStore store, String param, String targetValue, int entryCount) {
+        List<String> filteredVals = TestUtils.getRequestsWithParam(store.getRequests(), param);
+        Assert.assertEquals(entryCount, filteredVals.size());
+
+        if(entryCount != 0) {
+            String paramValue = TestUtils.getParamValueFromRequest(filteredVals.get(0), param);
+            Assert.assertEquals(targetValue, paramValue);
+        }
     }
 }

@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
-import android.content.Intent;
 import androidx.annotation.Nullable;
+import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class ModuleAttribution extends ModuleBase {
 
@@ -14,48 +16,132 @@ public class ModuleAttribution extends ModuleBase {
         attributionInterface = new ModuleAttribution.Attribution();
     }
 
-    void recordDirectAttributionInternal(@Nullable String campaignId, @Nullable String campaignUserId) {
-        L.d("[ModuleAttribution] recordDirectAttributionInternal, campaign id:[" + campaignId + "], user id:[" + campaignUserId + "]");
+    void recordDirectAttributionInternal(@Nullable String campaignType, @Nullable String campaignData) {
+        L.d("[ModuleAttribution] recordDirectAttributionInternal, campaign id:[" + campaignType + "], user id:[" + campaignData + "]");
 
-        if (campaignId == null || campaignId.isEmpty()) {
-            L.e("[ModuleAttribution] recordDirectAttributionInternal, provided campaign id value is not valid. Execution will be aborted.");
+        if (campaignType == null || campaignType.isEmpty()) {
+            L.e("[ModuleAttribution] recordDirectAttributionInternal, provided campaign type value is not valid. Execution will be aborted.");
             return;
         }
 
-        requestQueueProvider.sendDirectAttribution(campaignId, campaignUserId);
+        if (campaignData == null || campaignData.isEmpty()) {
+            L.e("[ModuleAttribution] recordDirectAttributionInternal, provided campaign data value is not valid. Execution will be aborted.");
+            return;
+        }
+
+        if (!campaignType.equals("countly")) {
+            //stop execution if the type is not "countly"
+            //this is a temporary exception
+            L.w("[ModuleAttribution] recordDirectAttributionInternal, recording direct attribution with a type other than 'countly' is currently not supported. Execution will be aborted.");
+            return;
+        }
+
+        JSONObject jObj;
+
+        try {
+            jObj = new JSONObject(campaignData);
+        } catch (JSONException e) {
+            L.e("[ModuleAttribution] recordDirectAttributionInternal, recording direct attribution data is not in the correct format. Execution will be aborted.");
+            return;
+        }
+
+        if(!jObj.has("cid")) {
+            L.e("[ModuleAttribution] recordDirectAttributionInternal, direct attribution can't be recorded because the data does not contain the 'cid' value. Execution will be aborted.");
+            return;
+        }
+
+        String campaignId = null;
+        try {
+            campaignId = jObj.getString("cid");
+
+            if(campaignId.isEmpty()) {
+                L.e("[ModuleAttribution] recordDirectAttributionInternal, 'cid' value can't be empty string. Execution will be aborted.");
+                return;
+            }
+        } catch (JSONException e) {
+            L.e("[ModuleAttribution] recordDirectAttributionInternal, encountered issue while accessing 'cid'. Execution will be aborted.");
+            return;
+        }
+
+        String campaignUserId = null;
+
+        try {
+            if(jObj.has("cuid")) {
+                campaignUserId = jObj.getString("cuid");
+
+                if(campaignUserId.isEmpty()) {
+                    L.w("[ModuleAttribution] recordDirectAttributionInternal, 'cuid' value can't be empty string. value will be ignored.");
+                    campaignUserId = null;
+                }
+            }
+        } catch (JSONException e) {
+            L.e("[ModuleAttribution] recordDirectAttributionInternal, encountered issue while accessing 'cuid'. Execution will be aborted.");
+            return;
+        }
+
+        requestQueueProvider.sendDirectAttributionLegacy(campaignId, campaignUserId);
     }
 
-    void recordIndirectAttributionInternal(@Nullable String attributionId) {
+    void recordIndirectAttributionInternal(@Nullable Map<String, String> attributionId) {
         L.d("[ModuleAttribution] recordIndirectAttributionInternal, attribution id:[" + attributionId + "]");
 
         if (attributionId == null || attributionId.isEmpty()) {
-            L.e("[ModuleAttribution] recordIndirectAttributionInternal, provided id value is not valid. Execution will be aborted.");
+            L.e("[ModuleAttribution] recordIndirectAttributionInternal, provided id values are not valid. Execution will be aborted.");
             return;
         }
 
-        requestQueueProvider.sendIndirectAttribution(attributionId);
+        JSONObject jObj = new JSONObject();
+        for (Map.Entry<String, String> entry : attributionId.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+
+            if (key == null || key.isEmpty()) {
+                L.e("[ModuleAttribution] recordIndirectAttributionInternal, provided key is not valid [" + key + "].");
+                continue;
+            }
+
+            if (value == null || value.isEmpty()) {
+                L.e("[ModuleAttribution] recordIndirectAttributionInternal, for the key[" + key + "] the provided value is not valid [" + value + "].");
+                continue;
+            }
+
+            try {
+                jObj.putOpt(key, value);
+            } catch (JSONException e) {
+                L.e("[ModuleAttribution] recordIndirectAttributionInternal, an issue happened while trying to add a value: " + e.toString());
+            }
+        }
+
+        if (jObj.length() == 0){
+            L.e("[ModuleAttribution] recordIndirectAttributionInternal, no valid attribution values were provided");
+            return;
+        }
+
+        String attributionObj = jObj.toString();
+
+        requestQueueProvider.sendIndirectAttribution(attributionObj);
     }
 
     @Override
     void initFinished(CountlyConfig config) {
         //check if any indirect attribution value is set
-        if(config.iaAttributionId != null) {
-            if(config.iaAttributionId.isEmpty()) {
+        if(config.iaAttributionValues != null) {
+            if(config.iaAttributionValues.isEmpty()) {
                 L.e("[ModuleAttribution] provided attribution ID for indirect attribution is empty string.");
             } else {
-                requestQueueProvider.sendIndirectAttribution(config.iaAttributionId);
+                recordIndirectAttributionInternal(config.iaAttributionValues);
             }
         }
 
         //checking if any direct attribution value is set
-        if(config.daCampaignUserId != null || config.daCampaignId != null) {
-            if(config.daCampaignId == null || config.daCampaignId.isEmpty()) {
+        if(config.daCampaignData != null || config.daCampaignType != null) {
+            if(config.daCampaignType == null || config.daCampaignType.isEmpty()) {
                 L.e("[ModuleAttribution] Can't record direct attribution can't be recorded with an invalid campaign id.");
             } else {
-                if(config.daCampaignUserId != null && config.daCampaignUserId.isEmpty()){
+                if(config.daCampaignData != null && config.daCampaignData.isEmpty()){
                     L.e("[ModuleAttribution] For direct attribution the provided Campaign user ID can't be empty string.");
                 }
-                requestQueueProvider.sendDirectAttribution(config.daCampaignId, config.daCampaignUserId);
+                recordDirectAttributionInternal(config.daCampaignType, config.daCampaignData);
             }
         }
     }
@@ -70,26 +156,25 @@ public class ModuleAttribution extends ModuleBase {
         /**
          * Report direct user attribution
          *
-         * @param campaignId
          */
-        public void recordDirectAttribution(String campaignId, String campaignUserId) {
+        public void recordDirectAttribution(String campaignType, String campaignData) {
             synchronized (_cly) {
                 L.i("[Attribution] calling 'recordCampaign'");
 
-                recordDirectAttributionInternal(campaignId, campaignUserId);
+                recordDirectAttributionInternal(campaignType, campaignData);
             }
         }
 
         /**
          * Report indirect user attribution
          *
-         * @param attributionId
+         * @param attributionValues
          */
-        public void recordIndirectAttribution(String attributionId) {
+        public void recordIndirectAttribution(Map<String, String> attributionValues) {
             synchronized (_cly) {
                 L.i("[Attribution] calling 'recordIndirectAttribution'");
 
-                recordIndirectAttributionInternal(attributionId);
+                recordIndirectAttributionInternal(attributionValues);
             }
         }
     }

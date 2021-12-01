@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -332,7 +333,7 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
-    public void sendIndirectAttribution(@NonNull String attributionId) {
+    public void sendIndirectAttribution(@NonNull String attributionObj) {
         checkInternalState();
         L.d("[Connection Queue] sendIndirectAttribution");
 
@@ -341,11 +342,12 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        if(attributionId.isEmpty()) {
+        if(attributionObj.isEmpty()) {
             L.e("[Connection Queue] provided attribution ID is not valid, aborting");
+            return;
         }
 
-        String param = "&aid=" + UtilsNetworking.urlEncodeString("{\"adid\":\"" + attributionId + "\"}");
+        String param = "&aid=" + UtilsNetworking.urlEncodeString(attributionObj);
 
         String data = prepareCommonRequestData() + param;
         addRequestToQueue(data);
@@ -353,7 +355,7 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
-    public void sendDirectAttribution(@NonNull String campaignID, String userID) {
+    public void sendDirectAttributionLegacy(@NonNull String campaignID, @Nullable String userID) {
         checkInternalState();
         L.d("[Connection Queue] sendDirectAttribution");
 

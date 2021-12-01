@@ -7,6 +7,9 @@ import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.HashMap;
+import java.util.Map;
+import ly.count.android.sdk.AttributionIndirectKey;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.DeviceId;
@@ -61,11 +64,17 @@ public class ActivityExampleOthers extends AppCompatActivity {
     }
 
     public void onClickReportDirectAttribution(View v) {
-        Countly.sharedInstance().attribution().recordDirectAttribution("yourCampaignId", "yourUserId");
+        Countly.sharedInstance().attribution().recordDirectAttribution("countly", "{'cid':'campaign_id', 'cuid':'campaign_user_id'}");
+    }
+
+    String GetAdvertisingID(){
+        return "12345";//this is only a dummy value
     }
 
     public void onClickReportIndirectAttribution(View v) {
-        Countly.sharedInstance().attribution().recordIndirectAttribution("attribution ID");
+        Map<String, String> attributionValues = new HashMap<>();
+        attributionValues.put(AttributionIndirectKey.AdvertisingID, GetAdvertisingID());
+        Countly.sharedInstance().attribution().recordIndirectAttribution(attributionValues);
     }
 
     public void onClickHaltAndInit(View v) {

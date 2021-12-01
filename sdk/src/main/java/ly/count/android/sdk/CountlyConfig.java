@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.app.Application;
 import android.content.Context;
-import java.util.List;
 import java.util.Map;
 
 public class CountlyConfig {
@@ -181,9 +180,9 @@ public class CountlyConfig {
 
     ModuleLog.LogCallback providedLogCallback;
 
-    String daCampaignId = null;
-    String daCampaignUserId = null;
-    String iaAttributionId = null;
+    String daCampaignType = null;
+    String daCampaignData = null;
+    Map<String, String> iaAttributionValues = null;
 
     public CountlyConfig() {
     }
@@ -802,23 +801,21 @@ public class CountlyConfig {
     /**
      * Report direct user attribution
      *
-     * @param campaignId
      * @return Returns the same config object for convenient linking
      */
-    public synchronized CountlyConfig setDirectAttribution(String campaignId, String campaignUserId) {
-        daCampaignId = campaignId;
-        daCampaignUserId = campaignUserId;
+    public synchronized CountlyConfig setDirectAttribution(String campaignType, String campaignData) {
+        daCampaignType = campaignType;
+        daCampaignData = campaignData;
         return this;
     }
 
     /**
      * Report indirect user attribution
      *
-     * @param attributionId
      * @return Returns the same config object for convenient linking
      */
-    public synchronized CountlyConfig setIndirectAttribution(String attributionId) {
-        iaAttributionId = attributionId;
+    public synchronized CountlyConfig setIndirectAttribution(Map<String, String> attributionValues) {
+        iaAttributionValues = attributionValues;
         return this;
     }
 }
