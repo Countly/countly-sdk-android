@@ -89,7 +89,7 @@ public class ModuleLocation extends ModuleBase {
     }
 
     @Override
-    void initFinished(CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
         //check first if consent is even given
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
             //if no consent is given, perform location erasure

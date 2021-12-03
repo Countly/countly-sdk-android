@@ -10,7 +10,7 @@
 
     <application
         android:name=".App"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/icon"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
@@ -105,7 +105,7 @@
             android:name=".ActivityExampleDeepLinkA"
             android:label="Deep link A"
             android:configChanges="orientation|screenSize"
-            android:exported="false">
+            android:exported="true">
 
             <intent-filter android:label="@string/deep_link">
                 <action android:name="android.intent.action.VIEW" />
@@ -123,7 +123,7 @@
             android:name=".ActivityExampleDeepLinkB"
             android:label="Deep link B"
             android:configChanges="orientation|screenSize"
-            android:exported="false">
+            android:exported="true">
 
             <intent-filter android:label="@string/deep_link">
                 <action android:name="android.intent.action.VIEW" />

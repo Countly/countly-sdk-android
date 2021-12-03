@@ -4,6 +4,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +23,6 @@ public class ActivityExampleAPM extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_apm);
-        Countly.onCreate(this);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class ActivityExampleAPM extends AppCompatActivity {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
@@ -52,7 +52,7 @@ public class ActivityExampleAPM extends AppCompatActivity {
     }
 
     public void onClickEndTrace_1(View v) {
-        Map<String, Integer> customMetric = new HashMap();
+        Map<String, Integer> customMetric = new HashMap<>();
         customMetric.put("ABC", 1233);
         customMetric.put("C44C", 1337);
 

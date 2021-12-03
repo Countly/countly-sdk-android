@@ -222,7 +222,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
     }
 
     @Override
-    public void initFinished(CountlyConfig config) {
+    public void initFinished(@NonNull CountlyConfig config) {
         if (exitTempIdAfterInit) {
             L.i("[ModuleDeviceId, initFinished] Exiting temp ID at the end of init");
             exitTemporaryIdMode(DeviceIdType.DEVELOPER_SUPPLIED, config.deviceID);

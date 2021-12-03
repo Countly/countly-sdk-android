@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.util.Base64;
+import androidx.annotation.NonNull;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -130,7 +131,7 @@ public class ModuleCrash extends ModuleBase {
         Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
 
             @Override
-            public void uncaughtException(Thread t, Throwable e) {
+            public void uncaughtException(@NonNull Thread t, Throwable e) {
                 L.d("[ModuleCrash] Uncaught crash handler triggered");
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
 
@@ -246,7 +247,7 @@ public class ModuleCrash extends ModuleBase {
     }
 
     @Override
-    void initFinished(CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
         //enable unhandled crash reporting
         if (config.enableUnhandledCrashReporting) {
             enableCrashReporting();

@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.annotation.NonNull;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -180,7 +181,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         return result;
     }
 
-    public synchronized String getRequestQueueRaw() {
+    @NonNull public synchronized String getRequestQueueRaw() {
         return preferences_.getString(REQUEST_PREFERENCE, "");
     }
 

@@ -27,7 +27,7 @@ import java.util.Map;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
-import ly.count.android.sdk.DeviceId;
+import ly.count.android.sdk.DeviceIdType;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.RemoteConfigCallback;
 import ly.count.android.sdk.messaging.CountlyPush;
@@ -125,7 +125,7 @@ public class App extends Application {
         customCrashSegmentation.put("EarBook", "3.5");
         customCrashSegmentation.put("AdGiver", "6.5");
 
-        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)//.setDeviceId("67567")
+        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceIdType.OPEN_UDID)//.setDeviceId("67567")
             .setLoggingEnabled(true)
             .setLogListener(new ModuleLog.LogCallback() {
                 @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {

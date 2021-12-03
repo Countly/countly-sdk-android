@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -281,7 +282,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     @Override
-    public void initFinished(CountlyConfig config) {
+    public void initFinished(@NonNull CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
         if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !deviceIdProvider.isTemporaryIdEnabled()) {
             L.d("[Init] Automatically updating remote config values");

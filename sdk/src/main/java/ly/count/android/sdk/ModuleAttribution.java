@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Map;
 import org.json.JSONException;
@@ -123,7 +124,7 @@ public class ModuleAttribution extends ModuleBase {
     }
 
     @Override
-    void initFinished(CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
         //check if any indirect attribution value is set
         if(config.iaAttributionValues != null) {
             if(config.iaAttributionValues.isEmpty()) {

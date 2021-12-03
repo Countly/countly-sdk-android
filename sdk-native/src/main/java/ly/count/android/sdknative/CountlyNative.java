@@ -5,7 +5,7 @@ import android.util.Log;
 import java.io.File;
 
 public class CountlyNative {
-    private static String TAG = "Countly";
+    private static final String TAG = "Countly";
     private static String countlyNativeCrashFolderPath;
 
     static boolean loadBreakpadSuccess = false;

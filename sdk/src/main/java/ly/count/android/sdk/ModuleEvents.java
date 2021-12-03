@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
@@ -189,7 +190,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     }
 
     @Override
-    void initFinished(CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
         checkCachedPushData(_cly.countlyStore);
     }
 

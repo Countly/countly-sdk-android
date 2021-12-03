@@ -12,7 +12,7 @@ import ly.count.android.sdk.Countly;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static String TAG = "CountlyDemoNative";
+    private static final String TAG = "CountlyDemoNative";
 
     // Used to load the 'native-lib' library on application startup.
     static {
@@ -23,8 +23,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        Countly.onCreate(this);
 
         // Example of a call to a native method
         TextView tv = findViewById(R.id.sampleText);

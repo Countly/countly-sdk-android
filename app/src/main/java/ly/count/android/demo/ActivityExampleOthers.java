@@ -12,7 +12,7 @@ import java.util.Map;
 import ly.count.android.sdk.AttributionIndirectKey;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
-import ly.count.android.sdk.DeviceId;
+import ly.count.android.sdk.DeviceIdType;
 
 @SuppressWarnings("UnusedParameters")
 public class ActivityExampleOthers extends AppCompatActivity {
@@ -84,7 +84,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
         final String COUNTLY_SERVER_URL = "YOUR_SERVER";
         final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
 
-        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceId.Type.OPEN_UDID)
+        CountlyConfig config = (new CountlyConfig(getApplication(), COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceIdType.OPEN_UDID)
             .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
             .setRequiresConsent(false);
 

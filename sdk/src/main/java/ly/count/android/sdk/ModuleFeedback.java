@@ -522,7 +522,7 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     @Override
-    void initFinished(CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
 
     }
 
