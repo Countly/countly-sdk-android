@@ -19,7 +19,7 @@ public class TestUtils {
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
 
-    public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener) {
+    public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
@@ -27,7 +27,14 @@ public class TestUtils {
             .setRequiresConsent(requiresConsent)
             .setConsentEnabled(givenConsent);
         cc.testModuleListener = testModuleListener;
+        cc.requestQueueProvider = rqp;
+
         return cc;
+    }
+
+    public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener) {
+
+        return createConsentCountlyConfig(requiresConsent, givenConsent, testModuleListener, null);
     }
 
     public static CountlyConfig createAttributionCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp, String daType,String daValue, Map<String, String> iaValues) {

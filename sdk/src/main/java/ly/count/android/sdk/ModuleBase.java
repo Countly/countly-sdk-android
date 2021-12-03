@@ -74,7 +74,7 @@ abstract class ModuleBase {
     void deviceIdChanged() {
     }
 
-    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {}
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {}
 
     void initFinished(@NonNull CountlyConfig config) {
     }

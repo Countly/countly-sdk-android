@@ -12,6 +12,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleConsentTests {
@@ -169,6 +173,40 @@ public class ModuleConsentTests {
         Assert.assertEquals("remote-config", Countly.CountlyFeatureNames.remoteConfig);
         Assert.assertEquals("scrolls", Countly.CountlyFeatureNames.scrolls);
         Assert.assertEquals("clicks", Countly.CountlyFeatureNames.clicks);
+    }
+
+    @Test
+    public void initTimeSetConsentRQ() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, null, null, rqp));
+
+        //this should send no consent changes and empty location
+        verify(rqp, times(0)).sendConsentChanges(any(String.class));
+        verify(rqp, times(1)).sendLocation(true, null, null, null, null);
+    }
+
+    @Test
+    public void initTimeSetConsentRQ_2() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, new String[] { Countly.CountlyFeatureNames.clicks }, null, rqp));
+
+        //this should send consent changes and empty location
+        verify(rqp, times(1)).sendConsentChanges("{\"clicks\":true}");
+        verify(rqp, times(1)).sendLocation(true, null, null, null, null);
+    }
+
+    /**
+     * Setting single consent value during init.
+     * That produces appropriate consent request and since it's the location request, does not clear location
+     */
+    @Test
+    public void initTimeSetConsentRQ_3() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, new String[] { Countly.CountlyFeatureNames.location }, null, rqp));
+
+        //this should send consent changes and empty location
+        verify(rqp, times(1)).sendConsentChanges("{\"location\":true}");
+        verify(rqp, times(0)).sendLocation(true, null, null, null, null);
     }
 
     // TODO test that makes sure that the consent change request is created correctly

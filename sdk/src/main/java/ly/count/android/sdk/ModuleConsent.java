@@ -30,6 +30,8 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         Countly.CountlyFeatureNames.scrolls
     };
 
+    public enum ConsentChangeSource { ChangeConsentCall, DeviceIDChangedNotMerged }
+
     protected boolean requiresConsent = false;
 
     final Map<String, Boolean> featureConsentValues = new HashMap<>();
@@ -187,7 +189,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         return preparedConsent.toString();
     }
 
-    void setConsentInternal(@Nullable final String[] featureNames, final boolean isConsentGiven) {
+    void setConsentInternal(@Nullable final String[] featureNames, final boolean isConsentGiven, final ConsentChangeSource changeSource) {
         final boolean isInit = _cly.isInitialized();//is the SDK initialized
 
         if (!requiresConsent) {
@@ -222,7 +224,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         for(ModuleBase module:_cly.modules) {
-            module.onConsentChanged(consentThatWillChange, isConsentGiven);
+            module.onConsentChanged(consentThatWillChange, isConsentGiven, changeSource);
         }
 
         //send consent changes
@@ -238,11 +240,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     public void removeConsentInternal(@Nullable final String[] featureNames) {
         L.d("[ModuleConsent] Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
 
-        if (!_cly.isInitialized()) {
-            L.w("Calling 'removeConsent' before initialising the SDK is deprecated!");
-        }
-
-        setConsentInternal(featureNames, false);
+        setConsentInternal(featureNames, false, ConsentChangeSource.ChangeConsentCall);
     }
 
     /**
@@ -266,8 +264,11 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
             //send collected consent changes that were made before initialization
             if(config.enabledFeatureNames != null) {
+                //if there were values set
                 String collectedConsentChanges = formatConsentChanges(config.enabledFeatureNames, true);
                 requestQueueProvider.sendConsentChanges(collectedConsentChanges);
+            } else {
+                //if no consent features were enabled then nothing would be sent
             }
 
             if (L.logEnabled()) {
@@ -278,7 +279,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     }
 
     @Override
-    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         if(consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
             //handle push consent changes
             doPushConsentSpecialAction(newConsent);
@@ -348,11 +349,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             synchronized (_cly) {
                 L.i("[Consent] Giving consent for all features");
 
-                if (!_cly.isInitialized()) {
-                    L.w("[Consent] Calling this before initialising the SDK is deprecated!");
-                }
-
-                setConsentInternal(validFeatureNames, true);
+                setConsentInternal(validFeatureNames, true, ConsentChangeSource.ChangeConsentCall);
             }
         }
 
@@ -364,7 +361,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          */
         public void giveConsent(@Nullable final String[] featureNames) {
             synchronized (_cly) {
-                setConsentInternal(featureNames, true);
+                setConsentInternal(featureNames, true, ConsentChangeSource.ChangeConsentCall);
             }
         }
 
@@ -377,7 +374,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          */
         public void setConsent(@Nullable final String[] featureNames, final boolean isConsentGiven) {
             synchronized (_cly) {
-                setConsentInternal(featureNames, isConsentGiven);
+                setConsentInternal(featureNames, isConsentGiven, ConsentChangeSource.ChangeConsentCall);
             }
         }
 
@@ -396,7 +393,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
                     return;
                 }
 
-                setConsentInternal(groupedFeatures.get(groupName), isConsentGiven);
+                setConsentInternal(groupedFeatures.get(groupName), isConsentGiven, ConsentChangeSource.ChangeConsentCall);
             }
         }
 

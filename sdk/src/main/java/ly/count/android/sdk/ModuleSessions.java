@@ -60,7 +60,7 @@ public class ModuleSessions extends ModuleBase {
     }
 
     @Override
-    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         if(consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if(newConsent) {
                 //if consent was just given and manual sessions sessions are not enabled, start a session

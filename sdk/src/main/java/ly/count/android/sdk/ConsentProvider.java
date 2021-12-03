@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+
 interface ConsentProvider {
-    boolean getConsent(String featureName);
+    boolean getConsent(@NonNull String featureName);
 
     boolean anyConsentGiven();
 }

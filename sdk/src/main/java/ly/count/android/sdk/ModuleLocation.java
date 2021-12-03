@@ -109,7 +109,7 @@ public class ModuleLocation extends ModuleBase {
     }
 
     @Override
-    void onConsentChanged(@NonNull List<String> consentChangeDelta, boolean newConsent) {
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         if(consentChangeDelta.contains(Countly.CountlyFeatureNames.location)) {
             if (!newConsent) {
                 //if consent is about to be removed
