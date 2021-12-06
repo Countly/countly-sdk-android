@@ -21,6 +21,7 @@ import javax.net.ssl.X509TrustManager;
 // Many thanks to Nikolay Elenkov for feedback.
 // Shamelessly based upon Moxie's example code (AOSP/Google did not offer code)
 // http://www.thoughtcrime.org/blog/authenticity-is-broken-in-ssl-but-your-app-ha/
+// https://moxie.org/2011/12/05/authenticity-is-broken-in-ssl-but-your-app-ha.html
 public final class CertificateTrustManager implements X509TrustManager {
 
     // DER encoded public keys
@@ -60,10 +61,6 @@ public final class CertificateTrustManager implements X509TrustManager {
 
         if (!(chain.length > 0)) {
             throw new IllegalArgumentException("PublicKeyManager: X509Certificate is empty");
-        }
-
-        if (!(null != authType && authType.contains("RSA"))) {
-            throw new CertificateException("PublicKeyManager: AuthType is not RSA");
         }
 
         // Perform customary SSL/TLS checks
