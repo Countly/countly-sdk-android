@@ -18,9 +18,8 @@ import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.InstanceIdResult;
 
+import com.google.firebase.messaging.FirebaseMessaging;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -212,17 +211,17 @@ public class App extends Application {
         CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION, Countly.CountlyMessagingProvider.FCM);
         CountlyPush.setNotificationAccentColor(255, 213, 89, 134);
 
-        FirebaseInstanceId.getInstance().getInstanceId()
-            .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+        FirebaseMessaging.getInstance().getToken()
+            .addOnCompleteListener(new OnCompleteListener<String>() {
                 @Override
-                public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                public void onComplete(@NonNull Task<String> task) {
                     if (!task.isSuccessful()) {
-                        Log.e(TAG, "getInstanceId failed", task.getException());
+                        Log.w(TAG, "Fetching FCM registration token failed", task.getException());
                         return;
                     }
 
-                    // Get new Instance ID token
-                    String token = task.getResult().getToken();
+                    // Get new FCM registration token
+                    String token = task.getResult();
                     CountlyPush.onTokenRefresh(token);
                 }
             });
@@ -249,7 +248,7 @@ public class App extends Application {
                     }
                 }
 
-                Log.i("Countly", "[CountlyActivity] Got a message, :[" + msg + "]");
+                Log.i("Countly", "[CountlyActivity] Got a message, :[" + msg + "], action index:[" + actionIndex + "]");
             }
         };
         IntentFilter filter = new IntentFilter();

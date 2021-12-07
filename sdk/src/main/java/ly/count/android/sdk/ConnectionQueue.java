@@ -236,10 +236,10 @@ class ConnectionQueue implements RequestQueueProvider {
 
         final String data = prepareCommonRequestData()
             + "&token_session=1"
-            + "&android_token=" + token
+            + "&android_token=" + UtilsNetworking.urlEncodeString(token)
             + "&token_provider=" + provider
             + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
-            + "&locale=" + DeviceInfo.getLocale();
+            + "&locale=" + UtilsNetworking.urlEncodeString(DeviceInfo.getLocale());
 
         L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
 

@@ -67,6 +67,11 @@ android {
         abortOnError false
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     /*
     //for automatic symbol upload
     afterEvaluate {
@@ -80,7 +85,9 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation project(':sdk')
 
-    implementation 'com.google.firebase:firebase-messaging:21.1.0'
+    //push dependencies
+    implementation 'com.google.firebase:firebase-messaging:22.0.0'
+
     implementation 'com.google.android.material:material:1.4.0-alpha02'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
