@@ -55,7 +55,6 @@ android {
 repositories {
     // needed for using sdk-native from countly maven repo
     mavenCentral()
-    jcenter()
 }
 
 // sdk and sdk-native are pulled from submodules of the project. 
@@ -65,9 +64,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation project(':sdk')
-    //implementation 'ly.count.android:sdk:20.11.9'
+    //implementation 'ly.count.android:sdk:21.11.0'
     implementation project(':sdk-native')
-    //implementation 'ly.count.android:sdk-native:20.11.9'
+    //implementation 'ly.count.android:sdk-native:21.11.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:runner:1.3.0'
@@ -79,7 +78,6 @@ dependencies {
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
     dependencies {
         classpath group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.14.1'

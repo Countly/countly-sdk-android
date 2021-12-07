@@ -3,7 +3,6 @@ apply plugin: "com.vanniktech.maven.publish"
 
 buildscript {
     repositories {
-        jcenter()
         mavenCentral()
     }
     dependencies {

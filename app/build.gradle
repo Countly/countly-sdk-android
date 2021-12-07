@@ -103,8 +103,8 @@ dependencies {
     implementation 'com.huawei.hms:push:5.3.0.304'
 
     implementation 'com.android.installreferrer:installreferrer:2.2'
-    //implementation 'ly.count.android:sdk:20.11.9'
-    //implementation 'ly.count.android:sdk-plugin:20.11.9'
+    //implementation 'ly.count.android:sdk:21.11.0-RC1'
+    //implementation 'ly.count.android:sdk-plugin:21.11.0'
 }
 
 /*

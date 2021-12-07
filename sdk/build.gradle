@@ -9,7 +9,6 @@ apply plugin: "com.vanniktech.maven.publish" //for publishing
 
 buildscript {
   repositories {
-    jcenter()
     mavenCentral()
   }
   dependencies {

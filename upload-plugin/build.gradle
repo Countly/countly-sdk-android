@@ -1,7 +1,6 @@
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
     }
     dependencies {
         classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2'
@@ -29,7 +28,7 @@ repositories {
 dependencies {
     implementation gradleApi()
     implementation localGroovy()
-    implementation 'com.squareup.okhttp3:okhttp:3.14.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.14.4'
 }
 
 apply plugin: "com.vanniktech.maven.publish"
