@@ -116,6 +116,7 @@ public class ModuleFeedback extends ModuleBase {
                         String valId = jObj.optString("_id", "");
                         String valType = jObj.optString("type", "");
                         String valName = jObj.optString("name", "");
+                        //String valTags = jObj.optString("tg", "");
 
                         if (valId.isEmpty()) {
                             Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
@@ -128,16 +129,13 @@ public class ModuleFeedback extends ModuleBase {
                         }
 
                         FeedbackWidgetType plannedType;
-                        switch (valType) {
-                            case "survey":
-                                plannedType = FeedbackWidgetType.survey;
-                                break;
-                            case "nps":
-                                plannedType = FeedbackWidgetType.nps;
-                                break;
-                            default:
-                                Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
-                                continue;
+                        if (valType.equals("survey")) {
+                            plannedType = FeedbackWidgetType.survey;
+                        } else if (valType.equals("nps")) {
+                            plannedType = FeedbackWidgetType.nps;
+                        } else {
+                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
+                            continue;
                         }
 
                         CountlyFeedbackWidget se = new CountlyFeedbackWidget();

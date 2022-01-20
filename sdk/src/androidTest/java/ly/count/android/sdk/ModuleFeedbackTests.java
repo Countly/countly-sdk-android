@@ -44,6 +44,22 @@ public class ModuleFeedbackTests {
     }
 
     @Test
+    public void parseFeedbackList_oneGoodWithGarbage() throws JSONException {
+        String requestJson =
+            "{\"result\":[{\"_id\":\"asd\",\"type\":\"qwe\",\"name\":\"zxc\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"},{\"g4id\":\"asd1\",\"t4type\":\"432\",\"nagdfgme\":\"zxct\"}]}";
+
+        JSONObject jObj = new JSONObject(requestJson);
+
+        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
+        Assert.assertNotNull(ret);
+        Assert.assertEquals(1, ret.size());
+
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(0).type);
+        Assert.assertEquals("fsdfsdf", ret.get(0).name);
+        Assert.assertEquals("5f97284635935cc338e78200", ret.get(0).widgetId);
+    }
+
+    @Test
     public void parseFeedbackList() throws JSONException {
         String requestJson =
             "{\"result\":[{\"_id\":\"5f8c6f959627f99e8e7de746\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"sdfsdfdsf\"},{\"_id\":\"5f8c6fd81ac8659e8846acf4\",\"type\":\"nps\",\"name\":\"fdsfsd\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"}]}";
