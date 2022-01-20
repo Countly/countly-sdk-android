@@ -1,5 +1,7 @@
 ## 21.11.0
   * !! Major breaking change !! Deprecating "ADVERTISING_ID" as device ID generation strategy. SDK will fall back to 'OPEN_UDID'.
+  * !! Major breaking change !! Changing device ID without merging will now clear all consent. It has to be given again after this operation.
+  * !! Major breaking change !! Entering temporary ID mode will now clear all consent. It has to be given again after this operation.
   * ! Minor breaking change ! Feedback widget callback not has an additional callback. This will cause a compilation error that is trivial to fix by adding the override for the missing call.
   * ! Minor breaking change ! Automatic "AdvertisingId" attribution has been removed from the SDK. A call is added for recording provided attribution values.
   * ! Minor breaking change ! Automatic install referrer attribution in play stores has been removed. A call is added for recording such provided values.

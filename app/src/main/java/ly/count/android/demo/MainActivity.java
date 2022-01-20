@@ -1,5 +1,6 @@
 package ly.count.android.demo;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -7,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
@@ -71,7 +73,8 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             //you would then pass those retrieved values as manual attribution:
-                            Countly.sharedInstance().attribution().recordDirectAttribution(campaignId, userId);
+                            Countly.sharedInstance().attribution().recordDirectAttribution("countly", "{\"cid\":" + campaignId + ",\"cuid\":" + userId +"}");
+                            //Countly.sharedInstance().attribution().recordDirectAttribution(campaignId, userId);
 
                             referrerClient.endConnection();
                         } catch (Exception e) {
@@ -91,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
             public void onInstallReferrerServiceDisconnected() {
             }
         });
+
+        //ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS }, 123);
     }
 
     public void onClickButtonCustomEvents(View v) {

@@ -20,6 +20,9 @@ public class ActivityExampleDeviceId extends AppCompatActivity {
     public void onClickDeviceId01(View v) {
         //set device id without merge
         Countly.sharedInstance().deviceId().changeWithoutMerge("New Device ID" + (new Random().nextInt()));
+
+        //give all consents after changing device ID without merging (that removes all consent)
+        Countly.sharedInstance().consent().giveConsentAll();
     }
 
     public void onClickDeviceId02(View v) {
@@ -31,6 +34,8 @@ public class ActivityExampleDeviceId extends AppCompatActivity {
     public void onClickDeviceId03(View v) {
         //Entering temporary id mode
         Countly.sharedInstance().deviceId().enableTemporaryIdMode();
+        //give all consents after entering temporary device ID mode (that removes all consent)
+        Countly.sharedInstance().consent().giveConsentAll();
     }
 
     @Override

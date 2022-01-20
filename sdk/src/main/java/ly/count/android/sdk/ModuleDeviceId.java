@@ -143,10 +143,10 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
 
         _cly.moduleSessions.endSessionInternal(getDeviceId());
 
-        //TODO should clear current consent here
+        //remove all consent
+        _cly.moduleConsent.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
 
         deviceIdInstance.changeToId(type, deviceId, true);
-        _cly.moduleSessions.beginSessionInternal();
 
         //clear automated star rating session values because now we have a new user
         _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal();
@@ -233,7 +233,6 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
     void halt() {
 
     }
-
 
     public final static String PREF_KEY = "openudid";
     public final static String PREFS_NAME = "openudid_prefs";
