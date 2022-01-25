@@ -163,25 +163,28 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     }
 
     /**
-     * Prepare features into json format
+     * Prepare the current feature state into a json format
      *
      * @param features the names of features that are about to be changed
-     * @param consentValue the value for the new consent
      * @return provided consent changes in json format
      */
-    private @NonNull String formatConsentChanges(@NonNull final String[] features, final boolean consentValue) {
+    private @NonNull String formatConsentState(@NonNull final Map<String, Boolean> features) {
         StringBuilder preparedConsent = new StringBuilder();
         preparedConsent.append("{");
 
-        for (int a = 0; a < features.length; a++) {
-            if (a != 0) {
+        boolean commaAdded = false;
+
+        for (Map.Entry<String, Boolean> entry : features.entrySet()) {
+            if (commaAdded) {
                 preparedConsent.append(",");
+            } {
+                commaAdded = true;
             }
             preparedConsent.append('"');
-            preparedConsent.append(features[a]);
+            preparedConsent.append(entry.getKey());
             preparedConsent.append('"');
             preparedConsent.append(':');
-            preparedConsent.append(consentValue);
+            preparedConsent.append(entry.getValue());
         }
 
         preparedConsent.append("}");
@@ -190,8 +193,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     }
 
     void setConsentInternal(@Nullable final String[] featureNames, final boolean isConsentGiven, final ConsentChangeSource changeSource) {
-        final boolean isInit = _cly.isInitialized();//is the SDK initialized
-
         if (!requiresConsent) {
             //if consent is not required, ignore all calls to it
             return;
@@ -201,8 +202,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             L.w("[ModuleConsent] Calling setConsent with null featureNames!");
             return;
         }
-
-        String formattedChanges = formatConsentChanges(featureNames, isConsentGiven);
 
         List<String> consentThatWillChange = new ArrayList<>(featureNames.length);
 
@@ -228,7 +227,8 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         //send consent changes
-        requestQueueProvider.sendConsentChanges(formattedChanges);
+        String formattedConsentState = formatConsentState(featureConsentValues);
+        requestQueueProvider.sendConsentChanges(formattedConsentState);
     }
 
     /**
@@ -237,10 +237,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      * @param featureNames the names of features for which consent should be removed
      * @return Returns link to Countly for call chaining
      */
-    public void removeConsentInternal(@Nullable final String[] featureNames) {
+    public void removeConsentInternal(@Nullable final String[] featureNames, final ConsentChangeSource changeSource) {
         L.d("[ModuleConsent] Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
 
-        setConsentInternal(featureNames, false, ConsentChangeSource.ChangeConsentCall);
+        setConsentInternal(featureNames, false, changeSource);
     }
 
     /**
@@ -248,10 +248,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      *
      * @return Returns link to Countly for call chaining
      */
-    public void removeConsentAllInternal() {
+    public void removeConsentAllInternal(final ConsentChangeSource changeSource) {
         L.d("[ModuleConsent] Removing consent for all features");
 
-        removeConsentInternal(validFeatureNames);
+        removeConsentInternal(validFeatureNames, changeSource);
     }
 
     @Override
@@ -262,14 +262,9 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             //remove persistent push flag if no push consent was set
             doPushConsentSpecialAction(getConsentTrue(Countly.CountlyFeatureNames.push));
 
-            //send collected consent changes that were made before initialization
-            if(config.enabledFeatureNames != null) {
-                //if there were values set
-                String collectedConsentChanges = formatConsentChanges(config.enabledFeatureNames, true);
-                requestQueueProvider.sendConsentChanges(collectedConsentChanges);
-            } else {
-                //if no consent features were enabled then nothing would be sent
-            }
+            //send 'after init' consent state
+            String formattedConsentState = formatConsentState(featureConsentValues);
+            requestQueueProvider.sendConsentChanges(formattedConsentState);
 
             if (L.logEnabled()) {
                 L.d("[ModuleConsent] [Init] Countly is initialized with the current consent state:");
@@ -324,7 +319,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          */
         public void removeConsentAll() {
             synchronized (_cly) {
-                removeConsentAllInternal();
+                removeConsentAllInternal(ConsentChangeSource.ChangeConsentCall);
             }
         }
 
@@ -336,7 +331,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          */
         public void removeConsent(@Nullable final String[] featureNames) {
             synchronized (_cly) {
-                removeConsentInternal(featureNames);
+                removeConsentInternal(featureNames, ConsentChangeSource.ChangeConsentCall);
             }
         }
 
