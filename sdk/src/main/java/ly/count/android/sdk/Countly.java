@@ -90,11 +90,6 @@ public class Countly {
     static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
 
     /**
-     * Maximum amount of requests allowed in the request queue
-     */
-    int maxRequestQueueSize = 1000;
-
-    /**
      * How often onTimer() is called. This is the default value.
      */
     private static final long TIMER_DELAY_IN_SECONDS = 60;
