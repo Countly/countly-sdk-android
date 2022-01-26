@@ -3,7 +3,6 @@ apply plugin: "com.vanniktech.maven.publish"
 
 buildscript {
     repositories {
-        jcenter()
         mavenCentral()
     }
     dependencies {
@@ -12,13 +11,13 @@ buildscript {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 1
-        versionName "20.11.10"
+        versionName "20.11.12"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

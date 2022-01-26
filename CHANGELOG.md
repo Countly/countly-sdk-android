@@ -1,3 +1,8 @@
+## 20.11.12
+  * Fixed bug due to "CLOSE_SYSTEM_DIALOGS" permission denial
+  * Updating the "compileSdkVersion" and "targetSdkVersion" to "31".
+  * Updating the "buildToolsVersion" to "31.0.0".
+
 ## 20.11.11
   * Fixed a bug where events would be sent with a larger delay if SDK callbacks are not called
   * Fixed a bug where "platform" and "app_version" were provided incorectly when retrieving the feedback widget data

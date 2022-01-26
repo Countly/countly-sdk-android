@@ -4,6 +4,7 @@
   <permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
       android:protectionLevel="signature" />
 
+  <uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" />
   <application>
     <uses-library android:name="android.test.runner" />
     <receiver android:name=".messaging.CountlyPush$NotificationBroadcastReceiver" android:exported="false"

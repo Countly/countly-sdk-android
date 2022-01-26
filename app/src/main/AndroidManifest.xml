@@ -16,7 +16,8 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:configChanges="orientation|screenSize">
+            android:configChanges="orientation|screenSize"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -102,7 +103,8 @@
         <activity
             android:name=".ActivityExampleDeepLinkA"
             android:label="Deep link A"
-            android:configChanges="orientation|screenSize">
+            android:configChanges="orientation|screenSize"
+            android:exported="true">
 
             <intent-filter android:label="@string/deep_link">
                 <action android:name="android.intent.action.VIEW" />
@@ -119,7 +121,8 @@
         <activity
             android:name=".ActivityExampleDeepLinkB"
             android:label="Deep link B"
-            android:configChanges="orientation|screenSize">
+            android:configChanges="orientation|screenSize"
+            android:exported="true">
 
             <intent-filter android:label="@string/deep_link">
                 <action android:name="android.intent.action.VIEW" />

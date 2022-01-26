@@ -289,8 +289,16 @@ public class CountlyPush {
                 manager.cancel(message.hashCode());
             }
 
-            Intent closeNotificationsPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
-            context.sendBroadcast(closeNotificationsPanel);
+            try {
+                //try/catch required due to Android 12
+                if (android.os.Build.VERSION.SDK_INT < 31) {
+                    //this needs to be called before Android 12
+                    Intent closeNotificationsPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+                    context.sendBroadcast(closeNotificationsPanel);
+                }
+            } catch (Exception ex) {
+                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Encountered issue while trying to send the on click broadcast. [" + ex.toString() + "]");
+            }
 
             if (index == 0) {
                 try {
