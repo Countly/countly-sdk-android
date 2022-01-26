@@ -1,5 +1,6 @@
 ## 20.11.12
   * Fixed bug due to "CLOSE_SYSTEM_DIALOGS" permission denial
+  * Adding an init time configuration option to set the maximum request queue size
   * Updating the "compileSdkVersion" and "targetSdkVersion" to "31".
   * Updating the "buildToolsVersion" to "31.0.0".
 

@@ -91,6 +91,7 @@ public class Countly {
      * an attempt is made to submit them to a Count.ly server.
      */
     private static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
+
     /**
      * How often onTimer() is called.
      */
@@ -521,6 +522,13 @@ public class Countly {
                 countlyStore = new CountlyStore(config.context, L);
                 config.setCountlyStore(countlyStore);
             }
+
+            if(config.maxRequestQueueSize < 1) {
+                L.e("[Init] provided request queue size is less than 1. Replacing it with 1.");
+                config.maxRequestQueueSize = 1;
+            }
+            L.d("[Init] request queue size set to [" + config.maxRequestQueueSize + "]");
+            CountlyStore.MAX_REQUESTS = config.maxRequestQueueSize;
 
             if(config.storageProvider == null) {
                 // outside of tests this should be null
