@@ -7,8 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.runner.Request;
+import org.mockito.ArgumentCaptor;
+
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 public class TestUtils {
     //Useful call:
@@ -197,6 +203,82 @@ public class TestUtils {
         if(entryCount != 0) {
             String paramValue = TestUtils.getParamValueFromRequest(filteredVals.get(0), param);
             Assert.assertEquals(targetValue, paramValue);
+        }
+    }
+
+    public static String[] subtractConsentFromArray(String[] input, String[] subtraction) {
+        ArrayList<String> res = new ArrayList<>();
+
+        for(String v:input) {
+            boolean contains = false;
+            for(String sv:subtraction) {
+                if(sv.equals(v)) {
+                    contains = true;
+                    break;
+                }
+            }
+
+            if(!contains) {
+                res.add(v);
+            }
+        }
+
+        return res.toArray(new String[0]);
+    }
+
+    public static String[] getReminderConsent(String[] subtraction) {
+        return subtractConsentFromArray(ModuleConsentTests.usedFeatureNames, subtraction);
+    }
+
+    public static void verifyLocationValuesInRQMockDisabled(RequestQueueProvider rqp) {
+        verifyLocationValuesInRQMock(1, true, null, null, null, null, rqp);
+    }
+
+    public static void verifyLocationValuesInRQMockNotGiven(RequestQueueProvider rqp) {
+        verifyLocationValuesInRQMock(0, true, null, null, null, null, rqp);
+    }
+
+    public static void verifyLocationValuesInRQMockValues(String countryCode, String city, String location, String ip, RequestQueueProvider rqp) {
+        verifyLocationValuesInRQMock(1, false, countryCode, city, location, ip, rqp);
+    }
+
+    public static void verifyLocationValuesInRQMock(int count, Boolean enabled, String countryCode, String city, String location, String ip, RequestQueueProvider rqp) {
+        ArgumentCaptor<Boolean> acLocationDisabled = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<String> acCountryCode = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> acCity = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> acGps = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> acIp = ArgumentCaptor.forClass(String.class);
+        verify(rqp, times(count)).sendLocation(acLocationDisabled.capture(), acCountryCode.capture(), acCity.capture(), acGps.capture(), acIp.capture());
+
+        if (count == 0) {
+            return;
+        }
+
+        Assert.assertEquals(enabled, acLocationDisabled.getValue());
+        Assert.assertEquals(countryCode, acCountryCode.getValue());
+        Assert.assertEquals(city, acCity.getValue());
+        Assert.assertEquals(location, acGps.getValue());
+        Assert.assertEquals(ip, acIp.getValue());
+    }
+
+    public static void verifyConsentValuesInRQMock(int count, String[] valuesTrue, String[] valuesFalse, RequestQueueProvider rqp) throws JSONException {
+        ArgumentCaptor<String> consentChanges = ArgumentCaptor.forClass(String.class);
+        verify(rqp, times(count)).sendConsentChanges(consentChanges.capture());
+
+        String changes = consentChanges.getValue();
+        Assert.assertNotNull(changes);
+
+        JSONObject jObj = new JSONObject(changes);
+
+        Assert.assertEquals(ModuleConsentTests.usedFeatureNames.length, jObj.length());
+        Assert.assertEquals(ModuleConsentTests.usedFeatureNames.length, valuesTrue.length + valuesFalse.length);
+
+        for (String v : valuesTrue) {
+            Assert.assertTrue((Boolean) jObj.get(v));
+        }
+
+        for (String v : valuesFalse) {
+            Assert.assertFalse((Boolean) jObj.get(v));
         }
     }
 }

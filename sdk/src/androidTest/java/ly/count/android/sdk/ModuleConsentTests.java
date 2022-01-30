@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @RunWith(AndroidJUnit4.class)
 public class ModuleConsentTests {
 
-    protected final String[] usedFeatureNames = new String[] {
+    protected static final String[] usedFeatureNames = new String[] {
         Countly.CountlyFeatureNames.sessions,
         Countly.CountlyFeatureNames.events,
         Countly.CountlyFeatureNames.views,
@@ -193,66 +193,6 @@ public class ModuleConsentTests {
         verifyZeroInteractions(rqp);
     }
 
-    void verifyLocationValuesInRQMock(int count, Boolean enabled, String countryCode, String city, String location, String ip, RequestQueueProvider rqp) {
-        ArgumentCaptor<Boolean> acLocationDisabled = ArgumentCaptor.forClass(Boolean.class);
-        ArgumentCaptor<String> acCountryCode = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> acCity = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> acGps = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> acIp = ArgumentCaptor.forClass(String.class);
-        verify(rqp, times(count)).sendLocation(acLocationDisabled.capture(), acCountryCode.capture(), acCity.capture(), acGps.capture(), acIp.capture());
-
-        if (count == 0) {
-            return;
-        }
-
-        Assert.assertEquals(enabled, acLocationDisabled.getValue());
-        Assert.assertEquals(countryCode, acCountryCode.getValue());
-        Assert.assertEquals(city, acCity.getValue());
-        Assert.assertEquals(location, acGps.getValue());
-        Assert.assertEquals(ip, acIp.getValue());
-    }
-
-    void verifyConsentValuesInRQMock(int count, String[] valuesTrue, String[] valuesFalse, RequestQueueProvider rqp) throws JSONException {
-        ArgumentCaptor<String> consentChanges = ArgumentCaptor.forClass(String.class);
-        verify(rqp, times(count)).sendConsentChanges(consentChanges.capture());
-
-        String changes = consentChanges.getValue();
-        Assert.assertNotNull(changes);
-
-        JSONObject jObj = new JSONObject(changes);
-
-        Assert.assertEquals(usedFeatureNames.length, jObj.length());
-        Assert.assertEquals(usedFeatureNames.length, valuesTrue.length + valuesFalse.length);
-
-        for (String v : valuesTrue) {
-            Assert.assertTrue((Boolean) jObj.get(v));
-        }
-
-        for (String v : valuesFalse) {
-            Assert.assertFalse((Boolean) jObj.get(v));
-        }
-    }
-
-    String[] subtractConsentFromArray(String[] input, String[] subtraction) {
-        ArrayList<String> res = new ArrayList<>();
-
-        for(String v:input) {
-            boolean contains = false;
-            for(String sv:subtraction) {
-                if(sv.equals(v)) {
-                    contains = true;
-                    break;
-                }
-            }
-
-            if(!contains) {
-                res.add(v);
-            }
-        }
-
-        return (String[]) res.toArray();
-    }
-
     /**
      * Consent required at init time but no consent values are given
      *
@@ -264,33 +204,61 @@ public class ModuleConsentTests {
         Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, null, null, rqp));
         Assert.assertEquals(2, Mockito.mockingDetails(rqp).getInvocations().size());
 
-        verifyLocationValuesInRQMock(1, true, null, null, null, null, rqp);
-        verifyConsentValuesInRQMock(1, new String[] {}, usedFeatureNames, rqp);
+        TestUtils.verifyLocationValuesInRQMock(1, true, null, null, null, null, rqp);
+        TestUtils.verifyConsentValuesInRQMock(1, new String[] {}, usedFeatureNames, rqp);
     }
 
-    //@Test
-    //public void initTimeSetConsentRQ_2() {
-    //    RequestQueueProvider rqp = mock(RequestQueueProvider.class);
-    //    Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, new String[] { Countly.CountlyFeatureNames.clicks }, null, rqp));
-    //
-    //    //this should send consent changes and empty location
-    //    verify(rqp, times(1)).sendConsentChanges("{\"clicks\":true}");
-    //    verify(rqp, times(1)).sendLocation(true, null, null, null, null);
-    //}
-    //
-    ///**
-    // * Setting single consent value during init.
-    // * That produces appropriate consent request and since it's the location request, does not clear location
-    // */
-    //@Test
-    //public void initTimeSetConsentRQ_3() {
-    //    RequestQueueProvider rqp = mock(RequestQueueProvider.class);
-    //    Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, new String[] { Countly.CountlyFeatureNames.location }, null, rqp));
-    //
-    //    //this should send consent changes and empty location
-    //    verify(rqp, times(1)).sendConsentChanges("{\"location\":true}");
-    //    verify(rqp, times(0)).sendLocation(true, null, null, null, null);
-    //}
+    /**
+     * Consent required at init time and a few consent values are given
+     * No location consent is given
+     *
+     * This should create a request with the relevant consent values and a location request with removed location
+     */
+    @Test
+    public void initTimeSetConsentRQ_2() throws JSONException {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        String [] initialConsent = new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback };
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, initialConsent, null, rqp));
+
+        //this should send consent state and empty location
+        TestUtils.verifyConsentValuesInRQMock(1, initialConsent, TestUtils.getReminderConsent(initialConsent), rqp);
+        TestUtils.verifyLocationValuesInRQMockDisabled(rqp);
+    }
+
+    /**
+     * Consent required at init time and a few consent values are given
+     * No location consent is given
+     *
+     * This should create a request with the relevant consent values and no location request (consent given but no values provided)
+     */
+    @Test
+    public void initTimeSetConsentRQ_3() throws JSONException {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        String [] initialConsent = new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback, Countly.CountlyFeatureNames.location };
+        Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, initialConsent, null, rqp));
+
+        TestUtils.verifyConsentValuesInRQMock(1, initialConsent, TestUtils.getReminderConsent(initialConsent), rqp);
+        TestUtils.verifyLocationValuesInRQMockNotGiven(rqp);
+    }
+
+    /**
+     * Consent required at init time and a few consent values are given
+     * No location consent is given
+     *
+     * This should create a request with the relevant consent values and location request with the given values
+     */
+    @Test
+    public void initTimeSetConsentRQ_4() throws JSONException {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        String [] initialConsent = new String[] { Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback, Countly.CountlyFeatureNames.location };
+        CountlyConfig cc = TestUtils.createConsentCountlyConfig(true, initialConsent, null, rqp);
+        cc.setLocation("qw", "Böston 墨尔本", "123.9009", "qwe890");
+        Countly mCountly = new Countly().init(cc);
+
+        TestUtils.verifyConsentValuesInRQMock(1, initialConsent, TestUtils.getReminderConsent(initialConsent), rqp);
+        TestUtils.verifyLocationValuesInRQMockValues(cc.locationCountyCode, cc.locationCity, cc.locationLocation, cc.locationIpAddress, rqp);
+
+    }
 
     // TODO test that makes sure that the consent change request is created correctly
     // TODO test that makes sure that the consent change request is not created for duplicate triggers

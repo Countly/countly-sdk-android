@@ -392,6 +392,7 @@ public class Countly {
                 L.e("[Init] provided request queue size is less than 1. Replacing it with 1.");
                 config.maxRequestQueueSize = 1;
             }
+            L.d("[Init] request queue size set to [" + config.maxRequestQueueSize + "]");
             countlyStore.setLimits(config.maxRequestQueueSize);
 
             if (config.storageProvider == null) {
