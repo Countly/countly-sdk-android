@@ -114,7 +114,7 @@ class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdPro
         }
 
         if (type == DeviceIdType.ADVERTISING_ID) {
-            L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, the usage of the type 'ADVERTISING_ID' is deprecated. It will be repleced with 'OPEN_UDID'.");
+            L.e("[ModuleDeviceId] changeDeviceIdWithoutMerge, the usage of the type 'ADVERTISING_ID' is deprecated. It will be replaced with 'OPEN_UDID'.");
             type = DeviceIdType.OPEN_UDID;
         }
 

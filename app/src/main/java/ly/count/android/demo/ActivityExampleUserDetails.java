@@ -24,22 +24,22 @@ public class ActivityExampleUserDetails extends AppCompatActivity {
 
     public void onClickUserData02(View v) {
         //providing any custom key values to store with user
-        HashMap<String, String> custom = new HashMap<>();
+        HashMap<String, Object> custom = new HashMap<>();
         custom.put("favoriteAnimal", "dog");
 
         //set multiple custom properties
-        Countly.userData.setCustomUserData(custom);
-        Countly.userData.save();
+        Countly.sharedInstance().userProfile().setProperties(custom);
+        Countly.sharedInstance().userProfile().save();
     }
 
     public void onClickUserData03(View v) {
         //providing any custom key values to store with user
-        HashMap<String, String> custom = new HashMap<>();
+        HashMap<String, Object> custom = new HashMap<>();
         custom.put("leastFavoritePet", "cat");
 
         //set multiple custom properties
-        Countly.userData.setCustomUserData(custom);
-        Countly.userData.save();
+        Countly.sharedInstance().userProfile().setProperties(custom);
+        Countly.sharedInstance().userProfile().save();
     }
 
     public void onClickUserData04(View v) {
@@ -51,7 +51,7 @@ public class ActivityExampleUserDetails extends AppCompatActivity {
     }
 
     public void setUserData() {
-        HashMap<String, String> data = new HashMap<>();
+        HashMap<String, Object> data = new HashMap<>();
         data.put("name", "First name Last name");
         data.put("username", "nickname");
         data.put("email", "test@test.com");
@@ -65,28 +65,27 @@ public class ActivityExampleUserDetails extends AppCompatActivity {
         data.put("byear", "1987");
 
         //providing any custom key values to store with user
-        HashMap<String, String> custom = new HashMap<>();
-        custom.put("country", "Turkey");
-        custom.put("city", "Istanbul");
-        custom.put("address", "My house 11");
+        data.put("Top rated Country", "Turkey");
+        data.put("Favourite city", "Istanbul");
+        data.put("Favourite car", "VroomVroom");
 
         //set multiple custom properties
-        Countly.userData.setUserData(data, custom);
+        Countly.sharedInstance().userProfile().setProperties(data);
 
         //set custom properties by one
-        Countly.userData.setProperty("test", "test");
+        Countly.sharedInstance().userProfile().setProperty("test", "test");
 
         //increment used value by 1
-        Countly.userData.incrementBy("used", 1);
+        Countly.sharedInstance().userProfile().incrementBy("used", 1);
 
         //insert value to array of unique values
-        Countly.userData.pushUniqueValue("type", "morning");
+        Countly.sharedInstance().userProfile().pushUnique("type", "morning");
 
         //insert multiple values to same property
-        Countly.userData.pushUniqueValue("skill", "fire");
-        Countly.userData.pushUniqueValue("skill", "earth");
+        Countly.sharedInstance().userProfile().pushUnique("skill", "fire");
+        Countly.sharedInstance().userProfile().pushUnique("skill", "earth");
 
-        Countly.userData.save();
+        Countly.sharedInstance().userProfile().save();
     }
 
     @Override

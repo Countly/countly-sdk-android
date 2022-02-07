@@ -37,6 +37,8 @@ public class ModuleUserProfile extends ModuleBase {
         userProfileInterface = new UserProfile();
     }
 
+    //todo refactor these calls after UserData.java has been removed
+
     //for url query parsing
     //this looks to be for internal use only
     //used when performing requests to get the set picture path
@@ -265,6 +267,7 @@ public class ModuleUserProfile extends ModuleBase {
 
     /**
      * This mainly performs the filtering of provided values
+     * This single call would be used for both predefined properties and custom user properties
      * @param data
      */
     void setPropertiesInternal(@NonNull Map<String, Object> data) {
@@ -273,8 +276,9 @@ public class ModuleUserProfile extends ModuleBase {
             return;
         }
 
-        Map<String, Object> dataNamedFields = new HashMap<>();
-        Map<String, Object> dataCustomFields = new HashMap<>();
+        //todo recheck if in the future these can be <String, Object>
+        Map<String, String> dataNamedFields = new HashMap<>();
+        Map<String, String> dataCustomFields = new HashMap<>();
 
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
@@ -285,15 +289,18 @@ public class ModuleUserProfile extends ModuleBase {
                 if (namedField.equals(key)) {
                     //if it's a name field
                     isNamed = true;
-                    dataNamedFields.put(key, value);
+                    dataNamedFields.put(key, value.toString());
                     break;
                 }
             }
 
             if (!isNamed) {
-                dataCustomFields.put(key, value);
+                dataCustomFields.put(key, value.toString());
             }
         }
+
+        UserData.setData(dataNamedFields);
+        UserData.setCustomData(dataCustomFields);
     }
 
     void saveInternal() {
@@ -308,7 +315,7 @@ public class ModuleUserProfile extends ModuleBase {
 
     @Override
     void halt() {
-
+        userProfileInterface = null;
     }
 
     public class UserProfile {
@@ -398,9 +405,12 @@ public class ModuleUserProfile extends ModuleBase {
             Countly.userData.pullValue(key, value);
         }
 
-        public void unset() {
-
-        }
+        /**
+         * Remove custom user property
+         */
+        //public void unset() {
+        //    //todo add in the future
+        //}
 
         /**
          * Set a single user property. It can be either a custom one or one of the predefined ones.

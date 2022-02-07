@@ -12,6 +12,7 @@
   * Added new calls to report attribution.
   * When recording internal events with 'recordEvent', the respective feature consent will now be checked instead of the 'events' consent. 
   * Consent changes will now send the whole consent state and not just the "delta"
+  * Deprecated old user profile calls. Introduced a new API by which to change them.
 
   * Removed the deprecated "init" methods
   * Removed the deprecated "recordEvent" methods
