@@ -13,7 +13,7 @@ buildscript {
   }
   dependencies {
     //classpath 'com.dicedmelon.gradle:jacoco-android:0.1.4'
-    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2' //for publishing
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.18.0' //for publishing
   }
 }
 
@@ -24,8 +24,6 @@ android {
   defaultConfig {
     minSdkVersion 17
     targetSdkVersion 31
-    versionCode 1
-    versionName "21.11.0"
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true

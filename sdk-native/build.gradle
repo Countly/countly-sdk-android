@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.14.2'
+        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.18.0' //for publishing
     }
 }
 
@@ -16,8 +16,6 @@ android {
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 31
-        versionCode 1
-        versionName "21.11.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -29,7 +27,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-
+    buildToolsVersion '31.0.0'
 }
 
 dependencies {
