@@ -289,8 +289,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     public class Consent {
         /**
          * Print the consent values of all features
-         *
-         * @return Returns link to Countly for call chaining
          */
         public void checkAllConsent() {
             synchronized (_cly) {
@@ -314,8 +312,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         /**
          * Remove consent for all features
-         *
-         * @return Returns link to Countly for call chaining
          */
         public void removeConsentAll() {
             synchronized (_cly) {
@@ -327,7 +323,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * Remove the consent of a feature
          *
          * @param featureNames the names of features for which consent should be removed
-         * @return Returns link to Countly for call chaining
          */
         public void removeConsent(@Nullable final String[] featureNames) {
             synchronized (_cly) {
@@ -337,8 +332,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         /**
          * Gives consent for all features
-         *
-         * @return Returns link to Countly for call chaining
          */
         public void giveConsentAll() {
             synchronized (_cly) {
@@ -352,7 +345,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * Give the consent to a feature
          *
          * @param featureNames the names of features for which consent should be given
-         * @return Returns link to Countly for call chaining
          */
         public void giveConsent(@Nullable final String[] featureNames) {
             synchronized (_cly) {
@@ -365,7 +357,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          *
          * @param featureNames feature names for which consent should be changed
          * @param isConsentGiven the consent value that should be set
-         * @return Returns link to Countly for call chaining
          */
         public void setConsent(@Nullable final String[] featureNames, final boolean isConsentGiven) {
             synchronized (_cly) {
@@ -378,7 +369,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          *
          * @param groupName name of the consent group
          * @param isConsentGiven the value that should be set for this consent group
-         * @return Returns link to Countly for call chaining
          */
         public void setConsentFeatureGroup(@Nullable final String groupName, final boolean isConsentGiven) {
             synchronized (_cly) {
@@ -397,7 +387,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          *
          * @param groupName name of the consent group
          * @param features array of feature to be added to the consent group
-         * @return Returns link to Countly for call chaining
          */
         public void createFeatureGroup(@Nullable final String groupName, @Nullable final String[] features) {
             synchronized (_cly) {

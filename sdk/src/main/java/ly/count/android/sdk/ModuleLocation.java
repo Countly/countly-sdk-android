@@ -144,7 +144,6 @@ public class ModuleLocation extends ModuleBase {
          * @param city Name of the user's city
          * @param gpsCoordinates comma separate lat and lng values. For example, "56.42345,123.45325"
          * @param ipAddress ipAddress like "192.168.88.33"
-         * @return Returns link to Countly for call chaining
          */
         public void setLocation(@Nullable String countryCode, @Nullable String city, @Nullable String gpsCoordinates, @Nullable String ipAddress) {
             synchronized (_cly) {

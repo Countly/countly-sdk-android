@@ -306,7 +306,6 @@ public class ModuleViews extends ModuleBase {
          *
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
-         * @return Returns link to Countly for call chaining
          */
         public Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
             synchronized (_cly) {

@@ -633,7 +633,6 @@ public class ModuleRatings extends ModuleBase {
          *
          * @param widgetId ID that identifies this dialog
          * @deprecated use 'presentRatingWidgetWithID' in place of this call
-         * @return
          */
         public void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
             L.i("[Ratings] Calling showFeedbackPopup");
@@ -644,7 +643,6 @@ public class ModuleRatings extends ModuleBase {
          * Show the rating widget dialog to the user
          *
          * @param widgetId ID that identifies this dialog
-         * @return
          */
         public void presentRatingWidgetWithID(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
             synchronized (_cly) {
