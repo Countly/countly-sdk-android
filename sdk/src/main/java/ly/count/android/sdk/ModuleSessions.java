@@ -14,6 +14,9 @@ public class ModuleSessions extends ModuleBase {
         L.v("[ModuleSessions] Initialising");
 
         manualSessionControlEnabled = config.manualSessionControlEnabled;
+        if (manualSessionControlEnabled) {
+            L.d("[ModuleSessions] Enabling manual session control");
+        }
 
         if (config.disableUpdateSessionRequests) {
             L.d("[ModuleSessions] Disabling periodic session time updates");
@@ -25,6 +28,8 @@ public class ModuleSessions extends ModuleBase {
 
     void beginSessionInternal() {
         L.d("[ModuleSessions] 'beginSessionInternal'");
+
+        _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
 
         prevSessionDurationStartTime_ = System.nanoTime();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);

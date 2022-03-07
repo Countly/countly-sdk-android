@@ -109,6 +109,13 @@ public class ModuleViews extends ModuleBase {
     }
 
     /**
+     * This should be called in case a new session starts so that we could identify the new "first view"
+     */
+    public void resetFirstView() {
+        firstView = true;
+    }
+
+    /**
      * Record a view manually, without automatic tracking
      * or track view that is not automatically tracked
      * like fragment, Message box or transparent Activity
@@ -133,7 +140,7 @@ public class ModuleViews extends ModuleBase {
             if (customViewSegmentation != null) {
                 segmCount = customViewSegmentation.size();
             }
-            L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view:[" + lastView + "] custom view segment count:[" + segmCount + "]");
+            L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view:[" + lastView + "] custom view segment count:[" + segmCount + "], first:[" + firstView + "]");
         }
 
         reportViewDuration();
@@ -149,6 +156,7 @@ public class ModuleViews extends ModuleBase {
         viewSegmentation.put("visit", "1");
         viewSegmentation.put("segment", "Android");
         if (firstView) {
+            L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");
             firstView = false;
             viewSegmentation.put("start", "1");
         }
