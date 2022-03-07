@@ -389,7 +389,8 @@ class ConnectionQueue implements RequestQueueProvider {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    public void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
+    //public void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
+    public void sendCrashReport(String crashData) {
         checkInternalState();
         L.d("[Connection Queue] sendCrashReport");
 
@@ -398,13 +399,8 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        //limit the size of the crash report to 20k characters
-        if (!isNativeCrash) {
-            error = error.substring(0, Math.min(20000, error.length()));
-        }
-
         final String data = prepareCommonRequestData()
-            + "&crash=" + UtilsNetworking.urlEncodeString(CrashDetails.getCrashData(context_, error, nonfatal, isNativeCrash, customSegmentation));
+            + "&crash=" + UtilsNetworking.urlEncodeString(crashData);
 
         addRequestToQueue(data);
 

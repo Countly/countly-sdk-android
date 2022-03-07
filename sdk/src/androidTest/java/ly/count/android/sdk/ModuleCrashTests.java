@@ -82,23 +82,24 @@ public class ModuleCrashTests {
 
         countly.crashes().recordHandledException(exception);
 
-        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(boolean.class), any(boolean.class), isNull(Map.class));
+        verify(requestQueueProvider, never()).sendCrashReport(any(String.class));
 
         Throwable throwable = new Throwable("Secret message");
 
         countly.crashes().recordUnhandledException(throwable);
 
-        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(boolean.class), any(boolean.class), isNull(Map.class));
+        verify(requestQueueProvider, never()).sendCrashReport(any(String.class));
 
         exception = new Exception("Reasonable message");
 
         countly.crashes().recordHandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture());
 
-        Assert.assertTrue(arg.getValue().startsWith("java.lang.Exception: Reasonable message\n" +
-            "\tat ly.count.android.sdk.ModuleCrashTests.crashFilterTest(ModuleCrashTests.java:"));
+        //todo improve this
+        Assert.assertTrue(arg.getValue().contains("java.lang.Exception: Reasonable message\\n" +
+            "\\tat ly.count.android.sdk.ModuleCrashTests.crashFilterTest(ModuleCrashTests.java:"));
     }
 
     @Test
@@ -152,10 +153,11 @@ public class ModuleCrashTests {
         mCountly.crashes().recordHandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture());
 
-        Assert.assertTrue(arg.getValue().startsWith("java.lang.Exception: Some message\n" +
-            "\tat ly.count.android.sdk.ModuleCrashTests.recordHandledExceptionException(ModuleCrashTests.java:"));
+        //todo improve this
+        Assert.assertTrue(arg.getValue().contains("java.lang.Exception: Some message\\n" +
+            "\\tat ly.count.android.sdk.ModuleCrashTests.recordHandledExceptionException(ModuleCrashTests.java:"));
     }
 
     @Test
@@ -165,12 +167,13 @@ public class ModuleCrashTests {
         mCountly.crashes().recordHandledException(throwable);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(true), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture());
 
         String crash = arg.getValue();
 
-        Assert.assertTrue(crash.startsWith("java.lang.Throwable: Some message\n" +
-            "\tat ly.count.android.sdk.ModuleCrashTests.recordHandledExceptionThrowable(ModuleCrashTests.java:"));
+        //todo improve this
+        Assert.assertTrue(crash.contains("java.lang.Throwable: Some message\\n" +
+            "\\tat ly.count.android.sdk.ModuleCrashTests.recordHandledExceptionThrowable(ModuleCrashTests.java:"));
     }
 
     @Test
@@ -180,12 +183,13 @@ public class ModuleCrashTests {
         mCountly.crashes().recordUnhandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(false), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture());
 
         String crash = arg.getValue();
 
-        Assert.assertTrue(crash.startsWith("java.lang.Exception: Some message\n" +
-            "\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionException(ModuleCrashTests.java:"));
+        //todo improve this
+        Assert.assertTrue(crash.contains("java.lang.Exception: Some message\\n" +
+            "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionException(ModuleCrashTests.java:"));
     }
 
     @Test
@@ -195,12 +199,13 @@ public class ModuleCrashTests {
         mCountly.crashes().recordUnhandledException(throwable);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture(), eq(false), eq(false), isNull(Map.class));
+        verify(requestQueueProvider).sendCrashReport(arg.capture());
 
         String crash = arg.getValue();
 
-        Assert.assertTrue(crash.startsWith("java.lang.Throwable: Some message\n" +
-            "\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
+        //todo improve this
+        Assert.assertTrue(crash.contains("java.lang.Throwable: Some message\\n" +
+            "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
     }
 
     @Test(expected = StackOverflowError.class)

@@ -41,7 +41,7 @@ public class ModuleCrash extends ModuleBase {
      *
      * @param context android context
      */
-    synchronized void checkForNativeCrashDumps(Context context) {
+    void checkForNativeCrashDumps(Context context) {
         L.d("[ModuleCrash] Checking for native crash dumps");
 
         String basePath = context.getCacheDir().getAbsolutePath();
@@ -75,7 +75,7 @@ public class ModuleCrash extends ModuleBase {
         }
     }
 
-    private synchronized void recordNativeException(File dumpFile) {
+    private void recordNativeException(File dumpFile) {
         L.d("[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
 
         //check for consent
@@ -101,7 +101,20 @@ public class ModuleCrash extends ModuleBase {
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         //record crash
-        requestQueueProvider.sendCrashReport(dumpString, false, true, null);
+        sendCrashReportToQueue(dumpString, false, true, null);
+    }
+
+    public void sendCrashReportToQueue(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
+        L.d("[ModuleCrash] sendCrashReportToQueue");
+
+        //limit the size of the crash report to 20k characters
+        if (!isNativeCrash) {
+            error = error.substring(0, Math.min(20000, error.length()));
+        }
+
+        final String crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, customSegmentation);
+
+        requestQueueProvider.sendCrashReport(crashData);
     }
 
     /**
@@ -148,7 +161,7 @@ public class ModuleCrash extends ModuleBase {
 
                     //check if it passes the crash filter
                     if (!crashFilterCheck(exceptionString)) {
-                        requestQueueProvider.sendCrashReport(exceptionString, false, false, null);
+                        sendCrashReportToQueue(exceptionString, false, false, null);
                     }
                 }
 
@@ -211,7 +224,7 @@ public class ModuleCrash extends ModuleBase {
      * @param itIsHandled If the exception is handled or not (fatal)
      * @return Returns link to Countly for call chaining
      */
-    synchronized Countly recordExceptionInternal(final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
+    Countly recordExceptionInternal(final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
         L.i("[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
 
         if (!_cly.isInitialized()) {
@@ -241,7 +254,7 @@ public class ModuleCrash extends ModuleBase {
         if (crashFilterCheck(exceptionString)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
-            requestQueueProvider.sendCrashReport(exceptionString, itIsHandled, false, customSegmentation);
+            sendCrashReportToQueue(exceptionString, itIsHandled, false, customSegmentation);
         }
         return _cly;
     }
