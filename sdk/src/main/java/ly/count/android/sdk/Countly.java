@@ -650,7 +650,7 @@ public class Countly {
      * @return true if Countly is ready to use
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public synchronized boolean isInitialized() {
+    public boolean isInitialized() {
         return sdkIsInitialised;
     }
 
@@ -982,7 +982,7 @@ public class Countly {
      *
      * @return true means "yes"
      */
-    public synchronized boolean isLoggingEnabled() {
+    public boolean isLoggingEnabled() {
         return enableLogging_;
     }
 
@@ -991,7 +991,7 @@ public class Countly {
      *
      * @return true - yes, it has, false - no it has not
      */
-    public synchronized boolean hasBeenCalledOnStart() {
+    public boolean hasBeenCalledOnStart() {
         return calledAtLeastOnceOnStart;
     }
 

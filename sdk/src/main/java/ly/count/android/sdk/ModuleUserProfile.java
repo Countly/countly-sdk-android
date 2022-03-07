@@ -325,7 +325,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param key String with property name to increment
          */
         public void increment(String key) {
-            Countly.userData.increment(key);
+            synchronized (_cly) {
+                Countly.userData.increment(key);
+            }
         }
 
         /**
@@ -335,7 +337,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value int value by which to increment
          */
         public void incrementBy(String key, int value) {
-            Countly.userData.incrementBy(key, value);
+            synchronized (_cly) {
+                Countly.userData.incrementBy(key, value);
+            }
         }
 
         /**
@@ -345,7 +349,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value int value by which to multiply
          */
         public void multiply(String key, int value) {
-            Countly.userData.multiply(key, value);
+            synchronized (_cly) {
+                Countly.userData.multiply(key, value);
+            }
         }
 
         /**
@@ -355,7 +361,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value int value to check for max
          */
         public void saveMax(String key, int value) {
-            Countly.userData.saveMax(key, value);
+            synchronized (_cly) {
+                Countly.userData.saveMax(key, value);
+            }
         }
 
         /**
@@ -365,7 +373,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value int value to check for min
          */
         public void saveMin(String key, int value) {
-            Countly.userData.saveMin(key, value);
+            synchronized (_cly) {
+                Countly.userData.saveMin(key, value);
+            }
         }
 
         /**
@@ -375,7 +385,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value String value to set
          */
         public void setOnce(String key, String value) {
-            Countly.userData.setOnce(key, value);
+            synchronized (_cly) {
+                Countly.userData.setOnce(key, value);
+            }
         }
 
         /* Create array property, if property does not exist and add value to array
@@ -384,7 +396,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value String with value to add to array
          */
         public void push(String key, String value) {
-            Countly.userData.pushValue(key, value);
+            synchronized (_cly) {
+                Countly.userData.pushValue(key, value);
+            }
         }
 
         /* Create array property, if property does not exist and add value to array, only if value is not yet in the array
@@ -393,7 +407,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value String with value to add to array
          */
         public void pushUnique(String key, String value) {
-            Countly.userData.pushUniqueValue(key, value);
+            synchronized (_cly) {
+                Countly.userData.pushUniqueValue(key, value);
+            }
         }
 
         /* Create array property, if property does not exist and remove value from array
@@ -402,7 +418,9 @@ public class ModuleUserProfile extends ModuleBase {
          * @param value String with value to remove from array
          */
         public void pull(String key, String value) {
-            Countly.userData.pullValue(key, value);
+            synchronized (_cly) {
+                Countly.userData.pullValue(key, value);
+            }
         }
 
         /**

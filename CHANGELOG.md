@@ -15,6 +15,7 @@
   * Deprecated old user profile calls. Introduced a new API by which to change them.
 
   * Fixed bug where, on the start of a new session, the first view was not identified correctly
+  * Fixed potential deadlock issue
 
   * Removed the deprecated "init" methods
   * Removed the deprecated "recordEvent" methods

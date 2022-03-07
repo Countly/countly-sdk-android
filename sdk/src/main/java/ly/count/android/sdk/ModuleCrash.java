@@ -333,7 +333,7 @@ public class ModuleCrash extends ModuleBase {
          * @return Returns link to Countly for call chaining
          */
         public Countly recordUnhandledException(Throwable exception) {
-            {
+            synchronized (_cly) {
                 return recordExceptionInternal(exception, false, null);
             }
         }

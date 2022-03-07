@@ -211,7 +211,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setContext(Context context) {
+    public synchronized CountlyConfig setContext(Context context) {
         this.context = context;
         return this;
     }
@@ -222,7 +222,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setServerURL(String serverURL) {
+    public synchronized CountlyConfig setServerURL(String serverURL) {
         this.serverURL = serverURL;
         return this;
     }
@@ -233,7 +233,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setAppKey(String appKey) {
+    public synchronized CountlyConfig setAppKey(String appKey) {
         this.appKey = appKey;
         return this;
     }
@@ -243,7 +243,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setDeviceId(String deviceID) {
+    public synchronized CountlyConfig setDeviceId(String deviceID) {
         this.deviceID = deviceID;
         return this;
     }
@@ -254,7 +254,7 @@ public class CountlyConfig {
      * @return Returns the same config object for convenient linking
      * @deprecated use this call with the other type override. The new type has the same values so a simple substitution is enough
      */
-    public CountlyConfig setIdMode(DeviceId.Type idMode) {
+    public synchronized CountlyConfig setIdMode(DeviceId.Type idMode) {
         this.idMode = ModuleDeviceId.fromOldDeviceIdToNew(idMode);
         return this;
     }
@@ -264,7 +264,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setIdMode(DeviceIdType idMode) {
+    public synchronized CountlyConfig setIdMode(DeviceIdType idMode) {
         this.idMode = idMode;
         return this;
     }
@@ -274,7 +274,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setStarRatingSessionLimit(int starRatingLimit) {
+    public synchronized CountlyConfig setStarRatingSessionLimit(int starRatingLimit) {
         this.starRatingSessionLimit = starRatingLimit;
         return this;
     }
@@ -284,7 +284,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setStarRatingCallback(StarRatingCallback starRatingCallback) {
+    public synchronized CountlyConfig setStarRatingCallback(StarRatingCallback starRatingCallback) {
         this.starRatingCallback = starRatingCallback;
         return this;
     }
@@ -294,7 +294,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setStarRatingTextTitle(String starRatingTextTitle) {
+    public synchronized CountlyConfig setStarRatingTextTitle(String starRatingTextTitle) {
         this.starRatingTextTitle = starRatingTextTitle;
         return this;
     }
@@ -303,7 +303,7 @@ public class CountlyConfig {
      * the shown message text for the star rating dialogs.
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setStarRatingTextMessage(String starRatingTextMessage) {
+    public synchronized CountlyConfig setStarRatingTextMessage(String starRatingTextMessage) {
         this.starRatingTextMessage = starRatingTextMessage;
         return this;
     }
@@ -312,7 +312,7 @@ public class CountlyConfig {
      * the shown dismiss button text for the shown star rating dialogs.
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setStarRatingTextDismiss(String starRatingTextDismiss) {
+    public synchronized CountlyConfig setStarRatingTextDismiss(String starRatingTextDismiss) {
         this.starRatingTextDismiss = starRatingTextDismiss;
         return this;
     }
@@ -323,7 +323,7 @@ public class CountlyConfig {
      *
      * @param enabled Set to true of you want to enable countly internal debugging logs
      */
-    public CountlyConfig setLoggingEnabled(boolean enabled) {
+    public synchronized CountlyConfig setLoggingEnabled(boolean enabled) {
         this.loggingEnabled = enabled;
         return this;
     }
@@ -333,7 +333,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig enableCrashReporting() {
+    public synchronized CountlyConfig enableCrashReporting() {
         this.enableUnhandledCrashReporting = true;
         return this;
     }
@@ -344,7 +344,7 @@ public class CountlyConfig {
      * @param enable
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setViewTracking(boolean enable) {
+    public synchronized CountlyConfig setViewTracking(boolean enable) {
         this.enableViewTracking = enable;
         return this;
     }
@@ -355,7 +355,7 @@ public class CountlyConfig {
      * @param enable set true if you want short names
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setAutoTrackingUseShortName(boolean enable) {
+    public synchronized CountlyConfig setAutoTrackingUseShortName(boolean enable) {
         this.autoTrackingUseShortName = enable;
         return this;
     }
@@ -365,7 +365,7 @@ public class CountlyConfig {
      * @param segmentation
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation) {
+    public synchronized CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation) {
         automaticViewSegmentation = segmentation;
         return this;
     }
@@ -376,7 +376,7 @@ public class CountlyConfig {
      * @param exceptions activities which should be ignored
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
+    public synchronized CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
         if (exceptions != null) {
             for (Class exception : exceptions) {
                 if (exception == null) {
@@ -393,7 +393,7 @@ public class CountlyConfig {
      * Allows you to add custom header key/value pairs to each request
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
+    public synchronized CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
         this.customNetworkRequestHeaders = customHeaderValues;
         return this;
     }
@@ -403,7 +403,7 @@ public class CountlyConfig {
      * @param enable
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setPushIntentAddMetadata(boolean enable) {
+    public synchronized CountlyConfig setPushIntentAddMetadata(boolean enable) {
         pushIntentAddMetadata = enable;
         return this;
     }
@@ -416,7 +416,7 @@ public class CountlyConfig {
      * @return Returns the same config object for convenient linking
      * @deprecated use the other version of this call that uses a different callback
      */
-    public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
+    public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownload = enabled;
         remoteConfigCallbackOld = callback;
         return this;
@@ -429,7 +429,7 @@ public class CountlyConfig {
      * @param callback callback called after the update was done
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
+    public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownload = enabled;
         remoteConfigCallbackNew = callback;
         return this;
@@ -441,7 +441,7 @@ public class CountlyConfig {
      * @param shouldRequireConsent
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setRequiresConsent(boolean shouldRequireConsent) {
+    public synchronized CountlyConfig setRequiresConsent(boolean shouldRequireConsent) {
         this.shouldRequireConsent = shouldRequireConsent;
         return this;
     }
@@ -452,7 +452,7 @@ public class CountlyConfig {
      * @param featureNames
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setConsentEnabled(String[] featureNames) {
+    public synchronized CountlyConfig setConsentEnabled(String[] featureNames) {
         enabledFeatureNames = featureNames;
         return this;
     }
@@ -463,7 +463,7 @@ public class CountlyConfig {
      * @param isForced the flag for the new status, set "true" if you want it to be forced
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setHttpPostForced(boolean isForced) {
+    public synchronized CountlyConfig setHttpPostForced(boolean isForced) {
         httpPostForced = isForced;
         return this;
     }
@@ -472,7 +472,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig enableTemporaryDeviceIdMode() {
+    public synchronized CountlyConfig enableTemporaryDeviceIdMode() {
         temporaryDeviceIdEnabled = true;
         return this;
     }
@@ -482,7 +482,7 @@ public class CountlyConfig {
      * @param callback
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
+    public synchronized CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
         crashFilterCallback = callback;
         return this;
     }
@@ -492,7 +492,7 @@ public class CountlyConfig {
      * @param salt
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setParameterTamperingProtectionSalt(String salt) {
+    public synchronized CountlyConfig setParameterTamperingProtectionSalt(String salt) {
         tamperingProtectionSalt = salt;
         return this;
     }
@@ -502,7 +502,7 @@ public class CountlyConfig {
      * @param shouldTrackOrientation
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation) {
+    public synchronized CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation) {
         trackOrientationChange = shouldTrackOrientation;
         return this;
     }
@@ -511,7 +511,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setRecordAllThreadsWithCrash() {
+    public synchronized CountlyConfig setRecordAllThreadsWithCrash() {
         recordAllThreadsWithCrash = true;
         return this;
     }
@@ -522,7 +522,7 @@ public class CountlyConfig {
      * @param enableAttribution set true if you want to enable it, set false if you want to disable it
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setEnableAttribution(boolean enableAttribution) {
+    public synchronized CountlyConfig setEnableAttribution(boolean enableAttribution) {
         this.enableAttribution = enableAttribution;
         return this;
     }
@@ -536,7 +536,7 @@ public class CountlyConfig {
      * @param certificates List of SSL public keys
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig enablePublicKeyPinning(String[] certificates) {
+    public synchronized CountlyConfig enablePublicKeyPinning(String[] certificates) {
         publicKeyPinningCertificates = certificates;
         return this;
     }
@@ -550,7 +550,7 @@ public class CountlyConfig {
      * @param certificates List of SSL certificates
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig enableCertificatePinning(String[] certificates) {
+    public synchronized CountlyConfig enableCertificatePinning(String[] certificates) {
         certificatePinningCertificates = certificates;
         return this;
     }
@@ -561,7 +561,7 @@ public class CountlyConfig {
      * @param shouldIgnore if crawlers should be ignored
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setShouldIgnoreAppCrawlers(boolean shouldIgnore) {
+    public synchronized CountlyConfig setShouldIgnoreAppCrawlers(boolean shouldIgnore) {
         shouldIgnoreAppCrawlers = shouldIgnore;
         return this;
     }
@@ -572,7 +572,7 @@ public class CountlyConfig {
      * @param appCrawlerNames the names to be ignored
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setAppCrawlerNames(String[] appCrawlerNames) {
+    public synchronized CountlyConfig setAppCrawlerNames(String[] appCrawlerNames) {
         this.appCrawlerNames = appCrawlerNames;
         return this;
     }
@@ -584,12 +584,12 @@ public class CountlyConfig {
      * @param threshold
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setEventQueueSizeToSend(int threshold) {
+    public synchronized CountlyConfig setEventQueueSizeToSend(int threshold) {
         eventQueueSizeThreshold = threshold;
         return this;
     }
 
-    public CountlyConfig enableManualSessionControl() {
+    public synchronized CountlyConfig enableManualSessionControl() {
         manualSessionControlEnabled = true;
         return this;
     }
@@ -600,7 +600,7 @@ public class CountlyConfig {
      * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
+    public synchronized CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
         customCrashSegment = crashSegment;
         return this;
     }
@@ -610,7 +610,7 @@ public class CountlyConfig {
      * @param checkForDumps
      * @return Returns the same config object for convenient linking
      */
-    protected CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
+    protected synchronized CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
         checkForNativeCrashDumps = checkForDumps;
         return this;
     }
@@ -623,7 +623,7 @@ public class CountlyConfig {
      * @param delay in seconds
      * @return Returns the same config object for convenient linking
      */
-    public CountlyConfig setUpdateSessionTimerDelay(int delay) {
+    public synchronized CountlyConfig setUpdateSessionTimerDelay(int delay) {
         sessionUpdateTimerDelay = delay;
         return this;
     }
@@ -633,7 +633,7 @@ public class CountlyConfig {
      * @param store
      * @return Returns the same config object for convenient linking
      */
-    protected CountlyConfig setCountlyStore(CountlyStore store) {
+    protected synchronized CountlyConfig setCountlyStore(CountlyStore store) {
         countlyStore = store;
         return this;
     }
@@ -647,7 +647,7 @@ public class CountlyConfig {
      * @param disable whether or not to disable session time updates
      * @return Returns the same config object for convenient linking
      */
-    protected CountlyConfig setDisableUpdateSessionRequests(boolean disable) {
+    protected synchronized CountlyConfig setDisableUpdateSessionRequests(boolean disable) {
         disableUpdateSessionRequests = disable;
         return this;
     }
