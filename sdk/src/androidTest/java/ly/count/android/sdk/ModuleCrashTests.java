@@ -146,6 +146,26 @@ public class ModuleCrashTests {
         Assert.assertEquals("Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", logs);
     }
 
+    /**
+     * Make sure that breadcrumbs are controlled by the count limit and the value length limit
+     */
+    @Test
+    public void addCrashBreadcrumbLimits() {
+        Countly countly = new Countly();
+        config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
+            .setMaxBreadcrumbCount(2).setMaxValueSize(5);
+        countly.init(config);
+
+        countly.crashes().addCrashBreadcrumb("Brc_1_aaaa");
+        countly.crashes().addCrashBreadcrumb("Brc_2_aaaa");
+        countly.crashes().addCrashBreadcrumb("Brc_3_aaaa");
+        countly.crashes().addCrashBreadcrumb("Brc_4_aaaa");
+
+        String logs = CrashDetails.getLogs();
+
+        Assert.assertEquals("Brc_3\nBrc_4\n", logs);
+    }
+
     @Test
     public void recordHandledExceptionException() {
         Exception exception = new Exception("Some message");

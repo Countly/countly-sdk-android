@@ -25,7 +25,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -35,7 +35,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -45,7 +45,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError65756";
         boolean nonfatal = true;
         boolean isNativeCrash = true;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -55,7 +55,7 @@ public class CrashDetailsTests {
         String errorText = "SomeErrorsh454353";
         boolean nonfatal = false;
         boolean isNativeCrash = true;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -65,13 +65,13 @@ public class CrashDetailsTests {
         String errorText = "fsdfdsfFFFDD";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
         Assert.assertFalse(cData.contains("\"logs\":"));
 
         String[] sArr = TestUtils.createStringArray(8);
         for (String s : sArr) {
-            CrashDetails.addLog(s);
+            CrashDetails.addLog(s, 100, 100);
         }
 
         String allLogs = CrashDetails.getLogs();
@@ -80,10 +80,10 @@ public class CrashDetailsTests {
         }
 
         for (String s : sArr) {
-            CrashDetails.addLog(s);
+            CrashDetails.addLog(s, 100, 100);
         }
 
-        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
         assertCrashData(cData2, errorText, nonfatal, isNativeCrash);
         Assert.assertTrue(cData2.contains("\"_logs\":"));
     }
@@ -93,7 +93,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
@@ -101,7 +101,7 @@ public class CrashDetailsTests {
 
         CrashDetails.setCustomSegments(cSeg);
 
-        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, null);
+        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Assert.assertTrue(cData2.contains("_custom"));
@@ -115,7 +115,7 @@ public class CrashDetailsTests {
         }
 
         Map<String, Object> additionalSeg = TestUtils.createMapString(6);
-        String cData3 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, additionalSeg);
+        String cData3 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), additionalSeg);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         for (Map.Entry<String, Object> entry : cSeg.entrySet()) {

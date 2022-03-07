@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.util.Base64;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -112,7 +113,7 @@ public class ModuleCrash extends ModuleBase {
             error = error.substring(0, Math.min(20000, error.length()));
         }
 
-        final String crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, customSegmentation);
+        final String crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), customSegmentation);
 
         requestQueueProvider.sendCrashReport(crashData);
     }
@@ -259,6 +260,20 @@ public class ModuleCrash extends ModuleBase {
         return _cly;
     }
 
+    Countly addBreadcrumbInternal(@Nullable String breadcrumb) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
+            return _cly;
+        }
+
+        if (breadcrumb == null || breadcrumb.isEmpty()) {
+            L.e("[Crashes] Can't add a null or empty crash breadcrumb");
+            return _cly;
+        }
+
+        CrashDetails.addLog(breadcrumb, _cly.config_.maxBreadcrumbCount, _cly.config_.maxValueSize);
+        return _cly;
+    }
+
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         //enable unhandled crash reporting
@@ -289,17 +304,7 @@ public class ModuleCrash extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Crashes] Adding crash breadcrumb");
 
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
-                    return _cly;
-                }
-
-                if (record == null || record.isEmpty()) {
-                    L.e("[Crashes] Can't add a null or empty crash breadcrumb");
-                    return _cly;
-                }
-
-                CrashDetails.addLog(record);
-                return _cly;
+                return addBreadcrumbInternal(record);
             }
         }
 

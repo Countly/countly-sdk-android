@@ -117,6 +117,8 @@ public class Countly {
         HMS,    // Huawei
     }
 
+    final int maxValueSizeDefault = 256;
+    final int maxBreadcrumbCountDefault = 100;
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
         @SuppressLint("StaticFieldLeak")
@@ -372,6 +374,26 @@ public class Countly {
             L.d("[Init] About to init internal systems");
 
             config_ = config;
+
+            if (config.maxValueSize != null) {
+                if(config.maxValueSize < 1) {
+                    config.maxValueSize = 1;
+                    L.w("[Init] provided 'maxValueSize' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxValueSize' override:[" + config.maxValueSize + "]");
+            } else {
+                config.maxValueSize = maxValueSizeDefault;
+            }
+
+            if (config.maxBreadcrumbCount != null) {
+                if(config.maxBreadcrumbCount < 1) {
+                    config.maxBreadcrumbCount = 1;
+                    L.w("[Init] provided 'maxBreadcrumbCount' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxBreadcrumbCount' override:[" + config.maxBreadcrumbCount + "]");
+            } else {
+                config.maxBreadcrumbCount = maxBreadcrumbCountDefault;
+            }
 
             if (config.sessionUpdateTimerDelay != null) {
                 //if we need to change the timer delay, do that first

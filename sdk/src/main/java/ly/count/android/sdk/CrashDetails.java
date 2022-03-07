@@ -35,6 +35,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
+import androidx.annotation.NonNull;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -51,8 +52,6 @@ import org.json.JSONObject;
  * the current device and operating environment for crash reporting purposes.
  */
 class CrashDetails {
-    private static final int maxBreadcrumbLimit = 1000;//the limit of how many breadcrumbs can be saved
-    private static final int maxBreadcrumbSize = 1000;//maximum allowed length of a breadcrumb in characters
     private static final LinkedList<String> logs = new LinkedList<>();
     private static final int startTime = UtilsTime.currentTimestampSeconds();
     static Map<String, Object> customSegments = null;
@@ -125,16 +124,16 @@ class CrashDetails {
     /**
      * Adds a record in the log
      */
-    static void addLog(String record) {
+    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
         int recordLength = record.length();
-        if (recordLength > maxBreadcrumbSize) {
-            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbSize + "]");
-            record = record.substring(0, maxBreadcrumbSize);
+        if (recordLength > maxBreadcrumbLength) {
+            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbLength + "]");
+            record = record.substring(0, maxBreadcrumbLength);
         }
 
         logs.add(record);
 
-        if (logs.size() > maxBreadcrumbLimit) {
+        if (logs.size() > maxBreadcrumbCount) {
             Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
             logs.removeFirst();
         }
@@ -414,7 +413,7 @@ class CrashDetails {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
-    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash, final Map<String, Object> additionalCustomSegmentation) {
+    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash, final String crashBreadcrumbs, final Map<String, Object> additionalCustomSegmentation) {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
@@ -436,7 +435,7 @@ class CrashDetails {
         if (!isNativeCrash) {
             //if is not a native crash
             fillJSONIfValuesNotEmpty(json,
-                "_logs", getLogs(),
+                "_logs", crashBreadcrumbs,
                 "_ram_current", getRamCurrent(context),
                 "_disk_current", getDiskCurrent(),
                 "_bat", getBatteryLevel(context),

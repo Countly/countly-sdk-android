@@ -184,6 +184,31 @@ public class CountlyConfig {
     String daCampaignData = null;
     Map<String, String> iaAttributionValues = null;
 
+    //SDK internal limits
+    Integer maxValueSize;
+    Integer maxBreadcrumbCount;
+    /**
+     * Set the maximum value size for values used internally. This affects things like: segmentation values
+     * user property values, breadcrumb text.
+     * If those values exceed the set limit, they will be truncated.
+     * @param maxValueSize
+     * @return
+     */
+    public synchronized CountlyConfig setMaxValueSize(int maxValueSize) {
+        this.maxValueSize = maxValueSize;
+        return this;
+    }
+
+    /**
+     * Set the maximum amount of breadcrumbs that can be recorded.
+     * After exceeding the limit, the oldest values will be removed.
+     * @param maxBreadcrumbCount
+     * @return
+     */
+    public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
+        this.maxBreadcrumbCount = maxBreadcrumbCount;
+        return this;
+    }
     public CountlyConfig() {
     }
 

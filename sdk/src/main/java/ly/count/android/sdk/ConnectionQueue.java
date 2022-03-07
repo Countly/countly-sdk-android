@@ -390,7 +390,7 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     //public void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
-    public void sendCrashReport(String crashData) {
+    public void sendCrashReport(@NonNull final String crashData) {
         checkInternalState();
         L.d("[Connection Queue] sendCrashReport");
 
