@@ -185,9 +185,19 @@ public class CountlyConfig {
     Map<String, String> iaAttributionValues = null;
 
     //SDK internal limits
+    Integer maxKeyLength;
     Integer maxValueSize;
     Integer maxSegmentationValues;
     Integer maxBreadcrumbCount;
+    Integer maxStackTraceLinesPerThread;
+    Integer maxStackTraceLineLength;
+    int maxStackTraceThreadCount = 30;
+
+    //public synchronized CountlyConfig setMaxKeyLength(int maxKeyLength) {
+    //    this.maxKeyLength = maxKeyLength;
+    //    return this;
+    //}
+
     /**
      * Set the maximum value size for values used internally. This affects things like: segmentation values
      * user property values, breadcrumb text.
@@ -195,10 +205,10 @@ public class CountlyConfig {
      * @param maxValueSize
      * @return
      */
-    public synchronized CountlyConfig setMaxValueSize(int maxValueSize) {
-        this.maxValueSize = maxValueSize;
-        return this;
-    }
+    //public synchronized CountlyConfig setMaxValueSize(int maxValueSize) {
+    //    this.maxValueSize = maxValueSize;
+    //    return this;
+    //}
 
     /**
      * Sets how many segmentation values can be recorded when recording an event or view.
@@ -221,6 +231,17 @@ public class CountlyConfig {
         this.maxBreadcrumbCount = maxBreadcrumbCount;
         return this;
     }
+
+    //public synchronized CountlyConfig setMaxStackTraceLinesPerThread(int maxStackTraceLinesPerThread) {
+    //    this.maxStackTraceLinesPerThread = maxStackTraceLinesPerThread;
+    //    return this;
+    //}
+    //
+    //public synchronized CountlyConfig setMaxStackTraceLineLength(int maxStackTraceLineLength) {
+    //    this.maxStackTraceLineLength = maxStackTraceLineLength;
+    //    return this;
+    //}
+
     public CountlyConfig() {
     }
 

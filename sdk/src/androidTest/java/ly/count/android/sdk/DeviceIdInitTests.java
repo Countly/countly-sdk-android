@@ -526,7 +526,7 @@ public class DeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.OPEN_UDID, cInitial.deviceId().getType());
 
 
-        //setup followup init. Adv id is still provided, id and type should be returned the same as befor
+        //setup followup init. Adv id is still provided, id and type should be returned the same as before
         CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
         configInitial.setIdMode(DeviceIdType.ADVERTISING_ID);
 

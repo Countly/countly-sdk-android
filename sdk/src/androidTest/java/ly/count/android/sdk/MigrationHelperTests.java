@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -149,4 +150,152 @@ public class MigrationHelperTests {
         sp.setDataSchemaVersion(-333);
         assertEquals(-333, mh.getCurrentSchemaVersion());
     }
+
+    /**
+     * We start on the latest version and nothing should change after calling "doWork"
+     */
+    @Test
+    public void performMigration0to1_0() {
+        cs.clear();
+        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        assertEquals(1, mh.getCurrentSchemaVersion());
+
+        mh.doWork();
+
+        assertEquals(1, mh.getCurrentSchemaVersion());
+        //we started at the latest version and the device ID type and value should be null
+        Assert.assertNull(cs.getDeviceID());
+        Assert.assertNull(cs.getDeviceIDType());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version.
+     * In case of developer supplied ID, nothing should be changed
+     */
+    @Test
+    public void performMigration0to1_1() {
+        cs.clear();
+        cs.addRequest("fff");
+        cs.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
+        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        assertEquals(0, mh.getCurrentSchemaVersion());
+
+        mh.doWork();
+
+        assertEquals(1, mh.getCurrentSchemaVersion());
+        Assert.assertNull(cs.getDeviceID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED.toString(), cs.getDeviceIDType());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * In case of ADVERTISING_ID it should be changed to OPEN_UDID,
+     * and a new ID should be generated in case it is null
+     */
+    @Test
+    public void performMigration0to1_2() {
+        cs.clear();
+        cs.addRequest("fff");
+        cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
+        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        assertEquals(0, mh.getCurrentSchemaVersion());
+
+        mh.doWork();
+
+        assertEquals(1, mh.getCurrentSchemaVersion());
+        Assert.assertNotNull(cs.getDeviceID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * In case of OPEN_UDID it should not be changed,
+     * A new ID should be generated in case it is null
+     */
+    @Test
+    public void performMigration0to1_3() {
+        cs.clear();
+        cs.addRequest("fff");
+        cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        assertEquals(0, mh.getCurrentSchemaVersion());
+
+        mh.doWork();
+
+        assertEquals(1, mh.getCurrentSchemaVersion());
+        Assert.assertNotNull(cs.getDeviceID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * In case of ADVERTISING_ID it should be changed to OPEN_UDID,
+     * and a new ID should be generated in case it is null
+     */
+    @Test
+    public void performMigration0to1_4() {
+        cs.clear();
+        cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(1, cs.getDataSchemaVersion());
+        String initialID = countly.deviceId().getID();
+        Assert.assertNotNull(initialID);
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+
+        Countly countly2 = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+        Assert.assertEquals(initialID, countly.deviceId().getID());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * In case of OPEN_UDID it should not be changed,
+     * and a new ID should be generated in case it is null
+     */
+    @Test
+    public void performMigration0to1_5() {
+        cs.clear();
+        cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(1, cs.getDataSchemaVersion());
+        String initialID = countly.deviceId().getID();
+        Assert.assertNotNull(initialID);
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+
+        Countly countly2 = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+        Assert.assertEquals(initialID, countly.deviceId().getID());
+    }
+
+    @Test
+    public void performMigration0to1_6() {
+        cs.clear();
+        cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
+        cs.setDeviceID("ab");
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(1, cs.getDataSchemaVersion());
+        Assert.assertEquals("ab", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
+
+    @Test
+    public void performMigration0to1_7() {
+        cs.clear();
+        cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+        cs.setDeviceID("cd");
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(1, cs.getDataSchemaVersion());
+        Assert.assertEquals("cd", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
+
+
 }

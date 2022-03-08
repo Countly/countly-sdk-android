@@ -118,8 +118,14 @@ public class Countly {
     }
 
     //SDK limit defaults
+    final int maxKeyLengthDefault = 128;
     final int maxValueSizeDefault = 256;
+    final int maxSegmentationValuesDefault = 30;
     final int maxBreadcrumbCountDefault = 100;
+    final int maxStackTraceLinesPerThreadDefault = 30;
+    final int maxStackTraceLineLengthDefault = 200;
+    final int maxStackTraceThreadCountDefault = 30;
+
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
         @SuppressLint("StaticFieldLeak")
@@ -376,6 +382,17 @@ public class Countly {
 
             config_ = config;
 
+            // Have a look at the SDK limit values
+            if (config.maxKeyLength != null) {
+                if(config.maxKeyLength < 1) {
+                    config.maxKeyLength = 1;
+                    L.w("[Init] provided 'maxKeyLength' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxKeyLength' override:[" + config.maxKeyLength + "]");
+            } else {
+                config.maxKeyLength = maxKeyLengthDefault;
+            }
+
             if (config.maxValueSize != null) {
                 if(config.maxValueSize < 1) {
                     config.maxValueSize = 1;
@@ -404,6 +421,26 @@ public class Countly {
                 L.i("[Init] provided 'maxBreadcrumbCount' override:[" + config.maxBreadcrumbCount + "]");
             } else {
                 config.maxBreadcrumbCount = maxBreadcrumbCountDefault;
+            }
+
+            if (config.maxStackTraceLinesPerThread != null) {
+                if(config.maxStackTraceLinesPerThread < 1) {
+                    config.maxStackTraceLinesPerThread = 1;
+                    L.w("[Init] provided 'maxStackTraceLinesPerThread' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxStackTraceLinesPerThread' override:[" + config.maxStackTraceLinesPerThread + "]");
+            } else {
+                config.maxStackTraceLinesPerThread = maxStackTraceLinesPerThreadDefault;
+            }
+
+            if (config.maxStackTraceLineLength != null) {
+                if(config.maxStackTraceLineLength < 1) {
+                    config.maxStackTraceLineLength = 1;
+                    L.w("[Init] provided 'maxStackTraceLineLength' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxStackTraceLineLength' override:[" + config.maxStackTraceLineLength + "]");
+            } else {
+                config.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
             }
 
             if (config.sessionUpdateTimerDelay != null) {

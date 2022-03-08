@@ -273,6 +273,15 @@ public class ModuleCrash extends ModuleBase {
         if (crashFilterCheck(exceptionString)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
+            //in case the exception needs to be recorded, truncate it
+            //String[] splitRes = exceptionString.split("\n");
+            //int totalAllowedLines = _cly.config_.maxStackTraceThreadCount * _cly.config_.maxStackTraceLinesPerThread;
+            //StringBuilder sb = new StringBuilder(exceptionString.length());
+            //
+            //for(int a = 0 ; a < splitRes.length && a < totalAllowedLines ; a++) {
+            //    sb.append(splitRes[a].substring(0, Math.min(splitRes[a].length(), _cly.config_.maxStackTraceLineLength)));
+            //}
+            //sendCrashReportToQueue(sb.toString(), itIsHandled, false, customSegmentation);
             sendCrashReportToQueue(exceptionString, itIsHandled, false, customSegmentation);
         }
         return _cly;

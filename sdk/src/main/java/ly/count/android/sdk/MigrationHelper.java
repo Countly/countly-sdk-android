@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import java.util.Date;
+import java.util.UUID;
 
 class MigrationHelper {
     /**
@@ -22,8 +23,8 @@ class MigrationHelper {
      * Called from SDK side to perform the required steps to check if the migration is required and then execute it if it is.
      */
     public void doWork() {
-        L.v("[MigrationHelper] doWork");
         int currentVersion = getCurrentSchemaVersion();
+        L.v("[MigrationHelper] doWork, current version:[" + currentVersion + "]");
 
         if (currentVersion < 0) {
             L.e("[MigrationHelper] doWork, returned schema version is negative, encountered serious issue");
@@ -106,6 +107,26 @@ class MigrationHelper {
      * Specific migration from schema version 0 to 1
      */
     void performMigration0To1() {
+        String deviceIDType = storage.getDeviceIDType();
+        String deviceID = storage.getDeviceID();
 
+        //update the device ID type
+        //noinspection StatementWithEmptyBody
+        if (deviceIDType.equals(DeviceIdType.OPEN_UDID.toString())) {
+            //current device ID is OPEN_UDID
+            //nothing should change
+        } else if (deviceIDType.equals(DeviceIdType.ADVERTISING_ID.toString())) {
+            //current device ID is ADVERTISING_ID
+            //it's type should be changed to OPEN_UDID.
+            storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+        }
+
+        //generate a deviceID in case the current type is OPEN_UDID and there is no ID
+        if(storage.getDeviceIDType().equals(DeviceIdType.OPEN_UDID.toString())) {
+            if(deviceID == null || deviceID.isEmpty()) {
+                //in case there is no valid ID, generate it
+                storage.setDeviceID(UUID.randomUUID().toString());
+            }
+        }
     }
 }
