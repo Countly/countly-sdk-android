@@ -117,6 +117,7 @@ public class Countly {
         HMS,    // Huawei
     }
 
+    //SDK limit defaults
     final int maxValueSizeDefault = 256;
     final int maxBreadcrumbCountDefault = 100;
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
@@ -383,6 +384,16 @@ public class Countly {
                 L.i("[Init] provided 'maxValueSize' override:[" + config.maxValueSize + "]");
             } else {
                 config.maxValueSize = maxValueSizeDefault;
+            }
+
+            if (config.maxSegmentationValues != null) {
+                if(config.maxSegmentationValues < 1) {
+                    config.maxSegmentationValues = 1;
+                    L.w("[Init] provided 'maxSegmentationValues' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxSegmentationValues' override:[" + config.maxSegmentationValues + "]");
+            } else {
+                config.maxSegmentationValues = maxSegmentationValuesDefault;
             }
 
             if (config.maxBreadcrumbCount != null) {

@@ -99,9 +99,7 @@ public class CrashDetailsTests {
 
         Map<String, Object> cSeg = TestUtils.createMapString(5);
 
-        CrashDetails.setCustomSegments(cSeg);
-
-        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), cSeg);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Assert.assertTrue(cData2.contains("_custom"));
@@ -113,37 +111,15 @@ public class CrashDetailsTests {
             Assert.assertTrue(cData2.contains(key));
             Assert.assertTrue(cData2.contains(value));
         }
-
-        Map<String, Object> additionalSeg = TestUtils.createMapString(6);
-        String cData3 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), additionalSeg);
-        assertCrashData(cData, errorText, nonfatal, isNativeCrash);
-
-        for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
-            String key = entry.getKey();
-            String value = (String) entry.getValue();
-
-            Assert.assertTrue(cData3.contains(key));
-            Assert.assertTrue(cData3.contains(value));
-        }
-
-        for (Map.Entry<String, Object> entry : additionalSeg.entrySet()) {
-            String key = entry.getKey();
-            String value = (String) entry.getValue();
-
-            Assert.assertTrue(cData3.contains(key));
-            Assert.assertTrue(cData3.contains(value));
-        }
     }
 
     @Test
     public void getCustomSegmentsJson() throws JSONException {
         Map<String, Object> cSeg = TestUtils.createMapString(5);
-        Map<String, Object> additionalSeg = TestUtils.createMapString(6);
 
-        CrashDetails.setCustomSegments(cSeg);
-        JSONObject jobj = CrashDetails.getCustomSegmentsJson(additionalSeg);
+        JSONObject jobj = CrashDetails.getCustomSegmentsJson(cSeg);
 
-        Assert.assertEquals(11, jobj.length());
+        Assert.assertEquals(cSeg.size(), jobj.length());
 
         for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
             String key = entry.getKey();
@@ -151,39 +127,6 @@ public class CrashDetailsTests {
 
             Assert.assertEquals(value, jobj.get(key));
         }
-
-        for (Map.Entry<String, Object> entry : additionalSeg.entrySet()) {
-            String key = entry.getKey();
-            String value = (String) entry.getValue();
-
-            Assert.assertEquals(value, additionalSeg.get(key));
-        }
-    }
-
-    @Test
-    public void getCustomSegmentsJsonOverlapping() throws JSONException {
-        Map<String, Object> cSeg = new HashMap<>();
-        cSeg.put("a", 1);
-        cSeg.put("a1", 12);
-        cSeg.put("a2", true);
-        cSeg.put("a3", "fdf");
-
-        Map<String, Object> additionalSeg = new HashMap<>();
-        additionalSeg.put("38383", "fdfd");
-        additionalSeg.put("a", false);
-        additionalSeg.put("a2", "trtr");
-        additionalSeg.put("a3", 84.3d);
-
-        CrashDetails.setCustomSegments(cSeg);
-        JSONObject jobj = CrashDetails.getCustomSegmentsJson(additionalSeg);
-
-        Assert.assertEquals(5, jobj.length());
-
-        Assert.assertEquals("fdfd", jobj.get("38383"));
-        Assert.assertEquals(false, jobj.get("a"));
-        Assert.assertEquals("trtr", jobj.get("a2"));
-        Assert.assertEquals(12, jobj.get("a1"));
-        Assert.assertEquals(84.3d, jobj.get("a3"));
     }
 
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {

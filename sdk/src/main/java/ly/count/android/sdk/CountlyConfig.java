@@ -186,6 +186,7 @@ public class CountlyConfig {
 
     //SDK internal limits
     Integer maxValueSize;
+    Integer maxSegmentationValues;
     Integer maxBreadcrumbCount;
     /**
      * Set the maximum value size for values used internally. This affects things like: segmentation values
@@ -196,6 +197,17 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setMaxValueSize(int maxValueSize) {
         this.maxValueSize = maxValueSize;
+        return this;
+    }
+
+    /**
+     * Sets how many segmentation values can be recorded when recording an event or view.
+     * Values exceeding this count will be ignored.
+     * @param maxSegmentationValues
+     * @return
+     */
+    public synchronized CountlyConfig setMaxSegmentationValues(int maxSegmentationValues) {
+        this.maxSegmentationValues = maxSegmentationValues;
         return this;
     }
 

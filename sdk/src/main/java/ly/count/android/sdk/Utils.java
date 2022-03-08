@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -256,6 +257,24 @@ public class Utils {
             return true;
         } else {
             return false;
+        }
+    }
+
+    static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String moduleTag, final @NonNull ModuleLog L) {
+        if(segmentation == null) {
+            return;
+        }
+
+        Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
+        while (iterator.hasNext()) {
+            if (segmentation.size() > maxCount) {
+                Map.Entry<String, Object> value = iterator.next();
+                String key = value.getKey();
+                L.w(moduleTag + ", Value exceeded the maximum segmentation count key:[" + key + "]");
+                iterator.remove();
+            } else {
+                break;
+            }
         }
     }
 }

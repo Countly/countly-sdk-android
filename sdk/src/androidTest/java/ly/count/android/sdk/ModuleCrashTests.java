@@ -3,6 +3,8 @@ package ly.count.android.sdk;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -103,13 +105,9 @@ public class ModuleCrashTests {
     }
 
     @Test
-    public void setCustomCrashSegment() {
-        CrashDetails.customSegments = null;
+    public void provideCustomCrashSegment_DuringInit() {
         Countly countly = new Countly();
         CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-
-        Map<String, Object> segmIn = CrashDetails.customSegments;
-        Assert.assertTrue(segmIn == null || segmIn.size() == 0);
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
@@ -132,7 +130,55 @@ public class ModuleCrashTests {
         segm2.put("2", 1234.55d);
         segm2.put("3", true);
 
-        Assert.assertEquals(segm2, CrashDetails.customSegments);
+        Assert.assertEquals(segm2, countly.moduleCrash.customCrashSegments);
+    }
+
+    @Test
+    public void provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
+        Countly countly = new Countly();
+        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("aa", "dd");
+        segm.put("aa1", "dda");
+        segm.put("1", 1234);
+
+        cConfig.setCustomCrashSegment(segm);
+
+        countly.init(cConfig);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
+
+        //validating values set by init
+        Map<String, Object> segm2 = new HashMap<>();
+        segm2.put("aa", "dd");
+        segm2.put("aa1", "dda");
+        segm2.put("1", 1234);
+        Assert.assertEquals(segm2, countly.moduleCrash.customCrashSegments);
+
+
+        //prepare new segm to be provided during recording
+        Map<String, Object> segm3 = new HashMap<>();
+        segm3.put("1", 54);
+        segm3.put("2", 1234.55d);
+        segm3.put("3", true);
+
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, segm3);
+        ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
+        verify(requestQueueProvider).sendCrashReport(arg.capture());
+
+        String argVal = arg.getValue();
+
+        JSONObject jobj = new JSONObject(argVal);
+        Assert.assertTrue(jobj.getString("_error").startsWith("java.lang.Exception: Some message"));
+        JSONObject jCus = jobj.getJSONObject("_custom");
+        Assert.assertEquals(5, jCus.length());
+        Assert.assertEquals("dd", jCus.get("aa"));
+        Assert.assertEquals("dda", jCus.get("aa1"));
+        Assert.assertEquals(54, jCus.get("1"));
+        Assert.assertEquals(1234.55d, jCus.get("2"));
+        Assert.assertEquals(true, jCus.get("3"));
     }
 
     @Test

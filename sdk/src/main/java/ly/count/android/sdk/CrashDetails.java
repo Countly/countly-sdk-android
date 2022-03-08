@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
@@ -36,10 +37,10 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -54,7 +55,6 @@ import org.json.JSONObject;
 class CrashDetails {
     private static final LinkedList<String> logs = new LinkedList<>();
     private static final int startTime = UtilsTime.currentTimestampSeconds();
-    static Map<String, Object> customSegments = null;
     private static boolean inBackground = true;
     private static long totalMemory = 0;
 
@@ -153,62 +153,20 @@ class CrashDetails {
     }
 
     /**
-     * Adds developer provided custom segments for crash,
-     * like versions of dependency libraries.
+     * Get custom segments json string from the provided map
      */
-    static void setCustomSegments(Map<String, Object> segments) {
-        customSegments = new HashMap<>();
-
-        for (Map.Entry<String, Object> pair : segments.entrySet()) {
-            String key = pair.getKey();
-            Object value = pair.getValue();
-
-            if (value instanceof Integer) {
-                customSegments.put(key, (Integer) value);
-            } else if (value instanceof Double) {
-                customSegments.put(key, (Double) value);
-            } else if (value instanceof String) {
-                customSegments.put(key, (String) value);
-            } else if (value instanceof Boolean) {
-                customSegments.put(key, (Boolean) value);
-            } else {
-                Countly.sharedInstance().L.w("Unsupported data type added as custom crash segment");
-            }
-        }
-
-        customSegments.putAll(segments);
-    }
-
-    /**
-     * Get custom segments json string
-     */
-    static JSONObject getCustomSegmentsJson(final Map<String, Object> additionalCustomSegmentation) {
-        if (additionalCustomSegmentation == null && (customSegments == null || customSegments.isEmpty())) {
+    static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {
+        if (customSegments == null || customSegments.isEmpty()) {
             return null;
         }
 
         JSONObject returnedSegmentation = new JSONObject();
-
-        if (customSegments != null) {
-            for (String k : customSegments.keySet()) {
-                if (k != null) {
-                    try {
-                        returnedSegmentation.put(k, customSegments.get(k));
-                    } catch (JSONException e) {
-                        Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
-                    }
-                }
-            }
-        }
-
-        if (additionalCustomSegmentation != null) {
-            for (String k : additionalCustomSegmentation.keySet()) {
-                if (k != null) {
-                    try {
-                        returnedSegmentation.put(k, additionalCustomSegmentation.get(k));
-                    } catch (JSONException e) {
-                        Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
-                    }
+        for (String k : customSegments.keySet()) {
+            if (k != null) {
+                try {
+                    returnedSegmentation.put(k, customSegments.get(k));
+                } catch (JSONException e) {
+                    Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
                 }
             }
         }
@@ -373,6 +331,7 @@ class CrashDetails {
     /**
      * Checks if device is online.
      */
+    @SuppressLint("MissingPermission")
     static String isOnline(Context context) {
         try {
             ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -413,7 +372,7 @@ class CrashDetails {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
-    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash, final String crashBreadcrumbs, final Map<String, Object> additionalCustomSegmentation) {
+    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash, final String crashBreadcrumbs, final Map<String, Object> customCrashSegmentation) {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
@@ -454,7 +413,7 @@ class CrashDetails {
         }
 
         try {
-            json.put("_custom", getCustomSegmentsJson(additionalCustomSegmentation));
+            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
         } catch (JSONException e) {
             //no custom segments
         }

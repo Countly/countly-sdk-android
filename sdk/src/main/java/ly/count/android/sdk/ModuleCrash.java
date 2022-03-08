@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ModuleCrash extends ModuleBase {
@@ -20,6 +21,9 @@ public class ModuleCrash extends ModuleBase {
     CrashFilterCallback crashFilterCallback;
 
     boolean recordAllThreads = false;
+
+    @Nullable
+    Map<String, Object> customCrashSegments = null;
 
     //interface for SDK users
     final Crashes crashesInterface;
@@ -105,15 +109,29 @@ public class ModuleCrash extends ModuleBase {
         sendCrashReportToQueue(dumpString, false, true, null);
     }
 
-    public void sendCrashReportToQueue(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
+    public void sendCrashReportToQueue(String error, boolean nonfatal, boolean isNativeCrash, @Nullable final Map<String, Object> customSegmentation) {
         L.d("[ModuleCrash] sendCrashReportToQueue");
+
+        Map<String, Object> combinedSegmentationValues = new HashMap<>();
+
+        if (customCrashSegments != null) {
+            combinedSegmentationValues.putAll(customCrashSegments);
+        }
+
+        if (customSegmentation != null) {
+            Utils.removeUnsupportedDataTypes(customSegmentation);
+            combinedSegmentationValues.putAll(customSegmentation);
+        }
+
+        //truncate crash segmentation
+        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
             error = error.substring(0, Math.min(20000, error.length()));
         }
 
-        final String crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), customSegmentation);
+        final String crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), combinedSegmentationValues);
 
         requestQueueProvider.sendCrashReport(crashData);
     }
@@ -133,8 +151,8 @@ public class ModuleCrash extends ModuleBase {
 
         if (segments != null) {
             Utils.removeUnsupportedDataTypes(segments);
-            CrashDetails.setCustomSegments(segments);
         }
+        customCrashSegments = segments;
     }
 
     void enableCrashReporting() {
