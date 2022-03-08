@@ -135,6 +135,8 @@ public class ModuleViews extends ModuleBase {
             return _cly;
         }
 
+        Utils.truncateSegmentationValues(customViewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] recordViewInternal,", L);
+
         if (L.logEnabled()) {
             int segmCount = 0;
             if (customViewSegmentation != null) {
