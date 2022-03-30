@@ -78,21 +78,16 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
                     }
                 }
 
-                if (found) {
-                    //recombine and add
-                    StringBuilder stringBuilder = new StringBuilder(storedRequest.length());
+                //recombine and add
+                StringBuilder stringBuilder = new StringBuilder(storedRequest.length());//todo make the lenght larger to take into account the app key size increase
 
-                    for (int c = 0; c < parts.length; c++) {
-                        if (c != 0) {
-                            stringBuilder.append("&");
-                        }
-                        stringBuilder.append(parts[c]);
+                for (int c = 0; c < parts.length; c++) {
+                    if (c != 0) {
+                        stringBuilder.append("&");
                     }
-                    filteredRequests.add(stringBuilder.toString());
-                } else {
-                    //pass through the old one
-                    filteredRequests.add(storedRequest);
+                    stringBuilder.append(parts[c]);
                 }
+                filteredRequests.add(stringBuilder.toString());
             }
 
             return filteredRequests;

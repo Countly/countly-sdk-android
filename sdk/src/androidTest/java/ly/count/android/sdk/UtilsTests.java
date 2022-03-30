@@ -71,11 +71,13 @@ public class UtilsTests {
 
     @Test
     public void testAPI() {
+        //The version the SDK is targeting should be above these values
         Assert.assertTrue(Utils.API(28));
         Assert.assertTrue(Utils.API(27));
         Assert.assertTrue(Utils.API(15));
 
-        Assert.assertFalse(Utils.API(32));
+        //The version the SDK is targeting should be below this value
+        Assert.assertFalse(Utils.API(33));
     }
 
     @Test

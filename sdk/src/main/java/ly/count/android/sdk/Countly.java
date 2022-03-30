@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "21.11.0-RC5";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "21.11.0-RC6";
 
     /**
      * Used as request meta data on every request
@@ -315,7 +315,7 @@ public class Countly {
 
         if (config.deviceID != null && config.deviceID.length() == 0) {
             //device ID is provided but it's a empty string
-            throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");
+            throw new IllegalArgumentException("valid deviceID is required, but was provided as empty String");//todo rework into a fallback mode
         }
 
         if (config.idMode == DeviceIdType.ADVERTISING_ID) {
@@ -336,10 +336,7 @@ public class Countly {
             throw new IllegalArgumentException("Valid device ID has to be provided with the Developer_Supplied device ID type");
         }
 
-        if (isLoggingEnabled()) {
-            String halfAppKey = config.appKey.substring(0, config.appKey.length() / 2);
-            L.d("[Init] SDK initialised with the URL:[" + config.serverURL + "] and first half of the appKey:[" + halfAppKey + "]");
-        }
+        L.d("[Init] SDK initialised with the URL:[" + config.serverURL + "] and the appKey:[" + config.appKey + "]");
 
         if (sdkIsInitialised && (!baseInfoProvider.getServerURL().equals(config.serverURL) ||
             !baseInfoProvider.getAppKey().equals(config.appKey) ||
