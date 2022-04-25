@@ -64,6 +64,8 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                 if (error != null) {
                     Toast.makeText(ActivityExampleFeedback.this, "Encountered error while showing feedback dialog: [" + error + "]", Toast.LENGTH_LONG).show();
                 }
+
+                Toast.makeText(ActivityExampleFeedback.this, "presentRatingWidgetWithID callback", Toast.LENGTH_LONG).show();
             }
         });
     }

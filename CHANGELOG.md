@@ -18,6 +18,7 @@
   * Deprecated old user profile calls. Introduced a new API by which to change them.
 
   * Fixed bug where, on the start of a new session, the first view was not identified correctly
+  * Fixed bug where the rating widget callback would not be called when the widget is closed and there is no error
   * Fixed potential deadlock issue
 
   * Removed the deprecated "init" methods

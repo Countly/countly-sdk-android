@@ -481,7 +481,7 @@ public class ModuleRatings extends ModuleBase {
                 if (checkResponse == null) {
                     L.d("[ModuleRatings] Not possible to show Feedback popup for widget id: [" + widgetId + "], probably a lack of connection to the server");
                     if (devCallback != null) {
-                        devCallback.callback("Not possible to show Rating popup, probably no internet connection");
+                        devCallback.callback("Not possible to show Rating popup, probably no internet connection or wrong widget id");
                     }
                     return;
                 }
@@ -517,7 +517,14 @@ public class ModuleRatings extends ModuleBase {
                                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);
                                 builder.setView(webView);
                                 if (closeButtonText != null && !closeButtonText.isEmpty()) {
-                                    builder.setNeutralButton(closeButtonText, null);
+                                    builder.setNeutralButton(closeButtonText, new DialogInterface.OnClickListener() {
+                                        @Override public void onClick(DialogInterface dialog, int which) {
+                                            L.d("[ModuleRatings] Calling callback from 'close' button");
+                                            if (devCallback != null) {
+                                                devCallback.callback(null);
+                                            }
+                                        }
+                                    });
                                 }
                                 builder.show();
                             }
