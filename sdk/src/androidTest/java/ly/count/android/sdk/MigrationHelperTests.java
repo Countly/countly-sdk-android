@@ -43,6 +43,7 @@ public class MigrationHelperTests {
     ModuleLog mockLog;
     CountlyStore cs;
     StorageProvider sp;
+    final int latestSchemaVersion = 1;
 
     @Before
     public void setUp() {
@@ -152,25 +153,46 @@ public class MigrationHelperTests {
     }
 
     /**
-     * We start on the latest version and nothing should change after calling "doWork"
+     * We start on the latest version and nothing should change
+     * Calling "doWork"
      */
     @Test
-    public void performMigration0to1_0() {
+    public void performMigration0to1_0_doWork() {
         cs.clear();
         MigrationHelper mh = new MigrationHelper(cs, mockLog);
-        assertEquals(1, mh.getCurrentSchemaVersion());
+        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
 
         mh.doWork();
 
-        assertEquals(1, mh.getCurrentSchemaVersion());
+        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
         //we started at the latest version and the device ID type and value should be null
         Assert.assertNull(cs.getDeviceID());
         Assert.assertNull(cs.getDeviceIDType());
     }
 
     /**
+     * We start on the latest version and nothing should change
+     * Calling "init"
+     */
+    @Test
+    public void performMigration0to1_0_init() {
+        cs.clear();
+
+        Assert.assertFalse(cs.anythingSetInStorage());
+        Assert.assertNull(cs.getDeviceID());
+        Assert.assertNull(cs.getDeviceIDType());
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertNotNull(cs.getDeviceID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
+
+    /**
      * We are on the legacy version and we should get to the latest schema version.
      * In case of developer supplied ID, nothing should be changed
+     * Calling "doWork"
      */
     @Test
     public void performMigration0to1_1() {
@@ -182,7 +204,7 @@ public class MigrationHelperTests {
 
         mh.doWork();
 
-        assertEquals(1, mh.getCurrentSchemaVersion());
+        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
         Assert.assertNull(cs.getDeviceID());
         Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED.toString(), cs.getDeviceIDType());
     }
@@ -190,19 +212,21 @@ public class MigrationHelperTests {
     /**
      * We are on the legacy version and we should get to the latest schema version
      * In case of ADVERTISING_ID it should be changed to OPEN_UDID,
-     * and a new ID should be generated in case it is null
+     * and a new ID should be generated because it currently is 'null'
+     *
+     * Calling "doWork"
      */
     @Test
     public void performMigration0to1_2() {
         cs.clear();
-        cs.addRequest("fff");
+        cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
         cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
         MigrationHelper mh = new MigrationHelper(cs, mockLog);
         assertEquals(0, mh.getCurrentSchemaVersion());
 
         mh.doWork();
 
-        assertEquals(1, mh.getCurrentSchemaVersion());
+        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
         Assert.assertNotNull(cs.getDeviceID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
     }
@@ -210,19 +234,21 @@ public class MigrationHelperTests {
     /**
      * We are on the legacy version and we should get to the latest schema version
      * In case of OPEN_UDID it should not be changed,
-     * A new ID should be generated in case it is null
+     * A new ID should be generated because it currently is 'null'
+     *
+     * Calling "doWork"
      */
     @Test
     public void performMigration0to1_3() {
         cs.clear();
-        cs.addRequest("fff");
+        cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
         cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
         MigrationHelper mh = new MigrationHelper(cs, mockLog);
         assertEquals(0, mh.getCurrentSchemaVersion());
 
         mh.doWork();
 
-        assertEquals(1, mh.getCurrentSchemaVersion());
+        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
         Assert.assertNotNull(cs.getDeviceID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
     }
@@ -230,7 +256,9 @@ public class MigrationHelperTests {
     /**
      * We are on the legacy version and we should get to the latest schema version
      * In case of ADVERTISING_ID it should be changed to OPEN_UDID,
-     * and a new ID should be generated in case it is null
+     * and a new ID should be generated because it currently is 'null'
+     *
+     * Calling "init"
      */
     @Test
     public void performMigration0to1_4() {
@@ -239,20 +267,21 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(1, cs.getDataSchemaVersion());
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
         Assert.assertNotNull(initialID);
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
 
+        //perform a second init and confirm that everything is still stable
         Countly countly2 = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
-        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
-        Assert.assertEquals(initialID, countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly2.deviceId().getType());
+        Assert.assertEquals(initialID, countly2.deviceId().getID());
     }
 
     /**
      * We are on the legacy version and we should get to the latest schema version
      * In case of OPEN_UDID it should not be changed,
-     * and a new ID should be generated in case it is null
+     * and a new ID should be generated because it currently is 'null'
      */
     @Test
     public void performMigration0to1_5() {
@@ -261,16 +290,21 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(1, cs.getDataSchemaVersion());
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
         Assert.assertNotNull(initialID);
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
 
         Countly countly2 = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
-        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
-        Assert.assertEquals(initialID, countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly2.deviceId().getType());
+        Assert.assertEquals(initialID, countly2.deviceId().getID());
     }
 
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * Since the initial type is ADVERTISING_ID, it should be changed to OPEN_UDID
+     * a new ID should not be generated because it already is a valid value
+     */
     @Test
     public void performMigration0to1_6() {
         cs.clear();
@@ -279,11 +313,16 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(1, cs.getDataSchemaVersion());
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("ab", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
 
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * Since the initial type is OPEN_UDID, it should not change
+     * a new ID should not be generated because it already is a valid value
+     */
     @Test
     public void performMigration0to1_7() {
         cs.clear();
@@ -292,10 +331,27 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(1, cs.getDataSchemaVersion());
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
 
+    /**
+     * We are on schema version 1
+     * Type and device ID should remain the same
+     */
+    @Test
+    public void performMigration0to1_8() {
+        cs.clear();
+        cs.setDataSchemaVersion(1);
+        cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+        cs.setDeviceID("cd");
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals("cd", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
 
 }

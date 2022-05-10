@@ -121,7 +121,7 @@ class MigrationHelper {
             storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
         }
 
-        //generate a deviceID in case the current type is OPEN_UDID and there is no ID
+        //generate a deviceID in case the current type is OPEN_UDID (either migrated or originally as such) and there is no ID
         if(storage.getDeviceIDType().equals(DeviceIdType.OPEN_UDID.toString())) {
             if(deviceID == null || deviceID.isEmpty()) {
                 //in case there is no valid ID, generate it
