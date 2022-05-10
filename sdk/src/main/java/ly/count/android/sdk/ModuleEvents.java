@@ -36,6 +36,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             L.d("[ModuleEvents] Found cached push event, recording it");
 
             Map<String, Object> map = new HashMap<>();
+            map.put(ModulePush.PUSH_EVENT_ACTION_PLATFORM_KEY, ModulePush.PUSH_EVENT_ACTION_PLATFORM_VALUE);
             map.put(ModulePush.PUSH_EVENT_ACTION_ID_KEY, cachedData[0]);
             map.put(ModulePush.PUSH_EVENT_ACTION_INDEX_KEY, cachedData[1]);
             recordEventInternal(ModulePush.PUSH_EVENT_ACTION, map, 1, 0, 0, null);

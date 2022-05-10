@@ -23,6 +23,8 @@ import org.json.JSONObject;
 public class ModulePush {
 
     public static final String PUSH_EVENT_ACTION = "[CLY]_push_action";
+    public static final String PUSH_EVENT_ACTION_PLATFORM_KEY = "p";
+    public static final String PUSH_EVENT_ACTION_PLATFORM_VALUE = "a";
     public static final String PUSH_EVENT_ACTION_ID_KEY = "i";
     public static final String PUSH_EVENT_ACTION_INDEX_KEY = "b";
     static final String KEY_ID = "c.i";
@@ -227,6 +229,7 @@ public class ModulePush {
         public void recordAction(Context context, int buttonIndex) {
             if (Countly.sharedInstance().isInitialized()) {
                 Map<String, Object> map = new HashMap<>();
+                map.put(PUSH_EVENT_ACTION_PLATFORM_KEY, PUSH_EVENT_ACTION_PLATFORM_VALUE);
                 map.put(PUSH_EVENT_ACTION_ID_KEY, id);
                 map.put(PUSH_EVENT_ACTION_INDEX_KEY, String.valueOf(buttonIndex));
                 Countly.sharedInstance().events().recordEvent(PUSH_EVENT_ACTION, map, 1);

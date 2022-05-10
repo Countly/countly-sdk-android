@@ -2,7 +2,7 @@
   * !! Major breaking change !! Deprecating "ADVERTISING_ID" as device ID generation strategy. SDK will fall back to 'OPEN_UDID'. All "ADVERTISING_ID" device ID's will have their type changed to "OPEN_UDID". If the device will have a "null" device ID, a random one will be generated.
   * !! Major breaking change !! Changing device ID without merging will now clear all consent. It has to be given again after this operation.
   * !! Major breaking change !! Entering temporary ID mode will now clear all consent. It has to be given again after this operation.
-  * ! Minor breaking change ! Feedback widget callback not has an additional callback. This will cause a compilation error that is trivial to fix by adding the override for the missing call.
+  * ! Minor breaking change ! Feedback widget callback has an additional callback. This will cause a compilation error that is trivial to fix by adding the override for the missing call.
   * ! Minor breaking change ! Automatic "AdvertisingId" attribution has been removed from the SDK. A call is added for recording provided attribution values.
   * ! Minor breaking change ! Automatic install referrer attribution in play stores has been removed. A call is added for recording such provided values.
   * ! Minor breaking change ! Orientation tracking is now enabled by default. Can be turned off during init.
@@ -16,6 +16,7 @@
   * When recording internal events with 'recordEvent', the respective feature consent will now be checked instead of the 'events' consent. 
   * Consent changes will now send the whole consent state and not just the "delta"
   * Deprecated old user profile calls. Introduced a new API by which to change them.
+  * Added platform information to push actioned events
 
   * Fixed bug where, on the start of a new session, the first view was not identified correctly
   * Fixed bug where the rating widget callback would not be called when the widget is closed and there is no error
