@@ -74,11 +74,10 @@
         android:text="Report indirect attribution" />
 
     <Button
-        android:id="@+id/button41"
+        android:id="@+id/button69"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:enabled="false"
-        android:onClick="onClickHaltAndInit"
-        android:text="Halt and ReInit" />
+        android:onClick="onClickAttributionTest"
+        android:text="Attribution test" />
 
 </LinearLayout>

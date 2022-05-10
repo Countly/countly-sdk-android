@@ -15,6 +15,7 @@ interface RequestQueueProvider {
     void sendUserData(String userdata);
     void sendIndirectAttribution(@NonNull String attributionObj);
     void sendDirectAttributionLegacy(@NonNull String campaignID, @Nullable String userID);
+    void sendDirectAttributionTest(@NonNull String attributionData);
     void sendCrashReport(@NonNull final String crashData);
     void recordEvents(final String events);
     void sendConsentChanges(String formattedConsentChanges);

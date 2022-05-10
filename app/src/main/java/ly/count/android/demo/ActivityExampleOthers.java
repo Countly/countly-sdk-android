@@ -77,18 +77,8 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().attribution().recordIndirectAttribution(attributionValues);
     }
 
-    public void onClickHaltAndInit(View v) {
-        //this will destroy all currently stored data
-        Countly.sharedInstance().halt();
-
-        final String COUNTLY_SERVER_URL = "YOUR_SERVER";
-        final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
-
-        CountlyConfig config = (new CountlyConfig(getApplication(), COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceIdType.OPEN_UDID)
-            .enableCrashReporting().setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true)
-            .setRequiresConsent(false);
-
-        Countly.sharedInstance().init(config);
+    public void onClickAttributionTest(View v) {
+        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "{'test_object':'some value', 'other value':'123'}");
     }
 
     @Override

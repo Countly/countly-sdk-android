@@ -355,9 +355,31 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
+    public void sendDirectAttributionTest(@NonNull String attributionData) {
+        checkInternalState();
+        L.d("[Connection Queue] sendDirectAttributionTest");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            L.d("[Connection Queue] request ignored, consent not given");
+            return;
+        }
+
+        if(attributionData.isEmpty()) {
+            L.w("[Connection Queue] sendDirectAttributionTest, attribution not sent, data is empty");
+            return;
+        }
+
+        String res = "&attribution_data=" + UtilsNetworking.urlEncodeString(attributionData);
+
+        String data = prepareCommonRequestData() + res;
+        addRequestToQueue(data);
+
+        tick();
+    }
+
     public void sendDirectAttributionLegacy(@NonNull String campaignID, @Nullable String userID) {
         checkInternalState();
-        L.d("[Connection Queue] sendDirectAttribution");
+        L.d("[Connection Queue] sendDirectAttributionLegacy");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             L.d("[Connection Queue] request ignored, consent not given");
@@ -374,7 +396,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         if (res.length() == 0) {
-            L.w("[Connection Queue] sendDirectAttribution, attribution not sent, both campaign ID and user ID are either null or empty");
+            L.w("[Connection Queue] sendDirectAttributionLegacy, attribution not sent, both campaign ID and user ID are either null or empty");
             return;
         }
 

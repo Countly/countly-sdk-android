@@ -85,11 +85,15 @@ public class ConnectionProcessor implements Runnable {
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
         if (usingHttpPost) {
-            requestData += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
+            String checksum = UtilsNetworking.sha256Hash(requestData + salt);
+            requestData += "&checksum256=" + checksum;
             approximateDateSize += requestData.length();
+            L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
         } else {
             urlStr += "?" + requestData;
-            urlStr += "&checksum256=" + UtilsNetworking.sha256Hash(requestData + salt);
+            String checksum = UtilsNetworking.sha256Hash(requestData + salt);
+            urlStr += "&checksum256=" + checksum;
+            L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
         }
         approximateDateSize += urlStr.length();
 

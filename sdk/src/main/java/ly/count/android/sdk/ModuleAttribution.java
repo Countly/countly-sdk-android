@@ -30,13 +30,23 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
 
-        if (!campaignType.equals("countly")) {
+        if (!campaignType.equals("countly") && !campaignType.equals("_special_test")) {
             //stop execution if the type is not "countly"
             //this is a temporary exception
             L.w("[ModuleAttribution] recordDirectAttributionInternal, recording direct attribution with a type other than 'countly' is currently not supported. Execution will be aborted.");
             return;
         }
 
+        if(campaignType.equals("_special_test")){
+            reportSpecialTestAttribution(campaignData);
+        }
+
+        if(campaignType.equals("countly")) {
+            reportLegacyInstallAttribution(campaignData);
+        }
+    }
+
+    void reportLegacyInstallAttribution(@NonNull String campaignData) {
         JSONObject jObj;
 
         try {
@@ -81,6 +91,10 @@ public class ModuleAttribution extends ModuleBase {
         }
 
         requestQueueProvider.sendDirectAttributionLegacy(campaignId, campaignUserId);
+    }
+
+    void reportSpecialTestAttribution(@NonNull String attributionData) {
+        requestQueueProvider.sendDirectAttributionTest(attributionData);
     }
 
     void recordIndirectAttributionInternal(@Nullable Map<String, String> attributionId) {

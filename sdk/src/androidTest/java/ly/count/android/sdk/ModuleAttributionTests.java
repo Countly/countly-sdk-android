@@ -20,17 +20,19 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
-public class ModelAttributionTests {
+public class ModuleAttributionTests {
     CountlyStore countlyStore;
 
     String cid_1;
     String cuid_1;
     String daType_Countly;
+    String daType_test;
     String daValue_Countly;
     String daValue_Countly_2;
     String daValue_Countly_3;
     String daValue_Countly_4;
     String daValue_Countly_5;
+    String daValue_Test;
 
     Map<String, String> ia_1;
     Map<String, String> ia_2;
@@ -49,11 +51,14 @@ public class ModelAttributionTests {
         cid_1 = "abc";
         cuid_1 = "123";
         daType_Countly = "countly";
+        daType_test = "_special_test";
         daValue_Countly = "{\"cid\":\"" + cid_1 + "\", \"cuid\":\"" + cuid_1 + "\"}";
         daValue_Countly_2 = "{\"cid\":\"\", \"cuid\":\"" + cuid_1 + "\"}";
         daValue_Countly_3 = "{\"cuid\":\"" + cuid_1 + "\"}";
         daValue_Countly_4 = "{\"cid\":\"" + cid_1 + "\", \"cuid\":\"\"}";
         daValue_Countly_5 = "{\"cid\":\"" + cid_1 + "\"}";
+
+        daValue_Test = "{'asd':'vcx', 'rte':'123'}";
 
         ia_k1 = "adid";
         ia_v1 = "SomeValue";
@@ -345,6 +350,17 @@ public class ModelAttributionTests {
         mCountly.attribution().recordDirectAttribution(daType_Countly, daValue_Countly_4);
         TestUtils.validateThatRQContainsCorrectEntry(countlyStore, "campaign_id", UtilsNetworking.urlEncodeString(cid_1), 1);
         TestUtils.validateThatRQContainsCorrectEntry(countlyStore, "campaign_user", null, 0);
+    }
+
+    /**
+     * Make sure that a post init direct attribution recording is recorded correctly in RQ
+     * Recording test data
+     */
+    @Test
+    public void postInitAddedToRQOnlyDA_3() {
+        Countly mCountly = new Countly().init(TestUtils.createAttributionCountlyConfig(false, null, null, null, null, null, null));
+        mCountly.attribution().recordDirectAttribution(daType_test, daValue_Test);
+        TestUtils.validateThatRQContainsCorrectEntry(countlyStore, "attribution_data", UtilsNetworking.urlEncodeString(daValue_Test), 1);
     }
 
 }

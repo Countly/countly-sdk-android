@@ -481,6 +481,10 @@ public class Countly {
                 L.d("[Init] Custom request queue provider was provided");
             }
 
+            if (config.tamperingProtectionSalt != null) {
+                L.d("[Init] Parameter tampering protection salt set");
+            }
+
             //check legacy access methods
             if (locationFallback != null && config.locationCountyCode == null && config.locationCity == null && config.locationLocation == null && config.locationIpAddress == null) {
                 //if the fallback was set and config did not contain any location, use the fallback info
