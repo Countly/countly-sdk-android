@@ -8,7 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.UUID;
 
-class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdProvider {
+public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdProvider {
     boolean exitTempIdAfterInit = false;
 
     ly.count.android.sdk.DeviceId deviceIdInstance;

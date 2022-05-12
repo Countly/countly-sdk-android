@@ -17,6 +17,7 @@ class ActivityExampleKotlin : AppCompatActivity() {
     Countly.sharedInstance().remoteConfig().allValues;
     Countly.sharedInstance().sessions().beginSession()
     Countly.sharedInstance().views().isAutomaticViewTrackingEnabled;
+    val id = Countly.sharedInstance().deviceId().id;
 
   }
 

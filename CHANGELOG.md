@@ -1,3 +1,6 @@
+## 21.11.1
+  * Made 'ModuleDeviceId' public so that it would eliminate access issues for kotlin projects.
+
 ## 21.11.0
   * !! Major breaking change !! Deprecating "ADVERTISING_ID" as device ID generation strategy. SDK will fall back to 'OPEN_UDID'. All "ADVERTISING_ID" device ID's will have their type changed to "OPEN_UDID". If the device will have a "null" device ID, a random one will be generated.
   * !! Major breaking change !! Changing device ID without merging will now clear all consent. It has to be given again after this operation.
