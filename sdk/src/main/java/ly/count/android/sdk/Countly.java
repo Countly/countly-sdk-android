@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -496,8 +497,11 @@ public class Countly {
             }
 
             //perform data migration if needed
+            Map<String, Object> migrationParams = new HashMap<>();
+            migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_set, config.deviceID != null);
+
             MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L);
-            mHelper.doWork();
+            mHelper.doWork(migrationParams);
 
             //initialise modules
             moduleRequestQueue = new ModuleRequestQueue(this, config);

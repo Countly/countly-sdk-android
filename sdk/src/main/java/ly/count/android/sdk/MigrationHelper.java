@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 class MigrationHelper {
@@ -9,6 +11,9 @@ class MigrationHelper {
      * 1 - adding device ID to all requests
      */
     final int DATA_SCHEMA_VERSIONS = 1;
+
+
+    static final public String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
 
     StorageProvider storage;
     ModuleLog L;
@@ -22,7 +27,7 @@ class MigrationHelper {
     /**
      * Called from SDK side to perform the required steps to check if the migration is required and then execute it if it is.
      */
-    public void doWork() {
+    public void doWork(@NonNull Map<String, Object> migrationParams) {
         int currentVersion = getCurrentSchemaVersion();
         L.v("[MigrationHelper] doWork, current version:[" + currentVersion + "]");
 
@@ -32,7 +37,7 @@ class MigrationHelper {
         }
 
         while (currentVersion < DATA_SCHEMA_VERSIONS) {
-            performMigrationStep(currentVersion);
+            performMigrationStep(currentVersion, migrationParams);
 
             currentVersion = getCurrentSchemaVersion();
         }
@@ -61,13 +66,13 @@ class MigrationHelper {
      *
      * @param currentVersion
      */
-    void performMigrationStep(int currentVersion) {
+    void performMigrationStep(int currentVersion, @NonNull Map<String, Object> migrationParams) {
         int newVersion = currentVersion;
 
         switch (currentVersion) {
             case 0:
                 L.w("[MigrationHelper] performMigrationStep, performing migration from version [0] -> [1]");
-                performMigration0To1();
+                performMigration0To1(migrationParams);
                 newVersion = newVersion + 1;
                 break;
             case DATA_SCHEMA_VERSIONS:
@@ -106,7 +111,7 @@ class MigrationHelper {
     /**
      * Specific migration from schema version 0 to 1
      */
-    void performMigration0To1() {
+    void performMigration0To1(@NonNull Map<String, Object> migrationParams) {
         String deviceIDType = storage.getDeviceIDType();
         String deviceID = storage.getDeviceID();
 
@@ -116,9 +121,22 @@ class MigrationHelper {
             storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
             deviceIDType = DeviceIdType.OPEN_UDID.toString();
         } else if(deviceIDType == null) {
-            //if the type is null, but the ID value is not null
-            storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
-            deviceIDType = DeviceIdType.OPEN_UDID.toString();
+            //if the type is null, but the ID value is not null, we have to guess the type
+            Boolean customIdProvided = (Boolean) migrationParams.get(key_from_0_to_1_custom_id_set);
+            if(customIdProvided == null) {
+                customIdProvided = false;
+            }
+
+            if(customIdProvided){
+                //if a custom device ID is provided during init, assume that the previous type was dev supplied
+                storage.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
+                deviceIDType = DeviceIdType.DEVELOPER_SUPPLIED.toString();
+
+            } else {
+                //if a custom device ID was not provided during init, assume that the previous type was SDK generated
+                storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+                deviceIDType = DeviceIdType.OPEN_UDID.toString();
+            }
         }
 
         //update the device ID type
@@ -130,10 +148,11 @@ class MigrationHelper {
             //current device ID is ADVERTISING_ID
             //it's type should be changed to OPEN_UDID.
             storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+            deviceIDType = DeviceIdType.OPEN_UDID.toString();
         }
 
         //generate a deviceID in case the current type is OPEN_UDID (either migrated or originally as such) and there is no ID
-        if(storage.getDeviceIDType().equals(DeviceIdType.OPEN_UDID.toString())) {
+        if(deviceIDType.equals(DeviceIdType.OPEN_UDID.toString())) {
             if(deviceID == null || deviceID.isEmpty()) {
                 //in case there is no valid ID, generate it
                 storage.setDeviceID(UUID.randomUUID().toString());

@@ -62,6 +62,12 @@ public class MigrationHelperTests {
 
     }
 
+    public Map<String, Object> GetMigrationParams_0_1(boolean customIdProvided) {
+        Map<String, Object> migrationParams = new HashMap<>();
+        migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_set, customIdProvided);
+        return migrationParams;
+    }
+
     void validateGeneratedUUID(String deviceId) {
         assertNotNull(deviceId);
         assertTrue(deviceId.length() > 10);
@@ -162,19 +168,26 @@ public class MigrationHelperTests {
     /**
      * We start on the latest version and nothing should change
      * Calling "doWork"
+     * This is 'true' when Custom ID not provided or it is provided
      */
     @Test
-    public void performMigration0to1_0_doWork() {
-        cs.clear();
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
-        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+    public void performMigration0to1_0_doWork_id_not_provided() {
+        for (int a = 0; a <= 1; a++) {
+            cs.clear();
+            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
 
-        mh.doWork();
+            if (a == 0) {
+                mh.doWork(GetMigrationParams_0_1(false));
+            } else {
+                mh.doWork(GetMigrationParams_0_1(true));
+            }
 
-        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
-        //we started at the latest version and the device ID type and value should be null
-        Assert.assertNull(cs.getDeviceID());
-        Assert.assertNull(cs.getDeviceIDType());
+            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            //we started at the latest version and the device ID type and value should be null
+            Assert.assertNull(cs.getDeviceID());
+            Assert.assertNull(cs.getDeviceIDType());
+        }
     }
 
     /**
@@ -203,17 +216,23 @@ public class MigrationHelperTests {
      */
     @Test
     public void performMigration0to1_1() {
-        cs.clear();
-        cs.addRequest("fff");
-        cs.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
-        assertEquals(0, mh.getCurrentSchemaVersion());
+        for (int a = 0; a <= 1; a++) {
+            cs.clear();
+            cs.addRequest("fff");
+            cs.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
+            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            assertEquals(0, mh.getCurrentSchemaVersion());
 
-        mh.doWork();
+            if (a == 0) {
+                mh.doWork(GetMigrationParams_0_1(false));
+            } else {
+                mh.doWork(GetMigrationParams_0_1(true));
+            }
 
-        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
-        Assert.assertNull(cs.getDeviceID());
-        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED.toString(), cs.getDeviceIDType());
+            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            Assert.assertNull(cs.getDeviceID());
+            Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED.toString(), cs.getDeviceIDType());
+        }
     }
 
     /**
@@ -225,17 +244,23 @@ public class MigrationHelperTests {
      */
     @Test
     public void performMigration0to1_2() {
-        cs.clear();
-        cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
-        cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
-        assertEquals(0, mh.getCurrentSchemaVersion());
+        for (int a = 0; a <= 1; a++) {
+            cs.clear();
+            cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
+            cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
+            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            assertEquals(0, mh.getCurrentSchemaVersion());
 
-        mh.doWork();
+            if (a == 0) {
+                mh.doWork(GetMigrationParams_0_1(false));
+            } else {
+                mh.doWork(GetMigrationParams_0_1(true));
+            }
 
-        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
-        validateGeneratedUUID(cs.getDeviceID());
-        Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
+            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            validateGeneratedUUID(cs.getDeviceID());
+            Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
+        }
     }
 
     /**
@@ -247,17 +272,23 @@ public class MigrationHelperTests {
      */
     @Test
     public void performMigration0to1_3() {
-        cs.clear();
-        cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
-        cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
-        assertEquals(0, mh.getCurrentSchemaVersion());
+        for (int a = 0; a <= 1; a++) {
+            cs.clear();
+            cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
+            cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            assertEquals(0, mh.getCurrentSchemaVersion());
 
-        mh.doWork();
+            if (a == 0) {
+                mh.doWork(GetMigrationParams_0_1(false));
+            } else {
+                mh.doWork(GetMigrationParams_0_1(true));
+            }
 
-        assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
-        validateGeneratedUUID(cs.getDeviceID());
-        Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
+            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            validateGeneratedUUID(cs.getDeviceID());
+            Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
+        }
     }
 
     /**
@@ -394,5 +425,4 @@ public class MigrationHelperTests {
         validateGeneratedUUID(countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
-
 }
