@@ -14,6 +14,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -59,6 +60,12 @@ public class MigrationHelperTests {
     @After
     public void tearDown() {
 
+    }
+
+    void validateGeneratedUUID(String deviceId) {
+        assertNotNull(deviceId);
+        assertTrue(deviceId.length() > 10);
+        assertTrue(deviceId.length() < 100);
     }
 
     /**
@@ -185,7 +192,7 @@ public class MigrationHelperTests {
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
-        Assert.assertNotNull(cs.getDeviceID());
+        validateGeneratedUUID(cs.getDeviceID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
 
@@ -227,7 +234,7 @@ public class MigrationHelperTests {
         mh.doWork();
 
         assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
-        Assert.assertNotNull(cs.getDeviceID());
+        validateGeneratedUUID(cs.getDeviceID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
     }
 
@@ -249,7 +256,7 @@ public class MigrationHelperTests {
         mh.doWork();
 
         assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
-        Assert.assertNotNull(cs.getDeviceID());
+        validateGeneratedUUID(cs.getDeviceID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
     }
 
@@ -269,7 +276,7 @@ public class MigrationHelperTests {
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
-        Assert.assertNotNull(initialID);
+        validateGeneratedUUID(initialID);
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
 
         //perform a second init and confirm that everything is still stable
@@ -292,7 +299,7 @@ public class MigrationHelperTests {
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
-        Assert.assertNotNull(initialID);
+        validateGeneratedUUID(initialID);
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
 
         Countly countly2 = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
@@ -351,6 +358,40 @@ public class MigrationHelperTests {
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * Device ID is provided, but no device ID has been set. This is a transition from a older version
+     * a new ID should not be generated because it already is a valid value
+     */
+    @Test
+    public void performMigration0to1_9() {
+        cs.clear();
+        cs.setDeviceID("cd");
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals("cd", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * Device ID and device ID type are not set, but there is something in the queue. This is a transition from a older version
+     * a new ID should not be generated because it already is a valid value
+     */
+    @Test
+    public void performMigration0to1_10() {
+        cs.clear();
+        cs.addRequest("qqq");
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        validateGeneratedUUID(countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
 

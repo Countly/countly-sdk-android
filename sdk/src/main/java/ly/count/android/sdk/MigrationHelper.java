@@ -110,6 +110,17 @@ class MigrationHelper {
         String deviceIDType = storage.getDeviceIDType();
         String deviceID = storage.getDeviceID();
 
+        if(deviceIDType == null && deviceID == null) {
+            //if both the ID and type are null we are in big trouble
+            //set type to OPEN_UDID and generate the ID afterwards
+            storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+            deviceIDType = DeviceIdType.OPEN_UDID.toString();
+        } else if(deviceIDType == null) {
+            //if the type is null, but the ID value is not null
+            storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+            deviceIDType = DeviceIdType.OPEN_UDID.toString();
+        }
+
         //update the device ID type
         //noinspection StatementWithEmptyBody
         if (deviceIDType.equals(DeviceIdType.OPEN_UDID.toString())) {

@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +29,9 @@ interface StorageProvider {
 
     String getEventsForRequestAndEmptyEventQueue();
 
-    String getDeviceID();
+    @Nullable String getDeviceID();
 
-    String getDeviceIDType();
+    @Nullable String getDeviceIDType();
 
     void setDeviceID(String id);
 

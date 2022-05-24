@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -430,10 +431,12 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         preferencesPush_.edit().clear().apply();
     }
 
+    @Nullable
     public String getDeviceID() {
         return preferences_.getString(PREFERENCE_KEY_ID_ID, null);
     }
 
+    @Nullable
     public String getDeviceIDType() {
         return preferences_.getString(PREFERENCE_KEY_ID_TYPE, null);
     }
