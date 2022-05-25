@@ -1,5 +1,5 @@
 ## 21.11.2
-  * Fixed bug that caused crashes when migrating from older versions that don't have a device ID type stored. When migrating from no device ID and no type, SDK will fall back to a generated ID. When migrating from device ID and no type, SDK will set id type to "DEVELOPER_SUPPLIED". Adding handling for additional edge cases.
+  * Fixed bug that caused crashes when migrating from older versions that don't have a device ID type stored. When migrating from no device ID and no type, SDK will fall back to a generated ID. When migrating from device ID and no type, SDK will set id type to 'DEVELOPER_SUPPLIED' if a custom ID was provided during init. Otherwise the new type will be 'OPEN_UDID'. Adding handling for additional edge cases.
 
 ## 21.11.1
   * Made 'ModuleDeviceId' public so that it would eliminate access issues for kotlin projects.
