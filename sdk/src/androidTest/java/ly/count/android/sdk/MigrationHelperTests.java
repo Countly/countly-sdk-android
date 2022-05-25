@@ -396,6 +396,7 @@ public class MigrationHelperTests {
      * We are on the legacy version and we should get to the latest schema version
      * Device ID is provided, but no device ID has been set. This is a transition from a older version
      * a new ID should not be generated because it already is a valid value
+     * The type should be set as OPEN_UDID since we are not providing a device ID during init
      */
     @Test
     public void performMigration0to1_9() {
@@ -424,5 +425,23 @@ public class MigrationHelperTests {
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         validateGeneratedUUID(countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
+    }
+
+    /**
+     * We are on the legacy version and we should get to the latest schema version
+     * Device ID is provided, but no device ID has been set. This is a transition from a older version
+     * a new ID should not be generated because it already is a valid value
+     * The type should be set as developer supplied since we are trying to provide a device ID during init
+     */
+    @Test
+    public void performMigration0to1_11() {
+        cs.clear();
+        cs.setDeviceID("cd");
+
+        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL).setDeviceId("asd"));
+
+        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals("cd", countly.deviceId().getID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, countly.deviceId().getType());
     }
 }

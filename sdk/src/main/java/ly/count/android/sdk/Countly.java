@@ -497,11 +497,16 @@ public class Countly {
             }
 
             //perform data migration if needed
-            Map<String, Object> migrationParams = new HashMap<>();
-            migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_set, config.deviceID != null);
+            try {
+                Map<String, Object> migrationParams = new HashMap<>();
+                migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_set, config.deviceID != null);
 
-            MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L);
-            mHelper.doWork(migrationParams);
+                MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L);
+                mHelper.doWork(migrationParams);
+            } catch (Exception ex) {
+                L.e("[Init] SDK failed while performing data migration. SDK is not capable to initialize.");
+                return this;
+            }
 
             //initialise modules
             moduleRequestQueue = new ModuleRequestQueue(this, config);
