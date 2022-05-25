@@ -103,7 +103,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     /**
      * Returns the true internally set value
      * @param featureName
-     * @return
      */
     private boolean getConsentTrue(@NonNull final String featureName) {
         Boolean returnValue = featureConsentValues.get(featureName);
@@ -117,8 +116,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     /**
      * Print the consent values of all features
-     *
-     * @return Returns link to Countly for call chaining
      */
     public void checkAllConsentInternal() {
         L.d("[ModuleConsent] Checking and printing consent for All features");
@@ -235,7 +232,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      * Remove the consent of a feature
      *
      * @param featureNames the names of features for which consent should be removed
-     * @return Returns link to Countly for call chaining
      */
     public void removeConsentInternal(@Nullable final String[] featureNames, final ConsentChangeSource changeSource) {
         L.d("[ModuleConsent] Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
@@ -245,8 +241,6 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     /**
      * Remove consent for all features
-     *
-     * @return Returns link to Countly for call chaining
      */
     public void removeConsentAllInternal(final ConsentChangeSource changeSource) {
         L.d("[ModuleConsent] Removing consent for all features");
