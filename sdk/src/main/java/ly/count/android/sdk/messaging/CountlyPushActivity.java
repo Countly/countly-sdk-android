@@ -46,20 +46,20 @@ public class CountlyPushActivity extends Activity {
 
     private void performPushAction(Intent activityIntent) {
         Context context = this;
-        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Push broadcast receiver receiving message");
+        Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Push activity receiver receiving message");
 
         activityIntent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
         Intent intent = activityIntent.getParcelableExtra(EXTRA_INTENT);
 
         if (intent == null) {
-            Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent, stopping execution");
+            Countly.sharedInstance().L.e("[CountlyPush, CountlyPushActivity] Received a null Intent, stopping execution");
             return;
         }
 
         int flags = intent.getFlags();
         if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) || ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
-            Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
+            Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Attempt to get URI permissions");
             return;
         }
 
@@ -70,30 +70,30 @@ public class CountlyPushActivity extends Activity {
             String contextPackageName = context.getPackageName();
 
             if (intentPackageName != null && !intentPackageName.equals(contextPackageName)) {
-                Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
+                Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
                 return;
             }
 
             if (intentPackageName == null || !intentClassName.startsWith(intentPackageName)) {
-                Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] intent class name and intent package names do not match");
+                Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] intent class name and intent package names do not match");
                 return;
             }
         }
 
-        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Push broadcast, after filtering");
+        Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Push activity, after filtering");
 
         intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
 
         int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
         Bundle bundle = intent.getParcelableExtra(EXTRA_MESSAGE);
         if (bundle == null) {
-            Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle, stopping execution");
+            Countly.sharedInstance().L.e("[CountlyPush, CountlyPushActivity] Received a null Intent bundle, stopping execution");
             return;
         }
 
         CountlyPush.Message message = bundle.getParcelable(EXTRA_MESSAGE);
         if (message == null) {
-            Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle message, stopping execution");
+            Countly.sharedInstance().L.e("[CountlyPush, CountlyPushActivity] Received a null Intent bundle message, stopping execution");
             return;
         }
 
@@ -112,20 +112,20 @@ public class CountlyPushActivity extends Activity {
                 context.sendBroadcast(closeNotificationsPanel);
             }
         } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Encountered issue while trying to send the on click broadcast. [" + ex.toString() + "]");
+            Countly.sharedInstance().L.e("[CountlyPush, CountlyPushActivity] Encountered issue while trying to send the on click broadcast. [" + ex.toString() + "]");
         }
 
         if (index == 0) {
             try {
                 if (message.link() != null) {
-                    Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given link. Push body. [" + message.link() + "]");
+                    Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given link. Push body. [" + message.link() + "]");
                     Intent i = new Intent(Intent.ACTION_VIEW, message.link());
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     i.putExtra(EXTRA_MESSAGE, bundle);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
                     context.startActivity(i);
                 } else {
-                    Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity without a link. Push body");
+                    Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity without a link. Push body");
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(intent);
                 }
@@ -134,7 +134,7 @@ public class CountlyPushActivity extends Activity {
             }
         } else {
             try {
-                Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given button link. [" + (index - 1) + "] [" + message.buttons().get(index - 1).link() + "]");
+                Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given button link. [" + (index - 1) + "] [" + message.buttons().get(index - 1).link() + "]");
                 Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 i.putExtra(EXTRA_MESSAGE, bundle);

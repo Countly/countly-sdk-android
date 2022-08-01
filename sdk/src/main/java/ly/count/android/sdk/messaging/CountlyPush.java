@@ -477,13 +477,6 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        //final Intent intent = new Intent(context.getApplicationContext(), NotificationActivityVisible.class)
-        //    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        //
-        //context.startActivity(intent);
-
-        //return Boolean.TRUE;
-
         Intent pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
