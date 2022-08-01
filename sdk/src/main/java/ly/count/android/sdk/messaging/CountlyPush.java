@@ -477,9 +477,17 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        Intent broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
-        broadcast.setPackage(context.getApplicationContext().getPackageName());
-        broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, 0));
+        //final Intent intent = new Intent(context.getApplicationContext(), NotificationActivityVisible.class)
+        //    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        //
+        //context.startActivity(intent);
+
+        //return Boolean.TRUE;
+
+        Intent pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
+        pushActivityIntent.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, 0));
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
             .setAutoCancel(true)
@@ -499,18 +507,19 @@ public class CountlyPush {
         }
 
         builder.setAutoCancel(true)
-            .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+            .setContentIntent(PendingIntent.getActivity(context, msg.hashCode(), pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
 
         builder.setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
 
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
-            broadcast.setPackage(context.getApplicationContext().getPackageName());
-            broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
+            pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
+            pushActivityIntent.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
-            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+            builder.addAction(button.icon(), button.title(), PendingIntent.getActivity(context, msg.hashCode() + i + 1, pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
 
         if (msg.sound() != null) {
@@ -539,6 +548,7 @@ public class CountlyPush {
         }
 
         return Boolean.TRUE;
+
     }
 
     private static Intent actionIntent(Context context, Intent notificationIntent, Message message, int index) {
