@@ -19,16 +19,16 @@ public class CountlyPushActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        performPushAction(getIntent());
         startHostActivity();
+        performPushAction(getIntent());
         finish();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        performPushAction(intent);
         startHostActivity();
+        performPushAction(intent);
         finish();
     }
 
@@ -120,7 +120,10 @@ public class CountlyPushActivity extends Activity {
                 if (message.link() != null) {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given link. Push body. [" + message.link() + "]");
                     Intent i = new Intent(Intent.ACTION_VIEW, message.link());
-                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    i.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY |
+                        Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET |
+                        Intent.FLAG_ACTIVITY_MULTIPLE_TASK |
+                        Intent.FLAG_ACTIVITY_NEW_TASK);
                     i.putExtra(EXTRA_MESSAGE, bundle);
                     i.putExtra(EXTRA_ACTION_INDEX, index);
                     context.startActivity(i);
