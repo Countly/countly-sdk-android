@@ -1,22 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ly.count.android.sdk">
+
+  <application>
+    <activity
+        android:name=".messaging.CountlyPushActivity"
+        android:excludeFromRecents="true"
+        android:noHistory="true"
+        android:taskAffinity=".CountlyPushActivity"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"
+        android:exported="false" />
+    <uses-library android:name="android.test.runner" />
+  </application>
 
   <permission
       android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
       android:protectionLevel="signature" />
 
   <uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" />
-
-  <application>
-    <uses-library android:name="android.test.runner" />
-    <receiver
-        android:name=".messaging.CountlyPush$NotificationBroadcastReceiver"
-        android:exported="false"
-        android:permission="${applicationId}.CountlyPush.BROADCAST_PERMISSION">
-      <intent-filter>
-        <action android:name="ly.count.android.sdk.CountlyPush.SECURE_NOTIFICATION_BROADCAST" />
-      </intent-filter>
-    </receiver>
-  </application>
 
 </manifest>

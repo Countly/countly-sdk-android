@@ -224,117 +224,6 @@ public class CountlyPush {
     }
 
     /**
-     * Notification action (or contentIntent) receiver. Responsible for recording action event.
-     * Starts:
-     * - activity specified in last parameter of {@link #displayNotification(Context, Message, int, Intent)} if it's not {@code null};
-     * - currently active activity if there is one, see {@link #callbacks};
-     * - main activity otherwise.
-     */
-    public static class NotificationBroadcastReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent broadcast) {
-            Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Push broadcast receiver receiving message");
-
-            broadcast.setExtrasClassLoader(CountlyPush.class.getClassLoader());
-
-            Intent intent = broadcast.getParcelableExtra(EXTRA_INTENT);
-
-            if (intent == null) {
-                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent, stopping execution");
-                return;
-            }
-
-            int flags = intent.getFlags();
-            if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) || ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
-                Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Attempt to get URI permissions");
-                return;
-            }
-
-            if (useAdditionalIntentRedirectionChecks) {
-                ComponentName componentName = intent.getComponent();
-                String intentPackageName = componentName.getPackageName();
-                String intentClassName = componentName.getClassName();
-                String contextPackageName = context.getPackageName();
-
-                if (intentPackageName != null && !intentPackageName.equals(contextPackageName)) {
-                    Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] Untrusted intent package");
-                    return;
-                }
-
-                if (intentPackageName == null || !intentClassName.startsWith(intentPackageName)) {
-                    Countly.sharedInstance().L.w("[CountlyPush, NotificationBroadcastReceiver] intent class name and intent package names do not match");
-                    return;
-                }
-            }
-
-            Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Push broadcast, after filtering");
-
-            intent.setExtrasClassLoader(CountlyPush.class.getClassLoader());
-
-            int index = intent.getIntExtra(EXTRA_ACTION_INDEX, 0);
-            Bundle bundle = intent.getParcelableExtra(EXTRA_MESSAGE);
-            if (bundle == null) {
-                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle, stopping execution");
-                return;
-            }
-
-            Message message = bundle.getParcelable(EXTRA_MESSAGE);
-            if (message == null) {
-                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Received a null Intent bundle message, stopping execution");
-                return;
-            }
-
-            message.recordAction(context, index);
-
-            final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-            if (manager != null) {
-                manager.cancel(message.hashCode());
-            }
-
-            try {
-                //try/catch required due to Android 12
-                if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                    //this needs to be called before Android 12
-                    Intent closeNotificationsPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
-                    context.sendBroadcast(closeNotificationsPanel);
-                }
-            } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[CountlyPush, NotificationBroadcastReceiver] Encountered issue while trying to send the on click broadcast. [" + ex.toString() + "]");
-            }
-
-            if (index == 0) {
-                try {
-                    if (message.link() != null) {
-                        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given link. Push body. [" + message.link() + "]");
-                        Intent i = new Intent(Intent.ACTION_VIEW, message.link());
-                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        i.putExtra(EXTRA_MESSAGE, bundle);
-                        i.putExtra(EXTRA_ACTION_INDEX, index);
-                        context.startActivity(i);
-                    } else {
-                        Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity without a link. Push body");
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(intent);
-                    }
-                } catch (Exception ex) {
-                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking on notification body [" + ex.toString() + "]");
-                }
-            } else {
-                try {
-                    Countly.sharedInstance().L.d("[CountlyPush, NotificationBroadcastReceiver] Starting activity with given button link. [" + (index - 1) + "] [" + message.buttons().get(index - 1).link() + "]");
-                    Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
-                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    i.putExtra(EXTRA_MESSAGE, bundle);
-                    i.putExtra(EXTRA_ACTION_INDEX, index);
-                    context.startActivity(i);
-                } catch (Exception ex) {
-                    Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking on notification button [" + ex.toString() + "]");
-                }
-            }
-        }
-    }
-
-    /**
      * Listens for push consent given and sends existing token to the server if any.
      */
     public static class ConsentBroadcastReceiver extends BroadcastReceiver {
@@ -477,9 +366,10 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        Intent broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
-        broadcast.setPackage(context.getApplicationContext().getPackageName());
-        broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, 0));
+        Intent pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
+        pushActivityIntent.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, 0));
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
             .setAutoCancel(true)
@@ -499,18 +389,19 @@ public class CountlyPush {
         }
 
         builder.setAutoCancel(true)
-            .setContentIntent(PendingIntent.getBroadcast(context, msg.hashCode(), broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+            .setContentIntent(PendingIntent.getActivity(context, msg.hashCode(), pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
 
         builder.setStyle(new Notification.BigTextStyle().bigText(msg.message()).setBigContentTitle(msg.title()));
 
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            broadcast = new Intent(SECURE_NOTIFICATION_BROADCAST, null, context.getApplicationContext(), NotificationBroadcastReceiver.class);
-            broadcast.setPackage(context.getApplicationContext().getPackageName());
-            broadcast.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
+            pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
+            pushActivityIntent.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, i + 1));
 
-            builder.addAction(button.icon(), button.title(), PendingIntent.getBroadcast(context, msg.hashCode() + i + 1, broadcast, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
+            builder.addAction(button.icon(), button.title(), PendingIntent.getActivity(context, msg.hashCode() + i + 1, pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
 
         if (msg.sound() != null) {
@@ -539,6 +430,7 @@ public class CountlyPush {
         }
 
         return Boolean.TRUE;
+
     }
 
     private static Intent actionIntent(Context context, Intent notificationIntent, Message message, int index) {
