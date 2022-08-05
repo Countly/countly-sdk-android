@@ -514,6 +514,7 @@ public class Countly {
             moduleDeviceId = new ModuleDeviceId(this, config);
             moduleCrash = new ModuleCrash(this, config);
             moduleEvents = new ModuleEvents(this, config);
+            moduleUserProfile = new ModuleUserProfile(this, config);//this has to be set before the session module so that we can update remote config before sending anything session related
             moduleViews = new ModuleViews(this, config);
             moduleRatings = new ModuleRatings(this, config);
             moduleSessions = new ModuleSessions(this, config);
@@ -522,7 +523,6 @@ public class Countly {
             moduleLocation = new ModuleLocation(this, config);
             moduleFeedback = new ModuleFeedback(this, config);
             moduleAttribution = new ModuleAttribution(this, config);
-            moduleUserProfile = new ModuleUserProfile(this, config);
 
             modules.clear();
             modules.add(moduleRequestQueue);
@@ -530,6 +530,7 @@ public class Countly {
             modules.add(moduleDeviceId);
             modules.add(moduleCrash);
             modules.add(moduleEvents);
+            modules.add(moduleUserProfile);//this has to be set before the session module so that we can update remote config before sending anything session related
             modules.add(moduleViews);
             modules.add(moduleRatings);
             modules.add(moduleSessions);
@@ -538,7 +539,7 @@ public class Countly {
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
-            modules.add(moduleUserProfile);
+
 
             if(config.testModuleListener != null) {
                 modules.add(config.testModuleListener);

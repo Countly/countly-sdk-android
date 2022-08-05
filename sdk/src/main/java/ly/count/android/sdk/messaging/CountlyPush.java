@@ -244,6 +244,7 @@ public class CountlyPush {
      * @return token string or null if no token is currently available.
      */
     private static String getToken(Context context, Countly.CountlyMessagingProvider prov, ModuleLog L) {
+        //todo this seems to be broken
         if (prov == Countly.CountlyMessagingProvider.FCM) {
             try {
                 Object instance = UtilsMessaging.reflectiveCall(FIREBASE_INSTANCEID_CLASS, null, "getInstance", L);
