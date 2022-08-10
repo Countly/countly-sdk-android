@@ -1,3 +1,6 @@
+## 22.02.1
+  * Fixed bug that would be opening two intents for MainActivity when clicking on a push notification with a deep-link.
+
 ## 22.02.0
   * Fixed notification trampoline restrictions in Android 12 using reverse activity trampolining implementation.
   * Adding a call to provide user properties during initialization.

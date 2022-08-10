@@ -19,29 +19,8 @@ public class CountlyPushActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        startHostActivity();
         performPushAction(getIntent());
         finish();
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        startHostActivity();
-        performPushAction(intent);
-        finish();
-    }
-
-    void startHostActivity() {
-        Intent intent = getHostAppIntent();
-        this.startActivity(intent);
-    }
-
-    private Intent getHostAppIntent() {
-        Intent launchIntent = this.getPackageManager().getLaunchIntentForPackage(this.getPackageName());
-        launchIntent.setPackage(null);
-        launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        return launchIntent;
     }
 
     private void performPushAction(Intent activityIntent) {
