@@ -35,6 +35,8 @@ public class CountlyConfig {
 
     protected boolean checkForNativeCrashDumps = true;
 
+    protected Map<String, Object> providedUserProperties = null;
+
     //used to deliver this object to connection queue
     //protected DeviceId deviceIdInstance = null;
 
@@ -874,6 +876,16 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setIndirectAttribution(Map<String, String> attributionValues) {
         iaAttributionValues = attributionValues;
+        return this;
+    }
+
+    /**
+     * Used to provide user properties that would be sent as soon as possible
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setUserProperties(Map<String, Object> userProperties) {
+        providedUserProperties = userProperties;
         return this;
     }
 }

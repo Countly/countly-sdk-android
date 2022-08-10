@@ -124,6 +124,10 @@ public class App extends Application {
         customCrashSegmentation.put("EarBook", "3.5");
         customCrashSegmentation.put("AdGiver", "6.5");
 
+        //properties that we want to sent at init time
+        Map<String, Object> customUserProperties = new HashMap<>();
+        customUserProperties.put("A", 1);
+
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceIdType.OPEN_UDID)//.setDeviceId("67567")
             .setLoggingEnabled(true)
             .setLogListener(new ModuleLog.LogCallback() {
@@ -202,7 +206,10 @@ public class App extends Application {
 
             //.setMetricOverride(metricOverride)
 
-            .setEnableAttribution(true);
+            .setEnableAttribution(true)
+
+
+            .setUserProperties(customUserProperties);
 
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

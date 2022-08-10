@@ -304,13 +304,22 @@ public class ModuleUserProfile extends ModuleBase {
     }
 
     void saveInternal() {
-        Countly.sharedInstance().L.w("[ModuleUserProfile] saveInternal");
+        Countly.sharedInstance().L.d("[ModuleUserProfile] saveInternal");
         Countly.userData.save();
     }
 
     void clearInternal() {
-        Countly.sharedInstance().L.w("[ModuleUserProfile] clearInternal");
+        Countly.sharedInstance().L.d("[ModuleUserProfile] clearInternal");
         Countly.userData.clear();
+    }
+
+    @Override
+    void initFinished(@NonNull final CountlyConfig config) {
+        if(config.providedUserProperties != null) {
+            L.i("[ModuleUserProfile] Custom user properties were provided during init [" + config.providedUserProperties.size() + "]");
+            setPropertiesInternal(config.providedUserProperties);
+            saveInternal();
+        }
     }
 
     @Override
