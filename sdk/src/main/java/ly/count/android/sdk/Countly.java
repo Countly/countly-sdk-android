@@ -202,6 +202,7 @@ public class Countly {
     protected CountlyConfig config_ = null;
 
     public static class CountlyFeatureNames {
+        public static final String metrics = "metrics";
         public static final String sessions = "sessions";
         public static final String events = "events";
         public static final String views = "views";
