@@ -430,6 +430,29 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     /**
+     * Send a direct request to server
+     *
+     * @throws IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    //public void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
+    public void sendDirectRequest(@NonNull final String requestData) {
+        checkInternalState();
+        L.d("[Connection Queue] sendDirectRequest");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
+            L.d("[Connection Queue] request ignored, consent not given");
+            return;
+        }
+
+        final String data = prepareCommonRequestData()
+            + "&events=" + UtilsNetworking.urlEncodeString(requestData);
+
+        addRequestToQueue(data);
+
+        tick();
+    }
+
+    /**
      * Records the specified events and sends them to the server.
      *
      * @param events URL-encoded JSON string of event data
