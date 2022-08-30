@@ -51,6 +51,15 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
     }
 
+    public void onAddDirectRequestClick(View v) {
+        Map<String, String> requestMap = new HashMap<>();
+        requestMap.put("city", "Istanbul");
+        requestMap.put("country_code", "TR");
+        requestMap.put("ip_address", "41.0082,28.9784");
+        requestMap.put("events", "[{\"key\":\"test\",\"count\":201,\"sum\":2010,\"dur\":2010,\"segmentation\":{\"trickplay\":[{\"type\":\"FF\",\"start_time\":123456789,\"end_time\":123456789},{\"type\":\"skip\",\"start_time\":123456789,\"end_time\":123456789},{\"type\":\"resume_play\",\"start_time\":123456789,\"end_time\":123456789}]}}]");
+        Countly.sharedInstance().requestQueue().addDirectRequest(requestMap);
+    }
+
     public void onClickTestcrashFilterSample(View v) {
         Countly.sharedInstance().crashes().recordUnhandledException(new Throwable("A really secret exception"));
     }

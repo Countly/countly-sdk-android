@@ -23,7 +23,7 @@ interface  RequestQueueProvider {
     void sendAPMNetworkTrace(String networkTraceKey, Long responseTimeMs, int responseCode, int requestPayloadSize, int responsePayloadSize, Long startMs, Long endMs);
     void sendAPMAppStart(long durationMs, Long startMs, Long endMs);
     void sendAPMScreenTime(boolean recordForegroundTime, long durationMs, Long startMs, Long endMs);
-    void sendDirectRequest(@NonNull final String requestData);
+    void sendDirectRequest(@NonNull final Map<String, String> requestData);
 
     //todo these should be moved or replaced in the future
     boolean queueContainsTemporaryIdItems();

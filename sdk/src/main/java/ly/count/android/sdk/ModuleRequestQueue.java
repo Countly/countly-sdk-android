@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
@@ -234,27 +235,51 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     /**
      * Send request data after removing the predefined keys
      */
-    synchronized public Countly addDirectRequestInternal(Map<String, String> requestMap) {
+    synchronized public void addDirectRequestInternal(@NonNull Map<String, String> requestMap) {
         L.i("[Countly] Calling addDirectRequest");
         if (!_cly.isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before adding direct request");
+            L.e("Countly.sharedInstance().init must be called before adding direct request, returning");
+            return;
         }
 
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
-            return _cly;
+        if (!consentProvider.anyConsentGiven()) {
+            L.e("[ModuleRequestQueue] addDirectRequest, no consent is given, returning");
+            return;
         }
 
-        if (requestMap == null) {
-            L.d("[ModuleRequestQueue] addDirectRequest, provided requestMap was null, returning");
-
-            return _cly;
+        if (requestMap == null || requestMap.isEmpty()) {
+            L.e("[ModuleRequestQueue] addDirectRequest, provided requestMap was null or empty, returning");
+            return;
         }
 
-        requestMap.keySet().removeAll(Arrays.asList(preDefinedKeys));
-        String requestData =  new JSONObject(requestMap).toString();
-        requestQueueProvider.sendDirectRequest(requestData);
+        // Filtering and removing predefined/restricted keys
+        Map<String, String> filteredRequestMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : requestMap.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            boolean isPreDefinedKey = false;
 
-        return _cly;
+            for (String preDefinedKey : preDefinedKeys) {
+                if (preDefinedKey.equals(key)) {
+                    //if it's a predefined field
+                    isPreDefinedKey = true;
+                    L.w("[ModuleRequestQueue] addDirectRequest, removing provided key: [" + key + "] is a restricted key.");
+                    break;
+                }
+            }
+
+            if (!isPreDefinedKey) {
+                filteredRequestMap.put(key, value.toString());
+            }
+        }
+
+        int requestDataCount = requestMap.size();
+        int filteredDataCount = filteredRequestMap.size();
+        int delta = requestDataCount - filteredDataCount;
+        if(delta > 0) {
+            L.w("[ModuleRequestQueue] addDirectRequest, [" + delta + "] restricted keys are removed");
+        }
+        requestQueueProvider.sendDirectRequest(filteredRequestMap);
     }
 
     @Override
@@ -344,10 +369,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         /**
          * Send request data after removing the predefined keys
          */
-        public Countly addDirectRequest(Map<String, String> requestMap) {
+        public void addDirectRequest(@NonNull Map<String, String> requestMap) {
             synchronized (_cly) {
                 L.i("[Countly] Calling addDirectRequest");
-                return addDirectRequestInternal(requestMap);
+                addDirectRequestInternal(requestMap);
             }
         }
     }
