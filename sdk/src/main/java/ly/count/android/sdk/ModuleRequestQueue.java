@@ -30,7 +30,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     static final String OLD_DEVICE_ID_KEY = "old_device_id";
     static final String CHECKSUM_KEY = "checksum";
     static final String CHECKSUM_256_KEY = "checksum256";
-    String[] preDefinedKeys = new String[] { APP_KEY_KEY, HOUR_KEY, DOW_KEY, TZ_KEY, SDK_VERSION_KEY, SDK_NAME_KEY, DEVICE_ID_KEY, OVVERIDE_KEY, OLD_DEVICE_ID_KEY, CHECKSUM_KEY, CHECKSUM_256_KEY};
+    String[] preDefinedKeys = new String[] { APP_KEY_KEY, HOUR_KEY, DOW_KEY, TZ_KEY, SDK_VERSION_KEY, SDK_NAME_KEY, DEVICE_ID_KEY, OVVERIDE_KEY, OLD_DEVICE_ID_KEY, CHECKSUM_KEY, CHECKSUM_256_KEY };
 
     ModuleRequestQueue(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -273,10 +273,15 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
             }
         }
 
+        if (filteredRequestMap.isEmpty()) {
+            L.e("[ModuleRequestQueue] addDirectRequest, filteredRequestMap was null or empty, returning");
+            return;
+        }
+
         int requestDataCount = requestMap.size();
         int filteredDataCount = filteredRequestMap.size();
         int delta = requestDataCount - filteredDataCount;
-        if(delta > 0) {
+        if (delta > 0) {
             L.w("[ModuleRequestQueue] addDirectRequest, [" + delta + "] restricted keys are removed");
         }
         requestQueueProvider.sendDirectRequest(filteredRequestMap);
