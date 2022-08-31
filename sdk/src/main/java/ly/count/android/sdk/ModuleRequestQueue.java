@@ -3,7 +3,10 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.json.JSONObject;
 
 public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
@@ -16,6 +19,18 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     private boolean deviceIsAppCrawler = false;//by default assume that device is not a app crawler
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
     private final List<String> appCrawlerNames = new ArrayList<>(Arrays.asList("Calypso AppCrawler"));//List against which device name is checked to determine if device is app crawler
+    static final String APP_KEY_KEY = "app_key";
+    static final String HOUR_KEY = "hour";
+    static final String DOW_KEY = "dow";
+    static final String TZ_KEY = "tz";
+    static final String SDK_VERSION_KEY = "sdk_version";
+    static final String SDK_NAME_KEY = "sdk_name";
+    static final String DEVICE_ID_KEY = "device_id";
+    static final String OVVERIDE_KEY = "override_id";
+    static final String OLD_DEVICE_ID_KEY = "old_device_id";
+    static final String CHECKSUM_KEY = "checksum";
+    static final String CHECKSUM_256_KEY = "checksum256";
+    String[] preDefinedKeys = new String[] { APP_KEY_KEY, HOUR_KEY, DOW_KEY, TZ_KEY, SDK_VERSION_KEY, SDK_NAME_KEY, DEVICE_ID_KEY, OVVERIDE_KEY, OLD_DEVICE_ID_KEY, CHECKSUM_KEY, CHECKSUM_256_KEY };
 
     ModuleRequestQueue(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -217,6 +232,61 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         attemptToSendStoredRequestsInternal();
     }
 
+    /**
+     * Send request data after removing the predefined keys
+     */
+    synchronized public void addDirectRequestInternal(@NonNull Map<String, String> requestMap) {
+        L.i("[Countly] Calling addDirectRequest");
+        if (!_cly.isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before adding direct request, returning");
+            return;
+        }
+
+        if (!consentProvider.anyConsentGiven()) {
+            L.e("[ModuleRequestQueue] addDirectRequest, no consent is given, returning");
+            return;
+        }
+
+        if (requestMap == null || requestMap.isEmpty()) {
+            L.e("[ModuleRequestQueue] addDirectRequest, provided requestMap was null or empty, returning");
+            return;
+        }
+
+        // Filtering and removing predefined/restricted keys
+        Map<String, String> filteredRequestMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : requestMap.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            boolean isPreDefinedKey = false;
+
+            for (String preDefinedKey : preDefinedKeys) {
+                if (preDefinedKey.equals(key)) {
+                    //if it's a predefined field
+                    isPreDefinedKey = true;
+                    L.w("[ModuleRequestQueue] addDirectRequest, removing provided key: [" + key + "] is a restricted key.");
+                    break;
+                }
+            }
+
+            if (!isPreDefinedKey) {
+                filteredRequestMap.put(key, value.toString());
+            }
+        }
+
+        if (filteredRequestMap.isEmpty()) {
+            L.e("[ModuleRequestQueue] addDirectRequest, filteredRequestMap was null or empty, returning");
+            return;
+        }
+
+        int requestDataCount = requestMap.size();
+        int filteredDataCount = filteredRequestMap.size();
+        int delta = requestDataCount - filteredDataCount;
+        if (delta > 0) {
+            L.w("[ModuleRequestQueue] addDirectRequest, [" + delta + "] restricted keys are removed");
+        }
+        requestQueueProvider.sendDirectRequest(filteredRequestMap);
+    }
+
     @Override
     void halt() {
         requestQueueInterface = null;
@@ -298,6 +368,16 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
             synchronized (_cly) {
                 L.i("[Countly] Calling eraseWrongAppKeyRequests");
                 requestQueueEraseAppKeysRequestsInternal();
+            }
+        }
+
+        /**
+         * Send request data after removing the predefined keys
+         */
+        public void addDirectRequest(@NonNull Map<String, String> requestMap) {
+            synchronized (_cly) {
+                L.i("[Countly] Calling addDirectRequest");
+                addDirectRequestInternal(requestMap);
             }
         }
     }

@@ -342,7 +342,7 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        if(attributionObj.isEmpty()) {
+        if (attributionObj.isEmpty()) {
             L.e("[Connection Queue] provided attribution ID is not valid, aborting");
             return;
         }
@@ -364,7 +364,7 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        if(attributionData.isEmpty()) {
+        if (attributionData.isEmpty()) {
             L.w("[Connection Queue] sendDirectAttributionTest, attribution not sent, data is empty");
             return;
         }
@@ -426,6 +426,37 @@ class ConnectionQueue implements RequestQueueProvider {
 
         addRequestToQueue(data);
 
+        tick();
+    }
+
+    /**
+     * Send a direct request to server
+     * We have encoded each key and value as http url encoded.
+     * You need to check the required consents by yourself before this call, we are just checking that if any consent is given.
+     *
+     * @param requestData key value pair for direct request
+     */
+    public void sendDirectRequest(@NonNull final Map<String, String> requestData) {
+        checkInternalState();
+        L.d("[Connection Queue] sendDirectRequest");
+
+        if (!consentProvider.anyConsentGiven()) {
+            L.d("[Connection Queue] request ignored, no consent given");
+            return;
+        }
+
+        StringBuilder data = new StringBuilder(prepareCommonRequestData());
+        for (Map.Entry<String, String> entry : requestData.entrySet()) {
+            if (data.length() > 0) {
+                data.append("&");
+            }
+            data.append(String.format("%s=%s",
+                UtilsNetworking.urlEncodeString(entry.getKey()),
+                UtilsNetworking.urlEncodeString(entry.getValue())
+            ));
+        }
+
+        addRequestToQueue(data.toString());
         tick();
     }
 
@@ -656,7 +687,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.v("[Connection Queue] tick, Not empty:[" + !isRequestQueueEmpty() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
             || connectionProcessorFuture_.isDone()) + "]");
 
-        if(!Countly.sharedInstance().isInitialized()) {
+        if (!Countly.sharedInstance().isInitialized()) {
             //attempting to tick when the SDK is not initialized
             return;
         }

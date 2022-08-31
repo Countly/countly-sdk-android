@@ -1,3 +1,6 @@
+## 22.02.2
+  * Added ability to record direct requests.
+
 ## 22.02.1
   * Fixed bug that would be opening two intents for MainActivity when clicking on a push notification with a deep-link.
 
