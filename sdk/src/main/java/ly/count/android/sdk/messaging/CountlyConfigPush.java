@@ -2,13 +2,12 @@ package ly.count.android.sdk.messaging;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import ly.count.android.sdk.Countly;
 
-public class CountlyConfigPush implements Serializable {
+public class CountlyConfigPush {
     Application application;
     Countly.CountlyMessagingMode mode;
     Countly.CountlyMessagingProvider provider;
@@ -34,23 +33,23 @@ public class CountlyConfigPush implements Serializable {
     /**
      * set white list intent class names
      *
-     * @param whilteListIntentClassNames
+     * @param whiteListIntentClassNames
      * @return Returns the same push config object for convenient linking
      */
 
-    public synchronized CountlyConfigPush addWhitelistIntentClassName(@NonNull List<String> whilteListIntentClassNames) {
-        this.whiteListIntentClassNames.addAll(whilteListIntentClassNames);
+    public synchronized CountlyConfigPush addWhitelistIntentClassName(@NonNull List<String> whiteListIntentClassNames) {
+        this.whiteListIntentClassNames.addAll(whiteListIntentClassNames);
         return this;
     }
 
     /**
      * set white list intent package names
      *
-     * @param whilteListIntentPackageNames
+     * @param whiteListIntentPackageNames
      * @return Returns the same push config object for convenient linking
      */
-    public synchronized CountlyConfigPush addWhitelistIntentPackageName(@NonNull List<String> whilteListIntentPackageNames) {
-        this.whiteListIntentPackageNames.addAll(whilteListIntentPackageNames);
+    public synchronized CountlyConfigPush addWhitelistIntentPackageName(@NonNull List<String> whiteListIntentPackageNames) {
+        this.whiteListIntentPackageNames.addAll(whiteListIntentPackageNames);
         return this;
     }
 }
