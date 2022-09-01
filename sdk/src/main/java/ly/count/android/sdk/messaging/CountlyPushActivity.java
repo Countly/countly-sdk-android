@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import ly.count.android.sdk.Countly;
 
+import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_CONFIG_PUSH;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_ACTION_INDEX;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_INTENT;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_MESSAGE;
@@ -48,10 +49,25 @@ public class CountlyPushActivity extends Activity {
             String intentClassName = componentName.getClassName();
             String contextPackageName = context.getPackageName();
 
-            if (intentPackageName != null && !intentPackageName.equals(contextPackageName)) {
-                Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
-                return;
+            CountlyConfigPush countlyConfigPush = (CountlyConfigPush) intent.getSerializableExtra(COUNTLY_CONFIG_PUSH);
+
+            countlyConfigPush.whiteListIntentClassNames.add(intentClassName);
+            countlyConfigPush.whiteListIntentPackageNames.add(contextPackageName);
+
+            if(intentPackageName != null) {
+                boolean isTrustedPackage = false;
+                for (String packageName : countlyConfigPush.whiteListIntentPackageNames) {
+                    if(intentPackageName.equals(packageName)) {
+                        isTrustedPackage = true;
+                        break;
+                    }
+                }
+                if (!isTrustedPackage) {
+                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
+                    return;
+                }
             }
+
 
             if (intentPackageName == null || !intentClassName.startsWith(intentPackageName)) {
                 Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] intent class name and intent package names do not match");
