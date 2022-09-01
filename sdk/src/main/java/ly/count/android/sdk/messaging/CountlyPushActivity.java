@@ -51,28 +51,44 @@ public class CountlyPushActivity extends Activity {
 
             CountlyConfigPush countlyConfigPush = (CountlyConfigPush) intent.getSerializableExtra(COUNTLY_CONFIG_PUSH);
 
-            countlyConfigPush.whiteListIntentClassNames.add(intentClassName);
-            countlyConfigPush.whiteListIntentPackageNames.add(contextPackageName);
-
             if(intentPackageName != null) {
-                boolean isTrustedPackage = false;
-                for (String packageName : countlyConfigPush.whiteListIntentPackageNames) {
-                    if(intentPackageName.equals(packageName)) {
-                        isTrustedPackage = true;
+                countlyConfigPush.whiteListIntentPackageNames.add(contextPackageName);
+            }
+
+            boolean isTrustedClass = false;
+            boolean isTrustedPackage = false;
+            for (String packageName : countlyConfigPush.whiteListIntentPackageNames) {
+                if(intentPackageName.equals(packageName)) {
+                    isTrustedPackage = true;
+                    if(isTrustedClass) {
                         break;
                     }
                 }
-                if (!isTrustedPackage) {
-                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
+                if(intentClassName.startsWith(intentPackageName)){
+                    isTrustedClass = true;
+                    if(isTrustedPackage) {
+                        break;
+                    }
+                }
+            }
+
+            if (!isTrustedPackage) {
+                Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
+                return;
+            }
+            if (!isTrustedClass) {
+                for (String className : countlyConfigPush.whiteListIntentClassNames) {
+                    if(intentClassName.equals(className)) {
+                        isTrustedClass = true;
+                        break;
+                    }
+                }
+                if (!isTrustedClass) {
+                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent class");
                     return;
                 }
             }
 
-
-            if (intentPackageName == null || !intentClassName.startsWith(intentPackageName)) {
-                Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] intent class name and intent package names do not match");
-                return;
-            }
         }
 
         Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Push activity, after filtering");
