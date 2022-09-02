@@ -368,7 +368,7 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        Intent pushActivityIntent = getPushActivityIntent(context, msg, notificationIntent,0);
+        Intent pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, 0, CountlyPush.countlyConfigPush.whiteListIntentClassNames, CountlyPush.countlyConfigPush.whiteListIntentPackageNames);
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
             .setAutoCancel(true)
@@ -395,7 +395,7 @@ public class CountlyPush {
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            pushActivityIntent = getPushActivityIntent(context, msg, notificationIntent,i+1);
+            pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, i + 1, CountlyPush.countlyConfigPush.whiteListIntentClassNames, CountlyPush.countlyConfigPush.whiteListIntentPackageNames);
 
             builder.addAction(button.icon(), button.title(), PendingIntent.getActivity(context, msg.hashCode() + i + 1, pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
@@ -426,18 +426,18 @@ public class CountlyPush {
         }
 
         return Boolean.TRUE;
-
     }
 
-    private static Intent getPushActivityIntent(final Context context, final Message msg, final Intent notificationIntent, int index) {
+    private static Intent createPushActivityIntent(final Context context, final Message msg, final Intent notificationIntent, int index, Set<String> whiteListIntentClassNames, Set<String> whiteListIntentPackageNames) {
         Intent pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
         pushActivityIntent.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, index));
-        pushActivityIntent.putExtra(WHITE_LIST_CLASS_NAMES, new ArrayList<>(CountlyPush.countlyConfigPush.whiteListIntentClassNames));
-        pushActivityIntent.putExtra(WHITE_LIST_PACKAGE_NAMES, new ArrayList<>(CountlyPush.countlyConfigPush.whiteListIntentPackageNames));
+        pushActivityIntent.putExtra(WHITE_LIST_CLASS_NAMES, new ArrayList<>(whiteListIntentClassNames));
+        pushActivityIntent.putExtra(WHITE_LIST_PACKAGE_NAMES, new ArrayList<>(whiteListIntentPackageNames));
         return pushActivityIntent;
     }
+
     private static Intent actionIntent(Context context, Intent notificationIntent, Message message, int index) {
         Intent intent;
         if (notificationIntent == null) {
@@ -659,17 +659,17 @@ public class CountlyPush {
      * @throws IllegalStateException
      */
     public static void init(final Application application, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
-       CountlyConfigPush countlyConfigPush = new CountlyConfigPush(application, mode)
-           .setProvider(preferredProvider);
-       init(countlyConfigPush);
+        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(application, mode)
+            .setProvider(preferredProvider);
+        init(countlyConfigPush);
     }
 
-        /**
-         * Initialize Countly messaging functionality
-         *
-         * @param countlyConfigPush push configuration
-         * @throws IllegalStateException
-         */
+    /**
+     * Initialize Countly messaging functionality
+     *
+     * @param countlyConfigPush push configuration
+     * @throws IllegalStateException
+     */
     public static void init(CountlyConfigPush countlyConfigPush) throws IllegalStateException {
         Countly.sharedInstance().L.i("[CountlyPush, init] Initialising Countly Push, App:[" + (countlyConfigPush.application != null) + "], mode:[" + countlyConfigPush.mode + "] provider:[" + countlyConfigPush.provider + "]");
 

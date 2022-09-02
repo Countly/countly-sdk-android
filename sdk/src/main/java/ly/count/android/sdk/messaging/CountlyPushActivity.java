@@ -52,9 +52,9 @@ public class CountlyPushActivity extends Activity {
             String contextPackageName = context.getPackageName();
 
             ArrayList<String> whiteListIntentClassNames = (ArrayList<String>) intent.getSerializableExtra(WHITE_LIST_CLASS_NAMES);
-            ArrayList<String> whiteListIntentPackageNames = (ArrayList<String> ) intent.getSerializableExtra(WHITE_LIST_PACKAGE_NAMES);
+            ArrayList<String> whiteListIntentPackageNames = (ArrayList<String>) intent.getSerializableExtra(WHITE_LIST_PACKAGE_NAMES);
 
-            if(intentPackageName != null) {
+            if (intentPackageName != null) {
                 whiteListIntentPackageNames.add(contextPackageName);
             }
 
@@ -63,16 +63,16 @@ public class CountlyPushActivity extends Activity {
 
             for (String packageName : whiteListIntentPackageNames) {
                 // Checking is trusted package name, if intent package name contains in whitelistPackagesName then it is trusted package name
-                if(intentPackageName.equals(packageName)) {
+                if (intentPackageName.equals(packageName)) {
                     isTrustedPackage = true;
-                    if(isTrustedClass) {
+                    if (isTrustedClass) {
                         break;
                     }
                 }
                 // Checking is trusted class name, if intent class name starts with any whitelistPackagesName then it is trusted class name
-                if(intentClassName.startsWith(packageName)){
+                if (intentClassName.startsWith(packageName)) {
                     isTrustedClass = true;
-                    if(isTrustedPackage) {
+                    if (isTrustedPackage) {
                         break;
                     }
                 }
@@ -85,7 +85,7 @@ public class CountlyPushActivity extends Activity {
             if (!isTrustedClass) {
                 // Checking is trusted class name, if class name contains in whiteListIntentClassNames then it is trusted class name
                 for (String className : whiteListIntentClassNames) {
-                    if(intentClassName.equals(className)) {
+                    if (intentClassName.equals(className)) {
                         isTrustedClass = true;
                         break;
                     }
@@ -95,7 +95,6 @@ public class CountlyPushActivity extends Activity {
                     return;
                 }
             }
-
         }
 
         Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Push activity, after filtering");
