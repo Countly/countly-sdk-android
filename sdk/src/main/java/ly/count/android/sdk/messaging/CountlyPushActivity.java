@@ -7,11 +7,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import java.util.ArrayList;
 import ly.count.android.sdk.Countly;
 
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_ACTION_INDEX;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_INTENT;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_MESSAGE;
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_CLASS_NAMES;
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_PACKAGE_NAMES;
 import static ly.count.android.sdk.messaging.CountlyPush.useAdditionalIntentRedirectionChecks;
 
 public class CountlyPushActivity extends Activity {
@@ -48,14 +51,49 @@ public class CountlyPushActivity extends Activity {
             String intentClassName = componentName.getClassName();
             String contextPackageName = context.getPackageName();
 
-            if (intentPackageName != null && !intentPackageName.equals(contextPackageName)) {
+            ArrayList<String> allowedIntentClassNames = activityIntent.getStringArrayListExtra(ALLOWED_CLASS_NAMES);
+            ArrayList<String> allowedIntentPackageNames = activityIntent.getStringArrayListExtra(ALLOWED_PACKAGE_NAMES);
+
+            if (intentPackageName != null) {
+                allowedIntentPackageNames.add(contextPackageName);
+            }
+
+            boolean isTrustedClass = false;
+            boolean isTrustedPackage = false;
+
+            for (String packageName : allowedIntentPackageNames) {
+                // Checking is trusted package name, if intent package name contains in allowedPackagesNames then it is trusted package name
+                if (intentPackageName.startsWith(packageName)) {
+                    isTrustedPackage = true;
+                    if (isTrustedClass) {
+                        break;
+                    }
+                }
+                // Checking is trusted class name, if intent class name starts with any allowedPackagesNames then it is trusted class name
+                if (intentClassName.startsWith(packageName)) {
+                    isTrustedClass = true;
+                    if (isTrustedPackage) {
+                        break;
+                    }
+                }
+            }
+
+            if (!isTrustedPackage) {
                 Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
                 return;
             }
-
-            if (intentPackageName == null || !intentClassName.startsWith(intentPackageName)) {
-                Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] intent class name and intent package names do not match");
-                return;
+            if (!isTrustedClass) {
+                // Checking is trusted class name, if class name contains in allowedIntentClassNames then it is trusted class name
+                for (String className : allowedIntentClassNames) {
+                    if (intentClassName.endsWith(className)) {
+                        isTrustedClass = true;
+                        break;
+                    }
+                }
+                if (!isTrustedClass) {
+                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent class");
+                    return;
+                }
             }
         }
 

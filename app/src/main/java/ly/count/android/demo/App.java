@@ -20,7 +20,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import com.google.firebase.messaging.FirebaseMessaging;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ly.count.android.sdk.Countly;
@@ -29,6 +31,7 @@ import ly.count.android.sdk.CrashFilterCallback;
 import ly.count.android.sdk.DeviceIdType;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.RemoteConfigCallback;
+import ly.count.android.sdk.messaging.CountlyConfigPush;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 import static ly.count.android.sdk.Countly.TAG;
@@ -214,8 +217,18 @@ public class App extends Application {
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
-        CountlyPush.useAdditionalIntentRedirectionChecks = false;
-        CountlyPush.init(this, Countly.CountlyMessagingMode.PRODUCTION, Countly.CountlyMessagingProvider.FCM);
+        List<String> allowedClassNames = new ArrayList<>();
+        allowedClassNames.add("MainActivity");
+        List<String> allowedPackageNames = new ArrayList<>();
+        allowedPackageNames.add(getPackageName());
+
+        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(this, Countly.CountlyMessagingMode.PRODUCTION)
+            .setProvider(Countly.CountlyMessagingProvider.FCM)
+            .setAllowedIntentClassNames(allowedClassNames)
+            .setAllowedIntentPackageNames(allowedPackageNames);
+
+        CountlyPush.useAdditionalIntentRedirectionChecks = true;
+        CountlyPush.init(countlyConfigPush);
         CountlyPush.setNotificationAccentColor(255, 213, 89, 134);
 
         FirebaseMessaging.getInstance().getToken()

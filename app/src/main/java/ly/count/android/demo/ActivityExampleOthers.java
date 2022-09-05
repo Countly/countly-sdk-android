@@ -13,6 +13,9 @@ import ly.count.android.sdk.AttributionIndirectKey;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.DeviceIdType;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 @SuppressWarnings("UnusedParameters")
 public class ActivityExampleOthers extends AppCompatActivity {
@@ -56,7 +59,44 @@ public class ActivityExampleOthers extends AppCompatActivity {
         requestMap.put("city", "Istanbul");
         requestMap.put("country_code", "TR");
         requestMap.put("ip_address", "41.0082,28.9784");
-        requestMap.put("events", "[{\"key\":\"test\",\"count\":201,\"sum\":2010,\"dur\":2010,\"segmentation\":{\"trickplay\":[{\"type\":\"FF\",\"start_time\":123456789,\"end_time\":123456789},{\"type\":\"skip\",\"start_time\":123456789,\"end_time\":123456789},{\"type\":\"resume_play\",\"start_time\":123456789,\"end_time\":123456789}]}}]");
+
+        try {
+            JSONObject event = new JSONObject();
+            event.putOpt("key", "test");
+            event.putOpt("count", "201");
+            event.putOpt("sum", "2010");
+            event.putOpt("dur", "2010");
+
+            JSONObject ffJson = new JSONObject();
+            ffJson.putOpt("type", "FF");
+            ffJson.putOpt("start_time", 123456789);
+            ffJson.putOpt("end_time", 123456789);
+
+            JSONObject skipJson = new JSONObject();
+            skipJson.putOpt("type", "skip");
+            skipJson.putOpt("start_time", 123456789);
+            skipJson.putOpt("end_time", 123456789);
+
+            JSONObject resumeJson = new JSONObject();
+            resumeJson.putOpt("type", "resume_play");
+            resumeJson.putOpt("start_time", 123456789);
+            resumeJson.putOpt("end_time", 123456789);
+
+            JSONArray trickPlay = new JSONArray();
+            trickPlay.put(ffJson);
+            trickPlay.put(skipJson);
+            trickPlay.put(resumeJson);
+
+            JSONObject segmentation = new JSONObject();
+            segmentation.putOpt("trickplay", trickPlay);
+            event.putOpt("segmentation", segmentation);
+
+            JSONArray events = new JSONArray();
+            events.put(event);
+            requestMap.put("events",events.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         Countly.sharedInstance().requestQueue().addDirectRequest(requestMap);
     }
 
