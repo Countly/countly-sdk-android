@@ -13,8 +13,8 @@ import ly.count.android.sdk.Countly;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_ACTION_INDEX;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_INTENT;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_MESSAGE;
-import static ly.count.android.sdk.messaging.CountlyPush.WHITE_LIST_CLASS_NAMES;
-import static ly.count.android.sdk.messaging.CountlyPush.WHITE_LIST_PACKAGE_NAMES;
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_CLASS_NAMES;
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_PACKAGE_NAMES;
 import static ly.count.android.sdk.messaging.CountlyPush.useAdditionalIntentRedirectionChecks;
 
 public class CountlyPushActivity extends Activity {
@@ -51,25 +51,25 @@ public class CountlyPushActivity extends Activity {
             String intentClassName = componentName.getClassName();
             String contextPackageName = context.getPackageName();
 
-            ArrayList<String> whiteListIntentClassNames = (ArrayList<String>) intent.getSerializableExtra(WHITE_LIST_CLASS_NAMES);
-            ArrayList<String> whiteListIntentPackageNames = (ArrayList<String>) intent.getSerializableExtra(WHITE_LIST_PACKAGE_NAMES);
+            ArrayList<String> allowedIntentClassNames = activityIntent.getStringArrayListExtra(ALLOWED_CLASS_NAMES);
+            ArrayList<String> allowedIntentPackageNames = activityIntent.getStringArrayListExtra(ALLOWED_PACKAGE_NAMES);
 
             if (intentPackageName != null) {
-                whiteListIntentPackageNames.add(contextPackageName);
+                allowedIntentPackageNames.add(contextPackageName);
             }
 
             boolean isTrustedClass = false;
             boolean isTrustedPackage = false;
 
-            for (String packageName : whiteListIntentPackageNames) {
-                // Checking is trusted package name, if intent package name contains in whitelistPackagesName then it is trusted package name
-                if (intentPackageName.equals(packageName)) {
+            for (String packageName : allowedIntentPackageNames) {
+                // Checking is trusted package name, if intent package name contains in allowedPackagesNames then it is trusted package name
+                if (intentPackageName.startsWith(packageName)) {
                     isTrustedPackage = true;
                     if (isTrustedClass) {
                         break;
                     }
                 }
-                // Checking is trusted class name, if intent class name starts with any whitelistPackagesName then it is trusted class name
+                // Checking is trusted class name, if intent class name starts with any allowedPackagesNames then it is trusted class name
                 if (intentClassName.startsWith(packageName)) {
                     isTrustedClass = true;
                     if (isTrustedPackage) {
@@ -83,9 +83,9 @@ public class CountlyPushActivity extends Activity {
                 return;
             }
             if (!isTrustedClass) {
-                // Checking is trusted class name, if class name contains in whiteListIntentClassNames then it is trusted class name
-                for (String className : whiteListIntentClassNames) {
-                    if (intentClassName.equals(className)) {
+                // Checking is trusted class name, if class name contains in allowedIntentClassNames then it is trusted class name
+                for (String className : allowedIntentClassNames) {
+                    if (intentClassName.endsWith(className)) {
                         isTrustedClass = true;
                         break;
                     }

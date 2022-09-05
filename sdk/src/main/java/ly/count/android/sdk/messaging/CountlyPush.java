@@ -52,8 +52,8 @@ public class CountlyPush {
     public static final String CHANNEL_ID = "ly.count.android.sdk.CountlyPush.CHANNEL_ID";
     public static final String SECURE_NOTIFICATION_BROADCAST = "ly.count.android.sdk.CountlyPush.SECURE_NOTIFICATION_BROADCAST";
     public static final String COUNTLY_BROADCAST_PERMISSION_POSTFIX = ".CountlyPush.BROADCAST_PERMISSION";
-    public static final String WHITE_LIST_PACKAGE_NAMES = "white_list_package_names";
-    public static final String WHITE_LIST_CLASS_NAMES = "white_list_class_names";
+    public static final String ALLOWED_PACKAGE_NAMES = "allowed_package_names";
+    public static final String ALLOWED_CLASS_NAMES = "allowed_class_names";
 
     private static Application.ActivityLifecycleCallbacks callbacks = null;
     private static Activity activity = null;
@@ -368,7 +368,7 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        Intent pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, 0, CountlyPush.countlyConfigPush.whiteListIntentClassNames, CountlyPush.countlyConfigPush.whiteListIntentPackageNames);
+        Intent pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, 0, CountlyPush.countlyConfigPush.allowedIntentClassNames, CountlyPush.countlyConfigPush.allowedIntentPackageNames);
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
             .setAutoCancel(true)
@@ -395,7 +395,7 @@ public class CountlyPush {
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, i + 1, CountlyPush.countlyConfigPush.whiteListIntentClassNames, CountlyPush.countlyConfigPush.whiteListIntentPackageNames);
+            pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, i + 1, CountlyPush.countlyConfigPush.allowedIntentClassNames, CountlyPush.countlyConfigPush.allowedIntentPackageNames);
 
             builder.addAction(button.icon(), button.title(), PendingIntent.getActivity(context, msg.hashCode() + i + 1, pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
@@ -428,13 +428,13 @@ public class CountlyPush {
         return Boolean.TRUE;
     }
 
-    private static Intent createPushActivityIntent(final Context context, final Message msg, final Intent notificationIntent, int index, Set<String> whiteListIntentClassNames, Set<String> whiteListIntentPackageNames) {
+    private static Intent createPushActivityIntent(final Context context, final Message msg, final Intent notificationIntent, int index, Set<String> allowedIntentClassNames, Set<String> allowedIntentPackageNames) {
         Intent pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
         pushActivityIntent.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, index));
-        pushActivityIntent.putExtra(WHITE_LIST_CLASS_NAMES, new ArrayList<>(whiteListIntentClassNames));
-        pushActivityIntent.putExtra(WHITE_LIST_PACKAGE_NAMES, new ArrayList<>(whiteListIntentPackageNames));
+        pushActivityIntent.putStringArrayListExtra(ALLOWED_CLASS_NAMES, new ArrayList<>(allowedIntentClassNames));
+        pushActivityIntent.putStringArrayListExtra(ALLOWED_PACKAGE_NAMES, new ArrayList<>(allowedIntentPackageNames));
         return pushActivityIntent;
     }
 

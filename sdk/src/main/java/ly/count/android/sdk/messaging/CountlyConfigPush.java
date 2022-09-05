@@ -11,8 +11,8 @@ public class CountlyConfigPush {
     Application application;
     Countly.CountlyMessagingMode mode;
     Countly.CountlyMessagingProvider provider;
-    Set<String> whiteListIntentClassNames = new HashSet<>();
-    Set<String> whiteListIntentPackageNames = new HashSet<>();
+    Set<String> allowedIntentClassNames = new HashSet<>();
+    Set<String> allowedIntentPackageNames = new HashSet<>();
 
     public CountlyConfigPush(final Application application, Countly.CountlyMessagingMode mode) {
         this.application = application;
@@ -31,25 +31,25 @@ public class CountlyConfigPush {
     }
 
     /**
-     * set white list intent class names
+     * set allowed intent class names
      *
-     * @param whiteListIntentClassNames
+     * @param allowedIntentClassNames
      * @return Returns the same push config object for convenient linking
      */
 
-    public synchronized CountlyConfigPush addWhitelistIntentClassName(@NonNull List<String> whiteListIntentClassNames) {
-        this.whiteListIntentClassNames.addAll(whiteListIntentClassNames);
+    public synchronized CountlyConfigPush setAllowedIntentClassNames(@NonNull List<String> allowedIntentClassNames) {
+        this.allowedIntentClassNames = new HashSet<>(allowedIntentClassNames);
         return this;
     }
 
     /**
-     * set white list intent package names
+     * set allowed intent package names
      *
-     * @param whiteListIntentPackageNames
+     * @param allowedIntentPackageNames
      * @return Returns the same push config object for convenient linking
      */
-    public synchronized CountlyConfigPush addWhitelistIntentPackageName(@NonNull List<String> whiteListIntentPackageNames) {
-        this.whiteListIntentPackageNames.addAll(whiteListIntentPackageNames);
+    public synchronized CountlyConfigPush setAllowedIntentPackageNames(@NonNull List<String> allowedIntentPackageNames) {
+        this.allowedIntentPackageNames = new HashSet<>(allowedIntentPackageNames);
         return this;
     }
 }

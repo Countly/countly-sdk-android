@@ -217,16 +217,17 @@ public class App extends Application {
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
-        List<String> whiteListClassNames = new ArrayList<>();
-        whiteListClassNames.add(getApplicationInfo().className);
-        List<String> whiteListPackageNames = new ArrayList<>();
-        whiteListPackageNames.add(getPackageName());
+        List<String> allowedClassNames = new ArrayList<>();
+        allowedClassNames.add(getApplicationInfo().className);
+        List<String> allowedPackageNames = new ArrayList<>();
+        allowedPackageNames.add(getPackageName());
 
         CountlyConfigPush countlyConfigPush = new CountlyConfigPush(this, Countly.CountlyMessagingMode.PRODUCTION)
             .setProvider(Countly.CountlyMessagingProvider.FCM)
-            .addWhitelistIntentClassName(whiteListClassNames)
-            .addWhitelistIntentPackageName(whiteListPackageNames);
-        CountlyPush.useAdditionalIntentRedirectionChecks = false;
+            .setAllowedIntentClassNames(allowedClassNames)
+            .setAllowedIntentPackageNames(allowedPackageNames);
+
+        CountlyPush.useAdditionalIntentRedirectionChecks = true;
         CountlyPush.init(countlyConfigPush);
         CountlyPush.setNotificationAccentColor(255, 213, 89, 134);
 

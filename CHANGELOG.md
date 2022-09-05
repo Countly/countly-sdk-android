@@ -1,7 +1,7 @@
 ## 22.02.3
   * Added CountlyConfigPush object which is used during CountlyPush init.
-  * Added function to add white list package names for push notification intent security.
-  * Added function to add white list class names for push notification intent security.
+  * Added function to add allowed package names for push notification intent security.
+  * Added function to add allowed class names for push notification intent security.
 
 ## 22.02.2
   * Added ability to record direct requests.
