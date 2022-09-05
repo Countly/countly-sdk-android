@@ -218,7 +218,7 @@ public class App extends Application {
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
         List<String> allowedClassNames = new ArrayList<>();
-        allowedClassNames.add(getApplicationInfo().className);
+        allowedClassNames.add("MainActivity");
         List<String> allowedPackageNames = new ArrayList<>();
         allowedPackageNames.add(getPackageName());
 

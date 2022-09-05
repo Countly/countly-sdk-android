@@ -645,6 +645,7 @@ public class CountlyPush {
      * @param application application instance
      * @param mode whether to mark push token as test or as production one
      * @throws IllegalStateException
+     * @deprecated use 'CountlyConfigPush' object to init Countly Push: 'init(CountlyConfigPush countlyConfigPush)'.
      */
     public static void init(final Application application, Countly.CountlyMessagingMode mode) throws IllegalStateException {
         init(application, mode, null);
@@ -657,6 +658,7 @@ public class CountlyPush {
      * @param mode whether to mark push token as test or as production one
      * @param preferredProvider prefer specified push provider, {@code null} means use FCM first, then fallback to Huawei
      * @throws IllegalStateException
+     * @deprecated use 'CountlyConfigPush' object to init Countly Push: 'init(CountlyConfigPush countlyConfigPush)'.
      */
     public static void init(final Application application, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
         CountlyConfigPush countlyConfigPush = new CountlyConfigPush(application, mode)
