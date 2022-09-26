@@ -84,20 +84,20 @@ public class ModuleCrashTests {
 
         countly.crashes().recordHandledException(exception);
 
-        verify(requestQueueProvider, never()).sendCrashReport(any(String.class));
+        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(Boolean.class));
 
         Throwable throwable = new Throwable("Secret message");
 
         countly.crashes().recordUnhandledException(throwable);
 
-        verify(requestQueueProvider, never()).sendCrashReport(any(String.class));
+        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(Boolean.class));
 
         exception = new Exception("Reasonable message");
 
         countly.crashes().recordHandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture());
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
 
         //todo improve this
         Assert.assertTrue(arg.getValue().contains("java.lang.Exception: Reasonable message\\n" +
@@ -166,7 +166,7 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, segm3);
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture());
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
 
         String argVal = arg.getValue();
 
@@ -219,7 +219,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordHandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture());
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
 
         //todo improve this
         Assert.assertTrue(arg.getValue().contains("java.lang.Exception: Some message\\n" +
@@ -233,7 +233,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordHandledException(throwable);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture());
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
 
         String crash = arg.getValue();
 
@@ -249,7 +249,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordUnhandledException(exception);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture());
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
 
         String crash = arg.getValue();
 
@@ -265,7 +265,7 @@ public class ModuleCrashTests {
         mCountly.crashes().recordUnhandledException(throwable);
 
         ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture());
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
 
         String crash = arg.getValue();
 

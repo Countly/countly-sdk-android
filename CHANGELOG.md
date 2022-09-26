@@ -1,3 +1,6 @@
+## 22.06.0
+  * Fatal crash reports will now be written in sync mode to shared preferences 
+
 ## 22.02.3
   * Added CountlyConfigPush object which is used during CountlyPush init.
   * Added a way to add allowed package names for push notification intent security.

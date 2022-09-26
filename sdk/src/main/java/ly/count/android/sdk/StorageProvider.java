@@ -15,7 +15,7 @@ interface StorageProvider {
 
     @NonNull String getRequestQueueRaw();
 
-    void addRequest(final String requestStr);
+    void addRequest(final String requestStr, final boolean writeInSync);
 
     void removeRequest(final String requestStr);
 

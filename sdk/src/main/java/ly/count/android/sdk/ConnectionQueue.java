@@ -170,7 +170,7 @@ class ConnectionQueue implements RequestQueueProvider {
         Countly.sharedInstance().isBeginSessionSent = true;
 
         if (dataAvailable) {
-            addRequestToQueue(data);
+            addRequestToQueue(data, false);
             tick();
         }
     }
@@ -196,7 +196,7 @@ class ConnectionQueue implements RequestQueueProvider {
             }
 
             if (dataAvailable) {
-                addRequestToQueue(data);
+                addRequestToQueue(data, false);
                 tick();
             }
         }
@@ -221,7 +221,7 @@ class ConnectionQueue implements RequestQueueProvider {
         // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGING BREAKS !!!!!
         data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceId);
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
         tick();
     }
 
@@ -249,7 +249,7 @@ class ConnectionQueue implements RequestQueueProvider {
             @Override
             public void run() {
                 L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
-                addRequestToQueue(data);
+                addRequestToQueue(data, false);
                 tick();
             }
         }, 10, TimeUnit.SECONDS);
@@ -288,7 +288,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         if (dataAvailable) {
-            addRequestToQueue(data);
+            addRequestToQueue(data, false);
             tick();
         }
     }
@@ -304,7 +304,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         data += prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -329,7 +329,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + userdata;
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
         tick();
     }
 
@@ -350,7 +350,7 @@ class ConnectionQueue implements RequestQueueProvider {
         String param = "&aid=" + UtilsNetworking.urlEncodeString(attributionObj);
 
         String data = prepareCommonRequestData() + param;
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -372,7 +372,7 @@ class ConnectionQueue implements RequestQueueProvider {
         String res = "&attribution_data=" + UtilsNetworking.urlEncodeString(attributionData);
 
         String data = prepareCommonRequestData() + res;
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -401,7 +401,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + res;
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -411,8 +411,7 @@ class ConnectionQueue implements RequestQueueProvider {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    //public void sendCrashReport(String error, boolean nonfatal, boolean isNativeCrash, final Map<String, Object> customSegmentation) {
-    public void sendCrashReport(@NonNull final String crashData) {
+    public void sendCrashReport(@NonNull final String crashData, final boolean nonFatalCrash) {
         checkInternalState();
         L.d("[Connection Queue] sendCrashReport");
 
@@ -424,7 +423,8 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&crash=" + UtilsNetworking.urlEncodeString(crashData);
 
-        addRequestToQueue(data);
+        //in case of a fatal crash, write it in sync to shared preferences
+        addRequestToQueue(data, !nonFatalCrash);
 
         tick();
     }
@@ -456,7 +456,7 @@ class ConnectionQueue implements RequestQueueProvider {
             ));
         }
 
-        addRequestToQueue(data.toString());
+        addRequestToQueue(data.toString(), false);
         tick();
     }
 
@@ -477,7 +477,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&events=" + events;
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
         tick();
     }
 
@@ -488,7 +488,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&consent=" + UtilsNetworking.urlEncodeString(formattedConsentChanges);
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -513,7 +513,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -539,7 +539,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -562,7 +562,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -585,7 +585,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data);
+        addRequestToQueue(data, false);
 
         tick();
     }
@@ -715,8 +715,8 @@ class ConnectionQueue implements RequestQueueProvider {
         return false;
     }
 
-    void addRequestToQueue(String requestData) {
-        storageProvider.addRequest(requestData);
+    void addRequestToQueue(final @NonNull String requestData, final boolean writeInSync) {
+        storageProvider.addRequest(requestData, writeInSync);
     }
 
     /**

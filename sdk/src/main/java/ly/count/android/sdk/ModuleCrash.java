@@ -133,7 +133,7 @@ public class ModuleCrash extends ModuleBase {
 
         final String crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), combinedSegmentationValues);
 
-        requestQueueProvider.sendCrashReport(crashData);
+        requestQueueProvider.sendCrashReport(crashData, nonfatal);
     }
 
     /**

@@ -21,6 +21,7 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
@@ -191,19 +192,27 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      *
      * @param requestStr the connection to be added, ignored if null or empty
      */
-    public synchronized void addRequest(final String requestStr) {
+    @SuppressLint("ApplySharedPref")
+    public synchronized void addRequest(final String requestStr, final boolean writeInSync) {
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
             if (connections.size() < maxRequestQueueSize) {
                 //request under max requests, add as normal
                 connections.add(requestStr);
-                preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
+                SharedPreferences.Editor editor = preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER));
+
+                if(writeInSync) {
+                    editor.commit();
+                } else {
+                    editor.apply();
+                }
+
             } else {
                 //reached the limit, start deleting oldest requests
                 L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
 
                 deleteOldestRequest();
-                addRequest(requestStr);
+                addRequest(requestStr, writeInSync);
             }
         }
     }
