@@ -96,7 +96,7 @@ public class CountlyStoreTests {
     public void testConnections_prefIsEmptyString() {
         // the following two calls will result in the pref being an empty string
         final String connStr = "blah";
-        store.addRequest(connStr);
+        store.addRequest(connStr, false);
         store.removeRequest(connStr);
         assertTrue(Arrays.equals(new String[0], store.getRequests()));
     }
@@ -104,7 +104,7 @@ public class CountlyStoreTests {
     @Test
     public void testConnections_prefHasSingleValue() {
         final String connStr = "blah";
-        store.addRequest(connStr);
+        store.addRequest(connStr, false);
         assertTrue(Arrays.equals(new String[] { connStr }, store.getRequests()));
     }
 
@@ -112,8 +112,8 @@ public class CountlyStoreTests {
     public void testConnections_prefHasTwoValues() {
         final String connStr1 = "blah1";
         final String connStr2 = "blah2";
-        store.addRequest(connStr1);
-        store.addRequest(connStr2);
+        store.addRequest(connStr1, false);
+        store.addRequest(connStr2, false);
         assertTrue(Arrays.equals(new String[] { connStr1, connStr2 }, store.getRequests()));
     }
 
@@ -322,8 +322,8 @@ public class CountlyStoreTests {
 */
     @Test
     public void testRemoveConnection_notFirstConn() {
-        store.addRequest("blah1");
-        store.addRequest("blah2");
+        store.addRequest("blah1", false);
+        store.addRequest("blah2", false);
         assertEquals(2, store.getRequests().length);
         store.removeRequest("blah2");
         assertEquals(1, store.getRequests().length);
@@ -331,9 +331,9 @@ public class CountlyStoreTests {
 
     @Test
     public void testRemoveConnection_onlyRemovesFirstMatchingOne() {
-        store.addRequest("blah1");
-        store.addRequest("blah2");
-        store.addRequest("blah1");
+        store.addRequest("blah1", false);
+        store.addRequest("blah2", false);
+        store.addRequest("blah1", false);
         assertEquals(3, store.getRequests().length);
         store.removeRequest("blah1");
         assertTrue(Arrays.equals(new String[] { "blah2", "blah1" }, store.getRequests()));
@@ -398,7 +398,7 @@ public class CountlyStoreTests {
         final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
-        store.addRequest("blah");
+        store.addRequest("blah", false);
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         store.recordEventToEventQueue("eventKey", null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow);
         assertTrue(prefs.contains("EVENTS"));
@@ -504,8 +504,8 @@ public class CountlyStoreTests {
 
     @Test
     public void removeConnection_nonExisting() {
-        store.addRequest("blah1");
-        store.addRequest("blah2");
+        store.addRequest("blah1", false);
+        store.addRequest("blah2", false);
         assertEquals(2, store.getRequests().length);
         store.removeRequest("blah3");
         assertEquals(2, store.getRequests().length);
@@ -514,8 +514,8 @@ public class CountlyStoreTests {
 
     @Test
     public void replaceConnections() {
-        store.addRequest("blah1");
-        store.addRequest("blah2");
+        store.addRequest("blah1", false);
+        store.addRequest("blah2", false);
         assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.getRequests()));
         store.replaceRequests(new String[] { "aa", "bb", "cc" });
         assertTrue(Arrays.equals(new String[] { "aa", "bb", "cc" }, store.getRequests()));
@@ -529,9 +529,9 @@ public class CountlyStoreTests {
 
     @Test
     public void deleteOldestConnection() {
-        store.addRequest("blah1");
-        store.addRequest("blah2");
-        store.addRequest("blah3");
+        store.addRequest("blah1", false);
+        store.addRequest("blah2", false);
+        store.addRequest("blah3", false);
         assertTrue(Arrays.equals(new String[] { "blah1", "blah2", "blah3" }, store.getRequests()));
         store.deleteOldestRequest();
         assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.getRequests()));
@@ -605,7 +605,7 @@ public class CountlyStoreTests {
     public void validatingAnythingSetInStorageSeparate() {
         assertFalse(sp.anythingSetInStorage());
 
-        sp.addRequest("234ff");
+        sp.addRequest("234ff", false);
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
@@ -669,7 +669,7 @@ public class CountlyStoreTests {
     public void validatingAnythingSetInStorageAggregate() {
         assertFalse(sp.anythingSetInStorage());
 
-        sp.addRequest("234ff");
+        sp.addRequest("234ff", false);
         assertTrue(sp.anythingSetInStorage());
 
         sp.replaceRequestList(new ArrayList<String>());

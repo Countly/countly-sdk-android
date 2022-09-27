@@ -136,7 +136,7 @@ public class MigrationHelperTests {
     @Test
     public void getCurrentSchemaVersionLegacy() {
         cs.clear();
-        cs.addRequest("fff");
+        cs.addRequest("fff", false);
         MigrationHelper mh = new MigrationHelper(cs, mockLog);
         assertEquals(0, mh.getCurrentSchemaVersion());
 
@@ -218,7 +218,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_1() {
         for (int a = 0; a <= 1; a++) {
             cs.clear();
-            cs.addRequest("fff");
+            cs.addRequest("fff", false);
             cs.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
             MigrationHelper mh = new MigrationHelper(cs, mockLog);
             assertEquals(0, mh.getCurrentSchemaVersion());
@@ -246,7 +246,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_2() {
         for (int a = 0; a <= 1; a++) {
             cs.clear();
-            cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
+            cs.addRequest("fff", false);//request added to indicate that this is not the first launch but a legacy version
             cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
             MigrationHelper mh = new MigrationHelper(cs, mockLog);
             assertEquals(0, mh.getCurrentSchemaVersion());
@@ -274,7 +274,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_3() {
         for (int a = 0; a <= 1; a++) {
             cs.clear();
-            cs.addRequest("fff");//request added to indicate that this is not the first launch but a legacy version
+            cs.addRequest("fff", false);//request added to indicate that this is not the first launch but a legacy version
             cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
             MigrationHelper mh = new MigrationHelper(cs, mockLog);
             assertEquals(0, mh.getCurrentSchemaVersion());
@@ -418,7 +418,7 @@ public class MigrationHelperTests {
     @Test
     public void performMigration0to1_10() {
         cs.clear();
-        cs.addRequest("qqq");
+        cs.addRequest("qqq", false);
 
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
