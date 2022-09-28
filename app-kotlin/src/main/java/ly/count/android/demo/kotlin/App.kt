@@ -24,6 +24,17 @@ class App :Application() {
     .setRecordAllThreadsWithCrash()
     .setLoggingEnabled(true)
 
+    .setViewTracking(false)
+    .setCustomCrashSegment(mapOf(Pair("deviceIdKey", "deviceId")))
+    .setRemoteConfigAutomaticDownload(true, RemoteConfigCallback { error ->
+      if (error == null) {
+        Log.d("Countly", "No error for automatic RC")
+      } else {
+        Log.d("Countly", "Automatic RC encountered issue")
+      }
+    })
+
+
     Countly.sharedInstance().init(countlyConfig)
   }
 }

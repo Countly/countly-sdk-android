@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
+import android.os.StrictMode;
 import androidx.annotation.NonNull;
 
 import android.os.Bundle;
@@ -48,6 +49,19 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        if(false) {
+            //setting up strict mode for additional validation
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build());
+
+            StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+                .detectAll()
+                .penaltyLog()
+                .build());
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
