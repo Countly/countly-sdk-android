@@ -109,13 +109,13 @@ public class MultiThreadingTests {
             @Override public void call(int threadNumber, int iter, long sleepTime) {
                 switch ((threadNumber + iter) % 3) {
                     case 0:
-                        mCountly.setLocation("aa" + iter, "vv" + iter, null, null);
+                        mCountly.location().setLocation("aa" + iter, "vv" + iter, null, null);
                         break;
                     case 1:
-                        mCountly.setLocation(null, null, iter + "," + iter, null);
+                        mCountly.location().setLocation(null, null, iter + "," + iter, null);
                         break;
                     case 2:
-                        mCountly.setLocation("aa" + iter, "vv" + iter, iter + "," + iter, iter + "." + iter + "." + iter + "." + iter);
+                        mCountly.location().setLocation("aa" + iter, "vv" + iter, iter + "," + iter, iter + "." + iter + "." + iter + "." + iter);
                         break;
                 }
             }

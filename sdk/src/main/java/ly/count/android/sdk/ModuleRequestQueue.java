@@ -212,7 +212,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * Go through the request queue and replace the appKey of all requests with the current appKey
      */
     synchronized public void requestQueueOverwriteAppKeysInternal() {
-        L.i("[Countly] Calling requestQueueOverwriteAppKeys");
+        L.i("[ModuleRequestQueue] Calling requestQueueOverwriteAppKeys");
 
         List<String> filteredRequests = requestQueueReplaceWithAppKey(storageProvider.getRequests(), baseInfoProvider.getAppKey());
         if (filteredRequests != null) {
@@ -225,7 +225,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * Go through the request queue and delete all requests that don't have the current application key
      */
     synchronized public void requestQueueEraseAppKeysRequestsInternal() {
-        L.i("[Countly] Calling requestQueueEraseAppKeysRequests");
+        L.i("[ModuleRequestQueue] Calling requestQueueEraseAppKeysRequests");
 
         List<String> filteredRequests = requestQueueRemoveWithoutAppKey(storageProvider.getRequests(), baseInfoProvider.getAppKey());
         storageProvider.replaceRequestList(filteredRequests);
@@ -236,7 +236,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * Send request data after removing the predefined keys
      */
     synchronized public void addDirectRequestInternal(@NonNull Map<String, String> requestMap) {
-        L.i("[Countly] Calling addDirectRequest");
+        L.i("[ModuleRequestQueue] Calling addDirectRequestInternal");
         if (!_cly.isInitialized()) {
             L.e("Countly.sharedInstance().init must be called before adding direct request, returning");
             return;

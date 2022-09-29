@@ -1010,53 +1010,6 @@ public class Countly {
         return this;
     }
 
-    /**
-     * Disable sending of location data
-     *
-     * @return Returns link to Countly for call chaining
-     * @deprecated Use 'Countly.sharedInstance().location().disableLocation()'
-     */
-    public synchronized Countly disableLocation() {
-        L.d("Disabling location");
-        if (!isInitialized()) {
-            L.w("The use of 'disableLocation' before init is deprecated, use CountlyConfig instead of this");
-            return this;
-        }
-
-        location().disableLocation();
-
-        return this;
-    }
-
-    /**
-     * Set location parameters. If they are set before begin_session, they will be sent as part of it.
-     * If they are set after, then they will be sent as a separate request.
-     * If this is called after disabling location, it will enable it.
-     *
-     * @param country_code ISO Country code for the user's country
-     * @param city Name of the user's city
-     * @param gpsCoordinates comma separate lat and lng values. For example, "56.42345,123.45325"
-     * @return Returns link to Countly for call chaining
-     * @deprecated Use 'Countly.sharedInstance().location().setLocation()'
-     */
-    public synchronized Countly setLocation(String country_code, String city, String gpsCoordinates, String ipAddress) {
-        L.d("Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
-
-        if (!isInitialized()) {
-            L.w("The use of 'setLocation' before init is deprecated, use CountlyConfig instead of this");
-            return this;
-        }
-
-        if (isInitialized()) {
-            location().setLocation(country_code, city, gpsCoordinates, ipAddress);
-        } else {
-            //use fallback
-            locationFallback = new String[] { country_code, city, gpsCoordinates, ipAddress };
-        }
-
-        return this;
-    }
-
     void setLoggingEnabled(final boolean enableLogging) {
         enableLogging_ = enableLogging;
         L.d("Enabling logging");
