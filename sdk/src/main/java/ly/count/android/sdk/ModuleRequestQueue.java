@@ -287,6 +287,11 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         requestQueueProvider.sendDirectRequest(filteredRequestMap);
     }
 
+    void esWriteCachesToPersistenceInternal() {
+        L.i("[ModuleRequestQueue] Calling esWriteCachesToPersistenceInternal");
+        storageProvider.esWriteCacheToStorage();
+    }
+
     @Override
     void halt() {
         requestQueueInterface = null;
@@ -378,6 +383,18 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
             synchronized (_cly) {
                 L.i("[Countly] Calling addDirectRequest");
                 addDirectRequestInternal(requestMap);
+            }
+        }
+
+        /**
+         * Call for the explicit storage mode.
+         * Request queue and event queue that, were held into a memory cache,
+         * will be written to persistent storage
+         */
+        public void esWriteCachesToPersistence() {
+            synchronized (_cly) {
+                L.i("[Countly] Calling esWriteCachesToStorage");
+                esWriteCachesToPersistenceInternal();
             }
         }
     }

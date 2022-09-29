@@ -186,6 +186,8 @@ public class CountlyConfig {
     String daCampaignData = null;
     Map<String, String> iaAttributionValues = null;
 
+    public boolean explicitStorageModeEnabled = false;
+
     //SDK internal limits
     Integer maxKeyLength;
     Integer maxValueSize;
@@ -886,6 +888,16 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setUserProperties(Map<String, Object> userProperties) {
         providedUserProperties = userProperties;
+        return this;
+    }
+
+    /**
+     * If this mode is enabled then the SDK not write the request and event queues to disk
+     * until the explicit write signal is given
+     * @return
+     */
+    public synchronized CountlyConfig enableExplicitStorageMode() {
+        explicitStorageModeEnabled = true;
         return this;
     }
 }

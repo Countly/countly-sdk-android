@@ -447,12 +447,16 @@ public class Countly {
                 startTimerService(timerService_, timerFuture, config.sessionUpdateTimerDelay);
             }
 
+            if(config.explicitStorageModeEnabled) {
+                L.i("[Init] Explicit storage mode is being enabled");
+            }
+
             //set or create the CountlyStore
             if (config.countlyStore != null) {
                 //we are running a test and using a mock object
                 countlyStore = config.countlyStore;
             } else {
-                countlyStore = new CountlyStore(config.context, L);
+                countlyStore = new CountlyStore(config.context, L, config.explicitStorageModeEnabled);
                 config.setCountlyStore(countlyStore);
             }
 

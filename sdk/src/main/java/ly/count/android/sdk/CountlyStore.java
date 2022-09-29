@@ -80,15 +80,26 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     int maxRequestQueueSize = 1000;
 
+    //explicit storage fields
+    boolean explicitStorageModeEnabled = false;
+    boolean esDirtyFlag = false;
+    String esRequestQueueCache = null;
+    String esEventQueueCache = null;
+
     /**
      * Constructs a CountlyStore object.
      *
      * @param context used to retrieve storage meta data, must not be null.
      */
     public CountlyStore(final Context context, ModuleLog logModule) {
+        this(context, logModule, false);
+    }
+
+    public CountlyStore(final Context context, ModuleLog logModule, boolean explicitStorageModeEnabled) {
         if (context == null) {
             throw new IllegalArgumentException("must provide valid context");
         }
+        this.explicitStorageModeEnabled = explicitStorageModeEnabled;
         preferences_ = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
         preferencesPush_ = createPreferencesPush(context);
         L = logModule;
@@ -102,11 +113,86 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         return context.getSharedPreferences(PREFERENCES_PUSH, Context.MODE_PRIVATE);
     }
 
+    private @Nullable String storageReadRequestQueue() {
+        if(explicitStorageModeEnabled) {
+            //L.v("[CountlyStore] Returning RQ from cache");
+            if(esRequestQueueCache == null) {
+                L.v("[CountlyStore] Reading initial RQ from storage");
+                esRequestQueueCache = preferences_.getString(REQUEST_PREFERENCE, "");
+            }
+
+            return esRequestQueueCache;
+        } else {
+            //L.v("[CountlyStore] Returning RQ from preferences");
+            return preferences_.getString(REQUEST_PREFERENCE, "");
+        }
+    }
+
+    private void storageWriteRequestQueue(@Nullable String requestQueue, boolean writeInSync) {
+        if(explicitStorageModeEnabled) {
+            //L.v("[CountlyStore] Writing RQ to cache");
+            esRequestQueueCache = requestQueue;
+            esDirtyFlag = true;
+        } else {
+            //L.v("[CountlyStore] Writing RQ to preferences");
+            SharedPreferences.Editor editor = preferences_.edit().putString(REQUEST_PREFERENCE, requestQueue);
+
+            if(writeInSync) {
+                editor.commit();
+            } else {
+                editor.apply();
+            }
+        }
+    }
+
+    private @Nullable String storageReadEventQueue() {
+        if(explicitStorageModeEnabled) {
+            //L.v("[CountlyStore] Returning EQ from cache");
+            if(esEventQueueCache == null) {
+                L.v("[CountlyStore] Reading initial EQ from storage");
+                esEventQueueCache = preferences_.getString(EVENTS_PREFERENCE, "");
+            }
+
+            return esEventQueueCache;
+        } else {
+            //L.v("[CountlyStore] Returning EQ from preferences");
+            return preferences_.getString(EVENTS_PREFERENCE, "");
+        }
+    }
+
+    private void storageWriteEventQueue(@Nullable String eventQueue, boolean writeInSync) {
+        if(explicitStorageModeEnabled) {
+            L.v("[CountlyStore] Writing EQ to cache");
+            esEventQueueCache = eventQueue;
+            esDirtyFlag = true;
+        } else {
+            L.v("[CountlyStore] Writing EQ to preferences");
+            SharedPreferences.Editor editor = preferences_.edit().putString(EVENTS_PREFERENCE, eventQueue);
+
+            if(writeInSync) {
+                editor.commit();
+            } else {
+                editor.apply();
+            }
+        }
+    }
+
+    public synchronized void esWriteCacheToStorage() {
+        L.v("[CountlyStore] Trying to write ES cache to storage[" + explicitStorageModeEnabled + "] [" + esDirtyFlag + "]");
+        if (explicitStorageModeEnabled) {
+            if(esDirtyFlag) {
+                preferences_.edit().putString(REQUEST_PREFERENCE, esRequestQueueCache).commit();
+                preferences_.edit().putString(EVENTS_PREFERENCE, esEventQueueCache).commit();
+                esDirtyFlag = false;
+            }
+        }
+    }
+
     /**
      * Returns an unsorted array of the current stored connections.
      */
     public synchronized String[] getRequests() {
-        final String joinedConnStr = preferences_.getString(REQUEST_PREFERENCE, "");
+        final String joinedConnStr = storageReadRequestQueue();
         return joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
     }
 
@@ -114,7 +200,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * Returns an unsorted array of the current stored event JSON strings.
      */
     public synchronized String[] getEvents() {
-        final String joinedEventsStr = preferences_.getString(EVENTS_PREFERENCE, "");
+        final String joinedEventsStr = storageReadEventQueue();
         return joinedEventsStr.length() == 0 ? new String[0] : joinedEventsStr.split(DELIMITER);
     }
 
@@ -184,7 +270,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     @NonNull public synchronized String getRequestQueueRaw() {
-        return preferences_.getString(REQUEST_PREFERENCE, "");
+        return storageReadRequestQueue();
     }
 
     /**
@@ -199,14 +285,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             if (connections.size() < maxRequestQueueSize) {
                 //request under max requests, add as normal
                 connections.add(requestStr);
-                SharedPreferences.Editor editor = preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER));
-
-                if(writeInSync) {
-                    editor.commit();
-                } else {
-                    editor.apply();
-                }
-
+                storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), writeInSync);
             } else {
                 //reached the limit, start deleting oldest requests
                 L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
@@ -220,7 +299,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     synchronized void deleteOldestRequest() {
         final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
         connections.remove(0);
-        preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
+        storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), false);
     }
 
     /**
@@ -233,7 +312,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
             if (connections.remove(requestStr)) {
-                preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(connections, DELIMITER)).apply();
+                storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), false);
             }
         }
     }
@@ -247,7 +326,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public synchronized void replaceRequestList(final List<String> newConns) {
         if (newConns != null) {
-            preferences_.edit().putString(REQUEST_PREFERENCE, Utils.joinCountlyStore(newConns, DELIMITER)).apply();
+            storageWriteRequestQueue(Utils.joinCountlyStore(newConns, DELIMITER), false);
         }
     }
 
@@ -270,7 +349,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param eventData
      */
     void setEventData(String eventData) {
-        preferences_.edit().putString(EVENTS_PREFERENCE, eventData).apply();
+        storageWriteEventQueue(eventData, false);
     }
 
     /**
@@ -370,7 +449,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         if (eventsToRemove != null && eventsToRemove.size() > 0) {
             final List<Event> events = getEventList();
             if (events.removeAll(eventsToRemove)) {
-                preferences_.edit().putString(EVENTS_PREFERENCE, joinEvents(events, DELIMITER)).apply();
+                storageWriteEventQueue(joinEvents(events, DELIMITER), false);
             }
         }
     }
@@ -436,6 +515,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         prefsEditor.remove(REQUEST_PREFERENCE);
         prefsEditor.clear();
         prefsEditor.apply();
+
+        //clear explicit storage things
+        esDirtyFlag = false;
+        esRequestQueueCache = null;
+        esEventQueueCache = null;
 
         preferencesPush_.edit().clear().apply();
     }
