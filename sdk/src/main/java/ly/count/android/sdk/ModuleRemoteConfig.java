@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -49,62 +50,69 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
      * @param callback called after the update is done
      */
-    void updateRemoteConfigValues(final String[] keysOnly, final String[] keysExcept, final boolean requestShouldBeDelayed, final RemoteConfigCallback callback) {
-        L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
+    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean requestShouldBeDelayed, @Nullable final RemoteConfigCallback callback) {
+        try {
+            L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
 
-        if (deviceIdProvider.getDeviceId() == null) {
-            //device ID is null, abort
-            L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
-
-            if (callback != null) {
-                callback.callback("Can't complete call, device ID is null");
-            }
-
-            return;
-        }
-
-        if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
-            //temporary id mode enabled, abort
-            L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
-
-            if (callback != null) {
-                callback.callback("Can't complete call, temporary device ID is set");
-            }
-
-            return;
-        }
-
-        String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
-        String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1]);
-        L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
-
-        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-
-        (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, requestShouldBeDelayed, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
-            @Override
-            public void callback(JSONObject checkResponse) {
-                L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
-                if (checkResponse == null) {
-                    if (callback != null) {
-                        callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
-                    }
-                    return;
-                }
-
-                String error = null;
-                try {
-                    boolean clearOldValues = keysExcept == null && keysOnly == null;
-                    mergeCheckResponseIntoCurrentValues(clearOldValues, checkResponse);
-                } catch (Exception ex) {
-                    L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]");
-                    error = "Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]";
-                }
+            if (deviceIdProvider.getDeviceId() == null) {
+                //device ID is null, abort
+                L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
 
                 if (callback != null) {
-                    callback.callback(error);
+                    callback.callback("Can't complete call, device ID is null");
                 }
+
+                return;
             }
-        }, L);
+
+            if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
+                //temporary id mode enabled, abort
+                L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
+
+                if (callback != null) {
+                    callback.callback("Can't complete call, temporary device ID is set");
+                }
+
+                return;
+            }
+
+            String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
+            String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1]);
+            L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
+
+            ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+
+            (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, requestShouldBeDelayed, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+                @Override
+                public void callback(JSONObject checkResponse) {
+                    L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
+                    if (checkResponse == null) {
+                        if (callback != null) {
+                            callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
+                        }
+                        return;
+                    }
+
+                    String error = null;
+                    try {
+                        boolean clearOldValues = keysExcept == null && keysOnly == null;
+                        mergeCheckResponseIntoCurrentValues(clearOldValues, checkResponse);
+                    } catch (Exception ex) {
+                        L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]");
+                        error = "Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]";
+                    }
+
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                }
+            }, L);
+        } catch (Exception ex) {
+            L.e("[ModuleRemoteConfig] Encountered critical error while trying to perform a remote config update. " + ex.toString());
+            if (callback != null) {
+                callback.callback("Encountered critical error while trying to perform a remote config update");
+            }
+        }
     }
 
     /**
@@ -129,7 +137,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         L.d("[ModuleRemoteConfig] Finished remote config saving");
     }
 
-    String[] prepareKeysIncludeExclude(final String[] keysOnly, final String[] keysExcept) {
+    @NonNull String[] prepareKeysIncludeExclude(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept) {
         String[] res = new String[2];//0 - include, 1 - exclude
 
         try {

@@ -29,7 +29,7 @@ interface  RequestQueueProvider {
     boolean queueContainsTemporaryIdItems();
     void tick();
     ConnectionProcessor createConnectionProcessor();
-    String prepareRemoteConfigRequest(String keysInclude, String keysExclude);
+    String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude);
     String prepareRatingWidgetRequest(String widgetId);
     String prepareFeedbackListRequest();
 

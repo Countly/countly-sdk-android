@@ -633,7 +633,7 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
-    public String prepareRemoteConfigRequest(String keysInclude, String keysExclude) {
+    public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude) {
         String data = prepareCommonRequestData()
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());

@@ -2,6 +2,8 @@
   * Fatal crash reports will now be written in sync mode to shared preferences 
   * Added explicit storage mode where the event queue and request queue are not writen to persistent storage until a signal is given
 
+  * Added mitigations for rare crashes while updating remote config
+
   * Removed the deprecated "disableLocation" method
   * Removed the deprecated "setLocation" method
 
