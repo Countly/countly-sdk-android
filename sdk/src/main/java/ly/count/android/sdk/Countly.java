@@ -339,14 +339,6 @@ public class Countly {
 
         L.d("[Init] SDK initialised with the URL:[" + config.serverURL + "] and the appKey:[" + config.appKey + "]");
 
-        if (sdkIsInitialised && (!baseInfoProvider.getServerURL().equals(config.serverURL) ||
-            !baseInfoProvider.getAppKey().equals(config.appKey) ||
-            !DeviceId.deviceIDEqualsNullSafe(config.deviceID, config.idMode, connectionQueue_.getDeviceId()))) {
-            //not sure if this needed
-            L.e("Countly cannot be reinitialized with different values");
-            return this;
-        }
-
         if (L.logEnabled()) {
             L.i("[Init] Checking init parameters");
 
@@ -617,7 +609,7 @@ public class Countly {
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
-            connectionQueue_.setDeviceId(config.deviceIdProvider.getDeviceIdInstance());
+            connectionQueue_.setDeviceId(config.deviceIdProvider);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);

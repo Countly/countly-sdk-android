@@ -65,7 +65,7 @@ public class DeviceId {
 
         L.d("[DeviceId-int] initialising with values, device ID:[" + this.id + "] type:[" + this.type + "]");
 
-        //check if there wasn't a value set before
+        //check if there wasn't a value set before. Read if from storage
         String storedId = storageProvider.getDeviceID();
         if (storedId != null) {
             //if there was a value saved previously, set it and it's type. Overwrite the in constructor set ones
@@ -76,16 +76,15 @@ public class DeviceId {
         } else {
             L.d("[DeviceId-int] retrieveId, no previous ID stored");
         }
+
+        //call init implicitly
+        init();
     }
 
     /**
-     * Initialize device ID generation, that is start up required services and send requests.
-     * Device ID is expected to be available after some time.
-     * In some cases, Countly can override ID generation strategy to other one, for example when
-     * Google Play Services are not available and user chose Advertising ID strategy, it will fall
-     * back to OpenUDID
+     * Initialize device ID generation
      */
-    protected void init() {
+    private void init() {
         DeviceIdType storedType = retrieveStoredType();
         L.d("[DeviceId-int] init, current type:[" + type + "] overriddenType:[" + storedType + "]");
 
@@ -174,18 +173,14 @@ public class DeviceId {
     }
 
     /**
-     * If a value is provided, it will take precedence and will not used no matter what the type is
+     * If a value is provided, it will take precedence and will not matter what the type is
      *
      * @param type
      * @param deviceId
-     * @param runInit
      */
-    protected void changeToId(@NonNull DeviceIdType type, @Nullable String deviceId, boolean runInit) {
-        L.v("[DeviceId-int] changeToId, Device ID is " + id + " (type " + type + "), init:" + runInit);
+    protected void changeToId(@NonNull DeviceIdType type, @Nullable String deviceId) {
+        L.v("[DeviceId-int] changeToId, Device ID is " + id + " (type " + type + ")");
         setAndStoreId(type, deviceId);
-        if (runInit) {
-            init();
-        }
     }
 
     void setAndStoreId(DeviceIdType type, String deviceId) {
@@ -220,21 +215,5 @@ public class DeviceId {
         }
 
         return id.equals(temporaryCountlyDeviceId);
-    }
-
-    /**
-     * Helper method for null safe comparison of current device ID and the one supplied to Countly.init
-     *
-     * @return true if supplied device ID equal to the one registered before
-     */
-    static boolean deviceIDEqualsNullSafe(final String id, DeviceIdType type, final DeviceId deviceId) {
-        if (type == null || type == DeviceIdType.DEVELOPER_SUPPLIED) {
-            //going here if no type is provided or type is developer supplied
-            final String deviceIdId = deviceId == null ? null : deviceId.getCurrentId();
-            return (deviceIdId == null && id == null) || (deviceIdId != null && deviceIdId.equals(id));
-        } else {
-            //if type is provided, but it is not developer supplied
-            return true;
-        }
     }
 }

@@ -39,9 +39,6 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         deviceIdInstance = new ly.count.android.sdk.DeviceId(config.idMode, config.deviceID, config.storageProvider, L, this);
 
-        //initialise the set device ID value
-        deviceIdInstance.init();
-
         config.deviceIdProvider = this;
 
         boolean temporaryDeviceIdIsCurrentlyEnabled = deviceIdInstance.isTemporaryIdModeEnabled();
@@ -92,7 +89,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         }
 
         //start by changing stored ID
-        deviceIdInstance.changeToId(type, deviceId, true);//run init because not clear if types other then dev supplied can be provided
+        deviceIdInstance.changeToId(type, deviceId);//run init because not clear if types other then dev supplied can be provided
 
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);
@@ -158,7 +155,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //remove all consent
         _cly.moduleConsent.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
 
-        deviceIdInstance.changeToId(type, deviceId, true);
+        deviceIdInstance.changeToId(type, deviceId);
 
         //clear automated star rating session values because now we have a new user
         _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal();

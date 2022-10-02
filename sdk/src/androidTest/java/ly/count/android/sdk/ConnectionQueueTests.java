@@ -76,14 +76,13 @@ public class ConnectionQueueTests {
         CountlyStore cs = mock(CountlyStore.class);
         when(cs.getCachedAdvertisingId()).thenReturn("");
         connQ.storageProvider = cs;
-        connQ.setDeviceId(mock(DeviceId.class));
+        connQ.setDeviceId(mock(DeviceIdProvider.class));
         connQ.setExecutor(mock(ExecutorService.class));
     }
 
     @Test
     public void testConstructor() {
         assertNull(freshConnQ.storageProvider);
-        assertNull(freshConnQ.getDeviceId());
         assertNull(freshConnQ.baseInfoProvider);
         assertNull(freshConnQ.getContext());
         assertNull(freshConnQ.getExecutor());
@@ -111,14 +110,6 @@ public class ConnectionQueueTests {
         final CountlyStore store = new CountlyStore(getContext(), mock(ModuleLog.class));
         freshConnQ.storageProvider = store;
         assertSame(store, freshConnQ.storageProvider);
-    }
-
-    @Test
-    public void testDeviceId() {
-        final CountlyStore store = new CountlyStore(getContext(), mock(ModuleLog.class));
-        final DeviceId deviceId = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "blah", store, mock(ModuleLog.class), null);
-        freshConnQ.setDeviceId(deviceId);
-        assertSame(deviceId, freshConnQ.getDeviceId());
     }
 
     @Test

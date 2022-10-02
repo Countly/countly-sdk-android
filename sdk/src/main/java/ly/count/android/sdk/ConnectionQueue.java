@@ -47,7 +47,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private ExecutorService executor_;
     private Context context_;
     private Future<?> connectionProcessorFuture_;
-    private DeviceId deviceId_;
+    private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
 
@@ -92,12 +92,8 @@ class ConnectionQueue implements RequestQueueProvider {
         }
     }
 
-    DeviceId getDeviceId() {
-        return deviceId_;
-    }
-
-    public void setDeviceId(DeviceId deviceId) {
-        this.deviceId_ = deviceId;
+    public void setDeviceId(DeviceIdProvider deviceIdProvider) {
+        this.deviceIdProvider_ = deviceIdProvider;
     }
 
     protected void setRequestHeaderCustomValues(Map<String, String> headerCustomValues) {
@@ -636,7 +632,7 @@ class ConnectionQueue implements RequestQueueProvider {
     public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude) {
         String data = prepareCommonRequestData()
             + "&method=fetch_remote_config"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
@@ -656,14 +652,14 @@ class ConnectionQueue implements RequestQueueProvider {
     public String prepareRatingWidgetRequest(String widgetId) {
         String data = prepareCommonRequestData()
             + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
         return data;
     }
 
     public String prepareFeedbackListRequest() {
         String data = prepareCommonRequestData()
             + "&method=feedback"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId_.getCurrentId());
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         return data;
     }
@@ -699,7 +695,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceId_, sslContext_, requestHeaderCustomValues, L);
+        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, sslContext_, requestHeaderCustomValues, L);
     }
 
     public boolean queueContainsTemporaryIdItems() {

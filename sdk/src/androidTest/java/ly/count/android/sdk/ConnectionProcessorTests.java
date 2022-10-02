@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 public class ConnectionProcessorTests {
     ConnectionProcessor connectionProcessor;
     CountlyStore mockStore;
-    DeviceId mockDeviceId;
+    DeviceIdProvider mockDeviceId;
     String testDeviceId;
     ModuleLog moduleLog;
 
@@ -62,7 +62,7 @@ public class ConnectionProcessorTests {
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
         mockStore = mock(CountlyStore.class);
-        mockDeviceId = mock(DeviceId.class);
+        mockDeviceId = mock(DeviceIdProvider.class);
         moduleLog = mock(ModuleLog.class);
 
         connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, null, null, moduleLog);
@@ -73,11 +73,10 @@ public class ConnectionProcessorTests {
     public void testConstructorAndGetters() {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
-        final DeviceId mockDeviceId = mock(DeviceId.class);
+        final DeviceIdProvider mockDeviceId = mock(DeviceIdProvider.class);
         final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, null, null, moduleLog);
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
-        assertSame(mockDeviceId, connectionProcessor1.getDeviceId());
     }
 
     /**
@@ -217,7 +216,7 @@ public class ConnectionProcessorTests {
         final String eventData = "blahblahblah";
         connectionProcessor = spy(connectionProcessor);
         when(mockStore.getRequests()).thenReturn(new String[] { eventData }, new String[0]);
-        when(mockDeviceId.getCurrentId()).thenReturn(testDeviceId);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
         final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
@@ -241,7 +240,7 @@ public class ConnectionProcessorTests {
         final String eventData = "blahblahblah";
         connectionProcessor = spy(connectionProcessor);
         when(mockStore.getRequests()).thenReturn(new String[] { eventData }, new String[0]);
-        when(mockDeviceId.getCurrentId()).thenReturn(testDeviceId);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
         final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
@@ -265,7 +264,7 @@ public class ConnectionProcessorTests {
         final String eventData = "blahblahblah";
         connectionProcessor = spy(connectionProcessor);
         when(mockStore.getRequests()).thenReturn(new String[] { eventData }, new String[0]);
-        when(mockDeviceId.getCurrentId()).thenReturn(testDeviceId);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
         final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
         final TestInputStream testInputStream = new TestInputStream();
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
@@ -289,7 +288,7 @@ public class ConnectionProcessorTests {
         final String eventData = "blahblahblah";
         connectionProcessor = spy(connectionProcessor);
         when(mockStore.getRequests()).thenReturn(new String[] { eventData }, new String[0]);
-        when(mockDeviceId.getCurrentId()).thenReturn(testDeviceId);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
         final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Failed");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
@@ -313,7 +312,7 @@ public class ConnectionProcessorTests {
         final String eventData2 = "123523523432";
         connectionProcessor = spy(connectionProcessor);
         when(mockStore.getRequests()).thenReturn(new String[] { eventData1, eventData2 }, new String[] { eventData2 }, new String[0]);
-        when(mockDeviceId.getCurrentId()).thenReturn(testDeviceId);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
         final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
         final CountlyResponseStream testInputStream1 = new CountlyResponseStream("Success");
         final CountlyResponseStream testInputStream2 = new CountlyResponseStream("Success");
