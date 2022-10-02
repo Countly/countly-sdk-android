@@ -160,9 +160,6 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 return true;
             }
 
-            if (key == null || key.length() == 0) {
-                throw new IllegalArgumentException("Valid Countly event key is required");
-            }
             if (count < 1) {
                 throw new IllegalArgumentException("Countly event count should be greater than zero");
             }

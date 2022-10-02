@@ -163,7 +163,7 @@ public class ModuleCrash extends ModuleBase {
         Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
 
             @Override
-            public void uncaughtException(@NonNull Thread t, Throwable e) {
+            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
                 L.d("[ModuleCrash] Uncaught crash handler triggered");
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
 

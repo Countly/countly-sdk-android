@@ -74,7 +74,11 @@ class CrashDetails {
                     value = m.group(1);
                 }
                 try {
-                    totalMemory = Long.parseLong(value) / 1024;
+                    if(value != null) {
+                        totalMemory = Long.parseLong(value) / 1024;
+                    } else {
+                        totalMemory = 0;
+                    }
                 } catch (NumberFormatException ex) {
                     totalMemory = 0;
                 }

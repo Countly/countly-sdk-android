@@ -167,48 +167,22 @@ public class DeviceIdTests {
      * Validating 'changeToId' with developer supplied values
      */
     @Test
-    public void changeToIdDevSupplied() {
+    public void changeToCustomIdAndEnterTempIDMode() {
         DeviceId did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "abc", store, mock(ModuleLog.class), null);
         assertEquals("abc", did.getCurrentId());
+        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did.changeToId(DeviceIdType.DEVELOPER_SUPPLIED, "123");
+        did.changeToCustomId("123");
         assertEquals("123", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did.changeToId(DeviceIdType.DEVELOPER_SUPPLIED, "456");
-        assertEquals("456", did.getCurrentId());
-        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
-    }
+        did.enterTempIDMode();
+        assertEquals(DeviceId.temporaryCountlyDeviceId, did.getCurrentId());
+        assertEquals(DeviceIdType.TEMPORARY_ID, did.getType());
 
-    /**
-     * Validating 'changeToId' around openUDID
-     */
-    @Test
-    public void changeToIdOpenUDID() {
-        DeviceId did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "abc", store, mock(ModuleLog.class), openUDIDProvider);
-        assertEquals("abc", did.getCurrentId());
-
-        //set first value without running init, should use the provided value
-        did.changeToId(DeviceIdType.OPEN_UDID, "123");
-        assertEquals("123", did.getCurrentId());
-        assertEquals(DeviceIdType.OPEN_UDID, did.getType());
-
-        //do a reset
-        did.changeToId(DeviceIdType.DEVELOPER_SUPPLIED, "aaa");
+        did.changeToCustomId("aaa");
         assertEquals("aaa", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
-
-        //change with init, since a value is specified, it should take precedence
-        currentOpenUDIDValue = "uio|";
-        did.changeToId(DeviceIdType.OPEN_UDID, "456");
-        assertEquals("456", did.getCurrentId());
-        assertEquals(DeviceIdType.OPEN_UDID, did.getType());
-
-        //change with init, it should use it's own value because a null device ID is provided
-        currentOpenUDIDValue = "sdfh";
-        did.changeToId(DeviceIdType.OPEN_UDID, null);
-        assertEquals(currentOpenUDIDValue, did.getCurrentId());
-        assertEquals(DeviceIdType.OPEN_UDID, did.getType());
     }
 
     /**

@@ -362,7 +362,11 @@ public class ConnectionProcessor implements Runnable {
                         storageProvider_.removeRequest(storedEvents[0]);
 
                         if (deviceIdChange) {
-                            deviceIdProvider_.getDeviceIdInstance().changeToId(DeviceIdType.DEVELOPER_SUPPLIED, newId);//todo needs to be refactored
+                            if(newId != null && !newId.isEmpty()) {
+                                deviceIdProvider_.getDeviceIdInstance().changeToCustomId(newId);//todo needs to be refactored
+                            } else {
+                                L.e("[Connection Processor] Failed to change device ID with merging because the new ID was empty or null. [" + newId + "]");
+                            }
                         }
 
                         if (deviceIdChange || deviceIdOverride) {

@@ -113,7 +113,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         return context.getSharedPreferences(PREFERENCES_PUSH, Context.MODE_PRIVATE);
     }
 
-    private @Nullable String storageReadRequestQueue() {
+    private @NonNull String storageReadRequestQueue() {
         if(explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Returning RQ from cache");
             if(esRequestQueueCache == null) {
@@ -145,7 +145,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
     }
 
-    private @Nullable String storageReadEventQueue() {
+    private @NonNull String storageReadEventQueue() {
         if(explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Returning EQ from cache");
             if(esEventQueueCache == null) {

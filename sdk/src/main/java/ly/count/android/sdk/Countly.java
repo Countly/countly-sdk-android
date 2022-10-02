@@ -482,6 +482,11 @@ public class Countly {
                 L.d("[Init] Parameter tampering protection salt set");
             }
 
+            if(connectionQueue_ == null) {
+                L.e("[Init] SDK failed to initialize because the connection queue failed to be created");
+                return this;
+            }
+
             //check legacy access methods
             if (locationFallback != null && config.locationCountyCode == null && config.locationCity == null && config.locationLocation == null && config.locationIpAddress == null) {
                 //if the fallback was set and config did not contain any location, use the fallback info
@@ -557,9 +562,8 @@ public class Countly {
             if (config.customNetworkRequestHeaders != null) {
                 L.i("[Countly] Calling addCustomNetworkRequestHeaders");
                 requestHeaderCustomValues = config.customNetworkRequestHeaders;
-                if (connectionQueue_ != null) {
-                    connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
-                }
+
+                connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             }
 
             if (config.httpPostForced) {
@@ -932,7 +936,17 @@ public class Countly {
             return;
         }
 
-        moduleDeviceId.changeDeviceIdWithoutMergeInternal(ModuleDeviceId.fromOldDeviceIdToNew(type), deviceId);
+        if(deviceId == null || deviceId.isEmpty()) {
+            L.e("changeDeviceIdWithoutMerge, can't change device ID to and empty or null value");
+            return;
+        }
+
+        if(type != DeviceId.Type.DEVELOPER_SUPPLIED) {
+            L.e("changeDeviceIdWithoutMerge, provided device ID type mus be 'DEVELOPER_SUPPLIED'");
+            return;
+        }
+
+        moduleDeviceId.changeDeviceIdWithoutMergeInternal(deviceId);
     }
 
     /**
