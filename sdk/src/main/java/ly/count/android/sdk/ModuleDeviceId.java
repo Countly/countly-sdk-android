@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, DeviceIdProvider {
     boolean exitTempIdAfterInit = false;
+    boolean cleanupTempIdAfterInit = false;
 
     ly.count.android.sdk.DeviceId deviceIdInstance;
 
@@ -32,7 +33,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             config.deviceID = ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId;
 
             //change also the type to indicate that we will go into the temp ID mode
-            //type is dev supplied even for temp ID
+            //type is dev supplied even for temp ID. todo type would become tempID specific
             config.idMode = DeviceIdType.DEVELOPER_SUPPLIED;
         }
 
@@ -53,25 +54,21 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             L.d("[ModuleDeviceId] [TemporaryDeviceId] Decided we have to exit temporary device ID mode, mode enabled: [" + config.temporaryDeviceIdEnabled + "], custom Device ID Set: [" + customIDWasProvided + "]");
 
             exitTempIdAfterInit = true;
+        } else {
+            if(!temporaryDeviceIdIsCurrentlyEnabled) {
+                //if temp ID mode is not enabled then there should also be no temp ID requests in the RQ
+                //note to perform queue cleanup
+                cleanupTempIdAfterInit = true;
+            }
         }
 
         deviceIdInterface = new DeviceId();
     }
 
-    void exitTemporaryIdMode(@NonNull DeviceIdType type, @Nullable String deviceId) {
-        L.d("[ModuleDeviceId] Calling exitTemporaryIdMode");
-
-        if (!_cly.isInitialized()) {
-            throw new IllegalStateException("init must be called before exitTemporaryIdMode");
-        }
-
-        //start by changing stored ID
-        deviceIdInstance.changeToId(type, deviceId, true);//run init because not clear if types other then dev supplied can be provided
-
-        //update stored request for ID change to use this new ID
+    void replaceTempIDWithRealIDinRQ(String targetDeviceId) {
         String[] storedRequests = storageProvider.getRequests();
         String temporaryIdTag = "&device_id=" + ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId;
-        String newIdTag = "&device_id=" + deviceId;
+        String newIdTag = "&device_id=" + targetDeviceId;
 
         boolean foundOne = false;
         for (int a = 0; a < storedRequests.length; a++) {
@@ -85,6 +82,21 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         if (foundOne) {
             storageProvider.replaceRequests(storedRequests);
         }
+    }
+
+    void exitTemporaryIdMode(@NonNull DeviceIdType type, @Nullable String deviceId) {
+        L.d("[ModuleDeviceId] Calling exitTemporaryIdMode");
+
+        if (!_cly.isInitialized()) {
+            throw new IllegalStateException("init must be called before exitTemporaryIdMode");
+        }
+
+        //start by changing stored ID
+        deviceIdInstance.changeToId(type, deviceId, true);//run init because not clear if types other then dev supplied can be provided
+
+        //update stored request for ID change to use this new ID
+        replaceTempIDWithRealIDinRQ(deviceId);
+
 
         //update remote config_ values if automatic update is enabled
         _cly.moduleRemoteConfig.clearValueStoreInternal();
@@ -226,6 +238,9 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         if (exitTempIdAfterInit) {
             L.i("[ModuleDeviceId, initFinished] Exiting temp ID at the end of init");
             exitTemporaryIdMode(DeviceIdType.DEVELOPER_SUPPLIED, config.deviceID);
+        } else if (cleanupTempIdAfterInit) {
+            L.i("[ModuleDeviceId, initFinished] Cleaning up potentially left temp ID requests in queue");
+            replaceTempIDWithRealIDinRQ(getDeviceId());
         }
     }
 
