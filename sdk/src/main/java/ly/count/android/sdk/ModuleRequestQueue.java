@@ -377,7 +377,18 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         }
 
         /**
-         * Send request data after removing the predefined keys
+         * This call is for creating custom manual requests that should be sent to the server.
+         * The SDK will add base parameters like "device id", "app key", timestamps, checksums etc.
+         * It is not possible to override those protected values.
+         *
+         * The SDK will take the provided request map and add those as key value pairs to the request.
+         * The provided pairs will be html encoded before they are added to the request, therefore you
+         * have to be sure not to encode them.
+         *
+         * If consent is being required, this call will check if any consent is given, but will not check further.
+         * It is up to this calls user to make sure that they have the required consent to record the things they are trying to record.
+         *
+         * This call should not be used lightly and should only be used if the SDK misses some specific functionality.
          */
         public void addDirectRequest(@NonNull Map<String, String> requestMap) {
             synchronized (_cly) {
@@ -388,8 +399,8 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
 
         /**
          * Call for the explicit storage mode.
-         * Request queue and event queue that, were held into a memory cache,
-         * will be written to persistent storage
+         * Writes temporary memory caches to persistent storage.
+         * This involves the Request queue and event queue.
          */
         public void esWriteCachesToPersistence() {
             synchronized (_cly) {

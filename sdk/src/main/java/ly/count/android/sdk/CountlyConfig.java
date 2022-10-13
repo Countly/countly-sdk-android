@@ -893,8 +893,13 @@ public class CountlyConfig {
 
     /**
      * If this mode is enabled then the SDK not write the request and event queues to disk
-     * until the explicit write signal is given
-     * @return
+     * until the explicit write signal is given.
+     *
+     * The explicit write signal is given with:
+     * 'Countly.sharedInstance().requestQueue().esWriteCachesToPersistence();'
+     *
+     * If not used properly, this mode will lead to data loss or data duplication.
+     * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig enableExplicitStorageMode() {
         explicitStorageModeEnabled = true;
