@@ -6,7 +6,9 @@ We're hiring: Countly is looking for Android SDK developers, full stack devs, de
 * **Questions?** [Ask in our Community forum](http://community.count.ly)
 
 ## What is Countly?
-[Countly](http://count.ly) is a product analytics solution and innovation enabler that helps teams track product performance and customer journey and behavior across [mobile](https://count.ly/mobile-analytics), [web](http://count.ly/web-analytics), and [desktop](https://count.ly/desktop-analytics) applications. [Ensuring privacy by design](https://count.ly/your-data-your-rules), Countly allows you to innovate and enhance your products to provide personalized and customized customer experiences, and meet key business and revenue goals.
+[Countly](http://count.ly) is a product analytics solution and innovation enabler that helps teams track product performance and customer journey and behavior across [mobile](https://count.ly/mobile-analytics), 
+[web](http://count.ly/web-analytics), and [desktop](https://count.ly/desktop-analytics) applications. 
+[Ensuring privacy by design](https://count.ly/your-data-your-rules), Countly allows you to innovate and enhance your products to provide personalized and customized customer experiences, and meet key business and revenue goals.
 
 Track, measure, and take action - all without leaving Countly.
 
