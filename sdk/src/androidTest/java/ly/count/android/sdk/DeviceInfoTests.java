@@ -30,6 +30,7 @@ import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Locale;
@@ -286,9 +287,21 @@ public class DeviceInfoTests {
         json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
         json.put("asd", "123");
 
-        final String expected = URLEncoder.encode(json.toString(), "UTF-8");
-        assertNotNull(expected);
-        assertEquals(expected, DeviceInfo.getMetrics(getContext(), metricOverride));
+        final String decoded = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        final JSONObject newJson = new JSONObject(decoded);
+
+        assertNotNull(newJson);
+        assertEquals(json.get("_device"), newJson.get("_device"));
+        assertEquals(json.get("_os"), newJson.get("_os"));
+        assertEquals(json.get("_os_version"), newJson.get("_os_version"));
+        assertEquals(json.get("_carrier"), newJson.get("_carrier"));
+        assertEquals(json.get("_resolution"), newJson.get("_resolution"));
+        assertEquals(json.get("_density"), newJson.get("_density"));
+        assertEquals(json.get("_locale"), newJson.get("_locale"));
+        assertEquals(json.get("_app_version"), newJson.get("_app_version"));
+        assertEquals(json.get("_manufacturer"), newJson.get("_manufacturer"));
+        assertEquals(json.get("_device_type"), newJson.get("_device_type"));
+        assertEquals(json.get("asd"), newJson.get("asd"));
     }
 
     @Test
