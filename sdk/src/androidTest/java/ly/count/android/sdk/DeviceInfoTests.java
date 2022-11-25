@@ -33,6 +33,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import org.json.JSONException;
@@ -289,19 +290,22 @@ public class DeviceInfoTests {
 
         final String decoded = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
         final JSONObject newJson = new JSONObject(decoded);
+        int sizeJson = 0;
+        int sizeNewJson = 0;
+        Iterator<String> keysJ = json.keys();
+        Iterator<String> keysNJ = newJson.keys();
 
         assertNotNull(newJson);
-        assertEquals(json.get("_device"), newJson.get("_device"));
-        assertEquals(json.get("_os"), newJson.get("_os"));
-        assertEquals(json.get("_os_version"), newJson.get("_os_version"));
-        assertEquals(json.get("_carrier"), newJson.get("_carrier"));
-        assertEquals(json.get("_resolution"), newJson.get("_resolution"));
-        assertEquals(json.get("_density"), newJson.get("_density"));
-        assertEquals(json.get("_locale"), newJson.get("_locale"));
-        assertEquals(json.get("_app_version"), newJson.get("_app_version"));
-        assertEquals(json.get("_manufacturer"), newJson.get("_manufacturer"));
-        assertEquals(json.get("_device_type"), newJson.get("_device_type"));
-        assertEquals(json.get("asd"), newJson.get("asd"));
+        while (keysJ.hasNext()) {
+            sizeJson++;
+            String key = keysJ.next();
+            assertEquals(json.get(key), newJson.get(key));
+        }
+        while (keysNJ.hasNext()) {
+            sizeNewJson++;
+            keysNJ.next();
+        }
+        assertEquals(sizeJson, sizeNewJson);
     }
 
     @Test
