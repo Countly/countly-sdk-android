@@ -1,3 +1,6 @@
+## 22.06.1
+* Fixed a bug that would throw a null pointer exception when calling "CountlyPush.onTokenRefresh" and CountlyPush was not initialized 
+
 ## 22.06.0
 * Fatal crash reports will now be written in sync mode to shared preferences 
 * Added explicit storage mode where the event queue and request queue are not written to persistent storage until a signal is given

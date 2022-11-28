@@ -618,6 +618,11 @@ public class CountlyPush {
      * @param provider which provider the token belongs to
      */
     public static void onTokenRefresh(String token, Countly.CountlyMessagingProvider provider) {
+        if (!initFinished) {
+            Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] CountlyPush is not initialized, ignoring call");
+            return;
+        }
+
         if (!Countly.sharedInstance().isInitialized()) {
             //is some edge cases this might be called before the SDK is initialized
             Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] SDK is not initialized, ignoring call");
@@ -628,6 +633,7 @@ public class CountlyPush {
             Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] Consent not given, ignoring call");
             return;
         }
+
         Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] Refreshing FCM push token, with mode: [" + countlyConfigPush.mode + "] for [" + provider + "]");
         Countly.sharedInstance().onRegistrationId(token, countlyConfigPush.mode, provider);
     }
@@ -673,7 +679,7 @@ public class CountlyPush {
      * @throws IllegalStateException
      */
     public static void init(CountlyConfigPush countlyConfigPush) throws IllegalStateException {
-        Countly.sharedInstance().L.i("[CountlyPush, init] Initialising Countly Push, App:[" + (countlyConfigPush.application != null) + "], mode:[" + countlyConfigPush.mode + "] provider:[" + countlyConfigPush.provider + "]");
+        Countly.sharedInstance().L.i("[CountlyPush, init] Initializing Countly Push, App:[" + (countlyConfigPush.application != null) + "], mode:[" + countlyConfigPush.mode + "] provider:[" + countlyConfigPush.provider + "]");
 
         if (countlyConfigPush.application == null) {
             throw new IllegalStateException("Non 'null' application must be provided!");
@@ -695,13 +701,13 @@ public class CountlyPush {
 
         // print error in case preferred push provider is not available
         if (countlyConfigPush.provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
-            Countly.sharedInstance().L.e("Countly push didn't initialise. No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Countly push didn't initialize. No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (countlyConfigPush.provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
-            Countly.sharedInstance().L.e("Countly push didn't initialise. No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Countly push didn't initialize. No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
             return;
         } else if (countlyConfigPush.provider == null) {
-            Countly.sharedInstance().L.e("Countly push didn't initialise. Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            Countly.sharedInstance().L.e("Countly push didn't initialize. Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
             return;
         }
 
@@ -773,10 +779,10 @@ public class CountlyPush {
     static boolean getPushConsent(Context context) {
         if (Countly.sharedInstance().isInitialized() || context == null) {
             //todo currently this is also used when context is null and might result in unintended consequences
-            //if SDK is initialised, use the stored value
+            //if SDK is initialized, use the stored value
             return Countly.sharedInstance().consent().getConsent(Countly.CountlyFeatureNames.push);
         } else {
-            //if the SDK is not initialised, use the cached value
+            //if the SDK is not initialized, use the cached value
             return CountlyStore.getConsentPushNoInit(context);
         }
     }
