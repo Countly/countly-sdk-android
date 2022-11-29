@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <style name="Theme.Kotlin" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <item name="colorPrimary">@color/green_700</item>
-        <item name="colorPrimaryVariant">@color/green_900</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/blue_200</item>
-        <item name="colorSecondaryVariant">@color/blue_700</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
-    </style>
+  <style name="Theme.Kotlin" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <item name="colorPrimary">@color/green_700</item>
+    <item name="colorPrimaryVariant">@color/green_900</item>
+    <item name="colorOnPrimary">@color/white</item>
+    <item name="colorSecondary">@color/blue_200</item>
+    <item name="colorSecondaryVariant">@color/blue_700</item>
+    <item name="colorOnSecondary">@color/black</item>
+    <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+  </style>
 </resources>
