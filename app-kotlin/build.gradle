@@ -2,7 +2,6 @@ plugins {
   id 'com.android.application'
   id 'kotlin-android'
   id 'kotlin-kapt'
-  id 'androidx.navigation.safeargs.kotlin'
 }
 
 android {
@@ -10,7 +9,7 @@ android {
 
   defaultConfig {
     applicationId "ly.count.android.demo.kotlin"
-    minSdkVersion 19
+    minSdkVersion 17
     targetSdkVersion 33
     versionCode 1
     versionName "1.0"
