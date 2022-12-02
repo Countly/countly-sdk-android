@@ -1,8 +1,10 @@
 package ly.count.android.demo.kotlin
 
 import android.app.Application
+import android.util.Log
 import ly.count.android.sdk.Countly
 import ly.count.android.sdk.CountlyConfig
+import ly.count.android.sdk.RemoteConfigCallback
 
 //import ly.count.android.sdk.DeviceIdType
 
