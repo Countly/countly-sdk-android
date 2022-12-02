@@ -1,4 +1,4 @@
-package ly.count.android.demo.kotlin
+package com.example.kotlin
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -6,17 +6,25 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import ly.count.android.demo.kotlin.databinding.FragmentMainListBinding
+import com.example.kotlin.databinding.FragmentSecondListBinding
 
-class MainListFragment : Fragment() {
-    private var _binding: FragmentMainListBinding? = null
+class FragmentCustomEvents : Fragment() {
 
+    companion object {
+        val TITLE = "title"
+    }
+
+    private var _binding: FragmentSecondListBinding? = null
     private val binding get() = _binding!!
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var titleId: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        arguments?.let {
+            titleId = it.getString(TITLE).toString()
+        }
+
     }
 
     override fun onCreateView(
@@ -24,21 +32,19 @@ class MainListFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        _binding = FragmentMainListBinding.inflate(inflater, container, false)
-        val view = binding.root
-        return view
+        _binding = FragmentSecondListBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        recyclerView = binding.recyclerView
-        recyclerView.layoutManager = LinearLayoutManager(context)
-        recyclerView.adapter = MainAdapter()
+        val recyclerView = binding.recyclerView
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.adapter = AdapterSecondList(titleId, requireContext())
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-
-
 }

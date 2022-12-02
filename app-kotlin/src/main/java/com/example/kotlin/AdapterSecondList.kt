@@ -1,4 +1,4 @@
-package ly.count.android.demo.kotlin
+package com.example.kotlin
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -7,8 +7,11 @@ import android.view.ViewGroup
 import android.widget.Button
 import androidx.recyclerview.widget.RecyclerView
 
-class SecondAdapter(private val titleId: String, context: Context) :
-    RecyclerView.Adapter<SecondAdapter.SecondViewHolder>() {
+import ly.count.android.sdk.Countly
+
+
+class AdapterSecondList(private val titleId: String, context: Context) :
+    RecyclerView.Adapter<AdapterSecondList.SecondViewHolder>() {
 
     private val filteredWords: List<String>
 
@@ -41,5 +44,9 @@ class SecondAdapter(private val titleId: String, context: Context) :
         val context = holder.view.context
         // Set the text of the WordViewHolder
         holder.button.text = item
+
+        holder.view.setOnClickListener{
+            Countly.sharedInstance().events().recordEvent(item)
+        }
     }
 }
