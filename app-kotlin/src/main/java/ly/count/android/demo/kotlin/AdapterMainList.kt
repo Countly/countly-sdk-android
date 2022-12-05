@@ -1,4 +1,4 @@
-package com.example.kotlin
+package ly.count.android.demo.kotlin
 
 import android.view.LayoutInflater
 import android.view.View

@@ -1,4 +1,4 @@
-package com.example.kotlin
+package ly.count.android.demo.kotlin
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.kotlin.databinding.FragmentMainListBinding
+import ly.count.android.demo.kotlin.databinding.FragmentMainListBinding
 
 class FragmentMainList : Fragment() {
     private var _binding: FragmentMainListBinding? = null

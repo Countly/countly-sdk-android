@@ -9,7 +9,7 @@ android {
   compileSdkVersion 33
 
   defaultConfig {
-    applicationId "com.example.kotlin"
+    applicationId "ly.count.android.demo.kotlin"
     minSdkVersion 17
     targetSdkVersion 33
     versionCode 1
