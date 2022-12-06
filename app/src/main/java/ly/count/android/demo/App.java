@@ -50,7 +50,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
 
-        if(false) {
+        if (false) {
             //setting up strict mode for additional validation
             StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
                 .detectAll()
@@ -135,7 +135,7 @@ public class App extends Application {
         Map<String, String> metricOverride = new HashMap<>();
         metricOverride.put("SomeKey", "123");
         metricOverride.put("_carrier", "BoneyK");
-      
+
         //add some custom segments, like dependency library versions
         HashMap<String, Object> customCrashSegmentation = new HashMap<>();
         customCrashSegmentation.put("EarBook", "3.5");
@@ -169,7 +169,7 @@ public class App extends Application {
                     }
                 }
             })
-          
+
             .enableCrashReporting()
             .setRecordAllThreadsWithCrash()
             .setCustomCrashSegment(customCrashSegmentation)
@@ -179,26 +179,26 @@ public class App extends Application {
                     return crash.contains("crash");
                 }
             })
-          
+
             .setViewTracking(true)
             .setAutoTrackingUseShortName(true)
             .setAutomaticViewSegmentation(automaticViewSegmentation)
             .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
-                   
+
             .setPushIntentAddMetadata(true)
-          
+
             .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
             //.setDisableLocation()
-          
+
             //.enableTemporaryDeviceIdMode()
-          
+
             .setRequiresConsent(true).setConsentEnabled(new String[] {
                 Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
                 Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
                 Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
                 Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
             })
-          
+
             .setHttpPostForced(false)
             .setParameterTamperingProtectionSalt("test-salt-checksum")
             .addCustomNetworkRequestHeaders(customHeaderValues)
@@ -224,7 +224,6 @@ public class App extends Application {
             //.setMetricOverride(metricOverride)
 
             .setEnableAttribution(true)
-
 
             .setUserProperties(customUserProperties);
 
