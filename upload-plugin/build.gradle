@@ -1,34 +1,34 @@
 buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.21.0' //for publishing
-    }
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.21.0' //for publishing
+  }
 }
 
 plugins {
-    id 'java-gradle-plugin'
-    id 'groovy'
+  id 'java-gradle-plugin'
+  id 'groovy'
 }
 
 gradlePlugin {
-    plugins {
-        uploadSymbolPlugin {
-            id = 'ly.count.android.plugins.upload-symbols'
-            implementationClass = 'ly.count.android.plugins.UploadSymbolsPlugin'
-        }
+  plugins {
+    uploadSymbolPlugin {
+      id = 'ly.count.android.plugins.upload-symbols'
+      implementationClass = 'ly.count.android.plugins.UploadSymbolsPlugin'
     }
+  }
 }
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 }
 
 dependencies {
-    implementation gradleApi()
-    implementation localGroovy()
-    implementation 'com.squareup.okhttp3:okhttp:3.14.4'
+  implementation gradleApi()
+  implementation localGroovy()
+  implementation 'com.squareup.okhttp3:okhttp:3.14.4'
 }
 
 apply plugin: "com.vanniktech.maven.publish"
