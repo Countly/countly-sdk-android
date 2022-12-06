@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="titles">
-        <item>event 1</item>
-        <item>event 2</item>
-        <item>session begin</item>
-        <item>sessions end</item>
-    </string-array>
+  <string-array name="titles">
+    <item>event 1</item>
+    <item>event 2</item>
+    <item>session begin</item>
+    <item>sessions end</item>
+  </string-array>
 </resources>

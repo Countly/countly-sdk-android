@@ -10,35 +10,34 @@ import androidx.recyclerview.widget.RecyclerView
 import ly.count.android.demo.kotlin.databinding.FragmentMainListBinding
 
 class FragmentMainList : Fragment() {
-    private var _binding: FragmentMainListBinding? = null
+  private var _binding: FragmentMainListBinding? = null
 
-    private val binding get() = _binding!!
-    private lateinit var recyclerView: RecyclerView
+  private val binding get() = _binding!!
+  private lateinit var recyclerView: RecyclerView
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+  }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        _binding = FragmentMainListBinding.inflate(inflater, container, false)
-        val view = binding.root
-        return view
-    }
+  override fun onCreateView(
+    inflater: LayoutInflater,
+    container: ViewGroup?,
+    savedInstanceState: Bundle?
+  ): View? {
+    _binding = FragmentMainListBinding.inflate(inflater, container, false)
+    val view = binding.root
+    return view
+  }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        recyclerView = binding.recyclerView
-        recyclerView.layoutManager = LinearLayoutManager(context)
-        recyclerView.adapter = AdapterMainList()
-    }
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    recyclerView = binding.recyclerView
+    recyclerView.layoutManager = LinearLayoutManager(context)
+    recyclerView.adapter = AdapterMainList()
+  }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
+  override fun onDestroyView() {
+    super.onDestroyView()
+    _binding = null
+  }
 
 }

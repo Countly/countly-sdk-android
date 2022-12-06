@@ -6,8 +6,8 @@ import ly.count.android.sdk.CountlyConfig
 
 //import ly.count.android.sdk.DeviceIdType
 
-class App :Application() {
-  val COUNTLY_SERVER_URL = "YOUR_SERVER"
+class App : Application() {
+  val COUNTLY_SERVER_URL = "https://yea.yea"
   val COUNTLY_APP_KEY = "YOUR_APP_KEY"
   override fun onCreate() {
     super.onCreate()
