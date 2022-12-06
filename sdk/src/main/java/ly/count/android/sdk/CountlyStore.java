@@ -114,9 +114,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private @NonNull String storageReadRequestQueue() {
-        if(explicitStorageModeEnabled) {
+        if (explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Returning RQ from cache");
-            if(esRequestQueueCache == null) {
+            if (esRequestQueueCache == null) {
                 L.v("[CountlyStore] Reading initial RQ from storage");
                 esRequestQueueCache = preferences_.getString(REQUEST_PREFERENCE, "");
             }
@@ -129,7 +129,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private void storageWriteRequestQueue(@Nullable String requestQueue, boolean writeInSync) {
-        if(explicitStorageModeEnabled) {
+        if (explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Writing RQ to cache");
             esRequestQueueCache = requestQueue;
             esDirtyFlag = true;
@@ -137,7 +137,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             //L.v("[CountlyStore] Writing RQ to preferences");
             SharedPreferences.Editor editor = preferences_.edit().putString(REQUEST_PREFERENCE, requestQueue);
 
-            if(writeInSync) {
+            if (writeInSync) {
                 editor.commit();
             } else {
                 editor.apply();
@@ -146,9 +146,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private @NonNull String storageReadEventQueue() {
-        if(explicitStorageModeEnabled) {
+        if (explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Returning EQ from cache");
-            if(esEventQueueCache == null) {
+            if (esEventQueueCache == null) {
                 L.v("[CountlyStore] Reading initial EQ from storage");
                 esEventQueueCache = preferences_.getString(EVENTS_PREFERENCE, "");
             }
@@ -161,7 +161,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private void storageWriteEventQueue(@Nullable String eventQueue, boolean writeInSync) {
-        if(explicitStorageModeEnabled) {
+        if (explicitStorageModeEnabled) {
             L.v("[CountlyStore] Writing EQ to cache");
             esEventQueueCache = eventQueue;
             esDirtyFlag = true;
@@ -169,7 +169,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             L.v("[CountlyStore] Writing EQ to preferences");
             SharedPreferences.Editor editor = preferences_.edit().putString(EVENTS_PREFERENCE, eventQueue);
 
-            if(writeInSync) {
+            if (writeInSync) {
                 editor.commit();
             } else {
                 editor.apply();
@@ -180,7 +180,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized void esWriteCacheToStorage() {
         L.v("[CountlyStore] Trying to write ES cache to storage[" + explicitStorageModeEnabled + "] [" + esDirtyFlag + "]");
         if (explicitStorageModeEnabled) {
-            if(esDirtyFlag) {
+            if (esDirtyFlag) {
                 preferences_.edit().putString(REQUEST_PREFERENCE, esRequestQueueCache).commit();
                 preferences_.edit().putString(EVENTS_PREFERENCE, esEventQueueCache).commit();
                 esDirtyFlag = false;

@@ -52,7 +52,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
             exitTempIdAfterInit = true;
         } else {
-            if(!temporaryDeviceIdIsCurrentlyEnabled) {
+            if (!temporaryDeviceIdIsCurrentlyEnabled) {
                 //if temp ID mode is not enabled then there should also be no temp ID requests in the RQ
                 //note to perform queue cleanup
                 cleanupTempIdAfterInit = true;
@@ -138,7 +138,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //remove all consent
         _cly.moduleConsent.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
 
-        if(deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId)) {
+        if (deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId)) {
             // entering temp ID mode
             deviceIdInstance.enterTempIDMode();
         } else {
@@ -231,7 +231,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             L.i("[ModuleDeviceId, initFinished] Cleaning up potentially left temp ID requests in queue");
             String storedDevId = getDeviceId();
 
-            if(storedDevId != null && !storedDevId.isEmpty()) {
+            if (storedDevId != null && !storedDevId.isEmpty()) {
                 replaceTempIDWithRealIDinRQ(storedDevId);
             } else {
                 L.w("[ModuleDeviceId, initFinished] Can't cleanup RQ, device ID is either null or empty [" + storedDevId + "]");
@@ -298,7 +298,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithoutMerge'");
 
-                if(deviceId == null) {
+                if (deviceId == null) {
                     L.e("[DeviceId] changeDeviceIdWithoutMerge, provided device ID value was 'null'. Request will be ignored");
                     return;
                 }
@@ -317,7 +317,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithMerge'");
 
-                if(deviceId == null) {
+                if (deviceId == null) {
                     L.e("[DeviceId] changeDeviceIdWithMerge, provided device ID value was 'null'. Request will be ignored");
                     return;
                 }
@@ -354,7 +354,6 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         /**
          * Go into temporary device ID mode
-         *
          */
         public void enableTemporaryIdMode() {
             synchronized (_cly) {

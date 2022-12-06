@@ -333,6 +333,7 @@ public class ModuleRatings extends ModuleBase {
     /**
      * Returns a object with the loaded preferences
      * TODO make this non static
+     *
      * @return
      */
     static StarRatingPreferences loadStarRatingPreferences(final StorageProvider sp) {
@@ -425,7 +426,7 @@ public class ModuleRatings extends ModuleBase {
 
     /// Countly webDialog user rating
 
-    synchronized void showFeedbackPopupInternal(@Nullable final String widgetId, @Nullable  final String closeButtonText, @Nullable  final Activity activity, @Nullable  final FeedbackRatingCallback devCallback) {
+    synchronized void showFeedbackPopupInternal(@Nullable final String widgetId, @Nullable final String closeButtonText, @Nullable final Activity activity, @Nullable final FeedbackRatingCallback devCallback) {
         L.d("[ModuleRatings] Showing Feedback popup for widget id: [" + widgetId + "]");
 
         if (widgetId == null || widgetId.isEmpty()) {
@@ -607,13 +608,13 @@ public class ModuleRatings extends ModuleBase {
          * @param email email of the user
          * @param comment comment set by the user
          * @param userCanBeContacted set true if the user wants you to contact him
-         *
          * @deprecated use 'recordRatingWidgetWithID' in place of this call
          */
         public void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
             L.i("[Ratings] Calling recordManualRating");
             recordRatingWidgetWithID(widgetId, rating, email, comment, userCanBeContacted);
         }
+
         /**
          * Record user rating widget manually without showing any message dialog.
          *

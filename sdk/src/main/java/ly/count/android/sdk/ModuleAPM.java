@@ -448,7 +448,7 @@ public class ModuleAPM extends ModuleBase {
 
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
-        if(consentChangeDelta.contains(Countly.CountlyFeatureNames.apm)) {
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.apm)) {
             if (!newConsent) {
                 //in case APM consent is removed, clear custom and network traces
                 _cly.moduleAPM.clearNetworkTraces();

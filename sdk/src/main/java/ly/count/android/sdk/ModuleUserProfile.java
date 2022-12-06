@@ -268,6 +268,7 @@ public class ModuleUserProfile extends ModuleBase {
     /**
      * This mainly performs the filtering of provided values
      * This single call would be used for both predefined properties and custom user properties
+     *
      * @param data
      */
     void setPropertiesInternal(@NonNull Map<String, Object> data) {
@@ -315,7 +316,7 @@ public class ModuleUserProfile extends ModuleBase {
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
-        if(config.providedUserProperties != null) {
+        if (config.providedUserProperties != null) {
             L.i("[ModuleUserProfile] Custom user properties were provided during init [" + config.providedUserProperties.size() + "]");
             setPropertiesInternal(config.providedUserProperties);
             saveInternal();
@@ -441,6 +442,7 @@ public class ModuleUserProfile extends ModuleBase {
 
         /**
          * Set a single user property. It can be either a custom one or one of the predefined ones.
+         *
          * @param key the key for the user property
          * @param value the value for the user property to be set. The value should be the allowed data type.
          */
@@ -458,13 +460,14 @@ public class ModuleUserProfile extends ModuleBase {
         /**
          * Provide a map of user properties to set.
          * Those can be either custom user properties or predefined user properties
+         *
          * @param data
          */
         public void setProperties(Map<String, Object> data) {
             synchronized (_cly) {
                 L.i("[UserProfile] Calling 'setProperties'");
 
-                if(data == null) {
+                if (data == null) {
                     L.i("[UserProfile] Provided data can not be 'null'");
                     return;
                 }

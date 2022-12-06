@@ -63,7 +63,7 @@ public class DeviceIdTests {
      */
     @Test(expected = IllegalStateException.class)
     public void constructorSDKGenerated_fail_2() {
-        new DeviceId((DeviceIdType) null, (String)null, store, mock(ModuleLog.class), null);
+        new DeviceId((DeviceIdType) null, (String) null, store, mock(ModuleLog.class), null);
     }
 
     /**
@@ -72,7 +72,7 @@ public class DeviceIdTests {
      */
     @Test
     public void temporaryIdModeEnabled_1() {
-        DeviceId did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED,"dsd", store, mock(ModuleLog.class), null);
+        DeviceId did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "dsd", store, mock(ModuleLog.class), null);
         assertFalse(did.isTemporaryIdModeEnabled());
 
         did.setId(DeviceIdType.OPEN_UDID, DeviceId.temporaryCountlyDeviceId);

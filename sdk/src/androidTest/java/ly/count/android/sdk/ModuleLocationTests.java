@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 public class ModuleLocationTests {
 
     @Test
-    public void bump(){
+    public void bump() {
 
     }
 

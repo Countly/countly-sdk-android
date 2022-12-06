@@ -217,6 +217,7 @@ public class CountlyConfig {
     /**
      * Sets how many segmentation values can be recorded when recording an event or view.
      * Values exceeding this count will be ignored.
+     *
      * @param maxSegmentationValues
      * @return
      */
@@ -228,6 +229,7 @@ public class CountlyConfig {
     /**
      * Set the maximum amount of breadcrumbs that can be recorded.
      * After exceeding the limit, the oldest values will be removed.
+     *
      * @param maxBreadcrumbCount
      * @return
      */
@@ -363,6 +365,7 @@ public class CountlyConfig {
 
     /**
      * the shown message text for the star rating dialogs.
+     *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setStarRatingTextMessage(String starRatingTextMessage) {
@@ -372,6 +375,7 @@ public class CountlyConfig {
 
     /**
      * the shown dismiss button text for the shown star rating dialogs.
+     *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setStarRatingTextDismiss(String starRatingTextDismiss) {
@@ -423,7 +427,6 @@ public class CountlyConfig {
     }
 
     /**
-     *
      * @param segmentation
      * @return Returns the same config object for convenient linking
      */
@@ -453,6 +456,7 @@ public class CountlyConfig {
 
     /**
      * Allows you to add custom header key/value pairs to each request
+     *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
@@ -461,7 +465,6 @@ public class CountlyConfig {
     }
 
     /**
-     *
      * @param enable
      * @return Returns the same config object for convenient linking
      */
@@ -531,7 +534,6 @@ public class CountlyConfig {
     }
 
     /**
-     *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig enableTemporaryDeviceIdMode() {
@@ -540,7 +542,6 @@ public class CountlyConfig {
     }
 
     /**
-     *
      * @param callback
      * @return Returns the same config object for convenient linking
      */
@@ -550,7 +551,6 @@ public class CountlyConfig {
     }
 
     /**
-     *
      * @param salt
      * @return Returns the same config object for convenient linking
      */
@@ -560,7 +560,6 @@ public class CountlyConfig {
     }
 
     /**
-     *
      * @param shouldTrackOrientation
      * @return Returns the same config object for convenient linking
      */
@@ -570,7 +569,6 @@ public class CountlyConfig {
     }
 
     /**
-     *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setRecordAllThreadsWithCrash() {
@@ -669,6 +667,7 @@ public class CountlyConfig {
 
     /**
      * For use during testing
+     *
      * @param checkForDumps
      * @return Returns the same config object for convenient linking
      */
@@ -692,6 +691,7 @@ public class CountlyConfig {
 
     /**
      * For use during testing
+     *
      * @param store
      * @return Returns the same config object for convenient linking
      */
@@ -852,6 +852,7 @@ public class CountlyConfig {
 
     /**
      * Set's the new maximum size for the request queue.
+     *
      * @param newMaxSize Minimum value is "1".
      * @return Returns the same config object for convenient linking
      */
@@ -899,6 +900,7 @@ public class CountlyConfig {
      * 'Countly.sharedInstance().requestQueue().esWriteCachesToPersistence();'
      *
      * If not used properly, this mode will lead to data loss or data duplication.
+     *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig enableExplicitStorageMode() {

@@ -261,7 +261,7 @@ public class Utils {
     }
 
     static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String moduleTag, final @NonNull ModuleLog L) {
-        if(segmentation == null) {
+        if (segmentation == null) {
             return;
         }
 

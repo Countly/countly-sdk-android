@@ -44,7 +44,7 @@ public class TestUtils {
         return createConsentCountlyConfig(requiresConsent, givenConsent, testModuleListener, null);
     }
 
-    public static CountlyConfig createAttributionCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp, String daType,String daValue, Map<String, String> iaValues) {
+    public static CountlyConfig createAttributionCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp, String daType, String daValue, Map<String, String> iaValues) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
@@ -187,9 +187,9 @@ public class TestUtils {
     public static String getParamValueFromRequest(String request, String param) {
         String[] params = request.split("&");
 
-        for(String entry:params) {
+        for (String entry : params) {
             String[] pair = entry.split("=");
-            if(pair[0].equals(param)) {
+            if (pair[0].equals(param)) {
                 return pair[1];
             }
         }
@@ -201,7 +201,7 @@ public class TestUtils {
         List<String> filteredVals = TestUtils.getRequestsWithParam(store.getRequests(), param);
         Assert.assertEquals(entryCount, filteredVals.size());
 
-        if(entryCount != 0) {
+        if (entryCount != 0) {
             String paramValue = TestUtils.getParamValueFromRequest(filteredVals.get(0), param);
             Assert.assertEquals(targetValue, paramValue);
         }
@@ -210,16 +210,16 @@ public class TestUtils {
     public static String[] subtractConsentFromArray(String[] input, String[] subtraction) {
         ArrayList<String> res = new ArrayList<>();
 
-        for(String v:input) {
+        for (String v : input) {
             boolean contains = false;
-            for(String sv:subtraction) {
-                if(sv.equals(v)) {
+            for (String sv : subtraction) {
+                if (sv.equals(v)) {
                     contains = true;
                     break;
                 }
             }
 
-            if(!contains) {
+            if (!contains) {
                 res.add(v);
             }
         }
