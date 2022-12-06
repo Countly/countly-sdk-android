@@ -362,5 +362,4 @@ public class ModuleAttributionTests {
         mCountly.attribution().recordDirectAttribution(daType_test, daValue_Test);
         TestUtils.validateThatRQContainsCorrectEntry(countlyStore, "attribution_data", UtilsNetworking.urlEncodeString(daValue_Test), 1);
     }
-
 }

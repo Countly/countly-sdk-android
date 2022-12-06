@@ -8,8 +8,8 @@ import ly.count.android.sdk.RemoteConfigCallback
 
 //import ly.count.android.sdk.DeviceIdType
 
-class App :Application() {
-  val COUNTLY_SERVER_URL = "YOUR_SERVER"
+class App : Application() {
+  val COUNTLY_SERVER_URL = "YOUR_SERVER_URL"
   val COUNTLY_APP_KEY = "YOUR_APP_KEY"
   override fun onCreate() {
     super.onCreate()
@@ -19,23 +19,13 @@ class App :Application() {
       COUNTLY_APP_KEY,
       COUNTLY_SERVER_URL
     )
-    .setDeviceId(
-      "myDeviceId"
-    )
-    .enableCrashReporting()
-    .setRecordAllThreadsWithCrash()
-    .setLoggingEnabled(true)
-
-    .setViewTracking(false)
-    .setCustomCrashSegment(mapOf(Pair("deviceIdKey", "deviceId")))
-    .setRemoteConfigAutomaticDownload(true, RemoteConfigCallback { error ->
-      if (error == null) {
-        Log.d("Countly", "No error for automatic RC")
-      } else {
-        Log.d("Countly", "Automatic RC encountered issue")
-      }
-    })
-
+      .setDeviceId(
+        "myDeviceId"
+      )
+      .enableCrashReporting()
+      .setRecordAllThreadsWithCrash()
+      .setLoggingEnabled(true)
+      .setViewTracking(false)
 
     Countly.sharedInstance().init(countlyConfig)
   }

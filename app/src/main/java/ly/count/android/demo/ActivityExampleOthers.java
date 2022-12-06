@@ -93,7 +93,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
 
             JSONArray events = new JSONArray();
             events.put(event);
-            requestMap.put("events",events.toString());
+            requestMap.put("events", events.toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -116,7 +116,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().attribution().recordDirectAttribution("countly", "{'cid':'campaign_id', 'cuid':'campaign_user_id'}");
     }
 
-    String GetAdvertisingID(){
+    String GetAdvertisingID() {
         return "12345";//this is only a dummy value
     }
 

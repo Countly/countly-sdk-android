@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
                             }
 
                             //you would then pass those retrieved values as manual attribution:
-                            Countly.sharedInstance().attribution().recordDirectAttribution("countly", "{\"cid\":" + campaignId + ",\"cuid\":" + userId +"}");
+                            Countly.sharedInstance().attribution().recordDirectAttribution("countly", "{\"cid\":" + campaignId + ",\"cuid\":" + userId + "}");
                             //Countly.sharedInstance().attribution().recordDirectAttribution(campaignId, userId);
 
                             referrerClient.endConnection();

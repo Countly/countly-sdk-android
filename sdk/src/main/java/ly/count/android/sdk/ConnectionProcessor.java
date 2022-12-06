@@ -362,7 +362,7 @@ public class ConnectionProcessor implements Runnable {
                         storageProvider_.removeRequest(storedEvents[0]);
 
                         if (deviceIdChange) {
-                            if(newId != null && !newId.isEmpty()) {
+                            if (newId != null && !newId.isEmpty()) {
                                 deviceIdProvider_.getDeviceIdInstance().changeToCustomId(newId);//todo needs to be refactored
                             } else {
                                 L.e("[Connection Processor] Failed to change device ID with merging because the new ID was empty or null. [" + newId + "]");

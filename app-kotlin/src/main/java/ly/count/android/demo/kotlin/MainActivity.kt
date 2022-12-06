@@ -1,36 +1,47 @@
 package ly.count.android.demo.kotlin
 
+import android.content.res.Configuration
 import android.os.Bundle
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.tabs.TabLayout
-import androidx.viewpager.widget.ViewPager
 import androidx.appcompat.app.AppCompatActivity
-import android.view.Menu
-import android.view.MenuItem
-import ly.count.android.demo.kotlin.ui.main.SectionsPagerAdapter
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupActionBarWithNavController
 import ly.count.android.demo.kotlin.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity() {
+import ly.count.android.sdk.Countly
+import ly.count.android.sdk.CountlyConfig
 
-  private lateinit var binding: ActivityMainBinding
+class MainActivity : AppCompatActivity() {
+  private lateinit var navController: NavController
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    binding = ActivityMainBinding.inflate(layoutInflater)
+    val binding = ActivityMainBinding.inflate(layoutInflater)
     setContentView(binding.root)
 
-    val sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
-    val viewPager: ViewPager = binding.viewPager
-    viewPager.adapter = sectionsPagerAdapter
-    val tabs: TabLayout = binding.tabs
-    tabs.setupWithViewPager(viewPager)
-    val fab: FloatingActionButton = binding.fab
+    val navHostFragment = supportFragmentManager
+      .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+    navController = navHostFragment.navController
+    setupActionBarWithNavController(navController)
+  }
 
-    fab.setOnClickListener { view ->
-      Snackbar.make(view, "Hello there!", Snackbar.LENGTH_LONG)
-        .setAction("Action", null).show()
-    }
+  override fun onSupportNavigateUp(): Boolean {
+    return navController.navigateUp() || super.onSupportNavigateUp()
+  }
+
+  override fun onStart() {
+    super.onStart()
+    Countly.sharedInstance().onStart(this)
+  }
+
+  override fun onStop() {
+    Countly.sharedInstance().onStop()
+    super.onStop()
+  }
+
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    Countly.sharedInstance().onConfigurationChanged(newConfig)
   }
 }
