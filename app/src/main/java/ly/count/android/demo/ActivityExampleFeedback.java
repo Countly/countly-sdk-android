@@ -57,7 +57,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
 
     public void onClickViewOther07(View v) {
         //show rating widget
-        String widgetId = "5f8c8cfd69ecabb38ed3677a";
+        String widgetId = "614871419f030e44be07d82f";
         Countly.sharedInstance().ratings().presentRatingWidgetWithID(widgetId, "Close", ActivityExampleFeedback.this, new FeedbackRatingCallback() {
             @Override
             public void callback(String error) {
@@ -158,6 +158,47 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         });
     }
 
+    public void onClickShowRating(View v) {
+        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
+            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
+                if (error != null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                if (retrievedWidgets == null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                CountlyFeedbackWidget chosenWidget = null;
+                for (CountlyFeedbackWidget widget : retrievedWidgets) {
+                    if (widget.type == FeedbackWidgetType.rating) {
+                        chosenWidget = widget;
+                        break;
+                    }
+                }
+
+                if (chosenWidget == null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "No available Rating widget", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new FeedbackCallback() {
+                    @Override public void onClosed() {
+                        Toast.makeText(ActivityExampleFeedback.this, "The feedback widget was closed", Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override public void onFinished(String error) {
+                        if (error != null) {
+                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
     public void onClickShowAvailableFeedbackWidgets(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
@@ -223,6 +264,55 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                         segm.put("comment", "Filled out comment");
                         Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
                         Toast.makeText(ActivityExampleFeedback.this, "NPS feedback reported manually", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
+    }
+
+    public void onClickReportRatingManually(View v) {
+        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
+            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
+                if (error != null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets for manual rating report: [" + error + "]", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                if (retrievedWidgets == null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                CountlyFeedbackWidget chosenWidget = null;
+                for (CountlyFeedbackWidget widget : retrievedWidgets) {
+                    if (widget.type == FeedbackWidgetType.rating) {
+                        chosenWidget = widget;
+                        break;
+                    }
+                }
+
+                if (chosenWidget == null) {
+                    Toast.makeText(ActivityExampleFeedback.this, "No available Rating widget for manual reporting", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                final CountlyFeedbackWidget widgetToReport = chosenWidget;
+
+                Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
+                    @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
+                        if (error != null) {
+                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while reporting rating feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        Log.d(Countly.TAG, "Retrieved rating widget data: " + retrievedWidgetData.toString());
+
+                        Map<String, Object> segm = new HashMap<>();
+                        segm.put("rating", 3);//value from 1 to 5
+                        segm.put("comment", "Filled out comment");
+                        segm.put("email", "Filled out email");
+                        segm.put("contactMe", true);
+                        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
+                        Toast.makeText(ActivityExampleFeedback.this, "Rating feedback reported manually", Toast.LENGTH_LONG).show();
                     }
                 });
             }

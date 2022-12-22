@@ -19,7 +19,7 @@ import org.json.JSONObject;
 
 public class ModuleFeedback extends ModuleBase {
 
-    public enum FeedbackWidgetType {survey, nps}
+    public enum FeedbackWidgetType {survey, nps, rating}
 
     public static class CountlyFeedbackWidget {
         public String widgetId;
@@ -29,6 +29,7 @@ public class ModuleFeedback extends ModuleBase {
 
     final static String NPS_EVENT_KEY = "[CLY]_nps";
     final static String SURVEY_EVENT_KEY = "[CLY]_survey";
+    final static String RATING_EVENT_KEY = "[CLY]_star_rating";
 
     final String cachedAppVersion;
 
@@ -133,6 +134,8 @@ public class ModuleFeedback extends ModuleBase {
                             plannedType = FeedbackWidgetType.survey;
                         } else if (valType.equals("nps")) {
                             plannedType = FeedbackWidgetType.nps;
+                        } else if (valType.equals("rating")) {
+                            plannedType = FeedbackWidgetType.rating;
                         } else {
                             Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
                             continue;
@@ -205,6 +208,11 @@ public class ModuleFeedback extends ModuleBase {
             case nps:
                 widgetListUrl.append(baseInfoProvider.getServerURL());
                 widgetListUrl.append("/feedback/nps?widget_id=");
+                widgetListUrl.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
+                break;
+            case rating:
+                widgetListUrl.append(baseInfoProvider.getServerURL());
+                widgetListUrl.append("/feedback/rating?widget_id=");
                 widgetListUrl.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
                 break;
         }
@@ -302,6 +310,8 @@ public class ModuleFeedback extends ModuleBase {
 
             if (widgetInfo.type == FeedbackWidgetType.survey) {
                 key = SURVEY_EVENT_KEY;
+            } else if(widgetInfo.type == FeedbackWidgetType.rating) {
+                key = RATING_EVENT_KEY;
             } else {
                 key = NPS_EVENT_KEY;
             }
@@ -351,6 +361,9 @@ public class ModuleFeedback extends ModuleBase {
             case nps:
                 //https://xxxx.count.ly/o/surveys/nps/widget?widget_id=601345cf5e313f74&shown=1platform=Android&app_version=7
                 widgetDataEndpoint = "/o/surveys/nps/widget";
+                break;
+            case rating:
+                widgetDataEndpoint = "/o/surveys/rating/widget";
                 break;
         }
 
@@ -452,6 +465,8 @@ public class ModuleFeedback extends ModuleBase {
                 }
             } else if (widgetInfo.type == FeedbackWidgetType.survey) {
                 //in case a survey widget was completed
+            } else if(widgetInfo.type == FeedbackWidgetType.rating){
+                // TODO: add checks here for rating
             }
         }
 
@@ -470,11 +485,15 @@ public class ModuleFeedback extends ModuleBase {
 
             if (widgetInfo.type == FeedbackWidgetType.nps) {
                 if (!"nps".equals(typeInData)) {
-                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data");
+                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data nps");
                 }
             } else if (widgetInfo.type == FeedbackWidgetType.survey) {
                 if (!"survey".equals(typeInData)) {
-                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data");
+                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data survey");
+                }
+            } else if (widgetInfo.type == FeedbackWidgetType.rating) {
+                if (!"rating".equals(typeInData)) {
+                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data rating");
                 }
             }
         }
@@ -496,6 +515,8 @@ public class ModuleFeedback extends ModuleBase {
 
             //event when answered
             //{"key":"[CLY]_survey","segmentation":{"widget_id":"600e9e0b563e89201631633e","platform":"android","app_version":"0.0","answ-1611570700-0":"ch1611570700-0"},"timestamp":1611570895465,"hour":16,"dow":1}
+        } else if (widgetInfo.type == FeedbackWidgetType.rating){
+            usedEventKey = RATING_EVENT_KEY;
         } else {
             usedEventKey = "";
         }
