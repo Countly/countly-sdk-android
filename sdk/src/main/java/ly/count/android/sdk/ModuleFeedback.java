@@ -466,7 +466,24 @@ public class ModuleFeedback extends ModuleBase {
             } else if (widgetInfo.type == FeedbackWidgetType.survey) {
                 //in case a survey widget was completed
             } else if(widgetInfo.type == FeedbackWidgetType.rating){
-                // TODO: add checks here for rating
+                //in case a rating widget was completed
+                if (!widgetResult.containsKey("rating")) {
+                    L.e("Provided Rating widget result does not have a 'rating' field, result can't be reported");
+                    return;
+                }
+
+                //check rating data type
+                Object ratingValue = widgetResult.get("rating");
+                if (!(ratingValue instanceof Integer)) {
+                    L.e("Provided Rating widget 'rating' field is not an integer, result can't be reported");
+                    return;
+                }
+
+                //check rating value range
+                int ratingValI = (int) ratingValue;
+                if (ratingValI < 1 || ratingValI > 5) {
+                    L.e("Provided Rating widget 'rating' value is out of bounds of the required value '[1;5]', it is probably an error");
+                }
             }
         }
 
