@@ -472,8 +472,12 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public static synchronized void cachePushData(String id_key, String index_key, Context context) {
         SharedPreferences sp = createPreferencesPush(context);
-        sp.edit().putString(CACHED_PUSH_ACTION_ID, id_key).apply();
-        sp.edit().putString(CACHED_PUSH_ACTION_INDEX, index_key).apply();
+        SharedPreferences.Editor spe = sp.edit();
+
+        spe.putString(CACHED_PUSH_ACTION_ID, id_key);
+        spe.putString(CACHED_PUSH_ACTION_INDEX, index_key);
+
+        spe.apply();
     }
 
     String[] getCachedPushData() {
@@ -484,8 +488,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     void clearCachedPushData() {
-        preferencesPush_.edit().remove(CACHED_PUSH_ACTION_ID).apply();
-        preferencesPush_.edit().remove(CACHED_PUSH_ACTION_INDEX).apply();
+        SharedPreferences.Editor spe = preferencesPush_.edit();
+        spe.remove(CACHED_PUSH_ACTION_ID);
+        spe.remove(CACHED_PUSH_ACTION_INDEX);
+        spe.apply();
     }
 
     public static void cacheLastMessagingMode(int mode, Context context) {
