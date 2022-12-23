@@ -92,7 +92,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     }
 
     // returns the first widget with the wanted type from the widget list
-    CountlyFeedbackWidget widgetPicker(List<CountlyFeedbackWidget> retrievedWidgets,FeedbackWidgetType type){
+    CountlyFeedbackWidget widgetPicker(List<CountlyFeedbackWidget> retrievedWidgets, FeedbackWidgetType type) {
         for (CountlyFeedbackWidget widget : retrievedWidgets) {
             if (widget.type == type) {
                 return widget;
@@ -104,7 +104,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     void GetAndShowFeedbackWidget(FeedbackWidgetType type) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
+                if (validateRetrievedFeedbackWidgetList(retrievedWidgets, error)) {
                     return;
                 }
 
@@ -145,7 +145,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickShowAvailableFeedbackWidgets(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
+                if (validateRetrievedFeedbackWidgetList(retrievedWidgets, error)) {
                     return;
                 }
 
@@ -163,7 +163,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void GetDataForFirstWidgetOfType(FeedbackWidgetType type, FeedbackCallbacks callback) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
+                if (validateRetrievedFeedbackWidgetList(retrievedWidgets, error)) {
                     return;
                 }
 
@@ -179,9 +179,9 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                 Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
                     @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
                         String val;
-                        if(type == FeedbackWidgetType.nps) {
+                        if (type == FeedbackWidgetType.nps) {
                             val = "nps";
-                        } else if(type == FeedbackWidgetType.survey) {
+                        } else if (type == FeedbackWidgetType.survey) {
                             val = "survey";
                         } else {
                             val = "rating";
@@ -291,7 +291,6 @@ public class ActivityExampleFeedback extends AppCompatActivity {
 
             Toast.makeText(ActivityExampleFeedback.this, "Survey feedback reported manually", Toast.LENGTH_LONG).show();
         });
-
     }
 
     public void onClickRetrieveSurveyDataManually(View v) {
@@ -305,7 +304,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     void getAndPrintRetrievedFeedbackWidgetData(final FeedbackWidgetType widgetType) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
+                if (validateRetrievedFeedbackWidgetList(retrievedWidgets, error)) {
                     return;
                 }
 
