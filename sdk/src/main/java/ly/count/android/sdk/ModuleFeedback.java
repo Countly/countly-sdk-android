@@ -534,6 +534,11 @@ public class ModuleFeedback extends ModuleBase {
             //{"key":"[CLY]_survey","segmentation":{"widget_id":"600e9e0b563e89201631633e","platform":"android","app_version":"0.0","answ-1611570700-0":"ch1611570700-0"},"timestamp":1611570895465,"hour":16,"dow":1}
         } else if (widgetInfo.type == FeedbackWidgetType.rating){
             usedEventKey = RATING_EVENT_KEY;
+            //event when closed
+            // {"key":"[CLY]_star_rating","count":1,"timestamp":1671783040088,"hour":11,"dow":5,"segmentation":{"app_version":"1.0","widget_id":"614871419f030e44be07d82f","closed":"1","platform":"android"}
+
+            //event when answered
+            //{"key":"[CLY]_star_rating","count":1,"segmentation":{"widget_id":"614871419f030e44be07d82f","contactMe":false,"platform":"android","app_version":"1","platform_version_rate":"","rating":4,"email":"","comment":""}
         } else {
             usedEventKey = "";
         }
