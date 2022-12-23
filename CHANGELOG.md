@@ -1,5 +1,11 @@
-## 22.06.1
+## 22.06.3
 * Added feedback widget features for Rating Widgets
+
+## 22.06.2
+* Fixed a bug that would throw a null pointer exception when calling "CountlyPush.displayNotification " and CountlyPush was not initialized 
+
+## 22.06.1
+* Fixed a bug that would throw a null pointer exception when calling "CountlyPush.onTokenRefresh" and CountlyPush was not initialized 
 
 ## 22.06.0
 * Fatal crash reports will now be written in sync mode to shared preferences 
