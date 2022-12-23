@@ -76,26 +76,39 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         Countly.sharedInstance().ratings().recordRatingWidgetWithID(widgetId, 3, "foo@bar.garr", "Ragnaros should watch out", true);
     }
 
+    // Checks if an error was received or the retrieved widget list is null. Would return true if all is kaput.
+    boolean didGotAvailableFeedbackWidgetsFaulty(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
+        if (error != null) {
+            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+            return true;
+        }
+
+        if (retrievedWidgets == null) {
+            Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
+            return true;
+        }
+
+        return false;
+    }
+
+    // returns the first widget with the wanted type from the widget list
+    CountlyFeedbackWidget widgetPicker(List<CountlyFeedbackWidget> retrievedWidgets,FeedbackWidgetType type){
+        for (CountlyFeedbackWidget widget : retrievedWidgets) {
+            if (widget.type == type) {
+                return widget;
+            }
+        }
+        return null;
+    }
+
     public void onClickShowSurvey(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = null;
-                for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == FeedbackWidgetType.survey) {
-                        chosenWidget = widget;
-                        break;
-                    }
-                }
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.survey);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available Survey widget", Toast.LENGTH_LONG).show();
@@ -120,23 +133,11 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickShowNPS(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = null;
-                for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == FeedbackWidgetType.nps) {
-                        chosenWidget = widget;
-                        break;
-                    }
-                }
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.nps);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available NPS widget", Toast.LENGTH_LONG).show();
@@ -161,23 +162,11 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickShowRating(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = null;
-                for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == FeedbackWidgetType.rating) {
-                        chosenWidget = widget;
-                        break;
-                    }
-                }
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.rating);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available Rating widget", Toast.LENGTH_LONG).show();
@@ -202,13 +191,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickShowAvailableFeedbackWidgets(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
@@ -226,23 +209,11 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickReportNPSManually(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets for manual nps report: [" + error + "]", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = null;
-                for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == FeedbackWidgetType.nps) {
-                        chosenWidget = widget;
-                        break;
-                    }
-                }
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.nps);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available NPS widget for manual reporting", Toast.LENGTH_LONG).show();
@@ -273,23 +244,11 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickReportRatingManually(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets for manual rating report: [" + error + "]", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = null;
-                for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == FeedbackWidgetType.rating) {
-                        chosenWidget = widget;
-                        break;
-                    }
-                }
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.rating);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available Rating widget for manual reporting", Toast.LENGTH_LONG).show();
@@ -322,23 +281,11 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onClickReportSurveyManually(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets for manual survey report: [" + error + "]", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = null;
-                for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == FeedbackWidgetType.survey) {
-                        chosenWidget = widget;
-                        break;
-                    }
-                }
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.survey);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available survey widget for manual reporting", Toast.LENGTH_LONG).show();
@@ -431,23 +378,11 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     void getAndPrintRetrievedFeedbackWidgetData(final FeedbackWidgetType widgetType) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if (error != null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets for manual survey report: [" + error + "]", Toast.LENGTH_LONG).show();
+                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
                     return;
                 }
 
-                if (retrievedWidgets == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "Got a null widget list", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = null;
-                for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                    if (widget.type == widgetType) {
-                        chosenWidget = widget;
-                        break;
-                    }
-                }
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, widgetType);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available survey widget for manual reporting", Toast.LENGTH_LONG).show();

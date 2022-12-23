@@ -502,15 +502,15 @@ public class ModuleFeedback extends ModuleBase {
 
             if (widgetInfo.type == FeedbackWidgetType.nps) {
                 if (!"nps".equals(typeInData)) {
-                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data nps");
+                    L.w("[ModuleFeedback] type in widget info [" + typeInData + "] does not match the type in widget data [nps]");
                 }
             } else if (widgetInfo.type == FeedbackWidgetType.survey) {
                 if (!"survey".equals(typeInData)) {
-                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data survey");
+                    L.w("[ModuleFeedback] type in widget info [" + typeInData + "] does not match the type in widget data [survey]");
                 }
             } else if (widgetInfo.type == FeedbackWidgetType.rating) {
                 if (!"rating".equals(typeInData)) {
-                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data rating");
+                    L.w("[ModuleFeedback] type in widget info [" + typeInData + "] does not match the type in widget data [rating]");
                 }
             }
         }
