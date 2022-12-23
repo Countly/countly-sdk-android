@@ -77,7 +77,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     }
 
     // Checks if an error was received or the retrieved widget list is null. Would return true if all is kaput.
-    boolean didGotAvailableFeedbackWidgetsFaulty(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
+    boolean validateRetrievedFeedbackWidgetList(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
         if (error != null) {
             Toast.makeText(ActivityExampleFeedback.this, "Encountered error while getting a list of available feedback widgets: [" + error + "]", Toast.LENGTH_LONG).show();
             return true;
@@ -101,14 +101,14 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         return null;
     }
 
-    public void onClickShowSurvey(View v) {
+    void GetAndShowFeedbackWidget(FeedbackWidgetType type) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
+                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
                     return;
                 }
 
-                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.survey);
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, type);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available Survey widget", Toast.LENGTH_LONG).show();
@@ -130,68 +130,22 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         });
     }
 
+    public void onClickShowSurvey(View v) {
+        GetAndShowFeedbackWidget(FeedbackWidgetType.survey);
+    }
+
     public void onClickShowNPS(View v) {
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.nps);
-
-                if (chosenWidget == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "No available NPS widget", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new FeedbackCallback() {
-                    @Override public void onClosed() {
-                        Toast.makeText(ActivityExampleFeedback.this, "The feedback widget was closed", Toast.LENGTH_LONG).show();
-                    }
-
-                    @Override public void onFinished(String error) {
-                        if (error != null) {
-                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
-            }
-        });
+        GetAndShowFeedbackWidget(FeedbackWidgetType.nps);
     }
 
     public void onClickShowRating(View v) {
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.rating);
-
-                if (chosenWidget == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "No available Rating widget", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, ActivityExampleFeedback.this, "Close", new FeedbackCallback() {
-                    @Override public void onClosed() {
-                        Toast.makeText(ActivityExampleFeedback.this, "The feedback widget was closed", Toast.LENGTH_LONG).show();
-                    }
-
-                    @Override public void onFinished(String error) {
-                        if (error != null) {
-                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while presenting the feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
-            }
-        });
+        GetAndShowFeedbackWidget(FeedbackWidgetType.rating);
     }
 
     public void onClickShowAvailableFeedbackWidgets(View v) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
+                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
                     return;
                 }
 
@@ -206,14 +160,14 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         });
     }
 
-    public void onClickReportNPSManually(View v) {
+    public void GetDataForFirstWidgetOfType(FeedbackWidgetType type, FeedbackCallbacks callback) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
+                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
                     return;
                 }
 
-                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.nps);
+                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, type);
 
                 if (chosenWidget == null) {
                     Toast.makeText(ActivityExampleFeedback.this, "No available NPS widget for manual reporting", Toast.LENGTH_LONG).show();
@@ -224,147 +178,120 @@ public class ActivityExampleFeedback extends AppCompatActivity {
 
                 Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
                     @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
+                        String val;
+                        if(type == FeedbackWidgetType.nps) {
+                            val = "nps";
+                        } else if(type == FeedbackWidgetType.survey) {
+                            val = "survey";
+                        } else {
+                            val = "rating";
+                        }
+
                         if (error != null) {
-                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while reporting nps feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
+                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while reporting " + val + " feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
                             return;
                         }
-                        Log.d(Countly.TAG, "Retrieved nps widget data: " + retrievedWidgetData.toString());
+                        Log.d(Countly.TAG, "Retrieved " + val + " widget data: " + retrievedWidgetData.toString());
 
-                        Map<String, Object> segm = new HashMap<>();
-                        segm.put("rating", 3);//value from 1 to 10
-                        segm.put("comment", "Filled out comment");
-                        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
-                        Toast.makeText(ActivityExampleFeedback.this, "NPS feedback reported manually", Toast.LENGTH_LONG).show();
+                        callback.onFinished(widgetToReport, retrievedWidgetData);
                     }
                 });
             }
+        });
+    }
+
+    public interface FeedbackCallbacks {
+        void onFinished(CountlyFeedbackWidget widgetToReport, JSONObject retrievedWidgetData);
+    }
+
+    public void onClickReportNPSManually(View v) {
+        GetDataForFirstWidgetOfType(FeedbackWidgetType.nps, (widgetToReport, retrievedWidgetData) -> {
+            //do note that error handling has already been taken care of at this point
+            Map<String, Object> segm = new HashMap<>();
+            segm.put("rating", 3);//value from 1 to 10
+            segm.put("comment", "Filled out comment");
+            Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
+            Toast.makeText(ActivityExampleFeedback.this, "NPS feedback reported manually", Toast.LENGTH_LONG).show();
         });
     }
 
     public void onClickReportRatingManually(View v) {
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
-                    return;
-                }
-
-                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.rating);
-
-                if (chosenWidget == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "No available Rating widget for manual reporting", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                final CountlyFeedbackWidget widgetToReport = chosenWidget;
-
-                Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
-                    @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
-                        if (error != null) {
-                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while reporting rating feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        Log.d(Countly.TAG, "Retrieved rating widget data: " + retrievedWidgetData.toString());
-
-                        Map<String, Object> segm = new HashMap<>();
-                        segm.put("rating", 3);//value from 1 to 5
-                        segm.put("comment", "Filled out comment");
-                        segm.put("email", "Filled out email");
-                        segm.put("contactMe", true);
-                        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
-                        Toast.makeText(ActivityExampleFeedback.this, "Rating feedback reported manually", Toast.LENGTH_LONG).show();
-                    }
-                });
-            }
+        GetDataForFirstWidgetOfType(FeedbackWidgetType.rating, (widgetToReport, retrievedWidgetData) -> {
+            //do note that error handling has already been taken care of at this point
+            Map<String, Object> segm = new HashMap<>();
+            segm.put("rating", 3);//value from 1 to 5
+            segm.put("comment", "Filled out comment");
+            segm.put("email", "Filled out email");
+            segm.put("contactMe", true);
+            Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
+            Toast.makeText(ActivityExampleFeedback.this, "Rating feedback reported manually", Toast.LENGTH_LONG).show();
         });
     }
 
     public void onClickReportSurveyManually(View v) {
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
-                    return;
-                }
+        GetDataForFirstWidgetOfType(FeedbackWidgetType.rating, (widgetToReport, retrievedWidgetData) -> {
+            //do note that error handling has already been taken care of at this point
+            JSONArray questions = retrievedWidgetData.optJSONArray("questions");
 
-                CountlyFeedbackWidget chosenWidget = widgetPicker(retrievedWidgets, FeedbackWidgetType.survey);
-
-                if (chosenWidget == null) {
-                    Toast.makeText(ActivityExampleFeedback.this, "No available survey widget for manual reporting", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                final CountlyFeedbackWidget widgetToReport = chosenWidget;
-
-                Countly.sharedInstance().feedback().getFeedbackWidgetData(chosenWidget, new RetrieveFeedbackWidgetData() {
-                    @Override public void onFinished(JSONObject retrievedWidgetData, String error) {
-                        if (error != null) {
-                            Toast.makeText(ActivityExampleFeedback.this, "Encountered error while reporting survey feedback widget: [" + error + "]", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        Log.d(Countly.TAG, "Retrieved survey widget data: " + retrievedWidgetData.toString());
-
-                        JSONArray questions = retrievedWidgetData.optJSONArray("questions");
-
-                        if (questions == null) {
-                            Toast.makeText(ActivityExampleFeedback.this, "No questions found in retrieved survey data", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-
-                        Map<String, Object> segm = new HashMap<>();
-                        Random rnd = new Random();
-
-                        //iterate over all questions and set random answers
-                        for (int a = 0; a < questions.length(); a++) {
-                            JSONObject question = null;
-                            try {
-                                question = questions.getJSONObject(a);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            String wType = question.optString("type");
-                            String questionId = question.optString("id");
-                            String answerKey = "answ-" + questionId;
-                            JSONArray choices = question.optJSONArray("choices");
-
-                            switch (wType) {
-                                //multiple answer question
-                                case "multi":
-                                    StringBuilder sb = new StringBuilder();
-
-                                    for (int b = 0; b < choices.length(); b++) {
-                                        if (b % 2 == 0) {//pick every other choice
-                                            if (b != 0) {
-                                                sb.append(",");
-                                            }
-                                            sb.append(choices.optJSONObject(b).optString("key"));
-                                        }
-                                    }
-                                    segm.put(answerKey, sb.toString());
-                                    break;
-                                //radio buttons
-                                case "radio":
-                                    //dropdown value selector
-                                case "dropdown":
-                                    int pick = rnd.nextInt(choices.length());
-                                    segm.put(answerKey, choices.optJSONObject(pick).optString("key"));//pick the key of random choice
-                                    break;
-                                //text input field
-                                case "text":
-                                    segm.put(answerKey, "Some random text");
-                                    break;
-                                //rating picker
-                                case "rating":
-                                    segm.put(answerKey, rnd.nextInt(11));//put a random rating
-                                    break;
-                            }
-                        }
-
-                        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
-
-                        Toast.makeText(ActivityExampleFeedback.this, "Survey feedback reported manually", Toast.LENGTH_LONG).show();
-                    }
-                });
+            if (questions == null) {
+                Toast.makeText(ActivityExampleFeedback.this, "No questions found in retrieved survey data", Toast.LENGTH_LONG).show();
+                return;
             }
+
+            Map<String, Object> segm = new HashMap<>();
+            Random rnd = new Random();
+
+            //iterate over all questions and set random answers
+            for (int a = 0; a < questions.length(); a++) {
+                JSONObject question = null;
+                try {
+                    question = questions.getJSONObject(a);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                String wType = question.optString("type");
+                String questionId = question.optString("id");
+                String answerKey = "answ-" + questionId;
+                JSONArray choices = question.optJSONArray("choices");
+
+                switch (wType) {
+                    //multiple answer question
+                    case "multi":
+                        StringBuilder sb = new StringBuilder();
+
+                        for (int b = 0; b < choices.length(); b++) {
+                            if (b % 2 == 0) {//pick every other choice
+                                if (b != 0) {
+                                    sb.append(",");
+                                }
+                                sb.append(choices.optJSONObject(b).optString("key"));
+                            }
+                        }
+                        segm.put(answerKey, sb.toString());
+                        break;
+                    //radio buttons
+                    case "radio":
+                        //dropdown value selector
+                    case "dropdown":
+                        int pick = rnd.nextInt(choices.length());
+                        segm.put(answerKey, choices.optJSONObject(pick).optString("key"));//pick the key of random choice
+                        break;
+                    //text input field
+                    case "text":
+                        segm.put(answerKey, "Some random text");
+                        break;
+                    //rating picker
+                    case "rating":
+                        segm.put(answerKey, rnd.nextInt(11));//put a random rating
+                        break;
+                }
+            }
+
+            Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widgetToReport, retrievedWidgetData, segm);
+
+            Toast.makeText(ActivityExampleFeedback.this, "Survey feedback reported manually", Toast.LENGTH_LONG).show();
         });
+
     }
 
     public void onClickRetrieveSurveyDataManually(View v) {
@@ -378,7 +305,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     void getAndPrintRetrievedFeedbackWidgetData(final FeedbackWidgetType widgetType) {
         Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
-                if(didGotAvailableFeedbackWidgetsFaulty(retrievedWidgets, error)){
+                if(validateRetrievedFeedbackWidgetList(retrievedWidgets, error)){
                     return;
                 }
 
