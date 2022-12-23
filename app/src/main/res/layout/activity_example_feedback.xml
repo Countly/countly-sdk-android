@@ -48,6 +48,13 @@
       android:text="Show NPS"
       />
   <Button
+      android:id="@+id/button37"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickShowRating"
+      android:text="show rating"
+      />
+  <Button
       android:id="@+id/btnAvailableWidgets"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
@@ -60,6 +67,13 @@
       android:layout_height="wrap_content"
       android:onClick="onClickReportSurveyManually"
       android:text="Report Survey Manually"
+      />
+  <Button
+      android:id="@+id/button38"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickReportRatingManually"
+      android:text="Report Rating Manually"
       />
   <Button
       android:id="@+id/button62"

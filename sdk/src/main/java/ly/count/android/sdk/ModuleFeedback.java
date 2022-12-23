@@ -19,7 +19,7 @@ import org.json.JSONObject;
 
 public class ModuleFeedback extends ModuleBase {
 
-    public enum FeedbackWidgetType {survey, nps}
+    public enum FeedbackWidgetType {survey, nps, rating}
 
     public static class CountlyFeedbackWidget {
         public String widgetId;
@@ -29,6 +29,7 @@ public class ModuleFeedback extends ModuleBase {
 
     final static String NPS_EVENT_KEY = "[CLY]_nps";
     final static String SURVEY_EVENT_KEY = "[CLY]_survey";
+    final static String RATING_EVENT_KEY = "[CLY]_star_rating";
 
     final String cachedAppVersion;
 
@@ -134,6 +135,8 @@ public class ModuleFeedback extends ModuleBase {
                             plannedType = FeedbackWidgetType.survey;
                         } else if (valType.equals("nps")) {
                             plannedType = FeedbackWidgetType.nps;
+                        } else if (valType.equals("rating")) {
+                            plannedType = FeedbackWidgetType.rating;
                         } else {
                             Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
                             continue;
@@ -206,6 +209,11 @@ public class ModuleFeedback extends ModuleBase {
             case nps:
                 widgetListUrl.append(baseInfoProvider.getServerURL());
                 widgetListUrl.append("/feedback/nps?widget_id=");
+                widgetListUrl.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
+                break;
+            case rating:
+                widgetListUrl.append(baseInfoProvider.getServerURL());
+                widgetListUrl.append("/feedback/rating?widget_id=");
                 widgetListUrl.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
                 break;
         }
@@ -303,6 +311,8 @@ public class ModuleFeedback extends ModuleBase {
 
             if (widgetInfo.type == FeedbackWidgetType.survey) {
                 key = SURVEY_EVENT_KEY;
+            } else if(widgetInfo.type == FeedbackWidgetType.rating) {
+                key = RATING_EVENT_KEY;
             } else {
                 key = NPS_EVENT_KEY;
             }
@@ -352,6 +362,9 @@ public class ModuleFeedback extends ModuleBase {
             case nps:
                 //https://xxxx.count.ly/o/surveys/nps/widget?widget_id=601345cf5e313f74&shown=1platform=Android&app_version=7
                 widgetDataEndpoint = "/o/surveys/nps/widget";
+                break;
+            case rating:
+                widgetDataEndpoint = "/o/surveys/rating/widget";
                 break;
         }
 
@@ -453,6 +466,25 @@ public class ModuleFeedback extends ModuleBase {
                 }
             } else if (widgetInfo.type == FeedbackWidgetType.survey) {
                 //in case a survey widget was completed
+            } else if(widgetInfo.type == FeedbackWidgetType.rating){
+                //in case a rating widget was completed
+                if (!widgetResult.containsKey("rating")) {
+                    L.e("Provided Rating widget result does not have a 'rating' field, result can't be reported");
+                    return;
+                }
+
+                //check rating data type
+                Object ratingValue = widgetResult.get("rating");
+                if (!(ratingValue instanceof Integer)) {
+                    L.e("Provided Rating widget 'rating' field is not an integer, result can't be reported");
+                    return;
+                }
+
+                //check rating value range
+                int ratingValI = (int) ratingValue;
+                if (ratingValI < 1 || ratingValI > 5) {
+                    L.e("Provided Rating widget 'rating' value is out of bounds of the required value '[1;5]', it is probably an error");
+                }
             }
         }
 
@@ -471,11 +503,15 @@ public class ModuleFeedback extends ModuleBase {
 
             if (widgetInfo.type == FeedbackWidgetType.nps) {
                 if (!"nps".equals(typeInData)) {
-                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data");
+                    L.w("[ModuleFeedback] type in widget info [" + typeInData + "] does not match the type in widget data [nps]");
                 }
             } else if (widgetInfo.type == FeedbackWidgetType.survey) {
                 if (!"survey".equals(typeInData)) {
-                    L.w("[ModuleFeedback] type in widget info does not match the type in widget data");
+                    L.w("[ModuleFeedback] type in widget info [" + typeInData + "] does not match the type in widget data [survey]");
+                }
+            } else if (widgetInfo.type == FeedbackWidgetType.rating) {
+                if (!"rating".equals(typeInData)) {
+                    L.w("[ModuleFeedback] type in widget info [" + typeInData + "] does not match the type in widget data [rating]");
                 }
             }
         }
@@ -497,6 +533,13 @@ public class ModuleFeedback extends ModuleBase {
 
             //event when answered
             //{"key":"[CLY]_survey","segmentation":{"widget_id":"600e9e0b563e89201631633e","platform":"android","app_version":"0.0","answ-1611570700-0":"ch1611570700-0"},"timestamp":1611570895465,"hour":16,"dow":1}
+        } else if (widgetInfo.type == FeedbackWidgetType.rating){
+            usedEventKey = RATING_EVENT_KEY;
+            //event when closed
+            // {"key":"[CLY]_star_rating","count":1,"timestamp":1671783040088,"hour":11,"dow":5,"segmentation":{"app_version":"1.0","widget_id":"614871419f030e44be07d82f","closed":"1","platform":"android"}
+
+            //event when answered
+            //{"key":"[CLY]_star_rating","count":1,"segmentation":{"widget_id":"614871419f030e44be07d82f","contactMe":false,"platform":"android","app_version":"1","platform_version_rate":"","rating":4,"email":"","comment":""}
         } else {
             usedEventKey = "";
         }
