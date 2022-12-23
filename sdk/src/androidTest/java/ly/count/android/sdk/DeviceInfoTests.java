@@ -30,8 +30,10 @@ import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import org.json.JSONException;
@@ -277,18 +279,33 @@ public class DeviceInfoTests {
         json.put("_device", "a1");
         json.put("_os", "b2");
         json.put("_os_version", "c3");
+        json.put("_carrier", "d1");
         json.put("_resolution", "d2");
         json.put("_density", "d3");
         json.put("_locale", "d4");
         json.put("_app_version", "d5");
         json.put("_manufacturer", DeviceInfo.getManufacturer());
         json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
-        json.put("_carrier", "d1");
         json.put("asd", "123");
 
-        final String expected = URLEncoder.encode(json.toString(), "UTF-8");
-        assertNotNull(expected);
-        assertEquals(expected, DeviceInfo.getMetrics(getContext(), metricOverride));
+        final String decoded = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        final JSONObject newJson = new JSONObject(decoded);
+        int sizeJson = 0;
+        int sizeNewJson = 0;
+        Iterator<String> keysJ = json.keys();
+        Iterator<String> keysNJ = newJson.keys();
+
+        assertNotNull(newJson);
+        while (keysJ.hasNext()) {
+            sizeJson++;
+            String key = keysJ.next();
+            assertEquals(json.get(key), newJson.get(key));
+        }
+        while (keysNJ.hasNext()) {
+            sizeNewJson++;
+            keysNJ.next();
+        }
+        assertEquals(sizeJson, sizeNewJson);
     }
 
     @Test
