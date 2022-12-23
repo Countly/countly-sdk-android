@@ -155,13 +155,11 @@ public class ModuleCrashTests {
         segm2.put("1", 1234);
         Assert.assertEquals(segm2, countly.moduleCrash.customCrashSegments);
 
-
         //prepare new segm to be provided during recording
         Map<String, Object> segm3 = new HashMap<>();
         segm3.put("1", 54);
         segm3.put("2", 1234.55d);
         segm3.put("3", true);
-
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, segm3);
@@ -211,7 +209,6 @@ public class ModuleCrashTests {
     //
     //    Assert.assertEquals("Brc_3\nBrc_4\n", logs);
     //}
-
     @Test
     public void recordHandledExceptionException() {
         Exception exception = new Exception("Some message");

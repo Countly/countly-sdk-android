@@ -23,9 +23,10 @@ public class CountlyNative {
 
     /**
      * init breakpad
+     *
      * @return true: init success  false: init fail
      */
-    public static boolean initNative(Context cxt){
+    public static boolean initNative(Context cxt) {
         // String basePath = Environment.getExternalStorageDirectory().getAbsolutePath();
         String basePath = cxt.getCacheDir().getAbsolutePath();
         String countlyFolderName = "Countly";
@@ -37,7 +38,7 @@ public class CountlyNative {
             boolean res = folder.mkdirs();
         }
         if (loadBreakpadSuccess) {
-            return init(countlyNativeCrashFolderPath) > 0 ;
+            return init(countlyNativeCrashFolderPath) > 0;
         }
         return false;
     }
@@ -47,8 +48,10 @@ public class CountlyNative {
     }
 
     public static native String getBreakpadVersion();
+
     public static native String getBreakpadChecksum();
 
     private static native int init(String dumpFileDir);
+
     private static native int testCrash();
 }

@@ -63,7 +63,7 @@ public class CountlyPushActivity extends Activity {
 
             for (String packageName : allowedIntentPackageNames) {
                 // Checking is trusted package name, if intent package name contains in allowedPackagesNames then it is trusted package name
-                if (intentPackageName!= null && intentPackageName.startsWith(packageName)) {
+                if (intentPackageName != null && intentPackageName.startsWith(packageName)) {
                     isTrustedPackage = true;
                     if (isTrustedClass) {
                         break;

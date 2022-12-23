@@ -282,6 +282,7 @@ public class ConnectionQueueTests {
             // success!
         }
     }
+
     /*
        @Test
        public void testEndSession_zeroDuration() {

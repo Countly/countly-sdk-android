@@ -28,7 +28,6 @@ public class ActivityExampleDeviceId extends AppCompatActivity {
     public void onClickDeviceId02(View v) {
         //set device id with merge
         Countly.sharedInstance().deviceId().changeWithMerge("New Device ID!" + (new Random().nextInt()));
-
     }
 
     public void onClickDeviceId03(View v) {

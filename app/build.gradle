@@ -21,97 +21,97 @@ buildscript {
 */
 
 repositories {
-    mavenCentral()
+  mavenCentral()
 
-    //required for huawei push
-    maven {
-        url "https://developer.huawei.com/repo/"
-    }
+  //required for huawei push
+  maven {
+    url "https://developer.huawei.com/repo/"
+  }
 }
 
 android {
-    compileSdkVersion 31
+  compileSdkVersion 31
 
-    signingConfigs {
-        release {
-            storeFile file('keys')
-            keyAlias 'HWDemo'
-            keyPassword 'countly'
-            storePassword 'countly'
-            v1SigningEnabled true
-            v2SigningEnabled true
-        }
+  signingConfigs {
+    release {
+      storeFile file('keys')
+      keyAlias 'HWDemo'
+      keyPassword 'countly'
+      storePassword 'countly'
+      v1SigningEnabled true
+      v2SigningEnabled true
     }
+  }
 
-    defaultConfig {
-        applicationId "ly.count.android.demo"
-        minSdkVersion 17
-        targetSdkVersion 31
-        versionCode 1
-        versionName "1.0"
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+  defaultConfig {
+    applicationId "ly.count.android.demo"
+    minSdkVersion 17
+    targetSdkVersion 31
+    versionCode 1
+    versionName "1.0"
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+  }
+  buildTypes {
+    debug {
+      signingConfig signingConfigs.release
+      minifyEnabled false
+      //shrinkResources true
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
     }
-    buildTypes {
-        debug {
-            signingConfig signingConfigs.release
-            minifyEnabled false
-            //shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-        release {
-            signingConfig signingConfigs.release
-            minifyEnabled true
-            //shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
+    release {
+      signingConfig signingConfigs.release
+      minifyEnabled true
+      //shrinkResources true
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
     }
-    lintOptions {
-        abortOnError false
-    }
-    buildToolsVersion '31.0.0'
+  }
+  lintOptions {
+    abortOnError false
+  }
+  buildToolsVersion '31.0.0'
 
-    //required to get rid of this error "Invoke-customs are only supported starting with Android O (--min-api 26)"
-//    compileOptions {
-//        sourceCompatibility JavaVersion.VERSION_1_8
-//        targetCompatibility JavaVersion.VERSION_1_8
-//    }
+  //required to get rid of this error "Invoke-customs are only supported starting with Android O (--min-api 26)"
+  //    compileOptions {
+  //        sourceCompatibility JavaVersion.VERSION_1_8
+  //        targetCompatibility JavaVersion.VERSION_1_8
+  //    }
 
-    /*
-    //for automatic symbol upload
-    afterEvaluate {
-        assembleRelease.finalizedBy(uploadJavaSymbols)
-    }
-     */
+  /*
+  //for automatic symbol upload
+  afterEvaluate {
+      assembleRelease.finalizedBy(uploadJavaSymbols)
+  }
+   */
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+  implementation fileTree(dir: 'libs', include: ['*.jar'])
+  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
-    implementation project(':sdk')
-    //implementation 'ly.count.android:sdk:21.11.0'
-    //implementation 'ly.count.android:sdk-plugin:21.11.0'
+  implementation project(':sdk')
+  //implementation 'ly.count.android:sdk:21.11.0'
+  //implementation 'ly.count.android:sdk-plugin:21.11.0'
 
-    //required for FCM push
-    implementation 'com.google.firebase:firebase-messaging:22.0.0'
-    //required for huawei push
-    implementation 'com.huawei.hms:push:6.3.0.304'
+  //required for FCM push
+  implementation 'com.google.firebase:firebase-messaging:22.0.0'
+  //required for huawei push
+  implementation 'com.huawei.hms:push:6.3.0.304'
 
-    implementation 'com.google.android.material:material:1.6.0-alpha02'
-    implementation 'androidx.appcompat:appcompat:1.4.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
-    implementation 'androidx.annotation:annotation:1.3.0'
-    implementation 'androidx.core:core-ktx:1.7.0'
+  implementation 'com.google.android.material:material:1.6.0-alpha02'
+  implementation 'androidx.appcompat:appcompat:1.4.1'
+  implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
+  implementation 'androidx.annotation:annotation:1.3.0'
+  implementation 'androidx.core:core-ktx:1.7.0'
 
-    //required for the install referrer
-    implementation 'com.android.installreferrer:installreferrer:2.2'
+  //required for the install referrer
+  implementation 'com.android.installreferrer:installreferrer:2.2'
 
-    //for testing
-    testImplementation 'junit:junit:4.13.2'
-//    androidTestImplementation 'androidx.test:runner:1.3.0'
-//    androidTestImplementation 'androidx.test:core:1.3.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-//    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+  //for testing
+  testImplementation 'junit:junit:4.13.2'
+  //    androidTestImplementation 'androidx.test:runner:1.3.0'
+  //    androidTestImplementation 'androidx.test:core:1.3.0'
+  androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+  //    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }
 
 /*

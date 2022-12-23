@@ -37,11 +37,11 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
 
-        if(campaignType.equals("_special_test")){
+        if (campaignType.equals("_special_test")) {
             reportSpecialTestAttribution(campaignData);
         }
 
-        if(campaignType.equals("countly")) {
+        if (campaignType.equals("countly")) {
             reportLegacyInstallAttribution(campaignData);
         }
     }
@@ -56,7 +56,7 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
 
-        if(!jObj.has("cid")) {
+        if (!jObj.has("cid")) {
             L.e("[ModuleAttribution] recordDirectAttributionInternal, direct attribution can't be recorded because the data does not contain the 'cid' value. Execution will be aborted.");
             return;
         }
@@ -65,7 +65,7 @@ public class ModuleAttribution extends ModuleBase {
         try {
             campaignId = jObj.getString("cid");
 
-            if(campaignId.isEmpty()) {
+            if (campaignId.isEmpty()) {
                 L.e("[ModuleAttribution] recordDirectAttributionInternal, 'cid' value can't be empty string. Execution will be aborted.");
                 return;
             }
@@ -77,10 +77,10 @@ public class ModuleAttribution extends ModuleBase {
         String campaignUserId = null;
 
         try {
-            if(jObj.has("cuid")) {
+            if (jObj.has("cuid")) {
                 campaignUserId = jObj.getString("cuid");
 
-                if(campaignUserId.isEmpty()) {
+                if (campaignUserId.isEmpty()) {
                     L.w("[ModuleAttribution] recordDirectAttributionInternal, 'cuid' value can't be empty string. value will be ignored.");
                     campaignUserId = null;
                 }
@@ -127,7 +127,7 @@ public class ModuleAttribution extends ModuleBase {
             }
         }
 
-        if (jObj.length() == 0){
+        if (jObj.length() == 0) {
             L.e("[ModuleAttribution] recordIndirectAttributionInternal, no valid attribution values were provided");
             return;
         }
@@ -140,8 +140,8 @@ public class ModuleAttribution extends ModuleBase {
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         //check if any indirect attribution value is set
-        if(config.iaAttributionValues != null) {
-            if(config.iaAttributionValues.isEmpty()) {
+        if (config.iaAttributionValues != null) {
+            if (config.iaAttributionValues.isEmpty()) {
                 L.e("[ModuleAttribution] provided attribution ID for indirect attribution is empty string.");
             } else {
                 recordIndirectAttributionInternal(config.iaAttributionValues);
@@ -149,11 +149,11 @@ public class ModuleAttribution extends ModuleBase {
         }
 
         //checking if any direct attribution value is set
-        if(config.daCampaignData != null || config.daCampaignType != null) {
-            if(config.daCampaignType == null || config.daCampaignType.isEmpty()) {
+        if (config.daCampaignData != null || config.daCampaignType != null) {
+            if (config.daCampaignType == null || config.daCampaignType.isEmpty()) {
                 L.e("[ModuleAttribution] Can't record direct attribution can't be recorded with an invalid campaign id.");
             } else {
-                if(config.daCampaignData != null && config.daCampaignData.isEmpty()){
+                if (config.daCampaignData != null && config.daCampaignData.isEmpty()) {
                     L.e("[ModuleAttribution] For direct attribution the provided Campaign user ID can't be empty string.");
                 }
                 recordDirectAttributionInternal(config.daCampaignType, config.daCampaignData);
@@ -170,7 +170,6 @@ public class ModuleAttribution extends ModuleBase {
 
         /**
          * Report direct user attribution
-         *
          */
         public void recordDirectAttribution(String campaignType, String campaignData) {
             synchronized (_cly) {

@@ -2,142 +2,139 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ly.count.android.demo">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <uses-permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION" />
-    <uses-permission android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS" android:maxSdkVersion="30" />
-    
+  <uses-permission android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION" />
+  <uses-permission
+      android:name="android.permission.BROADCAST_CLOSE_SYSTEM_DIALOGS"
+      android:maxSdkVersion="30" />
 
-    <application
-        android:name=".App"
-        android:allowBackup="false"
-        android:icon="@mipmap/icon"
+
+  <application
+      android:name=".App"
+      android:allowBackup="false"
+      android:icon="@mipmap/icon"
+      android:label="@string/app_name"
+      android:theme="@style/AppTheme">
+    <activity
+        android:name=".MainActivity"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme">
-        <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name"
-            android:configChanges="orientation|screenSize"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+        android:configChanges="orientation|screenSize"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
 
-        <service android:name=".DemoFirebaseMessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
+    <service
+        android:name=".DemoFirebaseMessagingService"
+        android:exported="false">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+      </intent-filter>
+    </service>
 
-        <!--
-        <service
-            android:name=".DemoHuaweiMessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.huawei.push.action.MESSAGING_EVENT" />
-            </intent-filter>
-        </service>
+    <!--
+    <service
+        android:name=".DemoHuaweiMessagingService"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="com.huawei.push.action.MESSAGING_EVENT" />
+        </intent-filter>
+    </service>
 -->
-        <activity
-            android:name=".ActivityExampleAPM"
-            android:label="@string/activity_name_apm"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleAPM"
+        android:label="@string/activity_name_apm"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleCrashReporting"
-            android:label="@string/activity_name_crash_reporting"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleCrashReporting"
+        android:label="@string/activity_name_crash_reporting"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleCustomEvents"
-            android:label="@string/activity_name_custom_events"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleCustomEvents"
+        android:label="@string/activity_name_custom_events"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleMultiThreading"
-            android:label="@string/activity_name_multithreading"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleMultiThreading"
+        android:label="@string/activity_name_multithreading"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleOthers"
-            android:label="@string/activity_name_others"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleOthers"
+        android:label="@string/activity_name_others"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleUserDetails"
-            android:label="@string/activity_name_user_detail"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleUserDetails"
+        android:label="@string/activity_name_user_detail"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleViewTracking"
-            android:label="@string/activity_name_view_tracking"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleViewTracking"
+        android:label="@string/activity_name_view_tracking"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleRemoteConfig"
-            android:label="@string/activity_name_remote_config"
-            android:configChanges="orientation|screenSize">
-        </activity>
-        <activity
-            android:name=".ActivityExampleDeviceId"
-            android:label="@string/activity_name_device_id"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleRemoteConfig"
+        android:label="@string/activity_name_remote_config"
+        android:configChanges="orientation|screenSize"></activity>
+    <activity
+        android:name=".ActivityExampleDeviceId"
+        android:label="@string/activity_name_device_id"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleFeedback"
-            android:label="@string/activity_name_feedback"
-            android:configChanges="orientation|screenSize">
-        </activity>
+    <activity
+        android:name=".ActivityExampleFeedback"
+        android:label="@string/activity_name_feedback"
+        android:configChanges="orientation|screenSize"></activity>
 
-        <activity
-            android:name=".ActivityExampleDeepLinkA"
-            android:label="Deep link A"
-            android:configChanges="orientation|screenSize"
-            android:exported="true">
+    <activity
+        android:name=".ActivityExampleDeepLinkA"
+        android:label="Deep link A"
+        android:configChanges="orientation|screenSize"
+        android:exported="true">
 
-            <intent-filter android:label="@string/deep_link">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+      <intent-filter android:label="@string/deep_link">
+        <action android:name="android.intent.action.VIEW" />
 
-                <!-- Accepts URIs that begin with "countly://sample_a” -->
-                <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
-                <data android:scheme="countly"
-                    android:host="sample_a" />
-            </intent-filter>
-        </activity>
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
 
-        <activity
-            android:name=".ActivityExampleDeepLinkB"
-            android:label="Deep link B"
-            android:configChanges="orientation|screenSize"
-            android:exported="true">
+        <!-- Accepts URIs that begin with "countly://sample_a” -->
+        <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
+        <data
+            android:scheme="countly"
+            android:host="sample_a" />
+      </intent-filter>
+    </activity>
 
-            <intent-filter android:label="@string/deep_link">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+    <activity
+        android:name=".ActivityExampleDeepLinkB"
+        android:label="Deep link B"
+        android:configChanges="orientation|screenSize"
+        android:exported="true">
 
-                <!-- Accepts URIs that begin with "countly://sample_b” -->
-                <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
-                <data android:scheme="countly"
-                    android:host="sample_b" />
-            </intent-filter>
-        </activity>
-        <activity android:name=".ActivityExampleKotlin" />
-    </application>
+      <intent-filter android:label="@string/deep_link">
+        <action android:name="android.intent.action.VIEW" />
+
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+
+        <!-- Accepts URIs that begin with "countly://sample_b” -->
+        <!-- test with adb shell am start -a android.intent.action.VIEW -d "countly://test" ly.count.android.demo  -->
+        <data
+            android:scheme="countly"
+            android:host="sample_b" />
+      </intent-filter>
+    </activity>
+    <activity android:name=".ActivityExampleKotlin" />
+  </application>
 
 </manifest>

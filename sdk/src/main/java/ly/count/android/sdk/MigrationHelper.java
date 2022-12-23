@@ -12,7 +12,6 @@ class MigrationHelper {
      */
     final int DATA_SCHEMA_VERSIONS = 1;
 
-
     static final public String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
 
     StorageProvider storage;
@@ -115,23 +114,22 @@ class MigrationHelper {
         String deviceIDType = storage.getDeviceIDType();
         String deviceID = storage.getDeviceID();
 
-        if(deviceIDType == null && deviceID == null) {
+        if (deviceIDType == null && deviceID == null) {
             //if both the ID and type are null we are in big trouble
             //set type to OPEN_UDID and generate the ID afterwards
             storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
             deviceIDType = DeviceIdType.OPEN_UDID.toString();
-        } else if(deviceIDType == null) {
+        } else if (deviceIDType == null) {
             //if the type is null, but the ID value is not null, we have to guess the type
             Boolean customIdProvided = (Boolean) migrationParams.get(key_from_0_to_1_custom_id_set);
-            if(customIdProvided == null) {
+            if (customIdProvided == null) {
                 customIdProvided = false;
             }
 
-            if(customIdProvided){
+            if (customIdProvided) {
                 //if a custom device ID is provided during init, assume that the previous type was dev supplied
                 storage.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
                 deviceIDType = DeviceIdType.DEVELOPER_SUPPLIED.toString();
-
             } else {
                 //if a custom device ID was not provided during init, assume that the previous type was SDK generated
                 storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
@@ -152,8 +150,8 @@ class MigrationHelper {
         }
 
         //generate a deviceID in case the current type is OPEN_UDID (either migrated or originally as such) and there is no ID
-        if(deviceIDType.equals(DeviceIdType.OPEN_UDID.toString())) {
-            if(deviceID == null || deviceID.isEmpty()) {
+        if (deviceIDType.equals(DeviceIdType.OPEN_UDID.toString())) {
+            if (deviceID == null || deviceID.isEmpty()) {
                 //in case there is no valid ID, generate it
                 storage.setDeviceID(UUID.randomUUID().toString());
             }

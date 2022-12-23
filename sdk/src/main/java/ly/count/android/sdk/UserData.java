@@ -173,8 +173,10 @@ public class UserData {
         ModuleUserProfile.modifyCustomData(key, value, "$setOnce");
     }
 
-    /** Create array property, if property does not exist and add value to array
+    /**
+     * Create array property, if property does not exist and add value to array
      * You can only use it on array properties or properties that do not exist yet
+     *
      * @param key String with property name for array property
      * @param value String with value to add to array
      * @deprecated This user data access method will be removed. Use 'Countly.sharedInstance().userProfile();' to access the required functionality.
@@ -183,8 +185,10 @@ public class UserData {
         ModuleUserProfile.modifyCustomData(key, value, "$push");
     }
 
-    /** Create array property, if property does not exist and add value to array, only if value is not yet in the array
+    /**
+     * Create array property, if property does not exist and add value to array, only if value is not yet in the array
      * You can only use it on array properties or properties that do not exist yet
+     *
      * @param key String with property name for array property
      * @param value String with value to add to array
      * @deprecated This user data access method will be removed. Use 'Countly.sharedInstance().userProfile();' to access the required functionality.
@@ -193,8 +197,10 @@ public class UserData {
         ModuleUserProfile.modifyCustomData(key, value, "$addToSet");
     }
 
-    /** Create array property, if property does not exist and remove value from array
+    /**
+     * Create array property, if property does not exist and remove value from array
      * You can only use it on array properties or properties that do not exist yet
+     *
      * @param key String with property name for array property
      * @param value String with value to remove from array
      * @deprecated This user data access method will be removed. Use 'Countly.sharedInstance().userProfile();' to access the required functionality.
@@ -205,6 +211,7 @@ public class UserData {
 
     /**
      * Send provided values to server
+     *
      * @deprecated This user data access method will be removed. Use 'Countly.sharedInstance().userProfile();' to access the required functionality.
      */
     public void save() {

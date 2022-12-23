@@ -174,6 +174,7 @@ public class Countly {
 
     /**
      * user data access
+     *
      * @deprecated This user data access method will be removed. Use 'Countly.sharedInstance().userProfile();' to access the required functionality.
      */
     public static UserData userData;
@@ -374,7 +375,7 @@ public class Countly {
 
             // Have a look at the SDK limit values
             if (config.maxKeyLength != null) {
-                if(config.maxKeyLength < 1) {
+                if (config.maxKeyLength < 1) {
                     config.maxKeyLength = 1;
                     L.w("[Init] provided 'maxKeyLength' is less than '1'. Setting it to '1'.");
                 }
@@ -384,7 +385,7 @@ public class Countly {
             }
 
             if (config.maxValueSize != null) {
-                if(config.maxValueSize < 1) {
+                if (config.maxValueSize < 1) {
                     config.maxValueSize = 1;
                     L.w("[Init] provided 'maxValueSize' is less than '1'. Setting it to '1'.");
                 }
@@ -394,7 +395,7 @@ public class Countly {
             }
 
             if (config.maxSegmentationValues != null) {
-                if(config.maxSegmentationValues < 1) {
+                if (config.maxSegmentationValues < 1) {
                     config.maxSegmentationValues = 1;
                     L.w("[Init] provided 'maxSegmentationValues' is less than '1'. Setting it to '1'.");
                 }
@@ -404,7 +405,7 @@ public class Countly {
             }
 
             if (config.maxBreadcrumbCount != null) {
-                if(config.maxBreadcrumbCount < 1) {
+                if (config.maxBreadcrumbCount < 1) {
                     config.maxBreadcrumbCount = 1;
                     L.w("[Init] provided 'maxBreadcrumbCount' is less than '1'. Setting it to '1'.");
                 }
@@ -414,7 +415,7 @@ public class Countly {
             }
 
             if (config.maxStackTraceLinesPerThread != null) {
-                if(config.maxStackTraceLinesPerThread < 1) {
+                if (config.maxStackTraceLinesPerThread < 1) {
                     config.maxStackTraceLinesPerThread = 1;
                     L.w("[Init] provided 'maxStackTraceLinesPerThread' is less than '1'. Setting it to '1'.");
                 }
@@ -424,7 +425,7 @@ public class Countly {
             }
 
             if (config.maxStackTraceLineLength != null) {
-                if(config.maxStackTraceLineLength < 1) {
+                if (config.maxStackTraceLineLength < 1) {
                     config.maxStackTraceLineLength = 1;
                     L.w("[Init] provided 'maxStackTraceLineLength' is less than '1'. Setting it to '1'.");
                 }
@@ -439,7 +440,7 @@ public class Countly {
                 startTimerService(timerService_, timerFuture, config.sessionUpdateTimerDelay);
             }
 
-            if(config.explicitStorageModeEnabled) {
+            if (config.explicitStorageModeEnabled) {
                 L.i("[Init] Explicit storage mode is being enabled");
             }
 
@@ -452,7 +453,7 @@ public class Countly {
                 config.setCountlyStore(countlyStore);
             }
 
-            if(config.maxRequestQueueSize < 1) {
+            if (config.maxRequestQueueSize < 1) {
                 L.e("[Init] provided request queue size is less than 1. Replacing it with 1.");
                 config.maxRequestQueueSize = 1;
             }
@@ -482,7 +483,7 @@ public class Countly {
                 L.d("[Init] Parameter tampering protection salt set");
             }
 
-            if(connectionQueue_ == null) {
+            if (connectionQueue_ == null) {
                 L.e("[Init] SDK failed to initialize because the connection queue failed to be created");
                 return this;
             }
@@ -541,8 +542,7 @@ public class Countly {
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
 
-
-            if(config.testModuleListener != null) {
+            if (config.testModuleListener != null) {
                 modules.add(config.testModuleListener);
             }
 
@@ -748,7 +748,7 @@ public class Countly {
         L.SetListener(null);
 
         if (connectionQueue_ != null) {
-            if(countlyStore != null) {
+            if (countlyStore != null) {
                 countlyStore.clear();
             }
             connectionQueue_.setContext(null);
@@ -936,12 +936,12 @@ public class Countly {
             return;
         }
 
-        if(deviceId == null || deviceId.isEmpty()) {
+        if (deviceId == null || deviceId.isEmpty()) {
             L.e("changeDeviceIdWithoutMerge, can't change device ID to and empty or null value");
             return;
         }
 
-        if(type != DeviceId.Type.DEVELOPER_SUPPLIED) {
+        if (type != DeviceId.Type.DEVELOPER_SUPPLIED) {
             L.e("changeDeviceIdWithoutMerge, provided device ID type mus be 'DEVELOPER_SUPPLIED'");
             return;
         }

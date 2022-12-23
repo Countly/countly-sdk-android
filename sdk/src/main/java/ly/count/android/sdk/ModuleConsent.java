@@ -30,7 +30,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         Countly.CountlyFeatureNames.scrolls
     };
 
-    public enum ConsentChangeSource { ChangeConsentCall, DeviceIDChangedNotMerged }
+    public enum ConsentChangeSource {ChangeConsentCall, DeviceIDChangedNotMerged}
 
     protected boolean requiresConsent = false;
 
@@ -46,7 +46,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         //setup initial consent data structure
         //initialize all features to "false"
-        for(String featureName : validFeatureNames) {
+        for (String featureName : validFeatureNames) {
             featureConsentValues.put(featureName, false);
         }
 
@@ -57,7 +57,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
                 L.i("[Init] Consent has been required but no consent was given during init");
             } else {
                 //set provided consent values
-                for(String providedFeature : config.enabledFeatureNames){
+                for (String providedFeature : config.enabledFeatureNames) {
                     featureConsentValues.put(providedFeature, true);
                 }
             }
@@ -85,7 +85,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     }
 
     boolean getConsentInternal(@Nullable final String featureName) {
-        if(featureName == null) {
+        if (featureName == null) {
             L.e("[ModuleConsent] getConsentInternal, Can't call this with a 'null' feature name!");
             return false;
         }
@@ -102,6 +102,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     /**
      * Returns the true internally set value
+     *
      * @param featureName
      */
     private boolean getConsentTrue(@NonNull final String featureName) {
@@ -174,9 +175,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         for (Map.Entry<String, Boolean> entry : features.entrySet()) {
             if (commaAdded) {
                 preparedConsent.append(",");
-            } {
+            } else {
                 commaAdded = true;
             }
+
             preparedConsent.append('"');
             preparedConsent.append(entry.getKey());
             preparedConsent.append('"');
@@ -210,7 +212,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
                 continue;
             }
 
-            if(getConsentTrue(featureName) != isConsentGiven) {
+            if (getConsentTrue(featureName) != isConsentGiven) {
                 //if the current consent does not match the one give, add it to the list
                 consentThatWillChange.add(featureName);
 
@@ -219,7 +221,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             }
         }
 
-        for(ModuleBase module:_cly.modules) {
+        for (ModuleBase module : _cly.modules) {
             module.onConsentChanged(consentThatWillChange, isConsentGiven, changeSource);
         }
 
@@ -269,7 +271,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
-        if(consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
             //handle push consent changes
             doPushConsentSpecialAction(newConsent);
         }

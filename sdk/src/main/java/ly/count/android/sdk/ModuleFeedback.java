@@ -54,6 +54,7 @@ public class ModuleFeedback extends ModuleBase {
 
     public interface FeedbackCallback {
         void onClosed();
+
         void onFinished(String error);
     }
 
@@ -290,7 +291,7 @@ public class ModuleFeedback extends ModuleBase {
                 L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
                 reportFeedbackWidgetCancelButton(widgetInfo, DeviceInfo.getAppVersion(context));
 
-                if(devCallback != null) {
+                if (devCallback != null) {
                     devCallback.onClosed();
                 }
             }
@@ -334,7 +335,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        if(widgetInfo == null) {
+        if (widgetInfo == null) {
             L.e("[ModuleFeedback] Feedback widget data if provided widget is 'null'");
             return;
         }

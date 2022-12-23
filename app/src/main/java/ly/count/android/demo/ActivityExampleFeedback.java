@@ -342,7 +342,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                                     break;
                                 //radio buttons
                                 case "radio":
-                                //dropdown value selector
+                                    //dropdown value selector
                                 case "dropdown":
                                     int pick = rnd.nextInt(choices.length());
                                     segm.put(answerKey, choices.optJSONObject(pick).optString("key"));//pick the key of random choice
