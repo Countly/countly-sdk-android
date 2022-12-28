@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,29 +47,36 @@ public class ModuleFeedbackTests {
     @Test
     public void parseFeedbackList_oneGoodWithGarbage() throws JSONException {
         String requestJson =
-            "{\"result\":[{\"_id\":\"asd\",\"type\":\"qwe\",\"name\":\"zxc\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"},{\"g4id\":\"asd1\",\"t4type\":\"432\",\"nagdfgme\":\"zxct\"}]}";
+            "{\"result\":[{\"_id\":\"asd\",\"type\":\"qwe\",\"name\":\"zxc\",\"tg\":[]},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\",\"tg\":[\"/\"]},{\"g4id\":\"asd1\",\"t4type\":\"432\",\"nagdfgme\":\"zxct\",\"tgm\":[\"/\"]}]}";
 
         JSONObject jObj = new JSONObject(requestJson);
 
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(1, ret.size());
+        List<String> retList = Arrays.asList("/");
 
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(0).type);
         Assert.assertEquals("fsdfsdf", ret.get(0).name);
         Assert.assertEquals("5f97284635935cc338e78200", ret.get(0).widgetId);
+        Assert.assertEquals(retList, ret.get(0).tags);
     }
 
     @Test
     public void parseFeedbackList() throws JSONException {
         String requestJson =
-            "{\"result\":[{\"_id\":\"5f8c6f959627f99e8e7de746\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"sdfsdfdsf\"},{\"_id\":\"5f8c6fd81ac8659e8846acf4\",\"type\":\"nps\",\"name\":\"fdsfsd\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"},{\"_id\":\"614871419f030e44be07d82f\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"],\"name\":\"ratingName1\"}]}";
+            "{\"result\":[{\"_id\":\"5f8c6f959627f99e8e7de746\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"sdfsdfdsf\",\"tg\":[\"/\"]},{\"_id\":\"5f8c6fd81ac8659e8846acf4\",\"type\":\"nps\",\"name\":\"fdsfsd\",\"tg\":[\"a\",\"0\"]},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\",\"tg\":[]},{\"_id\":\"614871419f030e44be07d82f\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"],\"name\":\"ratingName1\"}]}";
 
         JSONObject jObj = new JSONObject(requestJson);
 
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(4, ret.size());
+        List<String> retList1 = Arrays.asList("/");
+        List<String> retList2 = Arrays.asList("a","0");
+        List<String> retList3 = Arrays.asList();
+        List<String> retList4 = Arrays.asList("/");
+
 
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(1).type);
@@ -84,6 +92,11 @@ public class ModuleFeedbackTests {
         Assert.assertEquals("5f8c6fd81ac8659e8846acf4", ret.get(1).widgetId);
         Assert.assertEquals("5f97284635935cc338e78200", ret.get(2).widgetId);
         Assert.assertEquals("614871419f030e44be07d82f", ret.get(3).widgetId);
+
+        Assert.assertEquals(retList1, ret.get(0).tags);
+        Assert.assertEquals(retList2, ret.get(1).tags);
+        Assert.assertEquals(retList3, ret.get(2).tags);
+        Assert.assertEquals(retList4, ret.get(3).tags);
     }
 
     @Test
