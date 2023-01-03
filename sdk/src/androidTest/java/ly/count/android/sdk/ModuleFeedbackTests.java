@@ -54,12 +54,13 @@ public class ModuleFeedbackTests {
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(1, ret.size());
-        List<String> retList = Arrays.asList("/");
+        String[] retList = new String[1];
+        retList [0] = "/";
 
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(0).type);
         Assert.assertEquals("fsdfsdf", ret.get(0).name);
         Assert.assertEquals("5f97284635935cc338e78200", ret.get(0).widgetId);
-        Assert.assertEquals(retList, ret.get(0).tags);
+        Assert.assertArrayEquals(retList, ret.get(0).tags);
     }
 
     @Test
@@ -72,11 +73,14 @@ public class ModuleFeedbackTests {
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(4, ret.size());
-        List<String> retList1 = Arrays.asList("/");
-        List<String> retList2 = Arrays.asList("a","0");
-        List<String> retList3 = Arrays.asList();
-        List<String> retList4 = Arrays.asList("/");
-
+        String[] retList1 = new String[1];
+        String[] retList2 = new String[2];
+        String[] retList3 = new String[0];
+        String[] retList4 = new String[1];
+        retList1 [0] = "/";
+        retList2 [0] = "a";
+        retList2 [1] = "0";
+        retList4 [0] = "/";
 
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(1).type);
@@ -93,10 +97,10 @@ public class ModuleFeedbackTests {
         Assert.assertEquals("5f97284635935cc338e78200", ret.get(2).widgetId);
         Assert.assertEquals("614871419f030e44be07d82f", ret.get(3).widgetId);
 
-        Assert.assertEquals(retList1, ret.get(0).tags);
-        Assert.assertEquals(retList2, ret.get(1).tags);
-        Assert.assertEquals(retList3, ret.get(2).tags);
-        Assert.assertEquals(retList4, ret.get(3).tags);
+        Assert.assertArrayEquals(retList1, ret.get(0).tags);
+        Assert.assertArrayEquals(retList2, ret.get(1).tags);
+        Assert.assertArrayEquals(retList3, ret.get(2).tags);
+        Assert.assertArrayEquals(retList4, ret.get(3).tags);
     }
 
     @Test

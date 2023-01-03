@@ -25,7 +25,7 @@ public class ModuleFeedback extends ModuleBase {
         public String widgetId;
         public FeedbackWidgetType type;
         public String name;
-        public List<String> tags;
+        public String[] tags;
     }
 
     final static String NPS_EVENT_KEY = "[CLY]_nps";
@@ -156,7 +156,7 @@ public class ModuleFeedback extends ModuleBase {
                         se.type = plannedType;
                         se.widgetId = valId;
                         se.name = valName;
-                        se.tags = valTagsArr;
+                        se.tags = valTagsArr.toArray(new String[0]);
 
                         parsedRes.add(se);
                     } catch (Exception ex) {
