@@ -73,14 +73,10 @@ public class ModuleFeedbackTests {
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(4, ret.size());
-        String[] retList1 = new String[1];
-        String[] retList2 = new String[2];
-        String[] retList3 = new String[0];
-        String[] retList4 = new String[1];
-        retList1 [0] = "/";
-        retList2 [0] = "a";
-        retList2 [1] = "0";
-        retList4 [0] = "/";
+        String[] retList1 = new String[] { "/" };
+        String[] retList2 = new String[] { "a", "0" };
+        String[] retList3 = new String[] {};
+        String[] retList4 = new String[] { "/" };
 
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(1).type);
