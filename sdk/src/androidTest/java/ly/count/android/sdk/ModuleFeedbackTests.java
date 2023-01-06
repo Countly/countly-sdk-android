@@ -73,30 +73,11 @@ public class ModuleFeedbackTests {
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(4, ret.size());
-        String[] retList1 = new String[] { "/" };
-        String[] retList2 = new String[] { "a", "0" };
-        String[] retList3 = new String[] {};
-        String[] retList4 = new String[] { "/" };
 
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(1).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(2).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.rating, ret.get(3).type);
-
-        Assert.assertEquals("sdfsdfdsf", ret.get(0).name);
-        Assert.assertEquals("fdsfsd", ret.get(1).name);
-        Assert.assertEquals("fsdfsdf", ret.get(2).name);
-        Assert.assertEquals("ratingName1", ret.get(3).name);
-
-        Assert.assertEquals("5f8c6f959627f99e8e7de746", ret.get(0).widgetId);
-        Assert.assertEquals("5f8c6fd81ac8659e8846acf4", ret.get(1).widgetId);
-        Assert.assertEquals("5f97284635935cc338e78200", ret.get(2).widgetId);
-        Assert.assertEquals("614871419f030e44be07d82f", ret.get(3).widgetId);
-
-        Assert.assertArrayEquals(retList1, ret.get(0).tags);
-        Assert.assertArrayEquals(retList2, ret.get(1).tags);
-        Assert.assertArrayEquals(retList3, ret.get(2).tags);
-        Assert.assertArrayEquals(retList4, ret.get(3).tags);
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey, "sdfsdfdsf", "5f8c6f959627f99e8e7de746", new String[] { "/" }, ret.get(0));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "fdsfsd", "5f8c6fd81ac8659e8846acf4", new String[] { "a", "0" }, ret.get(1));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "fsdfsdf", "5f97284635935cc338e78200", new String[] {}, ret.get(2));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating, "ratingName1", "614871419f030e44be07d82f", new String[] { "/" }, ret.get(3));
     }
 
     @Test
