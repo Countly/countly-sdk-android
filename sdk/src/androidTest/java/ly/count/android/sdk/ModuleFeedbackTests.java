@@ -54,8 +54,7 @@ public class ModuleFeedbackTests {
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(1, ret.size());
-        String[] retList = new String[1];
-        retList [0] = "/";
+        String[] retList = new String[] { "/" };
 
         Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(0).type);
         Assert.assertEquals("fsdfsdf", ret.get(0).name);
@@ -97,6 +96,66 @@ public class ModuleFeedbackTests {
         Assert.assertArrayEquals(retList2, ret.get(1).tags);
         Assert.assertArrayEquals(retList3, ret.get(2).tags);
         Assert.assertArrayEquals(retList4, ret.get(3).tags);
+    }
+
+    @Test
+    public void parseFaultyFeedbackList() throws JSONException {
+        // 9 widgets (3 from each)
+        // First variation => no 'tg' key
+        // Second variation => no 'name' key
+        // First variation => no '_id' key
+        String requestJson =
+            "{\"result\":["
+                + "{\"_id\":\"survID1\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"surv1\"},"
+                + "{\"_id\":\"survID2\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"tg\":[\"/\"]},"
+                + "{\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"surv3\",\"tg\":[\"/\"]},"
+                + "{\"_id\":\"npsID1\",\"type\":\"nps\",\"name\":\"nps1\"},"
+                + "{\"_id\":\"npsID2\",\"type\":\"nps\",\"tg\":[]},"
+                + "{\"type\":\"nps\",\"name\":\"nps3\",\"tg\":[]},"
+                + "{\"_id\":\"ratingID1\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"name\":\"rating1\"},"
+                + "{\"_id\":\"ratingID2\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"]},"
+                + "{\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"],\"name\":\"rating3\"}"
+                + "]}";
+
+        JSONObject jObj = new JSONObject(requestJson);
+
+        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
+        Assert.assertNotNull(ret);
+        Assert.assertEquals(6, ret.size());
+        String[] retListSurv1 = new String[] {};
+        String[] retListSurv2 = new String[] {"/"};
+        String[] retListNps1 = new String[] {};
+        String[] retListNps2 = new String[] {};
+        String[] retListRat1 = new String[] {};
+        String[] retListRat2 = new String[] {"/"};
+
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(1).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(2).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(3).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.rating, ret.get(4).type);
+        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.rating, ret.get(5).type);
+
+        Assert.assertEquals("surv1", ret.get(0).name);
+        Assert.assertEquals("", ret.get(1).name);
+        Assert.assertEquals("nps1", ret.get(2).name);
+        Assert.assertEquals("", ret.get(3).name);
+        Assert.assertEquals("rating1", ret.get(4).name);
+        Assert.assertEquals("", ret.get(5).name);
+
+        Assert.assertEquals("survID1", ret.get(0).widgetId);
+        Assert.assertEquals("survID2", ret.get(1).widgetId);
+        Assert.assertEquals("npsID1", ret.get(2).widgetId);
+        Assert.assertEquals("npsID2", ret.get(3).widgetId);
+        Assert.assertEquals("ratingID1", ret.get(4).widgetId);
+        Assert.assertEquals("ratingID2", ret.get(5).widgetId);
+
+        Assert.assertArrayEquals(retListSurv1, ret.get(0).tags);
+        Assert.assertArrayEquals(retListSurv2, ret.get(1).tags);
+        Assert.assertArrayEquals(retListNps1, ret.get(2).tags);
+        Assert.assertArrayEquals(retListNps2, ret.get(3).tags);
+        Assert.assertArrayEquals(retListRat1, ret.get(4).tags);
+        Assert.assertArrayEquals(retListRat2, ret.get(5).tags);
     }
 
     @Test
