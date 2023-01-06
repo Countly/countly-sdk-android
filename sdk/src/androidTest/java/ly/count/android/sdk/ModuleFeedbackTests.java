@@ -55,12 +55,7 @@ public class ModuleFeedbackTests {
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(1, ret.size());
-        String[] retList = new String[] { "/" };
-
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(0).type);
-        Assert.assertEquals("fsdfsdf", ret.get(0).name);
-        Assert.assertEquals("5f97284635935cc338e78200", ret.get(0).widgetId);
-        Assert.assertArrayEquals(retList, ret.get(0).tags);
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "fsdfsdf", "5f97284635935cc338e78200", new String[] { "/" }, ret.get(0));
     }
 
     @Test
