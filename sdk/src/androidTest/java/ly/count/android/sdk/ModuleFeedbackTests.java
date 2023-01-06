@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,23 +48,20 @@ public class ModuleFeedbackTests {
     @Test
     public void parseFeedbackList_oneGoodWithGarbage() throws JSONException {
         String requestJson =
-            "{\"result\":[{\"_id\":\"asd\",\"type\":\"qwe\",\"name\":\"zxc\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"},{\"g4id\":\"asd1\",\"t4type\":\"432\",\"nagdfgme\":\"zxct\"}]}";
+            "{\"result\":[{\"_id\":\"asd\",\"type\":\"qwe\",\"name\":\"zxc\",\"tg\":[]},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\",\"tg\":[\"/\"]},{\"g4id\":\"asd1\",\"t4type\":\"432\",\"nagdfgme\":\"zxct\",\"tgm\":[\"/\"]}]}";
 
         JSONObject jObj = new JSONObject(requestJson);
 
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(1, ret.size());
-
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(0).type);
-        Assert.assertEquals("fsdfsdf", ret.get(0).name);
-        Assert.assertEquals("5f97284635935cc338e78200", ret.get(0).widgetId);
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "fsdfsdf", "5f97284635935cc338e78200", new String[] { "/" }, ret.get(0));
     }
 
     @Test
     public void parseFeedbackList() throws JSONException {
         String requestJson =
-            "{\"result\":[{\"_id\":\"5f8c6f959627f99e8e7de746\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"sdfsdfdsf\"},{\"_id\":\"5f8c6fd81ac8659e8846acf4\",\"type\":\"nps\",\"name\":\"fdsfsd\"},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\"},{\"_id\":\"614871419f030e44be07d82f\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"],\"name\":\"ratingName1\"}]}";
+            "{\"result\":[{\"_id\":\"5f8c6f959627f99e8e7de746\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"sdfsdfdsf\",\"tg\":[\"/\"]},{\"_id\":\"5f8c6fd81ac8659e8846acf4\",\"type\":\"nps\",\"name\":\"fdsfsd\",\"tg\":[\"a\",\"0\"]},{\"_id\":\"5f97284635935cc338e78200\",\"type\":\"nps\",\"name\":\"fsdfsdf\",\"tg\":[]},{\"_id\":\"614871419f030e44be07d82f\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"],\"name\":\"ratingName1\"}]}";
 
         JSONObject jObj = new JSONObject(requestJson);
 
@@ -70,20 +69,50 @@ public class ModuleFeedbackTests {
         Assert.assertNotNull(ret);
         Assert.assertEquals(4, ret.size());
 
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(1).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(2).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.rating, ret.get(3).type);
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey, "sdfsdfdsf", "5f8c6f959627f99e8e7de746", new String[] { "/" }, ret.get(0));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "fdsfsd", "5f8c6fd81ac8659e8846acf4", new String[] { "a", "0" }, ret.get(1));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "fsdfsdf", "5f97284635935cc338e78200", new String[] {}, ret.get(2));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating, "ratingName1", "614871419f030e44be07d82f", new String[] { "/" }, ret.get(3));
+    }
 
-        Assert.assertEquals("sdfsdfdsf", ret.get(0).name);
-        Assert.assertEquals("fdsfsd", ret.get(1).name);
-        Assert.assertEquals("fsdfsdf", ret.get(2).name);
-        Assert.assertEquals("ratingName1", ret.get(3).name);
+    @Test
+    public void parseFaultyFeedbackList() throws JSONException {
+        // 9 widgets (3 from each)
+        // First variation => no 'tg' key
+        // Second variation => no 'name' key
+        // First variation => no '_id' key
+        String requestJson =
+            "{\"result\":["
+                + "{\"_id\":\"survID1\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"surv1\"},"
+                + "{\"_id\":\"survID2\",\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"tg\":[\"/\"]},"
+                + "{\"type\":\"survey\",\"exitPolicy\":\"onAbandon\",\"appearance\":{\"show\":\"uSubmit\",\"position\":\"bLeft\",\"color\":\"#2eb52b\"},\"name\":\"surv3\",\"tg\":[\"/\"]},"
+                + "{\"_id\":\"npsID1\",\"type\":\"nps\",\"name\":\"nps1\"},"
+                + "{\"_id\":\"npsID2\",\"type\":\"nps\",\"tg\":[]},"
+                + "{\"type\":\"nps\",\"name\":\"nps3\",\"tg\":[]},"
+                + "{\"_id\":\"ratingID1\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"name\":\"rating1\"},"
+                + "{\"_id\":\"ratingID2\",\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"]},"
+                + "{\"type\":\"rating\",\"appearance\":{\"position\":\"mleft\",\"bg_color\":\"#fff\",\"text_color\":\"#ddd\",\"text\":\"Feedback\"},\"tg\":[\"\\/\"],\"name\":\"rating3\"}"
+                + "]}";
 
-        Assert.assertEquals("5f8c6f959627f99e8e7de746", ret.get(0).widgetId);
-        Assert.assertEquals("5f8c6fd81ac8659e8846acf4", ret.get(1).widgetId);
-        Assert.assertEquals("5f97284635935cc338e78200", ret.get(2).widgetId);
-        Assert.assertEquals("614871419f030e44be07d82f", ret.get(3).widgetId);
+        JSONObject jObj = new JSONObject(requestJson);
+
+        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
+        Assert.assertNotNull(ret);
+        Assert.assertEquals(6, ret.size());
+
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey, "surv1", "survID1", new String[] {}, ret.get(0));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey, "", "survID2", new String[] { "/" }, ret.get(1));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "nps1", "npsID1", new String[] {}, ret.get(2));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "", "npsID2", new String[] {}, ret.get(3));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating, "rating1", "ratingID1", new String[] {}, ret.get(4));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating, "", "ratingID2", new String[] { "/" }, ret.get(5));
+    }
+
+    void ValidateReturnedFeedbackWidget(@NonNull ModuleFeedback.FeedbackWidgetType type, @NonNull String wName, @NonNull String wId, @NonNull String[] wTags, @NonNull ModuleFeedback.CountlyFeedbackWidget fWidget) {
+        Assert.assertEquals(type, fWidget.type);
+        Assert.assertEquals(wName, fWidget.name);
+        Assert.assertEquals(wId, fWidget.widgetId);
+        Assert.assertArrayEquals(wTags, fWidget.tags);
     }
 
     @Test

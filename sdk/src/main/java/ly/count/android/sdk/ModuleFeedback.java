@@ -25,6 +25,7 @@ public class ModuleFeedback extends ModuleBase {
         public String widgetId;
         public FeedbackWidgetType type;
         public String name;
+        public String[] tags;
     }
 
     final static String NPS_EVENT_KEY = "[CLY]_nps";
@@ -118,7 +119,16 @@ public class ModuleFeedback extends ModuleBase {
                         String valId = jObj.optString("_id", "");
                         String valType = jObj.optString("type", "");
                         String valName = jObj.optString("name", "");
-                        //String valTags = jObj.optString("tg", "");
+                        List<String> valTagsArr = new ArrayList<String>();
+
+                        JSONArray jTagArr = jObj.optJSONArray("tg");
+                        if (jTagArr == null){
+                            Countly.sharedInstance().L.w("[ModuleFeedback] parseFeedbackList, no tags received");
+                        } else{
+                            for (int in = 0; in < jTagArr.length(); in++) {
+                                valTagsArr.add(jTagArr.getString(in));
+                            }
+                        }
 
                         if (valId.isEmpty()) {
                             Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
@@ -146,6 +156,7 @@ public class ModuleFeedback extends ModuleBase {
                         se.type = plannedType;
                         se.widgetId = valId;
                         se.name = valName;
+                        se.tags = valTagsArr.toArray(new String[0]);
 
                         parsedRes.add(se);
                     } catch (Exception ex) {

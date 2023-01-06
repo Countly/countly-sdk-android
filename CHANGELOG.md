@@ -1,5 +1,6 @@
 ## 22.06.3
 * Expanded feedback widget functionality. Added ability to use rating widgets.
+* Added functionality to access tags for feedback widgets.
 
 ## 22.06.2
 * Fixed a bug that would throw a null pointer exception when calling "CountlyPush.displayNotification " and CountlyPush was not initialized 
