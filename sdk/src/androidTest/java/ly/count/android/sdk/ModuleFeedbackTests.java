@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -122,40 +123,20 @@ public class ModuleFeedbackTests {
         List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
         Assert.assertNotNull(ret);
         Assert.assertEquals(6, ret.size());
-        String[] retListSurv1 = new String[] {};
-        String[] retListSurv2 = new String[] {"/"};
-        String[] retListNps1 = new String[] {};
-        String[] retListNps2 = new String[] {};
-        String[] retListRat1 = new String[] {};
-        String[] retListRat2 = new String[] {"/"};
 
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(0).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.survey, ret.get(1).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(2).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.nps, ret.get(3).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.rating, ret.get(4).type);
-        Assert.assertEquals(ModuleFeedback.FeedbackWidgetType.rating, ret.get(5).type);
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey, "surv1", "survID1", new String[] {}, ret.get(0));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey, "", "survID2", new String[] { "/" }, ret.get(1));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "nps1", "npsID1", new String[] {}, ret.get(2));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "", "npsID2", new String[] {}, ret.get(3));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating, "rating1", "ratingID1", new String[] {}, ret.get(4));
+        ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating, "", "ratingID2", new String[] { "/" }, ret.get(5));
+    }
 
-        Assert.assertEquals("surv1", ret.get(0).name);
-        Assert.assertEquals("", ret.get(1).name);
-        Assert.assertEquals("nps1", ret.get(2).name);
-        Assert.assertEquals("", ret.get(3).name);
-        Assert.assertEquals("rating1", ret.get(4).name);
-        Assert.assertEquals("", ret.get(5).name);
-
-        Assert.assertEquals("survID1", ret.get(0).widgetId);
-        Assert.assertEquals("survID2", ret.get(1).widgetId);
-        Assert.assertEquals("npsID1", ret.get(2).widgetId);
-        Assert.assertEquals("npsID2", ret.get(3).widgetId);
-        Assert.assertEquals("ratingID1", ret.get(4).widgetId);
-        Assert.assertEquals("ratingID2", ret.get(5).widgetId);
-
-        Assert.assertArrayEquals(retListSurv1, ret.get(0).tags);
-        Assert.assertArrayEquals(retListSurv2, ret.get(1).tags);
-        Assert.assertArrayEquals(retListNps1, ret.get(2).tags);
-        Assert.assertArrayEquals(retListNps2, ret.get(3).tags);
-        Assert.assertArrayEquals(retListRat1, ret.get(4).tags);
-        Assert.assertArrayEquals(retListRat2, ret.get(5).tags);
+    void ValidateReturnedFeedbackWidget(@NonNull ModuleFeedback.FeedbackWidgetType type, @NonNull String wName, @NonNull String wId, @NonNull String[] wTags, @NonNull ModuleFeedback.CountlyFeedbackWidget fWidget) {
+        Assert.assertEquals(type, fWidget.type);
+        Assert.assertEquals(wName, fWidget.name);
+        Assert.assertEquals(wId, fWidget.widgetId);
+        Assert.assertArrayEquals(wTags, fWidget.tags);
     }
 
     @Test
