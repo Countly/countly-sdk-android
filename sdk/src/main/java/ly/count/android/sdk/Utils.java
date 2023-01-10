@@ -278,6 +278,15 @@ public class Utils {
         }
     }
 
+    /**
+     * Checks and transforms the provided Object if it does not
+     * comply with the key count limit.
+     *
+     * @param maxCount Int @NonNull - max number of keys allowed
+     * @param L ModuleLog @NonNull - Logger function
+     * @param moduleTag String @NonNull - name of the module this function was called
+     * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
+     */
     static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String moduleTag, final @NonNull ModuleLog L) {
         if (segmentation == null) {
             return;
