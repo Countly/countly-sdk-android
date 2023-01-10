@@ -3,6 +3,10 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import android.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +30,30 @@ public class ModuleViews extends ModuleBase {
 
     //interface for SDK users
     final Views viewsInterface;
+
+    public static String idvValue() {
+        long timestamp = System.currentTimeMillis();
+        try {
+            SecureRandom random = new SecureRandom();
+            byte[] value = new byte[10];
+            random.nextBytes(value);
+            String b64Value = Base64.encodeToString(value,  Base64.DEFAULT);
+            String input = b64Value + "_" + timestamp;
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(input.getBytes());
+            StringBuilder hexString = new StringBuilder();
+            for (int i = 0; i < hash.length; i++) {
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     ModuleViews(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -88,6 +116,7 @@ public class ModuleViews extends ModuleBase {
             segments.put("name", lastView);
             segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - lastViewStart));
             segments.put("segment", "Android");
+            segments.put("_idv", idvValue());
             eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
             lastView = null;
             lastViewStart = 0;
