@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import static androidx.test.InstrumentationRegistry.getContext;
-import static ly.count.android.sdk.ModuleViews.idvValue;
+import static ly.count.android.sdk.Utils.safeRandomVal;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -66,7 +66,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
 
         if (shortNames) {
             segm.put("name", act.getClass().getSimpleName());
@@ -110,7 +110,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
 
         if (shortNames) {
             segm.put("name", act2.getClass().getSimpleName());
@@ -246,7 +246,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("name", act.getClass().getSimpleName());
         segm.put("aa", "11");
         segm.put("aagfg", "1133");
@@ -259,7 +259,7 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", dur);
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("name", act.getClass().getSimpleName());
 
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
@@ -277,7 +277,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("name", viewNames[0]);
 
         mCountly.views().recordView(viewNames[0]);
@@ -289,13 +289,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");//todo rework to verify duration better
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("name", viewNames[0]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("visit", "1");
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
@@ -305,13 +305,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");//todo rework to verify duration better
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);//todo this test has issues sometimes
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("visit", "1");
         segm.put("name", viewNames[2]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
@@ -362,7 +362,7 @@ public class ModuleViewsTests {
         mCountly.views().recordView(viewNames[0], cSegm1);
 
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("start", "1");
         segm.put("visit", "1");
         segm.put("name", viewNames[0]);
@@ -373,13 +373,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("name", viewNames[0]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("visit", "1");
         segm.put("name", viewNames[1]);
         segm.put("start", "33");
@@ -394,13 +394,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", idvValue());
+        segm.put("_idv", safeRandomVal());
         segm.put("visit", "1");
         segm.put("name", viewNames[2]);
         segm.put("doddnker", "m123ag");

@@ -4,6 +4,7 @@ import android.app.UiModeManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
+import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.BufferedReader;
@@ -11,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -20,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static android.content.Context.UI_MODE_SERVICE;
+import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 
 public class Utils {
     private static final ExecutorService bg = Executors.newSingleThreadExecutor();
@@ -158,6 +161,21 @@ public class Utils {
         }
 
         return sbRes.toString();
+    }
+
+    /**
+     * Creates a crypto-safe SHA-256 hashed random value
+     *
+     * @return returns a random string value
+     */
+    public static String safeRandomVal() {
+        long timestamp = System.currentTimeMillis();
+        SecureRandom random = new SecureRandom();
+        byte[] value = new byte[32];
+        random.nextBytes(value);
+        String b64Value = Base64.encodeToString(value,  Base64.DEFAULT);
+        String input = b64Value + "_" + timestamp;
+        return sha256Hash(input);
     }
 
     /**
