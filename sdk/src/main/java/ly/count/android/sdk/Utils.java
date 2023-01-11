@@ -22,7 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static android.content.Context.UI_MODE_SERVICE;
-import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 
 public class Utils {
     private static final ExecutorService bg = Executors.newSingleThreadExecutor();
@@ -171,11 +170,11 @@ public class Utils {
     public static String safeRandomVal() {
         long timestamp = System.currentTimeMillis();
         SecureRandom random = new SecureRandom();
-        byte[] value = new byte[32];
+        byte[] value = new byte[40];
         random.nextBytes(value);
         String b64Value = Base64.encodeToString(value,  Base64.DEFAULT);
         String input = b64Value + "_" + timestamp;
-        return sha256Hash(input);
+        return UtilsNetworking.sha256Hash(input);
     }
 
     /**

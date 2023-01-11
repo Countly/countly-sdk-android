@@ -7,12 +7,12 @@ import android.app.Activity;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -156,7 +156,7 @@ public class ModuleViewsTests {
         mCountly.moduleViews = mView;
         doReturn(Configuration.ORIENTATION_PORTRAIT).when(mView).getOrientationFromActivity(act);
 
-        assertEquals(-1, mView.currentOrientation);
+        Assert.assertEquals(-1, mView.currentOrientation);
 
         mCountly.moduleViews.onActivityStarted(act);
 
@@ -165,7 +165,7 @@ public class ModuleViewsTests {
 
         verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null);
 
-        assertEquals(Configuration.ORIENTATION_PORTRAIT, mView.currentOrientation);
+        Assert.assertEquals(Configuration.ORIENTATION_PORTRAIT, mView.currentOrientation);
     }
 
     @Test
@@ -181,12 +181,12 @@ public class ModuleViewsTests {
         mCountly.moduleViews = mView;
         doReturn(Configuration.ORIENTATION_LANDSCAPE).when(mView).getOrientationFromConfiguration(conf);
 
-        assertEquals(-1, mView.currentOrientation);
+        Assert.assertEquals(-1, mView.currentOrientation);
         mCountly.moduleViews.onConfigurationChanged(conf);
 
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
 
-        assertEquals(-1, mView.currentOrientation);
+        Assert.assertEquals(-1, mView.currentOrientation);
     }
 
     @Test
@@ -202,7 +202,7 @@ public class ModuleViewsTests {
         mCountly.moduleViews = mView;
         doReturn(Configuration.ORIENTATION_LANDSCAPE).when(mView).getOrientationFromConfiguration(conf);
 
-        assertEquals(-1, mView.currentOrientation);
+        Assert.assertEquals(-1, mView.currentOrientation);
         mCountly.moduleViews.onConfigurationChanged(conf);
 
         final Map<String, Object> segm = new HashMap<>();
@@ -210,7 +210,7 @@ public class ModuleViewsTests {
 
         verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null);
 
-        assertEquals(Configuration.ORIENTATION_LANDSCAPE, mView.currentOrientation);
+        Assert.assertEquals(Configuration.ORIENTATION_LANDSCAPE, mView.currentOrientation);
     }
 
     /**
