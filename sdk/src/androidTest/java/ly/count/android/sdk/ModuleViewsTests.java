@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.content.res.Configuration;
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import android.app.Activity;
 import java.util.HashMap;
@@ -29,10 +30,20 @@ public class ModuleViewsTests {
     //Countly mCountly;
     CountlyStore countlyStore;
 
+    int idx = 0;
+    String[] vals = new String[] {"ab1", "a234", "a456", "124", "gfg", "gfghh", "65hghg"};
+    SafeIDGenerator safeIDGenerator;
+
     @Before
     public void setUp() {
         countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
+        idx = 0;
+        safeIDGenerator = new SafeIDGenerator() {
+            @NonNull @Override public String GenerateValue() {
+                return vals[idx++];
+            }
+        };
     }
 
     @After
@@ -51,7 +62,9 @@ public class ModuleViewsTests {
 
     void activityStartedViewTracking(boolean shortNames) {
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames));
+        CountlyConfig cc = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames);
+        cc.safeIDGenerator = safeIDGenerator;
+        mCountly.init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
@@ -61,7 +74,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[0]);
 
         if (shortNames) {
             segm.put("name", act.getClass().getSimpleName());
@@ -91,6 +104,7 @@ public class ModuleViewsTests {
 
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames).setAutoTrackingExceptions(new Class[] { act1.getClass() });
+        config.safeIDGenerator = safeIDGenerator;
         mCountly.init(config);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -105,7 +119,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[0]);
 
         if (shortNames) {
             segm.put("name", act2.getClass().getSimpleName());
@@ -217,6 +231,7 @@ public class ModuleViewsTests {
     public void onActivityStartedStopped() throws InterruptedException {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true);
+        config.safeIDGenerator = safeIDGenerator;
 
         Map<String, Object> segms = new HashMap<>();
         segms.put("aa", "11");
@@ -224,9 +239,7 @@ public class ModuleViewsTests {
         segms.put("1", 123);
         segms.put("2", 234.0d);
         segms.put("3", true);
-        segms.put("_idv", mCountly.moduleViews.getLastViewID());
-
-
+        segms.put("_idv", vals[0]);
 
         config.setAutomaticViewSegmentation(segms);
         mCountly.init(config);
@@ -244,7 +257,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[1]);
         segm.put("name", act.getClass().getSimpleName());
         segm.put("aa", "11");
         segm.put("aagfg", "1133");
@@ -257,7 +270,7 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", dur);
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[2]);
         segm.put("name", act.getClass().getSimpleName());
 
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
@@ -266,7 +279,10 @@ public class ModuleViewsTests {
     @Test
     public void recordViewNoSegm() throws InterruptedException {
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
+        CountlyConfig cc = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true);
+        cc.safeIDGenerator = safeIDGenerator;
+
+        mCountly.init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
@@ -275,7 +291,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[0]);
         segm.put("name", viewNames[0]);
 
         mCountly.views().recordView(viewNames[0]);
@@ -287,13 +303,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");//todo rework to verify duration better
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[1]);
         segm.put("name", viewNames[0]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[2]);
         segm.put("visit", "1");
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
@@ -303,13 +319,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");//todo rework to verify duration better
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[3]);
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);//todo this test has issues sometimes
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[4]);
         segm.put("visit", "1");
         segm.put("name", viewNames[2]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
@@ -319,6 +335,7 @@ public class ModuleViewsTests {
     public void recordViewWithSegm() throws InterruptedException {
         Countly mCountly = new Countly();
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true);
+        config.safeIDGenerator = safeIDGenerator;
 
         Map<String, Object> segms = new HashMap<>();
         segms.put("aa", "11");
@@ -360,7 +377,7 @@ public class ModuleViewsTests {
         mCountly.views().recordView(viewNames[0], cSegm1);
 
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[0]);
         segm.put("start", "1");
         segm.put("visit", "1");
         segm.put("name", viewNames[0]);
@@ -371,13 +388,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[1]);
         segm.put("name", viewNames[0]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[2]);
         segm.put("visit", "1");
         segm.put("name", viewNames[1]);
         segm.put("start", "33");
@@ -392,13 +409,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[3]);
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
-        segm.put("_idv", mCountly.moduleViews.getLastViewID());
+        segm.put("_idv", vals[4]);
         segm.put("visit", "1");
         segm.put("name", viewNames[2]);
         segm.put("doddnker", "m123ag");

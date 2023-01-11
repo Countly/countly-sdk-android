@@ -31,6 +31,8 @@ public class CountlyConfig {
 
     protected BaseInfoProvider baseInfoProvider = null;
 
+    protected SafeIDGenerator safeIDGenerator = null;
+
     protected ModuleBase testModuleListener = null;
 
     protected boolean checkForNativeCrashDumps = true;

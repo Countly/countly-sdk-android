@@ -7,8 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static ly.count.android.sdk.Utils.safeRandomVal;
-
 public class ModuleViews extends ModuleBase {
     private String lastViewID = null;
     private boolean firstView = true;
@@ -86,21 +84,32 @@ public class ModuleViews extends ModuleBase {
      * Records last view with duration (ignores first view)
      */
     void reportViewDuration() {
-        L.d("[ModuleViews] View [" + Objects.requireNonNull(viewDataMap.get(lastViewID)).viewName + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime) + "] ms, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "], last views start: [" + Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime + "]");
-
-        if (lastViewID != null && Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime <= 0) {
-            L.e("[ModuleViews] Last view start value is not normal: [" + Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime + "]");
+        if (lastViewID == null || !viewDataMap.containsKey(lastViewID)) {
+            L.w("[ModuleViews] reportViewDuration, view id is null or not inside of viewDataMap");
+            return;
         }
+
+        ViewData vd = viewDataMap.get(lastViewID);
+        if (vd == null) {
+            L.w("[ModuleViews] reportViewDuration, view id:[" + lastViewID + "] has a null value");
+            return;
+        }
+
+        L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - vd.viewStartTime) + "] ms, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
             return;
         }
 
+        //we sanity check the time component and print error in case of problem
+        if (vd.viewStartTime <= 0) {
+            L.e("[ModuleViews] Last view start value is not normal: [" + Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime + "]");
+        }
+
         //only record view if the view name is not null and if it has a reasonable duration
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
-        if (lastViewID != null && Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime > 0) {
-            L.d("[ModuleViews] Recording view duration: [" + Objects.requireNonNull(viewDataMap.get(lastViewID)).viewName + "]");
+        if (vd.viewName != null && vd.viewStartTime > 0) {
             HashMap<String, Object> segments = new HashMap<>();
 
             segments.put("name", Objects.requireNonNull(viewDataMap.get(lastViewID)).viewName);
@@ -162,7 +171,7 @@ public class ModuleViews extends ModuleBase {
         // if segmentation is null this just returns so no null check necessary
         Utils.truncateSegmentationValues(customViewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] recordViewInternal", L);
 
-        if (L.logEnabled()) { // why this check?
+        if (L.logEnabled()) {
             int segmCount = 0;
             if (customViewSegmentation != null) {
                 segmCount = customViewSegmentation.size();
@@ -170,10 +179,9 @@ public class ModuleViews extends ModuleBase {
             L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view ID:[" + lastViewID + "] custom view segment count:[" + segmCount + "], first:[" + firstView + "]");
         }
 
-        if(lastViewID != null){ // if this is not the first view
-            reportViewDuration();
-        }
-        lastViewID = safeRandomVal();
+        reportViewDuration();
+
+        lastViewID = safeIDGenerator.GenerateValue();
         ViewData currentViewData = new ViewData();
         currentViewData.viewID = lastViewID;
         currentViewData.viewName = viewName;
@@ -284,18 +292,6 @@ public class ModuleViews extends ModuleBase {
         }
 
         return conf.orientation;
-    }
-
-    /**
-     * Needed for mocking test result
-     *
-     * @return String - view id returns to the hands of the developer
-     */
-    String getLastViewID() {
-        if(lastViewID == null){
-            return null;
-        }
-        return lastViewID;
     }
 
     /**

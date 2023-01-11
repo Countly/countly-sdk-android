@@ -14,6 +14,7 @@ abstract class ModuleBase {
     RequestQueueProvider requestQueueProvider;
     DeviceIdProvider deviceIdProvider;
     BaseInfoProvider baseInfoProvider;
+    SafeIDGenerator safeIDGenerator;
 
     ModuleBase(@NonNull Countly cly, @NonNull CountlyConfig config) {
         _cly = cly;
@@ -24,6 +25,7 @@ abstract class ModuleBase {
         requestQueueProvider = config.requestQueueProvider;
         deviceIdProvider = config.deviceIdProvider;
         baseInfoProvider = config.baseInfoProvider;
+        safeIDGenerator = config.safeIDGenerator;
     }
 
     void halt() {
