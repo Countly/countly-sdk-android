@@ -13,6 +13,14 @@ public class ModuleViews extends ModuleBase {
     private String lastViewID = null;
     private boolean firstView = true;
 
+    boolean autoViewTracker = false;
+    boolean automaticTrackingShouldUseShortName = false;
+
+    //track orientation changes
+    boolean trackOrientationChanges = false;
+    int currentOrientation = -1;
+    final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
+
     final static String VIEW_EVENT_KEY = "[CLY]_view";
 
     Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
@@ -26,14 +34,6 @@ public class ModuleViews extends ModuleBase {
         boolean firstView;
         String viewName;
     }
-
-    boolean autoViewTracker = false;
-    boolean automaticTrackingShouldUseShortName = false;
-
-    //track orientation changes
-    boolean trackOrientationChanges = false;
-    int currentOrientation = -1;
-    final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
 
     //interface for SDK users
     final Views viewsInterface;
@@ -284,6 +284,18 @@ public class ModuleViews extends ModuleBase {
         }
 
         return conf.orientation;
+    }
+
+    /**
+     * Needed for mocking test result
+     *
+     * @return String - view id returns to the hands of the developer
+     */
+    String getLastViewID() {
+        if(lastViewID == null){
+            return null;
+        }
+        return lastViewID;
     }
 
     /**
