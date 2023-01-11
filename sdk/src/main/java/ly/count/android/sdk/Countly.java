@@ -27,6 +27,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.06.2";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.0";
 
     /**
      * Used as request meta data on every request
@@ -477,6 +478,15 @@ public class Countly {
                 config.requestQueueProvider = connectionQueue_;
             } else {
                 L.d("[Init] Custom request queue provider was provided");
+            }
+
+            if( config.safeIDGenerator == null) {
+                //if we didn't override this for a test
+                config.safeIDGenerator = new SafeIDGenerator() {
+                    @NonNull @Override public String GenerateValue() {
+                        return Utils.safeRandomVal();
+                    }
+                };
             }
 
             if (config.tamperingProtectionSalt != null) {

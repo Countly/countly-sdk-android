@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.content.res.Configuration;
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import android.app.Activity;
 import java.util.HashMap;
@@ -10,7 +11,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,10 +18,8 @@ import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -32,10 +30,20 @@ public class ModuleViewsTests {
     //Countly mCountly;
     CountlyStore countlyStore;
 
+    int idx = 0;
+    String[] vals = new String[] { "ab1", "a234", "a456", "124", "gfg", "gfghh", "65hghg" };
+    SafeIDGenerator safeIDGenerator;
+
     @Before
     public void setUp() {
         countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
+        idx = 0;
+        safeIDGenerator = new SafeIDGenerator() {
+            @NonNull @Override public String GenerateValue() {
+                return vals[idx++];
+            }
+        };
     }
 
     @After
@@ -53,8 +61,8 @@ public class ModuleViewsTests {
     }
 
     void activityStartedViewTracking(boolean shortNames) {
-        Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames));
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeIDGenerator, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
@@ -64,6 +72,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
+        segm.put("_idv", vals[0]);
 
         if (shortNames) {
             segm.put("name", act.getClass().getSimpleName());
@@ -91,9 +100,9 @@ public class ModuleViewsTests {
         Activity act1 = mock(Activity.class);
         Activity act2 = mock(Activity2.class);
 
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(shortNames).setAutoTrackingExceptions(new Class[] { act1.getClass() });
-        mCountly.init(config);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeIDGenerator, null).setAutoTrackingExceptions(new Class[] { act1.getClass() });
+        Countly mCountly = new Countly().init(cc);
+
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.moduleViews.onActivityStarted(act1);
@@ -107,6 +116,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
+        segm.put("_idv", vals[0]);
 
         if (shortNames) {
             segm.put("name", act2.getClass().getSimpleName());
@@ -119,9 +129,8 @@ public class ModuleViewsTests {
 
     @Test
     public void onActivityStartedDisabledOrientationView() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        mCountly.init(config);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
@@ -132,14 +141,13 @@ public class ModuleViewsTests {
 
     @Test
     public void onActivityStartedOrientation() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(true);
-        mCountly.init(config);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(true, false, false, null, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
 
-        ModuleViews mView = spy(new ModuleViews(mCountly, config));
+        ModuleViews mView = spy(new ModuleViews(mCountly, cc));
         mCountly.moduleViews = mView;
         doReturn(Configuration.ORIENTATION_PORTRAIT).when(mView).getOrientationFromActivity(act);
 
@@ -157,14 +165,13 @@ public class ModuleViewsTests {
 
     @Test
     public void onConfigurationChangedOrientationDisabled() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(false);
-        mCountly.init(config);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Configuration conf = new Configuration();
 
-        ModuleViews mView = spy(new ModuleViews(mCountly, config));
+        ModuleViews mView = spy(new ModuleViews(mCountly, cc));
         mCountly.moduleViews = mView;
         doReturn(Configuration.ORIENTATION_LANDSCAPE).when(mView).getOrientationFromConfiguration(conf);
 
@@ -178,14 +185,13 @@ public class ModuleViewsTests {
 
     @Test
     public void onConfigurationChangedOrientation() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setTrackOrientationChanges(true);
-        mCountly.init(config);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, false, null, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Configuration conf = new Configuration();
 
-        ModuleViews mView = spy(new ModuleViews(mCountly, config));
+        ModuleViews mView = spy(new ModuleViews(mCountly, cc));
         mCountly.moduleViews = mView;
         doReturn(Configuration.ORIENTATION_LANDSCAPE).when(mView).getOrientationFromConfiguration(conf);
 
@@ -205,8 +211,8 @@ public class ModuleViewsTests {
      */
     @Test
     public void onActivityStopped() {
-        Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true));
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, false, null, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.moduleViews.onActivityStopped();
@@ -216,9 +222,6 @@ public class ModuleViewsTests {
 
     @Test
     public void onActivityStartedStopped() throws InterruptedException {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true);
-
         Map<String, Object> segms = new HashMap<>();
         segms.put("aa", "11");
         segms.put("aagfg", "1133");
@@ -226,8 +229,9 @@ public class ModuleViewsTests {
         segms.put("2", 234.0d);
         segms.put("3", true);
 
-        config.setAutomaticViewSegmentation(segms);
-        mCountly.init(config);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, true, safeIDGenerator, segms);
+        Countly mCountly = new Countly().init(cc);
+
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
@@ -242,6 +246,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
+        segm.put("_idv", vals[0]);
         segm.put("name", act.getClass().getSimpleName());
         segm.put("aa", "11");
         segm.put("aagfg", "1133");
@@ -254,6 +259,7 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", dur);
         segm.put("segment", "Android");
+        segm.put("_idv", vals[0]);
         segm.put("name", act.getClass().getSimpleName());
 
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
@@ -261,8 +267,8 @@ public class ModuleViewsTests {
 
     @Test
     public void recordViewNoSegm() throws InterruptedException {
-        Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true).setAutoTrackingUseShortName(true));
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, false, safeIDGenerator, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
@@ -271,6 +277,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
+        segm.put("_idv", vals[0]);
         segm.put("name", viewNames[0]);
 
         mCountly.views().recordView(viewNames[0]);
@@ -282,11 +289,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");//todo rework to verify duration better
         segm.put("segment", "Android");
+        segm.put("_idv", vals[0]);
         segm.put("name", viewNames[0]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
+        segm.put("_idv", vals[1]);
         segm.put("visit", "1");
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
@@ -296,11 +305,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");//todo rework to verify duration better
         segm.put("segment", "Android");
+        segm.put("_idv", vals[1]);
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);//todo this test has issues sometimes
 
         segm.clear();
         segm.put("segment", "Android");
+        segm.put("_idv", vals[2]);
         segm.put("visit", "1");
         segm.put("name", viewNames[2]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
@@ -308,9 +319,6 @@ public class ModuleViewsTests {
 
     @Test
     public void recordViewWithSegm() throws InterruptedException {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setViewTracking(true);
-
         Map<String, Object> segms = new HashMap<>();
         segms.put("aa", "11");
         segms.put("aagfg", "1133");
@@ -323,6 +331,7 @@ public class ModuleViewsTests {
         Map<String, Object> cSegm2 = new HashMap<>();
         cSegm2.put("name", "33");
         cSegm2.put("segment", "33");
+        cSegm2.put("_idv", "33");
         cSegm2.put("visit", "33");
         cSegm2.put("start", "33");
         cSegm2.put("donker", "mag");
@@ -340,8 +349,8 @@ public class ModuleViewsTests {
         cSegm3.put("cannndy", 9534.33d);
         cSegm3.put("calaaling", true);
 
-        config.setAutomaticViewSegmentation(segms);
-        mCountly.init(config);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeIDGenerator, segms);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
@@ -350,6 +359,7 @@ public class ModuleViewsTests {
         mCountly.views().recordView(viewNames[0], cSegm1);
 
         segm.put("segment", "Android");
+        segm.put("_idv", vals[0]);
         segm.put("start", "1");
         segm.put("visit", "1");
         segm.put("name", viewNames[0]);
@@ -360,11 +370,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");
         segm.put("segment", "Android");
+        segm.put("_idv", vals[0]);
         segm.put("name", viewNames[0]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
+        segm.put("_idv", vals[1]);
         segm.put("visit", "1");
         segm.put("name", viewNames[1]);
         segm.put("start", "33");
@@ -379,11 +391,13 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("dur", "1");
         segm.put("segment", "Android");
+        segm.put("_idv", vals[1]);
         segm.put("name", viewNames[1]);
         verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
 
         segm.clear();
         segm.put("segment", "Android");
+        segm.put("_idv", vals[2]);
         segm.put("visit", "1");
         segm.put("name", viewNames[2]);
         segm.put("doddnker", "m123ag");
@@ -402,8 +416,8 @@ public class ModuleViewsTests {
      */
     @Test
     public void recordViewEmptyViewName() {
-        Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).setViewTracking(true));
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, true, null, null);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("");
@@ -415,9 +429,8 @@ public class ModuleViewsTests {
      */
     @Test
     public void recordViewWithoutConsent() {
-        Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true)
-            .setViewTracking(true).setRequiresConsent(true));
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, true, null, null).setRequiresConsent(false);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView(null);
@@ -430,11 +443,8 @@ public class ModuleViewsTests {
      */
     @Test
     public void noViewRecordedWithAutomaticTurnedOffActChange() {
-        CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
-        cc.setDeviceId("1234").setLoggingEnabled(true).setViewTracking(false).setEventQueueSizeToSend(100);
-
-        Countly mCountly = new Countly();
-        mCountly.init(cc);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null).setEventQueueSizeToSend(100);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         Activity act = mock(Activity.class);
@@ -451,11 +461,8 @@ public class ModuleViewsTests {
 
     @Test
     public void recordViewWithActivitiesAfterwardsAutoDisabled() {
-        CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
-        cc.setDeviceId("1234").setLoggingEnabled(true).setViewTracking(false).setEventQueueSizeToSend(100);
-
-        Countly mCountly = new Countly();
-        mCountly.init(cc);
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null).setEventQueueSizeToSend(100);
+        Countly mCountly = new Countly().init(cc);
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("abcd");

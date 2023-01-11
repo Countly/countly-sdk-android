@@ -4,6 +4,7 @@ import android.app.UiModeManager;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Build;
+import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.BufferedReader;
@@ -11,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -161,6 +163,21 @@ public class Utils {
     }
 
     /**
+     * Creates a crypto-safe SHA-256 hashed random value
+     *
+     * @return returns a random string value
+     */
+    public static String safeRandomVal() {
+        long timestamp = System.currentTimeMillis();
+        SecureRandom random = new SecureRandom();
+        byte[] value = new byte[40];
+        random.nextBytes(value);
+        String b64Value = Base64.encodeToString(value,  Base64.DEFAULT);
+        String input = b64Value + "_" + timestamp;
+        return UtilsNetworking.sha256Hash(input);
+    }
+
+    /**
      * Removes unsupported data types
      *
      * @param data
@@ -260,6 +277,15 @@ public class Utils {
         }
     }
 
+    /**
+     * Checks and transforms the provided Object if it does not
+     * comply with the key count limit.
+     *
+     * @param maxCount Int @NonNull - max number of keys allowed
+     * @param L ModuleLog @NonNull - Logger function
+     * @param moduleTag String @NonNull - name of the module this function was called
+     * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
+     */
     static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String moduleTag, final @NonNull ModuleLog L) {
         if (segmentation == null) {
             return;
