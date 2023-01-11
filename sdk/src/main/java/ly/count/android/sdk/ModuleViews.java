@@ -46,12 +46,12 @@ public class ModuleViews extends ModuleBase {
 
         if (config.enableViewTracking) {
             L.d("[ModuleViews] Enabling automatic view tracking");
-            autoViewTracker = config.enableViewTracking; // Why not set it to true?
+            autoViewTracker = config.enableViewTracking;
         }
 
         if (config.autoTrackingUseShortName) {
             L.d("[ModuleViews] Enabling automatic view tracking short names");
-            automaticTrackingShouldUseShortName = config.autoTrackingUseShortName; // Why not set it to true?
+            automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
         }
 
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
@@ -73,7 +73,7 @@ public class ModuleViews extends ModuleBase {
         if (segmentation != null) {
             if (Utils.removeUnsupportedDataTypes(segmentation)) {
                 //found an unsupported type, print warning
-                L.w("[ModuleViews] You have provided an unsupported data type in your View Segmentation. Removing that value(s).");
+                L.w("[ModuleViews] You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
             }
 
             automaticViewSegmentation.putAll(segmentation);
@@ -330,12 +330,7 @@ public class ModuleViews extends ModuleBase {
         }
         autoTrackingActivityExceptions = null;
     }
-
-    /**
-     * Interface for developer to interact with the SDK/ModuleViews
-     * Currently the developer can check if the automatic view tracking
-     * is enabled or record a view (with or without segmentation).
-     */
+    
     public class Views {
         /**
          * Check state of automatic view tracking
@@ -343,7 +338,6 @@ public class ModuleViews extends ModuleBase {
          * @return boolean - true if enabled, false if disabled
          */
         public boolean isAutomaticViewTrackingEnabled() {
-            // Checks the instance of Countly Object through mutual exclusion(single thread lock) and returns the wanted flag
             synchronized (_cly) {
                 L.i("[Views] Calling isAutomaticViewTrackingEnabled");
 
@@ -360,9 +354,8 @@ public class ModuleViews extends ModuleBase {
          * @return Returns link to Countly for call chaining
          */
         public Countly recordView(String viewName) {
-            // Checks the instance of Countly Object through mutual exclusion(single thread lock) and executes the wanted method
             synchronized (_cly) {
-                // call the function below with two parameters
+                // call the general function that has two parameters
                 return recordView(viewName, null);
             }
         }
@@ -377,7 +370,6 @@ public class ModuleViews extends ModuleBase {
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
          */
         public Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
-            // Checks the instance of Countly Object through mutual exclusion(single thread lock) and executes the wanted method
             synchronized (_cly) {
                 L.i("[Views] Calling recordView [" + viewName + "]");
 
