@@ -330,7 +330,7 @@ public class ModuleViews extends ModuleBase {
         }
         autoTrackingActivityExceptions = null;
     }
-    
+
     public class Views {
         /**
          * Check state of automatic view tracking
