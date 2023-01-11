@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.runner.Request;
 import org.mockito.ArgumentCaptor;
 
+import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -40,7 +41,6 @@ public class TestUtils {
     }
 
     public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener) {
-
         return createConsentCountlyConfig(requiresConsent, givenConsent, testModuleListener, null);
     }
 
@@ -55,6 +55,20 @@ public class TestUtils {
             .setConsentEnabled(givenConsent);
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
+        return cc;
+    }
+
+    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeIDGenerator, Map<String, Object> autoViewSegms) {
+        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+            .setDeviceId(commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableCrashReporting()
+            .setTrackOrientationChanges(orientationTracking);
+
+        cc.setAutoTrackingUseShortName(useShortNames);
+        cc.safeIDGenerator = safeIDGenerator;
+        cc.setAutomaticViewSegmentation(autoViewSegms);
+        cc.setViewTracking(automaticViewTracking);
         return cc;
     }
 

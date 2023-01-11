@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -29,7 +30,6 @@ public class ModuleViews extends ModuleBase {
     static class ViewData {
         String viewID;
         long viewStartTime;
-        boolean firstView;
         String viewName;
     }
 
@@ -103,19 +103,14 @@ public class ModuleViews extends ModuleBase {
 
         //we sanity check the time component and print error in case of problem
         if (vd.viewStartTime <= 0) {
-            L.e("[ModuleViews] Last view start value is not normal: [" + Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime + "]");
+            L.e("[ModuleViews] Last view start value is not normal: [" + vd.viewStartTime + "]");
         }
 
         //only record view if the view name is not null and if it has a reasonable duration
         //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (vd.viewName != null && vd.viewStartTime > 0) {
-            HashMap<String, Object> segments = new HashMap<>();
-
-            segments.put("name", Objects.requireNonNull(viewDataMap.get(lastViewID)).viewName);
-            segments.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - Objects.requireNonNull(viewDataMap.get(lastViewID)).viewStartTime));
-            segments.put("segment", "Android");
-            segments.put("_idv", lastViewID);
+            Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, true, null);
             eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
             lastViewID = null;
         }
@@ -145,6 +140,28 @@ public class ModuleViews extends ModuleBase {
      */
     public void resetFirstView() {
         firstView = true;
+    }
+
+    Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, boolean duration, Map<String, Object> customViewSegmentation) {
+        Map<String, Object> viewSegmentation = new HashMap<>();
+        if (customViewSegmentation != null) {
+            viewSegmentation.putAll(customViewSegmentation);
+        }
+
+        viewSegmentation.put("name", vd.viewName);
+        if (visit) {
+            viewSegmentation.put("visit", "1");
+        }
+        if (duration) {
+            viewSegmentation.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - vd.viewStartTime));
+        }
+        if (firstView) {
+            viewSegmentation.put("start", "1");
+        }
+        viewSegmentation.put("segment", "Android");
+        viewSegmentation.put("_idv", lastViewID);
+
+        return viewSegmentation;
     }
 
     /**
@@ -181,27 +198,19 @@ public class ModuleViews extends ModuleBase {
 
         reportViewDuration();
 
-        lastViewID = safeIDGenerator.GenerateValue();
         ViewData currentViewData = new ViewData();
-        currentViewData.viewID = lastViewID;
+        currentViewData.viewID = safeIDGenerator.GenerateValue();
         currentViewData.viewName = viewName;
         currentViewData.viewStartTime = UtilsTime.currentTimestampSeconds();
-        currentViewData.firstView = firstView;
-        viewDataMap.put(lastViewID,currentViewData);
 
-        Map<String, Object> viewSegmentation = new HashMap<>();
-        if (customViewSegmentation != null) {
-            viewSegmentation.putAll(customViewSegmentation);
-        }
+        viewDataMap.put(currentViewData.viewID, currentViewData);
+        lastViewID = currentViewData.viewID;
 
-        viewSegmentation.put("name", viewName);
-        viewSegmentation.put("visit", "1");
-        viewSegmentation.put("segment", "Android");
-        viewSegmentation.put("_idv", lastViewID);
+        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, false, customViewSegmentation);
+
         if (firstView) {
             L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");
             firstView = false;
-            viewSegmentation.put("start", "1");
         }
 
         eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null);
@@ -326,7 +335,6 @@ public class ModuleViews extends ModuleBase {
      * Interface for developer to interact with the SDK/ModuleViews
      * Currently the developer can check if the automatic view tracking
      * is enabled or record a view (with or without segmentation).
-     *
      */
     public class Views {
         /**
@@ -371,11 +379,6 @@ public class ModuleViews extends ModuleBase {
         public Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
             // Checks the instance of Countly Object through mutual exclusion(single thread lock) and executes the wanted method
             synchronized (_cly) {
-                if (!_cly.isInitialized()) { // redundant?
-                    L.e("Countly.sharedInstance().init must be called before recordView");
-                    return _cly;
-                }
-
                 L.i("[Views] Calling recordView [" + viewName + "]");
 
                 return recordViewInternal(viewName, viewSegmentation);
