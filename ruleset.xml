@@ -13,7 +13,7 @@
     <rule ref="category/java/bestpractices.xml/AbstractClassWithoutAbstractMethod" />
     <rule ref="category/java/bestpractices.xml/AccessorClassGeneration" />
     <rule ref="category/java/bestpractices.xml/AccessorMethodGeneration" />
-    <rule ref="category/java/bestpractices.xml/ArrayIsStoredDirectly" />
+    <rule ref="category/java/bestpractices.xml/ArrayIsStoredDirectly" /><!--???-->
     <rule ref="category/java/bestpractices.xml/AvoidMessageDigestField" />
     <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace" />
     <rule ref="category/java/bestpractices.xml/AvoidReassigningCatchVariables" />
@@ -68,8 +68,7 @@
     <rule ref="category/java/bestpractices.xml/UseVarargs" />
     -->
 
-    <!-- Code Style rules -->
-    <rule ref="category/java/codestyle.xml/AtLeastOneConstructor" />
+    <!-- Code Style rules -->    
     <rule ref="category/java/codestyle.xml/AvoidDollarSigns" />
     <rule ref="category/java/codestyle.xml/AvoidProtectedFieldInFinalClass" />
     <rule ref="category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending" />
@@ -87,8 +86,7 @@
     <rule ref="category/java/codestyle.xml/IdenticalCatchBranches" />
     <rule ref="category/java/codestyle.xml/LinguisticNaming" /><!--???-->
     <rule ref="category/java/codestyle.xml/LocalHomeNamingConvention" />
-    <rule ref="category/java/codestyle.xml/LocalInterfaceSessionNamingConvention" />
-    <rule ref="category/java/codestyle.xml/LocalVariableCouldBeFinal" /><!--???-->
+    <rule ref="category/java/codestyle.xml/LocalInterfaceSessionNamingConvention" />    
     <rule ref="category/java/codestyle.xml/LongVariable">
         <properties>
             <property name="minimum" value="50" />
@@ -96,26 +94,15 @@
     </rule>
     <rule ref="category/java/codestyle.xml/MDBAndSessionBeanNamingConvention" />
     <rule ref="category/java/codestyle.xml/MethodArgumentCouldBeFinal" />
-    <rule ref="category/java/codestyle.xml/NoPackage" />
-    <rule ref="category/java/codestyle.xml/OnlyOneReturn" /><!--???-->
+    <rule ref="category/java/codestyle.xml/NoPackage" />    
     <rule ref="category/java/codestyle.xml/PrematureDeclaration" />
     <rule ref="category/java/codestyle.xml/RemoteInterfaceNamingConvention" />
     <rule ref="category/java/codestyle.xml/RemoteSessionInterfaceNamingConvention" />
     <rule ref="category/java/codestyle.xml/ShortClassName">
         <properties>
-            <property name="minimum" value="5" />
-        </properties>
-    </rule>
-    <rule ref="category/java/codestyle.xml/ShortMethodName">
-        <properties>
             <property name="minimum" value="3" />
         </properties>
-    </rule>
-    <rule ref="category/java/codestyle.xml/ShortVariable">
-        <properties>
-            <property name="minimum" value="3" />
-        </properties>
-    </rule>
+    </rule>        
     <rule ref="category/java/codestyle.xml/TooManyStaticImports">
         <properties>
             <property name="maximumStaticImports" value="2" />
@@ -140,6 +127,19 @@
     </rule>
 
     <!--
+    <rule ref="category/java/codestyle.xml/ShortMethodName">
+        <properties>
+            <property name="minimum" value="3" />
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/ShortVariable">
+        <properties>
+            <property name="minimum" value="3" />
+        </properties>
+    </rule>
+    <rule ref="category/java/codestyle.xml/OnlyOneReturn" />
+    <rule ref="category/java/codestyle.xml/LocalVariableCouldBeFinal" />
+    <rule ref="category/java/codestyle.xml/AtLeastOneConstructor" />
     <rule ref="category/java/codestyle.xml/ClassNamingConventions">
         <properties>
             <property name="classPattern" value="[A-Z][a-zA-Z0-9]*" />
@@ -193,11 +193,10 @@
     -->
 
     <!-- Design rules -->
-    <rule ref="category/java/design.xml/AbstractClassWithoutAnyMethod" />
-    <rule ref="category/java/design.xml/AvoidCatchingGenericException" /><!--???-->
+    <rule ref="category/java/design.xml/AbstractClassWithoutAnyMethod" />    
     <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
         <properties>
-            <property name="problemDepth" value="3" />
+            <property name="problemDepth" value="5" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/AvoidRethrowingException" />
@@ -208,7 +207,7 @@
     <rule ref="category/java/design.xml/ClassWithOnlyPrivateConstructorsShouldBeFinal" />
     <rule ref="category/java/design.xml/CognitiveComplexity"><!--???-->
         <properties>
-            <property name="reportLevel" value="15" />
+            <property name="reportLevel" value="20" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/CollapsibleIfStatements" /><!--???-->
@@ -219,8 +218,8 @@
     </rule>
     <rule ref="category/java/design.xml/CyclomaticComplexity"><!--???-->
         <properties>
-            <property name="classReportLevel" value="80" />
-            <property name="methodReportLevel" value="10" />
+            <property name="classReportLevel" value="100" />
+            <property name="methodReportLevel" value="20" />
             <property name="cycloOptions" value="" />
         </properties>
     </rule>
@@ -234,43 +233,40 @@
     </rule>
     <rule ref="category/java/design.xml/ExcessivePublicCount">
         <properties>
-            <property name="minimum" value="45.0" />
+            <property name="minimum" value="55.0" />
         </properties>
     </rule>
-    <rule ref="category/java/design.xml/FinalFieldCouldBeStatic" />
-    <rule ref="category/java/design.xml/GodClass" />
+    <rule ref="category/java/design.xml/FinalFieldCouldBeStatic" />    
     <rule ref="category/java/design.xml/ImmutableField" />
     <rule ref="category/java/design.xml/InvalidJavaBean" />
     <rule ref="category/java/design.xml/LogicInversion" />
-    <rule ref="category/java/design.xml/LoosePackageCoupling" /><!--???-->
-    <rule ref="category/java/design.xml/MutableStaticState" /><!--???-->
+    <rule ref="category/java/design.xml/LoosePackageCoupling" /><!--???-->    
     <rule ref="category/java/design.xml/NcssCount"><!--???-->
         <properties>
-            <property name="methodReportLevel" value="60" />
-            <property name="classReportLevel" value="1500" />
+            <property name="methodReportLevel" value="100" />
+            <property name="classReportLevel" value="2000" />
             <property name="ncssOptions" value="" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/NPathComplexity"><!--???-->
         <properties>
-            <property name="reportLevel" value="200" />
+            <property name="reportLevel" value="250" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/SignatureDeclareThrowsException" />
     <rule ref="category/java/design.xml/SimplifiedTernary" />
-    <rule ref="category/java/design.xml/SimplifyBooleanExpressions" />
-    <rule ref="category/java/design.xml/SimplifyBooleanReturns" /><!--???-->
+    <rule ref="category/java/design.xml/SimplifyBooleanExpressions" />    
     <rule ref="category/java/design.xml/SimplifyConditional" />
     <rule ref="category/java/design.xml/SingularField" />
     <rule ref="category/java/design.xml/SwitchDensity" />
     <rule ref="category/java/design.xml/TooManyFields">
         <properties>
-            <property name="maxfields" value="15" />
+            <property name="maxfields" value="35" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/TooManyMethods">
         <properties>
-            <property name="maxmethods" value="10" />
+            <property name="maxmethods" value="100" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/UselessOverridingMethod" />
@@ -278,6 +274,10 @@
     <rule ref="category/java/design.xml/UseUtilityClass" /><!--???-->
 
     <!--
+    <rule ref="category/java/design.xml/SimplifyBooleanReturns" />
+    <rule ref="category/java/design.xml/MutableStaticState" />
+    <rule ref="category/java/design.xml/GodClass" />
+    <rule ref="category/java/design.xml/AvoidCatchingGenericException" />
     <rule ref="category/java/design.xml/DataClass" />
     <rule ref="category/java/design.xml/LawOfDemeter" />
     -->
@@ -288,10 +288,10 @@
         <properties>
             <property name="methodWithOverrideCommentRequirement" value="Ignored" />
             <property name="accessorCommentRequirement" value="Ignored" />
-            <property name="classCommentRequirement" value="Required" />
-            <property name="fieldCommentRequirement" value="Required" />
+            <property name="classCommentRequirement" value="Ignored" />
+            <property name="fieldCommentRequirement" value="Ignored" />
             <property name="publicMethodCommentRequirement" value="Required" />
-            <property name="protectedMethodCommentRequirement" value="Required" />
+            <property name="protectedMethodCommentRequirement" value="Ignored" />
             <property name="enumCommentRequirement" value="Required" />
             <property name="serialVersionUIDCommentRequired" value="Ignored" />
             <property name="serialPersistentFieldsCommentRequired" value="Ignored" />
@@ -299,12 +299,15 @@
     </rule>
     <rule ref="category/java/documentation.xml/CommentSize">
         <properties>
-            <property name="maxLines" value="6" />
-            <property name="maxLineLength" value="80" />
+            <property name="maxLines" value="10" />
+            <property name="maxLineLength" value="200" />
         </properties>
     </rule>
-    <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor" />
+    <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor" />    
+
+    <!--
     <rule ref="category/java/documentation.xml/UncommentedEmptyMethodBody" />
+    -->
 
     <!-- Error Prone rules -->
     <rule ref="category/java/errorprone.xml/AssignmentInOperand" />
@@ -366,8 +369,7 @@
     <rule ref="category/java/errorprone.xml/MoreThanOneLogger" />
     <rule ref="category/java/errorprone.xml/NonCaseLabelInSwitchStatement" />
     <rule ref="category/java/errorprone.xml/NonSerializableClass" />
-    <rule ref="category/java/errorprone.xml/NonStaticInitializer" />
-    <rule ref="category/java/errorprone.xml/NullAssignment" />
+    <rule ref="category/java/errorprone.xml/NonStaticInitializer" />    
     <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode" />
     <rule ref="category/java/errorprone.xml/ProperCloneImplementation" />
     <rule ref="category/java/errorprone.xml/ProperLogger" />
@@ -393,17 +395,24 @@
     <rule ref="category/java/errorprone.xml/UseLocaleWithCaseConversions" />
     <rule ref="category/java/errorprone.xml/UseProperClassLoader" />
 
-    <!-- Multithreading rules -->
-    <rule ref="category/java/multithreading.xml/AvoidSynchronizedAtMethodLevel" />
+    <!--
+    <rule ref="category/java/errorprone.xml/NullAssignment" />
+    -->
+
+    <!-- Multithreading rules -->    
     <rule ref="category/java/multithreading.xml/AvoidThreadGroup" />
     <rule ref="category/java/multithreading.xml/AvoidUsingVolatile" />
-    <rule ref="category/java/multithreading.xml/DoNotUseThreads" />
     <rule ref="category/java/multithreading.xml/DontCallThreadRun" />
     <rule ref="category/java/multithreading.xml/DoubleCheckedLocking" />
     <rule ref="category/java/multithreading.xml/NonThreadSafeSingleton" />
     <rule ref="category/java/multithreading.xml/UnsynchronizedStaticFormatter" />
     <rule ref="category/java/multithreading.xml/UseConcurrentHashMap" />
     <rule ref="category/java/multithreading.xml/UseNotifyAllInsteadOfNotify" />
+
+    <!--
+    <rule ref="category/java/multithreading.xml/AvoidSynchronizedAtMethodLevel" />
+    <rule ref="category/java/multithreading.xml/DoNotUseThreads" />
+    -->
 
     <!-- Performance rules -->
     <rule ref="category/java/performance.xml/AddEmptyString" />
@@ -412,14 +421,12 @@
     <rule ref="category/java/performance.xml/AvoidCalendarDateCreation" />
     <rule ref="category/java/performance.xml/AvoidFileStream" />
     <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops" />
-    <rule ref="category/java/performance.xml/BigIntegerInstantiation" />
-    <rule ref="category/java/performance.xml/ConsecutiveAppendsShouldReuse" />
+    <rule ref="category/java/performance.xml/BigIntegerInstantiation" />    
     <rule ref="category/java/performance.xml/ConsecutiveLiteralAppends" />
     <rule ref="category/java/performance.xml/InefficientEmptyStringCheck" />
     <rule ref="category/java/performance.xml/InefficientStringBuffering" />
     <rule ref="category/java/performance.xml/InsufficientStringBufferDeclaration" />
-    <rule ref="category/java/performance.xml/OptimizableToArrayCall" />
-    <rule ref="category/java/performance.xml/RedundantFieldInitializer" />
+    <rule ref="category/java/performance.xml/OptimizableToArrayCall" />    
     <rule ref="category/java/performance.xml/SimplifyStartsWith" />
     <rule ref="category/java/performance.xml/StringInstantiation" />
     <rule ref="category/java/performance.xml/StringToString" />
@@ -432,6 +439,11 @@
     <rule ref="category/java/performance.xml/UselessStringValueOf" />
     <rule ref="category/java/performance.xml/UseStringBufferForStringAppends" />
     <rule ref="category/java/performance.xml/UseStringBufferLength" />
+
+    <!--
+    <rule ref="category/java/performance.xml/RedundantFieldInitializer" />
+    <rule ref="category/java/performance.xml/ConsecutiveAppendsShouldReuse" />
+    -->
 
     <!-- Security rules -->
     <rule ref="category/java/security.xml/HardCodedCryptoKey" />
