@@ -64,7 +64,6 @@ public class ModuleViewsTests {
         Assert.assertNotEquals(result1, result2);
     }
 
-
     @Test
     public void onActivityStartedViewTrackingLongNames() {
         activityStartedViewTracking(false);
