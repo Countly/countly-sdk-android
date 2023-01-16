@@ -170,10 +170,10 @@ public class Utils {
     public static String safeRandomVal() {
         long timestamp = System.currentTimeMillis();
         SecureRandom random = new SecureRandom();
-        byte[] value = new byte[40];
+        byte[] value = new byte[6];
         random.nextBytes(value);
         String b64Value = Base64.encodeToString(value,  Base64.DEFAULT);
-        String input = b64Value + "_" + timestamp;
+        String input = b64Value + timestamp;
         return UtilsNetworking.sha256Hash(input);
     }
 
