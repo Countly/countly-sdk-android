@@ -32,6 +32,7 @@ public class ModuleViewsTests {
 
     int idx = 0;
     String[] vals = new String[] { "idv1", "idv2", "idv3", "idv4", "idv5", "idv6", "idv7" };
+    String base64Regex = "^[A-Za-z0-9+/]*={0,2}$";
     SafeIDGenerator safeIDGenerator;
 
     @Before
@@ -57,8 +58,9 @@ public class ModuleViewsTests {
 
         Assert.assertNotNull(result1);
         Assert.assertNotNull(result2);
-        Assert.assertTrue(result1.matches("^[a-fA-F0-9]{64}$"));
-        Assert.assertTrue(result2.matches("^[a-fA-F0-9]{64}$"));
+        Assert.assertTrue(result1.matches(base64Regex));
+        Assert.assertTrue(result2.matches(base64Regex));
+        Assert.assertEquals(21, result1.length(), result2.length());
         Assert.assertNotEquals(result1, result2);
     }
 
