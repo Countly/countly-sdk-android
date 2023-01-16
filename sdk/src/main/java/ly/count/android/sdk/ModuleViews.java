@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -353,7 +354,7 @@ public class ModuleViews extends ModuleBase {
          * @param viewName String - name of the view
          * @return Returns link to Countly for call chaining
          */
-        public Countly recordView(String viewName) {
+        public Countly recordView(@Nullable String viewName) {
             synchronized (_cly) {
                 // call the general function that has two parameters
                 return recordView(viewName, null);
@@ -369,7 +370,7 @@ public class ModuleViews extends ModuleBase {
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
          */
-        public Countly recordView(String viewName, Map<String, Object> viewSegmentation) {
+        public Countly recordView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling recordView [" + viewName + "]");
 
