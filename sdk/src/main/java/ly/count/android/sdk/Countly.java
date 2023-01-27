@@ -584,11 +584,11 @@ public class Countly {
 
             if(config.viewIdProvider == null) {
                 config.viewIdProvider =  new ViewIdProvider() {
-                    @Override public String getCurrentViewId() {
+                    @NonNull @Override public String getCurrentViewId() {
                         return null;
                     }
 
-                    @Override public String getLastViewId() {
+                    @NonNull @Override public String getLastViewId() {
                         return null;
                     }
                 };

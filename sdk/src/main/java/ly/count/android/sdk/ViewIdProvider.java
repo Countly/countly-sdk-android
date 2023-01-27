@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+
 interface ViewIdProvider {
-    String getCurrentViewId();
-    String getLastViewId();
+    @NonNull String getCurrentViewId();
+    @NonNull String getLastViewId();
 }
