@@ -563,6 +563,7 @@ public class Countly {
             moduleConsent.deviceIdProvider = config.deviceIdProvider;
             moduleDeviceId.eventProvider = config.eventProvider;
             moduleCrash.eventProvider = config.eventProvider;
+            moduleEvents.viewIdProvider = config.viewIdProvider;
 
             baseInfoProvider = config.baseInfoProvider;
             requestQueueProvider = config.requestQueueProvider;
@@ -579,6 +580,18 @@ public class Countly {
             if (config.httpPostForced) {
                 L.d("[Init] Setting HTTP POST to be forced");
                 isHttpPostForced = config.httpPostForced;
+            }
+
+            if(config.viewIdProvider == null) {
+                config.viewIdProvider =  new ViewIdProvider() {
+                    @Override public String getCurrentViewId() {
+                        return null;
+                    }
+
+                    @Override public String getLastViewId() {
+                        return null;
+                    }
+                };
             }
 
             if (config.tamperingProtectionSalt != null) {

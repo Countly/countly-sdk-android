@@ -15,6 +15,7 @@ abstract class ModuleBase {
     DeviceIdProvider deviceIdProvider;
     BaseInfoProvider baseInfoProvider;
     SafeIDGenerator safeIDGenerator;
+    ViewIdProvider viewIdProvider;
 
     ModuleBase(@NonNull Countly cly, @NonNull CountlyConfig config) {
         _cly = cly;
@@ -26,6 +27,7 @@ abstract class ModuleBase {
         deviceIdProvider = config.deviceIdProvider;
         baseInfoProvider = config.baseInfoProvider;
         safeIDGenerator = config.safeIDGenerator;
+        viewIdProvider = config.viewIdProvider;
     }
 
     void halt() {

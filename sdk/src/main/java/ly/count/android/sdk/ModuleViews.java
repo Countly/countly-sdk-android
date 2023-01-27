@@ -9,8 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class ModuleViews extends ModuleBase {
+public class ModuleViews extends ModuleBase implements ViewIdProvider{
     private String lastViewID = null;
+    private String previousID = null;
+
     private boolean firstView = true;
 
     boolean autoViewTracker = false;
@@ -28,6 +30,15 @@ public class ModuleViews extends ModuleBase {
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
+
+    public String getCurrentViewId() {
+        return previousID;
+    }
+
+    public String getLastViewId() {
+        return lastViewID;
+    }
+
     static class ViewData {
         String viewID;
         long viewStartTime;
@@ -54,6 +65,8 @@ public class ModuleViews extends ModuleBase {
             L.d("[ModuleViews] Enabling automatic view tracking short names");
             automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
         }
+
+        config.viewIdProvider = this;
 
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
         autoTrackingActivityExceptions = config.autoTrackingExceptions;
@@ -112,7 +125,7 @@ public class ModuleViews extends ModuleBase {
         //and therefore will be ignored
         if (vd.viewName != null && vd.viewStartTime > 0) {
             Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, true, null);
-            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
+            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, vd.viewID);
             lastViewID = null;
         }
     }
@@ -160,7 +173,6 @@ public class ModuleViews extends ModuleBase {
             viewSegmentation.put("start", "1");
         }
         viewSegmentation.put("segment", "Android");
-        viewSegmentation.put("_idv", lastViewID);
 
         return viewSegmentation;
     }
@@ -205,7 +217,9 @@ public class ModuleViews extends ModuleBase {
         currentViewData.viewStartTime = UtilsTime.currentTimestampSeconds();
 
         viewDataMap.put(currentViewData.viewID, currentViewData);
+        previousID = lastViewID;
         lastViewID = currentViewData.viewID;
+
 
         Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, false, customViewSegmentation);
 
@@ -214,7 +228,7 @@ public class ModuleViews extends ModuleBase {
             firstView = false;
         }
 
-        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null);
+        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, currentViewData.viewID);
 
         return _cly;
     }
@@ -238,7 +252,7 @@ public class ModuleViews extends ModuleBase {
                 segm.put("mode", "landscape");
             }
 
-            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null);
+            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null, lastViewID);
         }
     }
 

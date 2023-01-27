@@ -14,6 +14,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     final Events eventsInterface;
 
     EventQueueProvider eventQueueProvider;
+    ViewIdProvider  viewIdProvider;
 
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -22,6 +23,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         eventProvider = this;
         config.eventProvider = this;
         eventQueueProvider = config.eventQueueProvider;
+        viewIdProvider = config.viewIdProvider;
 
         eventsInterface = new Events();
     }
@@ -56,7 +58,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param dur
      * @param instant
      */
-    public void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant) {
+    public void recordEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, String eventIdOverride) {
         L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
@@ -75,57 +77,84 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             Utils.removeUnsupportedDataTypes(segmentation);
         }
 
+
         //record the current event timestamps
         //if a past event is recorded, instant value will not be null
         if (instant == null) {
             instant = UtilsTime.getCurrentInstant();
         }
 
+        String eventId;
+
+        if (eventIdOverride == null || eventIdOverride.length() == 0) {
+            L.w("[ModuleEvents] provided event ID override value is empty or null. Will generate a new one.");
+            eventId = Utils.safeRandomVal();
+        } else {
+            eventId = eventIdOverride;
+        }
+
         final long timestamp = instant.timestampMs;
         final int hour = instant.hour;
         final int dow = instant.dow;
+        String id = viewIdProvider.getCurrentViewId();
+
+        String viewId;
+
+        if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
+            viewId = viewIdProvider.getLastViewId();
+            if (viewId == null) {
+                L.v("[ModuleEvents] retrieved previous view ID is null.");
+                viewId = "";
+            }
+        } else {
+            viewId = viewIdProvider.getCurrentViewId();
+            if (viewId == null) {
+                L.v("[ModuleEvents] retrieved current view ID is null.");
+                viewId = "";
+            }
+        }
 
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, viewId);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
             case ModuleRatings.STAR_RATING_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, viewId);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, viewId);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, viewId);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, viewId);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
             case ACTION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.clicks) || consentProvider.getConsent(Countly.CountlyFeatureNames.scrolls)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, viewId);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, viewId);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
