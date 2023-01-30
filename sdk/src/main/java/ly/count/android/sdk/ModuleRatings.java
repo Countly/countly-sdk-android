@@ -87,7 +87,7 @@ public class ModuleRatings extends ModuleBase {
             segm.put("comment", comment);
         }
 
-        eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null);
+        eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 
     /**
@@ -413,7 +413,7 @@ public class ModuleRatings extends ModuleBase {
                     segm.put("app_version", DeviceInfo.getAppVersion(context));
                     segm.put("rating", "" + rating);
 
-                    eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null);
+                    eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
                 }
 
                 dialog.dismiss();

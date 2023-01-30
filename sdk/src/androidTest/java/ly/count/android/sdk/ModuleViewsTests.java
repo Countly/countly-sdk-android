@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -94,7 +95,7 @@ public class ModuleViewsTests {
             segm.put("name", act.getClass().getName());
         }
 
-        verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
     }
 
     @Test
@@ -121,7 +122,7 @@ public class ModuleViewsTests {
 
         mCountly.moduleViews.onActivityStarted(act1);
 
-        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
+        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), null);
 
         mCountly.moduleViews.onActivityStarted(act2);
 
@@ -138,7 +139,7 @@ public class ModuleViewsTests {
             segm.put("name", act2.getClass().getName());
         }
 
-        verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
     }
 
     @Test
@@ -150,7 +151,7 @@ public class ModuleViewsTests {
         @NonNull Activity act = mock(Activity.class);
         mCountly.moduleViews.onActivityStarted(act);
 
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class), any(String.class));
     }
 
     @Test
@@ -172,7 +173,7 @@ public class ModuleViewsTests {
         final Map<String, Object> segm = new HashMap<>();
         segm.put("mode", "portrait");
 
-        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
 
         Assert.assertEquals(Configuration.ORIENTATION_PORTRAIT, mView.currentOrientation);
     }
@@ -192,7 +193,7 @@ public class ModuleViewsTests {
         Assert.assertEquals(-1, mView.currentOrientation);
         mCountly.moduleViews.onConfigurationChanged(conf);
 
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class), any(String.class));
 
         Assert.assertEquals(-1, mView.currentOrientation);
     }
@@ -215,7 +216,7 @@ public class ModuleViewsTests {
         final Map<String, Object> segm = new HashMap<>();
         segm.put("mode", "landscape");
 
-        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(ModuleViews.ORIENTATION_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
 
         Assert.assertEquals(Configuration.ORIENTATION_LANDSCAPE, mView.currentOrientation);
     }
@@ -231,7 +232,7 @@ public class ModuleViewsTests {
 
         mCountly.moduleViews.onActivityStopped();
 
-        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class));
+        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), null);
     }
 
     @Test
@@ -268,7 +269,7 @@ public class ModuleViewsTests {
         segm.put("2", 234.0d);
         segm.put("3", true);
 
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
 
         segm.clear();
         segm.put("dur", dur);
@@ -276,7 +277,7 @@ public class ModuleViewsTests {
         segm.put("_idv", vals[0]);
         segm.put("name", act.getClass().getSimpleName());
 
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
     }
 
     @Test
@@ -296,7 +297,7 @@ public class ModuleViewsTests {
 
         mCountly.views().recordView(viewNames[0]);
 
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, null);
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1]);
@@ -305,14 +306,14 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("_idv", vals[0]);
         segm.put("name", viewNames[0]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         segm.clear();
         segm.put("segment", "Android");
         segm.put("_idv", vals[1]);
         segm.put("visit", "1");
         segm.put("name", viewNames[1]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2]);
@@ -321,14 +322,14 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("_idv", vals[1]);
         segm.put("name", viewNames[1]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);//todo this test has issues sometimes
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, null);//todo this test has issues sometimes
 
         segm.clear();
         segm.put("segment", "Android");
         segm.put("_idv", vals[2]);
         segm.put("visit", "1");
         segm.put("name", viewNames[2]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 
     @Test
@@ -377,8 +378,8 @@ public class ModuleViewsTests {
         segm.put("start", "1");
         segm.put("visit", "1");
         segm.put("name", viewNames[0]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
-        Thread.sleep(1000);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, "asd");
+        Thread.sleep(2000);
 
         mCountly.views().recordView(viewNames[1], cSegm2);
         segm.clear();
@@ -386,7 +387,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("_idv", vals[0]);
         segm.put("name", viewNames[0]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, any(String.class));
 
         segm.clear();
         segm.put("segment", "Android");
@@ -398,7 +399,7 @@ public class ModuleViewsTests {
         segm.put("big", 1337);
         segm.put("candy", 954.33d);
         segm.put("calling", false);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, any(String.class));
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2], cSegm3);
@@ -407,7 +408,7 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("_idv", vals[1]);
         segm.put("name", viewNames[1]);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, any(String.class));
 
         segm.clear();
         segm.put("segment", "Android");
@@ -422,7 +423,7 @@ public class ModuleViewsTests {
         segm.put("biffg", 132137);
         segm.put("cannndy", 9534.33d);
         segm.put("calaaling", true);
-        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep, times(1)).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0, 0, null, any(String.class));
     }
 
     /**
@@ -435,7 +436,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("");
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class), any(String.class));
     }
 
     /**
@@ -448,7 +449,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView(null);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 
     /**
@@ -470,7 +471,7 @@ public class ModuleViewsTests {
         mCountly.onStop();
         mCountly.onStop();
 
-        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 
     @Test
@@ -480,7 +481,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("abcd");
-        verify(ep, times(1)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(1)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class),any(String.class));
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
@@ -492,6 +493,6 @@ public class ModuleViewsTests {
         mCountly.onStop();
         mCountly.onStop();
 
-        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 }

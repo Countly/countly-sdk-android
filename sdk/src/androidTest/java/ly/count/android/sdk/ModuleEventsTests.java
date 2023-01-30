@@ -88,21 +88,21 @@ public class ModuleEventsTests {
     public void recordEvent_1() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.events().recordEvent(eventKey);
-        verify(ep).recordEventInternal(eventKey, null, 1, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(eventKey, null, 1, 0.0, 0.0, null, null);
     }
 
     @Test
     public void recordEvent_2() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.events().recordEvent(eventKey, 657);
-        verify(ep).recordEventInternal(eventKey, null, 657, 0.0, 0.0, null);
+        verify(ep).recordEventInternal(eventKey, null, 657, 0.0, 0.0, null ,null);
     }
 
     @Test
     public void recordEvent_3() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.events().recordEvent(eventKey, 657, 884.213d);
-        verify(ep).recordEventInternal(eventKey, null, 657, 884.213d, 0.0, null);
+        verify(ep).recordEventInternal(eventKey, null, 657, 884.213d, 0.0, null,null);
     }
 
     @Test
@@ -137,25 +137,26 @@ public class ModuleEventsTests {
         segmUsed.put("4", 45.4f);
         segmUsed.put("41", new Object());
 
+        // event key is always provided here
         if (timestamp == null) {
-            if (count == null && sum == null && dur == null) {
+            if (count == null && sum == null && dur == null) { // everything is null
                 mCountly.events().recordEvent(eventKey, segmUsed);
-            } else if (count != null && sum == null && dur == null) {
+            } else if (count != null && sum == null && dur == null) { // only count provided
                 mCountly.events().recordEvent(eventKey, segmUsed, count);
-            } else if (count != null && sum != null && dur == null) {
+            } else if (count != null && sum != null && dur == null) { // count and sum provided
                 mCountly.events().recordEvent(eventKey, segmUsed, count, sum);
-            } else if (count != null && sum != null && dur != null) {
+            } else if (count != null && sum != null && dur != null) { // count and sum and duration provided
                 mCountly.events().recordEvent(eventKey, segmUsed, count, sum, dur);
             } else {
-                Assert.fail("You should not get here");
+                Assert.fail("You should not get here"); // says the wise one
             }
         } else {
-            if (count == null && sum == null && dur == null) {
+            if (count == null && sum == null && dur == null) { // only timestamp provided
                 mCountly.events().recordPastEvent(eventKey, segmUsed, timestamp);
-            } else if (count != null && sum != null && dur != null) {
+            } else if (count != null && sum != null && dur != null) { // count and sum and duration and timestamp provided
                 mCountly.events().recordPastEvent(eventKey, segmUsed, count, sum, dur, timestamp);
             } else {
-                Assert.fail("You should not get here");
+                Assert.fail("You should not get here"); // again says the wise one
             }
         }
 
@@ -175,8 +176,11 @@ public class ModuleEventsTests {
         ArgumentCaptor<Long> arg4 = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Integer> arg5 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Integer> arg6 = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<String> arg7 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg8 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg9 = ArgumentCaptor.forClass(String.class);
 
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture(), arg8.capture(), arg9.capture());
 
         if (count != null) {
             Assert.assertEquals(count, arg1.getValue());
@@ -201,6 +205,8 @@ public class ModuleEventsTests {
             Assert.assertEquals(instantTimestamp.dow, (int) arg6.getValue());
             Assert.assertEquals(timestamp.longValue(), (long) arg4.getValue());
         }
+
+        // TODO: Arg 7,8,9 check somehow
     }
 
     @Test
@@ -217,7 +223,7 @@ public class ModuleEventsTests {
     public void startEndEvent_noSegments() throws InterruptedException {
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class));
+        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class), any(String.class),any(String.class),any(String.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -233,7 +239,7 @@ public class ModuleEventsTests {
         ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture());
+        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class),isNull(String.class),eq(""));
 
         Assert.assertEquals(startEvent.timestamp, (long) arg1.getValue());
         Assert.assertEquals(startEvent.hour, (int) arg2.getValue());
@@ -248,7 +254,7 @@ public class ModuleEventsTests {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -276,7 +282,8 @@ public class ModuleEventsTests {
 
         ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(ep).recordEventInternal(eq(eventKey), eq(segmVals), eq(6372), eq(5856.34d), argD.capture(), arg.capture());
+        //  TODO: should final param really be null?
+        verify(ep).recordEventInternal(eq(eventKey), eq(segmVals), eq(6372), eq(5856.34d), argD.capture(), arg.capture(), isNull(String.class));
 
         UtilsTime.Instant captV = arg.getValue();
         Assert.assertEquals(startEvent.hour, captV.hour);
@@ -292,7 +299,7 @@ public class ModuleEventsTests {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -300,13 +307,13 @@ public class ModuleEventsTests {
         res = mCountly.events().cancelEvent(eventKey);
         Assert.assertTrue(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
-
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        // TODO: Check these 2 null event IDs
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertFalse(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
     }
 
     @Test
@@ -314,7 +321,7 @@ public class ModuleEventsTests {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -322,13 +329,13 @@ public class ModuleEventsTests {
         res = mCountly.events().cancelEvent(eventKey);
         Assert.assertTrue(res);
         Assert.assertEquals(0, ModuleEvents.timedEvents.size());
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
         // finished first start and cancel
 
         res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -342,7 +349,7 @@ public class ModuleEventsTests {
 
         ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(ep).recordEventInternal(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture());
+        verify(ep).recordEventInternal(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture(), isNull(String.class));
 
         UtilsTime.Instant captV = arg.getValue();
         Assert.assertEquals(startEvent.hour, captV.hour);
@@ -374,16 +381,16 @@ public class ModuleEventsTests {
         segm2.put("3", true);
 
         Map<String, Object> segm3 = new HashMap<>(segm1);
-        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null);
+        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
 
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm2), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class));
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm2), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""));
         eqp = TestUtils.setEventQueueProviderToMock(mCountly, mock(EventQueueProvider.class));
 
         segm3.clear();
         segm3.putAll(segm1);
 
-        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null);
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class));
+        mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""));
     }
 /*
     //todo should be reworked

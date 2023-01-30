@@ -114,9 +114,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private @NonNull String storageReadRequestQueue() {
-        if (explicitStorageModeEnabled) {
+        if(explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Returning RQ from cache");
-            if (esRequestQueueCache == null) {
+            if(esRequestQueueCache == null) {
                 L.v("[CountlyStore] Reading initial RQ from storage");
                 esRequestQueueCache = preferences_.getString(REQUEST_PREFERENCE, "");
             }
@@ -129,7 +129,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private void storageWriteRequestQueue(@Nullable String requestQueue, boolean writeInSync) {
-        if (explicitStorageModeEnabled) {
+        if(explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Writing RQ to cache");
             esRequestQueueCache = requestQueue;
             esDirtyFlag = true;
@@ -137,7 +137,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             //L.v("[CountlyStore] Writing RQ to preferences");
             SharedPreferences.Editor editor = preferences_.edit().putString(REQUEST_PREFERENCE, requestQueue);
 
-            if (writeInSync) {
+            if(writeInSync) {
                 editor.commit();
             } else {
                 editor.apply();
@@ -146,9 +146,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private @NonNull String storageReadEventQueue() {
-        if (explicitStorageModeEnabled) {
+        if(explicitStorageModeEnabled) {
             //L.v("[CountlyStore] Returning EQ from cache");
-            if (esEventQueueCache == null) {
+            if(esEventQueueCache == null) {
                 L.v("[CountlyStore] Reading initial EQ from storage");
                 esEventQueueCache = preferences_.getString(EVENTS_PREFERENCE, "");
             }
@@ -161,7 +161,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     private void storageWriteEventQueue(@Nullable String eventQueue, boolean writeInSync) {
-        if (explicitStorageModeEnabled) {
+        if(explicitStorageModeEnabled) {
             L.v("[CountlyStore] Writing EQ to cache");
             esEventQueueCache = eventQueue;
             esDirtyFlag = true;
@@ -169,7 +169,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             L.v("[CountlyStore] Writing EQ to preferences");
             SharedPreferences.Editor editor = preferences_.edit().putString(EVENTS_PREFERENCE, eventQueue);
 
-            if (writeInSync) {
+            if(writeInSync) {
                 editor.commit();
             } else {
                 editor.apply();
@@ -178,9 +178,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     public synchronized void esWriteCacheToStorage() {
-        L.v("[CountlyStore] Trying to write ES cache to storage[" + explicitStorageModeEnabled + "] [" + esDirtyFlag + "]");
+        L.v("[CountlyStore] Trying to write ES cache to storage[" + explicitStorageModeEnabled + "], is dirty flag:[" + esDirtyFlag + "]");
         if (explicitStorageModeEnabled) {
-            if (esDirtyFlag) {
+            if(esDirtyFlag) {
                 preferences_.edit().putString(REQUEST_PREFERENCE, esRequestQueueCache).commit();
                 preferences_.edit().putString(EVENTS_PREFERENCE, esEventQueueCache).commit();
                 esDirtyFlag = false;
@@ -407,7 +407,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param sum sum associated with the custom event, if not used, pass zero.
      * NaN and infinity values will be quietly ignored.
      */
-    public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow) {
+    public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,final @Nullable String currentViewId) {
         Map<String, String> segmentationString = null;
         Map<String, Integer> segmentationInt = null;
         Map<String, Double> segmentationDouble = null;
@@ -435,6 +435,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         event.count = count;
         event.sum = sum;
         event.dur = dur;
+        event.id = eventID;
+        event.pvid = previousViewId;
+        event.cvid = currentViewId;
 
         addEvent(event);
     }
@@ -472,12 +475,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public static synchronized void cachePushData(String id_key, String index_key, Context context) {
         SharedPreferences sp = createPreferencesPush(context);
-        SharedPreferences.Editor spe = sp.edit();
-
-        spe.putString(CACHED_PUSH_ACTION_ID, id_key);
-        spe.putString(CACHED_PUSH_ACTION_INDEX, index_key);
-
-        spe.apply();
+        sp.edit().putString(CACHED_PUSH_ACTION_ID, id_key).apply();
+        sp.edit().putString(CACHED_PUSH_ACTION_INDEX, index_key).apply();
     }
 
     String[] getCachedPushData() {
@@ -488,10 +487,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     void clearCachedPushData() {
-        SharedPreferences.Editor spe = preferencesPush_.edit();
-        spe.remove(CACHED_PUSH_ACTION_ID);
-        spe.remove(CACHED_PUSH_ACTION_INDEX);
-        spe.apply();
+        preferencesPush_.edit().remove(CACHED_PUSH_ACTION_ID).apply();
+        preferencesPush_.edit().remove(CACHED_PUSH_ACTION_INDEX).apply();
     }
 
     public static void cacheLastMessagingMode(int mode, Context context) {

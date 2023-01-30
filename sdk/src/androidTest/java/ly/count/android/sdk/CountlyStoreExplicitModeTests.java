@@ -209,17 +209,18 @@ public class CountlyStoreExplicitModeTests {
 
         countly.requestQueue().esWriteCachesToPersistence();
 
-        assertTrue(store.getEvents().length == 2);
-        assertTrue(store.getRequests().length == 1);
+        // TODO: Investigate from 2,2,0 to 1,1,1 for getEvents()
+        assertEquals(2, store.getEvents().length);
+        assertEquals(1, store.getRequests().length);
 
         countly.requestQueue().attemptToSendStoredRequests();
 
-        assertTrue(store.getEvents().length == 2);
-        assertTrue(store.getRequests().length == 1);
+        assertEquals(2, store.getEvents().length);
+        assertEquals(1, store.getRequests().length);
 
         countly.requestQueue().esWriteCachesToPersistence();
 
-        assertTrue(store.getEvents().length == 0);
-        assertTrue(store.getRequests().length == 2);
+        assertEquals(0, store.getEvents().length);
+        assertEquals(2, store.getRequests().length);
     }
 }

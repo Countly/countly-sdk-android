@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class ModuleViews extends ModuleBase implements ViewIdProvider{
     private String currentViewID = null;
-    private String previousID = null;
+    private String previousViewID = null;
 
     private boolean firstView = true;
 
@@ -30,18 +30,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider{
 
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
 
-    @NonNull public String getCurrentViewId() {
-        if (previousID == null) {
-            return "";
-        }
-        return previousID;
-    }
+    @NonNull public String getCurrentViewId() { return previousViewID == null ? "": previousViewID; }
 
     @NonNull public String getLastViewId() {
-        if (currentViewID == null) {
-            return "";
-        }
-        return currentViewID;
+        return currentViewID == null ? "": currentViewID;
     }
 
     static class ViewData {
@@ -222,7 +214,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider{
         currentViewData.viewStartTime = UtilsTime.currentTimestampSeconds();
 
         viewDataMap.put(currentViewData.viewID, currentViewData);
-        previousID = currentViewID;
+        previousViewID = currentViewID;
         currentViewID = currentViewData.viewID;
 
 

@@ -43,6 +43,9 @@ class Event {
     private static final String TIMESTAMP_KEY = "timestamp";
     private static final String DAY_OF_WEEK = "dow";
     private static final String HOUR = "hour";
+    private static final String ID = "id";
+    private static final String PV_ID = "pvid";
+    private static final String CV_ID = "cvid";
 
     public String key;
     public Map<String, String> segmentation;
@@ -55,6 +58,9 @@ class Event {
     public long timestamp;
     public int hour;
     public int dow;
+    public String id;
+    public String pvid;
+    public String cvid;
 
     Event() {
     }
@@ -82,6 +88,9 @@ class Event {
             json.put(TIMESTAMP_KEY, timestamp);
             json.put(HOUR, hour);
             json.put(DAY_OF_WEEK, dow);
+            json.put(ID, id);
+            json.put(PV_ID, pvid);
+            json.put(CV_ID, cvid);
 
             JSONObject jobj = new JSONObject();
             if (segmentation != null) {
@@ -147,6 +156,9 @@ class Event {
             event.timestamp = json.optLong(TIMESTAMP_KEY);
             event.hour = json.optInt(HOUR);
             event.dow = json.optInt(DAY_OF_WEEK);
+            event.id = json.getString(ID);
+            event.pvid = json.getString(PV_ID);
+            event.cvid = json.getString(CV_ID);
 
             if (!json.isNull(SEGMENTATION_KEY)) {
                 JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
