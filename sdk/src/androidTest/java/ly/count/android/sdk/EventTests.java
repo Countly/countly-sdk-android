@@ -41,6 +41,7 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("ConstantConditions")
 public class EventTests {
 
+    // TODO: Add those tests here. Add asserts to IDs
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);

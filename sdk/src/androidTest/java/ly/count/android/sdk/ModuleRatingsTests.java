@@ -67,10 +67,10 @@ public class ModuleRatingsTests {
 
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.moduleRatings.recordManualRatingInternal(null, 12, vals[1], vals[2], true);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), null);
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         mCountly.moduleRatings.recordManualRatingInternal("", 12, vals[1], vals[2], true);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), null);
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 
     @Test(expected = IllegalStateException.class)

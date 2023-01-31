@@ -156,9 +156,16 @@ class Event {
             event.timestamp = json.optLong(TIMESTAMP_KEY);
             event.hour = json.optInt(HOUR);
             event.dow = json.optInt(DAY_OF_WEEK);
-            event.id = json.getString(ID);
-            event.pvid = json.getString(PV_ID);
-            event.cvid = json.getString(CV_ID);
+            // TODO: make explicit test these wont exist. These might not exist.
+            if (!json.isNull(ID)) {
+                event.id = json.getString(ID);
+            }
+            if (!json.isNull(PV_ID)) {
+                event.pvid = json.getString(PV_ID);
+            }
+            if (!json.isNull(CV_ID)) {
+                event.cvid = json.getString(CV_ID);
+            }
 
             if (!json.isNull(SEGMENTATION_KEY)) {
                 JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);

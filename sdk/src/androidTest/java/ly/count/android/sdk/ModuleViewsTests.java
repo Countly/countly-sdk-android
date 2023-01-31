@@ -87,7 +87,6 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", vals[0]);
 
         if (shortNames) {
             segm.put("name", act.getClass().getSimpleName());
@@ -122,7 +121,7 @@ public class ModuleViewsTests {
 
         mCountly.moduleViews.onActivityStarted(act1);
 
-        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), null);
+        verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), any(String.class));
 
         mCountly.moduleViews.onActivityStarted(act2);
 
@@ -131,7 +130,6 @@ public class ModuleViewsTests {
         segm.put("segment", "Android");
         segm.put("start", "1");
         segm.put("visit", "1");
-        segm.put("_idv", vals[0]);
 
         if (shortNames) {
             segm.put("name", act2.getClass().getSimpleName());
