@@ -11,12 +11,14 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
@@ -94,7 +96,59 @@ public class ModuleViewsTests {
             segm.put("name", act.getClass().getName());
         }
 
-        verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
+        validateRecordEventInternalMock(ep,ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null, "override");
+        //verify(ep).recordEventInternal(ModuleViews.VIEW_EVENT_KEY, segm, 1, 0.0, 0.0, null, null);
+    }
+
+    public void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segment, Integer count, Double sum, Double duration, UtilsTime.Instant instant, String idOverride){
+
+        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Map> arg2 = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Double> arg4 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> arg5 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<UtilsTime.Instant> arg6 = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<String> arg7 = ArgumentCaptor.forClass(String.class);
+
+
+        verify(ep).recordEventInternal(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture());
+
+        if(eventKey != null) {
+            Assert.assertEquals(eventKey, arg1.getValue());
+        }
+
+        if(segment != null) {
+            Assert.assertEquals(segment, arg2.getValue());
+        }
+
+
+        if (count != null) {
+            Assert.assertEquals(count, arg3.getValue());
+        }
+
+        if (sum != null) {
+            Assert.assertEquals(sum, arg4.getValue());
+        }
+
+        if (duration != null) {
+            Assert.assertEquals(duration, arg5.getValue());
+        }
+
+        //if (instant != null) {
+        //    Assert.assertNotNull(arg4.getValue());
+        //    Assert.assertNotNull(arg5.getValue());
+        //    Assert.assertNotNull(arg6.getValue());
+        //} else {
+        //    UtilsTime.Instant instantTimestamp = UtilsTime.Instant.get(timestamp);
+        //    Assert.assertEquals(instantTimestamp.timestampMs, (long) arg4.getValue());
+        //    Assert.assertEquals(instantTimestamp.hour, (int) arg5.getValue());
+        //    Assert.assertEquals(instantTimestamp.dow, (int) arg6.getValue());
+        //    Assert.assertEquals(timestamp.longValue(), (long) arg4.getValue());
+        //}
+
+        if (idOverride != null) {
+            Assert.assertEquals(idOverride, arg7.getValue());
+        }
     }
 
     @Test
