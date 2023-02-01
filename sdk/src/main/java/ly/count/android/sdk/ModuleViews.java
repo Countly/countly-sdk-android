@@ -8,7 +8,7 @@ import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ModuleViews extends ModuleBase implements ViewIdProvider{
+public class ModuleViews extends ModuleBase implements ViewIdProvider {
     private String currentViewID = null;
     private String previousViewID = null;
 
@@ -30,10 +30,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider{
 
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
 
-    @NonNull public String getCurrentViewId() { return previousViewID == null ? "": previousViewID; }
+    @NonNull public String getCurrentViewId() {
+        return previousViewID == null ? "" : previousViewID;
+    }
 
     @NonNull public String getLastViewId() {
-        return currentViewID == null ? "": currentViewID;
+        return currentViewID == null ? "" : currentViewID;
     }
 
     static class ViewData {
@@ -46,7 +48,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider{
     final Views viewsInterface;
 
     /**
-     * Checks the Countly config Object. Turns on/off the flags for view tracking accordingly. 
+     * Checks the Countly config Object. Turns on/off the flags for view tracking accordingly.
      * And initiates the Views interface for the developer to interact with the SDK/ModuleViews.
      */
     ModuleViews(Countly cly, CountlyConfig config) {
@@ -73,7 +75,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider{
     }
 
     /**
-     * Checks the provided Segmentation by the user. Sanitizes it 
+     * Checks the provided Segmentation by the user. Sanitizes it
      * and transfers the data into an internal Segmentation Object.
      */
     void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation) {
@@ -129,7 +131,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider{
 
     /**
      * Checks if the current Activity is in the Activity Exception list
-     * 
+     *
      * @return boolean - true if in the list, false else
      */
     boolean isActivityInExceptionList(Activity act) {
@@ -216,7 +218,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider{
         viewDataMap.put(currentViewData.viewID, currentViewData);
         previousViewID = currentViewID;
         currentViewID = currentViewData.viewID;
-
 
         Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, false, customViewSegmentation);
 

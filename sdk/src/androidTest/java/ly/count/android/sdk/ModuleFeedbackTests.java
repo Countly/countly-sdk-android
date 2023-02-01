@@ -177,7 +177,6 @@ public class ModuleFeedbackTests {
         segm.put("email", "123456");
         segm.put("contactMe", true);
 
-
         verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         //report without a "null" comment

@@ -10,10 +10,13 @@ import java.util.Random;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.runner.Request;
 import org.mockito.ArgumentCaptor;
 
-import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -294,6 +297,80 @@ public class TestUtils {
 
         for (String v : valuesFalse) {
             Assert.assertFalse((Boolean) jObj.get(v));
+        }
+    }
+
+    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation, Integer count, Double sum, Double duration, UtilsTime.Instant instant, String idOverride) {
+        validateRecordEventInternalMock(ep, eventKey, segmentation, count, sum, duration, instant, idOverride, 0, 1);
+    }
+
+    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation) {
+        validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, null, 0, 1);
+    }
+
+    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation, String idOverride, int index, Integer interactionCount) {
+        validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, idOverride, index, interactionCount);
+    }
+
+    public static void validateRecordEventInternalMockInteractions(EventProvider ep, int interactionCount) {
+        verify(ep, times(interactionCount)).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), anyString());
+    }
+
+    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation, Integer count, Double sum, Double duration, UtilsTime.Instant instant, String idOverride, int index, int interactionCount) {
+
+        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Map> arg2 = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Double> arg4 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> arg5 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<UtilsTime.Instant> arg6 = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<String> arg7 = ArgumentCaptor.forClass(String.class);
+        verify(ep, times(interactionCount)).recordEventInternal(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture());
+
+        if (interactionCount == 0) {
+            return;
+        }
+        String cEventKey = arg1.getAllValues().get(index);
+        Map cSegment = arg2.getAllValues().get(index);
+        Integer cCount = arg3.getAllValues().get(index);
+        Double cSum = arg4.getAllValues().get(index);
+        Double cDuration = arg5.getAllValues().get(index);
+        UtilsTime.Instant cInstant = arg6.getAllValues().get(index);
+        String cIdOverride = arg7.getAllValues().get(index);
+
+        Assert.assertNotNull(cEventKey);
+        Assert.assertEquals(eventKey, cEventKey);
+
+        if (segmentation != null) {
+            Assert.assertEquals(segmentation, cSegment);
+        }
+
+        Assert.assertTrue(cCount > 0);
+        if (count != null) {
+            Assert.assertEquals(count, cCount);
+        }
+
+        if (sum != null) {
+            Assert.assertEquals(sum, cSum);
+        }
+
+        Assert.assertTrue(cDuration >= 0);
+        if (duration != null) {
+            Assert.assertEquals(duration, cDuration);
+        }
+
+        if (instant != null) {
+            Assert.assertTrue(cInstant.timestampMs > 0);
+            Assert.assertEquals(instant.timestampMs, cInstant.timestampMs);
+            Assert.assertEquals(instant.hour, cInstant.hour);
+            Assert.assertEquals(instant.dow, cInstant.dow);
+        }
+
+        if (cIdOverride != null) {
+            Assert.assertTrue(cIdOverride.length() > 0);
+        }
+        if (idOverride != null) {
+            Assert.assertEquals(idOverride, cIdOverride);
         }
     }
 }

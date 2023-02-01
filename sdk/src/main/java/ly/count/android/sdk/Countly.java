@@ -480,7 +480,7 @@ public class Countly {
                 L.d("[Init] Custom request queue provider was provided");
             }
 
-            if( config.safeIDGenerator == null) {
+            if (config.safeIDGenerator == null) {
                 //if we didn't override this for a test
                 config.safeIDGenerator = new SafeIDGenerator() {
                     @NonNull @Override public String GenerateValue() {

@@ -77,7 +77,6 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             Utils.removeUnsupportedDataTypes(segmentation);
         }
 
-
         //record the current event timestamps
         //if a past event is recorded, instant value will not be null
         if (instant == null) {
@@ -88,7 +87,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
         if (eventIdOverride == null) { // if eventIdOverride not provided generate an event ID
             eventId = Utils.safeRandomVal();
-        } else if (eventIdOverride.length() == 0){
+        } else if (eventIdOverride.length() == 0) {
             L.w("[ModuleEvents] provided event ID override value is empty. Will generate a new one.");
             eventId = Utils.safeRandomVal();
         } else { // if eventIdOverride is provided use it the event ID
