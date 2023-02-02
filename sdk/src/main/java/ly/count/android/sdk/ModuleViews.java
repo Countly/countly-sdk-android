@@ -30,11 +30,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
 
-    @NonNull public String getCurrentViewId() {
+    public @NonNull String getCurrentViewId() {
         return previousViewID == null ? "" : previousViewID;
     }
 
-    @NonNull public String getLastViewId() {
+    public @NonNull String getPreviousViewId() {
         return currentViewID == null ? "" : currentViewID;
     }
 
@@ -120,7 +120,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         //only record view if the view name is not null and if it has a reasonable duration
-        //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
+        //if the PreviousViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (vd.viewName != null && vd.viewStartTime > 0) {
             Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, true, null);

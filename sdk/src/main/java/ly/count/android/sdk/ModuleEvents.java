@@ -67,7 +67,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             throw new IllegalArgumentException("Countly event count should be greater than zero");
         }
 
-        L.d("[ModuleEvents] Recording event with key: [" + key + "] and provided event ID of:[" + eventIdOverride + "] and segmentation with:[" + (segmentation == null ? "0" : segmentation.size()) + "] keys");
+        L.d("[ModuleEvents] Recording event with key: [" + key + "] and provided event ID of:[" + eventIdOverride + "] and segmentation with:[" + (segmentation == null ? "null" : segmentation.size()) + "] keys");
 
         if (!_cly.isInitialized()) {
             throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
@@ -102,17 +102,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String cvid = null; // Current View ID
 
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
-            pvid = viewIdProvider.getLastViewId();
-            if (pvid == null) {
-                L.v("[ModuleEvents] retrieved previous view ID is null.");
-                pvid = "";
-            }
+            pvid = viewIdProvider.getPreviousViewId();
         } else {
             cvid = viewIdProvider.getCurrentViewId();
-            if (cvid == null) {
-                L.v("[ModuleEvents] retrieved current view ID is null.");
-                cvid = "";
-            }
         }
 
         switch (key) {

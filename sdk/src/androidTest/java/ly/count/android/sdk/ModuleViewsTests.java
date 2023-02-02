@@ -378,7 +378,7 @@ public class ModuleViewsTests {
         segm.put("dur", "2");
         segm.put("segment", "Android");
         segm.put("name", viewNames[0]);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2); // duration comes off sometimes
 
         segm.clear();
         segm.put("segment", "Android");
@@ -426,7 +426,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("");
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class), any(String.class));
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
     /**
@@ -439,7 +439,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView(null);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
     /**
@@ -461,7 +461,7 @@ public class ModuleViewsTests {
         mCountly.onStop();
         mCountly.onStop();
 
-        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
     @Test
@@ -471,7 +471,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView("abcd");
-        verify(ep, times(1)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY);
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
@@ -483,6 +483,6 @@ public class ModuleViewsTests {
         mCountly.onStop();
         mCountly.onStop();
 
-        verify(ep, never()).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 }

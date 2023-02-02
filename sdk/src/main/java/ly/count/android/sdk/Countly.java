@@ -588,7 +588,7 @@ public class Countly {
             //            return null;
             //        }
             //
-            //        @NonNull @Override public String getLastViewId() {
+            //        @NonNull @Override public String getPreviousViewId() {
             //            return null;
             //        }
             //    };

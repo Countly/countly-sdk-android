@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
 import android.app.Application;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -304,6 +306,10 @@ public class TestUtils {
         validateRecordEventInternalMock(ep, eventKey, segmentation, count, sum, duration, instant, idOverride, 0, 1);
     }
 
+    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey) {
+        validateRecordEventInternalMock(ep, eventKey, null, null, null, null, null, null, 0, 1);
+    }
+
     public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation) {
         validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, null, 0, 1);
     }
@@ -316,7 +322,7 @@ public class TestUtils {
         verify(ep, times(interactionCount)).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), anyString());
     }
 
-    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation, Integer count, Double sum, Double duration, UtilsTime.Instant instant, String idOverride, int index, int interactionCount) {
+    public static void validateRecordEventInternalMock(final @NonNull EventProvider ep, final @NonNull String eventKey, final @Nullable Map<String, Object> segmentation, final @Nullable Integer count, final @Nullable Double sum, final @Nullable Double duration, final @Nullable UtilsTime.Instant instant, final @Nullable String idOverride, int index, int interactionCount) {
 
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Map> arg2 = ArgumentCaptor.forClass(Map.class);

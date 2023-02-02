@@ -5,5 +5,5 @@ import androidx.annotation.NonNull;
 interface ViewIdProvider {
     @NonNull String getCurrentViewId();
 
-    @NonNull String getLastViewId();
+    @NonNull String getPreviousViewId();
 }
