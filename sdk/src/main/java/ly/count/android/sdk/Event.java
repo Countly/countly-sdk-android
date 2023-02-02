@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -217,17 +218,23 @@ class Event {
 
         final Event e = (Event) o;
 
-        return (key == null ? e.key == null : key.equals(e.key)) &&
+        return (Objects.equals(key, e.key)) &&
             timestamp == e.timestamp &&
             hour == e.hour &&
             dow == e.dow &&
-            (segmentation == null ? e.segmentation == null : segmentation.equals(e.segmentation));
+            Objects.equals(id, e.id) &&
+            Objects.equals(pvid, e.pvid) &&
+            Objects.equals(cvid, e.cvid) &&
+            (Objects.equals(segmentation, e.segmentation));
     }
 
     @Override
     public int hashCode() {
         return (key != null ? key.hashCode() : 1) ^
             (segmentation != null ? segmentation.hashCode() : 1) ^
+            (id != null ? id.hashCode() : 1) ^
+            (pvid != null ? pvid.hashCode() : 1) ^
+            (cvid != null ? cvid.hashCode() : 1) ^
             (timestamp != 0 ? (int) timestamp : 1);
     }
 }

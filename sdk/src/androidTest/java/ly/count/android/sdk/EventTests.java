@@ -62,7 +62,7 @@ public class EventTests {
         final Event event1 = new Event();
         final Event event2 = new Event();
         //noinspection ObjectEqualsNull
-        assertFalse(event1.equals(null));
+        assertNotEquals(null, event1);
         assertNotEquals(event1, new Object());
         assertEquals(event1, event2);
         assertEquals(event1.hashCode(), event2.hashCode());
@@ -111,6 +111,36 @@ public class EventTests {
         event2.count = 42;
         assertEquals(event1, event2);
         assertEquals(event2, event1);
+        assertEquals(event1.hashCode(), event2.hashCode());
+
+        event1.cvid = "cvid";
+        assertNotEquals(event1,event2);
+        assertNotEquals(event2,event1);
+        assertTrue(event1.hashCode() != event2.hashCode());
+
+        event2.cvid = "cvid";
+        assertEquals(event1,event2);
+        assertEquals(event2,event1);
+        assertEquals(event1.hashCode(), event2.hashCode());
+
+        event1.pvid = "pvid";
+        assertNotEquals(event1,event2);
+        assertNotEquals(event2,event1);
+        assertTrue(event1.hashCode() != event2.hashCode());
+
+        event2.pvid = "pvid";
+        assertEquals(event1,event2);
+        assertEquals(event2,event1);
+        assertEquals(event1.hashCode(), event2.hashCode());
+
+        event1.id = "id";
+        assertNotEquals(event1,event2);
+        assertNotEquals(event2,event1);
+        assertTrue(event1.hashCode() != event2.hashCode());
+
+        event2.id = "id";
+        assertEquals(event1,event2);
+        assertEquals(event2,event1);
         assertEquals(event1.hashCode(), event2.hashCode());
     }
 
