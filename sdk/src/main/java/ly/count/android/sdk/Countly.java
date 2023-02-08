@@ -719,6 +719,8 @@ public class Countly {
  */
             }
 
+            L.i("[Init] About to call module 'initFinished'");
+
             for (ModuleBase module : modules) {
                 module.initFinished(config);
             }

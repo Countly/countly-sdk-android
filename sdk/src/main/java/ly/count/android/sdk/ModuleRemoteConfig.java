@@ -122,6 +122,8 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @throws Exception it throws an exception so that it is escalated upwards
      */
     void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, JSONObject checkResponse) throws Exception {
+        //todo iterate over all response values and print a summary of the returned keys + ideally a summary of their payload.
+
         //merge the new values into the current ones
         RemoteConfigValueStore rcvs = loadConfig();
         if (clearOldValues) {
@@ -293,7 +295,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     public void initFinished(@NonNull CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
         if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !deviceIdProvider.isTemporaryIdEnabled()) {
-            L.d("[Init] Automatically updating remote config values");
+            L.d("[RemoteConfig] Automatically updating remote config values");
             updateRemoteConfigValues(null, null, false, remoteConfigInitCallback);
         }
     }

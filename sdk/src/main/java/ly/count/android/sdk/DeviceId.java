@@ -153,7 +153,7 @@ public class DeviceId {
      * @param deviceId
      */
     protected void changeToCustomId(@NonNull String deviceId) {
-        L.v("[DeviceId-int] changeToCustomId, Device ID is " + id);
+        L.v("[DeviceId-int] changeToCustomId, current Device ID is [" + id + "] new ID is[" + deviceId + "]");
         setAndStoreId(DeviceIdType.DEVELOPER_SUPPLIED, deviceId);
     }
 
