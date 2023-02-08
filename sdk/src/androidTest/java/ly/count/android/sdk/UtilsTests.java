@@ -78,7 +78,7 @@ public class UtilsTests {
         Assert.assertTrue(Utils.API(15));
 
         //The version the SDK is targeting should be below this value
-        Assert.assertFalse(Utils.API(33));
+        Assert.assertFalse(Utils.API(34));
     }
 
     @Test
