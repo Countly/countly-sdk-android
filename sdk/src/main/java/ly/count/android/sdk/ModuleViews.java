@@ -38,7 +38,7 @@ public class ModuleViews extends ModuleBase {
     final Views viewsInterface;
 
     /**
-     * Checks the Countly config Object. Turns on/off the flags for view tracking accordingly. 
+     * Checks the Countly config Object. Turns on/off the flags for view tracking accordingly.
      * And initiates the Views interface for the developer to interact with the SDK/ModuleViews.
      */
     ModuleViews(Countly cly, CountlyConfig config) {
@@ -63,7 +63,7 @@ public class ModuleViews extends ModuleBase {
     }
 
     /**
-     * Checks the provided Segmentation by the user. Sanitizes it 
+     * Checks the provided Segmentation by the user. Sanitizes it
      * and transfers the data into an internal Segmentation Object.
      */
     void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation) {

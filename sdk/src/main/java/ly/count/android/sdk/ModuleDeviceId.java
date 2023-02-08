@@ -116,6 +116,12 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             return;
         }
 
+        if(deviceIdInstance.getCurrentId().equals(deviceId)) {
+            //if we are attempting to change the device ID to the same ID, do nothing
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMergeInternal, We are attempting to change the device ID to the same ID, request will be ignored");
+            return;
+        }
+
         if (isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
             // we are about to exit temporary ID mode
             // because of the previous check, we know that the new type is a different one
@@ -161,6 +167,13 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             L.e("changeDeviceIdWithMergeInternal, provided device ID can't be empty string");
             return;
         }
+
+        //todo finish implementing remaining changes and uncomment this
+        //if(deviceIdInstance.getCurrentId().equals(deviceId)) {
+        //    //if we are attempting to change the device ID to the same ID, do nothing
+        //    L.w("[ModuleDeviceId] changeDeviceIdWithMergeInternal, We are attempting to change the device ID to the same ID, request will be ignored");
+        //    return;
+        //}
 
         if (isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
             //if we are in temporary ID mode or

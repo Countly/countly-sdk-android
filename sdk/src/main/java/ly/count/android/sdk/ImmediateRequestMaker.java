@@ -46,7 +46,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
         boolean wasSuccess = true;
 
         try {
-            L.d("[ImmediateRequestMaker] delayed[" + requestShouldBeDelayed + "] hasCallback[" + (callback != null) + "] endpoint[" + customEndpoint + "] request[" + requestData + "]");
+            L.d("[ImmediateRequestMaker] delayed[" + requestShouldBeDelayed + "] hasCallback[" + (callback != null) + "] endpoint[" + customEndpoint + "] request[" + requestData + "] url[" + cp.getServerURL() + "]");
 
             if (requestShouldBeDelayed) {
                 //used in cases after something has to be done after a device id change
@@ -73,6 +73,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
 
             InputStream stream;
 
+            //todo check response code
             try {
                 //assume there will be no error
                 stream = connection.getInputStream();
