@@ -36,17 +36,17 @@ import org.json.JSONObject;
  * https://count.ly/resources/reference/custom-events
  */
 class Event {
-    private static final String SEGMENTATION_KEY = "segmentation";
-    private static final String KEY_KEY = "key";
-    private static final String COUNT_KEY = "count";
-    private static final String SUM_KEY = "sum";
-    private static final String DUR_KEY = "dur";
-    private static final String TIMESTAMP_KEY = "timestamp";
-    private static final String DAY_OF_WEEK = "dow";
-    private static final String HOUR = "hour";
-    private static final String ID = "id";
-    private static final String PV_ID = "pvid";
-    private static final String CV_ID = "cvid";
+    protected static final String SEGMENTATION_KEY = "segmentation";
+    protected static final String KEY_KEY = "key";
+    protected static final String COUNT_KEY = "count";
+    protected static final String SUM_KEY = "sum";
+    protected static final String DUR_KEY = "dur";
+    protected static final String TIMESTAMP_KEY = "timestamp";
+    protected static final String DAY_OF_WEEK_KEY = "dow";
+    protected static final String HOUR_KEY = "hour";
+    protected static final String ID_KEY = "id";
+    protected static final String PV_ID_KEY = "pvid";
+    protected static final String CV_ID_KEY = "cvid";
 
     public String key;
     public Map<String, String> segmentation;
@@ -66,13 +66,11 @@ class Event {
     Event() {
     }
 
-    Event(@NonNull String key) {
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-
+    Event(@NonNull String key, long timestamp, int hour, int dow) {
         this.key = key;
-        this.timestamp = instant.timestampMs;
-        this.hour = instant.hour;
-        this.dow = instant.dow;
+        this.timestamp = timestamp;
+        this.hour = hour;
+        this.dow = dow;
     }
 
     /**
@@ -87,11 +85,21 @@ class Event {
             json.put(KEY_KEY, key);
             json.put(COUNT_KEY, count);
             json.put(TIMESTAMP_KEY, timestamp);
-            json.put(HOUR, hour);
-            json.put(DAY_OF_WEEK, dow);
-            json.put(ID, id);
-            json.put(PV_ID, pvid);
-            json.put(CV_ID, cvid);
+            json.put(HOUR_KEY, hour);
+            json.put(DAY_OF_WEEK_KEY, dow);
+
+            //set the ID's only if they are not 'null'
+            if (id != null) {
+                json.put(ID_KEY, id);
+            }
+
+            if (pvid != null) {
+                json.put(PV_ID_KEY, pvid);
+            }
+
+            if (cvid != null) {
+                json.put(CV_ID_KEY, cvid);
+            }
 
             JSONObject jobj = new JSONObject();
             if (segmentation != null) {
@@ -155,17 +163,18 @@ class Event {
             event.sum = json.optDouble(SUM_KEY, 0.0d);
             event.dur = json.optDouble(DUR_KEY, 0.0d);
             event.timestamp = json.optLong(TIMESTAMP_KEY);
-            event.hour = json.optInt(HOUR);
-            event.dow = json.optInt(DAY_OF_WEEK);
-            // TODO: make explicit test these wont exist. These might not exist.
-            if (!json.isNull(ID)) {
-                event.id = json.getString(ID);
+            event.hour = json.optInt(HOUR_KEY);
+            event.dow = json.optInt(DAY_OF_WEEK_KEY);
+
+            // the parsed ID's might not be set or it might be set as null
+            if (!json.isNull(ID_KEY)) {
+                event.id = json.getString(ID_KEY);
             }
-            if (!json.isNull(PV_ID)) {
-                event.pvid = json.getString(PV_ID);
+            if (!json.isNull(PV_ID_KEY)) {
+                event.pvid = json.getString(PV_ID_KEY);
             }
-            if (!json.isNull(CV_ID)) {
-                event.cvid = json.getString(CV_ID);
+            if (!json.isNull(CV_ID_KEY)) {
+                event.cvid = json.getString(CV_ID_KEY);
             }
 
             if (!json.isNull(SEGMENTATION_KEY)) {
@@ -207,7 +216,13 @@ class Event {
             event = null;
         }
 
-        return (event != null && event.key != null && event.key.length() > 0) ? event : null;
+        if (event != null && event.key != null && event.key.length() > 0) {
+            //in case the event has a key, it counts as a valid event
+            return event;
+        } else {
+            //if the event doesn't even have a key, return 'null' since it's not a valid event
+            return null;
+        }
     }
 
     @Override

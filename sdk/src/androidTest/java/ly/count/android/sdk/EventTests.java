@@ -21,6 +21,8 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,22 +43,71 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("ConstantConditions")
 public class EventTests {
 
-    // TODO: Add those tests here. Add asserts to IDs
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
     }
 
+    /**
+     * By default all values should be either null or
+     * have their default value in case of value types
+     */
     @Test
-    public void testConstructor() {
+    public void testDefaultValueBasicConstructor() {
         final Event event = new Event();
         assertNull(event.key);
         assertNull(event.segmentation);
+        assertNull(event.segmentationInt);
+        assertNull(event.segmentationDouble);
+        assertNull(event.segmentationBoolean);
+        assertNull(event.id);
+        assertNull(event.cvid);
+        assertNull(event.pvid);
         assertEquals(0, event.count);
-        assertEquals(0, event.timestamp);
         assertEquals(0.0d, event.sum, 0.0000001);
+        assertEquals(0.0d, event.dur, 0.0000001);
+        assertEquals(0, event.timestamp);
+        assertEquals(0, event.hour);
+        assertEquals(0, event.dow);
     }
 
+    /**
+     * All values except the key, timestamp, hour, dow should have their default and null values
+     */
+    @Test
+    public void testDefaultValueKeyConstructor() {
+        final Event event = new Event("abc", 123L, 5, 7);
+        assertEquals("abc", event.key);
+        assertNull(event.segmentation);
+        assertNull(event.segmentationInt);
+        assertNull(event.segmentationDouble);
+        assertNull(event.segmentationBoolean);
+        assertNull(event.id);
+        assertNull(event.cvid);
+        assertNull(event.pvid);
+        assertEquals(0, event.count);
+        assertEquals(0.0d, event.sum, 0.0000001);
+        assertEquals(0.0d, event.dur, 0.0000001);
+        assertEquals(123L, event.timestamp);
+        assertEquals(5, event.hour);
+        assertEquals(7, event.dow);
+    }
+
+    void TestCompareEvents(Event event1, Event event2, boolean interpretedAsEqual) {
+        if (interpretedAsEqual) {
+            assertEquals(event1, event2);
+            assertEquals(event2, event1);
+            assertEquals(event1.hashCode(), event2.hashCode());
+        } else {
+            assertNotEquals(event1, event2);
+            assertNotEquals(event2, event1);
+            assertTrue(event1.hashCode() != event2.hashCode());
+        }
+    }
+
+    /**
+     * Validate how setting different fields would affect equality and hash code
+     */
     @Test
     public void testEqualsAndHashCode() {
         final Event event1 = new Event();
@@ -64,88 +115,143 @@ public class EventTests {
         //noinspection ObjectEqualsNull
         assertNotEquals(null, event1);
         assertNotEquals(event1, new Object());
-        assertEquals(event1, event2);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
 
         event1.key = "eventKey";
-        assertNotEquals(event1, event2);
-        assertNotEquals(event2, event1);
-        assertTrue(event1.hashCode() != event2.hashCode());
+        TestCompareEvents(event1, event2, false);
 
         event2.key = "eventKey";
-        assertEquals(event1, event2);
-        assertEquals(event2, event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
 
         event1.timestamp = 1234;
-        assertNotEquals(event1, event2);
-        assertNotEquals(event2, event1);
-        assertTrue(event1.hashCode() != event2.hashCode());
+        TestCompareEvents(event1, event2, false);
 
         event2.timestamp = 1234;
-        assertEquals(event1, event2);
-        assertEquals(event2, event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
 
         event1.segmentation = new HashMap<>();
-        assertNotEquals(event1, event2);
-        assertNotEquals(event2, event1);
-        assertTrue(event1.hashCode() != event2.hashCode());
+        TestCompareEvents(event1, event2, false);
 
         event2.segmentation = new HashMap<>();
-        assertEquals(event1, event2);
-        assertEquals(event2, event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
 
         event1.segmentation.put("segkey", "segvalue");
-        assertNotEquals(event1, event2);
-        assertNotEquals(event2, event1);
-        assertTrue(event1.hashCode() != event2.hashCode());
+        TestCompareEvents(event1, event2, false);
 
         event2.segmentation.put("segkey", "segvalue");
-        assertEquals(event1, event2);
-        assertEquals(event2, event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
 
         event1.sum = 3.2;
         event2.count = 42;
-        assertEquals(event1, event2);
-        assertEquals(event2, event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);//todo it's unclear why both should be treated as equal
 
         event1.cvid = "cvid";
-        assertNotEquals(event1,event2);
-        assertNotEquals(event2,event1);
-        assertTrue(event1.hashCode() != event2.hashCode());
+        TestCompareEvents(event1, event2, false);
 
         event2.cvid = "cvid";
-        assertEquals(event1,event2);
-        assertEquals(event2,event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
 
         event1.pvid = "pvid";
-        assertNotEquals(event1,event2);
-        assertNotEquals(event2,event1);
-        assertTrue(event1.hashCode() != event2.hashCode());
+        TestCompareEvents(event1, event2, false);
 
         event2.pvid = "pvid";
-        assertEquals(event1,event2);
-        assertEquals(event2,event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
 
         event1.id = "id";
-        assertNotEquals(event1,event2);
-        assertNotEquals(event2,event1);
-        assertTrue(event1.hashCode() != event2.hashCode());
+        TestCompareEvents(event1, event2, false);
 
         event2.id = "id";
-        assertEquals(event1,event2);
-        assertEquals(event2,event1);
-        assertEquals(event1.hashCode(), event2.hashCode());
+        TestCompareEvents(event1, event2, true);
+    }
+
+    /**
+     * Seems like we would want to explode when trying to parse 'null'
+     * Probably that's because the value passed should never be 'null'
+     */
+    @Test
+    public void testFromJSON_nullJSONObj() {
+        try {
+            Event.fromJSON(null);
+            fail("Expected NPE when calling Event.fromJSON with null");
+        } catch (NullPointerException ignored) {
+            // success
+        }
+    }
+
+    /**
+     * Testing how parsing works with a empty json object
+     * Since the event does not have a key, it should be parsed to 'null'
+     */
+    @Test
+    public void testFromJSON_noKeyCausesJSONException() {
+        final JSONObject jsonObj = new JSONObject();
+        assertNull(Event.fromJSON(jsonObj));
+    }
+
+    /**
+     * JSONObject does have a key set
+     * But since the event does not have a valid (it's null) key, it should be parsed to 'null'
+     */
+    @Test
+    public void testFromJSON_KeyNull() throws JSONException {
+        final JSONObject jsonObj = new JSONObject();
+        jsonObj.put("key", JSONObject.NULL);
+        assertNull(Event.fromJSON(jsonObj));
+    }
+
+    /**
+     * JSONObject does have a key set
+     * Since the event does not have a valid (it's empty string) key, it should be parsed to 'null'
+     */
+    @Test
+    public void testFromJSON_KeyEmpty() throws JSONException {
+        final JSONObject jsonObj = new JSONObject();
+        jsonObj.put("key", "");
+        assertNull(Event.fromJSON(jsonObj));
+    }
+
+    /**
+     * Basic event with only a key set
+     * JSON obj with only key set
+     * Both should be equal after parsing the JSON
+     *
+     * @throws JSONException
+     */
+    @Test
+    public void testFromJSON_KeyOnly() throws JSONException {
+        final Event expected = CreateEvent("eventKey");
+        final JSONObject jsonObj = CreateEventJsonObj(expected.key);
+        CompareEventJSON(jsonObj, "eventKey", null, null, expected);
+    }
+
+    /**
+     * If JSON has other values set to 'null' and only the event key is set
+     * then that should behave the same as only the event key is set
+     *
+     * @throws JSONException
+     */
+    @Test
+    public void testFromJSON_KeyOnlyAllOtherNull() throws JSONException {
+        final Event expected = CreateEvent("eventKey");
+        final JSONObject jsonObj = new JSONObject();
+        jsonObj.put(Event.KEY_KEY, expected.key);
+        jsonObj.put(Event.TIMESTAMP_KEY, JSONObject.NULL);
+        jsonObj.put(Event.DAY_OF_WEEK_KEY, JSONObject.NULL);
+        jsonObj.put(Event.DUR_KEY, JSONObject.NULL);
+        jsonObj.put(Event.HOUR_KEY, JSONObject.NULL);
+        jsonObj.put(Event.COUNT_KEY, JSONObject.NULL);
+        jsonObj.put(Event.SUM_KEY, JSONObject.NULL);
+        jsonObj.put(Event.ID_KEY, JSONObject.NULL);
+        jsonObj.put(Event.PV_ID_KEY, JSONObject.NULL);
+        jsonObj.put(Event.CV_ID_KEY, JSONObject.NULL);
+        jsonObj.put(Event.SEGMENTATION_KEY, JSONObject.NULL);
+        CompareEventJSON(jsonObj, expected.key, null, null, expected);
     }
 
     @Test
     public void testToJSON_nullSegmentation() throws JSONException {
+        //CreateAndValidateEvent("eventKey", 1234L, 42, 3.2d, 9);
+
         final Event event = new Event();
         event.key = "eventKey";
         event.timestamp = 1234;
@@ -156,6 +262,28 @@ public class EventTests {
         event.cvid = "cvid";
         final JSONObject jsonObj = event.toJSON();
         assertEquals(9, jsonObj.length());
+        assertEquals(event.key, jsonObj.getString("key"));
+        assertEquals(event.timestamp, jsonObj.getInt("timestamp"));
+        assertEquals(event.count, jsonObj.getInt("count"));
+        assertEquals(event.sum, jsonObj.getDouble("sum"), 0.0000001);
+        assertEquals(event.id, jsonObj.getString("id"));
+        assertEquals(event.pvid, jsonObj.getString("pvid"));
+        assertEquals(event.cvid, jsonObj.getString("cvid"));
+    }
+
+    void CreateAndValidateEvent(@NonNull String eventKey, Long timestamp, Integer count, Double sum, int expectedCount) throws JSONException {
+        //int fieldCount = 4;
+        final Event event = new Event();
+
+        if (timestamp != null) {
+            event.timestamp = timestamp;
+            //fieldCount++;
+        }
+
+        final JSONObject jsonObj = event.toJSON();
+        //assertEquals(fieldCount, jsonObj.length());
+        assertEquals(expectedCount, jsonObj.length());
+
         assertEquals(event.key, jsonObj.getString("key"));
         assertEquals(event.timestamp, jsonObj.getInt("timestamp"));
         assertEquals(event.count, jsonObj.getInt("count"));
@@ -249,64 +377,71 @@ public class EventTests {
         assertEquals(event.cvid, jsonObj.getString("cvid"));
     }
 
-    @Test
-    public void testFromJSON_nullJSONObj() {
-        try {
-            Event.fromJSON(null);
-            fail("Expected NPE when calling Event.fromJSON with null");
-        } catch (NullPointerException ignored) {
-            // success
+    void CompareEventJSON(@NonNull JSONObject jsonObj, @NonNull String eventKey, @Nullable Integer count, @Nullable Double sum, @Nullable final Event expectedEvent) throws JSONException {
+        //validate JSON fields with the one that are given
+        if (eventKey != null) {
+            assertTrue(jsonObj.has(Event.KEY_KEY));
+            assertEquals(eventKey, jsonObj.getString(Event.KEY_KEY));
+        }
+
+        if (count != null) {
+            assertTrue(jsonObj.has(Event.COUNT_KEY));
+            assertEquals(count.intValue(), jsonObj.getInt(Event.COUNT_KEY));
+        }
+
+        if (sum != null) {
+            assertTrue(jsonObj.has(Event.SUM_KEY));
+            assertEquals(sum, jsonObj.getDouble(Event.SUM_KEY), 0.0000001);
+        }
+
+        //validate events as they are parsed
+        final Event parsedEvent = Event.fromJSON(jsonObj);
+
+        if (eventKey != null) {
+            assertEquals(eventKey, parsedEvent.key);
+        }
+
+        if (count != null) {
+            assertEquals(count.intValue(), parsedEvent.count);
+        }
+
+        if (sum != null) {
+            assertEquals(sum, parsedEvent.sum, 0.0000001);
+        }
+
+        //finally compare to the given expected event
+        if (expectedEvent != null) {
+            assertEquals(expectedEvent, parsedEvent);
+            assertEquals(expectedEvent.count, parsedEvent.count);
+            assertEquals(expectedEvent.sum, parsedEvent.sum, 0.0000001);
         }
     }
 
-    @Test
-    public void testFromJSON_noKeyCausesJSONException() {
-        final JSONObject jsonObj = new JSONObject();
-        assertNull(Event.fromJSON(jsonObj));
+    /**
+     * Values not provided are not set
+     *
+     * @param eventKey
+     * @return
+     */
+    Event CreateEvent(@NonNull String eventKey) {
+        final Event event = new Event();
+        event.key = eventKey;
+        return event;
     }
 
-    @Test
-    public void testFromJSON_nullKey() throws JSONException {
+    /**
+     * Values not provided are not set.
+     *
+     * @param key
+     * @return
+     * @throws JSONException
+     */
+    JSONObject CreateEventJsonObj(String key) throws JSONException {
         final JSONObject jsonObj = new JSONObject();
-        jsonObj.put("key", JSONObject.NULL);
-        assertNull(Event.fromJSON(jsonObj));
-    }
-
-    @Test
-    public void testFromJSON_emptyKey() throws JSONException {
-        final JSONObject jsonObj = new JSONObject();
-        jsonObj.put("key", "");
-        assertNull(Event.fromJSON(jsonObj));
-    }
-
-    @Test
-    public void testFromJSON_keyOnly() throws JSONException {
-        final Event expected = new Event();
-        expected.key = "eventKey";
-        final JSONObject jsonObj = new JSONObject();
-        jsonObj.put("key", expected.key);
-        final Event actual = Event.fromJSON(jsonObj);
-        assertEquals(expected, actual);
-        assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum, 0.0000001);
-    }
-
-    @Test
-    public void testFromJSON_keyOnly_nullOtherValues() throws JSONException {
-        final Event expected = new Event();
-        expected.key = "eventKey";
-        final JSONObject jsonObj = new JSONObject();
-        jsonObj.put("key", expected.key);
-        jsonObj.put("timestamp", JSONObject.NULL);
-        jsonObj.put("count", JSONObject.NULL);
-        jsonObj.put("sum", JSONObject.NULL);
-        jsonObj.put("pvid", JSONObject.NULL);
-        jsonObj.put("id", JSONObject.NULL);
-        jsonObj.put("cvid", JSONObject.NULL);
-        final Event actual = Event.fromJSON(jsonObj);
-        assertEquals(expected, actual);
-        assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum, 0.0000001);
+        if (key != null) {
+            jsonObj.put("key", key);
+        }
+        return jsonObj;
     }
 
     @Test
@@ -327,10 +462,7 @@ public class EventTests {
         jsonObj.put("id", expected.id);
         jsonObj.put("pvid", expected.pvid);
         jsonObj.put("cvid", expected.cvid);
-        final Event actual = Event.fromJSON(jsonObj);
-        assertEquals(expected, actual);
-        assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum, 0.0000001);
+        CompareEventJSON(jsonObj, "eventKey", null, null, expected);
     }
 
     @Test
@@ -352,10 +484,7 @@ public class EventTests {
         jsonObj.put("pvid", expected.pvid);
         jsonObj.put("cvid", expected.cvid);
         jsonObj.put("segmentation", JSONObject.NULL);
-        final Event actual = Event.fromJSON(jsonObj);
-        assertEquals(expected, actual);
-        assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum, 0.0000001);
+        CompareEventJSON(jsonObj, "eventKey", null, null, expected);
     }
 
     @Test
@@ -400,10 +529,7 @@ public class EventTests {
         jsonObj.put("pvid", expected.pvid);
         jsonObj.put("cvid", expected.cvid);
         jsonObj.put("segmentation", new JSONObject(expected.segmentation));
-        final Event actual = Event.fromJSON(jsonObj);
-        assertEquals(expected, actual);
-        assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum, 0.0000001);
+        CompareEventJSON(jsonObj, "eventKey", null, null, expected);
     }
 
     @Test
@@ -427,10 +553,7 @@ public class EventTests {
         jsonObj.put("pvid", expected.pvid);
         jsonObj.put("cvid", expected.cvid);
         jsonObj.put("segmentation", new JSONObject(expected.segmentation));
-        final Event actual = Event.fromJSON(jsonObj);
-        assertEquals(expected, actual);
-        assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum, 0.0000001);
+        CompareEventJSON(jsonObj, "eventKey", null, null, expected);
     }
 
     @Test
@@ -466,10 +589,7 @@ public class EventTests {
         jsonObj.put("pvid", expected.pvid);
         jsonObj.put("cvid", expected.cvid);
         jsonObj.put("segmentation", new JSONObject(valueMap));
-        final Event actual = Event.fromJSON(jsonObj);
-        assertEquals(expected, actual);
-        assertEquals(expected.count, actual.count);
-        assertEquals(expected.sum, actual.sum, 0.0000001);
+        CompareEventJSON(jsonObj, "eventKey", null, null, expected);
     }
 
     @Test

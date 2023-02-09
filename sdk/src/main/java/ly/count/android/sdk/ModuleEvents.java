@@ -163,7 +163,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             return false;
         }
         L.d("[ModuleEvents] Starting event: [" + key + "]");
-        timedEvents.put(key, new Event(key));
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        timedEvents.put(key, new Event(key, instant.timestampMs, instant.hour, instant.dow));
         return true;
     }
 
