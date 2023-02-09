@@ -126,7 +126,12 @@ class Event {
                 }
             }
 
-            if (segmentation != null || segmentationInt != null || segmentationDouble != null || segmentationBoolean != null) {
+            if ((segmentation != null && !segmentation.isEmpty()) ||
+                (segmentationInt != null && !segmentationInt.isEmpty()) ||
+                (segmentationDouble != null && !segmentationDouble.isEmpty()) ||
+                (segmentationBoolean != null && !segmentationBoolean.isEmpty())) {
+                //we only write to the segmentation key if it contains at least one entry
+                //we don't want to write an empty object
                 json.put(SEGMENTATION_KEY, jobj);
             }
 
@@ -135,6 +140,7 @@ class Event {
             // a JSON object with the rest of the fields populated
             json.put(SUM_KEY, sum);
 
+            //set duration only if it has any useful value
             if (dur > 0) {
                 json.put(DUR_KEY, dur);
             }
@@ -178,12 +184,14 @@ class Event {
             }
 
             if (!json.isNull(SEGMENTATION_KEY)) {
+                //we would also enter here if segmentation was set to an empty object
                 JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
 
-                final HashMap<String, String> segmentation = new HashMap<>();
-                final HashMap<String, Integer> segmentationInt = new HashMap<>();
-                final HashMap<String, Double> segmentationDouble = new HashMap<>();
-                final HashMap<String, Boolean> segmentationBoolean = new HashMap<>();
+                //we only create these objects if we would write to them
+                HashMap<String, String> segmentation = null;
+                HashMap<String, Integer> segmentationInt = null;
+                HashMap<String, Double> segmentationDouble = null;
+                HashMap<String, Boolean> segmentationBoolean = null;
 
                 final Iterator nameItr = segm.keys();
                 while (nameItr.hasNext()) {
@@ -193,15 +201,27 @@ class Event {
 
                         if (obj instanceof Double) {
                             //in case it's a double
+                            if (segmentationDouble == null) {
+                                segmentationDouble = new HashMap<>();
+                            }
                             segmentationDouble.put(key, segm.getDouble(key));
                         } else if (obj instanceof Integer) {
                             //in case it's a integer
+                            if (segmentationInt == null) {
+                                segmentationInt = new HashMap<>();
+                            }
                             segmentationInt.put(key, segm.getInt(key));
                         } else if (obj instanceof Boolean) {
                             //in case it's a boolean
+                            if (segmentationBoolean == null) {
+                                segmentationBoolean = new HashMap<>();
+                            }
                             segmentationBoolean.put(key, segm.getBoolean(key));
-                        } else {
-                            //assume it's String
+                        } else if (obj instanceof String) {
+                            //in case it's a String
+                            if (segmentation == null) {
+                                segmentation = new HashMap<>();
+                            }
                             segmentation.put(key, segm.getString(key));
                         }
                     }
