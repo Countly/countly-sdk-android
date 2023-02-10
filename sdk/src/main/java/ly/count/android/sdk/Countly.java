@@ -582,18 +582,6 @@ public class Countly {
                 isHttpPostForced = config.httpPostForced;
             }
 
-            //if(config.viewIdProvider == null) {
-            //    config.viewIdProvider =  new ViewIdProvider() {
-            //        @NonNull @Override public String getCurrentViewId() {
-            //            return null;
-            //        }
-            //
-            //        @NonNull @Override public String getPreviousViewId() {
-            //            return null;
-            //        }
-            //    };
-            //}
-
             if (config.tamperingProtectionSalt != null) {
                 L.d("[Init] Enabling tamper protection");
                 ConnectionProcessor.salt = config.tamperingProtectionSalt;
