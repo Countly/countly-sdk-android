@@ -29,6 +29,8 @@ public class CountlyConfig {
 
     protected DeviceIdProvider deviceIdProvider = null;
 
+    protected ViewIdProvider viewIdProvider = null;
+
     protected BaseInfoProvider baseInfoProvider = null;
 
     protected SafeIDGenerator safeIDGenerator = null;

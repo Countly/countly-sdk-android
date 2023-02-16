@@ -30,7 +30,8 @@ repositories {
 }
 
 android {
-  compileSdkVersion 31
+  compileSdkVersion 33
+  buildToolsVersion '33.0.0'
 
   signingConfigs {
     release {
@@ -46,7 +47,7 @@ android {
   defaultConfig {
     applicationId "ly.count.android.demo"
     minSdkVersion 17
-    targetSdkVersion 31
+    targetSdkVersion 33
     versionCode 1
     versionName "1.0"
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -68,7 +69,6 @@ android {
   lintOptions {
     abortOnError false
   }
-  buildToolsVersion '31.0.0'
 
   //required to get rid of this error "Invoke-customs are only supported starting with Android O (--min-api 26)"
   //    compileOptions {

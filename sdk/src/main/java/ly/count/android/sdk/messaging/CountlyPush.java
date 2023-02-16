@@ -316,7 +316,7 @@ public class CountlyPush {
     public static Boolean displayMessage(@Nullable final Context context, @Nullable final Message msg, @DrawableRes final int notificationSmallIcon, @Nullable final Intent notificationIntent) {
         Countly.sharedInstance().L.d("[CountlyPush, displayMessage] Displaying push message");
 
-        if(context == null) {
+        if (context == null) {
             Countly.sharedInstance().L.e("[CountlyPush, displayMessage] Provided context was null, execution will stop");
             return false;
         }
@@ -351,7 +351,7 @@ public class CountlyPush {
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if message is not displayable as {@link Notification}
      */
     public static Boolean displayNotification(@Nullable final Context context, @Nullable final Message msg, @DrawableRes final int notificationSmallIcon, @Nullable final Intent notificationIntent) {
-        if(context == null) {
+        if (context == null) {
             Countly.sharedInstance().L.e("[CountlyPush, displayNotification] Provided context was null, execution will stop");
             return false;
         }
@@ -481,7 +481,7 @@ public class CountlyPush {
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if message is not displayable as {@link Notification}
      */
     public static Boolean displayDialog(@Nullable final Activity activity, @Nullable final Message msg) {
-        if(activity == null) {
+        if (activity == null) {
             Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Provided Activity was null, execution will stop");
             return false;
         }
@@ -705,7 +705,7 @@ public class CountlyPush {
      * @throws IllegalStateException
      */
     public static void init(@Nullable CountlyConfigPush countlyConfigPush) throws IllegalStateException {
-        if(countlyConfigPush == null) {
+        if (countlyConfigPush == null) {
             Countly.sharedInstance().L.e("[CountlyPush, init] Can't initialize Countly Push, provided 'CountlyConfigPush' was null");
             return;
         }

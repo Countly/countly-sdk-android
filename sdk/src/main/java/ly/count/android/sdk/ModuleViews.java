@@ -7,10 +7,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
-public class ModuleViews extends ModuleBase {
-    private String lastViewID = null;
+public class ModuleViews extends ModuleBase implements ViewIdProvider {
+    private String currentViewID = null;
+    private String previousViewID = null;
+
     private boolean firstView = true;
 
     boolean autoViewTracker = false;
@@ -28,6 +29,15 @@ public class ModuleViews extends ModuleBase {
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
+
+    public @NonNull String getCurrentViewId() {
+        return previousViewID == null ? "" : previousViewID;
+    }
+
+    public @NonNull String getPreviousViewId() {
+        return currentViewID == null ? "" : currentViewID;
+    }
+
     static class ViewData {
         String viewID;
         long viewStartTime;
@@ -54,6 +64,8 @@ public class ModuleViews extends ModuleBase {
             L.d("[ModuleViews] Enabling automatic view tracking short names");
             automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
         }
+
+        config.viewIdProvider = this;
 
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
         autoTrackingActivityExceptions = config.autoTrackingExceptions;
@@ -85,14 +97,14 @@ public class ModuleViews extends ModuleBase {
      * Records last view with duration (ignores first view)
      */
     void reportViewDuration() {
-        if (lastViewID == null || !viewDataMap.containsKey(lastViewID)) {
+        if (currentViewID == null || !viewDataMap.containsKey(currentViewID)) {
             L.w("[ModuleViews] reportViewDuration, view id is null or not inside of viewDataMap");
             return;
         }
 
-        ViewData vd = viewDataMap.get(lastViewID);
+        ViewData vd = viewDataMap.get(currentViewID);
         if (vd == null) {
-            L.w("[ModuleViews] reportViewDuration, view id:[" + lastViewID + "] has a null value");
+            L.w("[ModuleViews] reportViewDuration, view id:[" + currentViewID + "] has a null value");
             return;
         }
 
@@ -108,18 +120,18 @@ public class ModuleViews extends ModuleBase {
         }
 
         //only record view if the view name is not null and if it has a reasonable duration
-        //if the lastViewStart is equal to 0, the duration would be set to the current timestamp
+        //if the PreviousViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (vd.viewName != null && vd.viewStartTime > 0) {
             Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, true, null);
-            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null);
-            lastViewID = null;
+            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, vd.viewID);
+            currentViewID = null;
         }
     }
 
     /**
      * Checks if the current Activity is in the Activity Exception list
-     * 
+     *
      * @return boolean - true if in the list, false else
      */
     boolean isActivityInExceptionList(Activity act) {
@@ -160,7 +172,6 @@ public class ModuleViews extends ModuleBase {
             viewSegmentation.put("start", "1");
         }
         viewSegmentation.put("segment", "Android");
-        viewSegmentation.put("_idv", lastViewID);
 
         return viewSegmentation;
     }
@@ -194,7 +205,7 @@ public class ModuleViews extends ModuleBase {
             if (customViewSegmentation != null) {
                 segmCount = customViewSegmentation.size();
             }
-            L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view ID:[" + lastViewID + "] custom view segment count:[" + segmCount + "], first:[" + firstView + "]");
+            L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view ID:[" + currentViewID + "] custom view segment count:[" + segmCount + "], first:[" + firstView + "]");
         }
 
         reportViewDuration();
@@ -205,7 +216,8 @@ public class ModuleViews extends ModuleBase {
         currentViewData.viewStartTime = UtilsTime.currentTimestampSeconds();
 
         viewDataMap.put(currentViewData.viewID, currentViewData);
-        lastViewID = currentViewData.viewID;
+        previousViewID = currentViewID;
+        currentViewID = currentViewData.viewID;
 
         Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, false, customViewSegmentation);
 
@@ -214,7 +226,7 @@ public class ModuleViews extends ModuleBase {
             firstView = false;
         }
 
-        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null);
+        eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, currentViewData.viewID);
 
         return _cly;
     }
@@ -238,7 +250,7 @@ public class ModuleViews extends ModuleBase {
                 segm.put("mode", "landscape");
             }
 
-            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null);
+            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null, currentViewID);
         }
     }
 

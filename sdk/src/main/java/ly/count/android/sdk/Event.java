@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,14 +36,17 @@ import org.json.JSONObject;
  * https://count.ly/resources/reference/custom-events
  */
 class Event {
-    private static final String SEGMENTATION_KEY = "segmentation";
-    private static final String KEY_KEY = "key";
-    private static final String COUNT_KEY = "count";
-    private static final String SUM_KEY = "sum";
-    private static final String DUR_KEY = "dur";
-    private static final String TIMESTAMP_KEY = "timestamp";
-    private static final String DAY_OF_WEEK = "dow";
-    private static final String HOUR = "hour";
+    protected static final String SEGMENTATION_KEY = "segmentation";
+    protected static final String KEY_KEY = "key";
+    protected static final String COUNT_KEY = "count";
+    protected static final String SUM_KEY = "sum";
+    protected static final String DUR_KEY = "dur";
+    protected static final String TIMESTAMP_KEY = "timestamp";
+    protected static final String DAY_OF_WEEK_KEY = "dow";
+    protected static final String HOUR_KEY = "hour";
+    protected static final String ID_KEY = "id";
+    protected static final String PV_ID_KEY = "pvid";
+    protected static final String CV_ID_KEY = "cvid";
 
     public String key;
     public Map<String, String> segmentation;
@@ -55,17 +59,18 @@ class Event {
     public long timestamp;
     public int hour;
     public int dow;
+    public String id;
+    public String pvid;
+    public String cvid;
 
     Event() {
     }
 
-    Event(@NonNull String key) {
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-
+    Event(@NonNull String key, long timestamp, int hour, int dow) {
         this.key = key;
-        this.timestamp = instant.timestampMs;
-        this.hour = instant.hour;
-        this.dow = instant.dow;
+        this.timestamp = timestamp;
+        this.hour = hour;
+        this.dow = dow;
     }
 
     /**
@@ -80,8 +85,21 @@ class Event {
             json.put(KEY_KEY, key);
             json.put(COUNT_KEY, count);
             json.put(TIMESTAMP_KEY, timestamp);
-            json.put(HOUR, hour);
-            json.put(DAY_OF_WEEK, dow);
+            json.put(HOUR_KEY, hour);
+            json.put(DAY_OF_WEEK_KEY, dow);
+
+            //set the ID's only if they are not 'null'
+            if (id != null) {
+                json.put(ID_KEY, id);
+            }
+
+            if (pvid != null) {
+                json.put(PV_ID_KEY, pvid);
+            }
+
+            if (cvid != null) {
+                json.put(CV_ID_KEY, cvid);
+            }
 
             JSONObject jobj = new JSONObject();
             if (segmentation != null) {
@@ -108,7 +126,12 @@ class Event {
                 }
             }
 
-            if (segmentation != null || segmentationInt != null || segmentationDouble != null || segmentationBoolean != null) {
+            if ((segmentation != null && !segmentation.isEmpty()) ||
+                (segmentationInt != null && !segmentationInt.isEmpty()) ||
+                (segmentationDouble != null && !segmentationDouble.isEmpty()) ||
+                (segmentationBoolean != null && !segmentationBoolean.isEmpty())) {
+                //we only write to the segmentation key if it contains at least one entry
+                //we don't want to write an empty object
                 json.put(SEGMENTATION_KEY, jobj);
             }
 
@@ -117,6 +140,7 @@ class Event {
             // a JSON object with the rest of the fields populated
             json.put(SUM_KEY, sum);
 
+            //set duration only if it has any useful value
             if (dur > 0) {
                 json.put(DUR_KEY, dur);
             }
@@ -145,16 +169,29 @@ class Event {
             event.sum = json.optDouble(SUM_KEY, 0.0d);
             event.dur = json.optDouble(DUR_KEY, 0.0d);
             event.timestamp = json.optLong(TIMESTAMP_KEY);
-            event.hour = json.optInt(HOUR);
-            event.dow = json.optInt(DAY_OF_WEEK);
+            event.hour = json.optInt(HOUR_KEY);
+            event.dow = json.optInt(DAY_OF_WEEK_KEY);
+
+            // the parsed ID's might not be set or it might be set as null
+            if (!json.isNull(ID_KEY)) {
+                event.id = json.getString(ID_KEY);
+            }
+            if (!json.isNull(PV_ID_KEY)) {
+                event.pvid = json.getString(PV_ID_KEY);
+            }
+            if (!json.isNull(CV_ID_KEY)) {
+                event.cvid = json.getString(CV_ID_KEY);
+            }
 
             if (!json.isNull(SEGMENTATION_KEY)) {
+                //we would also enter here if segmentation was set to an empty object
                 JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
 
-                final HashMap<String, String> segmentation = new HashMap<>();
-                final HashMap<String, Integer> segmentationInt = new HashMap<>();
-                final HashMap<String, Double> segmentationDouble = new HashMap<>();
-                final HashMap<String, Boolean> segmentationBoolean = new HashMap<>();
+                //we only create these objects if we would write to them
+                HashMap<String, String> segmentation = null;
+                HashMap<String, Integer> segmentationInt = null;
+                HashMap<String, Double> segmentationDouble = null;
+                HashMap<String, Boolean> segmentationBoolean = null;
 
                 final Iterator nameItr = segm.keys();
                 while (nameItr.hasNext()) {
@@ -164,15 +201,27 @@ class Event {
 
                         if (obj instanceof Double) {
                             //in case it's a double
+                            if (segmentationDouble == null) {
+                                segmentationDouble = new HashMap<>();
+                            }
                             segmentationDouble.put(key, segm.getDouble(key));
                         } else if (obj instanceof Integer) {
                             //in case it's a integer
+                            if (segmentationInt == null) {
+                                segmentationInt = new HashMap<>();
+                            }
                             segmentationInt.put(key, segm.getInt(key));
                         } else if (obj instanceof Boolean) {
                             //in case it's a boolean
+                            if (segmentationBoolean == null) {
+                                segmentationBoolean = new HashMap<>();
+                            }
                             segmentationBoolean.put(key, segm.getBoolean(key));
-                        } else {
-                            //assume it's String
+                        } else if (obj instanceof String) {
+                            //in case it's a String
+                            if (segmentation == null) {
+                                segmentation = new HashMap<>();
+                            }
                             segmentation.put(key, segm.getString(key));
                         }
                     }
@@ -187,7 +236,13 @@ class Event {
             event = null;
         }
 
-        return (event != null && event.key != null && event.key.length() > 0) ? event : null;
+        if (event != null && event.key != null && event.key.length() > 0) {
+            //in case the event has a key, it counts as a valid event
+            return event;
+        } else {
+            //if the event doesn't even have a key, return 'null' since it's not a valid event
+            return null;
+        }
     }
 
     @Override
@@ -198,17 +253,23 @@ class Event {
 
         final Event e = (Event) o;
 
-        return (key == null ? e.key == null : key.equals(e.key)) &&
+        return (Objects.equals(key, e.key)) &&
             timestamp == e.timestamp &&
             hour == e.hour &&
             dow == e.dow &&
-            (segmentation == null ? e.segmentation == null : segmentation.equals(e.segmentation));
+            Objects.equals(id, e.id) &&
+            Objects.equals(pvid, e.pvid) &&
+            Objects.equals(cvid, e.cvid) &&
+            (Objects.equals(segmentation, e.segmentation));
     }
 
     @Override
     public int hashCode() {
         return (key != null ? key.hashCode() : 1) ^
             (segmentation != null ? segmentation.hashCode() : 1) ^
+            (id != null ? id.hashCode() : 1) ^
+            (pvid != null ? pvid.hashCode() : 1) ^
+            (cvid != null ? cvid.hashCode() : 1) ^
             (timestamp != 0 ? (int) timestamp : 1);
     }
 }

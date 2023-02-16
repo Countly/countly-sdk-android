@@ -137,7 +137,7 @@ public class ModuleFeedbackTests {
         segm.put("rating", 4);
         segm.put("comment", "123456");
 
-        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         //report without a "null" comment
         mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
@@ -148,7 +148,7 @@ public class ModuleFeedbackTests {
         segm.remove("comment");
 
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 
     @Test
@@ -177,8 +177,7 @@ public class ModuleFeedbackTests {
         segm.put("email", "123456");
         segm.put("contactMe", true);
 
-
-        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         //report without a "null" comment
         mCountly.moduleEvents.eventQueueProvider = mock(EventQueueProvider.class);
@@ -189,7 +188,7 @@ public class ModuleFeedbackTests {
         segm.remove("comment");
 
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 
     @Test
@@ -209,7 +208,7 @@ public class ModuleFeedbackTests {
         segm.put("widget_id", widgetInfo.widgetId);
         segm.put("closed", "1");
 
-        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 
     @Test
@@ -229,7 +228,7 @@ public class ModuleFeedbackTests {
         segm.put("widget_id", widgetInfo.widgetId);
         segm.put("closed", "1");
 
-        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 
     @Test
@@ -245,7 +244,7 @@ public class ModuleFeedbackTests {
 
         //just an empty result map
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         //result map with unrelated fields
         JSONObject emptyJObj = new JSONObject();
@@ -253,7 +252,7 @@ public class ModuleFeedbackTests {
         segmRes.put("11", null);
         segmRes.put(null, "gf");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 
     @Test
@@ -269,7 +268,7 @@ public class ModuleFeedbackTests {
 
         //just an empty result map
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         //result map with unrelated fields
         JSONObject emptyJObj = new JSONObject();
@@ -277,7 +276,7 @@ public class ModuleFeedbackTests {
         segmRes.put("11", null);
         segmRes.put(null, "gf");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 
     @Test
@@ -294,33 +293,33 @@ public class ModuleFeedbackTests {
         //result map with unrelated fields
         segmRes.put("rating", "gg");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", null);
         segmRes.put("comment", "123456");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "5.5");
         JSONObject emptyJObj = new JSONObject();
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "6.0");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "0.0");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "10.0f");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 
     @Test
@@ -337,33 +336,33 @@ public class ModuleFeedbackTests {
         //result map with unrelated fields
         segmRes.put("rating", "gg");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", null);
         segmRes.put("comment", "123456");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "5.5");
         JSONObject emptyJObj = new JSONObject();
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "6.0");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "0.0");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
         segmRes.put("rating", "10.0f");
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, emptyJObj, segmRes);
-        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class));
+        verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
     }
 
     @Test
@@ -383,6 +382,6 @@ public class ModuleFeedbackTests {
         segm.put("widget_id", widgetInfo.widgetId);
         segm.put("closed", "1");
 
-        verify(ep).recordEventInternal(ModuleFeedback.SURVEY_EVENT_KEY, segm, 1, 0, 0, null);
+        verify(ep).recordEventInternal(ModuleFeedback.SURVEY_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 }

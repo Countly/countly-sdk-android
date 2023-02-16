@@ -122,9 +122,9 @@ public class ModuleFeedback extends ModuleBase {
                         List<String> valTagsArr = new ArrayList<String>();
 
                         JSONArray jTagArr = jObj.optJSONArray("tg");
-                        if (jTagArr == null){
+                        if (jTagArr == null) {
                             Countly.sharedInstance().L.w("[ModuleFeedback] parseFeedbackList, no tags received");
-                        } else{
+                        } else {
                             for (int in = 0; in < jTagArr.length(); in++) {
                                 valTagsArr.add(jTagArr.getString(in));
                             }
@@ -322,13 +322,13 @@ public class ModuleFeedback extends ModuleBase {
 
             if (widgetInfo.type == FeedbackWidgetType.survey) {
                 key = SURVEY_EVENT_KEY;
-            } else if(widgetInfo.type == FeedbackWidgetType.rating) {
+            } else if (widgetInfo.type == FeedbackWidgetType.rating) {
                 key = RATING_EVENT_KEY;
             } else {
                 key = NPS_EVENT_KEY;
             }
 
-            eventProvider.recordEventInternal(key, segm, 1, 0, 0, null);
+            eventProvider.recordEventInternal(key, segm, 1, 0, 0, null, null);
         }
     }
 
@@ -477,7 +477,7 @@ public class ModuleFeedback extends ModuleBase {
                 }
             } else if (widgetInfo.type == FeedbackWidgetType.survey) {
                 //in case a survey widget was completed
-            } else if(widgetInfo.type == FeedbackWidgetType.rating){
+            } else if (widgetInfo.type == FeedbackWidgetType.rating) {
                 //in case a rating widget was completed
                 if (!widgetResult.containsKey("rating")) {
                     L.e("Provided Rating widget result does not have a 'rating' field, result can't be reported");
@@ -544,7 +544,7 @@ public class ModuleFeedback extends ModuleBase {
 
             //event when answered
             //{"key":"[CLY]_survey","segmentation":{"widget_id":"600e9e0b563e89201631633e","platform":"android","app_version":"0.0","answ-1611570700-0":"ch1611570700-0"},"timestamp":1611570895465,"hour":16,"dow":1}
-        } else if (widgetInfo.type == FeedbackWidgetType.rating){
+        } else if (widgetInfo.type == FeedbackWidgetType.rating) {
             usedEventKey = RATING_EVENT_KEY;
             //event when closed
             // {"key":"[CLY]_star_rating","count":1,"timestamp":1671783040088,"hour":11,"dow":5,"segmentation":{"app_version":"1.0","widget_id":"614871419f030e44be07d82f","closed":"1","platform":"android"}
@@ -571,7 +571,7 @@ public class ModuleFeedback extends ModuleBase {
             }
         }
 
-        eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null);
+        eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null, null);
     }
 
     @Override

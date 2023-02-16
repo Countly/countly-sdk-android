@@ -178,7 +178,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     public synchronized void esWriteCacheToStorage() {
-        L.v("[CountlyStore] Trying to write ES cache to storage[" + explicitStorageModeEnabled + "] [" + esDirtyFlag + "]");
+        L.v("[CountlyStore] Trying to write ES cache to storage[" + explicitStorageModeEnabled + "], is dirty flag:[" + esDirtyFlag + "]");
         if (explicitStorageModeEnabled) {
             if (esDirtyFlag) {
                 preferences_.edit().putString(REQUEST_PREFERENCE, esRequestQueueCache).commit();
@@ -335,6 +335,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      *
      * @param event event to be added to the local store, must not be null
      */
+    // TODO:
     void addEvent(final Event event) {
         final List<Event> events = getEventList();
         if (events.size() < MAX_EVENTS) {
@@ -407,7 +408,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param sum sum associated with the custom event, if not used, pass zero.
      * NaN and infinity values will be quietly ignored.
      */
-    public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow) {
+    public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
+        final @Nullable String currentViewId) {
         Map<String, String> segmentationString = null;
         Map<String, Integer> segmentationInt = null;
         Map<String, Double> segmentationDouble = null;
@@ -435,6 +437,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         event.count = count;
         event.sum = sum;
         event.dur = dur;
+        event.id = eventID;
+        event.pvid = previousViewId;
+        event.cvid = currentViewId;
 
         addEvent(event);
     }
@@ -489,6 +494,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     void clearCachedPushData() {
         SharedPreferences.Editor spe = preferencesPush_.edit();
+
         spe.remove(CACHED_PUSH_ACTION_ID);
         spe.remove(CACHED_PUSH_ACTION_INDEX);
         spe.apply();
