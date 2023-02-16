@@ -1,5 +1,5 @@
 ## 22.09.0
-* Views are now recorded with a internal ID
+* Events are now recorded with an internal ID. 
 
 ## 22.06.3
 * Expanded feedback widget functionality. Added ability to use rating widgets.
