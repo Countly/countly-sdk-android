@@ -50,6 +50,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
+    ModuleRequestQueue moduleRequestQueue = null;
 
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
@@ -323,6 +324,8 @@ class ConnectionQueue implements RequestQueueProvider {
             L.d("[Connection Queue] No user data to send, skipping");
             return;
         }
+
+        moduleRequestQueue.sendEventsIfNeeded(true); // flush events before sending user details
 
         String data = prepareCommonRequestData() + userdata;
         addRequestToQueue(data, false);

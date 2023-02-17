@@ -1,5 +1,6 @@
 ## 22.09.0
-* Events are now recorded with an internal ID. 
+* Events are now recorded with an internal ID.
+* Fixed a race condition bug where a recorded event would have the wrong user properties in the drill database on the server. Now event queue is emptied (formed into a request) before recording any user profile changes.
 
 ## 22.06.3
 * Expanded feedback widget functionality. Added ability to use rating widgets.
