@@ -49,7 +49,7 @@ interface StorageProvider {
 
     String getRemoteConfigValues();//not integrated
 
-    void esWriteCacheToStorage();//required for explicit storage
+    void esWriteCacheToStorage(@Nullable ExplicitStorageCallback callback);//required for explicit storage
 
     //fields for data migration
     int getDataSchemaVersion();

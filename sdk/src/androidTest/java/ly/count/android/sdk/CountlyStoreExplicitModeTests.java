@@ -1,10 +1,11 @@
 package ly.count.android.sdk;
 
-import android.content.SharedPreferences;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,6 +74,8 @@ public class CountlyStoreExplicitModeTests {
     public void rqAddRequestSetGetWriteCache() {
         CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
 
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
+
         validateRQArrays(new String[] {}, new String[] {}, store, emStore);
 
         emStore.addRequest("abc", true);
@@ -80,7 +83,8 @@ public class CountlyStoreExplicitModeTests {
 
         validateRQArrays(new String[] {}, new String[] { "abc", "123" }, store, emStore);
 
-        emStore.esWriteCacheToStorage();
+        esWriteCacheToStorageValidateWrite(emStore, true);
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
         validateRQArrays(new String[] { "abc", "123" }, new String[] { "abc", "123" }, store, emStore);
     }
@@ -93,6 +97,8 @@ public class CountlyStoreExplicitModeTests {
 
         CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
 
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
+
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "a", "b", "c" }, store, emStore);
 
         emStore.deleteOldestRequest();
@@ -103,7 +109,8 @@ public class CountlyStoreExplicitModeTests {
 
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "c" }, store, emStore);
 
-        emStore.esWriteCacheToStorage();
+        esWriteCacheToStorageValidateWrite(emStore, true);
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
         validateRQArrays(new String[] { "c" }, new String[] { "c" }, store, emStore);
     }
@@ -116,13 +123,16 @@ public class CountlyStoreExplicitModeTests {
 
         CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
 
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
+
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "a", "b", "c" }, store, emStore);
 
         emStore.removeRequest("b");
 
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "a", "c" }, store, emStore);
 
-        emStore.esWriteCacheToStorage();
+        esWriteCacheToStorageValidateWrite(emStore, true);
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
         validateRQArrays(new String[] { "a", "c" }, new String[] { "a", "c" }, store, emStore);
     }
@@ -134,6 +144,8 @@ public class CountlyStoreExplicitModeTests {
         store.addRequest("c", false);
 
         CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
+
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "a", "b", "c" }, store, emStore);
 
@@ -147,9 +159,36 @@ public class CountlyStoreExplicitModeTests {
 
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "1", "2", "3", "4" }, store, emStore);
 
-        emStore.esWriteCacheToStorage();
+        esWriteCacheToStorageValidateWrite(emStore, true);
+        esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
         validateRQArrays(new String[] { "1", "2", "3", "4" }, new String[] { "1", "2", "3", "4" }, store, emStore);
+    }
+
+    void esWriteCacheToStorageValidateWrite(final CountlyStore emStore, final boolean valueWritten) {
+        final Map<String, Boolean> valueHolder = new HashMap<>();
+        valueHolder.put("v", false);
+
+        emStore.esWriteCacheToStorage(new ExplicitStorageCallback() {
+            @Override public void WriteToStorageFinished(boolean writeWasPerformed) {
+                valueHolder.put("v", writeWasPerformed);
+            }
+        });
+
+        assertEquals(valueWritten, valueHolder.get("v"));
+    }
+
+    void esWriteCachesToPersistenceValidateWrite(final Countly countly, final boolean valueWritten) {
+        final Map<String, Boolean> valueHolder = new HashMap<>();
+        valueHolder.put("v", false);
+
+        countly.requestQueue().esWriteCachesToPersistence(new ExplicitStorageCallback() {
+            @Override public void WriteToStorageFinished(boolean writeWasPerformed) {
+                valueHolder.put("v", writeWasPerformed);
+            }
+        });
+
+        assertEquals(valueWritten, valueHolder.get("v"));
     }
 
     void populateEvents(String[] events, CountlyStore store) {
@@ -192,6 +231,8 @@ public class CountlyStoreExplicitModeTests {
         CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableExplicitStorageMode();
         countly.init(config);
 
+        esWriteCachesToPersistenceValidateWrite(countly, false);//this should perform no write
+
         countly.events().recordEvent("aa");
         countly.events().recordEvent("aabb");
         countly.events().recordEvent("aabbcc");
@@ -207,9 +248,9 @@ public class CountlyStoreExplicitModeTests {
         assertEquals(0, store.getEvents().length);
         assertEquals(0, store.getRequests().length);
 
-        countly.requestQueue().esWriteCachesToPersistence();
+        esWriteCachesToPersistenceValidateWrite(countly, true);
+        esWriteCachesToPersistenceValidateWrite(countly, false);//this should perform no write
 
-        // TODO: Investigate from 2,2,0 to 1,1,1 for getEvents()
         assertEquals(2, store.getEvents().length);
         assertEquals(1, store.getRequests().length);
 
@@ -218,7 +259,8 @@ public class CountlyStoreExplicitModeTests {
         assertEquals(2, store.getEvents().length);
         assertEquals(1, store.getRequests().length);
 
-        countly.requestQueue().esWriteCachesToPersistence();
+        esWriteCachesToPersistenceValidateWrite(countly, true);
+        esWriteCachesToPersistenceValidateWrite(countly, false);//this should perform no write
 
         assertEquals(0, store.getEvents().length);
         assertEquals(2, store.getRequests().length);
