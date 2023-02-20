@@ -56,6 +56,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
     protected ModuleLog L;
     protected ConsentProvider consentProvider;//link to the consent module
+    protected ModuleRequestQueue moduleRequestQueue = null;//todo remove in the future
     StorageProvider storageProvider;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
@@ -323,6 +324,8 @@ class ConnectionQueue implements RequestQueueProvider {
             L.d("[Connection Queue] No user data to send, skipping");
             return;
         }
+
+        moduleRequestQueue.sendEventsIfNeeded(true); // flush events before sending user details //todo this should be moved to the user profile modile after removing the static user profile implementation
 
         String data = prepareCommonRequestData() + userdata;
         addRequestToQueue(data, false);
