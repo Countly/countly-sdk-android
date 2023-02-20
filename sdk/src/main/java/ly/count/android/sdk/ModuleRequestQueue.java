@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -287,9 +288,9 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         requestQueueProvider.sendDirectRequest(filteredRequestMap);
     }
 
-    void esWriteCachesToPersistenceInternal() {
+    void esWriteCachesToPersistenceInternal(@Nullable ExplicitStorageCallback callback) {
         L.i("[ModuleRequestQueue] Calling esWriteCachesToPersistenceInternal");
-        storageProvider.esWriteCacheToStorage();
+        storageProvider.esWriteCacheToStorage(callback);
     }
 
     @Override
@@ -405,7 +406,14 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         public void esWriteCachesToPersistence() {
             synchronized (_cly) {
                 L.i("[Countly] Calling esWriteCachesToStorage");
-                esWriteCachesToPersistenceInternal();
+                esWriteCachesToPersistenceInternal(null);
+            }
+        }
+
+        public void esWriteCachesToPersistence(@Nullable ExplicitStorageCallback callback) {
+            synchronized (_cly) {
+                L.i("[Countly] Calling esWriteCachesToStorage");
+                esWriteCachesToPersistenceInternal(callback);
             }
         }
     }
