@@ -621,6 +621,7 @@ public class Countly {
             //initialize networking queues
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;
+            connectionQueue_.moduleRequestQueue = moduleRequestQueue;
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);

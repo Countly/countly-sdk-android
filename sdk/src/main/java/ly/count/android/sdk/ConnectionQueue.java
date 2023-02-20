@@ -50,13 +50,13 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
-    ModuleRequestQueue moduleRequestQueue = null;
 
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
 
     protected ModuleLog L;
     protected ConsentProvider consentProvider;//link to the consent module
+    protected ModuleRequestQueue moduleRequestQueue = null;//todo remove in the future
     StorageProvider storageProvider;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
@@ -325,7 +325,7 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        moduleRequestQueue.sendEventsIfNeeded(true); // flush events before sending user details
+        moduleRequestQueue.sendEventsIfNeeded(true); // flush events before sending user details //todo this should be moved to the user profile modile after removing the static user profile implementation
 
         String data = prepareCommonRequestData() + userdata;
         addRequestToQueue(data, false);
