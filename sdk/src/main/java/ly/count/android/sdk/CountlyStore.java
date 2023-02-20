@@ -83,8 +83,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     //explicit storage fields
     boolean explicitStorageModeEnabled = false;
     boolean esDirtyFlag = false;
-    String esRequestQueueCache = null;
-    String esEventQueueCache = null;
+    String esRequestQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
+    String esEventQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
 
     /**
      * Constructs a CountlyStore object.
@@ -177,13 +177,47 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
     }
 
-    public synchronized void esWriteCacheToStorage() {
+    public synchronized void esWriteCacheToStorage(@Nullable ExplicitStorageCallback callback) {
         L.v("[CountlyStore] Trying to write ES cache to storage[" + explicitStorageModeEnabled + "], is dirty flag:[" + esDirtyFlag + "]");
         if (explicitStorageModeEnabled) {
             if (esDirtyFlag) {
-                preferences_.edit().putString(REQUEST_PREFERENCE, esRequestQueueCache).commit();
-                preferences_.edit().putString(EVENTS_PREFERENCE, esEventQueueCache).commit();
-                esDirtyFlag = false;
+                boolean writePerformed = false;//flag for indicating if anything will be written
+                SharedPreferences.Editor spe = preferences_.edit();
+
+                //if it's not 'null' then it means that it is written to
+                if (esRequestQueueCache != null) {
+                    //check if the cached request queue matches the one in persistent memory
+                    String currentRQValue = preferences_.getString(REQUEST_PREFERENCE, "");
+                    if (!esRequestQueueCache.equals(currentRQValue)) {
+                        writePerformed = true;
+                        spe.putString(REQUEST_PREFERENCE, esRequestQueueCache);
+                    }
+                }
+
+                //if it's not 'null' then it means that it is written to
+                if (esEventQueueCache != null) {
+                    //check if the cached event queue matches the one in persistent memory
+                    String currentEQValue = preferences_.getString(EVENTS_PREFERENCE, "");
+                    if (!esEventQueueCache.equals((currentEQValue))) {
+                        writePerformed = true;
+                        spe.putString(EVENTS_PREFERENCE, esEventQueueCache);
+                    }
+                }
+
+                if (writePerformed) {
+                    //commit the changes if needed
+                    spe.commit();
+                }
+                esDirtyFlag = false;//clear the dirty flag
+
+                //signal the caller about the write that was potentially done
+                if (callback != null) {
+                    callback.WriteToStorageFinished(writePerformed);
+                }
+            } else {
+                if (callback != null) {
+                    callback.WriteToStorageFinished(false);
+                }
             }
         }
     }
