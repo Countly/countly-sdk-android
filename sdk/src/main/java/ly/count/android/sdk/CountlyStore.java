@@ -313,9 +313,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param requestStr the connection to be added, ignored if null or empty
      */
     @SuppressLint("ApplySharedPref")
-    public synchronized void addRequest(final String requestStr, final boolean writeInSync) {
+    public synchronized void addRequest(@NonNull final String requestStr, final boolean writeInSync) {
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
+
+            L.v("[CountlyStore] addRequest, s:[" + writeInSync + "] new q size:[" + (connections.size() + 1) + "] r:[" + requestStr + "]");
             if (connections.size() < maxRequestQueueSize) {
                 //request under max requests, add as normal
                 connections.add(requestStr);
@@ -327,6 +329,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 deleteOldestRequest();
                 addRequest(requestStr, writeInSync);
             }
+        } else {
+            L.w("[CountlyStore] addRequest, providing null or empty request string");
         }
     }
 

@@ -313,7 +313,7 @@ public class Countly {
         }
 
         if (config.application == null) {
-            L.w("[Init] Initialising the SDK without providing the application class is deprecated");
+            L.i("[Init] Initialising the SDK without providing the application class");
         }
 
         if (config.deviceID != null && config.deviceID.length() == 0) {

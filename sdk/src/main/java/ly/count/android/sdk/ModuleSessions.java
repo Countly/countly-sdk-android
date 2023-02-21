@@ -111,8 +111,6 @@ public class ModuleSessions extends ModuleBase {
                     return;
                 }
 
-                L.i("[Sessions] Calling 'updateSession'");
-
                 updateSessionInternal();
             }
         }
