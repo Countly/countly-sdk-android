@@ -3,8 +3,6 @@
 * Events are now recorded with an internal ID.
 * Added a variant of "esWriteCachesToPersistence" that has a callback to indicate if any writes were performed
 * When calling "esWriteCachesToPersistence", no write to storage is performed if the same data would be written
-
-## 22.06.3
 * Expanded feedback widget functionality. Added ability to use rating widgets.
 * Added functionality to access tags for feedback widgets.
 

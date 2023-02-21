@@ -145,7 +145,7 @@ public class App extends Application {
         Map<String, Object> customUserProperties = new HashMap<>();
         customUserProperties.put("A", 1);
 
-        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setIdMode(DeviceIdType.OPEN_UDID)//.setDeviceId("67567")
+        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL))//.setDeviceId("67567")
             .setLoggingEnabled(true)
             .setLogListener(new ModuleLog.LogCallback() {
                 @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
