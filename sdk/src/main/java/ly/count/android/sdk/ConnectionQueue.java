@@ -637,8 +637,8 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            //add session data if consent given
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.metrics) || consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            //add metrics data if consent given
             data += "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);
         }
 
