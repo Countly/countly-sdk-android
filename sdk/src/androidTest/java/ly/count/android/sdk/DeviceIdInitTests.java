@@ -207,15 +207,16 @@ public class DeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
+        final String specificDeviceId = "hjk";
         CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
-        configInitial.setDeviceId("hjk");
+        configInitial.setDeviceId(specificDeviceId);
 
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
 
         String initialDId = cInitial.getDeviceID();
 
-        Assert.assertEquals("hjk", cInitial.getDeviceID());
+        Assert.assertEquals(specificDeviceId, cInitial.getDeviceID());
         Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, cInitial.getDeviceIDType());
 
         //setup followup state
@@ -227,6 +228,7 @@ public class DeviceIdInitTests {
         countly.init(cc);
 
         Assert.assertEquals(initialDId, countly.getDeviceID());
+        Assert.assertEquals(specificDeviceId, countly.getDeviceID());
         Assert.assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, countly.getDeviceIDType());
     }
 
