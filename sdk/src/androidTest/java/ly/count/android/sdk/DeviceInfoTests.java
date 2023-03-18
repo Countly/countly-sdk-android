@@ -32,6 +32,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
@@ -229,9 +230,10 @@ public class DeviceInfoTests {
         json.put("_app_version", DeviceInfo.getAppVersion(getContext()));
         json.put("_manufacturer", DeviceInfo.getManufacturer());
         json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
-        final String expected = URLEncoder.encode(json.toString(), "UTF-8");
-        assertNotNull(expected);
-        assertEquals(expected, DeviceInfo.getMetrics(getContext(), null));
+
+        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), null), "UTF-8");
+        final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
+        TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
 
     @Test
@@ -257,9 +259,10 @@ public class DeviceInfoTests {
         json.put("123", "bb");
         json.put("456", "cc");
         json.put("Test", "aa");
-        final String expected = URLEncoder.encode(json.toString(), "UTF-8");
-        assertNotNull(expected);
-        assertEquals(expected, DeviceInfo.getMetrics(getContext(), metricOverride));
+
+        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
+        TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
 
     @Test
@@ -288,23 +291,8 @@ public class DeviceInfoTests {
         json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
         json.put("asd", "123");
 
-        final String decoded = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
-        final JSONObject newJson = new JSONObject(decoded);
-        int sizeJson = 0;
-        int sizeNewJson = 0;
-        Iterator<String> keysJ = json.keys();
-        Iterator<String> keysNJ = newJson.keys();
-
-        assertNotNull(newJson);
-        while (keysJ.hasNext()) {
-            sizeJson++;
-            String key = keysJ.next();
-            assertEquals(json.get(key), newJson.get(key));
-        }
-        while (keysNJ.hasNext()) {
-            sizeNewJson++;
-            keysNJ.next();
-        }
-        assertEquals(sizeJson, sizeNewJson);
+        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
+        TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
 }

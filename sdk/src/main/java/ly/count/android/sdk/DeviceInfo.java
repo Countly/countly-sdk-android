@@ -253,20 +253,30 @@ class DeviceInfo {
         return "mobile";
     }
 
-    protected static JSONObject getMetricsJson(final Context context, final Map<String, String> metricOverride) {
+    @NonNull
+    static JSONObject getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
         final JSONObject json = new JSONObject();
 
         Utils.fillJSONIfValuesNotEmpty(json,
             "_device", getDevice(),
             "_os", getOS(),
             "_os_version", getOSVersion(),
-            "_carrier", getCarrier(context),
             "_resolution", getResolution(context),
+            "_app_version", getAppVersion(context),
+            "_manufacturer", getManufacturer());
+
+        return json;
+    }
+
+    static String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+        //we set the override to null because all of the entries will be overwritten anyway
+        final JSONObject json = getCommonMetrics(context, null);
+
+        Utils.fillJSONIfValuesNotEmpty(json,
+            "_carrier", getCarrier(context),
             "_density", getDensity(context),
             "_locale", getLocale(),
-            "_app_version", getAppVersion(context),
             "_store", getStore(context),
-            "_manufacturer", getManufacturer(),
             "_device_type", getDeviceType(context));
 
         //override metric values
@@ -291,27 +301,66 @@ class DeviceInfo {
                 }
             }
         }
-        return json;
-    }
-
-    /**
-     * Returns a URL-encoded JSON string containing the device metrics
-     * to be associated with a begin session event.
-     * See the following link for more info:
-     * https://count.ly/resources/reference/server-api
-     */
-    static String getMetrics(final Context context, final Map<String, String> metricOverride) {
-        JSONObject json = DeviceInfo.getMetricsJson(context, metricOverride);
 
         String result = json.toString();
 
         try {
             result = java.net.URLEncoder.encode(result, "UTF-8");
-        } catch (UnsupportedEncodingException ignored) {
+        } catch (UnsupportedEncodingException ex) {
             // should never happen because Android guarantees UTF-8 support
+            Countly.sharedInstance().L.e("[getMetrics] encode failed, [" + ex + "]");
         }
 
         return result;
+    }
+
+    /**
+     * Returns a URL-encoded JSON string containing the device crash report
+     * See the following link for more info:
+     * http://resources.count.ly/v1.0/docs/i
+     */
+    static String getCrashData(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
+        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
+
+        final JSONObject json = getCommonMetrics(context, metricOverride);
+
+        Utils.fillJSONIfValuesNotEmpty(json,
+            "_error", error,
+            "_nonfatal", Boolean.toString(nonfatal),
+            "_cpu", getCpu(),
+            "_opengl", getOpenGL(context),
+            "_root", isRooted(),
+            "_ram_total", getRamTotal(),
+            "_disk_total", getDiskTotal()
+        );
+
+        if (!isNativeCrash) {
+            //if is not a native crash
+            Utils.fillJSONIfValuesNotEmpty(json,
+                "_logs", crashBreadcrumbs,
+                "_ram_current", getRamCurrent(context),
+                "_disk_current", getDiskCurrent(),
+                "_bat", getBatteryLevel(context),
+                "_run", getRunningTime(),
+                "_orientation", getOrientation(context),
+                "_online", isOnline(context),
+                "_muted", isMuted(context),
+                "_background", isInBackground()
+            );
+        } else {
+            //if is a native crash
+            try {
+                json.put("_native_cpp", true);
+            } catch (JSONException ignored) {
+            }
+        }
+
+        try {
+            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
+        } catch (JSONException e) {
+            //no custom segments
+        }
+        return json.toString();
     }
 
     // Crash related calls
@@ -618,66 +667,5 @@ class DeviceInfo {
         } catch (Throwable thr) {
             return "false";
         }
-    }
-
-    /**
-     * Returns a URL-encoded JSON string containing the device crash report
-     * See the following link for more info:
-     * http://resources.count.ly/v1.0/docs/i
-     */
-    static String getCrashData(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
-
-        final JSONObject json = new JSONObject();
-
-        if (metricOverride != null) {
-            final JSONObject deviceInfoMetrics = DeviceInfo.getMetricsJson(context, metricOverride);
-            for (Iterator<String> it = deviceInfoMetrics.keys(); it.hasNext(); ) {
-                String key = it.next();
-                try {
-                    json.put(key, deviceInfoMetrics.get(key));
-                } catch (JSONException ex) {
-                    // continue
-                }
-            }
-        }
-
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_error", error,
-            "_nonfatal", Boolean.toString(nonfatal),
-            "_cpu", getCpu(),
-            "_opengl", getOpenGL(context),
-            "_root", isRooted(),
-            "_ram_total", getRamTotal(),
-            "_disk_total", getDiskTotal()
-        );
-
-        if (!isNativeCrash) {
-            //if is not a native crash
-            Utils.fillJSONIfValuesNotEmpty(json,
-                "_logs", crashBreadcrumbs,
-                "_ram_current", getRamCurrent(context),
-                "_disk_current", getDiskCurrent(),
-                "_bat", getBatteryLevel(context),
-                "_run", getRunningTime(),
-                "_orientation", getOrientation(context),
-                "_online", isOnline(context),
-                "_muted", isMuted(context),
-                "_background", isInBackground()
-            );
-        } else {
-            //if is a native crash
-            try {
-                json.put("_native_cpp", true);
-            } catch (JSONException ignored) {
-            }
-        }
-
-        try {
-            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
-        } catch (JSONException e) {
-            //no custom segments
-        }
-        return json.toString();
     }
 }

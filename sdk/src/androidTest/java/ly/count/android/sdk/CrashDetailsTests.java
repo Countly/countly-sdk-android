@@ -76,7 +76,7 @@ public class CrashDetailsTests {
 
         String allLogs = DeviceInfo.getLogs();
         for (String s : sArr) {
-            allLogs.contains(s);
+            Assert.assertTrue(allLogs.contains(s));
         }
 
         for (String s : sArr) {
@@ -136,7 +136,7 @@ public class CrashDetailsTests {
         Assert.assertTrue(cData.contains("\"_device\":\""));
         Assert.assertTrue(cData.contains("\"_os_version\":\""));
         Assert.assertTrue(cData.contains("\"_resolution\":\""));
-        Assert.assertTrue(cData.contains("\"_manufacture\":\""));
+        Assert.assertTrue(cData.contains("\"_manufacturer\":\""));
         Assert.assertTrue(cData.contains("\"_cpu\":\""));
         Assert.assertTrue(cData.contains("\"_opengl\":\""));
         Assert.assertTrue(cData.contains("\"_root\":\""));

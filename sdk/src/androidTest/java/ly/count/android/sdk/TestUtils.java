@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -190,6 +191,19 @@ public class TestUtils {
         return Countly.sharedInstance();
     }
 
+    public static void bothJSONObjEqual(@NonNull JSONObject jA, @NonNull JSONObject jB) throws JSONException {
+        Assert.assertNotNull(jA);
+        Assert.assertNotNull(jB);
+        Assert.assertEquals(jA.length(), jB.length());
+
+        Iterator<String> iter = jA.keys();
+        while (iter.hasNext()) {
+            String key = iter.next();
+
+            Assert.assertEquals(jA.get(key), jB.get(key));
+        }
+    }
+
     public static List<String> getRequestsWithParam(String[] requests, String param) {
         List<String> filteredRequests = new ArrayList<>();
         String targetParamValue = "&" + param + "=";
@@ -322,7 +336,8 @@ public class TestUtils {
         verify(ep, times(interactionCount)).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), anyString());
     }
 
-    public static void validateRecordEventInternalMock(final @NonNull EventProvider ep, final @NonNull String eventKey, final @Nullable Map<String, Object> segmentation, final @Nullable Integer count, final @Nullable Double sum, final @Nullable Double duration, final @Nullable UtilsTime.Instant instant, final @Nullable String idOverride, int index, int interactionCount) {
+    public static void validateRecordEventInternalMock(final @NonNull EventProvider ep, final @NonNull String eventKey, final @Nullable Map<String, Object> segmentation, final @Nullable Integer count, final @Nullable Double sum, final @Nullable Double duration,
+        final @Nullable UtilsTime.Instant instant, final @Nullable String idOverride, int index, int interactionCount) {
 
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Map> arg2 = ArgumentCaptor.forClass(Map.class);

@@ -1,5 +1,6 @@
 ## 22.09.1
 * Fixed bug where metric override values were not applying to crash metrics
+* Fixed bug where crash metrics sent the "manufacturer" value under the wrong key
 
 ## 22.09.0
 * Fixed a race condition bug where a recorded event would have the wrong user properties in the drill database on the server. Now event queue is emptied (formed into a request) before recording any user profile changes.
