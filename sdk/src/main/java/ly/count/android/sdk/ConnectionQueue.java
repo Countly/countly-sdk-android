@@ -57,6 +57,7 @@ class ConnectionQueue implements RequestQueueProvider {
     protected ModuleLog L;
     protected ConsentProvider consentProvider;//link to the consent module
     protected ModuleRequestQueue moduleRequestQueue = null;//todo remove in the future
+    protected DeviceInfo deviceInfo = null;//todo ?remove in the future?
     StorageProvider storageProvider;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
@@ -236,7 +237,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&android_token=" + UtilsNetworking.urlEncodeString(token)
             + "&token_provider=" + provider
             + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
-            + "&locale=" + UtilsNetworking.urlEncodeString(DeviceInfo.getLocale());
+            + "&locale=" + UtilsNetworking.urlEncodeString(deviceInfo.mp.getLocale());
 
         L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
 
@@ -596,7 +597,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&timestamp=" + instant.timestampMs
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
-            + "&tz=" + DeviceInfo.getTimezoneOffset()
+            + "&tz=" + deviceInfo.mp.getTimezoneOffset()
             + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
             + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
     }

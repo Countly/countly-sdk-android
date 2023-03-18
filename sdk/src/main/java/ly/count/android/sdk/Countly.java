@@ -627,6 +627,7 @@ public class Countly {
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
+            connectionQueue_.deviceInfo = config.deviceInfo;
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
@@ -837,7 +838,7 @@ public class Countly {
             moduleSessions.beginSessionInternal();
         }
 
-        DeviceInfo.inForeground();
+        config_.deviceInfo.inForeground();
 
         for (ModuleBase module : modules) {
             module.onActivityStarted(activity);
@@ -873,7 +874,7 @@ public class Countly {
             moduleSessions.endSessionInternal(null);
         }
 
-        DeviceInfo.inBackground();
+        config_.deviceInfo.inBackground();
 
         for (ModuleBase module : modules) {
             module.onActivityStopped();

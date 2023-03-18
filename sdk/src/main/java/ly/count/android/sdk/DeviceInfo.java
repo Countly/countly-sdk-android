@@ -65,7 +65,7 @@ class DeviceInfo {
     //crash related fields
     private static final LinkedList<String> logs = new LinkedList<>();
     private final static int startTime = UtilsTime.currentTimestampSeconds();
-    private static boolean inBackground = true;
+    private boolean inBackground = true;
     private static long totalMemory = 0;
 
     MetricProvider mp;
@@ -78,6 +78,7 @@ class DeviceInfo {
                 /**
                  * Returns the display name of the current operating system.
                  */
+                @NonNull
                 @Override public String getOS() {
                     return "Android";
                 }
@@ -86,180 +87,449 @@ class DeviceInfo {
                  * Returns the current operating system version as a displayable string.
                  */
                 @SuppressWarnings("SameReturnValue")
+                @NonNull
+                @Override
                 public String getOSVersion() {
                     return android.os.Build.VERSION.RELEASE;
                 }
+
+                /**
+                 * Returns the current device model.
+                 */
+                @SuppressWarnings("SameReturnValue")
+                @NonNull
+                @Override
+                public String getDevice() {
+                    return android.os.Build.MODEL;
+                }
+
+                @SuppressWarnings("SameReturnValue")
+                @NonNull
+                @Override
+                public String getManufacturer() {
+                    return Build.MANUFACTURER;
+                }
+
+                /**
+                 * Returns the non-scaled pixel resolution of the current default display being used by the
+                 * WindowManager in the specified context.
+                 *
+                 * @param context context to use to retrieve the current WindowManager
+                 * @return a string in the format "WxH", or the empty string "" if resolution cannot be determined
+                 */
+                @NonNull
+                @Override
+                public String getResolution(@NonNull final Context context) {
+                    // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
+                    // were returning null, even though the documentation doesn't say they should do so; so now
+                    // we catch Throwable and return empty string if that happens
+                    String resolution = "";
+                    try {
+                        final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                        final Display display = wm.getDefaultDisplay();
+                        final DisplayMetrics metrics = new DisplayMetrics();
+                        display.getMetrics(metrics);
+                        resolution = metrics.widthPixels + "x" + metrics.heightPixels;
+                    } catch (Throwable t) {
+                        Countly.sharedInstance().L.i("[DeviceInfo] Device resolution cannot be determined");
+                    }
+                    return resolution;
+                }
+
+                /**
+                 * Maps the current display density to a string constant.
+                 *
+                 * @param context context to use to retrieve the current display metrics
+                 * @return a string constant representing the current display density, or the
+                 * empty string if the density is unknown
+                 */
+                @NonNull
+                @Override
+                public String getDensity(@NonNull final Context context) {
+                    String densityStr;
+                    final int density = context.getResources().getDisplayMetrics().densityDpi;
+                    switch (density) {
+                        case DisplayMetrics.DENSITY_LOW:
+                            densityStr = "LDPI";
+                            break;
+                        case DisplayMetrics.DENSITY_MEDIUM:
+                            densityStr = "MDPI";
+                            break;
+                        case DisplayMetrics.DENSITY_TV:
+                            densityStr = "TVDPI";
+                            break;
+                        case DisplayMetrics.DENSITY_HIGH:
+                            densityStr = "HDPI";
+                            break;
+                        case DisplayMetrics.DENSITY_260:
+                        case DisplayMetrics.DENSITY_280:
+                        case DisplayMetrics.DENSITY_300:
+                        case DisplayMetrics.DENSITY_XHIGH:
+                            densityStr = "XHDPI";
+                            break;
+                        case DisplayMetrics.DENSITY_340:
+                        case DisplayMetrics.DENSITY_360:
+                        case DisplayMetrics.DENSITY_400:
+                        case DisplayMetrics.DENSITY_420:
+                        case DisplayMetrics.DENSITY_XXHIGH:
+                            densityStr = "XXHDPI";
+                            break;
+                        case DisplayMetrics.DENSITY_560:
+                        case DisplayMetrics.DENSITY_XXXHIGH:
+                            densityStr = "XXXHDPI";
+                            break;
+                        default:
+                            densityStr = "other";
+                            break;
+                    }
+                    return densityStr;
+                }
+
+                /**
+                 * Returns the display name of the current network operator from the
+                 * TelephonyManager from the specified context.
+                 *
+                 * @param context context to use to retrieve the TelephonyManager from
+                 * @return the display name of the current network operator, or the empty
+                 * string if it cannot be accessed or determined
+                 */
+                @NonNull
+                @Override
+                public String getCarrier(@NonNull final Context context) {
+                    String carrier = "";
+                    final TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+                    if (manager != null) {
+                        carrier = manager.getNetworkOperatorName();
+                    }
+                    if (carrier == null || carrier.length() == 0) {
+                        carrier = "";
+                        Countly.sharedInstance().L.i("[DeviceInfo] No carrier found");
+                    }
+                    return carrier;
+                }
+
+                @Override
+                public int getTimezoneOffset() {
+                    return TimeZone.getDefault().getOffset(new Date().getTime()) / 60000;
+                }
+
+                /**
+                 * Returns the current locale (ex. "en_US").
+                 */
+                @NonNull
+                @Override
+                public String getLocale() {
+                    final Locale locale = Locale.getDefault();
+                    return locale.getLanguage() + "_" + locale.getCountry();
+                }
+
+                /**
+                 * Returns the application version string stored in the specified
+                 * context's package info versionName field, or "1.0" if versionName
+                 * is not present.
+                 */
+                @NonNull
+                @Override
+                public String getAppVersion(@NonNull final Context context) {
+                    String result = Countly.DEFAULT_APP_VERSION;
+                    try {
+                        String tmpVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+                        if (tmpVersion != null) {
+                            result = tmpVersion;
+                        }
+                    } catch (PackageManager.NameNotFoundException e) {
+                        Countly.sharedInstance().L.i("[DeviceInfo] No app version found");
+                    }
+                    return result;
+                }
+
+                /**
+                 * Returns the package name of the app that installed this app
+                 */
+                @NonNull
+                @Override
+                public String getStore(@NonNull final Context context) {
+                    String result = "";
+                    try {
+                        result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
+                    } catch (Exception e) {
+                        Countly.sharedInstance().L.d("[DeviceInfo, getStore] Can't get Installer package ");
+                    }
+                    if (result == null || result.length() == 0) {
+                        result = "";
+                        Countly.sharedInstance().L.d("[DeviceInfo, getStore] No store found");
+                    }
+                    return result;
+                }
+
+                /**
+                 * Returns what kind of device this is. The potential values are:
+                 * ["console", "mobile", "tablet", "smarttv", "wearable", "embedded", "desktop"]
+                 * Currently the Android SDK differentiates between ["mobile", "tablet", "smarttv"]
+                 */
+                @NonNull
+                @Override
+                public String getDeviceType(@NonNull final Context context) {
+                    if (Utils.isDeviceTv(context)) {
+                        return "smarttv";
+                    }
+
+                    if (Utils.isDeviceTablet(context)) {
+                        return "tablet";
+                    }
+
+                    return "mobile";
+                }
+
+                // Crash related calls
+                @Override
+                public long getTotalRAM() {
+                    if (totalMemory == 0) {
+                        RandomAccessFile reader = null;
+                        String load;
+                        try {
+                            reader = new RandomAccessFile("/proc/meminfo", "r");
+                            load = reader.readLine();
+
+                            // Get the Number value from the string
+                            Pattern p = Pattern.compile("(\\d+)");
+                            Matcher m = p.matcher(load);
+                            String value = "";
+                            while (m.find()) {
+                                value = m.group(1);
+                            }
+                            try {
+                                if (value != null) {
+                                    totalMemory = Long.parseLong(value) / 1024;
+                                } else {
+                                    totalMemory = 0;
+                                }
+                            } catch (NumberFormatException ex) {
+                                totalMemory = 0;
+                            }
+                        } catch (IOException ex) {
+                            try {
+                                if (reader != null) {
+                                    reader.close();
+                                }
+                            } catch (IOException exc) {
+                                exc.printStackTrace();
+                            }
+                            ex.printStackTrace();
+                        } finally {
+                            try {
+                                if (reader != null) {
+                                    reader.close();
+                                }
+                            } catch (IOException exc) {
+                                exc.printStackTrace();
+                            }
+                        }
+                    }
+                    return totalMemory;
+                }
+
+                /**
+                 * Returns the current device RAM amount.
+                 */
+                @NonNull
+                @Override
+                public String getRamCurrent(Context context) {
+                    ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
+                    ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                    activityManager.getMemoryInfo(mi);
+                    return Long.toString(getTotalRAM() - (mi.availMem / 1048576L));
+                }
+
+                /**
+                 * Returns the total device RAM amount.
+                 */
+                @NonNull
+                @Override
+                public String getRamTotal() {
+                    return Long.toString(getTotalRAM());
+                }
+
+                /**
+                 * Returns the current device cpu.
+                 */
+                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                @NonNull
+                @Override
+                public String getCpu() {
+                    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+                        return android.os.Build.CPU_ABI;
+                    } else {
+                        return Build.SUPPORTED_ABIS[0];
+                    }
+                }
+
+                /**
+                 * Returns the current device openGL version.
+                 */
+                @NonNull
+                @Override
+                public String getOpenGL(Context context) {
+                    PackageManager packageManager = context.getPackageManager();
+                    FeatureInfo[] featureInfos = packageManager.getSystemAvailableFeatures();
+                    if (featureInfos != null && featureInfos.length > 0) {
+                        for (FeatureInfo featureInfo : featureInfos) {
+                            // Null feature name means this feature is the open gl es version feature.
+                            if (featureInfo.name == null) {
+                                if (featureInfo.reqGlEsVersion != FeatureInfo.GL_ES_VERSION_UNDEFINED) {
+                                    return Integer.toString((featureInfo.reqGlEsVersion & 0xffff0000) >> 16);
+                                } else {
+                                    return "1"; // Lack of property means OpenGL ES version 1
+                                }
+                            }
+                        }
+                    }
+                    return "1";
+                }
+
+                /**
+                 * Returns the current device disk space.
+                 */
+                @TargetApi(18)
+                @NonNull
+                @Override
+                public String getDiskCurrent() {
+                    if (android.os.Build.VERSION.SDK_INT < 18) {
+                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
+                        long free = ((long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize());
+                        return Long.toString((total - free) / 1048576L);
+                    } else {
+                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+                        long free = (statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong());
+                        return Long.toString((total - free) / 1048576L);
+                    }
+                }
+
+                /**
+                 * Returns the current device disk space.
+                 */
+                @TargetApi(18)
+                @NonNull
+                @Override
+                public String getDiskTotal() {
+                    if (android.os.Build.VERSION.SDK_INT < 18) {
+                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
+                        return Long.toString(total / 1048576L);
+                    } else {
+                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
+                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+                        return Long.toString(total / 1048576L);
+                    }
+                }
+
+                /**
+                 * Returns the current device battery level.
+                 */
+                @NonNull
+                @Override
+                public String getBatteryLevel(Context context) {
+                    try {
+                        Intent batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                        if (batteryIntent != null) {
+                            int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                            int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+                            // Error checking that probably isn't needed but I added just in case.
+                            if (level > -1 && scale > 0) {
+                                return Float.toString(((float) level / (float) scale) * 100.0f);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Countly.sharedInstance().L.i("Can't get battery level");
+                    }
+
+                    return null;
+                }
+
+                /**
+                 * Returns the current device orientation.
+                 */
+                @NonNull
+                @Override
+                public String getOrientation(Context context) {
+                    int orientation = context.getResources().getConfiguration().orientation;
+                    switch (orientation) {
+                        case Configuration.ORIENTATION_LANDSCAPE:
+                            return "Landscape";
+                        case Configuration.ORIENTATION_PORTRAIT:
+                            return "Portrait";
+                        case Configuration.ORIENTATION_SQUARE:
+                            return "Square";
+                        case Configuration.ORIENTATION_UNDEFINED:
+                            return "Unknown";
+                        default:
+                            return null;
+                    }
+                }
+
+                /**
+                 * Checks if device is rooted.
+                 */
+                @NonNull
+                @Override
+                public String isRooted() {
+                    String[] paths = {
+                        "/sbin/su", "/system/bin/su", "/system/xbin/su", "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
+                        "/system/bin/failsafe/su", "/data/local/su"
+                    };
+                    for (String path : paths) {
+                        if (new File(path).exists()) return "true";
+                    }
+                    return "false";
+                }
+
+                /**
+                 * Checks if device is online.
+                 */
+                @SuppressLint("MissingPermission")
+                @NonNull
+                @Override
+                public String isOnline(Context context) {
+                    try {
+                        ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+                        if (conMgr != null && conMgr.getActiveNetworkInfo() != null
+                            && conMgr.getActiveNetworkInfo().isAvailable()
+                            && conMgr.getActiveNetworkInfo().isConnected()) {
+
+                            return "true";
+                        }
+                        return "false";
+                    } catch (Exception e) {
+                        Countly.sharedInstance().L.w("Got exception determining connectivity", e);
+                    }
+                    return null;
+                }
+
+                /**
+                 * Checks if device is muted.
+                 */
+                @NonNull
+                @Override
+                public String isMuted(Context context) {
+                    try {
+                        AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+                        switch (audio.getRingerMode()) {
+                            case AudioManager.RINGER_MODE_SILENT:
+                                // Fall-through
+                            case AudioManager.RINGER_MODE_VIBRATE:
+                                return "true";
+                            default:
+                                return "false";
+                        }
+                    } catch (Throwable thr) {
+                        return "false";
+                    }
+                }
             };
         }
-    }
-
-    /**
-     * Returns the current device model.
-     */
-    @SuppressWarnings("SameReturnValue")
-    static String getDevice() {
-        return android.os.Build.MODEL;
-    }
-
-    @SuppressWarnings("SameReturnValue")
-    static String getManufacturer() {
-        return Build.MANUFACTURER;
-    }
-
-    /**
-     * Returns the non-scaled pixel resolution of the current default display being used by the
-     * WindowManager in the specified context.
-     *
-     * @param context context to use to retrieve the current WindowManager
-     * @return a string in the format "WxH", or the empty string "" if resolution cannot be determined
-     */
-    static String getResolution(final Context context) {
-        // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
-        // were returning null, even though the documentation doesn't say they should do so; so now
-        // we catch Throwable and return empty string if that happens
-        String resolution = "";
-        try {
-            final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-            final Display display = wm.getDefaultDisplay();
-            final DisplayMetrics metrics = new DisplayMetrics();
-            display.getMetrics(metrics);
-            resolution = metrics.widthPixels + "x" + metrics.heightPixels;
-        } catch (Throwable t) {
-            Countly.sharedInstance().L.i("[DeviceInfo] Device resolution cannot be determined");
-        }
-        return resolution;
-    }
-
-    /**
-     * Maps the current display density to a string constant.
-     *
-     * @param context context to use to retrieve the current display metrics
-     * @return a string constant representing the current display density, or the
-     * empty string if the density is unknown
-     */
-    static String getDensity(final Context context) {
-        String densityStr;
-        final int density = context.getResources().getDisplayMetrics().densityDpi;
-        switch (density) {
-            case DisplayMetrics.DENSITY_LOW:
-                densityStr = "LDPI";
-                break;
-            case DisplayMetrics.DENSITY_MEDIUM:
-                densityStr = "MDPI";
-                break;
-            case DisplayMetrics.DENSITY_TV:
-                densityStr = "TVDPI";
-                break;
-            case DisplayMetrics.DENSITY_HIGH:
-                densityStr = "HDPI";
-                break;
-            case DisplayMetrics.DENSITY_260:
-            case DisplayMetrics.DENSITY_280:
-            case DisplayMetrics.DENSITY_300:
-            case DisplayMetrics.DENSITY_XHIGH:
-                densityStr = "XHDPI";
-                break;
-            case DisplayMetrics.DENSITY_340:
-            case DisplayMetrics.DENSITY_360:
-            case DisplayMetrics.DENSITY_400:
-            case DisplayMetrics.DENSITY_420:
-            case DisplayMetrics.DENSITY_XXHIGH:
-                densityStr = "XXHDPI";
-                break;
-            case DisplayMetrics.DENSITY_560:
-            case DisplayMetrics.DENSITY_XXXHIGH:
-                densityStr = "XXXHDPI";
-                break;
-            default:
-                densityStr = "other";
-                break;
-        }
-        return densityStr;
-    }
-
-    /**
-     * Returns the display name of the current network operator from the
-     * TelephonyManager from the specified context.
-     *
-     * @param context context to use to retrieve the TelephonyManager from
-     * @return the display name of the current network operator, or the empty
-     * string if it cannot be accessed or determined
-     */
-    static String getCarrier(final Context context) {
-        String carrier = "";
-        final TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        if (manager != null) {
-            carrier = manager.getNetworkOperatorName();
-        }
-        if (carrier == null || carrier.length() == 0) {
-            carrier = "";
-            Countly.sharedInstance().L.i("[DeviceInfo] No carrier found");
-        }
-        return carrier;
-    }
-
-    static int getTimezoneOffset() {
-        return TimeZone.getDefault().getOffset(new Date().getTime()) / 60000;
-    }
-
-    /**
-     * Returns the current locale (ex. "en_US").
-     */
-    static String getLocale() {
-        final Locale locale = Locale.getDefault();
-        return locale.getLanguage() + "_" + locale.getCountry();
-    }
-
-    /**
-     * Returns the application version string stored in the specified
-     * context's package info versionName field, or "1.0" if versionName
-     * is not present.
-     */
-    static String getAppVersion(final Context context) {
-        String result = Countly.DEFAULT_APP_VERSION;
-        try {
-            String tmpVersion = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
-            if (tmpVersion != null) {
-                result = tmpVersion;
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            Countly.sharedInstance().L.i("[DeviceInfo] No app version found");
-        }
-        return result;
-    }
-
-    /**
-     * Returns the package name of the app that installed this app
-     */
-    static String getStore(final Context context) {
-        String result = "";
-        try {
-            result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
-        } catch (Exception e) {
-            Countly.sharedInstance().L.d("[DeviceInfo, getStore] Can't get Installer package ");
-        }
-        if (result == null || result.length() == 0) {
-            result = "";
-            Countly.sharedInstance().L.d("[DeviceInfo, getStore] No store found");
-        }
-        return result;
-    }
-
-    /**
-     * Returns what kind of device this is. The potential values are:
-     * ["console", "mobile", "tablet", "smarttv", "wearable", "embedded", "desktop"]
-     * Currently the Android SDK differentiates between ["mobile", "tablet", "smarttv"]
-     */
-    static String getDeviceType(final Context context) {
-        if (Utils.isDeviceTv(context)) {
-            return "smarttv";
-        }
-
-        if (Utils.isDeviceTablet(context)) {
-            return "tablet";
-        }
-
-        return "mobile";
     }
 
     /**
@@ -271,16 +541,16 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    static JSONObject getCommonMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
+    JSONObject getCommonMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
         final JSONObject json = new JSONObject();
 
         Utils.fillJSONIfValuesNotEmpty(json,
-            "_device", getDevice(),
+            "_device", deviceInfo.mp.getDevice(),
             "_os", deviceInfo.mp.getOS(),
             "_os_version", deviceInfo.mp.getOSVersion(),
-            "_resolution", getResolution(context),
-            "_app_version", getAppVersion(context),
-            "_manufacturer", getManufacturer());
+            "_resolution", deviceInfo.mp.getResolution(context),
+            "_app_version", deviceInfo.mp.getAppVersion(context),
+            "_manufacturer", deviceInfo.mp.getManufacturer());
 
         return json;
     }
@@ -293,16 +563,16 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    static String getMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
+    String getMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
         //we set the override to null because all of the entries will be overwritten anyway
         final JSONObject json = getCommonMetrics(context, deviceInfo, null);
 
         Utils.fillJSONIfValuesNotEmpty(json,
-            "_carrier", getCarrier(context),
-            "_density", getDensity(context),
-            "_locale", getLocale(),
-            "_store", getStore(context),
-            "_device_type", getDeviceType(context));
+            "_carrier", deviceInfo.mp.getCarrier(context),
+            "_density", deviceInfo.mp.getDensity(context),
+            "_locale", deviceInfo.mp.getLocale(),
+            "_store", deviceInfo.mp.getStore(context),
+            "_device_type", deviceInfo.mp.getDeviceType(context));
 
         //override metric values
         if (metricOverride != null) {
@@ -345,7 +615,7 @@ class DeviceInfo {
      * http://resources.count.ly/v1.0/docs/i
      */
     @NonNull
-    static String getCrashData(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
+    String getCrashData(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
         @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
 
         final JSONObject json = getCommonMetrics(context, deviceInfo, metricOverride);
@@ -353,24 +623,24 @@ class DeviceInfo {
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", error,
             "_nonfatal", Boolean.toString(nonfatal),
-            "_cpu", getCpu(),
-            "_opengl", getOpenGL(context),
-            "_root", isRooted(),
-            "_ram_total", getRamTotal(),
-            "_disk_total", getDiskTotal()
+            "_cpu", deviceInfo.mp.getCpu(),
+            "_opengl", deviceInfo.mp.getOpenGL(context),
+            "_root", deviceInfo.mp.isRooted(),
+            "_ram_total", deviceInfo.mp.getRamTotal(),
+            "_disk_total", deviceInfo.mp.getDiskTotal()
         );
 
         if (!isNativeCrash) {
             //if is not a native crash
             Utils.fillJSONIfValuesNotEmpty(json,
                 "_logs", crashBreadcrumbs,
-                "_ram_current", getRamCurrent(context),
-                "_disk_current", getDiskCurrent(),
-                "_bat", getBatteryLevel(context),
+                "_ram_current", deviceInfo.mp.getRamCurrent(context),
+                "_disk_current", deviceInfo.mp.getDiskCurrent(),
+                "_bat", deviceInfo.mp.getBatteryLevel(context),
                 "_run", getRunningTime(),
-                "_orientation", getOrientation(context),
-                "_online", isOnline(context),
-                "_muted", isMuted(context),
+                "_orientation", deviceInfo.mp.getOrientation(context),
+                "_online", deviceInfo.mp.isOnline(context),
+                "_muted", deviceInfo.mp.isMuted(context),
                 "_background", isInBackground()
             );
         } else {
@@ -389,71 +659,24 @@ class DeviceInfo {
         return json.toString();
     }
 
-    // Crash related calls
-    private static long getTotalRAM() {
-        if (totalMemory == 0) {
-            RandomAccessFile reader = null;
-            String load;
-            try {
-                reader = new RandomAccessFile("/proc/meminfo", "r");
-                load = reader.readLine();
-
-                // Get the Number value from the string
-                Pattern p = Pattern.compile("(\\d+)");
-                Matcher m = p.matcher(load);
-                String value = "";
-                while (m.find()) {
-                    value = m.group(1);
-                }
-                try {
-                    if (value != null) {
-                        totalMemory = Long.parseLong(value) / 1024;
-                    } else {
-                        totalMemory = 0;
-                    }
-                } catch (NumberFormatException ex) {
-                    totalMemory = 0;
-                }
-            } catch (IOException ex) {
-                try {
-                    if (reader != null) {
-                        reader.close();
-                    }
-                } catch (IOException exc) {
-                    exc.printStackTrace();
-                }
-                ex.printStackTrace();
-            } finally {
-                try {
-                    if (reader != null) {
-                        reader.close();
-                    }
-                } catch (IOException exc) {
-                    exc.printStackTrace();
-                }
-            }
-        }
-        return totalMemory;
-    }
-
     /**
      * Notify when app is in foreground
      */
-    static void inForeground() {
+    void inForeground() {
         inBackground = false;
     }
 
     /**
      * Notify when app is in background
      */
-    static void inBackground() {
+    void inBackground() {
         inBackground = true;
     }
 
     /**
      * Returns app background state
      */
-    static String isInBackground() {
+    String isInBackground() {
         return Boolean.toString(inBackground);
     }
 
@@ -512,187 +735,9 @@ class DeviceInfo {
     }
 
     /**
-     * Returns the current device cpu.
-     */
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    static String getCpu() {
-        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            return android.os.Build.CPU_ABI;
-        } else {
-            return Build.SUPPORTED_ABIS[0];
-        }
-    }
-
-    /**
-     * Returns the current device openGL version.
-     */
-    static String getOpenGL(Context context) {
-        PackageManager packageManager = context.getPackageManager();
-        FeatureInfo[] featureInfos = packageManager.getSystemAvailableFeatures();
-        if (featureInfos != null && featureInfos.length > 0) {
-            for (FeatureInfo featureInfo : featureInfos) {
-                // Null feature name means this feature is the open gl es version feature.
-                if (featureInfo.name == null) {
-                    if (featureInfo.reqGlEsVersion != FeatureInfo.GL_ES_VERSION_UNDEFINED) {
-                        return Integer.toString((featureInfo.reqGlEsVersion & 0xffff0000) >> 16);
-                    } else {
-                        return "1"; // Lack of property means OpenGL ES version 1
-                    }
-                }
-            }
-        }
-        return "1";
-    }
-
-    /**
-     * Returns the current device RAM amount.
-     */
-    static String getRamCurrent(Context context) {
-        ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        activityManager.getMemoryInfo(mi);
-        return Long.toString(getTotalRAM() - (mi.availMem / 1048576L));
-    }
-
-    /**
-     * Returns the total device RAM amount.
-     */
-    static String getRamTotal() {
-        return Long.toString(getTotalRAM());
-    }
-
-    /**
-     * Returns the current device disk space.
-     */
-    @TargetApi(18)
-    static String getDiskCurrent() {
-        if (android.os.Build.VERSION.SDK_INT < 18) {
-            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-            long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
-            long free = ((long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize());
-            return Long.toString((total - free) / 1048576L);
-        } else {
-            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-            long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
-            long free = (statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong());
-            return Long.toString((total - free) / 1048576L);
-        }
-    }
-
-    /**
-     * Returns the current device disk space.
-     */
-    @TargetApi(18)
-    static String getDiskTotal() {
-        if (android.os.Build.VERSION.SDK_INT < 18) {
-            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-            long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
-            return Long.toString(total / 1048576L);
-        } else {
-            StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-            long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
-            return Long.toString(total / 1048576L);
-        }
-    }
-
-    /**
-     * Returns the current device battery level.
-     */
-    static String getBatteryLevel(Context context) {
-        try {
-            Intent batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-            if (batteryIntent != null) {
-                int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-
-                // Error checking that probably isn't needed but I added just in case.
-                if (level > -1 && scale > 0) {
-                    return Float.toString(((float) level / (float) scale) * 100.0f);
-                }
-            }
-        } catch (Exception e) {
-            Countly.sharedInstance().L.i("Can't get battery level");
-        }
-
-        return null;
-    }
-
-    /**
      * Get app's running time before crashing.
      */
     static String getRunningTime() {
         return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
-    }
-
-    /**
-     * Returns the current device orientation.
-     */
-    static String getOrientation(Context context) {
-        int orientation = context.getResources().getConfiguration().orientation;
-        switch (orientation) {
-            case Configuration.ORIENTATION_LANDSCAPE:
-                return "Landscape";
-            case Configuration.ORIENTATION_PORTRAIT:
-                return "Portrait";
-            case Configuration.ORIENTATION_SQUARE:
-                return "Square";
-            case Configuration.ORIENTATION_UNDEFINED:
-                return "Unknown";
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * Checks if device is rooted.
-     */
-    static String isRooted() {
-        String[] paths = {
-            "/sbin/su", "/system/bin/su", "/system/xbin/su", "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
-            "/system/bin/failsafe/su", "/data/local/su"
-        };
-        for (String path : paths) {
-            if (new File(path).exists()) return "true";
-        }
-        return "false";
-    }
-
-    /**
-     * Checks if device is online.
-     */
-    @SuppressLint("MissingPermission")
-    static String isOnline(Context context) {
-        try {
-            ConnectivityManager conMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            if (conMgr != null && conMgr.getActiveNetworkInfo() != null
-                && conMgr.getActiveNetworkInfo().isAvailable()
-                && conMgr.getActiveNetworkInfo().isConnected()) {
-
-                return "true";
-            }
-            return "false";
-        } catch (Exception e) {
-            Countly.sharedInstance().L.w("Got exception determining connectivity", e);
-        }
-        return null;
-    }
-
-    /**
-     * Checks if device is muted.
-     */
-    static String isMuted(Context context) {
-        try {
-            AudioManager audio = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            switch (audio.getRingerMode()) {
-                case AudioManager.RINGER_MODE_SILENT:
-                    // Fall-through
-                case AudioManager.RINGER_MODE_VIBRATE:
-                    return "true";
-                default:
-                    return "false";
-            }
-        } catch (Throwable thr) {
-            return "false";
-        }
     }
 }

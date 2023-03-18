@@ -82,7 +82,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
 
             //prepare metrics
-            String preparedMetrics = DeviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
+            String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
 
             String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
             String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);

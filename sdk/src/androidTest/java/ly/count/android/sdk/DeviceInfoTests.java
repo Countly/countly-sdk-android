@@ -74,7 +74,7 @@ public class DeviceInfoTests {
 
     @Test
     public void testGetDevice() {
-        assertEquals(android.os.Build.MODEL, DeviceInfo.getDevice());
+        assertEquals(android.os.Build.MODEL, regularDeviceInfo.mp.getDevice());
     }
 
     @Test
@@ -82,14 +82,14 @@ public class DeviceInfoTests {
         final DisplayMetrics metrics = new DisplayMetrics();
         ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(metrics);
         final String expected = metrics.widthPixels + "x" + metrics.heightPixels;
-        assertEquals(expected, DeviceInfo.getResolution(getContext()));
+        assertEquals(expected, regularDeviceInfo.mp.getResolution(getContext()));
     }
 
     @Test
     public void testGetResolution_getWindowManagerReturnsNull() {
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.WINDOW_SERVICE)).thenReturn(null);
-        assertEquals("", DeviceInfo.getResolution(mockContext));
+        assertEquals("", regularDeviceInfo.mp.getResolution(mockContext));
     }
 
     @Test
@@ -98,7 +98,7 @@ public class DeviceInfoTests {
         when(mockWindowMgr.getDefaultDisplay()).thenReturn(null);
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.WINDOW_SERVICE)).thenReturn(mockWindowMgr);
-        assertEquals("", DeviceInfo.getResolution(mockContext));
+        assertEquals("", regularDeviceInfo.mp.getResolution(mockContext));
     }
 
     private Context mockContextForTestingDensity(final int density) {
@@ -114,46 +114,46 @@ public class DeviceInfoTests {
     @Test
     public void testGetDensity() {
         Context mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_LOW);
-        assertEquals("LDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("LDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_MEDIUM);
-        assertEquals("MDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("MDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_TV);
-        assertEquals("TVDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("TVDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_HIGH);
-        assertEquals("HDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("HDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_XHIGH);
-        assertEquals("XHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_XXHIGH);
-        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_XXXHIGH);
-        assertEquals("XXXHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_260);
-        assertEquals("XHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_280);
-        assertEquals("XHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_300);
-        assertEquals("XHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_340);
-        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_360);
-        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_400);
-        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_420);
-        assertEquals("XXHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(DisplayMetrics.DENSITY_560);
-        assertEquals("XXXHDPI", DeviceInfo.getDensity(mockContext));
+        assertEquals("XXXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(0);
-        assertEquals("other", DeviceInfo.getDensity(mockContext));
+        assertEquals("other", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(1234567890);
-        assertEquals("other", DeviceInfo.getDensity(mockContext));
+        assertEquals("other", regularDeviceInfo.mp.getDensity(mockContext));
     }
 
     @Test
     public void testGetCarrier_nullTelephonyManager() {
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.TELEPHONY_SERVICE)).thenReturn(null);
-        assertEquals("", DeviceInfo.getCarrier(mockContext));
+        assertEquals("", regularDeviceInfo.mp.getCarrier(mockContext));
     }
 
     @Test
@@ -162,7 +162,7 @@ public class DeviceInfoTests {
         when(mockTelephonyManager.getNetworkOperatorName()).thenReturn(null);
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.TELEPHONY_SERVICE)).thenReturn(mockTelephonyManager);
-        assertEquals("", DeviceInfo.getCarrier(mockContext));
+        assertEquals("", regularDeviceInfo.mp.getCarrier(mockContext));
     }
 
     @Test
@@ -171,7 +171,7 @@ public class DeviceInfoTests {
         when(mockTelephonyManager.getNetworkOperatorName()).thenReturn("");
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.TELEPHONY_SERVICE)).thenReturn(mockTelephonyManager);
-        assertEquals("", DeviceInfo.getCarrier(mockContext));
+        assertEquals("", regularDeviceInfo.mp.getCarrier(mockContext));
     }
 
     @Test
@@ -180,7 +180,7 @@ public class DeviceInfoTests {
         when(mockTelephonyManager.getNetworkOperatorName()).thenReturn("Verizon");
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.TELEPHONY_SERVICE)).thenReturn(mockTelephonyManager);
-        assertEquals("Verizon", DeviceInfo.getCarrier(mockContext));
+        assertEquals("Verizon", regularDeviceInfo.mp.getCarrier(mockContext));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class DeviceInfoTests {
         final Locale defaultLocale = Locale.getDefault();
         try {
             Locale.setDefault(new Locale("ab", "CD"));
-            assertEquals("ab_CD", DeviceInfo.getLocale());
+            assertEquals("ab_CD", regularDeviceInfo.mp.getLocale());
         } finally {
             Locale.setDefault(defaultLocale);
         }
@@ -204,7 +204,7 @@ public class DeviceInfoTests {
         final Context mockContext = mock(Context.class);
         when(mockContext.getPackageName()).thenReturn(fakePkgName);
         when(mockContext.getPackageManager()).thenReturn(mockPkgMgr);
-        assertEquals("42.0", DeviceInfo.getAppVersion(mockContext));
+        assertEquals("42.0", regularDeviceInfo.mp.getAppVersion(mockContext));
     }
 
     @Test
@@ -215,26 +215,26 @@ public class DeviceInfoTests {
         final Context mockContext = mock(Context.class);
         when(mockContext.getPackageName()).thenReturn(fakePkgName);
         when(mockContext.getPackageManager()).thenReturn(mockPkgMgr);
-        assertEquals("1.0", DeviceInfo.getAppVersion(mockContext));
+        assertEquals("1.0", regularDeviceInfo.mp.getAppVersion(mockContext));
     }
 
     @Test
     public void testGetMetrics() throws UnsupportedEncodingException, JSONException {
         final JSONObject json = new JSONObject();
-        json.put("_device", DeviceInfo.getDevice());
+        json.put("_device", regularDeviceInfo.mp.getDevice());
         json.put("_os", regularDeviceInfo.mp.getOS());
         json.put("_os_version", regularDeviceInfo.mp.getOSVersion());
-        if (!"".equals(DeviceInfo.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
-            json.put("_carrier", DeviceInfo.getCarrier(getContext()));
+        if (!"".equals(regularDeviceInfo.mp.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
+            json.put("_carrier", regularDeviceInfo.mp.getCarrier(getContext()));
         }
-        json.put("_resolution", DeviceInfo.getResolution(getContext()));
-        json.put("_density", DeviceInfo.getDensity(getContext()));
-        json.put("_locale", DeviceInfo.getLocale());
-        json.put("_app_version", DeviceInfo.getAppVersion(getContext()));
-        json.put("_manufacturer", DeviceInfo.getManufacturer());
-        json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
+        json.put("_resolution", regularDeviceInfo.mp.getResolution(getContext()));
+        json.put("_density", regularDeviceInfo.mp.getDensity(getContext()));
+        json.put("_locale", regularDeviceInfo.mp.getLocale());
+        json.put("_app_version", regularDeviceInfo.mp.getAppVersion(getContext()));
+        json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
+        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
 
-        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), regularDeviceInfo, null), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), regularDeviceInfo, null), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -247,23 +247,23 @@ public class DeviceInfoTests {
         metricOverride.put("Test", "aa");
 
         final JSONObject json = new JSONObject();
-        json.put("_device", DeviceInfo.getDevice());
+        json.put("_device", regularDeviceInfo.mp.getDevice());
         json.put("_os", regularDeviceInfo.mp.getOS());
         json.put("_os_version", regularDeviceInfo.mp.getOSVersion());
-        if (!"".equals(DeviceInfo.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
-            json.put("_carrier", DeviceInfo.getCarrier(getContext()));
+        if (!"".equals(regularDeviceInfo.mp.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
+            json.put("_carrier", regularDeviceInfo.mp.getCarrier(getContext()));
         }
-        json.put("_resolution", DeviceInfo.getResolution(getContext()));
-        json.put("_density", DeviceInfo.getDensity(getContext()));
-        json.put("_locale", DeviceInfo.getLocale());
-        json.put("_app_version", DeviceInfo.getAppVersion(getContext()));
-        json.put("_manufacturer", DeviceInfo.getManufacturer());
-        json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
+        json.put("_resolution", regularDeviceInfo.mp.getResolution(getContext()));
+        json.put("_density", regularDeviceInfo.mp.getDensity(getContext()));
+        json.put("_locale", regularDeviceInfo.mp.getLocale());
+        json.put("_app_version", regularDeviceInfo.mp.getAppVersion(getContext()));
+        json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
+        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
         json.put("123", "bb");
         json.put("456", "cc");
         json.put("Test", "aa");
 
-        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), regularDeviceInfo, metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), regularDeviceInfo, metricOverride), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -290,11 +290,11 @@ public class DeviceInfoTests {
         json.put("_density", "d3");
         json.put("_locale", "d4");
         json.put("_app_version", "d5");
-        json.put("_manufacturer", DeviceInfo.getManufacturer());
-        json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
+        json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
+        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
         json.put("asd", "123");
 
-        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), regularDeviceInfo, metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), regularDeviceInfo, metricOverride), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }

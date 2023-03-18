@@ -74,7 +74,7 @@ public class ModuleRatings extends ModuleBase {
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("platform", "android");
-        segm.put("app_version", DeviceInfo.getAppVersion(_cly.context_));
+        segm.put("app_version", deviceInfo.mp.getAppVersion(_cly.context_));
         segm.put("rating", "" + rating);
         segm.put("widget_id", widgetId);
         segm.put("contactMe", userCanBeContacted);
@@ -167,7 +167,7 @@ public class ModuleRatings extends ModuleBase {
     void registerAppSession(final Context context, final StarRatingCallback starRatingCallback) {
         StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
 
-        String currentAppVersion = DeviceInfo.getAppVersion(context);
+        String currentAppVersion = deviceInfo.mp.getAppVersion(context);
 
         //a new app version is released, reset all counters
         //if we show the rating once per apps lifetime, don't reset the counters
@@ -410,7 +410,7 @@ public class ModuleRatings extends ModuleBase {
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
                     Map<String, Object> segm = new HashMap<>();
                     segm.put("platform", "android");
-                    segm.put("app_version", DeviceInfo.getAppVersion(context));
+                    segm.put("app_version", deviceInfo.mp.getAppVersion(context));
                     segm.put("rating", "" + rating);
 
                     eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);

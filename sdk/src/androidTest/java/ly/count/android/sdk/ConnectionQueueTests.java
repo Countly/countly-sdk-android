@@ -60,9 +60,11 @@ public class ConnectionQueueTests {
     ConnectionQueue freshConnQ;
     final static long timestampAllowance = 150;
     final String appKey = "abcDeFgHiJkLmNoPQRstuVWxyz";
+    DeviceInfo regularDeviceInfo;
 
     @Before
     public void setUp() {
+        regularDeviceInfo = new DeviceInfo(null);
         Countly.sharedInstance().halt();
         Countly.sharedInstance().setLoggingEnabled(true);
         freshConnQ = new ConnectionQueue();
@@ -489,7 +491,7 @@ public class ConnectionQueueTests {
                         Assert.assertTrue(pair[1].equals(appKey));
                         break;
                     case "tz":
-                        Assert.assertTrue(pair[1].equals("" + DeviceInfo.getTimezoneOffset()));
+                        Assert.assertTrue(pair[1].equals("" + regularDeviceInfo.mp.getTimezoneOffset()));
                         break;
                     case "sdk_version":
                         if (a == 0) {
