@@ -226,13 +226,7 @@ class DeviceInfo {
         return "mobile";
     }
 
-    /**
-     * Returns a URL-encoded JSON string containing the device metrics
-     * to be associated with a begin session event.
-     * See the following link for more info:
-     * https://count.ly/resources/reference/server-api
-     */
-    static String getMetrics(final Context context, final Map<String, String> metricOverride) {
+    protected static JSONObject getMetricsJson(final Context context, final Map<String, String> metricOverride) {
         final JSONObject json = new JSONObject();
 
         fillJSONIfValuesNotEmpty(json,
@@ -270,6 +264,17 @@ class DeviceInfo {
                 }
             }
         }
+        return json;
+    }
+
+    /**
+     * Returns a URL-encoded JSON string containing the device metrics
+     * to be associated with a begin session event.
+     * See the following link for more info:
+     * https://count.ly/resources/reference/server-api
+     */
+    static String getMetrics(final Context context, final Map<String, String> metricOverride) {
+        JSONObject json = DeviceInfo.getMetricsJson(context, metricOverride);
 
         String result = json.toString();
 

@@ -41,6 +41,7 @@ import androidx.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -176,14 +177,6 @@ class CrashDetails {
         }
 
         return returnedSegmentation;
-    }
-
-    /**
-     * Returns the current device manufacturer.
-     */
-    @SuppressWarnings("SameReturnValue")
-    static String getManufacturer() {
-        return android.os.Build.MANUFACTURER;
     }
 
     /**
@@ -376,18 +369,31 @@ class CrashDetails {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
-    static String getCrashData(final Context context, String error, Boolean nonfatal, boolean isNativeCrash, final String crashBreadcrumbs, final Map<String, Object> customCrashSegmentation) {
+    static String getCrashData(final Context context,
+        String error,
+        Boolean nonfatal,
+        boolean isNativeCrash,
+        final String crashBreadcrumbs,
+        final Map<String, Object> customCrashSegmentation,
+        @Nullable final Map<String, String> metricOverride) {
+
         final JSONObject json = new JSONObject();
+
+        if (metricOverride != null) {
+            final JSONObject deviceInfoMetrics = DeviceInfo.getMetricsJson(context, metricOverride);
+            for (Iterator<String> it = deviceInfoMetrics.keys(); it.hasNext();) {
+                String key = it.next();
+                try {
+                    json.put(key, deviceInfoMetrics.get(key));
+                } catch (JSONException ex) {
+                    // continue
+                }
+            }
+        }
 
         fillJSONIfValuesNotEmpty(json,
             "_error", error,
             "_nonfatal", Boolean.toString(nonfatal),
-            "_device", DeviceInfo.getDevice(),
-            "_os", DeviceInfo.getOS(),
-            "_os_version", DeviceInfo.getOSVersion(),
-            "_resolution", DeviceInfo.getResolution(context),
-            "_app_version", DeviceInfo.getAppVersion(context),
-            "_manufacture", getManufacturer(),
             "_cpu", getCpu(),
             "_opengl", getOpenGL(context),
             "_root", isRooted(),
@@ -422,6 +428,15 @@ class CrashDetails {
             //no custom segments
         }
         return json.toString();
+    }
+
+    static String getCrashData(final Context context,
+        String error,
+        Boolean nonfatal,
+        boolean isNativeCrash,
+        final String crashBreadcrumbs,
+        final Map<String, Object> customCrashSegmentation) {
+        return getCrashData(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, null);
     }
 
     /**
