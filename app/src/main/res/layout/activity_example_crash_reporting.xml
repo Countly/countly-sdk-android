@@ -13,20 +13,11 @@
     >
 
   <Button
-      android:text="@string/unrecognized_selector"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/button20"
-      android:enabled="false"
-      android:onClick="onClickCrashReporting01"
-      />
-
-  <Button
       android:text="@string/out_of_bounds"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/button21"
-      android:onClick="onClickCrashReporting02"
+      android:onClick="onClickOutOfBounds"
       />
 
   <Button
@@ -34,25 +25,7 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/button22"
-      android:onClick="onClickCrashReporting03"
-      />
-
-  <Button
-      android:text="@string/invalid_geometry"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/button23"
-      android:enabled="false"
-      android:onClick="onClickCrashReporting04"
-      />
-
-  <Button
-      android:id="@+id/button24"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:enabled="false"
-      android:onClick="onClickCrashReporting05"
-      android:text="@string/assert_fail"
+      android:onClick="onClickNullPointer"
       />
 
   <Button
@@ -65,11 +38,11 @@
       />
 
   <Button
-      android:text="@string/custom_crash_log"
+      android:id="@+id/button26"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:id="@+id/button26"
-      android:onClick="onClickCrashReporting07"
+      android:onClick="onClickDivZero"
+      android:text="@string/custom_crash_log"
       />
 
   <Button
@@ -77,7 +50,7 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/button27"
-      android:onClick="onClickCrashReporting08"
+      android:onClick="onClickHandledException"
       />
 
   <Button
@@ -85,14 +58,14 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/button28"
-      android:onClick="onClickCrashReporting09"
+      android:onClick="onClickUNhandledException"
       />
 
   <Button
       android:id="@+id/button49"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:onClick="onClickCrashReporting10"
+      android:onClick="onClickDeepUnhandled"
       android:text="@string/deep_unhandled_exception"
       />
 
@@ -100,7 +73,7 @@
       android:id="@+id/button48"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:onClick="onClickCrashReporting11"
+      android:onClick="onClickDeepHandled"
       android:text="@string/deep_handled_exception"
       />
 
@@ -108,7 +81,7 @@
       android:id="@+id/button50"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:onClick="onClickCrashReporting13"
+      android:onClick="onClickLargeBreadcrumb"
       android:text="@string/add_a_breadcrumb"
       />
 </LinearLayout>

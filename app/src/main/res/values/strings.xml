@@ -30,7 +30,7 @@
   <string name="invalid_geometry">invalid geometry</string>
   <string name="assert_fail">assert fail</string>
   <string name="kill">kill</string>
-  <string name="custom_crash_log">custom crash log</string>
+  <string name="custom_crash_log">Divzero with breadcrumbs</string>
   <string name="record_handled_exception">record handled exception</string>
   <string name="unhandled_exception">Unhandled exception</string>
   <string name="deep_unhandled_exception">Deep Unhandled exception</string>
