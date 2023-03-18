@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
@@ -552,6 +551,31 @@ class DeviceInfo {
             "_app_version", deviceInfo.mp.getAppVersion(context),
             "_manufacturer", deviceInfo.mp.getManufacturer());
 
+        if (metricOverride != null) {
+            try {
+                if (metricOverride.containsKey("_device")) {
+                    json.put("_device", metricOverride.get("_device"));
+                }
+                if (metricOverride.containsKey("_os")) {
+                    json.put("_os", metricOverride.get("_os"));
+                }
+                if (metricOverride.containsKey("_os_version")) {
+                    json.put("_os_version", metricOverride.get("_os_version"));
+                }
+                if (metricOverride.containsKey("_resolution")) {
+                    json.put("_resolution", metricOverride.get("_resolution"));
+                }
+                if (metricOverride.containsKey("_app_version")) {
+                    json.put("_app_version", metricOverride.get("_app_version"));
+                }
+                if (metricOverride.containsKey("_manufacturer")) {
+                    json.put("_manufacturer", metricOverride.get("_manufacturer"));
+                }
+            } catch (Exception ex) {
+                Countly.sharedInstance().L.e("[DeviceInfo] SDK encountered failure while trying to apply metric override, " + ex.toString());
+            }
+        }
+
         return json;
     }
 
@@ -610,12 +634,10 @@ class DeviceInfo {
     }
 
     /**
-     * Returns a URL-encoded JSON string containing the device crash report
-     * See the following link for more info:
-     * http://resources.count.ly/v1.0/docs/i
+     * Returns a JSON object containing the device crash report
      */
     @NonNull
-    String getCrashData(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
+    JSONObject getCrashDataStringJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
         @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
 
         final JSONObject json = getCommonMetrics(context, deviceInfo, metricOverride);
@@ -656,6 +678,18 @@ class DeviceInfo {
         } catch (JSONException e) {
             //no custom segments
         }
+
+        return json;
+    }
+
+    /**
+     * Returns a JSON string containing the device crash report
+     */
+    @NonNull
+    String getCrashDataString(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
+        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
+        final JSONObject json = getCrashDataStringJSON(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, deviceInfo, metricOverride);
+
         return json.toString();
     }
 
