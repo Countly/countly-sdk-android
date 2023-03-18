@@ -137,7 +137,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         final String crashData;
-        crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), combinedSegmentationValues, metricOverride);
+        crashData = DeviceInfo.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, metricOverride);
 
         requestQueueProvider.sendCrashReport(crashData, nonfatal);
     }
@@ -303,7 +303,7 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        CrashDetails.addLog(breadcrumb, _cly.config_.maxBreadcrumbCount, _cly.config_.maxValueSize);
+        DeviceInfo.addLog(breadcrumb, _cly.config_.maxBreadcrumbCount, _cly.config_.maxValueSize);
         return _cly;
     }
 

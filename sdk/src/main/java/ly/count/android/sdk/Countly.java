@@ -832,7 +832,7 @@ public class Countly {
             moduleSessions.beginSessionInternal();
         }
 
-        CrashDetails.inForeground();
+        DeviceInfo.inForeground();
 
         for (ModuleBase module : modules) {
             module.onActivityStarted(activity);
@@ -868,7 +868,7 @@ public class Countly {
             moduleSessions.endSessionInternal(null);
         }
 
-        CrashDetails.inBackground();
+        DeviceInfo.inBackground();
 
         for (ModuleBase module : modules) {
             module.onActivityStopped();
