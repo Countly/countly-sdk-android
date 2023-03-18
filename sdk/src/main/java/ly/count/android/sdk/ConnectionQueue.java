@@ -57,6 +57,7 @@ class ConnectionQueue implements RequestQueueProvider {
     protected ModuleLog L;
     protected ConsentProvider consentProvider;//link to the consent module
     protected ModuleRequestQueue moduleRequestQueue = null;//todo remove in the future
+    protected DeviceInfo deviceInfo = null;//todo ?remove in the future?
     StorageProvider storageProvider;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
@@ -144,7 +145,7 @@ class ConnectionQueue implements RequestQueueProvider {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    public void beginSession(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
+    public void beginSession(boolean locationDisabled, @Nullable String locationCountryCode, @Nullable String locationCity, @Nullable String locationGpsCoordinates, @Nullable String locationIpAddress, @NonNull String preparedMetrics) {
         checkInternalState();
         L.d("[Connection Queue] beginSession");
 
@@ -154,7 +155,7 @@ class ConnectionQueue implements RequestQueueProvider {
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&begin_session=1"
-                + "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);//can be only sent with begin session
+                + "&metrics=" + preparedMetrics;//can be only sent with begin session
 
             String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
             if (!locationData.isEmpty()) {
@@ -236,7 +237,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&android_token=" + UtilsNetworking.urlEncodeString(token)
             + "&token_provider=" + provider
             + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
-            + "&locale=" + UtilsNetworking.urlEncodeString(DeviceInfo.getLocale());
+            + "&locale=" + UtilsNetworking.urlEncodeString(deviceInfo.mp.getLocale());
 
         L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
 
@@ -596,7 +597,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&timestamp=" + instant.timestampMs
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
-            + "&tz=" + DeviceInfo.getTimezoneOffset()
+            + "&tz=" + deviceInfo.mp.getTimezoneOffset()
             + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
             + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
     }
@@ -632,14 +633,14 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
-    public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude) {
+    public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
         String data = prepareCommonRequestData()
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
-            data += "&metrics=" + DeviceInfo.getMetrics(context_, metricOverride);
+            data += "&metrics=" + preparedMetrics;
         }
 
         //add key filters

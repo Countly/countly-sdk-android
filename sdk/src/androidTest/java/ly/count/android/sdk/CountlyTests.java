@@ -346,7 +346,7 @@ public class CountlyTests {
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
         assertTrue(prevSessionDurationStartTime > 0);
         assertTrue(prevSessionDurationStartTime <= System.nanoTime());
-        verify(requestQueueProvider).beginSession(false, null, null, null, null);
+        TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
     }
 
     @Test
@@ -359,7 +359,7 @@ public class CountlyTests {
 
         assertEquals(2, mCountly.getActivityCount());
         assertEquals(prevSessionDurationStartTime, mCountly.getPrevSessionDurationStartTime());
-        verify(requestQueueProvider).beginSession(false, null, null, null, null);
+        TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
     }
 
     @Test

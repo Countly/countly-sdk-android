@@ -60,9 +60,11 @@ public class ConnectionQueueTests {
     ConnectionQueue freshConnQ;
     final static long timestampAllowance = 150;
     final String appKey = "abcDeFgHiJkLmNoPQRstuVWxyz";
+    DeviceInfo regularDeviceInfo;
 
     @Before
     public void setUp() {
+        regularDeviceInfo = new DeviceInfo(null);
         Countly.sharedInstance().halt();
         Countly.sharedInstance().setLoggingEnabled(true);
         freshConnQ = new ConnectionQueue();
@@ -194,7 +196,7 @@ public class ConnectionQueueTests {
     @Test
     public void testBeginSession_checkInternalState() {
         try {
-            freshConnQ.beginSession(false, null, null, null, null);
+            freshConnQ.beginSession(false, null, null, null, null, null);
             fail("expected IllegalStateException when internal state is not set up");
         } catch (IllegalStateException ignored) {
             // success!
@@ -489,11 +491,11 @@ public class ConnectionQueueTests {
                         Assert.assertTrue(pair[1].equals(appKey));
                         break;
                     case "tz":
-                        Assert.assertTrue(pair[1].equals("" + DeviceInfo.getTimezoneOffset()));
+                        Assert.assertTrue(pair[1].equals("" + regularDeviceInfo.mp.getTimezoneOffset()));
                         break;
                     case "sdk_version":
                         if (a == 0) {
-                            Assert.assertTrue(pair[1].equals("22.09.0"));
+                            Assert.assertTrue(pair[1].equals("22.09.1"));
                         } else if (a == 1) {
                             Assert.assertTrue(pair[1].equals("123sdf.v-213"));
                         }

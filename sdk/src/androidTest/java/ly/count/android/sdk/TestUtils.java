@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -190,6 +191,19 @@ public class TestUtils {
         return Countly.sharedInstance();
     }
 
+    public static void bothJSONObjEqual(@NonNull JSONObject jA, @NonNull JSONObject jB) throws JSONException {
+        Assert.assertNotNull(jA);
+        Assert.assertNotNull(jB);
+        Assert.assertEquals(jA.length(), jB.length());
+
+        Iterator<String> iter = jA.keys();
+        while (iter.hasNext()) {
+            String key = iter.next();
+
+            Assert.assertEquals(jA.get(key), jB.get(key));
+        }
+    }
+
     public static List<String> getRequestsWithParam(String[] requests, String param) {
         List<String> filteredRequests = new ArrayList<>();
         String targetParamValue = "&" + param + "=";
@@ -322,7 +336,8 @@ public class TestUtils {
         verify(ep, times(interactionCount)).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), anyString());
     }
 
-    public static void validateRecordEventInternalMock(final @NonNull EventProvider ep, final @NonNull String eventKey, final @Nullable Map<String, Object> segmentation, final @Nullable Integer count, final @Nullable Double sum, final @Nullable Double duration, final @Nullable UtilsTime.Instant instant, final @Nullable String idOverride, int index, int interactionCount) {
+    public static void validateRecordEventInternalMock(final @NonNull EventProvider ep, final @NonNull String eventKey, final @Nullable Map<String, Object> segmentation, final @Nullable Integer count, final @Nullable Double sum, final @Nullable Double duration,
+        final @Nullable UtilsTime.Instant instant, final @Nullable String idOverride, int index, int interactionCount) {
 
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Map> arg2 = ArgumentCaptor.forClass(Map.class);
@@ -378,5 +393,33 @@ public class TestUtils {
         if (idOverride != null) {
             Assert.assertEquals(idOverride, cIdOverride);
         }
+    }
+
+    public static void verifyBeginSessionNotCalled(RequestQueueProvider requestQueueProvider) {
+        ArgumentCaptor<Boolean> arg1 = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg3 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg4 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg5 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg6 = ArgumentCaptor.forClass(String.class);
+
+        verify(requestQueueProvider, never()).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+    }
+
+    public static void verifyBeginSessionValues(RequestQueueProvider requestQueueProvider, Boolean v1, String v2, String v3, String v4, String v5) {
+        ArgumentCaptor<Boolean> arg1 = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg3 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg4 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg5 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg6 = ArgumentCaptor.forClass(String.class);
+
+        verify(requestQueueProvider, times(1)).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+
+        Assert.assertEquals(v1, arg1.getAllValues().get(0));
+        Assert.assertEquals(v2, arg2.getAllValues().get(0));
+        Assert.assertEquals(v3, arg3.getAllValues().get(0));
+        Assert.assertEquals(v4, arg4.getAllValues().get(0));
+        Assert.assertEquals(v5, arg5.getAllValues().get(0));
     }
 }

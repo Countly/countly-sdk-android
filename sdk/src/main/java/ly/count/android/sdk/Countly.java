@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.0";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.1";
 
     /**
      * Used as request meta data on every request
@@ -489,6 +489,11 @@ public class Countly {
                 };
             }
 
+            if (config.metricProviderOverride != null) {
+                L.d("[Init] Custom metric provider was provided");
+            }
+            config.deviceInfo = new DeviceInfo(config.metricProviderOverride);
+
             if (config.tamperingProtectionSalt != null) {
                 L.d("[Init] Parameter tampering protection salt set");
             }
@@ -622,6 +627,7 @@ public class Countly {
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
+            connectionQueue_.deviceInfo = config.deviceInfo;
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
@@ -832,7 +838,7 @@ public class Countly {
             moduleSessions.beginSessionInternal();
         }
 
-        CrashDetails.inForeground();
+        config_.deviceInfo.inForeground();
 
         for (ModuleBase module : modules) {
             module.onActivityStarted(activity);
@@ -868,7 +874,7 @@ public class Countly {
             moduleSessions.endSessionInternal(null);
         }
 
-        CrashDetails.inBackground();
+        config_.deviceInfo.inBackground();
 
         for (ModuleBase module : modules) {
             module.onActivityStopped();

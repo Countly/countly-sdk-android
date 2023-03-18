@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
@@ -9,9 +11,14 @@ public class ModuleSessions extends ModuleBase {
 
     final Sessions sessionInterface;
 
+    @Nullable
+    Map<String, String> metricOverride = null;
+
     ModuleSessions(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleSessions] Initialising");
+
+        metricOverride = config.metricOverride;
 
         manualSessionControlEnabled = config.manualSessionControlEnabled;
         if (manualSessionControlEnabled) {
@@ -31,8 +38,11 @@ public class ModuleSessions extends ModuleBase {
 
         _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
 
+        //prepare metrics
+        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
+
         prevSessionDurationStartTime_ = System.nanoTime();
-        requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress);
+        requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
     }
 
     void updateSessionInternal() {

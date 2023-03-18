@@ -28,6 +28,9 @@ public class ModuleCrash extends ModuleBase {
     //interface for SDK users
     final Crashes crashesInterface;
 
+    @Nullable
+    Map<String, String> metricOverride = null;
+
     ModuleCrash(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
@@ -37,6 +40,8 @@ public class ModuleCrash extends ModuleBase {
         recordAllThreads = config.recordAllThreadsWithCrash;
 
         setCustomCrashSegmentsInternal(config.customCrashSegment);
+
+        metricOverride = config.metricOverride;
 
         crashesInterface = new Crashes();
     }
@@ -131,7 +136,8 @@ public class ModuleCrash extends ModuleBase {
             error = error.substring(0, Math.min(20000, error.length()));
         }
 
-        final String crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), combinedSegmentationValues);
+        final String crashData;
+        crashData = deviceInfo.getCrashDataString(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, deviceInfo, metricOverride);
 
         requestQueueProvider.sendCrashReport(crashData, nonfatal);
     }
@@ -297,7 +303,7 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        CrashDetails.addLog(breadcrumb, _cly.config_.maxBreadcrumbCount, _cly.config_.maxValueSize);
+        DeviceInfo.addLog(breadcrumb, _cly.config_.maxBreadcrumbCount, _cly.config_.maxValueSize);
         return _cly;
     }
 

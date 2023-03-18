@@ -40,7 +40,7 @@ public class ModuleFeedback extends ModuleBase {
         super(cly, config);
         L.v("[ModuleFeedback] Initialising");
 
-        cachedAppVersion = DeviceInfo.getAppVersion(config.context);
+        cachedAppVersion = deviceInfo.mp.getAppVersion(config.context);
 
         feedbackInterface = new Feedback();
     }
@@ -300,7 +300,7 @@ public class ModuleFeedback extends ModuleBase {
         builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
             @Override public void onClick(DialogInterface dialogInterface, int i) {
                 L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
-                reportFeedbackWidgetCancelButton(widgetInfo, DeviceInfo.getAppVersion(context));
+                reportFeedbackWidgetCancelButton(widgetInfo, deviceInfo.mp.getAppVersion(context));
 
                 if (devCallback != null) {
                     devCallback.onClosed();

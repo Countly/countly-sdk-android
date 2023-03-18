@@ -166,7 +166,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     }
 
     private void checkIfDeviceIsAppCrawler() {
-        String deviceName = DeviceInfo.getDevice();
+        String deviceName = deviceInfo.mp.getDevice();
 
         for (int a = 0; a < appCrawlerNames.size(); a++) {
             if (deviceName.equals(appCrawlerNames.get(a))) {
