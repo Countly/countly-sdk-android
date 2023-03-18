@@ -5,13 +5,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(AndroidJUnit4.class)
 public class UtilsTests {
@@ -202,5 +207,30 @@ public class UtilsTests {
         //after inspecting what is returned in the debugger, it should have the values of "a2" and "a4"
         //Assert.assertEquals("2", values.get("a2"));
         //Assert.assertEquals("4", values.get("a4"));
+    }
+
+    @Test
+    public void fillJSONIfValuesNotEmpty_noValues() {
+        final JSONObject mockJSON = mock(JSONObject.class);
+        Utils.fillJSONIfValuesNotEmpty(mockJSON);
+        verifyZeroInteractions(mockJSON);
+    }
+
+    @Test
+    public void fillJSONIfValuesNotEmpty_oddNumberOfValues() {
+        final JSONObject mockJSON = mock(JSONObject.class);
+        Utils.fillJSONIfValuesNotEmpty(mockJSON, "key1", "value1", "key2");
+        verifyZeroInteractions(mockJSON);
+    }
+
+    @Test
+    public void fillJSONIfValuesNotEmpty() throws JSONException {
+        final JSONObject json = new JSONObject();
+        Utils.fillJSONIfValuesNotEmpty(json, "key1", "value1", "key2", null, "key3", "value3", "key4", "", "key5", "value5");
+        assertEquals("value1", json.get("key1"));
+        assertFalse(json.has("key2"));
+        assertEquals("value3", json.get("key3"));
+        assertFalse(json.has("key4"));
+        assertEquals("value5", json.get("key5"));
     }
 }

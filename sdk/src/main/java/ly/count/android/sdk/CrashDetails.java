@@ -369,19 +369,14 @@ class CrashDetails {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
-    static String getCrashData(final Context context,
-        String error,
-        Boolean nonfatal,
-        boolean isNativeCrash,
-        final String crashBreadcrumbs,
-        final Map<String, Object> customCrashSegmentation,
-        @Nullable final Map<String, String> metricOverride) {
+    static String getCrashData(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
+        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
 
         final JSONObject json = new JSONObject();
 
         if (metricOverride != null) {
             final JSONObject deviceInfoMetrics = DeviceInfo.getMetricsJson(context, metricOverride);
-            for (Iterator<String> it = deviceInfoMetrics.keys(); it.hasNext();) {
+            for (Iterator<String> it = deviceInfoMetrics.keys(); it.hasNext(); ) {
                 String key = it.next();
                 try {
                     json.put(key, deviceInfoMetrics.get(key));
@@ -391,7 +386,7 @@ class CrashDetails {
             }
         }
 
-        fillJSONIfValuesNotEmpty(json,
+        Utils.fillJSONIfValuesNotEmpty(json,
             "_error", error,
             "_nonfatal", Boolean.toString(nonfatal),
             "_cpu", getCpu(),
@@ -403,7 +398,7 @@ class CrashDetails {
 
         if (!isNativeCrash) {
             //if is not a native crash
-            fillJSONIfValuesNotEmpty(json,
+            Utils.fillJSONIfValuesNotEmpty(json,
                 "_logs", crashBreadcrumbs,
                 "_ram_current", getRamCurrent(context),
                 "_disk_current", getDiskCurrent(),
@@ -428,38 +423,5 @@ class CrashDetails {
             //no custom segments
         }
         return json.toString();
-    }
-
-    static String getCrashData(final Context context,
-        String error,
-        Boolean nonfatal,
-        boolean isNativeCrash,
-        final String crashBreadcrumbs,
-        final Map<String, Object> customCrashSegmentation) {
-        return getCrashData(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, null);
-    }
-
-    /**
-     * Utility method to fill JSONObject with supplied objects for supplied keys.
-     * Fills json only with non-null and non-empty key/value pairs.
-     *
-     * @param json JSONObject to fill
-     * @param objects varargs of this kind: key1, value1, key2, value2, ...
-     */
-    static void fillJSONIfValuesNotEmpty(final JSONObject json, final String... objects) {
-        try {
-            if (objects.length > 0 && objects.length % 2 == 0) {
-                for (int i = 0; i < objects.length; i += 2) {
-                    final String key = objects[i];
-                    final String value = objects[i + 1];
-                    if (value != null && value.length() > 0) {
-                        json.put(key, value);
-                    }
-                }
-            }
-        } catch (JSONException ignored) {
-            // shouldn't ever happen when putting String objects into a JSONObject,
-            // it can only happen when putting NaN or INFINITE doubles or floats into it
-        }
     }
 }

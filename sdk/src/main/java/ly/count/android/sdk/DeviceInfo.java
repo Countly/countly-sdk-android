@@ -229,7 +229,7 @@ class DeviceInfo {
     protected static JSONObject getMetricsJson(final Context context, final Map<String, String> metricOverride) {
         final JSONObject json = new JSONObject();
 
-        fillJSONIfValuesNotEmpty(json,
+        Utils.fillJSONIfValuesNotEmpty(json,
             "_device", getDevice(),
             "_os", getOS(),
             "_os_version", getOSVersion(),
@@ -285,29 +285,5 @@ class DeviceInfo {
         }
 
         return result;
-    }
-
-    /**
-     * Utility method to fill JSONObject with supplied objects for supplied keys.
-     * Fills json only with non-null and non-empty key/value pairs.
-     *
-     * @param json JSONObject to fill
-     * @param objects varargs of this kind: key1, value1, key2, value2, ...
-     */
-    static void fillJSONIfValuesNotEmpty(final JSONObject json, final String... objects) {
-        try {
-            if (objects.length > 0 && objects.length % 2 == 0) {
-                for (int i = 0; i < objects.length; i += 2) {
-                    final String key = objects[i];
-                    final String value = objects[i + 1];
-                    if (value != null && value.length() > 0) {
-                        json.put(key, value);
-                    }
-                }
-            }
-        } catch (JSONException ignored) {
-            // shouldn't ever happen when putting String objects into a JSONObject,
-            // it can only happen when putting NaN or INFINITE doubles or floats into it
-        }
     }
 }

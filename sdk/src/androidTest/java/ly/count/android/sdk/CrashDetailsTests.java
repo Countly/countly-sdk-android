@@ -25,7 +25,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null, null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -35,7 +35,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null, null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -45,7 +45,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError65756";
         boolean nonfatal = true;
         boolean isNativeCrash = true;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null, null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -55,7 +55,7 @@ public class CrashDetailsTests {
         String errorText = "SomeErrorsh454353";
         boolean nonfatal = false;
         boolean isNativeCrash = true;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null, null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -65,7 +65,7 @@ public class CrashDetailsTests {
         String errorText = "fsdfdsfFFFDD";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null, null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
         Assert.assertFalse(cData.contains("\"logs\":"));
 
@@ -83,7 +83,7 @@ public class CrashDetailsTests {
             CrashDetails.addLog(s, 100, 100);
         }
 
-        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null, null);
         assertCrashData(cData2, errorText, nonfatal, isNativeCrash);
         Assert.assertTrue(cData2.contains("\"_logs\":"));
     }
@@ -93,13 +93,13 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null);
+        String cData = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), null, null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Map<String, Object> cSeg = TestUtils.createMapString(5);
 
-        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), cSeg);
+        String cData2 = CrashDetails.getCrashData(getContext(), errorText, nonfatal, isNativeCrash, CrashDetails.getLogs(), cSeg, null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Assert.assertTrue(cData2.contains("_custom"));

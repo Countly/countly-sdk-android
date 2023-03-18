@@ -307,29 +307,4 @@ public class DeviceInfoTests {
         }
         assertEquals(sizeJson, sizeNewJson);
     }
-
-    @Test
-    public void testFillJSONIfValuesNotEmpty_noValues() {
-        final JSONObject mockJSON = mock(JSONObject.class);
-        DeviceInfo.fillJSONIfValuesNotEmpty(mockJSON);
-        verifyZeroInteractions(mockJSON);
-    }
-
-    @Test
-    public void testFillJSONIfValuesNotEmpty_oddNumberOfValues() {
-        final JSONObject mockJSON = mock(JSONObject.class);
-        DeviceInfo.fillJSONIfValuesNotEmpty(mockJSON, "key1", "value1", "key2");
-        verifyZeroInteractions(mockJSON);
-    }
-
-    @Test
-    public void testFillJSONIfValuesNotEmpty() throws JSONException {
-        final JSONObject json = new JSONObject();
-        DeviceInfo.fillJSONIfValuesNotEmpty(json, "key1", "value1", "key2", null, "key3", "value3", "key4", "", "key5", "value5");
-        assertEquals("value1", json.get("key1"));
-        assertFalse(json.has("key2"));
-        assertEquals("value3", json.get("key3"));
-        assertFalse(json.has("key4"));
-        assertEquals("value5", json.get("key5"));
-    }
 }

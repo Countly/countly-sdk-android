@@ -20,6 +20,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static android.content.Context.UI_MODE_SERVICE;
 
@@ -236,6 +238,30 @@ public class Utils {
                     reminder.put(key, value);
                 }
             }
+        }
+    }
+
+    /**
+     * Utility method to fill JSONObject with supplied objects for supplied keys.
+     * Fills json only with non-null and non-empty key/value pairs.
+     *
+     * @param json JSONObject to fill
+     * @param objects varargs of this kind: key1, value1, key2, value2, ...
+     */
+    static void fillJSONIfValuesNotEmpty(final JSONObject json, final String... objects) {
+        try {
+            if (objects.length > 0 && objects.length % 2 == 0) {
+                for (int i = 0; i < objects.length; i += 2) {
+                    final String key = objects[i];
+                    final String value = objects[i + 1];
+                    if (value != null && value.length() > 0) {
+                        json.put(key, value);
+                    }
+                }
+            }
+        } catch (JSONException ignored) {
+            // shouldn't ever happen when putting String objects into a JSONObject,
+            // it can only happen when putting NaN or INFINITE doubles or floats into it
         }
     }
 

@@ -137,12 +137,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         final String crashData;
-        if (metricOverride != null) {
-            crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), combinedSegmentationValues, metricOverride);
-        } else {
-            crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), combinedSegmentationValues);
-        }
-
+        crashData = CrashDetails.getCrashData(_cly.context_, error, nonfatal, isNativeCrash, CrashDetails.getLogs(), combinedSegmentationValues, metricOverride);
 
         requestQueueProvider.sendCrashReport(crashData, nonfatal);
     }
