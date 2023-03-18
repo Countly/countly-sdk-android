@@ -35,6 +35,10 @@ public class CountlyConfig {
 
     protected SafeIDGenerator safeIDGenerator = null;
 
+    protected MetricProvider metricProviderOverride = null;
+
+    protected DeviceInfo deviceInfo = null;
+
     protected ModuleBase testModuleListener = null;
 
     protected boolean checkForNativeCrashDumps = true;

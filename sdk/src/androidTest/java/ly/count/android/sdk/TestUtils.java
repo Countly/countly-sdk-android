@@ -394,4 +394,32 @@ public class TestUtils {
             Assert.assertEquals(idOverride, cIdOverride);
         }
     }
+
+    public static void verifyBeginSessionNotCalled(RequestQueueProvider requestQueueProvider) {
+        ArgumentCaptor<Boolean> arg1 = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg3 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg4 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg5 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg6 = ArgumentCaptor.forClass(String.class);
+
+        verify(requestQueueProvider, never()).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+    }
+
+    public static void verifyBeginSessionValues(RequestQueueProvider requestQueueProvider, Boolean v1, String v2, String v3, String v4, String v5) {
+        ArgumentCaptor<Boolean> arg1 = ArgumentCaptor.forClass(Boolean.class);
+        ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg3 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg4 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg5 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg6 = ArgumentCaptor.forClass(String.class);
+
+        verify(requestQueueProvider, times(1)).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+
+        Assert.assertEquals(v1, arg1.getAllValues().get(0));
+        Assert.assertEquals(v2, arg2.getAllValues().get(0));
+        Assert.assertEquals(v3, arg3.getAllValues().get(0));
+        Assert.assertEquals(v4, arg4.getAllValues().get(0));
+        Assert.assertEquals(v5, arg5.getAllValues().get(0));
+    }
 }

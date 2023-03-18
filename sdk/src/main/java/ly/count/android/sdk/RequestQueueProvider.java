@@ -5,7 +5,7 @@ import androidx.annotation.Nullable;
 import java.util.Map;
 
 interface RequestQueueProvider {
-    void beginSession(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress);
+    void beginSession(boolean locationDisabled, @Nullable String locationCountryCode, @Nullable String locationCity, @Nullable String locationGpsCoordinates, @Nullable String locationIpAddress, @NonNull String preparedMetrics);
 
     void updateSession(final int duration);
 
@@ -50,7 +50,7 @@ interface RequestQueueProvider {
 
     ConnectionProcessor createConnectionProcessor();
 
-    String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude);
+    String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
 
     String prepareRatingWidgetRequest(String widgetId);
 

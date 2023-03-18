@@ -54,19 +54,22 @@ import static org.mockito.Mockito.when;
 @RunWith(AndroidJUnit4.class)
 public class DeviceInfoTests {
 
+    DeviceInfo regularDeviceInfo;
+
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
+        regularDeviceInfo = new DeviceInfo(null);
     }
 
     @Test
     public void testGetOS() {
-        assertEquals("Android", DeviceInfo.getOS());
+        assertEquals("Android", regularDeviceInfo.mp.getOS());
     }
 
     @Test
     public void testGetOSVersion() {
-        assertEquals(android.os.Build.VERSION.RELEASE, DeviceInfo.getOSVersion());
+        assertEquals(android.os.Build.VERSION.RELEASE, regularDeviceInfo.mp.getOSVersion());
     }
 
     @Test
@@ -219,8 +222,8 @@ public class DeviceInfoTests {
     public void testGetMetrics() throws UnsupportedEncodingException, JSONException {
         final JSONObject json = new JSONObject();
         json.put("_device", DeviceInfo.getDevice());
-        json.put("_os", DeviceInfo.getOS());
-        json.put("_os_version", DeviceInfo.getOSVersion());
+        json.put("_os", regularDeviceInfo.mp.getOS());
+        json.put("_os_version", regularDeviceInfo.mp.getOSVersion());
         if (!"".equals(DeviceInfo.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
             json.put("_carrier", DeviceInfo.getCarrier(getContext()));
         }
@@ -231,7 +234,7 @@ public class DeviceInfoTests {
         json.put("_manufacturer", DeviceInfo.getManufacturer());
         json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
 
-        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), null), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), regularDeviceInfo, null), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -245,8 +248,8 @@ public class DeviceInfoTests {
 
         final JSONObject json = new JSONObject();
         json.put("_device", DeviceInfo.getDevice());
-        json.put("_os", DeviceInfo.getOS());
-        json.put("_os_version", DeviceInfo.getOSVersion());
+        json.put("_os", regularDeviceInfo.mp.getOS());
+        json.put("_os_version", regularDeviceInfo.mp.getOSVersion());
         if (!"".equals(DeviceInfo.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
             json.put("_carrier", DeviceInfo.getCarrier(getContext()));
         }
@@ -260,7 +263,7 @@ public class DeviceInfoTests {
         json.put("456", "cc");
         json.put("Test", "aa");
 
-        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), regularDeviceInfo, metricOverride), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -291,7 +294,7 @@ public class DeviceInfoTests {
         json.put("_device_type", DeviceInfo.getDeviceType(getContext()));
         json.put("asd", "123");
 
-        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), regularDeviceInfo, metricOverride), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }

@@ -18,9 +18,14 @@ public class ModuleRemoteConfig extends ModuleBase {
     boolean remoteConfigAutomaticUpdateEnabled = false;
     RemoteConfigCallback remoteConfigInitCallback = null;
 
+    @Nullable
+    Map<String, String> metricOverride = null;
+
     ModuleRemoteConfig(Countly cly, final CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleRemoteConfig] Initialising");
+
+        metricOverride = config.metricOverride;
 
         if (config.enableRemoteConfigAutomaticDownload) {
             L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownload);
@@ -76,8 +81,11 @@ public class ModuleRemoteConfig extends ModuleBase {
                 return;
             }
 
+            //prepare metrics
+            String preparedMetrics = DeviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
+
             String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
-            String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1]);
+            String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);
             L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();

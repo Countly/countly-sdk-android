@@ -194,7 +194,7 @@ public class ConnectionQueueTests {
     @Test
     public void testBeginSession_checkInternalState() {
         try {
-            freshConnQ.beginSession(false, null, null, null, null);
+            freshConnQ.beginSession(false, null, null, null, null, null);
             fail("expected IllegalStateException when internal state is not set up");
         } catch (IllegalStateException ignored) {
             // success!

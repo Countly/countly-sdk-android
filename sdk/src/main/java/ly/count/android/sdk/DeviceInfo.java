@@ -64,24 +64,33 @@ import org.json.JSONObject;
 class DeviceInfo {
     //crash related fields
     private static final LinkedList<String> logs = new LinkedList<>();
-    private static final int startTime = UtilsTime.currentTimestampSeconds();
+    private final static int startTime = UtilsTime.currentTimestampSeconds();
     private static boolean inBackground = true;
     private static long totalMemory = 0;
 
-    /**
-     * Returns the display name of the current operating system.
-     */
-    @SuppressWarnings("SameReturnValue")
-    static String getOS() {
-        return "Android";
-    }
+    MetricProvider mp;
 
-    /**
-     * Returns the current operating system version as a displayable string.
-     */
-    @SuppressWarnings("SameReturnValue")
-    static String getOSVersion() {
-        return android.os.Build.VERSION.RELEASE;
+    public DeviceInfo(MetricProvider mpOverride) {
+        mp = mpOverride;
+
+        if (mp == null) {
+            mp = new MetricProvider() {
+                /**
+                 * Returns the display name of the current operating system.
+                 */
+                @Override public String getOS() {
+                    return "Android";
+                }
+
+                /**
+                 * Returns the current operating system version as a displayable string.
+                 */
+                @SuppressWarnings("SameReturnValue")
+                public String getOSVersion() {
+                    return android.os.Build.VERSION.RELEASE;
+                }
+            };
+        }
     }
 
     /**
@@ -253,14 +262,22 @@ class DeviceInfo {
         return "mobile";
     }
 
+    /**
+     * Returns the common metrics that would be shared with session, remote config and crash metrics
+     * If metric override is provided, it will check for specific keys and override them
+     *
+     * @param context
+     * @param metricOverride
+     * @return
+     */
     @NonNull
-    static JSONObject getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+    static JSONObject getCommonMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
         final JSONObject json = new JSONObject();
 
         Utils.fillJSONIfValuesNotEmpty(json,
             "_device", getDevice(),
-            "_os", getOS(),
-            "_os_version", getOSVersion(),
+            "_os", deviceInfo.mp.getOS(),
+            "_os_version", deviceInfo.mp.getOSVersion(),
             "_resolution", getResolution(context),
             "_app_version", getAppVersion(context),
             "_manufacturer", getManufacturer());
@@ -268,9 +285,17 @@ class DeviceInfo {
         return json;
     }
 
-    static String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+    /**
+     * Returns url encoded metrics that would be used for "begin_session" requests and remote config
+     *
+     * @param context
+     * @param metricOverride
+     * @return
+     */
+    @NonNull
+    static String getMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
         //we set the override to null because all of the entries will be overwritten anyway
-        final JSONObject json = getCommonMetrics(context, null);
+        final JSONObject json = getCommonMetrics(context, deviceInfo, null);
 
         Utils.fillJSONIfValuesNotEmpty(json,
             "_carrier", getCarrier(context),
@@ -319,10 +344,11 @@ class DeviceInfo {
      * See the following link for more info:
      * http://resources.count.ly/v1.0/docs/i
      */
+    @NonNull
     static String getCrashData(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
+        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
 
-        final JSONObject json = getCommonMetrics(context, metricOverride);
+        final JSONObject json = getCommonMetrics(context, deviceInfo, metricOverride);
 
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", error,
@@ -452,6 +478,7 @@ class DeviceInfo {
     /**
      * Returns the collected logs.
      */
+    @NonNull
     static String getLogs() {
         StringBuilder allLogs = new StringBuilder();
 

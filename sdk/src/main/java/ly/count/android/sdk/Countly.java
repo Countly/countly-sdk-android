@@ -489,6 +489,11 @@ public class Countly {
                 };
             }
 
+            if (config.metricProviderOverride != null) {
+                L.d("[Init] Custom metric provider was provided");
+            }
+            config.deviceInfo = new DeviceInfo(config.metricProviderOverride);
+
             if (config.tamperingProtectionSalt != null) {
                 L.d("[Init] Parameter tampering protection salt set");
             }
