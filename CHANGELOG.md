@@ -3,7 +3,7 @@
 * Fixed a bug where crash metrics sent the "manufacturer" value under the wrong key
 * Fixed a bug where orientation events would have the same view ID as the previous view event
 * Fixed a bug where automatic view tracking reported view duration with a duration of "0"
-* Fixed a bug where view ID's where being reported incorrectly
+* Fixed a bug where view ID's were being reported incorrectly
 
 ## 22.09.0
 * Fixed a race condition bug where a recorded event would have the wrong user properties in the drill database on the server. Now event queue is emptied (formed into a request) before recording any user profile changes.
