@@ -430,4 +430,9 @@ public class TestUtils {
         Assert.assertEquals(v4, arg4.getAllValues().get(0));
         Assert.assertEquals(v5, arg5.getAllValues().get(0));
     }
+
+    public static void verifyCurrentPreviousViewID(ModuleViews mv, String current, String previous) {
+        Assert.assertEquals(current, mv.getCurrentViewId());
+        Assert.assertEquals(previous, mv.getPreviousViewId());
+    }
 }

@@ -476,7 +476,9 @@ public class ModuleViewsTests {
 
         //go from one activity to another in the expected way and then "go to background"
         ///////// 1
+        TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, "", "");
         mCountly.onStart(act);
+        TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[0], "");
 
         // there should be the first view start
         ClearFillSegmentationViewStart(segm, viewNames[0], true);
@@ -486,7 +488,9 @@ public class ModuleViewsTests {
         ///////// 2
         Thread.sleep(1000);
         mCountly.onStart(act2);
+        TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[1], vals[0]);
         mCountly.onStop();
+        TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[1], vals[0]);
 
         //we are transitioning to the next view
         //first the next activities 'onStart' is called
@@ -500,7 +504,9 @@ public class ModuleViewsTests {
 
         Thread.sleep(2000);
         mCountly.onStart(act3);
+        TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
         mCountly.onStop();
+        TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
         ClearFillSegmentationViewEnd(segm, viewNames[1], "2");
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 2);
@@ -511,6 +517,7 @@ public class ModuleViewsTests {
 
         Thread.sleep(1000);
         mCountly.onStop();
+        TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
         ClearFillSegmentationViewEnd(segm, viewNames[2], "1");
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 0, 1);
