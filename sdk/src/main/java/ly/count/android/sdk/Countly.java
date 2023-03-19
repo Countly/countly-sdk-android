@@ -877,7 +877,7 @@ public class Countly {
         config_.deviceInfo.inBackground();
 
         for (ModuleBase module : modules) {
-            module.onActivityStopped();
+            module.onActivityStopped(activityCount_);
         }
     }
 

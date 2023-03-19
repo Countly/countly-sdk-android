@@ -333,7 +333,15 @@ public class TestUtils {
     }
 
     public static void validateRecordEventInternalMockInteractions(EventProvider ep, int interactionCount) {
-        verify(ep, times(interactionCount)).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), anyString());
+        ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Map> arg2 = ArgumentCaptor.forClass(Map.class);
+        ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Double> arg4 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<Double> arg5 = ArgumentCaptor.forClass(Double.class);
+        ArgumentCaptor<UtilsTime.Instant> arg6 = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<String> arg7 = ArgumentCaptor.forClass(String.class);
+
+        verify(ep, times(interactionCount)).recordEventInternal(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture());
     }
 
     public static void validateRecordEventInternalMock(final @NonNull EventProvider ep, final @NonNull String eventKey, final @Nullable Map<String, Object> segmentation, final @Nullable Integer count, final @Nullable Double sum, final @Nullable Double duration,

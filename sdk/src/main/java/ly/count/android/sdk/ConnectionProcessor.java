@@ -405,10 +405,10 @@ public class ConnectionProcessor implements Runnable {
         }
     }
 
-
     String getServerURL() {
         return serverURL_;
     }
+
     // for unit testing
     StorageProvider getCountlyStore() {
         return storageProvider_;

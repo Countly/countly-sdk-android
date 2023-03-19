@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.assist.AssistStructure;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -22,6 +23,7 @@ import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -105,6 +107,9 @@ public class ModuleViewsTests {
     }
 
     class Activity2 extends Activity {
+    }
+
+    class Activity3 extends Activity {
     }
 
     void activityStartedViewTrackingException(boolean shortNames) {
@@ -213,6 +218,7 @@ public class ModuleViewsTests {
 
     /**
      * Verify that when calling "onStop" without calling "onStart", no event is created
+     * In either of the degenerate cases, there should be no view duration recorded
      */
     @Test
     public void onActivityStopped() {
@@ -220,8 +226,8 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.moduleViews.onActivityStopped();
-
+        mCountly.moduleViews.onActivityStopped(0);
+        mCountly.moduleViews.onActivityStopped(-1);
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
@@ -242,9 +248,9 @@ public class ModuleViewsTests {
         @NonNull Activity act = mock(Activity.class);
 
         int start = UtilsTime.currentTimestampSeconds();
-        mCountly.moduleViews.onActivityStarted(act);
+        mCountly.moduleViews.onActivityStarted(act);//activity count = 1
         Thread.sleep(100);
-        mCountly.moduleViews.onActivityStopped();
+        mCountly.moduleViews.onActivityStopped(0);//activity count = 0
         String dur = String.valueOf(UtilsTime.currentTimestampSeconds() - start);
 
         final Map<String, Object> segm = new HashMap<>();
@@ -434,19 +440,86 @@ public class ModuleViewsTests {
         @NonNull Activity act = mock(Activity.class);
         @NonNull Activity act2 = mock(Activity2.class);
 
+        final Map<String, Object> segm = new HashMap<>();
+
+        //make sure nothing was happening here before
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
         //go from one activity to another in the expected way and then "go to background"
         mCountly.onStart(act);
+
         mCountly.onStart(act2);
+
         mCountly.onStop();
+
         mCountly.onStop();
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
+    @Test
+    public void autoSessionFlow_1() throws InterruptedException {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeIDGenerator, null).setEventQueueSizeToSend(100);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        //mCountly.views().recordView("abcd");
+        //TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY);
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        @NonNull Activity act = mock(Activity.class);
+        @NonNull Activity act2 = mock(Activity2.class);
+        @NonNull Activity act3 = mock(Activity3.class);
+
+        String viewNames[] = new String[] { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
+        final Map<String, Object> segm = new HashMap<>();
+
+        //go from one activity to another in the expected way and then "go to background"
+        ///////// 1
+        mCountly.onStart(act);
+
+        // there should be the first view start
+        ClearFillSegmentationViewStart(segm, viewNames[0], true);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        ///////// 2
+        Thread.sleep(1000);
+        mCountly.onStart(act2);
+        mCountly.onStop();
+
+        //we are transitioning to the next view
+        //first the next activities 'onStart' is called
+        //we would report the duration of the first view and then start the next one
+        ClearFillSegmentationViewEnd(segm, viewNames[0], "1");
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
+
+        ClearFillSegmentationViewStart(segm, viewNames[1], false);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Thread.sleep(2000);
+        mCountly.onStart(act3);
+        mCountly.onStop();
+
+        ClearFillSegmentationViewEnd(segm, viewNames[1], "2");
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 2);
+
+        ClearFillSegmentationViewStart(segm, viewNames[2], false);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
+        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Thread.sleep(1000);
+        mCountly.onStop();
+
+        ClearFillSegmentationViewEnd(segm, viewNames[2], "1");
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 0, 1);
+    }
+
     void ClearFillSegmentationViewStart(final Map<String, Object> segm, String viewName, boolean firstView) {
         segm.clear();
         segm.put("segment", "Android");
-        if(firstView) {
+        if (firstView) {
             segm.put("start", "1");
         }
         segm.put("visit", "1");

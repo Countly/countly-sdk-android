@@ -306,7 +306,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
          */
         public boolean isHttpPostForced() {
             synchronized (_cly) {
-                L.i("[RequestQueue] Calling 'isHttpPostForced'");
+                L.v("[RequestQueue] Calling 'isHttpPostForced'");
 
                 return isHttpPostForcedInternal();
             }
@@ -319,7 +319,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
          */
         public boolean isDeviceAppCrawler() {
             synchronized (_cly) {
-                L.i("[RequestQueue] Calling 'isDeviceAppCrawler'");
+                L.v("[RequestQueue] Calling 'isDeviceAppCrawler'");
                 return isDeviceAppCrawlerInternal();
             }
         }
@@ -329,7 +329,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
          */
         public boolean ifShouldIgnoreCrawlers() {
             synchronized (_cly) {
-                L.i("[RequestQueue] Calling 'ifShouldIgnoreCrawlers'");
+                L.v("[RequestQueue] Calling 'ifShouldIgnoreCrawlers'");
                 return ifShouldIgnoreCrawlersInternal();
             }
         }
@@ -341,7 +341,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
          */
         public void flushQueues() {
             synchronized (_cly) {
-                L.i("[RequestQueue] Calling 'flushQueues'");
+                L.v("[RequestQueue] Calling 'flushQueues'");
                 flushQueuesInternal();
             }
         }
@@ -352,7 +352,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
          */
         public void attemptToSendStoredRequests() {
             synchronized (_cly) {
-                L.i("[RequestQueue] Calling 'attemptToSendStoredRequestsInternal'");
+                L.v("[RequestQueue] Calling 'attemptToSendStoredRequestsInternal'");
                 attemptToSendStoredRequestsInternal();
             }
         }

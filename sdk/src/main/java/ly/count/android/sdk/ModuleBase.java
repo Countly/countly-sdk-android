@@ -55,7 +55,7 @@ abstract class ModuleBase {
     /**
      * Called manually by a countly call from the developer
      */
-    void onActivityStopped() {
+    void onActivityStopped(int updatedActivityCount) {
     }
 
     void callbackOnActivityCreated(Activity activity) {

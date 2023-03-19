@@ -116,7 +116,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             return;
         }
 
-        if(deviceIdInstance.getCurrentId().equals(deviceId)) {
+        if (deviceIdInstance.getCurrentId().equals(deviceId)) {
             //if we are attempting to change the device ID to the same ID, do nothing
             L.w("[ModuleDeviceId] changeDeviceIdWithoutMergeInternal, We are attempting to change the device ID to the same ID, request will be ignored");
             return;
