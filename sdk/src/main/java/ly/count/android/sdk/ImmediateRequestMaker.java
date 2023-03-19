@@ -99,10 +99,13 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
                 buffer.append(line).append("\n");
             }
 
+            final String receivedBuffer = buffer.toString();
+
             if (wasSuccess) {
-                return new JSONObject(buffer.toString());
+                L.d("[ImmediateRequestMaker] Received the following response, :[" + receivedBuffer + "]");
+                return new JSONObject(receivedBuffer);
             } else {
-                L.e("[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + buffer.toString() + "]");
+                L.e("[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + receivedBuffer + "]");
                 return null;
             }
         } catch (Exception e) {
