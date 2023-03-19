@@ -31,11 +31,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
 
     public @NonNull String getCurrentViewId() {
-        return previousViewID == null ? "" : previousViewID;
+        return currentViewID == null ? "" : currentViewID;
     }
 
     public @NonNull String getPreviousViewId() {
-        return currentViewID == null ? "" : currentViewID;
+        return previousViewID == null ? "" : previousViewID;
     }
 
     static class ViewData {
@@ -125,7 +125,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (vd.viewName != null && vd.viewStartTime > 0) {
             Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, true, null);
             eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, vd.viewID);
-            currentViewID = null;
+            viewDataMap.remove(vd.viewID);
         }
     }
 
@@ -208,7 +208,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view ID:[" + currentViewID + "] custom view segment count:[" + segmCount + "], first:[" + firstView + "]");
         }
 
-        reportViewDuration();
+        if (viewDataMap.size() > 0) {
+            //there is only a point in calling this if there are any open views
+            reportViewDuration();
+        } else {
+            L.i("[ModuleViews] Skipping to call 'reportViewDuration' due to having no open views");
+        }
 
         ViewData currentViewData = new ViewData();
         currentViewData.viewID = safeIDGenerator.GenerateValue();
@@ -250,7 +255,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 segm.put("mode", "landscape");
             }
 
-            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null, currentViewID);
+            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null, null);
         }
     }
 
@@ -265,10 +270,13 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     }
 
     @Override
-    void onActivityStopped() {
+    void onActivityStopped(int updatedActivityCount) {
         if (autoViewTracker) {
-            //report current view duration
-            reportViewDuration();
+            //main purpose of this is handling transitions when the app is getting closed/minimised
+            //for cases when going from one view to another we would report the duration there
+            if (updatedActivityCount <= 0) {
+                reportViewDuration();
+            }
         }
     }
 
