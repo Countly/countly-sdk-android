@@ -447,7 +447,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * NaN and infinity values will be quietly ignored.
      */
     public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
-        final @Nullable String currentViewId) {
+        final @Nullable String currentViewId, final @Nullable String previousEventId) {
         Map<String, String> segmentationString = null;
         Map<String, Integer> segmentationInt = null;
         Map<String, Double> segmentationDouble = null;
@@ -478,6 +478,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         event.id = eventID;
         event.pvid = previousViewId;
         event.cvid = currentViewId;
+        event.peid = previousEventId;
 
         addEvent(event);
     }

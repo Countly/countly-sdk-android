@@ -62,6 +62,7 @@ public class EventTests {
         assertNull(event.segmentationBoolean);
         assertNull(event.id);
         assertNull(event.cvid);
+        assertNull(event.peid);
         assertNull(event.pvid);
         assertEquals(0, event.count);
         assertEquals(0.0d, event.sum, 0.0000001);
@@ -84,6 +85,7 @@ public class EventTests {
         assertNull(event.segmentationBoolean);
         assertNull(event.id);
         assertNull(event.cvid);
+        assertNull(event.peid);
         assertNull(event.pvid);
         assertEquals(0, event.count);
         assertEquals(0.0d, event.sum, 0.0000001);
@@ -151,6 +153,12 @@ public class EventTests {
         event2.cvid = "cvid";
         TestEventComparer(event1, event2, true);
 
+        event1.peid = "peid";
+        TestEventComparer(event1, event2, false);
+
+        event2.peid = "peid";
+        TestEventComparer(event1, event2, true);
+
         event1.pvid = "pvid";
         TestEventComparer(event1, event2, false);
 
@@ -215,6 +223,10 @@ public class EventTests {
 
         if (!jsonObj.isNull(Event.CV_ID_KEY)) {
             assertEquals(expectedEvent.cvid, parsedEvent.cvid);
+        }
+
+        if (!jsonObj.isNull(Event.PE_ID_KEY)) {
+            assertEquals(expectedEvent.peid, parsedEvent.peid);
         }
 
         if (!jsonObj.isNull(Event.SEGMENTATION_KEY)) {
@@ -362,6 +374,7 @@ public class EventTests {
         expected.sum = 3.2;
         expected.id = "id";
         expected.cvid = "cvid";
+        expected.peid = "peid";
         expected.pvid = "pvid";
         final JSONObject jsonObj = CreateEventJsonObj(expected.key, null);
         jsonObj.put(Event.TIMESTAMP_KEY, expected.timestamp);
@@ -373,6 +386,7 @@ public class EventTests {
         jsonObj.put(Event.ID_KEY, expected.id);
         jsonObj.put(Event.PV_ID_KEY, expected.pvid);
         jsonObj.put(Event.CV_ID_KEY, expected.cvid);
+        jsonObj.put(Event.PE_ID_KEY, expected.peid);
         fromJSON_CompareExpectedToParsed(jsonObj, expected);
     }
 
@@ -527,6 +541,7 @@ public class EventTests {
         event.id = "id";
         event.pvid = "pvid";
         event.cvid = "cvid";
+        event.peid = "peid";
         event.segmentation = new HashMap<>();
         event.segmentationInt = new HashMap<>();
         event.segmentationDouble = new HashMap<>();
@@ -536,7 +551,7 @@ public class EventTests {
         event.segmentationDouble.put("segkey2", 544.43d);
         event.segmentationBoolean.put("segkey3", true);
         final JSONObject jsonObj = event.toJSON();
-        assertEquals(10, jsonObj.length());
+        assertEquals(11, jsonObj.length());
         assertEquals(event.key, jsonObj.getString(Event.KEY_KEY));
         assertEquals(event.timestamp, jsonObj.getInt(Event.TIMESTAMP_KEY));
         assertEquals(event.dow, jsonObj.getInt(Event.DAY_OF_WEEK_KEY));
@@ -551,6 +566,7 @@ public class EventTests {
         assertEquals(event.id, jsonObj.getString(Event.ID_KEY));
         assertEquals(event.pvid, jsonObj.getString(Event.PV_ID_KEY));
         assertEquals(event.cvid, jsonObj.getString(Event.CV_ID_KEY));
+        assertEquals(event.peid, jsonObj.getString(Event.PE_ID_KEY));
     }
 
     /**
