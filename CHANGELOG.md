@@ -1,5 +1,6 @@
 ## 22.09.2
 * Implemented previous event ID logic for each non-internal event
+
 ## 22.09.1
 * Fixed a bug where metric override values were not applying to crash metrics
 * Fixed a bug where crash metrics sent the "manufacturer" value under the wrong key
