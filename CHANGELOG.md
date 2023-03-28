@@ -1,5 +1,6 @@
 ## 22.09.2
 * Implemented previous event ID logic for each non-internal event
+* Session update interval upper limit has been lifted
 
 ## 22.09.1
 * Fixed a bug where metric override values were not applying to crash metrics
