@@ -203,7 +203,6 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
-        Assert.assertTrue(config.enableAttribution);
         Assert.assertEquals(crashSegments, config.customCrashSegment);
         Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
         Assert.assertTrue(config.starRatingDialogIsCancellable);
@@ -280,7 +279,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.appCrawlerNames);
         Assert.assertNull(config.publicKeyPinningCertificates);
         Assert.assertNull(config.certificatePinningCertificates);
-        Assert.assertNull(config.enableAttribution);
         Assert.assertNull(config.customCrashSegment);
         Assert.assertNull(config.sessionUpdateTimerDelay);
         Assert.assertFalse(config.starRatingDialogIsCancellable);
