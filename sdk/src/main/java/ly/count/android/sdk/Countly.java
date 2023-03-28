@@ -189,9 +189,6 @@ public class Countly {
     //internal flags
     private boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
 
-    //attribution
-    protected boolean isAttributionEnabled = true;
-
     protected boolean isBeginSessionSent = false;
 
     //custom request header fields
@@ -617,12 +614,7 @@ public class Countly {
                 Countly.sharedInstance().L.i("[Init] Enabling certificate pinning");
                 certificatePinCertificates = config.certificatePinningCertificates;
             }
-
-            if (config.enableAttribution != null) {
-                L.d("[Init] Enabling attribution");
-                isAttributionEnabled = config.enableAttribution;
-            }
-
+            
             //initialize networking queues
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;
