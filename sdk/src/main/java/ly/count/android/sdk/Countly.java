@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.2";
 
     /**
      * Used as request meta data on every request
@@ -247,11 +247,8 @@ public class Countly {
         }
 
         //minimum delay of 1 second
-        //maximum delay if 10 minutes
         if (timerDelay < 1) {
             timerDelay = 1;
-        } else if (timerDelay > 600) {
-            timerDelay = 600;
         }
 
         timerFuture = service.scheduleWithFixedDelay(new Runnable() {

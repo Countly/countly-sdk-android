@@ -685,7 +685,6 @@ public class CountlyConfig {
     /**
      * Sets the interval for the automatic session update calls
      * min value 1 (1 second),
-     * max value 600 (10 minutes)
      *
      * @param delay in seconds
      * @return Returns the same config object for convenient linking
