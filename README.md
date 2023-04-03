@@ -11,8 +11,7 @@ and [desktop](https://count.ly/desktop-analytics) applications. [Ensuring privac
 
 Track, measure, and take action - all without leaving Countly.
 
-* **Slack user?** [Join our Slack Community](https://slack.count.ly)
-* **Questions or feature requests?** [Post in our Community Forum](https://support.count.ly/hc/en-us/community/topics)
+* **Questions or feature requests?** [Join the Countly Community on Discord](https://discord.gg/countly)
 * **Looking for the Countly Server?** [Countly Community Edition repository](https://github.com/Countly/countly-server)
 * **Looking for other Countly SDKs?** [An overview of all Countly SDKs for mobile, web and desktop](https://support.count.ly/hc/en-us/articles/360037236571-Downloading-and-Installing-SDKs#officially-supported-sdks)
 
@@ -54,6 +53,6 @@ If you like Countly, [why not use one of our badges](https://count.ly/brand-asse
 ```
 
 ## How can I help you with your efforts?
-Glad you asked! We need ideas, feedback and constructive comments. All your suggestions will be taken care of with utmost importance. For feature requests and engaging with the community, join [our Slack Community](https://slack.count.ly) or [Community Forum](https://support.count.ly/hc/en-us/community/topics).
+Glad you asked! For community support, feature requests, and engaging with the Countly Community, please join us at [our Discord Server](https://discord.gg/countly). We're excited to have you there!
 
-We are on [Twitter](http://twitter.com/gocountly), [Facebook](https://www.facebook.com/Countly) and [LinkedIn](https://www.linkedin.com/company/countly) if you would like to keep up with Countly related updates.
+Also, we are on [Twitter](https://twitter.com/gocountly) and [LinkedIn](https://www.linkedin.com/company/countly) if you would like to keep up with Countly related updates.
