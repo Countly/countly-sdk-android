@@ -150,8 +150,6 @@ public class CountlyConfig {
 
     protected String[] certificatePinningCertificates = null;
 
-    protected Boolean enableAttribution = null;
-
     protected Map<String, Object> customCrashSegment = null;
 
     protected Integer sessionUpdateTimerDelay = null;
@@ -589,9 +587,9 @@ public class CountlyConfig {
      *
      * @param enableAttribution set true if you want to enable it, set false if you want to disable it
      * @return Returns the same config object for convenient linking
+     * @deprecated This call will not do anything anymore. Use 'setDirectAttribution' or 'setIndirectAttribution' for attribution purposes
      */
     public synchronized CountlyConfig setEnableAttribution(boolean enableAttribution) {
-        this.enableAttribution = enableAttribution;
         return this;
     }
 

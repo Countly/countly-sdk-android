@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.2";
 
     /**
      * Used as request meta data on every request
@@ -188,9 +188,6 @@ public class Countly {
 
     //internal flags
     private boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
-
-    //attribution
-    protected boolean isAttributionEnabled = true;
 
     protected boolean isBeginSessionSent = false;
 
@@ -614,12 +611,7 @@ public class Countly {
                 Countly.sharedInstance().L.i("[Init] Enabling certificate pinning");
                 certificatePinCertificates = config.certificatePinningCertificates;
             }
-
-            if (config.enableAttribution != null) {
-                L.d("[Init] Enabling attribution");
-                isAttributionEnabled = config.enableAttribution;
-            }
-
+            
             //initialize networking queues
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;
