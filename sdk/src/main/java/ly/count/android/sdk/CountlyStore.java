@@ -69,7 +69,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
     private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
     private static final String CACHED_PUSH_MESSAGING_PROVIDER = "PUSH_MESSAGING_PROVIDER";
-    private static final int MAX_EVENTS = 100;
+    private static final int MAX_EVENTS = 1000;//the maximum amount of events that can be held in the event queue
 
     private final SharedPreferences preferences_;
     private final SharedPreferences preferencesPush_;

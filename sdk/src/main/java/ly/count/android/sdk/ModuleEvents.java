@@ -14,6 +14,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     //interface for SDK users
     final Events eventsInterface;
 
+    //used for tracking recorded custom event ID's. This is not updated when internal events are recorded
     String previousEventId = "";
 
     EventQueueProvider eventQueueProvider;
