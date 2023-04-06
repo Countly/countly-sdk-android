@@ -74,6 +74,7 @@ public class CountlyStoreTests {
 
     /**
      * Convenience function for recording event to countly store and generating a current timestamp
+     * This wraps the messy recording function
      *
      * @param eventKey
      * @param cs
@@ -86,6 +87,7 @@ public class CountlyStoreTests {
     /**
      * Convenience function for tests
      * Uses the event object to record an event to EQ
+     * This wraps the messy recording function
      *
      * @param e
      * @param cs
@@ -358,10 +360,11 @@ public class CountlyStoreTests {
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
         store.addRequest("blah", false);
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.recordEventToEventQueue("eventKey", null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null, null);
+
+        RecordEvent(eKeys[0], store);
         assertTrue(prefs.contains("EVENTS"));
         assertTrue(prefs.contains("CONNECTIONS"));
+
         store.clear();
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));

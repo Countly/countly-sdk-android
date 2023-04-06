@@ -49,7 +49,7 @@ public class EventTests {
     }
 
     /**
-     * By default all values should be either null or
+     * By default all values should be either 'null' or
      * have their default value in case of value types
      */
     @Test
