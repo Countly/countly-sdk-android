@@ -33,7 +33,9 @@ public class CountlyConfig {
 
     protected BaseInfoProvider baseInfoProvider = null;
 
-    protected SafeIDGenerator safeIDGenerator = null;
+    protected SafeIDGenerator safeViewIDGenerator = null;
+
+    protected SafeIDGenerator safeEventIDGenerator = null;
 
     protected MetricProvider metricProviderOverride = null;
 

@@ -47,6 +47,9 @@ public class ModuleEventsTests {
     public void tearDown() {
     }
 
+    /**
+     * Validating 'fillInSegmentation' call
+     */
     @Test
     public void fillInSegmentation() {
         Map<String, Object> segm = new HashMap<>();

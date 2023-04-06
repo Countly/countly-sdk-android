@@ -20,6 +20,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     EventQueueProvider eventQueueProvider;
     ViewIdProvider viewIdProvider;
 
+    SafeIDGenerator safeEventIDGenerator;
+
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleEvents] Initialising");
@@ -27,6 +29,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         eventProvider = this;
         config.eventProvider = this;
         eventQueueProvider = config.eventQueueProvider;
+        safeEventIDGenerator = config.safeEventIDGenerator;
 
         eventsInterface = new Events();
     }
@@ -90,10 +93,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String eventId;
 
         if (eventIdOverride == null) { // if eventIdOverride not provided generate an event ID
-            eventId = Utils.safeRandomVal();
+            eventId = safeEventIDGenerator.GenerateValue();
         } else if (eventIdOverride.length() == 0) {
             L.w("[ModuleEvents] provided event ID override value is empty. Will generate a new one.");
-            eventId = Utils.safeRandomVal();
+            eventId = safeEventIDGenerator.GenerateValue();
         } else { // if eventIdOverride is provided use it the event ID
             eventId = eventIdOverride;
         }

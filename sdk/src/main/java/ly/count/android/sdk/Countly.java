@@ -474,9 +474,18 @@ public class Countly {
                 L.d("[Init] Custom request queue provider was provided");
             }
 
-            if (config.safeIDGenerator == null) {
+            if (config.safeViewIDGenerator == null) {
                 //if we didn't override this for a test
-                config.safeIDGenerator = new SafeIDGenerator() {
+                config.safeViewIDGenerator = new SafeIDGenerator() {
+                    @NonNull @Override public String GenerateValue() {
+                        return Utils.safeRandomVal();
+                    }
+                };
+            }
+
+            if (config.safeEventIDGenerator == null) {
+                //if we didn't override this for a test
+                config.safeEventIDGenerator = new SafeIDGenerator() {
                     @NonNull @Override public String GenerateValue() {
                         return Utils.safeRandomVal();
                     }
@@ -611,7 +620,7 @@ public class Countly {
                 Countly.sharedInstance().L.i("[Init] Enabling certificate pinning");
                 certificatePinCertificates = config.certificatePinningCertificates;
             }
-            
+
             //initialize networking queues
             connectionQueue_.L = L;
             connectionQueue_.consentProvider = moduleConsent;

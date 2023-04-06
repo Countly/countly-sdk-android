@@ -72,7 +72,7 @@ public class TestUtils {
             .setTrackOrientationChanges(orientationTracking);
 
         cc.setAutoTrackingUseShortName(useShortNames);
-        cc.safeIDGenerator = safeIDGenerator;
+        cc.safeViewIDGenerator = safeIDGenerator;
         cc.setAutomaticViewSegmentation(autoViewSegms);
         cc.setViewTracking(automaticViewTracking);
         return cc;

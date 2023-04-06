@@ -14,7 +14,6 @@ abstract class ModuleBase {
     RequestQueueProvider requestQueueProvider;
     DeviceIdProvider deviceIdProvider;
     BaseInfoProvider baseInfoProvider;
-    SafeIDGenerator safeIDGenerator;
     ViewIdProvider viewIdProvider;
 
     DeviceInfo deviceInfo;
@@ -28,7 +27,6 @@ abstract class ModuleBase {
         requestQueueProvider = config.requestQueueProvider;
         deviceIdProvider = config.deviceIdProvider;
         baseInfoProvider = config.baseInfoProvider;
-        safeIDGenerator = config.safeIDGenerator;
         viewIdProvider = config.viewIdProvider;
 
         deviceInfo = config.deviceInfo;

@@ -30,6 +30,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
 
+    SafeIDGenerator safeViewIDGenerator;
+
     public @NonNull String getCurrentViewId() {
         return currentViewID == null ? "" : currentViewID;
     }
@@ -66,6 +68,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         config.viewIdProvider = this;
+        safeViewIDGenerator = config.safeViewIDGenerator;
 
         setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
         autoTrackingActivityExceptions = config.autoTrackingExceptions;
@@ -216,7 +219,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         ViewData currentViewData = new ViewData();
-        currentViewData.viewID = safeIDGenerator.GenerateValue();
+        currentViewData.viewID = safeViewIDGenerator.GenerateValue();
         currentViewData.viewName = viewName;
         currentViewData.viewStartTime = UtilsTime.currentTimestampSeconds();
 
