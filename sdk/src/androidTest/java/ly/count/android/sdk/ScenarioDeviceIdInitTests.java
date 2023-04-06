@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
-public class DeviceIdInitTests {
+public class ScenarioDeviceIdInitTests {
     CountlyStore countlyStore;
 
     @Before
