@@ -9,7 +9,7 @@ import ly.count.android.sdk.messaging.ModulePush;
 public class ModuleEvents extends ModuleBase implements EventProvider {
     static final Map<String, Event> timedEvents = new HashMap<>();
 
-    final String ACTION_EVENT_KEY = "[CLY]_action";
+    final static String ACTION_EVENT_KEY = "[CLY]_action";
 
     //interface for SDK users
     final Events eventsInterface;

@@ -33,10 +33,16 @@ public class ScenarioEventIDTests {
     SafeIDGenerator safeViewIDGenerator;
     SafeIDGenerator safeEventIDGenerator;
 
+    Activity act;
+    Activity act2;
+
     @Before
     public void setUp() {
         final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
+
+        act = mock(Activity.class);
+        act2 = mock(TestUtils.Activity2.class);
 
         safeViewIDGenerator = new SafeIDGenerator() {
             @NonNull @Override public String GenerateValue() {
@@ -55,13 +61,13 @@ public class ScenarioEventIDTests {
     public void tearDown() {
     }
 
+    /**
+     * Making sure that id's are correct in a mixed view (automatic, manual) scenario
+     */
     @Test
     public void eventIDScenario_mixedViews_1() {
-        Activity act = mock(Activity.class);
-
         CountlyConfig cc = TestUtils.createScenarioEventIDConfig(safeViewIDGenerator, safeEventIDGenerator);
         Countly mCountly = new Countly().init(cc);
-
         EventQueueProvider eqp = TestUtils.setCreateEventQueueProviderMock(mCountly);
 
         //no events initially
@@ -127,6 +133,96 @@ public class ScenarioEventIDTests {
         mCountly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION);
         verifyRecordEventToEventQueueIDs(eqp, ModulePush.PUSH_EVENT_ACTION, idE[8], idV[1], null, null, 0, 1);
     }
+
+    /**
+     * Simulate a 2 automatic activity scenario
+     * Making sure that ID's are correct
+     */
+    @Test
+    public void eventIDScenario_automaticViews() {
+        CountlyConfig cc = TestUtils.createScenarioEventIDConfig(safeViewIDGenerator, safeEventIDGenerator);
+        Countly mCountly = new Countly().init(cc);
+        EventQueueProvider eqp = TestUtils.setCreateEventQueueProviderMock(mCountly);
+
+        //no events initially
+        verifyRecordEventToEventQueueNotCalled(eqp);
+
+        mCountly.onStart(act);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 1);
+
+        clearInvocations(eqp);
+
+        mCountly.onStart(act2);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 2);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 1, 2);
+        clearInvocations(eqp);
+
+        //custom event 1
+        mCountly.events().recordEvent(eKeys[0]);
+        verifyRecordEventToEventQueueIDs(eqp, eKeys[0], idE[0], idV[1], null, "", 0, 1);
+        clearInvocations(eqp);
+
+        mCountly.onStop();
+        verifyRecordEventToEventQueueNotCalled(eqp);
+        clearInvocations(eqp);
+
+        //internal event
+        mCountly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleFeedback.RATING_EVENT_KEY, idE[1], idV[1], null, null, 0, 1);
+        clearInvocations(eqp);
+
+        mCountly.onStop();
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 0, 1);
+        clearInvocations(eqp);
+
+        //custom event 2
+        mCountly.events().recordEvent(eKeys[1]);
+        verifyRecordEventToEventQueueIDs(eqp, eKeys[1], idE[2], idV[1], null, idE[0], 0, 1);
+    }
+
+    /**
+     * Making sure that the ID's are linked together in a manual view scenario
+     */
+    @Test
+    public void eventIDScenario_manualViews() {
+        CountlyConfig cc = TestUtils.createScenarioEventIDConfig(safeViewIDGenerator, safeEventIDGenerator);
+        Countly mCountly = new Countly().init(cc);
+        EventQueueProvider eqp = TestUtils.setCreateEventQueueProviderMock(mCountly);
+
+        //no events initially
+        verifyRecordEventToEventQueueNotCalled(eqp);
+
+        //view A
+        mCountly.views().recordView(vNames[0]);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 1);
+        clearInvocations(eqp);
+
+        //view B
+        mCountly.views().recordView(vNames[1]);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 2);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 1, 2);
+        clearInvocations(eqp);
+
+        //custom event 1
+        mCountly.events().recordEvent(eKeys[0]);
+        verifyRecordEventToEventQueueIDs(eqp, eKeys[0], idE[0], idV[1], null, "", 0, 1);
+        clearInvocations(eqp);
+
+        //view C
+        mCountly.views().recordView(vNames[2]);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 0, 2);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[2], null, idV[1], null, 1, 2);
+        clearInvocations(eqp);
+
+        //internal event
+        mCountly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleEvents.ACTION_EVENT_KEY, idE[1], idV[2], null, null, 0, 1);
+        clearInvocations(eqp);
+
+        //custom event 2
+        mCountly.events().recordEvent(eKeys[1]);
+
+        clearInvocations(eqp);
     }
 
     public static void verifyRecordEventToEventQueueNotCalled(EventQueueProvider eqp) {
