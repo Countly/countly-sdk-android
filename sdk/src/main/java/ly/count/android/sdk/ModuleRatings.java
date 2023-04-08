@@ -22,8 +22,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ModuleRatings extends ModuleBase {
-    static final String STAR_RATING_EVENT_KEY = "[CLY]_star_rating";
-
     //star rating
     StarRatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
     boolean showStarRatingDialogOnFirstActivity = false;
@@ -87,7 +85,7 @@ public class ModuleRatings extends ModuleBase {
             segm.put("comment", comment);
         }
 
-        eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
+        eventProvider.recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
 
     /**
@@ -413,7 +411,7 @@ public class ModuleRatings extends ModuleBase {
                     segm.put("app_version", deviceInfo.mp.getAppVersion(context));
                     segm.put("rating", "" + rating);
 
-                    eventProvider.recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
+                    eventProvider.recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
                 }
 
                 dialog.dismiss();

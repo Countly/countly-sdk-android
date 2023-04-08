@@ -122,8 +122,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
-            case ModuleRatings.STAR_RATING_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
+            case ModuleFeedback.RATING_EVENT_KEY: //these events can be reported from a lot of sources, therefore multiple consents could apply
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating) || consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }

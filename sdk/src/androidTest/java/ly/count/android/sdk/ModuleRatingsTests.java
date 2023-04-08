@@ -51,19 +51,19 @@ public class ModuleRatingsTests {
         segm.put("comment", vals[2]);
         segm.put("contactMe", true);
 
-        verify(ep).recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
+        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         //validate lower bound
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.ratings().recordManualRating(vals[0], -12, vals[1], vals[2], true);
         segm.put("rating", "" + 1);
-        verify(ep).recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
+        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         //validate upper bound
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.ratings().recordManualRating(vals[0], 12, vals[1], vals[2], true);
         segm.put("rating", "" + 5);
-        verify(ep).recordEventInternal(ModuleRatings.STAR_RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
+        verify(ep).recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);
 
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
         mCountly.moduleRatings.recordManualRatingInternal(null, 12, vals[1], vals[2], true);
