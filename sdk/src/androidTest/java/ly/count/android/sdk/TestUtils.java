@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,6 +20,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,9 +32,23 @@ public class TestUtils {
     //
     //
 
+    //convenience arrays for referencing during tests
+    public static final String[] eKeys = new String[] { "eventKey1", "eventKey2", "eventKey3", "eventKey4", "eventKey5", "eventKey6", "eventKey7" };
+    public static final String[] vNames = new String[] { "vienName1", "vienName2", "vienName3", "vienName4", "vienName5", "vienName6", "vienName7" };
+    public static final String[] requestEntries = new String[] { "blah", "blah1", "blah2", "123", "456", "678", "890" };
+    public static final String[] viewIDVals = new String[] { "idv1", "idv2", "idv3", "idv4", "idv5", "idv6", "idv7", "idv8", "idv9", "idv10" };
+    public static final String[] eventIDVals = new String[] { "ide1", "ide2", "ide3", "ide4", "ide5", "ide6", "ide7", "ide8", "ide9", "ide10" };
+
+    //common values used for SDK init during tests
     public final static String commonURL = "http://test.count.ly";
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
+
+    public static class Activity2 extends Activity {
+    }
+
+    public static class Activity3 extends Activity {
+    }
 
     public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
@@ -64,7 +81,7 @@ public class TestUtils {
         return cc;
     }
 
-    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeIDGenerator, Map<String, Object> autoViewSegms) {
+    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeViewIDGenerator, Map<String, Object> autoViewSegms) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
@@ -72,9 +89,22 @@ public class TestUtils {
             .setTrackOrientationChanges(orientationTracking);
 
         cc.setAutoTrackingUseShortName(useShortNames);
-        cc.safeViewIDGenerator = safeIDGenerator;
+        cc.safeViewIDGenerator = safeViewIDGenerator;
         cc.setAutomaticViewSegmentation(autoViewSegms);
         cc.setViewTracking(automaticViewTracking);
+        return cc;
+    }
+
+    public static CountlyConfig createScenarioEventIDConfig(SafeIDGenerator safeViewIDGenerator, SafeIDGenerator safeEventIDGenerator) {
+        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+            .setDeviceId(commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableCrashReporting();
+
+        cc.setAutoTrackingUseShortName(true);
+        cc.setViewTracking(true);
+        cc.safeViewIDGenerator = safeViewIDGenerator;
+        cc.safeEventIDGenerator = safeEventIDGenerator;
         return cc;
     }
 
@@ -116,6 +146,10 @@ public class TestUtils {
         countly.config_.eventProvider = ep;
 
         return ep;
+    }
+
+    public static EventQueueProvider setCreateEventQueueProviderMock(Countly countly) {
+        return setEventQueueProviderToMock(countly, mock(EventQueueProvider.class));
     }
 
     public static EventQueueProvider setEventQueueProviderToMock(Countly countly, EventQueueProvider eqp) {

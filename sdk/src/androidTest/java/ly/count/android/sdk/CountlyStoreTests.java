@@ -56,8 +56,8 @@ public class CountlyStoreTests {
     final String countlyStoreName = "COUNTLY_STORE";
     final String countlyStoreNamePush = "ly.count.android.api.messaging";
 
-    final String[] eKeys = new String[] { "eventKey1", "eventKey2", "eventKey3", "eventKey4" };
-    final String[] requestEntries = new String[] { "blah", "blah1", "blah2", "123", "456", "678", "890" };
+    final String[] eKeys = TestUtils.eKeys;
+    final String[] requestEntries = TestUtils.requestEntries;
 
     @Before
     public void setUp() {
