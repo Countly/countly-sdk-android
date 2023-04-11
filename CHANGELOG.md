@@ -1,5 +1,5 @@
 ## 22.09.3
-* Implemented previous event ID logic for each non-internal event
+* Added "previous event ID" logic for non-internal events
 
 ## 22.09.2
 * Deprecated the init time configuration of 'setEnableAttribution'
