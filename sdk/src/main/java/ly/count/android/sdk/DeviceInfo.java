@@ -502,7 +502,7 @@ class DeviceInfo {
                         }
                         return "false";
                     } catch (Exception e) {
-                        Countly.sharedInstance().L.w("Got exception determining connectivity", e);
+                        Countly.sharedInstance().L.w("isOnline, Got exception determining netwprl connectivity", e);
                     }
                     return null;
                 }
