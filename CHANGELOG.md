@@ -1,3 +1,6 @@
+## 22.09.3
+* Added "previous event ID" logic for non-internal events
+
 ## 22.09.2
 * Deprecated the init time configuration of 'setEnableAttribution'
 * Session update interval upper limit (10 minutes) has been lifted

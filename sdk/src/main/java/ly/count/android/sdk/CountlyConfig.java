@@ -33,7 +33,9 @@ public class CountlyConfig {
 
     protected BaseInfoProvider baseInfoProvider = null;
 
-    protected SafeIDGenerator safeIDGenerator = null;
+    protected SafeIDGenerator safeViewIDGenerator = null;
+
+    protected SafeIDGenerator safeEventIDGenerator = null;
 
     protected MetricProvider metricProviderOverride = null;
 
@@ -684,7 +686,7 @@ public class CountlyConfig {
 
     /**
      * Sets the interval for the automatic session update calls
-     * min value 1 (1 second),
+     * min value 1 (1 second)
      *
      * @param delay in seconds
      * @return Returns the same config object for convenient linking

@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -55,6 +56,9 @@ public class CountlyStoreTests {
     final String countlyStoreName = "COUNTLY_STORE";
     final String countlyStoreNamePush = "ly.count.android.api.messaging";
 
+    final String[] eKeys = TestUtils.eKeys;
+    final String[] requestEntries = TestUtils.requestEntries;
+
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
@@ -65,8 +69,50 @@ public class CountlyStoreTests {
 
     @After
     public void tearDown() {
-        //CountlyStore.MAX_REQUESTS = 1000;
         store.clear();
+    }
+
+    /**
+     * Convenience function for recording event to countly store and generating a current timestamp
+     * This wraps the messy recording function
+     *
+     * @param eventKey
+     * @param cs
+     */
+    void RecordEvent(String eventKey, CountlyStore cs) {
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        cs.recordEventToEventQueue(eventKey, null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null, null);
+    }
+
+    /**
+     * Convenience function for tests
+     * Uses the event object to record an event to EQ
+     * This wraps the messy recording function
+     *
+     * @param e
+     * @param cs
+     */
+    void RecordEvent(Event e, CountlyStore cs) {
+        cs.recordEventToEventQueue(e.key, TestUtils.combineSegmentation(e), e.count, e.sum, e.dur, e.timestamp, e.hour, e.dow, e.id, e.pvid, e.cvid, e.peid);
+    }
+
+    /**
+     * Convenience function for creating an event with just a event key
+     * It populates other fields
+     *
+     * @param eventKey
+     * @return
+     */
+    Event CreateEvent(String eventKey) {
+        Event e = new Event();
+        e.key = eventKey;
+        e.hour = 3;
+        e.dow = 5;
+        e.cvid = "a";
+        e.pvid = "t";
+        e.peid = "o";
+
+        return e;
     }
 
     @Test
@@ -86,119 +132,111 @@ public class CountlyStoreTests {
         verify(mockContext).getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
     }
 
+    /**
+     * When store is cleared, it should still return empty array
+     */
     @Test
-    public void testConnections_prefIsNull() {
-        // the clear() call in setUp ensures the pref is not present
-        assertTrue(Arrays.equals(new String[0], store.getRequests()));
+    public void getRequests_InitialState() {
+        assertArrayEquals(new String[0], store.getRequests());
     }
 
+    /**
+     * Adding and removing the same requests should produce an empty queue that is returned as empty array
+     */
     @Test
-    public void testConnections_prefIsEmptyString() {
-        // the following two calls will result in the pref being an empty string
-        final String connStr = "blah";
-        store.addRequest(connStr, false);
-        store.removeRequest(connStr);
-        assertTrue(Arrays.equals(new String[0], store.getRequests()));
+    public void getRequests_AddRemoveRequest() {
+        store.addRequest(requestEntries[0], false);
+        store.removeRequest(requestEntries[0]);
+        assertArrayEquals(new String[0], store.getRequests());
     }
 
+    /**
+     * Adding a single entry to the request queue should work as intended
+     */
     @Test
-    public void testConnections_prefHasSingleValue() {
-        final String connStr = "blah";
-        store.addRequest(connStr, false);
-        assertTrue(Arrays.equals(new String[] { connStr }, store.getRequests()));
+    public void getRequests_AddSingleEntry() {
+        store.addRequest(requestEntries[0], false);
+        assertArrayEquals(new String[] { requestEntries[0] }, store.getRequests());
     }
 
+    /**
+     * Adding two entries to the request queue should work as intended
+     */
     @Test
-    public void testConnections_prefHasTwoValues() {
-        final String connStr1 = "blah1";
-        final String connStr2 = "blah2";
-        store.addRequest(connStr1, false);
-        store.addRequest(connStr2, false);
-        assertTrue(Arrays.equals(new String[] { connStr1, connStr2 }, store.getRequests()));
+    public void getRequests_AddTwoEntries() {
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1] }, store.getRequests());
     }
 
+    /**
+     * When store is cleared, it should still return empty array
+     */
     @Test
-    public void testEvents_prefIsNull() {
-        // the clear() call in setUp ensures the pref is not present
-        assertTrue(Arrays.equals(new String[0], store.getEvents()));
+    public void getEvents_InitialState() {
+        assertArrayEquals(new String[0], store.getEvents());
     }
 
+    /**
+     * Adding an event and then removing the whole list of events should result in an empty String array when requesting the list again.
+     * This should not return 'null'
+     */
     @Test
-    public void testEvents_prefIsEmptyString() {
-        // the following two calls will result in the pref being an empty string
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.recordEventToEventQueue("eventKey", null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null);
+    public void getEvents_addEventRemoveAll() {
+        RecordEvent(eKeys[0], store);
         store.removeEvents(store.getEventList());
-        assertTrue(Arrays.equals(new String[0], store.getEvents()));
+        assertArrayEquals(new String[0], store.getEvents());
     }
 
     @Test
-    public void testEvents_prefHasSingleValue() throws JSONException {
-        final String eventKey = "eventKey";
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.recordEventToEventQueue(eventKey, null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null);
+    public void getEvents_addSingleEntry() throws JSONException {
+        RecordEvent(eKeys[0], store);
         final String[] eventJSONStrings = store.getEvents();
-        final JSONObject eventJSONObj = new JSONObject(eventJSONStrings[0]);
-        assertEquals(eventKey, eventJSONObj.getString("key"));
+        assertEquals(eKeys[0], new JSONObject(eventJSONStrings[0]).getString("key"));
         // this is good enough, we verify the entire JSON content is written in later unit tests
     }
 
     @Test
-    public void testEvents_prefHasTwoValues() throws JSONException {
-        final String eventKey1 = "eventKey1";
-        final String eventKey2 = "eventKey2";
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.recordEventToEventQueue(eventKey1, null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null);
+    public void getEvents_addTwoEntries() throws JSONException {
+        RecordEvent(eKeys[0], store);
+        RecordEvent(eKeys[1], store);
 
-        instant = UtilsTime.getCurrentInstant();
-        store.recordEventToEventQueue(eventKey2, null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null);
         final String[] eventJSONStrs = store.getEvents();
-        final JSONObject eventJSONObj1 = new JSONObject(eventJSONStrs[0]);
-        assertEquals(eventKey1, eventJSONObj1.getString("key"));
-        final JSONObject eventJSONObj2 = new JSONObject(eventJSONStrs[1]);
-        assertEquals(eventKey2, eventJSONObj2.getString("key"));
+        assertEquals(eKeys[0], new JSONObject(eventJSONStrs[0]).getString("key"));
+        assertEquals(eKeys[1], new JSONObject(eventJSONStrs[1]).getString("key"));
         // this is good enough, we verify the entire JSON content is written in later unit tests
     }
 
     @Test
-    public void testEventsList_noEvents() {
+    public void getEventList_InitialState() {
         assertEquals(new ArrayList<Event>(0), store.getEventList());
     }
 
     @Test
-    public void testEventsList_singleEvent() {
-        final Event event1 = new Event();
-        event1.key = "eventKey1";
-        event1.timestamp = UtilsTime.currentTimestampMs();
-        event1.count = 1;
-        event1.dur = 10.0d;
-        store.recordEventToEventQueue(event1.key, TestUtils.combineSegmentation(event1), event1.count, event1.sum, event1.dur, event1.timestamp, event1.hour, event1.dow, null, null, null);
+    public void getEventList_singleEvent() {
+        final Event event1 = CreateEvent(eKeys[1]);
+        RecordEvent(event1, store);
         final List<Event> expected = new ArrayList<>(1);
         expected.add(event1);
         final List<Event> actual = store.getEventList();
         Assert.assertEquals(expected, actual);
     }
 
+    /**
+     * Validating 'getEventList' to make sure events are correctly ordered by their timestamp
+     */
     @Test
-    public void testEventsList_sortingOfMultipleEvents() {
-        final Event event1 = new Event();
-        event1.key = "eventKey1";
+    public void getEventList_sortingOfMultipleEvents() {
+        final Event event1 = CreateEvent(eKeys[0]);
         event1.timestamp = UtilsTime.currentTimestampMs();
-        event1.count = 1;
-        event1.dur = 10.0d;
-        final Event event2 = new Event();
-        event2.key = "eventKey2";
+        final Event event2 = CreateEvent(eKeys[1]);
         event2.timestamp = UtilsTime.currentTimestampMs() - 60000;
-        event2.count = 1;
-        event2.dur = 10.0d;
-        final Event event3 = new Event();
-        event3.key = "eventKey3";
+        final Event event3 = CreateEvent(eKeys[2]);
         event3.timestamp = UtilsTime.currentTimestampMs() - 30000;
-        event3.count = 1;
-        event3.dur = 10.0d;
-        store.recordEventToEventQueue(event1.key, TestUtils.combineSegmentation(event1), event1.count, event1.sum, event1.dur, event1.timestamp, event1.hour, event1.dow, null, null, null);
-        store.recordEventToEventQueue(event2.key, TestUtils.combineSegmentation(event2), event2.count, event2.sum, event2.dur, event2.timestamp, event2.hour, event2.dow, null, null, null);
-        store.recordEventToEventQueue(event3.key, TestUtils.combineSegmentation(event3), event3.count, event3.sum, event3.dur, event3.timestamp, event3.hour, event3.dow, null, null, null);
+
+        RecordEvent(event1, store);
+        RecordEvent(event2, store);
+        RecordEvent(event3, store);
         final List<Event> expected = new ArrayList<>(3);
         expected.add(event2);
         expected.add(event3);
@@ -207,184 +245,107 @@ public class CountlyStoreTests {
         assertEquals(expected, actual);
     }
 
+    /**
+     * Store events with a bad string snippet in the middle.
+     * The list should correctly return the correct entries and bad entry should be skipped
+     */
     @Test
-    public void testEventsList_badJSON() {
-        final Event event1 = new Event();
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        event1.key = "eventKey1";
-        event1.timestamp = instant.timestampMs - 60000;
-        event1.hour = instant.hour;
-        event1.dow = instant.dow;
-        event1.count = 1;
-        final Event event2 = new Event();
-        instant = UtilsTime.getCurrentInstant();
-        event2.key = "eventKey2";
-        event2.timestamp = instant.timestampMs;
-        event2.hour = instant.hour;
-        event2.dow = instant.dow;
-        event2.count = 1;
+    public void getEventList_badJSONStored() {
+        final Event event1 = CreateEvent(eKeys[0]);
+        event1.timestamp = UtilsTime.getCurrentInstant().timestampMs;
 
+        final Event event2 = CreateEvent(eKeys[1]);
+        event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60000;
+
+        //insert bad entry
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::blah:::" + event2.toJSON().toString();
         final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
         final List<Event> expected = new ArrayList<>(2);
-        expected.add(event1);
         expected.add(event2);
+        expected.add(event1);
         final List<Event> actual = store.getEventList();
         assertEquals(expected, actual);
     }
 
+    /**
+     * Store events with a null entry in the middle.
+     * The list should correctly return the correct entries and bad entry should be skipped
+     */
     @Test
-    public void testEventsList_EventFromJSONReturnsNull() {
-        final Event event1 = new Event();
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        event1.key = "eventKey1";
-        event1.timestamp = instant.timestampMs - 60000;
-        event1.hour = instant.hour;
-        event1.dow = instant.dow;
-        event1.count = 1;
-        final Event event2 = new Event();
-        instant = UtilsTime.getCurrentInstant();
-        event2.key = "eventKey2";
-        event2.timestamp = instant.timestampMs;
-        event2.hour = instant.hour;
-        event2.dow = instant.dow;
-        event2.count = 1;
+    public void getEventList_nullEntryStored() {
+        final Event event1 = CreateEvent(eKeys[2]);
+        event1.timestamp = UtilsTime.getCurrentInstant().timestampMs;
 
+        final Event event2 = CreateEvent(eKeys[3]);
+        event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60000;
+
+        //insert null entry
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::{\"key\":null}:::" + event2.toJSON().toString();
         final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
         final List<Event> expected = new ArrayList<>(2);
-        expected.add(event1);
         expected.add(event2);
+        expected.add(event1);
         final List<Event> actual = store.getEventList();
         assertEquals(expected, actual);
     }
 
-    /*
     @Test
-    public void testIsEmptyConnections_prefIsNull() {
-        // the clear() call in setUp ensures the pref is not present
-        assertTrue(store.ifNoRequestsAvailable());
-    }
-
-    @Test
-    public void testIsEmptyConnections_prefIsEmpty() {
-        // the following two calls will result in the pref being an empty string
-        final String connStr = "blah";
-        store.addRequest(connStr);
-        store.removeRequest(connStr);
-        assertTrue(store.ifNoRequestsAvailable());
-    }
-
-    @Test
-    public void testIsEmptyConnections_prefIsPopulated() {
-        final String connStr = "blah";
-        store.addRequest(connStr);
-        assertFalse(store.ifNoRequestsAvailable());
-    }
-
-    @Test
-    public void testAddConnection_nullStr() {
-        store.addRequest(null);
-        assertTrue(store.ifNoRequestsAvailable());
-    }
-
-    @Test
-    public void testAddConnection_emptyStr() {
-        store.addRequest("");
-        assertTrue(store.ifNoRequestsAvailable());
-    }
-
-    @Test
-    public void testRemoveConnection_nullStr() {
-        store.addRequest("blah");
-        store.removeRequest(null);
-        assertFalse(store.ifNoRequestsAvailable());
-    }
-
-    @Test
-    public void testRemoveConnection_emptyStr() {
-        store.addRequest("blah");
-        store.removeRequest("");
-        assertFalse(store.ifNoRequestsAvailable());
-    }
-
-    @Test
-    public void testRemoveConnection_firstConn() {
-        store.addRequest("blah");
-        assertFalse(store.ifNoRequestsAvailable());
-        store.removeRequest("blah");
-        assertTrue(store.ifNoRequestsAvailable());
-    }
-*/
-    @Test
-    public void testRemoveConnection_notFirstConn() {
-        store.addRequest("blah1", false);
-        store.addRequest("blah2", false);
+    public void removeRequest_notFirstConn() {
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
         assertEquals(2, store.getRequests().length);
-        store.removeRequest("blah2");
+        store.removeRequest(requestEntries[1]);
         assertEquals(1, store.getRequests().length);
     }
 
     @Test
-    public void testRemoveConnection_onlyRemovesFirstMatchingOne() {
-        store.addRequest("blah1", false);
-        store.addRequest("blah2", false);
-        store.addRequest("blah1", false);
+    public void removeRequest_onlyRemovesFirstMatchingOne() {
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        store.addRequest(requestEntries[0], false);
         assertEquals(3, store.getRequests().length);
-        store.removeRequest("blah1");
-        assertTrue(Arrays.equals(new String[] { "blah2", "blah1" }, store.getRequests()));
+        store.removeRequest(requestEntries[0]);
+        assertTrue(Arrays.equals(new String[] { requestEntries[1], requestEntries[0] }, store.getRequests()));
     }
 
     @Test
-    public void testAddEvent() {
-        final Event event1 = new Event();
-        event1.key = "eventKey1";
-        event1.timestamp = UtilsTime.currentTimestampMs() - 60000;
-        event1.count = 42;
-        event1.sum = 3.2;
-        event1.dur = 10.0d;
-        event1.segmentation = new HashMap<>(2);
-        event1.segmentation.put("segKey1", "segValue1");
-        event1.segmentation.put("segKey2", "segValue2");
+    public void recordEventToEventQueue() {
+        final Event event = CreateEvent(eKeys[3]);
+        event.segmentation = new HashMap<>(2);
+        event.segmentation.put("segKey1", "segValue1");
+        event.segmentation.put("segKey2", "segValue2");
 
-        store.recordEventToEventQueue(event1.key, TestUtils.combineSegmentation(event1), event1.count, event1.sum, event1.dur, event1.timestamp, event1.hour, event1.dow, null, null, null);
+        RecordEvent(event, store);
 
         final List<Event> addedEvents = store.getEventList();
         assertEquals(1, addedEvents.size());
         final Event addedEvent = addedEvents.get(0);
-        assertEquals(event1, addedEvent);
-        assertEquals(event1.count, addedEvent.count);
-        assertEquals(event1.sum, addedEvent.sum, 0.0000001);
+        assertEquals(event, addedEvent);
+        assertEquals(event.count, addedEvent.count);
+        assertEquals(event.sum, addedEvent.sum, 0.0000001);
     }
 
     @Test
     public void testRemoveEvents() {
-        final Event event1 = new Event();
-        event1.key = "eventKey1";
+        final Event event1 = CreateEvent(eKeys[1]);
         event1.timestamp = UtilsTime.currentTimestampMs() - 60000;
-        event1.count = 1;
-        event1.dur = 10.0d;
-        final Event event2 = new Event();
-        event2.key = "eventKey2";
-        event2.timestamp = UtilsTime.currentTimestampMs() - 30000;
-        event2.count = 1;
-        event2.dur = 10.0d;
-        final Event event3 = new Event();
-        event3.key = "eventKey2";
-        event3.timestamp = UtilsTime.currentTimestampMs();
-        event3.count = 1;
-        event3.dur = 10.0d;
 
-        store.recordEventToEventQueue(event1.key, TestUtils.combineSegmentation(event1), event1.count, event1.sum, event1.dur, event1.timestamp, event1.hour, event1.dow, null, null, null);
-        store.recordEventToEventQueue(event2.key, TestUtils.combineSegmentation(event2), event2.count, event2.sum, event2.dur, event2.timestamp, event2.hour, event2.dow, null, null, null);
+        final Event event2 = CreateEvent(eKeys[2]);
+        event2.timestamp = UtilsTime.currentTimestampMs() - 30000;
+
+        final Event event3 = CreateEvent(eKeys[3]);
+        event3.timestamp = UtilsTime.currentTimestampMs();
+
+        RecordEvent(event1, store);
+        RecordEvent(event2, store);
 
         final List<Event> eventsToRemove = store.getEventList();
 
-        store.recordEventToEventQueue(event3.key, TestUtils.combineSegmentation(event3), event3.count, event3.sum, event3.dur, event3.timestamp, event3.hour, event3.dow, null, null, null);
+        RecordEvent(event3, store);
 
         store.removeEvents(eventsToRemove);
 
@@ -399,10 +360,11 @@ public class CountlyStoreTests {
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
         store.addRequest("blah", false);
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        store.recordEventToEventQueue("eventKey", null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null);
+
+        RecordEvent(eKeys[0], store);
         assertTrue(prefs.contains("EVENTS"));
         assertTrue(prefs.contains("CONNECTIONS"));
+
         store.clear();
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
@@ -502,60 +464,74 @@ public class CountlyStoreTests {
         assertEquals("123", sp.getStarRatingPreferences());
     }
 
-    @Test
-    public void removeConnection_nonExisting() {
-        store.addRequest("blah1", false);
-        store.addRequest("blah2", false);
-        assertEquals(2, store.getRequests().length);
-        store.removeRequest("blah3");
-        assertEquals(2, store.getRequests().length);
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.getRequests()));
-    }
-
-    @Test
-    public void replaceConnections() {
-        store.addRequest("blah1", false);
-        store.addRequest("blah2", false);
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.getRequests()));
-        store.replaceRequests(new String[] { "aa", "bb", "cc" });
-        assertTrue(Arrays.equals(new String[] { "aa", "bb", "cc" }, store.getRequests()));
-
-        List<String> newList = new ArrayList<>();
-        newList.add("33");
-        newList.add("pp");
-        store.replaceRequestList(newList);
-        assertTrue(Arrays.equals(new String[] { "33", "pp" }, store.getRequests()));
-    }
-
-    @Test
-    public void deleteOldestConnection() {
-        store.addRequest("blah1", false);
-        store.addRequest("blah2", false);
-        store.addRequest("blah3", false);
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2", "blah3" }, store.getRequests()));
-        store.deleteOldestRequest();
-        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.getRequests()));
-    }
-
-    /*
-    @Test
-    public void addConnectionMaxRequests() {
-        CountlyStore.MAX_REQUESTS = 2;
-        store.addRequest("blah1");
-        store.addRequest("blah2");
-        assertTrue(Arrays.equals(new String[] { "blah1", "blah2" }, store.getRequests()));
-
-        store.addRequest("blah3");
-        assertTrue(Arrays.equals(new String[] { "blah2", "blah3" }, store.getRequests()));
-
-        store.addRequest("123");
-        assertTrue(Arrays.equals(new String[] { "blah3", "123" }, store.getRequests()));
-
-        store.addRequest("1qwe");
-        assertTrue(Arrays.equals(new String[] { "123", "1qwe" }, store.getRequests()));
-    }
-
+    /**
+     * Removing a non existing request should cause no problems or changes
      */
+    @Test
+    public void removeRequest_nonExisting() {
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        assertEquals(2, store.getRequests().length);
+        store.removeRequest(requestEntries[2]);
+        assertEquals(2, store.getRequests().length);
+        assertTrue(Arrays.equals(new String[] { requestEntries[0], requestEntries[1] }, store.getRequests()));
+    }
+
+    /**
+     * Validating that 'replaceRequests' and 'replaceRequestList' work as intended
+     */
+    @Test
+    public void replaceRequestQueue() {
+        //add initial requests
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1] }, store.getRequests());
+
+        //replace with a new queue in array form
+        store.replaceRequests(new String[] { requestEntries[2], requestEntries[3], requestEntries[4] });
+        assertArrayEquals(new String[] { requestEntries[2], requestEntries[3], requestEntries[4] }, store.getRequests());
+
+        //replace with a new queue in List form
+        List<String> newList = new ArrayList<>();
+        newList.add(requestEntries[5]);
+        newList.add(requestEntries[6]);
+        store.replaceRequestList(newList);
+        assertArrayEquals(new String[] { requestEntries[5], requestEntries[6] }, store.getRequests());
+    }
+
+    /**
+     * Validating that 'deleteOldestRequest' deletes the oldest request
+     */
+    @Test
+    public void deleteOldestRequest() {
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        store.addRequest(requestEntries[2], false);
+        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1], requestEntries[2] }, store.getRequests());
+        store.deleteOldestRequest();
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2] }, store.getRequests());
+    }
+
+    /**
+     * Validating that the max request queue size is respected,
+     * And that it removes the oldest entry when it is about to be exceeded
+     */
+    @Test
+    public void addRequest_MaxQueueLimit() {
+        store.setLimits(2);
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1] }, store.getRequests());
+
+        store.addRequest(requestEntries[2], false);
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2] }, store.getRequests());
+
+        store.addRequest(requestEntries[3], false);
+        assertArrayEquals(new String[] { requestEntries[2], requestEntries[3] }, store.getRequests());
+
+        store.addRequest(requestEntries[4], false);
+        assertArrayEquals(new String[] { requestEntries[3], requestEntries[4] }, store.getRequests());
+    }
 
     /**
      * Validate that setting and retrieving device ID and device ID type works as intended
@@ -613,7 +589,7 @@ public class CountlyStoreTests {
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34545L, 4, 2, null, null, null);
+        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34545L, 4, 2, null, null, null, null);
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
@@ -675,7 +651,7 @@ public class CountlyStoreTests {
         sp.replaceRequestList(new ArrayList<String>());
         assertTrue(sp.anythingSetInStorage());
 
-        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34545L, 4, 2, null, null, null);
+        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34545L, 4, 2, null, null, null, null);
         assertTrue(sp.anythingSetInStorage());
 
         sp.setStarRatingPreferences("dfg");
@@ -726,6 +702,7 @@ public class CountlyStoreTests {
 
     /**
      * Validate 'getEventsForRequestAndEmptyEventQueue' in a situation where there are no events
+     * This should return an empty array
      *
      * @throws UnsupportedEncodingException
      */
@@ -739,16 +716,15 @@ public class CountlyStoreTests {
 
     /**
      * Validate 'getEventsForRequestAndEmptyEventQueue' in a situation where there are 2 events
+     * Both event should be added to the return value
      *
      * @throws UnsupportedEncodingException
      */
     @Test
     public void getEventsForRequestAndEmptyEventQueueWithSimpleEvents() throws UnsupportedEncodingException {
-        final Event event1 = new Event();
-        event1.key = "event1Key";
+        final Event event1 = CreateEvent(eKeys[0]);
         store.addEvent(event1);
-        final Event event2 = new Event();
-        event2.key = "event2Key";
+        final Event event2 = CreateEvent(eKeys[1]);
         store.addEvent(event2);
 
         final String jsonToEncode = "[" + event1.toJSON().toString() + "," + event2.toJSON().toString() + "]";

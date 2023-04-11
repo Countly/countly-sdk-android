@@ -69,7 +69,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
     private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
     private static final String CACHED_PUSH_MESSAGING_PROVIDER = "PUSH_MESSAGING_PROVIDER";
-    private static final int MAX_EVENTS = 100;
+    private static final int MAX_EVENTS = 1000;//the maximum amount of events that can be held in the event queue
 
     private final SharedPreferences preferences_;
     private final SharedPreferences preferencesPush_;
@@ -447,7 +447,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * NaN and infinity values will be quietly ignored.
      */
     public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
-        final @Nullable String currentViewId) {
+        final @Nullable String currentViewId, final @Nullable String previousEventId) {
         Map<String, String> segmentationString = null;
         Map<String, Integer> segmentationInt = null;
         Map<String, Double> segmentationDouble = null;
@@ -478,6 +478,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         event.id = eventID;
         event.pvid = previousViewId;
         event.cvid = currentViewId;
+        event.peid = previousEventId;
 
         addEvent(event);
     }

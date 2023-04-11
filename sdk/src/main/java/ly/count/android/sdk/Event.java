@@ -47,6 +47,7 @@ class Event {
     protected static final String ID_KEY = "id";
     protected static final String PV_ID_KEY = "pvid";
     protected static final String CV_ID_KEY = "cvid";
+    protected static final String PE_ID_KEY = "peid";
 
     public String key;
     public Map<String, String> segmentation;
@@ -62,6 +63,7 @@ class Event {
     public String id;
     public String pvid;
     public String cvid;
+    public String peid;
 
     Event() {
     }
@@ -99,6 +101,10 @@ class Event {
 
             if (cvid != null) {
                 json.put(CV_ID_KEY, cvid);
+            }
+
+            if (peid != null) {
+                json.put(PE_ID_KEY, peid);
             }
 
             JSONObject jobj = new JSONObject();
@@ -182,6 +188,9 @@ class Event {
             if (!json.isNull(CV_ID_KEY)) {
                 event.cvid = json.getString(CV_ID_KEY);
             }
+            if (!json.isNull(PE_ID_KEY)) {
+                event.peid = json.getString(PE_ID_KEY);
+            }
 
             if (!json.isNull(SEGMENTATION_KEY)) {
                 //we would also enter here if segmentation was set to an empty object
@@ -260,6 +269,7 @@ class Event {
             Objects.equals(id, e.id) &&
             Objects.equals(pvid, e.pvid) &&
             Objects.equals(cvid, e.cvid) &&
+            Objects.equals(peid, e.peid) &&
             (Objects.equals(segmentation, e.segmentation));
     }
 
@@ -270,6 +280,7 @@ class Event {
             (id != null ? id.hashCode() : 1) ^
             (pvid != null ? pvid.hashCode() : 1) ^
             (cvid != null ? cvid.hashCode() : 1) ^
+            (peid != null ? peid.hashCode() : 1) ^
             (timestamp != 0 ? (int) timestamp : 1);
     }
 }

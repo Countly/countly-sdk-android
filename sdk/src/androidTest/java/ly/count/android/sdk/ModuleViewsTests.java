@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import android.app.assist.AssistStructure;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -21,9 +20,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -35,16 +34,16 @@ public class ModuleViewsTests {
     CountlyStore countlyStore;
 
     int idx = 0;
-    String[] vals = new String[] { "idv1", "idv2", "idv3", "idv4", "idv5", "idv6", "idv7" };
+    final String[] vals = TestUtils.viewIDVals;
     String base64Regex = "^[A-Za-z0-9+/]*={0,2}$";
-    SafeIDGenerator safeIDGenerator;
+    SafeIDGenerator safeViewIDGenerator;
 
     @Before
     public void setUp() {
         countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
         idx = 0;
-        safeIDGenerator = new SafeIDGenerator() {
+        safeViewIDGenerator = new SafeIDGenerator() {
             @NonNull @Override public String GenerateValue() {
                 return vals[idx++];
             }
@@ -79,7 +78,7 @@ public class ModuleViewsTests {
     }
 
     void activityStartedViewTracking(boolean shortNames) {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeIDGenerator, null);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -106,17 +105,11 @@ public class ModuleViewsTests {
         activityStartedViewTrackingException(true);
     }
 
-    class Activity2 extends Activity {
-    }
-
-    class Activity3 extends Activity {
-    }
-
     void activityStartedViewTrackingException(boolean shortNames) {
         @NonNull Activity act1 = mock(Activity.class);
-        @NonNull Activity act2 = mock(Activity2.class);
+        @NonNull Activity act2 = mock(TestUtils.Activity2.class);
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeIDGenerator, null).setAutoTrackingExceptions(new Class[] { act1.getClass() });
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeViewIDGenerator, null).setAutoTrackingExceptions(new Class[] { act1.getClass() });
         Countly mCountly = new Countly().init(cc);
 
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -240,7 +233,7 @@ public class ModuleViewsTests {
         segms.put("2", 234.0d);
         segms.put("3", true);
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, true, safeIDGenerator, segms);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, true, safeViewIDGenerator, segms);
         Countly mCountly = new Countly().init(cc);
 
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -269,7 +262,7 @@ public class ModuleViewsTests {
 
     @Test
     public void recordViewNoSegm() throws InterruptedException {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, false, safeIDGenerator, null);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, false, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -281,7 +274,7 @@ public class ModuleViewsTests {
         mCountly.views().recordView(viewNames[0]);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1]);
@@ -290,7 +283,7 @@ public class ModuleViewsTests {
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2]);
@@ -332,7 +325,7 @@ public class ModuleViewsTests {
         cSegm3.put("cannndy", 9534.33d);
         cSegm3.put("calaaling", true);
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeIDGenerator, segms);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, segms);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -344,7 +337,7 @@ public class ModuleViewsTests {
         ClearFillSegmentationViewStart(segm, viewNames[0], true);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
         Thread.sleep(2000);
 
         mCountly.views().recordView(viewNames[1], cSegm2);
@@ -358,7 +351,7 @@ public class ModuleViewsTests {
         segm.put("candy", 954.33d);
         segm.put("calling", false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2], cSegm3);
@@ -376,7 +369,6 @@ public class ModuleViewsTests {
         segm.put("cannndy", 9534.33d);
         segm.put("calaaling", true);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
     }
 
     /**
@@ -416,7 +408,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
-        Activity2 act2 = mock(Activity2.class);
+        Activity act2 = mock(TestUtils.Activity2.class);
 
         //go from one activity to another in the expected way and then "go to background"
         mCountly.onStart(act);
@@ -435,10 +427,10 @@ public class ModuleViewsTests {
 
         mCountly.views().recordView("abcd");
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
 
         @NonNull Activity act = mock(Activity.class);
-        @NonNull Activity act2 = mock(Activity2.class);
+        @NonNull Activity act2 = mock(TestUtils.Activity2.class);
 
         final Map<String, Object> segm = new HashMap<>();
 
@@ -459,7 +451,7 @@ public class ModuleViewsTests {
 
     @Test
     public void autoSessionFlow_1() throws InterruptedException {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeIDGenerator, null).setEventQueueSizeToSend(100);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null).setEventQueueSizeToSend(100);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -468,8 +460,8 @@ public class ModuleViewsTests {
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
-        @NonNull Activity act2 = mock(Activity2.class);
-        @NonNull Activity act3 = mock(Activity3.class);
+        @NonNull Activity act2 = mock(TestUtils.Activity2.class);
+        @NonNull Activity act3 = mock(TestUtils.Activity3.class);
 
         String viewNames[] = new String[] { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
         final Map<String, Object> segm = new HashMap<>();
@@ -483,7 +475,7 @@ public class ModuleViewsTests {
         // there should be the first view start
         ClearFillSegmentationViewStart(segm, viewNames[0], true);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
 
         ///////// 2
         Thread.sleep(1000);
@@ -500,7 +492,7 @@ public class ModuleViewsTests {
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
 
         Thread.sleep(2000);
         mCountly.onStart(act3);
@@ -513,7 +505,7 @@ public class ModuleViewsTests {
 
         ClearFillSegmentationViewStart(segm, viewNames[2], false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        clearInvocations(ep);
 
         Thread.sleep(1000);
         mCountly.onStop();
