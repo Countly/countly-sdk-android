@@ -122,7 +122,7 @@ public class Countly {
     //SDK limit defaults
     final int maxKeyLengthDefault = 128;
     final int maxValueSizeDefault = 256;
-    final int maxSegmentationValuesDefault = 30;
+    final int maxSegmentationValuesDefault = 100;
     final int maxBreadcrumbCountDefault = 100;
     final int maxStackTraceLinesPerThreadDefault = 30;
     final int maxStackTraceLineLengthDefault = 200;

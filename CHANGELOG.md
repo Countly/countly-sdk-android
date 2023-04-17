@@ -1,3 +1,6 @@
+## 22.09.4
+* maxSegmentationValuesDefault is now 100 (from 30)
+
 ## 22.09.3
 * Added "previous event ID" logic for non-internal events
 
