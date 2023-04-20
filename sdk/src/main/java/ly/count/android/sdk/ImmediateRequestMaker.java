@@ -16,12 +16,16 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
     /**
      * Used for callback from async task
      */
-    protected interface InternalFeedbackRatingCallback {
+    protected interface InternalImmediateRequestCallback {
         void callback(JSONObject checkResponse);
     }
 
-    InternalFeedbackRatingCallback callback;
+    InternalImmediateRequestCallback callback;
     ModuleLog L;
+
+    public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, InternalImmediateRequestCallback callback, ModuleLog log) {
+        this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
+    }
 
     /**
      * params fields:
@@ -29,15 +33,24 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
      * 1 - custom endpoint
      * 2 - connection processor
      * 3 - requestShouldBeDelayed
-     * 4 - callback
+     * 4 - networkingIsEnabled
+     * 5 - callback
+     * 6 - log module
      */
     protected JSONObject doInBackground(Object... params) {
         final String requestData = (String) params[0];
         final String customEndpoint = (String) params[1];
         final ConnectionProcessor cp = (ConnectionProcessor) params[2];
         final boolean requestShouldBeDelayed = (boolean) params[3];
-        callback = (InternalFeedbackRatingCallback) params[4];
-        L = (ModuleLog) params[5];
+        final boolean networkingIsEnabled = (boolean) params[4];
+        callback = (InternalImmediateRequestCallback) params[5];
+        L = (ModuleLog) params[6];
+
+        if (!networkingIsEnabled) {
+            L.i("[ImmediateRequestMaker] ImmediateRequestMaker, request cancelled due to networking being disabled. endpoint[" + customEndpoint + "] request[" + requestData + "]");
+
+            return null;
+        }
 
         L.v("[ImmediateRequestMaker] Starting request");
 

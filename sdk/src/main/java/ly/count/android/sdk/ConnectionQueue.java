@@ -59,6 +59,7 @@ class ConnectionQueue implements RequestQueueProvider {
     protected ModuleRequestQueue moduleRequestQueue = null;//todo remove in the future
     protected DeviceInfo deviceInfo = null;//todo ?remove in the future?
     StorageProvider storageProvider;
+    ConfigurationProvider configProvider;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -699,7 +700,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, sslContext_, requestHeaderCustomValues, L);
+        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, sslContext_, requestHeaderCustomValues, L);
     }
 
     public boolean queueContainsTemporaryIdItems() {

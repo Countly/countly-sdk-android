@@ -79,10 +79,11 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getConfigBool(ConfigBool.networkingEnabled);
 
         String requestData = requestQueueProvider.prepareFeedbackListRequest();
 
-        (new ImmediateRequestMaker()).execute(requestData, "/o/sdk", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
                     L.d("[ModuleFeedback] Not possible to retrieve widget list. Probably due to lack of connection to the server");
@@ -391,11 +392,12 @@ public class ModuleFeedback extends ModuleBase {
         requestData.append(cachedAppVersion);
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getConfigBool(ConfigBool.networkingEnabled);
         String requestDataStr = requestData.toString();
 
         L.d("[ModuleFeedback] Using following request params for retrieving widget data:[" + requestDataStr + "]");
 
-        (new ImmediateRequestMaker()).execute(requestDataStr, widgetDataEndpoint, cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+        (new ImmediateRequestMaker()).doWork(requestDataStr, widgetDataEndpoint, cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
                     L.d("[ModuleFeedback] Not possible to retrieve widget data. Probably due to lack of connection to the server");

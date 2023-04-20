@@ -33,6 +33,8 @@ public class CountlyConfig {
 
     protected BaseInfoProvider baseInfoProvider = null;
 
+    protected ConfigurationProvider configProvider = null;
+
     protected SafeIDGenerator safeViewIDGenerator = null;
 
     protected SafeIDGenerator safeEventIDGenerator = null;
@@ -194,7 +196,9 @@ public class CountlyConfig {
     String daCampaignData = null;
     Map<String, String> iaAttributionValues = null;
 
-    public boolean explicitStorageModeEnabled = false;
+    boolean explicitStorageModeEnabled = false;
+
+    boolean serverConfigurationEnabled = false;
 
     //SDK internal limits
     Integer maxKeyLength;
@@ -912,6 +916,18 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableExplicitStorageMode() {
         explicitStorageModeEnabled = true;
+        return this;
+    }
+
+    /**
+     * This is an experimental feature and it can have breaking changes
+     *
+     * with this mode enable, the SDK will acquire additional configuration from it's Countly server
+     *
+     * @return
+     */
+    public synchronized CountlyConfig enableServerConfiguration() {
+        serverConfigurationEnabled = true;
         return this;
     }
 }

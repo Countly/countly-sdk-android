@@ -51,6 +51,7 @@ public class ConnectionProcessor implements Runnable {
 
     private final StorageProvider storageProvider_;
     private final DeviceIdProvider deviceIdProvider_;
+    final ConfigurationProvider configProvider_;
     private final String serverURL_;
     private final SSLContext sslContext_;
 
@@ -65,10 +66,11 @@ public class ConnectionProcessor implements Runnable {
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
     }
 
-    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
+    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
+        configProvider_ = configProvider;
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         L = logModule;
@@ -198,6 +200,11 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         while (true) {
+            if (!configProvider_.getConfigBool(ConfigBool.networkingEnabled)) {
+                L.i("[Connection Processor] run request queue skipped, networking is disabled");
+                break;
+            }
+
             final String[] storedEvents = storageProvider_.getRequests();
             int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
 

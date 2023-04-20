@@ -473,8 +473,9 @@ public class ModuleRatings extends ModuleBase {
         L.d("[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getConfigBool(ConfigBool.networkingEnabled);
 
-        (new ImmediateRequestMaker()).execute(requestData, "/o/feedback/widget", cp, false, new ImmediateRequestMaker.InternalFeedbackRatingCallback() {
+        (new ImmediateRequestMaker()).doWork(requestData, "/o/feedback/widget", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override
             public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
