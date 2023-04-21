@@ -1,4 +1,4 @@
-## xx.xx.xx
+## 22.09.4
 * Default max segmentation value count changed from 30 to 100
 * Fixing bug that prevented device ID to be changed when there is no consent given
 

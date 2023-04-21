@@ -247,7 +247,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] tokenSession");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'push' consent not given");
             return;
         }
 
@@ -342,7 +342,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendUserData");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'user' consent not given");
             return;
         }
 
@@ -365,7 +365,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendIndirectAttribution");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'attribution' consent not given");
             return;
         }
 
@@ -389,7 +389,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendDirectAttributionTest");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'attribution' consent not given");
             return;
         }
 
@@ -413,7 +413,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendDirectAttributionLegacy");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'attribution' consent not given");
             return;
         }
 
@@ -449,7 +449,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendCrashReport");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'crashes' consent not given");
             return;
         }
 
@@ -540,7 +540,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendAPMCustomTrace");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'apm' consent not given");
             return;
         }
 
@@ -567,7 +567,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendAPMNetworkTrace");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'apm' consent not given");
             return;
         }
 
@@ -620,7 +620,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'apm' consent not given");
             return;
         }
 
