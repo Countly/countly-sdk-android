@@ -122,22 +122,39 @@ class ConnectionQueue implements RequestQueueProvider {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    void checkInternalState() {
+    boolean checkInternalState() {
         if (context_ == null) {
-            throw new IllegalStateException("context has not been set");
+            if (L != null) {
+                L.e("[Connection Queue] context has not been set");
+            }
+            return false;
         }
         if (baseInfoProvider.getAppKey() == null || baseInfoProvider.getAppKey().length() == 0) {
-            throw new IllegalStateException("app key has not been set");
+            if (L != null) {
+                L.e("[Connection Queue] app key has not been set");
+            }
+            return false;
         }
         if (storageProvider == null) {
-            throw new IllegalStateException("countly storage provider has not been set");
+            if (L != null) {
+                L.e("[Connection Queue] countly storage provider has not been set");
+            }
+            return false;
         }
         if (baseInfoProvider.getServerURL() == null || !UtilsNetworking.isValidURL(baseInfoProvider.getServerURL())) {
-            throw new IllegalStateException("server URL is not valid");
+            if (L != null) {
+                L.e("[Connection Queue] server URL is not valid");
+            }
+            return false;
         }
         if (Countly.publicKeyPinCertificates != null && !baseInfoProvider.getServerURL().startsWith("https")) {
-            throw new IllegalStateException("server must start with https once you specified public keys");
+            if (L != null) {
+                L.e("[Connection Queue] server must start with https once you specified public keys");
+            }
+            return false;
         }
+
+        return true;
     }
 
     /**
@@ -146,7 +163,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void beginSession(boolean locationDisabled, @Nullable String locationCountryCode, @Nullable String locationCity, @Nullable String locationGpsCoordinates, @Nullable String locationIpAddress, @NonNull String preparedMetrics) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] beginSession");
 
         boolean dataAvailable = false;//will only send data if there is something valuable to send
@@ -181,7 +200,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void updateSession(final int duration) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] updateSession");
 
         if (duration > 0) {
@@ -201,14 +222,10 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void changeDeviceId(String deviceId, final int duration) {
-        checkInternalState();
-        L.d("[Connection Queue] changeDeviceId");
-
-        if (!consentProvider.anyConsentGiven()) {
-            L.d("[Connection Queue] request ignored, consent not given");
-            //no consent set, aborting
+        if (!checkInternalState()) {
             return;
         }
+        L.d("[Connection Queue] changeDeviceId");
 
         String data = prepareCommonRequestData();
 
@@ -224,7 +241,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] tokenSession");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
@@ -265,7 +284,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void endSession(final int duration, String deviceIdOverride) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] endSession");
 
         boolean dataAvailable = false;//will only send data if there is something valuable to send
@@ -295,7 +316,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * Send user location
      */
     public void sendLocation(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendLocation");
 
         String data = prepareCommonRequestData();
@@ -313,7 +336,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws java.lang.IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void sendUserData(String userdata) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendUserData");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
@@ -334,7 +359,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendIndirectAttribution(@NonNull String attributionObj) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendIndirectAttribution");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
@@ -356,7 +383,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendDirectAttributionTest(@NonNull String attributionData) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendDirectAttributionTest");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
@@ -378,7 +407,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendDirectAttributionLegacy(@NonNull String campaignID, @Nullable String userID) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendDirectAttributionLegacy");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
@@ -412,7 +443,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void sendCrashReport(@NonNull final String crashData, final boolean nonFatalCrash) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendCrashReport");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
@@ -437,7 +470,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * @param requestData key value pair for direct request
      */
     public void sendDirectRequest(@NonNull final Map<String, String> requestData) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendDirectRequest");
 
         if (!consentProvider.anyConsentGiven()) {
@@ -467,7 +502,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void recordEvents(final String events) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendConsentChanges");
 
         ////////////////////////////////////////////////////
@@ -482,7 +519,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendConsentChanges(String formattedConsentChanges) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
         L.d("[Connection Queue] sendConsentChanges");
 
         final String data = prepareCommonRequestData()
@@ -494,7 +533,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs, String customMetrics) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
 
         L.d("[Connection Queue] sendAPMCustomTrace");
 
@@ -519,7 +560,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendAPMNetworkTrace(String networkTraceKey, Long responseTimeMs, int responseCode, int requestPayloadSize, int responsePayloadSize, Long startMs, Long endMs) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
 
         L.d("[Connection Queue] sendAPMNetworkTrace");
 
@@ -545,7 +588,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendAPMAppStart(long durationMs, Long startMs, Long endMs) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
 
         L.d("[Connection Queue] sendAPMAppStart");
 
@@ -568,7 +613,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendAPMScreenTime(boolean recordForegroundTime, long durationMs, Long startMs, Long endMs) {
-        checkInternalState();
+        if (!checkInternalState()) {
+            return;
+        }
 
         L.d("[Connection Queue] sendAPMScreenTime, recording foreground time: [" + recordForegroundTime + "]");
 
