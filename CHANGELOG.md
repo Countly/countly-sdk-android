@@ -1,5 +1,6 @@
 ## xx.xx.xx
 * Default max segmentation value count changed from 30 to 100
+* Fixing bug that prevented device ID to be changed when there is no consent given
 
 ## 22.09.3
 * Added "previous event ID" logic for non-internal events
