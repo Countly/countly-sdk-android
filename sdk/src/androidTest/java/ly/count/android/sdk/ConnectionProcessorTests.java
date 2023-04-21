@@ -62,7 +62,11 @@ public class ConnectionProcessorTests {
     @Before
     public void setUp() {
         configurationProviderFake = new ConfigurationProvider() {
-            @Override public boolean getConfigBool(ConfigBool key) {
+            @Override public boolean getNetworkingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getTrackingEnabled() {
                 return true;
             }
         };

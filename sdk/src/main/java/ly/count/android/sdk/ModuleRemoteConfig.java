@@ -89,7 +89,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-            final boolean networkingIsEnabled = cp.configProvider_.getConfigBool(ConfigBool.networkingEnabled);
+            final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
             (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
                 @Override

@@ -79,7 +79,7 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-        final boolean networkingIsEnabled = cp.configProvider_.getConfigBool(ConfigBool.networkingEnabled);
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
         String requestData = requestQueueProvider.prepareFeedbackListRequest();
 
@@ -392,7 +392,7 @@ public class ModuleFeedback extends ModuleBase {
         requestData.append(cachedAppVersion);
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-        final boolean networkingIsEnabled = cp.configProvider_.getConfigBool(ConfigBool.networkingEnabled);
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
         String requestDataStr = requestData.toString();
 
         L.d("[ModuleFeedback] Using following request params for retrieving widget data:[" + requestDataStr + "]");

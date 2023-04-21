@@ -64,6 +64,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String STORAGE_SCHEMA_VERSION = "SCHEMA_VERSION";
     private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
+    private static final String PREFERENCE_SERVER_CONFIG = "SERVER_CONFIG";
 
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
@@ -220,6 +221,17 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 }
             }
         }
+    }
+
+    @Override
+    public void setServerConfig(String config) {
+        //PREFERENCE_SERVER_CONFIG
+        preferences_.edit().putString(PREFERENCE_SERVER_CONFIG, config).apply();
+    }
+
+    @Override
+    public String getServerConfig() {
+        return preferences_.getString(PREFERENCE_SERVER_CONFIG, null);
     }
 
     /**
@@ -645,6 +657,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (preferences_.getInt(STORAGE_SCHEMA_VERSION, -100) != -100) {
+            return true;
+        }
+
+        if (preferences_.getString(PREFERENCE_SERVER_CONFIG, null) != null) {
             return true;
         }
 

@@ -473,7 +473,7 @@ public class ModuleRatings extends ModuleBase {
         L.d("[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-        final boolean networkingIsEnabled = cp.configProvider_.getConfigBool(ConfigBool.networkingEnabled);
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
         (new ImmediateRequestMaker()).doWork(requestData, "/o/feedback/widget", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override

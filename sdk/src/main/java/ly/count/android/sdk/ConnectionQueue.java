@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -650,6 +651,15 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
     }
 
+    String prepareCommonRequestDataShort() {
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+
+        return "app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&timestamp=" + instant.timestampMs
+            + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
+            + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
+    }
+
     private String prepareLocationData(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
         String data = "";
 
@@ -713,6 +723,13 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&method=feedback"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
+        return data;
+    }
+
+    @Override
+    public String prepareServerConfigRequest() {
+        String data = prepareCommonRequestDataShort()
+            + "&method=sc";
         return data;
     }
 

@@ -636,6 +636,10 @@ public class CountlyStoreTests {
         CountlyStore.cachePushData("mnc", null, getContext());
         assertTrue(sp.anythingSetInStorage());
         store.clear();
+
+        sp.setServerConfig("qwe");
+        assertTrue(sp.anythingSetInStorage());
+        store.clear();
     }
 
     /**
@@ -679,6 +683,9 @@ public class CountlyStoreTests {
         assertTrue(sp.anythingSetInStorage());
 
         CountlyStore.cachePushData("mnc", "uio", getContext());
+        assertTrue(sp.anythingSetInStorage());
+
+        sp.setServerConfig("qwe");
         assertTrue(sp.anythingSetInStorage());
     }
 
@@ -731,5 +738,13 @@ public class CountlyStoreTests {
         final String expected = URLEncoder.encode(jsonToEncode, "UTF-8");
         assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
         Assert.assertEquals(0, sp.getEventQueueSize());
+    }
+
+    @Test
+    public void getSetServerConfig() {
+        store.clear();
+        Assert.assertNull(sp.getServerConfig());
+        sp.setServerConfig("qwe");
+        Assert.assertEquals("qwe", sp.getServerConfig());
     }
 }
