@@ -54,7 +54,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     void loadStoredConfig() {
+        String sConfig = storageProvider.getServerConfig();
 
+        if (sConfig == null || sConfig.isEmpty()) {
+            return;
+        }
+
+        try {
+            latestRetrievedConfigurationFull = new JSONObject(sConfig);
+            latestRetrievedConfiguration = latestRetrievedConfigurationFull.getJSONObject(keyRConfig);
+        } catch (JSONException e) {
+            L.w("[ModuleConfiguration] loadStoredConfig, failed to parse, " + e);
+
+            latestRetrievedConfigurationFull = null;
+            latestRetrievedConfiguration = null;
+        }
     }
 
     void updateConfigs() {
