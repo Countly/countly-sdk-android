@@ -26,47 +26,78 @@ public class ModuleConfigurationTests {
     public void tearDown() {
     }
 
+    /**
+     * Default values when server config is disabled and storage is empty
+     */
     @Test
     public void init_disabled_storageEmpty() {
         countlyStore.clear();
-        CountlyConfig config = TestUtils.createConfigurationConfig();
-        Countly countly = Countly.sharedInstance().init(config);
+        CountlyConfig config = TestUtils.createConfigurationConfig(false);
+        Countly countly = (new Countly()).init(config);
 
+        Assert.assertFalse(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNull(countlyStore.getServerConfig());
         Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
     }
 
+    /**
+     * Default values when server config is enabled and storage is empty
+     */
     @Test
     public void init_enabled_storageEmpty() {
-        CountlyConfig config = TestUtils.createConfigurationConfig();
-        config.enableServerConfiguration();
-        Countly countly = Countly.sharedInstance().init(config);
+        CountlyConfig config = TestUtils.createConfigurationConfig(true);
+        Countly countly = (new Countly()).init(config);
 
+        Assert.assertTrue(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNull(countlyStore.getServerConfig());
         Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
     }
 
     @Test
-    public void init_storageAllowing() throws JSONException {
+    public void init_enabled_storageAllowing() throws JSONException {
         countlyStore.setServerConfig(getStorageString(true, true));
-        CountlyConfig config = TestUtils.createConfigurationConfig();
-        config.enableServerConfiguration();
-        Countly countly = Countly.sharedInstance().init(config);
+        CountlyConfig config = TestUtils.createConfigurationConfig(true);
+        Countly countly = (new Countly()).init(config);
 
+        Assert.assertTrue(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNotNull(countlyStore.getServerConfig());
         Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
     }
 
     @Test
-    public void init_storageForbidding() throws JSONException {
+    public void init_enabled_storageForbidding() throws JSONException {
         countlyStore.setServerConfig(getStorageString(false, false));
-        CountlyConfig config = TestUtils.createConfigurationConfig();
-        config.enableServerConfiguration();
+        CountlyConfig config = TestUtils.createConfigurationConfig(true);
+        Countly countly = (new Countly()).init(config);
+
+        Assert.assertTrue(countly.moduleConfiguration.serverConfigEnabled);
+        Assert.assertNotNull(countlyStore.getServerConfig());
+        Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+    }
+
+    @Test
+    public void init_disabled_storageAllowing() throws JSONException {
+        countlyStore.setServerConfig(getStorageString(true, true));
+        CountlyConfig config = TestUtils.createConfigurationConfig(false);
         Countly countly = Countly.sharedInstance().init(config);
 
+        Assert.assertFalse(countly.moduleConfiguration.serverConfigEnabled);
+        Assert.assertNotNull(countlyStore.getServerConfig());
+        Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
+        Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
+    }
+
+    @Test
+    public void init_disabled_storageForbidding() throws JSONException {
+        countlyStore.setServerConfig(getStorageString(false, false));
+        CountlyConfig config = TestUtils.createConfigurationConfig(false);
+        Countly countly = (new Countly()).init(config);
+
+        Assert.assertFalse(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNotNull(countlyStore.getServerConfig());
         Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());

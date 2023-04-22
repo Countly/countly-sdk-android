@@ -50,11 +50,15 @@ public class TestUtils {
     public static class Activity3 extends Activity {
     }
 
-    public static CountlyConfig createConfigurationConfig() {
+    public static CountlyConfig createConfigurationConfig(boolean enableServerConfig) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
+
+        if (enableServerConfig) {
+            cc.enableServerConfiguration();
+        }
 
         return cc;
     }
