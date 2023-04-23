@@ -55,4 +55,6 @@ interface RequestQueueProvider {
     String prepareRatingWidgetRequest(String widgetId);
 
     String prepareFeedbackListRequest();
+
+    String prepareServerConfigRequest();
 }

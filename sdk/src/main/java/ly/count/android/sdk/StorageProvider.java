@@ -51,6 +51,10 @@ interface StorageProvider {
 
     void esWriteCacheToStorage(@Nullable ExplicitStorageCallback callback);//required for explicit storage
 
+    void setServerConfig(String config);
+
+    String getServerConfig();
+
     //fields for data migration
     int getDataSchemaVersion();
 

@@ -169,6 +169,7 @@ public class Countly {
     ModuleRequestQueue moduleRequestQueue = null;
     ModuleAttribution moduleAttribution = null;
     ModuleUserProfile moduleUserProfile = null;
+    ModuleConfiguration moduleConfiguration = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -492,6 +493,14 @@ public class Countly {
                 };
             }
 
+            if (config.immediateRequestGenerator == null) {
+                config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+                    @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                        return (new ImmediateRequestMaker());
+                    }
+                };
+            }
+
             if (config.metricProviderOverride != null) {
                 L.d("[Init] Custom metric provider was provided");
             }
@@ -529,6 +538,7 @@ public class Countly {
             }
 
             //initialise modules
+            moduleConfiguration = new ModuleConfiguration(this, config);
             moduleRequestQueue = new ModuleRequestQueue(this, config);
             moduleConsent = new ModuleConsent(this, config);
             moduleDeviceId = new ModuleDeviceId(this, config);
@@ -545,6 +555,7 @@ public class Countly {
             moduleAttribution = new ModuleAttribution(this, config);
 
             modules.clear();
+            modules.add(moduleConfiguration);
             modules.add(moduleRequestQueue);
             modules.add(moduleConsent);
             modules.add(moduleDeviceId);
@@ -565,6 +576,7 @@ public class Countly {
             }
 
             //add missing providers
+            moduleConfiguration.consentProvider = config.consentProvider;
             moduleRequestQueue.consentProvider = config.consentProvider;
             moduleRequestQueue.deviceIdProvider = config.deviceIdProvider;
             moduleConsent.eventProvider = config.eventProvider;
@@ -623,6 +635,7 @@ public class Countly {
 
             //initialize networking queues
             connectionQueue_.L = L;
+            connectionQueue_.configProvider = config.configProvider;
             connectionQueue_.consentProvider = moduleConsent;
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
             connectionQueue_.deviceInfo = config.deviceInfo;
@@ -792,6 +805,7 @@ public class Countly {
         moduleLocation = null;
         moduleFeedback = null;
         moduleRequestQueue = null;
+        moduleConfiguration = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;

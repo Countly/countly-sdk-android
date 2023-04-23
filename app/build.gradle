@@ -4,7 +4,6 @@ apply plugin: 'com.android.application'
 //apply plugin: 'com.huawei.agconnect'
 
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 
 /*
 //for automatic symbol upload

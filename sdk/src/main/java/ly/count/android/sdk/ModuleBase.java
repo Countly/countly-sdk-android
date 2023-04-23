@@ -15,6 +15,7 @@ abstract class ModuleBase {
     DeviceIdProvider deviceIdProvider;
     BaseInfoProvider baseInfoProvider;
     ViewIdProvider viewIdProvider;
+    ConfigurationProvider configProvider;
 
     DeviceInfo deviceInfo;
 
@@ -28,6 +29,7 @@ abstract class ModuleBase {
         deviceIdProvider = config.deviceIdProvider;
         baseInfoProvider = config.baseInfoProvider;
         viewIdProvider = config.viewIdProvider;
+        configProvider = config.configProvider;
 
         deviceInfo = config.deviceInfo;
     }
@@ -77,10 +79,17 @@ abstract class ModuleBase {
     void callbackOnActivityDestroyed(Activity activity) {
     }
 
+    //notify the SDK modules that the device ID has changed
     void deviceIdChanged() {
     }
 
+    //notify the SDK modules that consent was updated
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+    }
+
+    //notify the SDK modules that internal configuration was updated
+    void sdkConfigurationChanged() {
+
     }
 
     void initFinished(@NonNull CountlyConfig config) {
