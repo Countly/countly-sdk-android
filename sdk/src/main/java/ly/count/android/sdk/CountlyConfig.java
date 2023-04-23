@@ -924,7 +924,7 @@ public class CountlyConfig {
     /**
      * This is an experimental feature and it can have breaking changes
      *
-     * with this mode enable, the SDK will acquire additional configuration from it's Countly server
+     * With this mode enable, the SDK will acquire additional configuration from it's Countly server
      *
      * @return
      */

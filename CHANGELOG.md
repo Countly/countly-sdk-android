@@ -1,4 +1,5 @@
 ## 22.09.4
+* Added server side configuration functionality. This is an experimental feature.
 * Default max segmentation value count changed from 30 to 100
 * Fixing bug that prevented device ID to be changed when there is no consent given
 
