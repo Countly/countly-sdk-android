@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.HashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -154,6 +155,36 @@ public class ModuleConfigurationTests {
         countly = initAndValidateConfigParsingResult("{'v':1,'t':2,'c':{'tracking':true,'networking':false}}", true);
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
+    }
+
+    /**
+     * With tracking disabled, nothing should be written to the request and event queues
+     */
+    @Test
+    public void validatingTrackingConfig() throws JSONException {
+        //nothing in queues initially
+        Assert.assertEquals("", countlyStore.getRequestQueueRaw());
+        Assert.assertEquals(0, countlyStore.getEvents().length);
+
+        countlyStore.setServerConfig(getStorageString(true, true));
+
+        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
+        Countly countly = (new Countly()).init(config);
+
+        //try events
+        countly.events().recordEvent("d");
+        countly.events().recordEvent("1");
+
+        //try a non event recording
+        countly.crashes().recordHandledException(new Exception());
+
+        //try a direct request
+        countly.requestQueue().addDirectRequest(new HashMap<>());
+
+        countly.requestQueue().attemptToSendStoredRequests();
+
+        Assert.assertEquals("", countlyStore.getRequestQueueRaw());
+        Assert.assertEquals(0, countlyStore.getEvents().length);
     }
 
     /**

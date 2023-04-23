@@ -29,12 +29,15 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
+        L.v("[ModuleConfiguration] Initialising");
         config.configProvider = this;
         configProvider = this;
 
         serverConfigEnabled = config.serverConfigurationEnabled;
 
         immediateRequestGenerator = config.immediateRequestGenerator;
+
+        config.countlyStore.setConfigurationProvider(this);
 
         if (serverConfigEnabled) {
             //load the previously saved configuration
@@ -63,6 +66,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      */
     void loadConfigFromStorage() {
         String sConfig = storageProvider.getServerConfig();
+        L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");
 
         if (sConfig == null || sConfig.isEmpty()) {
             L.d("[ModuleConfiguration] loadStoredConfig, no configs persistently stored");
@@ -83,6 +87,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     //update the config variables according to the current config obj state
     void updateConfigVariables() {
+        L.v("[ModuleConfiguration] updateConfigVariables");
         //set all to defaults
         currentVNetworking = defaultVNetworking;
         currentVTracking = defaultVTracking;
@@ -112,6 +117,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     void saveAndStoreDownloadedConfig(@NonNull JSONObject config) {
+        L.v("[ModuleConfiguration] saveAndStoreDownloadedConfig");
         if (!config.has(keyRVersion)) {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
             return;
@@ -169,6 +175,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      */
     void fetchConfigFromServer() {
+        L.v("[ModuleConfiguration] fetchConfigFromServer");
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 

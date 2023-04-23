@@ -729,7 +729,8 @@ class ConnectionQueue implements RequestQueueProvider {
     @Override
     public String prepareServerConfigRequest() {
         String data = prepareCommonRequestDataShort()
-            + "&method=sc";
+            + "&method=sc"
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
         return data;
     }
 

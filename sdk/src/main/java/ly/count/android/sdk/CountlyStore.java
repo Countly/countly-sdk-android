@@ -79,6 +79,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     ModuleLog L;
 
+    ConfigurationProvider configurationProvider;
+
     int maxRequestQueueSize = 1000;
 
     //explicit storage fields
@@ -108,6 +110,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public void setLimits(final int maxRequestQueueSize) {
         this.maxRequestQueueSize = maxRequestQueueSize;
+    }
+
+    public void setConfigurationProvider(ConfigurationProvider configurationProvider) {
+        this.configurationProvider = configurationProvider;
     }
 
     static SharedPreferences createPreferencesPush(Context context) {
@@ -326,6 +332,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      */
     @SuppressLint("ApplySharedPref")
     public synchronized void addRequest(@NonNull final String requestStr, final boolean writeInSync) {
+        if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
+            L.w("[CountlyStore] addRequest, Tracking is disabled, request will not be added to the request queue.");
+            return;
+        }
+
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
 
@@ -387,6 +398,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      */
     // TODO:
     void addEvent(final Event event) {
+        if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
+            L.w("[CountlyStore] addEvent, Tracking is disabled, event will not be added to the request queue.");
+            return;
+        }
+
         final List<Event> events = getEventList();
         if (events.size() < MAX_EVENTS) {
             events.add(event);
