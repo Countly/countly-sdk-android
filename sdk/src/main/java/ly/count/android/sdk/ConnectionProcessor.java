@@ -201,7 +201,7 @@ public class ConnectionProcessor implements Runnable {
     public void run() {
         while (true) {
             if (!configProvider_.getNetworkingEnabled()) {
-                L.i("[Connection Processor] run request queue skipped, networking is disabled");
+                L.w("[Connection Processor] run, Networking config is disabled, request queue skipped");
                 break;
             }
 

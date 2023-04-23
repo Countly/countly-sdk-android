@@ -333,7 +333,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     @SuppressLint("ApplySharedPref")
     public synchronized void addRequest(@NonNull final String requestStr, final boolean writeInSync) {
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
-            L.w("[CountlyStore] addRequest, Tracking is disabled, request will not be added to the request queue.");
+            L.w("[CountlyStore] addRequest, Tracking config is disabled, request will not be added to the request queue.");
             return;
         }
 
@@ -399,7 +399,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     // TODO:
     void addEvent(final Event event) {
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
-            L.w("[CountlyStore] addEvent, Tracking is disabled, event will not be added to the request queue.");
+            L.w("[CountlyStore] addEvent, Tracking config is disabled, event will not be added to the request queue.");
             return;
         }
 

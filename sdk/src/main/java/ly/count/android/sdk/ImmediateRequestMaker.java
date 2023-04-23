@@ -48,7 +48,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
         L = (ModuleLog) params[6];
 
         if (!networkingIsEnabled) {
-            L.i("[ImmediateRequestMaker] ImmediateRequestMaker, request cancelled due to networking being disabled. endpoint[" + customEndpoint + "] request[" + requestData + "]");
+            L.w("[ImmediateRequestMaker] ImmediateRequestMaker, Networking config is disabled, request cancelled. Endpoint[" + customEndpoint + "] request[" + requestData + "]");
 
             return null;
         }
