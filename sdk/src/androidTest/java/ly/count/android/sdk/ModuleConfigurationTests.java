@@ -166,10 +166,13 @@ public class ModuleConfigurationTests {
         Assert.assertEquals("", countlyStore.getRequestQueueRaw());
         Assert.assertEquals(0, countlyStore.getEvents().length);
 
-        countlyStore.setServerConfig(getStorageString(true, true));
+        countlyStore.setServerConfig(getStorageString(false, false));
 
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
         Countly countly = (new Countly()).init(config);
+
+        Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
 
         //try events
         countly.events().recordEvent("d");
