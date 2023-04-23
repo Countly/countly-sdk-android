@@ -39,6 +39,8 @@ public class CountlyConfig {
 
     protected SafeIDGenerator safeEventIDGenerator = null;
 
+    protected ImmediateRequestGenerator immediateRequestGenerator = null;
+
     protected MetricProvider metricProviderOverride = null;
 
     protected DeviceInfo deviceInfo = null;

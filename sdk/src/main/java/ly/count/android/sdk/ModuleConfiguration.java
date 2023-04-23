@@ -1,11 +1,12 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
-import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
+    ImmediateRequestGenerator immediateRequestGenerator;
+
     boolean serverConfigEnabled = false;
 
     JSONObject latestRetrievedConfigurationFull = null;
@@ -33,10 +34,14 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         serverConfigEnabled = config.serverConfigurationEnabled;
 
+        immediateRequestGenerator = config.immediateRequestGenerator;
+
         if (serverConfigEnabled) {
             //load the previously saved configuration
-            loadStoredConfig();
-            updateConfigs();
+            loadConfigFromStorage();
+
+            //update the config variables according to the new state
+            updateConfigVariables();
         }
     }
 
@@ -53,16 +58,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     }
 
-    void loadStoredConfig() {
+    /**
+     * Reads from storage to local json objects
+     */
+    void loadConfigFromStorage() {
         String sConfig = storageProvider.getServerConfig();
 
         if (sConfig == null || sConfig.isEmpty()) {
+            L.d("[ModuleConfiguration] loadStoredConfig, no configs persistently stored");
             return;
         }
 
         try {
             latestRetrievedConfigurationFull = new JSONObject(sConfig);
             latestRetrievedConfiguration = latestRetrievedConfigurationFull.getJSONObject(keyRConfig);
+            L.d("[ModuleConfiguration] loadStoredConfig, stored config loaded [" + sConfig + "]");
         } catch (JSONException e) {
             L.w("[ModuleConfiguration] loadStoredConfig, failed to parse, " + e);
 
@@ -71,7 +81,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
-    void updateConfigs() {
+    //update the config variables according to the current config obj state
+    void updateConfigVariables() {
         //set all to defaults
         currentVNetworking = defaultVNetworking;
         currentVTracking = defaultVTracking;
@@ -118,9 +129,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         //at this point it is a valid response
         latestRetrievedConfigurationFull = config;
+        String configAsString = null;
 
         try {
             latestRetrievedConfiguration = config.getJSONObject(keyRConfig);
+            configAsString = config.toString();
         } catch (JSONException e) {
             latestRetrievedConfigurationFull = null;
             latestRetrievedConfiguration = null;
@@ -130,11 +143,15 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
 
         //save to storage
+        storageProvider.setServerConfig(configAsString);
+
+        //update config variables
+        updateConfigVariables();
     }
 
     /**
      * Perform network request for retrieving latest config
-     * If valid configu is downloaded, save it, and update the values
+     * If valid config is downloaded, save it, and update the values
      *
      * Example response:
      * {
@@ -155,7 +172,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 
-        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, true, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+        immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, true, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
                     L.w("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");

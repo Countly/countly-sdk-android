@@ -493,6 +493,14 @@ public class Countly {
                 };
             }
 
+            if (config.immediateRequestGenerator == null) {
+                config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+                    @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                        return (new ImmediateRequestMaker());
+                    }
+                };
+            }
+
             if (config.metricProviderOverride != null) {
                 L.d("[Init] Custom metric provider was provided");
             }

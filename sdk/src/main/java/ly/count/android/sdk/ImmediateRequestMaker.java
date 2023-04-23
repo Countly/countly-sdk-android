@@ -11,7 +11,7 @@ import org.json.JSONObject;
 /**
  * Async task for making immediate server requests
  */
-class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
+class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implements ImmediateRequestI {
 
     /**
      * Used for callback from async task
@@ -23,6 +23,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> {
     InternalImmediateRequestCallback callback;
     ModuleLog L;
 
+    @Override
     public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, InternalImmediateRequestCallback callback, ModuleLog log) {
         this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
     }
