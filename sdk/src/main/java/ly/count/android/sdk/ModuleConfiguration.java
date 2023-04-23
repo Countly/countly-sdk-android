@@ -13,16 +13,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     JSONObject latestRetrievedConfiguration = null;
 
     //config keys
-    final String keyTracking = "tracking";
-    final String keyNetworking = "networking";
+    final static String keyTracking = "tracking";
+    final static String keyNetworking = "networking";
 
     //request keys
-    final String keyRTimestamp = "t";
-    final String keyRVersion = "v";
-    final String keyRConfig = "c";
+    final static String keyRTimestamp = "t";
+    final static String keyRVersion = "v";
+    final static String keyRConfig = "c";
 
-    final boolean defaultVTracking = true;
-    final boolean defaultVNetworking = true;
+    final static boolean defaultVTracking = true;
+    final static boolean defaultVNetworking = true;
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
