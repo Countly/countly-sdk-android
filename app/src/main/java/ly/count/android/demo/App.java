@@ -225,6 +225,8 @@ public class App extends Application {
 
             .setEnableAttribution(true)
 
+            .enableServerConfiguration()
+
             .setUserProperties(customUserProperties);
 
         Countly.sharedInstance().init(config);

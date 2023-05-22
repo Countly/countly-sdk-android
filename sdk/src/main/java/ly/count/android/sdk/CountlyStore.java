@@ -64,6 +64,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String STORAGE_SCHEMA_VERSION = "SCHEMA_VERSION";
     private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
+    private static final String PREFERENCE_SERVER_CONFIG = "SERVER_CONFIG";
 
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
@@ -77,6 +78,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
     ModuleLog L;
+
+    ConfigurationProvider configurationProvider;
 
     int maxRequestQueueSize = 1000;
 
@@ -107,6 +110,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public void setLimits(final int maxRequestQueueSize) {
         this.maxRequestQueueSize = maxRequestQueueSize;
+    }
+
+    public void setConfigurationProvider(ConfigurationProvider configurationProvider) {
+        this.configurationProvider = configurationProvider;
     }
 
     static SharedPreferences createPreferencesPush(Context context) {
@@ -222,6 +229,17 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
     }
 
+    @Override
+    public void setServerConfig(String config) {
+        //PREFERENCE_SERVER_CONFIG
+        preferences_.edit().putString(PREFERENCE_SERVER_CONFIG, config).apply();
+    }
+
+    @Override
+    public String getServerConfig() {
+        return preferences_.getString(PREFERENCE_SERVER_CONFIG, null);
+    }
+
     /**
      * Returns an unsorted array of the current stored connections.
      */
@@ -314,6 +332,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      */
     @SuppressLint("ApplySharedPref")
     public synchronized void addRequest(@NonNull final String requestStr, final boolean writeInSync) {
+        if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
+            L.w("[CountlyStore] addRequest, Tracking config is disabled, request will not be added to the request queue.");
+            return;
+        }
+
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
 
@@ -375,6 +398,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      */
     // TODO:
     void addEvent(final Event event) {
+        if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
+            L.w("[CountlyStore] addEvent, Tracking config is disabled, event will not be added to the request queue.");
+            return;
+        }
+
         final List<Event> events = getEventList();
         if (events.size() < MAX_EVENTS) {
             events.add(event);
@@ -645,6 +673,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (preferences_.getInt(STORAGE_SCHEMA_VERSION, -100) != -100) {
+            return true;
+        }
+
+        if (preferences_.getString(PREFERENCE_SERVER_CONFIG, null) != null) {
             return true;
         }
 

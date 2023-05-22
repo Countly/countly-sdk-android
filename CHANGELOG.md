@@ -1,5 +1,7 @@
 ## 22.09.4
-* maxSegmentationValuesDefault is now 100 (from 30)
+* Added server side configuration functionality. This is an experimental feature.
+* Default max segmentation value count changed from 30 to 100
+* Fixing bug that prevented device ID to be changed when there is no consent given
 
 ## 22.09.3
 * Added "previous event ID" logic for non-internal events
