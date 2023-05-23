@@ -151,7 +151,7 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
         Countly.sharedInstance().L.d("Get all variants: [" + values.toString() + "]");
 
-       Toast t = Toast.makeText(getApplicationContext(), "Stored Variant Values: [" + values.toString() + "]", Toast.LENGTH_LONG);
+        Toast t = Toast.makeText(getApplicationContext(), "Stored Variant Values: [" + values.toString() + "]", Toast.LENGTH_LONG);
         t.setGravity(Gravity.BOTTOM, 0, 0);
         t.show();
     }

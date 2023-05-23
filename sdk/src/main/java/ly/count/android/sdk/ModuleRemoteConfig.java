@@ -238,9 +238,9 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     /*
-    * Decide which keys to use
-    * Useful if both 'keysExcept' and 'keysOnly' set
-    * */
+     * Decide which keys to use
+     * Useful if both 'keysExcept' and 'keysOnly' set
+     * */
     @NonNull String[] prepareKeysIncludeExclude(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept) {
         String[] res = new String[2];//0 - include, 1 - exclude
 
@@ -288,8 +288,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         return variantStore;
     }
 
-
-
     void saveConfig(RemoteConfigValueStore rcvs) throws Exception {
         storageProvider.setRemoteConfigValues(rcvs.dataToString());
     }
@@ -308,6 +306,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     void clearValueStoreInternal() {
         storageProvider.setRemoteConfigValues("");
     }
+
     void clearVariantStoreInternal() {
         storageProvider.setVariantValues("");
     }
@@ -324,6 +323,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     /**
      * Gets all AB testing variants stored in the storage
+     *
      * @return
      */
     Map<String, Object> getAllRemoteConfigVariantsInternal() {
@@ -353,6 +353,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         /**
          * Adds new values to the current storage instead of replacing it all
+         *
          * @param newVariants - new variants fetched from the server
          */
         public void mergeValues(JSONObject newVariants) {
@@ -424,7 +425,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         public String dataToString() {
             return container.toString();
         }
-
     }
 
     static class RemoteConfigValueStore {
@@ -582,6 +582,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         /**
          * Fetches all variants of A/B testing experiments
+         *
          * @param callback
          */
         public void testFetchAllVariants(RemoteConfigCallback callback) {

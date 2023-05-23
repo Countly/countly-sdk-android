@@ -714,6 +714,7 @@ class ConnectionQueue implements RequestQueueProvider {
     /**
      * To fetch all variants from the server. Something like this should be formed: method=ab_fetch_variants&app_key="APP_KEY"&device_id=DEVICE_ID
      * API end point for this is /o/sdk
+     *
      * @return
      */
     public String prepareFetchAllVariants() {
