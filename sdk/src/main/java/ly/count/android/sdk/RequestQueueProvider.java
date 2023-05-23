@@ -52,6 +52,8 @@ interface RequestQueueProvider {
 
     String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
 
+    String prepareFetchAllVariants();
+
     String prepareRatingWidgetRequest(String widgetId);
 
     String prepareFeedbackListRequest();

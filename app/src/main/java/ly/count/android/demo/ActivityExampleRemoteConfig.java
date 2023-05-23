@@ -131,6 +131,36 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
         t.show();
     }
 
+    // For fetching all variants with a button click
+    public void onClickFetchAllVariants(View v) {
+        Countly.sharedInstance().remoteConfig().testFetchAllVariants(new RemoteConfigCallback() {
+            @Override
+            public void callback(String error) {
+                if (error == null) {
+                    Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    // To get all variants from the storage and show them with a toast
+    public void onClickVariantsPrintValues(View v) {
+        Map<String, Object> values = Countly.sharedInstance().remoteConfig().getAllVariants();
+
+        Countly.sharedInstance().L.d("Get all variants: [" + values.toString() + "]");
+
+       Toast t = Toast.makeText(getApplicationContext(), "Stored Variant Values: [" + values.toString() + "]", Toast.LENGTH_LONG);
+        t.setGravity(Gravity.BOTTOM, 0, 0);
+        t.show();
+    }
+
+    // To clear all stored variants
+    public void onClickVariantsClearValues(View v) {
+        Countly.sharedInstance().remoteConfig().clearStoredVariants();
+    }
+
     @Override
     public void onStart() {
         super.onStart();

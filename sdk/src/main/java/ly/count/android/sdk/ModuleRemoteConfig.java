@@ -125,6 +125,76 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     /**
+     * Internal call for fetching all variants of A/B test experiments
+     *
+     * @param requestShouldBeDelayed this is set to true in case of fetching after a deviceId change
+     * @param callback called after the fetch is done
+     */
+    void testFetchAllVariantsInternal(final boolean requestShouldBeDelayed, @Nullable final RemoteConfigCallback callback) {
+        try {
+            L.d("[ModuleRemoteConfig] Fetching all A/B test variants, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
+
+            // Device ID change related logic
+            if (deviceIdProvider.getDeviceId() == null) {
+                L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, deviceID is null");
+                if (callback != null) { // inform callback
+                    callback.callback("Can't complete Fetching all A/B test variants, device ID is null");
+                }
+                return;
+            }
+
+            // Temp ID related logic
+            if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
+                L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set");
+                if (callback != null) { // inform callback
+                    callback.callback("Can't complete Fetching all A/B test variants, temporary device ID is set");
+                }
+                return;
+            }
+
+            String requestData = requestQueueProvider.prepareFetchAllVariants();
+            L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
+
+            ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+            final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+
+            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+                @Override
+                public void callback(JSONObject checkResponse) {
+                    L.d("[ModuleRemoteConfig] Processing A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
+
+                    // In case of error
+                    if (checkResponse == null) {
+                        if (callback != null) {
+                            callback.callback("Encountered problem while trying to reach the server for A/B test variants, possibly no internet connection");
+                        }
+                        return;
+                    }
+
+                    String error = null;
+
+                    try {
+                        mergeCheckResponseIntoCurrentValuesWithVariants(checkResponse);
+                    } catch (Exception ex) {
+                        L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered critical issue while trying to Fetching all A/B test variants from the server, [" + ex.toString() + "]");
+                        error = "Encountered critical issue while trying to Fetching all A/B test variants from the server, [" + ex.toString() + "]";
+                    }
+
+                    // let callback know that there were no errors so it can do its thing
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                }
+            }, L);
+        } catch (Exception ex) {
+            L.e("[ModuleRemoteConfig] Encountered critical error while trying to fetch all A/B test variants. " + ex.toString());
+            if (callback != null) {
+                callback.callback("Encountered critical error while trying to fetch all A/B test variants");
+            }
+        }
+    }
+
+    /**
      * Merge the values acquired from the server into the current values.
      * Clear if needed.
      *
@@ -148,6 +218,29 @@ public class ModuleRemoteConfig extends ModuleBase {
         L.d("[ModuleRemoteConfig] Finished remote config saving");
     }
 
+    /**
+     * Merge the variant values acquired from the server into the current values.
+     * Clear if needed.
+     *
+     * @throws Exception it throws an exception so that it is escalated upwards
+     */
+    void mergeCheckResponseIntoCurrentValuesWithVariants(JSONObject checkResponse) throws Exception {
+
+        //merge the new values into the current ones or erase values if they are gone
+        ABVariantStore variantContainer = loadConfigVariant();
+        variantContainer.mergeValues(checkResponse);
+
+        L.d("[ModuleRemoteConfig] Finished variant processing, starting saving");
+
+        saveConfig(variantContainer);
+
+        L.d("[ModuleRemoteConfig] Finished variant saving");
+    }
+
+    /*
+    * Decide which keys to use
+    * Useful if both 'keysExcept' and 'keysOnly' set
+    * */
     @NonNull String[] prepareKeysIncludeExclude(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept) {
         String[] res = new String[2];//0 - include, 1 - exclude
 
@@ -185,6 +278,18 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
+    void saveConfig(ABVariantStore variantStore) throws Exception {
+        storageProvider.setVariantValues(variantStore.dataToString());
+    }
+
+    ABVariantStore loadConfigVariant() throws Exception {
+        String variantStoreString = storageProvider.getVariantValues();
+        ABVariantStore variantStore = ABVariantStore.dataFromString(variantStoreString);
+        return variantStore;
+    }
+
+
+
     void saveConfig(RemoteConfigValueStore rcvs) throws Exception {
         storageProvider.setRemoteConfigValues(rcvs.dataToString());
     }
@@ -203,6 +308,9 @@ public class ModuleRemoteConfig extends ModuleBase {
     void clearValueStoreInternal() {
         storageProvider.setRemoteConfigValues("");
     }
+    void clearVariantStoreInternal() {
+        storageProvider.setVariantValues("");
+    }
 
     Map<String, Object> getAllRemoteConfigValuesInternal() {
         try {
@@ -212,6 +320,111 @@ public class ModuleRemoteConfig extends ModuleBase {
             Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
             return null;
         }
+    }
+
+    /**
+     * Gets all AB testing variants stored in the storage
+     * @return
+     */
+    Map<String, Object> getAllRemoteConfigVariantsInternal() {
+        try {
+            ABVariantStore stored = loadConfigVariant();
+            return stored.getAllValues();
+        } catch (Exception ex) {
+            Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigVariantsInternal, Call failed:[" + ex.toString() + "]");
+            return null;
+        }
+    }
+
+    /**
+     * This class is used to do certain tasks on the AB variants in the storage or fetched from the server
+     */
+    static class ABVariantStore {
+        // create a new JSON object as a storage container
+        public JSONObject container = new JSONObject();
+
+        private ABVariantStore(JSONObject container) {
+            this.container = container;
+        }
+
+        public Object getVariant(String key) {
+            return container.opt(key);
+        }
+
+        /**
+         * Adds new values to the current storage instead of replacing it all
+         * @param newVariants - new variants fetched from the server
+         */
+        public void mergeValues(JSONObject newVariants) {
+            if (newVariants == null) {
+                return;
+            }
+
+            Iterator<String> iter = newVariants.keys();
+            while (iter.hasNext()) {
+                String key = iter.next();
+                try {
+                    Object value = newVariants.get(key);
+                    JSONArray existingVariants = container.optJSONArray(key);
+
+                    if (existingVariants != null) {
+                        // Merge with existing variants
+                        JSONArray mergedVariants = new JSONArray();
+                        for (int i = 0; i < existingVariants.length(); i++) {
+                            mergedVariants.put(existingVariants.getJSONObject(i));
+                        }
+                        mergedVariants.put(value);
+                        container.put(key, mergedVariants);
+                    } else {
+                        // Add new entry
+                        JSONArray newEntry = new JSONArray();
+                        newEntry.put(value);
+                        container.put(key, newEntry);
+                    }
+                } catch (Exception e) {
+                    Countly.sharedInstance().L.e("[ABVariantStore] Failed merging new variant values");
+                }
+            }
+        }
+
+        public Map<String, Object> getAllValues() {
+            Map<String, Object> ret = new HashMap<>();
+
+            Iterator<String> keys = container.keys();
+
+            while (keys.hasNext()) {
+                String key = keys.next();
+
+                try {
+                    Object value = container.get(key);
+                    ret.put(key, value);
+                } catch (Exception ex) {
+                    Countly.sharedInstance().L.e("[ABVariantStore] Got JSON exception while calling 'getAllValues': " + ex.toString());
+                }
+            }
+
+            return ret;
+        }
+
+        public static ABVariantStore dataFromString(String storageString) {
+            if (storageString == null || storageString.isEmpty()) {
+                return new ABVariantStore(new JSONObject());
+            }
+
+            JSONObject values;
+            try {
+                values = new JSONObject(storageString);
+            } catch (JSONException e) {
+                Countly.sharedInstance().L.e("[ABVariantStore] Couldn't decode ABVariantStore successfully: " + e.toString());
+                values = new JSONObject();
+            }
+            return new ABVariantStore(values);
+        }
+
+        public String dataToString() {
+            return container.toString();
+        }
+
     }
 
     static class RemoteConfigValueStore {
@@ -314,6 +527,12 @@ public class ModuleRemoteConfig extends ModuleBase {
         remoteConfigInterface = null;
     }
 
+    // ==================================================================
+    // ==================================================================
+    // INTERFACE
+    // ==================================================================
+    // ==================================================================
+
     public class RemoteConfig {
         /**
          * Clear all stored remote config_ values
@@ -326,6 +545,17 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
+        /**
+         * Clear all stored Variant values
+         */
+        public void clearStoredVariants() {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'clearStoredVariants'");
+
+                clearVariantStoreInternal();
+            }
+        }
+
         public Map<String, Object> getAllValues() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'getAllValues'");
@@ -335,6 +565,35 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
 
                 return getAllRemoteConfigValuesInternal();
+            }
+        }
+
+        public Map<String, Object> getAllVariants() {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'getAllVariants'");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return null;
+                }
+
+                return getAllRemoteConfigVariantsInternal();
+            }
+        }
+
+        /**
+         * Fetches all variants of A/B testing experiments
+         * @param callback
+         */
+        public void testFetchAllVariants(RemoteConfigCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testFetchAllVariants'");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                testFetchAllVariantsInternal(false, callback);
+                // TODO: requestShouldBeDelayed necessary?
             }
         }
 
