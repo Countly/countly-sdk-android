@@ -361,6 +361,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keysToExclude
          * @param callback
+         * @deprecated
          */
         public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -384,6 +385,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keysToInclude
          * @param callback
+         * @deprecated
          */
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -405,12 +407,78 @@ public class ModuleRemoteConfig extends ModuleBase {
          * Manually update remote config_ values
          *
          * @param callback
+         * @deprecated
          */
         public void update(RemoteConfigCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback("No consent given");
+                    }
+                    return;
+                }
+
+                updateRemoteConfigValues(null, null, false, callback);
+            }
+        }
+
+        /**
+         * Manual remote config update call. Will update all keys except the ones provided
+         *
+         * @param keysToExclude
+         * @param callback
+         * @deprecated
+         */
+        public void updateExceptKeys(String[] keysToExclude, RemoteConfigDownloadCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback(RCDownloadResult.NoConsent, null);
+                    }
+                    return;
+                }
+                if (keysToExclude == null) {
+                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+                }
+                updateRemoteConfigValues(null, keysToExclude, false, callback);
+            }
+        }
+
+        /**
+         * Manual remote config_ update call. Will only update the keys provided.
+         *
+         * @param keysToInclude
+         * @param callback
+         * @deprecated
+         */
+        public void updateForKeysOnly(String[] keysToInclude, RemoteConfigDownloadCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback(RCDownloadResult.NoConsent, null);
+                    }
+                    return;
+                }
+                if (keysToInclude == null) {
+                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+                }
+                updateRemoteConfigValues(keysToInclude, null, false, callback);
+            }
+        }
+
+        public void update(RemoteConfigDownloadCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Manually calling to update Remote Config v2");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback(RCDownloadResult.NoConsent, null);
+                    }
                     return;
                 }
 

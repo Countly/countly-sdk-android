@@ -507,10 +507,19 @@ public class CountlyConfig {
      * @param enabled set true for enabling it
      * @param callback callback called after the update was done
      * @return Returns the same config object for convenient linking
+     * @deprecated
      */
     public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownload = enabled;
         remoteConfigCallbackNew = callback;
+        return this;
+    }
+
+    public synchronized CountlyConfig enableRemoteConfigAutomaticTriggers() {
+        return this;
+    }
+
+    public synchronized CountlyConfig enableRemoteConfigValueCaching() {
         return this;
     }
 
