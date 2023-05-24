@@ -72,4 +72,11 @@
       android:onClick="onClickVariantsPrintValues"
       android:text="get all variants"
       />
+  <Button
+      android:id="@+id/enroll_variant"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickEnrollVariant"
+      android:text="Enroll first variant"
+      />
 </LinearLayout>

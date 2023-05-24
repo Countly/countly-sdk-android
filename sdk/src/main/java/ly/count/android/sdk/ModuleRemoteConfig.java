@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.HashMap;
@@ -11,7 +12,7 @@ import org.json.JSONObject;
 
 public class ModuleRemoteConfig extends ModuleBase {
     boolean updateRemoteConfigAfterIdChange = false;
-    String variantMemContainer; // Stores the fetched A/B test variants
+    JSONObject variantContainer; // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
@@ -48,6 +49,91 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     /**
+     * Checks if device ID is null and cancels the process if necessary
+     *
+     * @param message - unique message indicating where this check was done
+     * @param callback - callback to report if device ID is null
+     */
+    void checkDeviceId(String message, @Nullable final RemoteConfigCallback callback) {
+        if (deviceIdProvider.getDeviceId() == null) {
+            //device ID is null, abort
+            L.d("[ModuleRemoteConfig] " + message + " was aborted, deviceID is null");
+            if (callback != null) {
+                callback.callback("Can't complete " + message + ", device ID is null");
+            }
+            return;
+        }
+    }
+
+    /**
+     * Checks if temp ID mode is on and cancels the process if necessary
+     *
+     * @param message - unique message indicating where this check was done
+     * @param callback - callback to report if we are in temp ID mode
+     */
+    void checkTempId(String message, @Nullable final RemoteConfigCallback callback) {
+        if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
+            //temporary id mode enabled, abort
+            L.d("[ModuleRemoteConfig] " + message + " was aborted, temporary device ID mode is set");
+            if (callback != null) {
+                callback.callback("Can't complete " + message + ", temporary device ID is set");
+            }
+            return;
+        }
+    }
+
+    /**
+     * Callback to be used in 'makeRequest'
+     */
+    public interface SuccessOperation {
+        void execute(JSONObject checkResponse) throws Exception;
+    }
+
+    /**
+     * Uses ImmediateRequestMaker to make a request at 'o/sdk' for a given request data. Also executes the given function
+     * TODO: should be able to provide API end point too
+     *
+     * @param message - unique message to show where we make the request
+     * @param requestData - data to send (things after '?')
+     * @param requestShouldBeDelayed - if a delay necessary in case of ID change
+     * @param callback - Provided callback to relay info
+     * @param successOperation - Things to do if response was valid
+     */
+    void makeRequest(String message, String requestData, boolean requestShouldBeDelayed, @Nullable final RemoteConfigCallback callback, @Nullable SuccessOperation successOperation) {
+        L.d("[ModuleRemoteConfig] " + message + " requestData:[" + requestData + "]");
+
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+
+        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            @Override
+            public void callback(JSONObject checkResponse) {
+                L.d("[ModuleRemoteConfig] Processing " + message + " received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    if (callback != null) {
+                        callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
+                    }
+                    return;
+                }
+
+                String error = null;
+                try {
+                    if (successOperation != null) {
+                        successOperation.execute(checkResponse);
+                    }
+                } catch (Exception ex) {
+                    L.e("[ModuleRemoteConfig] " + message + " - execute, Encountered critical issue:[" + ex.toString() + "]");
+                    error = "Encountered critical issue:[" + ex.toString() + "]";
+                }
+
+                if (callback != null) {
+                    callback.callback(error);
+                }
+            }
+        }, L);
+    }
+
+    /**
      * Internal call for updating remote config keys
      *
      * @param keysOnly set if these are the only keys to update
@@ -59,63 +145,22 @@ public class ModuleRemoteConfig extends ModuleBase {
         try {
             L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
 
-            if (deviceIdProvider.getDeviceId() == null) {
-                //device ID is null, abort
-                L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
+            // checks
+            checkDeviceId("RemoteConfig value update", callback);
+            checkTempId("RemoteConfig value update", callback);
 
-                if (callback != null) {
-                    callback.callback("Can't complete call, device ID is null");
-                }
-
-                return;
-            }
-
-            if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
-                //temporary id mode enabled, abort
-                L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
-
-                if (callback != null) {
-                    callback.callback("Can't complete call, temporary device ID is set");
-                }
-
-                return;
-            }
-
-            //prepare metrics
+            //prepare metrics and request data
             String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
-
             String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
             String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);
-            L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
-            ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-            final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
-
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
-                    if (checkResponse == null) {
-                        if (callback != null) {
-                            callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
-                        }
-                        return;
-                    }
-
-                    String error = null;
-                    try {
-                        boolean clearOldValues = keysExcept == null && keysOnly == null;
-                        mergeCheckResponseIntoCurrentValues(clearOldValues, checkResponse);
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]");
-                        error = "Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]";
-                    }
-
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
+            // Make immediate request
+            makeRequest("Remote Config", requestData, false, callback, new SuccessOperation() {
+                @Override public void execute(JSONObject checkResponse) throws Exception {
+                    boolean clearOldValues = keysExcept == null && keysOnly == null;
+                    mergeCheckResponseIntoCurrentValues(clearOldValues, checkResponse);
                 }
-            }, L);
+            });
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered critical error while trying to perform a remote config update. " + ex.toString());
             if (callback != null) {
@@ -134,62 +179,47 @@ public class ModuleRemoteConfig extends ModuleBase {
         try {
             L.d("[ModuleRemoteConfig] Fetching all A/B test variants, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
 
-            // Device ID change related logic
-            if (deviceIdProvider.getDeviceId() == null) {
-                L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, deviceID is null");
-                if (callback != null) { // inform callback
-                    callback.callback("Can't complete Fetching all A/B test variants, device ID is null");
-                }
-                return;
-            }
+            checkDeviceId("Fetching all A/B test variants", callback);
+            checkTempId("Fetching all A/B test variants", callback);
 
-            // Temp ID related logic
-            if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
-                L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set");
-                if (callback != null) { // inform callback
-                    callback.callback("Can't complete Fetching all A/B test variants, temporary device ID is set");
-                }
-                return;
-            }
-
+            // prepare request data
             String requestData = requestQueueProvider.prepareFetchAllVariants();
-            L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
-            ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-            final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
-
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
-
-                    // In case of error
-                    if (checkResponse == null) {
-                        if (callback != null) {
-                            callback.callback("Encountered problem while trying to reach the server for A/B test variants, possibly no internet connection");
-                        }
-                        return;
-                    }
-
-                    String error = null;
-
-                    try {
-                        mergeCheckResponseIntoCurrentValuesWithVariants(checkResponse);
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered critical issue while trying to Fetching all A/B test variants from the server, [" + ex.toString() + "]");
-                        error = "Encountered critical issue while trying to Fetching all A/B test variants from the server, [" + ex.toString() + "]";
-                    }
-
-                    // let callback know that there were no errors so it can do its thing
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
+            // Make immediate request
+            makeRequest("Fetching all A/B test variants", requestData, false, callback, new SuccessOperation() {
+                @Override public void execute(JSONObject checkResponse) throws Exception {
+                    variantContainer = checkResponse;
                 }
-            }, L);
+            });
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered critical error while trying to fetch all A/B test variants. " + ex.toString());
             if (callback != null) {
                 callback.callback("Encountered critical error while trying to fetch all A/B test variants");
+            }
+        }
+    }
+
+    void testEnrollIntoVariantInternal(@NonNull final String[] keyAndVariant, @Nullable final RemoteConfigCallback callback) {
+        try {
+            L.d("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pairs:[" + keyAndVariant.toString() + "]");
+
+            checkDeviceId("Enrolling to A/B test variants", callback);
+
+            // checkKeyAndVariant
+            if (!(keyAndVariant.length >= 2) || TextUtils.isEmpty(keyAndVariant[0]) || TextUtils.isEmpty(keyAndVariant[1])) {
+                L.w("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pair is invalid. Aborting.");
+                return;
+            }
+
+            // prepare request data
+            String requestData = requestQueueProvider.prepareEnrollVariant(keyAndVariant);
+
+            // Make immediate request
+            makeRequest("Enrolling to A/B test variants", requestData, false, callback, null);
+        } catch (Exception ex) {
+            L.e("[ModuleRemoteConfig] Encountered critical error while trying to enroll A/B test variants. " + ex.toString());
+            if (callback != null) {
+                callback.callback("Encountered critical error while trying to enroll A/B test variants");
             }
         }
     }
@@ -216,26 +246,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         saveConfig(rcvs);
 
         L.d("[ModuleRemoteConfig] Finished remote config saving");
-    }
-
-    /**
-     * Merge the variant values acquired from the server into the current values.
-     * Clear if needed.
-     *
-     * @throws Exception it throws an exception so that it is escalated upwards
-     */
-    void mergeCheckResponseIntoCurrentValuesWithVariants(JSONObject checkResponse) throws Exception {
-
-        //merge the new values into the current ones or erase values if they are gone
-        ABVariantStore variantContainer = loadConfigVariant();
-        variantContainer.container = new JSONObject();
-        variantContainer.mergeValues(checkResponse);
-
-        L.d("[ModuleRemoteConfig] Finished variant processing, starting saving");
-
-        saveConfig(variantContainer);
-
-        L.d("[ModuleRemoteConfig] Finished variant saving");
     }
 
     /*
@@ -279,16 +289,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
-    void saveConfig(ABVariantStore variantStore) throws Exception {
-        variantMemContainer = variantStore.dataToString();
-    }
-
-    ABVariantStore loadConfigVariant() throws Exception {
-        String variantStoreString = variantMemContainer;
-        ABVariantStore variantStore = ABVariantStore.dataFromString(variantStoreString);
-        return variantStore;
-    }
-
     void saveConfig(RemoteConfigValueStore rcvs) throws Exception {
         storageProvider.setRemoteConfigValues(rcvs.dataToString());
     }
@@ -319,109 +319,12 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     /**
-     * Gets all AB testing variants stored in the storage
+     * Gets all AB testing variants stored in the memory
      *
      * @return
      */
-    Map<String, Object> getAllRemoteConfigVariantsInternal() {
-        try {
-            ABVariantStore stored = loadConfigVariant();
-            return stored.getAllValues();
-        } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigVariantsInternal, Call failed:[" + ex.toString() + "]");
-            return null;
-        }
-    }
-
-    /**
-     * This class is used to do certain tasks on the AB variants in the storage or fetched from the server
-     */
-    static class ABVariantStore {
-        // create a new JSON object as a storage container
-        public JSONObject container = new JSONObject();
-
-        private ABVariantStore(JSONObject container) {
-            this.container = container;
-        }
-
-        public Object getVariant(String key) {
-            return container.opt(key);
-        }
-
-        /**
-         * Adds new values to the current storage instead of replacing it all
-         *
-         * @param newVariants - new variants fetched from the server
-         */
-        public void mergeValues(JSONObject newVariants) {
-            if (newVariants == null) {
-                return;
-            }
-
-            Iterator<String> iter = newVariants.keys();
-            while (iter.hasNext()) {
-                String key = iter.next();
-                try {
-                    Object value = newVariants.get(key);
-                    JSONArray existingVariants = container.optJSONArray(key);
-
-                    if (existingVariants != null) {
-                        // Merge with existing variants
-                        JSONArray mergedVariants = new JSONArray();
-                        for (int i = 0; i < existingVariants.length(); i++) {
-                            mergedVariants.put(existingVariants.getJSONObject(i));
-                        }
-                        mergedVariants.put(value);
-                        container.put(key, mergedVariants);
-                    } else {
-                        // Add new entry
-                        JSONArray newEntry = new JSONArray();
-                        newEntry.put(value);
-                        container.put(key, newEntry);
-                    }
-                } catch (Exception e) {
-                    Countly.sharedInstance().L.e("[ABVariantStore] Failed merging new variant values");
-                }
-            }
-        }
-
-        public Map<String, Object> getAllValues() {
-            Map<String, Object> ret = new HashMap<>();
-
-            Iterator<String> keys = container.keys();
-
-            while (keys.hasNext()) {
-                String key = keys.next();
-
-                try {
-                    Object value = container.get(key);
-                    ret.put(key, value);
-                } catch (Exception ex) {
-                    Countly.sharedInstance().L.e("[ABVariantStore] Got JSON exception while calling 'getAllValues': " + ex.toString());
-                }
-            }
-
-            return ret;
-        }
-
-        public static ABVariantStore dataFromString(String storageString) {
-            if (storageString == null || storageString.isEmpty()) {
-                return new ABVariantStore(new JSONObject());
-            }
-
-            JSONObject values;
-            try {
-                values = new JSONObject(storageString);
-            } catch (JSONException e) {
-                Countly.sharedInstance().L.e("[ABVariantStore] Couldn't decode ABVariantStore successfully: " + e.toString());
-                values = new JSONObject();
-            }
-            return new ABVariantStore(values);
-        }
-
-        public String dataToString() {
-            return container.toString();
-        }
+    JSONObject getAllRemoteConfigVariantsInternal() {
+        return variantContainer;
     }
 
     static class RemoteConfigValueStore {
@@ -554,7 +457,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        public Map<String, Object> getAllVariants() {
+        public JSONObject getAllVariants() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'getAllVariants'");
 
@@ -581,6 +484,29 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 testFetchAllVariantsInternal(false, callback);
                 // TODO: requestShouldBeDelayed necessary?
+            }
+        }
+
+        /**
+         * Enrolls user for a specific variant of A/B testing experiment
+         *
+         * @param keysAndVariant - An array of String, first value should be the key and the second the variant name
+         * @param callback
+         */
+        public void testEnrollIntoVariant(String[] keysAndVariant, RemoteConfigCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testEnrollIntoVariant'");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                if (keysAndVariant == null) {
+                    L.w("[RemoteConfig] testEnrollIntoVariant, passed 'keysAndVariant' array is null. Aborting.");
+                    return;
+                }
+
+                testEnrollIntoVariantInternal(keysAndVariant, callback);
             }
         }
 
