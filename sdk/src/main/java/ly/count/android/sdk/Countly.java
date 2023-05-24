@@ -119,6 +119,17 @@ public class Countly {
         HMS,    // Huawei
     }
 
+    /**
+     * Enum used throughout Countly for relaying result of A/B test variants fetch
+     * TODO: Make it proper with correct enums and variety
+     */
+    public enum RCVariantEnums {
+        SERVER_NOT_REACHABLE,
+        RESULT_SUCCESS,
+        TEMP_OR_DEVICE_ID_ISSUE,
+        CRITICAL_ERROR,
+    }
+
     //SDK limit defaults
     final int maxKeyLengthDefault = 128;
     final int maxValueSizeDefault = 256;

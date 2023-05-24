@@ -124,27 +124,16 @@ public class ModuleRemoteConfig extends ModuleBase {
     /**
      * Internal call for fetching all variants of A/B test experiments
      *
-     * @param requestShouldBeDelayed this is set to true in case of fetching after a deviceId change
      * @param callback called after the fetch is done
      */
-    void testFetchAllVariantsInternal(final boolean requestShouldBeDelayed, @Nullable final RemoteConfigCallback callback) {
+    void testFetchAllVariantsInternal(@Nullable final RemoteConfigVariantCallback callback) {
         try {
-            L.d("[ModuleRemoteConfig] Fetching all A/B test variants, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
+            L.d("[ModuleRemoteConfig] Fetching all A/B test variants");
 
-            if (deviceIdProvider.getDeviceId() == null) {
-                //device ID is null, abort
-                L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, deviceID is null");
+            if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
+                L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
                 if (callback != null) {
-                    callback.callback("Can't complete Fetching all A/B test variants, device ID is null");
-                }
-                return;
-            }
-
-            if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
-                //temporary id mode enabled, abort
-                L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set");
-                if (callback != null) {
-                    callback.callback("Can't complete Fetching all A/B test variants, temporary device ID is set");
+                    callback.callback(Countly.RCVariantEnums.TEMP_OR_DEVICE_ID_ISSUE);
                 }
                 return;
             }
@@ -157,17 +146,16 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        if (callback != null) {
-                            callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
-                        }
+                        callback.callback(Countly.RCVariantEnums.SERVER_NOT_REACHABLE);
                         return;
                     }
 
+                    // TODO: wrt checkResponse handle enums here
                     String error = null;
                     try {
                         variantContainer = checkResponse;
@@ -176,28 +164,23 @@ public class ModuleRemoteConfig extends ModuleBase {
                         error = "Encountered critical issue while trying to fetch all A/B test variants from the server, [" + ex.toString() + "]";
                     }
 
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
+                    callback.callback(Countly.RCVariantEnums.RESULT_SUCCESS);
                 }
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered critical error while trying to fetch all A/B test variants. " + ex.toString());
-            if (callback != null) {
-                callback.callback("Encountered critical error while trying to fetch all A/B test variants");
-            }
+            callback.callback(Countly.RCVariantEnums.CRITICAL_ERROR);
         }
     }
 
-    void testEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @Nullable final RemoteConfigCallback callback) {
+    void testEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @Nullable final RemoteConfigVariantCallback callback) {
         try {
             L.d("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pairs:[" + key + "][" + variant + "]");
 
-            if (deviceIdProvider.getDeviceId() == null) {
-                //device ID is null, abort
-                L.d("[ModuleRemoteConfig] Enrolling A/B test variants was aborted, deviceID is null");
+            if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
+                L.d("[ModuleRemoteConfig] Enrolling A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
                 if (callback != null) {
-                    callback.callback("Can't complete Enrolling A/B test variants, device ID is null");
+                    callback.callback(Countly.RCVariantEnums.TEMP_OR_DEVICE_ID_ISSUE);
                 }
                 return;
             }
@@ -221,30 +204,36 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        if (callback != null) {
-                            callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
-                        }
+                        callback.callback(Countly.RCVariantEnums.SERVER_NOT_REACHABLE);
                         return;
                     }
 
+                    // TODO: wrt checkResponse handle enums here
                     String error = null;
                     try {
-                        // TODO: DO sth?
+                        if (remoteConfigAutomaticUpdateEnabled) {
+                            // TODO: Check consent here? Should not call directly?
+                            updateRemoteConfigValues(null, null, false, new RemoteConfigCallback() {
+                                @Override public void callback(String error) {
+                                    if (error != null) {
+                                        L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
+                                    } else {
+                                        L.e("[ModuleRemoteConfig] Attempt to update the remote config after enrolling to a variant failed:" + error.toString());
+                                    }
+                                }
+                            });
+                        }
                     } catch (Exception ex) {
                         L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered critical issue while trying to enroll all A/B test variants from the server, [" + ex.toString() + "]");
                         error = "Encountered critical issue while trying to enroll all A/B test variants from the server, [" + ex.toString() + "]";
                     }
 
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
+                    callback.callback(Countly.RCVariantEnums.RESULT_SUCCESS);
                 }
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered critical error while trying to enroll A/B test variants. " + ex.toString());
-            if (callback != null) {
-                callback.callback("Encountered critical error while trying to enroll A/B test variants");
-            }
+            callback.callback(Countly.RCVariantEnums.CRITICAL_ERROR);
         }
     }
 
@@ -498,7 +487,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param callback
          */
-        public void testFetchAllVariants(RemoteConfigCallback callback) {
+        public void testFetchAllVariants(RemoteConfigVariantCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testFetchAllVariants'");
 
@@ -506,8 +495,19 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                testFetchAllVariantsInternal(false, callback);
-                // TODO: requestShouldBeDelayed necessary?
+                if (callback == null) {
+                    callback = new RemoteConfigVariantCallback() {
+                        @Override public void callback(Enum result) {
+                            if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
+                                L.i("[RemoteConfig] Fetched all variants successfully");
+                            } else {
+                                L.e("[RemoteConfig] Fetching all variants failed" + result);
+                            }
+                        }
+                    };
+                }
+
+                testFetchAllVariantsInternal(callback);
             }
         }
 
@@ -518,7 +518,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param variant - name of the variant for the key to enroll
          * @param callback
          */
-        public void testEnrollIntoVariant(String key, String variant, RemoteConfigCallback callback) {
+        public void testEnrollIntoVariant(String key, String variant, RemoteConfigVariantCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testEnrollIntoVariant'");
 
@@ -529,6 +529,18 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (key == null || variant == null) {
                     L.w("[RemoteConfig] testEnrollIntoVariant, passed key or variant is null. Aborting.");
                     return;
+                }
+
+                if (callback == null) {
+                    callback = new RemoteConfigVariantCallback() {
+                        @Override public void callback(Enum result) {
+                            if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
+                                L.i("[RemoteConfig] Enrolled to the variant successfully");
+                            } else {
+                                L.e("[RemoteConfig] Enrolling to the variant failed" + result);
+                            }
+                        }
+                    };
                 }
 
                 testEnrollIntoVariantInternal(key, variant, callback);

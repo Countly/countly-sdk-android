@@ -8,7 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import java.util.Iterator;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.RemoteConfigCallback;
+import ly.count.android.sdk.RemoteConfigVariantCallback;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -22,13 +22,13 @@ public class ActivityExampleTests extends AppCompatActivity {
 
     // For fetching all variants with a button click
     public void onClickFetchAllVariants(View v) {
-        Countly.sharedInstance().remoteConfig().testFetchAllVariants(new RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().testFetchAllVariants(new RemoteConfigVariantCallback() {
             @Override
-            public void callback(String error) {
-                if (error == null) {
+            public void callback(Enum result) {
+                if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Error: " + result, Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -37,7 +37,7 @@ public class ActivityExampleTests extends AppCompatActivity {
     // To get all variants from the storage and show them with a toast
     public void onClickVariantsPrintValues(View v) {
         JSONObject values = Countly.sharedInstance().remoteConfig().getAllVariants();
-        if(values== null) {
+        if (values == null) {
             Countly.sharedInstance().L.w("No variants present");
             return;
         }
@@ -50,7 +50,7 @@ public class ActivityExampleTests extends AppCompatActivity {
 
     public void onClickEnrollVariant(View v) {
         JSONObject values = Countly.sharedInstance().remoteConfig().getAllVariants();
-        if(values== null) {
+        if (values == null) {
             Countly.sharedInstance().L.w("No variants present");
             return;
         }
@@ -71,6 +71,7 @@ public class ActivityExampleTests extends AppCompatActivity {
                     String variant = jsonObject.optString("value");
 
                     if (!name.isEmpty() && !variant.isEmpty()) {
+                        // TODO: change this after API is fixed
                         result = new String[] { key, variant };
                         break;
                     }
@@ -78,13 +79,13 @@ public class ActivityExampleTests extends AppCompatActivity {
             }
         }
 
-        Countly.sharedInstance().remoteConfig().testEnrollIntoVariant(result[0], result[1], new RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().testEnrollIntoVariant(result[0], result[1], new RemoteConfigVariantCallback() {
             @Override
-            public void callback(String error) {
-                if (error == null) {
+            public void callback(Enum result) {
+                if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Error: " + result, Toast.LENGTH_SHORT).show();
                 }
             }
         });
