@@ -58,25 +58,4 @@
       android:onClick="onClickRemoteConfigPrintValues"
       android:text="Remote Config Print Stored Values"
       />
-  <Button
-      android:id="@+id/fetch_ab_variants"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:onClick="onClickFetchAllVariants"
-      android:text="Fetch All vARIANTS"
-      />
-  <Button
-      android:id="@+id/get_all_variants"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:onClick="onClickVariantsPrintValues"
-      android:text="get all variants"
-      />
-  <Button
-      android:id="@+id/enroll_variant"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:onClick="onClickEnrollVariant"
-      android:text="Enroll first variant"
-      />
 </LinearLayout>
