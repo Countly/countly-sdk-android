@@ -11,7 +11,7 @@ import org.json.JSONObject;
 
 public class ModuleRemoteConfig extends ModuleBase {
     boolean updateRemoteConfigAfterIdChange = false;
-
+    String variantMemContainer; // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
@@ -228,6 +228,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         //merge the new values into the current ones or erase values if they are gone
         ABVariantStore variantContainer = loadConfigVariant();
+        variantContainer.container = new JSONObject();
         variantContainer.mergeValues(checkResponse);
 
         L.d("[ModuleRemoteConfig] Finished variant processing, starting saving");
@@ -279,11 +280,11 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void saveConfig(ABVariantStore variantStore) throws Exception {
-        storageProvider.setVariantValues(variantStore.dataToString());
+        variantMemContainer = variantStore.dataToString();
     }
 
     ABVariantStore loadConfigVariant() throws Exception {
-        String variantStoreString = storageProvider.getVariantValues();
+        String variantStoreString = variantMemContainer;
         ABVariantStore variantStore = ABVariantStore.dataFromString(variantStoreString);
         return variantStore;
     }
@@ -305,10 +306,6 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     void clearValueStoreInternal() {
         storageProvider.setRemoteConfigValues("");
-    }
-
-    void clearVariantStoreInternal() {
-        storageProvider.setVariantValues("");
     }
 
     Map<String, Object> getAllRemoteConfigValuesInternal() {
@@ -542,17 +539,6 @@ public class ModuleRemoteConfig extends ModuleBase {
                 L.i("[RemoteConfig] Calling 'clearStoredValues'");
 
                 clearValueStoreInternal();
-            }
-        }
-
-        /**
-         * Clear all stored Variant values
-         */
-        public void clearStoredVariants() {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'clearStoredVariants'");
-
-                clearVariantStoreInternal();
             }
         }
 

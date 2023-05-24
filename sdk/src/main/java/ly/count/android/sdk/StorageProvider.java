@@ -49,10 +49,6 @@ interface StorageProvider {
 
     String getRemoteConfigValues();//not integrated
 
-    void setVariantValues(String values);
-
-    String getVariantValues();
-
     void esWriteCacheToStorage(@Nullable ExplicitStorageCallback callback);//required for explicit storage
 
     void setServerConfig(String config);

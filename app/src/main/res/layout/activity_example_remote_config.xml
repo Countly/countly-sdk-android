@@ -72,11 +72,4 @@
       android:onClick="onClickVariantsPrintValues"
       android:text="get all variants"
       />
-  <Button
-      android:id="@+id/clear_all_variants"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:onClick="onClickVariantsClearValues"
-      android:text="clear all stored variants"
-      />
 </LinearLayout>

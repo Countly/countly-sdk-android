@@ -156,11 +156,6 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
         t.show();
     }
 
-    // To clear all stored variants
-    public void onClickVariantsClearValues(View v) {
-        Countly.sharedInstance().remoteConfig().clearStoredVariants();
-    }
-
     @Override
     public void onStart() {
         super.onStart();

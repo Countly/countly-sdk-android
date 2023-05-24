@@ -61,7 +61,6 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String STAR_RATING_PREFERENCE = "STAR_RATING";
     private static final String CACHED_ADVERTISING_ID = "ADVERTISING_ID";
     private static final String REMOTE_CONFIG_VALUES = "REMOTE_CONFIG";
-    private static final String AB_VARIANT_VALUES = "AB_VARIANT_VALUES";
     private static final String STORAGE_SCHEMA_VERSION = "SCHEMA_VERSION";
     private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
@@ -440,14 +439,6 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public synchronized String getRemoteConfigValues() {
         return preferences_.getString(REMOTE_CONFIG_VALUES, "");
-    }
-
-    public synchronized void setVariantValues(String values) {
-        preferences_.edit().putString(AB_VARIANT_VALUES, values).apply();
-    }
-
-    public synchronized String getVariantValues() {
-        return preferences_.getString(AB_VARIANT_VALUES, "");
     }
 
     public synchronized void setCachedAdvertisingId(String advertisingId) {
