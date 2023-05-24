@@ -247,7 +247,7 @@ public class MigrationHelperTests {
         for (int a = 0; a <= 1; a++) {
             cs.clear();
             cs.addRequest("fff", false);//request added to indicate that this is not the first launch but a legacy version
-            cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
+            cs.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
             MigrationHelper mh = new MigrationHelper(cs, mockLog);
             assertEquals(0, mh.getCurrentSchemaVersion());
 
@@ -301,7 +301,7 @@ public class MigrationHelperTests {
     @Test
     public void performMigration0to1_4() {
         cs.clear();
-        cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
+        cs.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
 
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
@@ -346,7 +346,7 @@ public class MigrationHelperTests {
     @Test
     public void performMigration0to1_6() {
         cs.clear();
-        cs.setDeviceIDType(DeviceIdType.ADVERTISING_ID.toString());
+        cs.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
         cs.setDeviceID("ab");
 
         Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));

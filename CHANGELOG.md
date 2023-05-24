@@ -1,3 +1,22 @@
+## 23.2.0
+* Removed the deprecated enum "DeviceId.Type"
+* Removed the deprecated function "Countly.changeDeviceIdWithoutMerge(type, deviceID)"
+* Removed the deprecated function "Countly.changeDeviceIdWithMerge(deviceID)"
+* Removed the deprecated function "Countly.getDeviceID()"
+* Removed the deprecated function "Countly.getDeviceIDType()"
+* Removed the deprecated function "Countly.enableTemporaryIdMode()"
+* Removing the deprecated value "ADVERTISING_ID" from the enum "DeviceIdType"
+* Removed the deprecated function "Countly.onCreate(activity)"
+* Removed the deprecated function "Countly.isHttpPostForced()"
+* Removed the deprecated function "Countly.isDeviceAppCrawler()"
+* Removed the deprecated function "Countly.ifShouldIgnoreCrawlers()"
+* Removed the deprecated function "Countly.flushRequestQueues()"
+* Removed the deprecated function "Countly.doStoredRequests()"
+* Removed the deprecated function "Countly.requestQueueOverwriteAppKeys()"
+* Removed the deprecated function "Countly.requestQueueEraseAppKeysRequests()"
+* Removed the deprecated function "CountlyConfig.setRemoteConfigAutomaticDownload(enabled, callback)"
+
+
 ## 22.09.4
 * Added server side configuration functionality. This is an experimental feature.
 * Default max segmentation value count changed from 30 to 100
