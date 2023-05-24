@@ -189,9 +189,9 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
-    void testEnrollIntoVariantInternal(@NonNull final String[] keyAndVariant, @Nullable final RemoteConfigCallback callback) {
+    void testEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @Nullable final RemoteConfigCallback callback) {
         try {
-            L.d("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pairs:[" + keyAndVariant.toString() + "]");
+            L.d("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pairs:[" + key + "][" + variant + "]");
 
             if (deviceIdProvider.getDeviceId() == null) {
                 //device ID is null, abort
@@ -202,14 +202,14 @@ public class ModuleRemoteConfig extends ModuleBase {
                 return;
             }
 
-            // checkKeyAndVariant
-            if (!(keyAndVariant.length >= 2) || TextUtils.isEmpty(keyAndVariant[0]) || TextUtils.isEmpty(keyAndVariant[1])) {
+            // check Key and Variant
+            if (TextUtils.isEmpty(key) || TextUtils.isEmpty(variant)) {
                 L.w("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pair is invalid. Aborting.");
                 return;
             }
 
             // prepare request data
-            String requestData = requestQueueProvider.prepareEnrollVariant(keyAndVariant);
+            String requestData = requestQueueProvider.prepareEnrollVariant(key, variant);
 
             L.d("[ModuleRemoteConfig] Enrolling A/B test variants requestData:[" + requestData + "]");
 
@@ -514,10 +514,11 @@ public class ModuleRemoteConfig extends ModuleBase {
         /**
          * Enrolls user for a specific variant of A/B testing experiment
          *
-         * @param keysAndVariant - An array of String, first value should be the key and the second the variant name
+         * @param key - key value retrieved from the fetched variants
+         * @param variant - name of the variant for the key to enroll
          * @param callback
          */
-        public void testEnrollIntoVariant(String[] keysAndVariant, RemoteConfigCallback callback) {
+        public void testEnrollIntoVariant(String key, String variant, RemoteConfigCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testEnrollIntoVariant'");
 
@@ -525,12 +526,12 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                if (keysAndVariant == null) {
-                    L.w("[RemoteConfig] testEnrollIntoVariant, passed 'keysAndVariant' array is null. Aborting.");
+                if (key == null || variant == null) {
+                    L.w("[RemoteConfig] testEnrollIntoVariant, passed key or variant is null. Aborting.");
                     return;
                 }
 
-                testEnrollIntoVariantInternal(keysAndVariant, callback);
+                testEnrollIntoVariantInternal(key, variant, callback);
             }
         }
 

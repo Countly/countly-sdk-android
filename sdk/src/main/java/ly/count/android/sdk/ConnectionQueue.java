@@ -725,12 +725,12 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
-    public String prepareEnrollVariant(String[] keyAndVariant){
+    public String prepareEnrollVariant(String key, String variant){
         String data = "method=ab_enroll_variant"
             + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
-            + "&key=" + UtilsNetworking.urlEncodeString(keyAndVariant[0])
-            + "&variant=" + UtilsNetworking.urlEncodeString(keyAndVariant[1]);
+            + "&key=" + UtilsNetworking.urlEncodeString(key)
+            + "&variant=" + UtilsNetworking.urlEncodeString(variant);
 
         return data;
     }

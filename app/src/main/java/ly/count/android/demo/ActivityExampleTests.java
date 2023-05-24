@@ -78,7 +78,7 @@ public class ActivityExampleTests extends AppCompatActivity {
             }
         }
 
-        Countly.sharedInstance().remoteConfig().testEnrollIntoVariant(result, new RemoteConfigCallback() {
+        Countly.sharedInstance().remoteConfig().testEnrollIntoVariant(result[0], result[1], new RemoteConfigCallback() {
             @Override
             public void callback(String error) {
                 if (error == null) {
