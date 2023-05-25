@@ -6,11 +6,11 @@ import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.Map;
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.ImmediateRequestResponse;
 import ly.count.android.sdk.RemoteConfigVariantCallback;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class ActivityExampleTests extends AppCompatActivity {
 
@@ -25,7 +25,7 @@ public class ActivityExampleTests extends AppCompatActivity {
         Countly.sharedInstance().remoteConfig().testFetchAllVariants(new RemoteConfigVariantCallback() {
             @Override
             public void callback(Enum result) {
-                if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
+                if (result == ImmediateRequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + result, Toast.LENGTH_SHORT).show();
@@ -36,53 +36,48 @@ public class ActivityExampleTests extends AppCompatActivity {
 
     // To get all variants from the storage and show them with a toast
     public void onClickVariantsPrintValues(View v) {
-        JSONObject values = Countly.sharedInstance().remoteConfig().getAllVariants();
+        Map<String, String[]> values = Countly.sharedInstance().remoteConfig().getAllVariants();
         if (values == null) {
             Countly.sharedInstance().L.w("No variants present");
             return;
         }
-        Countly.sharedInstance().L.d("Get all variants: [" + values.toString() + "]");
+        Countly.sharedInstance().L.d("Get all variants: " + values);
 
-        Toast t = Toast.makeText(getApplicationContext(), "Stored Variant Values: [" + values.toString() + "]", Toast.LENGTH_LONG);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Stored Variant Values:\n");
+        for (Map.Entry<String, String[]> entry : values.entrySet()) {
+            String key = entry.getKey();
+            String[] variants = entry.getValue();
+            sb.append(key).append(": ").append(Arrays.toString(variants)).append("\n");
+        }
+
+        Toast t = Toast.makeText(getApplicationContext(), sb.toString(), Toast.LENGTH_LONG);
         t.setGravity(Gravity.BOTTOM, 0, 0);
         t.show();
     }
 
+
     public void onClickEnrollVariant(View v) {
-        JSONObject values = Countly.sharedInstance().remoteConfig().getAllVariants();
+        Map<String,String[]> values = Countly.sharedInstance().remoteConfig().getAllVariants();
         if (values == null) {
             Countly.sharedInstance().L.w("No variants present");
             return;
         }
         Countly.sharedInstance().L.d("Get all variants: [" + values.toString() + "]");
 
-        String[] result = null;
-
-        Iterator<String> keys = values.keys();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            Object value = values.opt(key);
-
-            if (value instanceof JSONArray) {
-                JSONArray jsonArray = (JSONArray) value;
-                if (jsonArray.length() > 0 && jsonArray.opt(0) instanceof JSONObject) {
-                    JSONObject jsonObject = jsonArray.optJSONObject(0);
-                    String name = jsonObject.optString("name");
-                    String variant = jsonObject.optString("value");
-
-                    if (!name.isEmpty() && !variant.isEmpty()) {
-                        // TODO: change this after API is fixed
-                        result = new String[] { key, variant };
-                        break;
-                    }
-                }
-            }
+        // Get the first key and variant
+        String key = null;
+        String variant = null;
+        for (Map.Entry<String, String[]> entry : values.entrySet()) {
+            key = entry.getKey();
+            variant = entry.getValue()[0]; // first variant
+            break; // Get only the first key-value pair
         }
 
-        Countly.sharedInstance().remoteConfig().testEnrollIntoVariant(result[0], result[1], new RemoteConfigVariantCallback() {
+        Countly.sharedInstance().remoteConfig().testEnrollIntoVariant(key, variant, new RemoteConfigVariantCallback() {
             @Override
             public void callback(Enum result) {
-                if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
+                if (result == ImmediateRequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + result, Toast.LENGTH_SHORT).show();

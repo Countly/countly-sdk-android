@@ -12,7 +12,7 @@ import org.json.JSONObject;
 
 public class ModuleRemoteConfig extends ModuleBase {
     boolean updateRemoteConfigAfterIdChange = false;
-    JSONObject variantContainer; // Stores the fetched A/B test variants
+    Map<String,String[]> variantContainer; // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
@@ -104,8 +104,8 @@ public class ModuleRemoteConfig extends ModuleBase {
                         boolean clearOldValues = keysExcept == null && keysOnly == null;
                         mergeCheckResponseIntoCurrentValues(clearOldValues, checkResponse);
                     } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]");
-                        error = "Encountered critical issue while trying to download remote config information from the server, [" + ex.toString() + "]";
+                        L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]");
+                        error = "Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]";
                     }
 
                     if (callback != null) {
@@ -114,9 +114,9 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
             }, L);
         } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] Encountered critical error while trying to perform a remote config update. " + ex.toString());
+            L.e("[ModuleRemoteConfig] Encountered internal error while trying to perform a remote config update. " + ex.toString());
             if (callback != null) {
-                callback.callback("Encountered critical error while trying to perform a remote config update");
+                callback.callback("Encountered internal error while trying to perform a remote config update");
             }
         }
     }
@@ -126,15 +126,13 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param callback called after the fetch is done
      */
-    void testFetchAllVariantsInternal(@Nullable final RemoteConfigVariantCallback callback) {
+    void testFetchAllVariantsInternal(@NonNull final RemoteConfigVariantCallback callback) {
         try {
             L.d("[ModuleRemoteConfig] Fetching all A/B test variants");
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                if (callback != null) {
-                    callback.callback(Countly.RCVariantEnums.TEMP_OR_DEVICE_ID_ISSUE);
-                }
+                callback.callback(ImmediateRequestResponse.USAGE_ERROR);
                 return;
             }
 
@@ -151,43 +149,42 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        callback.callback(Countly.RCVariantEnums.SERVER_NOT_REACHABLE);
+                        callback.callback(ImmediateRequestResponse.NETWORK_ISSUE);
                         return;
                     }
 
                     // TODO: wrt checkResponse handle enums here
-                    String error = null;
+
                     try {
-                        variantContainer = checkResponse;
+                        Map<String,String[]> parsedResponse = convertVariantsJsonToMap(checkResponse);
+                        variantContainer = parsedResponse;
                     } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered critical issue while trying to fetch all A/B test variants from the server, [" + ex.toString() + "]");
-                        error = "Encountered critical issue while trying to fetch all A/B test variants from the server, [" + ex.toString() + "]";
+                        L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered internal issue while trying to fetch information from the server, [" + ex.toString() + "]");
                     }
 
-                    callback.callback(Countly.RCVariantEnums.RESULT_SUCCESS);
+                    callback.callback(ImmediateRequestResponse.SUCCESS);
                 }
             }, L);
         } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] Encountered critical error while trying to fetch all A/B test variants. " + ex.toString());
-            callback.callback(Countly.RCVariantEnums.CRITICAL_ERROR);
+            L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants. " + ex.toString());
+            callback.callback(ImmediateRequestResponse.INTERNAL_ERROR);
         }
     }
 
-    void testEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @Nullable final RemoteConfigVariantCallback callback) {
+    void testEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @NonNull final RemoteConfigVariantCallback callback) {
         try {
             L.d("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pairs:[" + key + "][" + variant + "]");
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Enrolling A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                if (callback != null) {
-                    callback.callback(Countly.RCVariantEnums.TEMP_OR_DEVICE_ID_ISSUE);
-                }
+                callback.callback(ImmediateRequestResponse.USAGE_ERROR);
                 return;
             }
 
             // check Key and Variant
             if (TextUtils.isEmpty(key) || TextUtils.isEmpty(variant)) {
                 L.w("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pair is invalid. Aborting.");
+                callback.callback(ImmediateRequestResponse.USAGE_ERROR);
                 return;
             }
 
@@ -204,36 +201,30 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        callback.callback(Countly.RCVariantEnums.SERVER_NOT_REACHABLE);
+                        callback.callback(ImmediateRequestResponse.NETWORK_ISSUE);
                         return;
                     }
 
                     // TODO: wrt checkResponse handle enums here
-                    String error = null;
-                    try {
-                        if (remoteConfigAutomaticUpdateEnabled) {
-                            // TODO: Check consent here? Should not call directly?
-                            updateRemoteConfigValues(null, null, false, new RemoteConfigCallback() {
-                                @Override public void callback(String error) {
-                                    if (error != null) {
-                                        L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
-                                    } else {
-                                        L.e("[ModuleRemoteConfig] Attempt to update the remote config after enrolling to a variant failed:" + error.toString());
-                                    }
+                    if (remoteConfigAutomaticUpdateEnabled) {
+                        // TODO: Check consent here? Should not call directly?
+                        updateRemoteConfigValues(null, null, false, new RemoteConfigCallback() {
+                            @Override public void callback(String error) {
+                                if (error != null) {
+                                    L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
+                                } else {
+                                    L.e("[ModuleRemoteConfig] Attempt to update the remote config after enrolling to a variant failed:" + error.toString());
                                 }
-                            });
-                        }
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered critical issue while trying to enroll all A/B test variants from the server, [" + ex.toString() + "]");
-                        error = "Encountered critical issue while trying to enroll all A/B test variants from the server, [" + ex.toString() + "]";
+                            }
+                        });
                     }
 
-                    callback.callback(Countly.RCVariantEnums.RESULT_SUCCESS);
+                    callback.callback(ImmediateRequestResponse.SUCCESS);
                 }
             }, L);
         } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] Encountered critical error while trying to enroll A/B test variants. " + ex.toString());
-            callback.callback(Countly.RCVariantEnums.CRITICAL_ERROR);
+            L.e("[ModuleRemoteConfig] Encountered internal error while trying to enroll A/B test variants. " + ex.toString());
+            callback.callback(ImmediateRequestResponse.INTERNAL_ERROR);
         }
     }
 
@@ -259,6 +250,36 @@ public class ModuleRemoteConfig extends ModuleBase {
         saveConfig(rcvs);
 
         L.d("[ModuleRemoteConfig] Finished remote config saving");
+    }
+
+    /**
+     * Converts A/B testing variants fetched from the server (JSONObject) into a map
+     * @param variantsObj - JSON Object fetched from the server
+     * @return
+     * @throws JSONException
+     */
+    static Map<String, String[]> convertVariantsJsonToMap(@NonNull JSONObject variantsObj) throws JSONException {
+        Map<String, String[]> map = new HashMap<>();
+
+        // Iterate over the keys of the JSON object
+        Iterator<String> keys = variantsObj.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            JSONArray jsonArray = variantsObj.getJSONArray(key);
+
+            // Extract the variant names from the JSON array
+            String[] variants = new String[jsonArray.length()];
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject variantObj = jsonArray.getJSONObject(i);
+                String variant = variantObj.getString("name");
+                variants[i] = variant;
+            }
+
+            // Add the key and variant names to the map
+            map.put(key, variants);
+        }
+
+        return map;
     }
 
     /*
@@ -336,7 +357,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @return
      */
-    JSONObject getAllRemoteConfigVariantsInternal() {
+    Map<String, String[]> getAllRemoteConfigVariantsInternal() {
         return variantContainer;
     }
 
@@ -470,7 +491,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        public JSONObject getAllVariants() {
+        public Map<String, String[]> getAllVariants() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'getAllVariants'");
 
@@ -498,12 +519,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (callback == null) {
                     callback = new RemoteConfigVariantCallback() {
                         @Override public void callback(Enum result) {
-                            if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
-                                L.i("[RemoteConfig] Fetched all variants successfully");
-                            } else {
-                                L.e("[RemoteConfig] Fetching all variants failed" + result);
-                            }
-                        }
+                           }
                     };
                 }
 
@@ -515,10 +531,10 @@ public class ModuleRemoteConfig extends ModuleBase {
          * Enrolls user for a specific variant of A/B testing experiment
          *
          * @param key - key value retrieved from the fetched variants
-         * @param variant - name of the variant for the key to enroll
+         * @param variantName - name of the variant for the key to enroll
          * @param callback
          */
-        public void testEnrollIntoVariant(String key, String variant, RemoteConfigVariantCallback callback) {
+        public void testEnrollIntoVariant(String key, String variantName, RemoteConfigVariantCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testEnrollIntoVariant'");
 
@@ -526,7 +542,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                if (key == null || variant == null) {
+                if (key == null || variantName == null) {
                     L.w("[RemoteConfig] testEnrollIntoVariant, passed key or variant is null. Aborting.");
                     return;
                 }
@@ -534,16 +550,11 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (callback == null) {
                     callback = new RemoteConfigVariantCallback() {
                         @Override public void callback(Enum result) {
-                            if (result == Countly.RCVariantEnums.RESULT_SUCCESS) {
-                                L.i("[RemoteConfig] Enrolled to the variant successfully");
-                            } else {
-                                L.e("[RemoteConfig] Enrolling to the variant failed" + result);
-                            }
                         }
                     };
                 }
 
-                testEnrollIntoVariantInternal(key, variant, callback);
+                testEnrollIntoVariantInternal(key, variantName, callback);
             }
         }
 
