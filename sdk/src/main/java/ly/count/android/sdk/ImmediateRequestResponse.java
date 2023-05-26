@@ -7,7 +7,6 @@ package ly.count.android.sdk;
 public enum ImmediateRequestResponse {
     NETWORK_ISSUE,
     SUCCESS,
-    USAGE_ERROR,
-    INTERNAL_ERROR,
+    ERROR,
 }
 

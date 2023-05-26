@@ -132,7 +132,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                callback.callback(ImmediateRequestResponse.USAGE_ERROR);
+                callback.callback(ImmediateRequestResponse.ERROR);
                 return;
             }
 
@@ -165,7 +165,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants. " + ex.toString());
-            callback.callback(ImmediateRequestResponse.INTERNAL_ERROR);
+            callback.callback(ImmediateRequestResponse.ERROR);
         }
     }
 
@@ -175,14 +175,14 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Enrolling A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                callback.callback(ImmediateRequestResponse.USAGE_ERROR);
+                callback.callback(ImmediateRequestResponse.ERROR);
                 return;
             }
 
             // check Key and Variant
             if (TextUtils.isEmpty(key) || TextUtils.isEmpty(variant)) {
                 L.w("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pair is invalid. Aborting.");
-                callback.callback(ImmediateRequestResponse.USAGE_ERROR);
+                callback.callback(ImmediateRequestResponse.ERROR);
                 return;
             }
 
@@ -230,7 +230,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to enroll A/B test variants. " + ex.toString());
-            callback.callback(ImmediateRequestResponse.INTERNAL_ERROR);
+            callback.callback(ImmediateRequestResponse.ERROR);
         }
     }
 
@@ -542,7 +542,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (callback == null) {
                     callback = new RemoteConfigVariantCallback() {
-                        @Override public void callback(Enum result) {
+                        @Override public void callback(ImmediateRequestResponse result) {
                         }
                     };
                 }
@@ -573,7 +573,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (callback == null) {
                     callback = new RemoteConfigVariantCallback() {
-                        @Override public void callback(Enum result) {
+                        @Override public void callback(ImmediateRequestResponse result) {
                         }
                     };
                 }
