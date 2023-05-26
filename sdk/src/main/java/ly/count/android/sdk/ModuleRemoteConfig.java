@@ -12,7 +12,7 @@ import org.json.JSONObject;
 
 public class ModuleRemoteConfig extends ModuleBase {
     boolean updateRemoteConfigAfterIdChange = false;
-    Map<String,String[]> variantContainer; // Stores the fetched A/B test variants
+    Map<String, String[]> variantContainer; // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
@@ -153,10 +153,8 @@ public class ModuleRemoteConfig extends ModuleBase {
                         return;
                     }
 
-                    // TODO: wrt checkResponse handle enums here
-
                     try {
-                        Map<String,String[]> parsedResponse = convertVariantsJsonToMap(checkResponse);
+                        Map<String, String[]> parsedResponse = convertVariantsJsonToMap(checkResponse);
                         variantContainer = parsedResponse;
                     } catch (Exception ex) {
                         L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered internal issue while trying to fetch information from the server, [" + ex.toString() + "]");
@@ -205,21 +203,29 @@ public class ModuleRemoteConfig extends ModuleBase {
                         return;
                     }
 
-                    // TODO: wrt checkResponse handle enums here
-                    if (remoteConfigAutomaticUpdateEnabled) {
-                        // TODO: Check consent here? Should not call directly?
-                        updateRemoteConfigValues(null, null, false, new RemoteConfigCallback() {
-                            @Override public void callback(String error) {
-                                if (error != null) {
-                                    L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
-                                } else {
-                                    L.e("[ModuleRemoteConfig] Attempt to update the remote config after enrolling to a variant failed:" + error.toString());
-                                }
-                            }
-                        });
-                    }
+                    try {
+                        if (!isResponseValid(checkResponse)) {
+                            callback.callback(ImmediateRequestResponse.NETWORK_ISSUE);
+                            return;
+                        }
 
-                    callback.callback(ImmediateRequestResponse.SUCCESS);
+                        // Update Remote Config
+                        if (remoteConfigAutomaticUpdateEnabled) {
+                            updateRemoteConfigValues(null, null, false, new RemoteConfigCallback() {
+                                @Override public void callback(String error) {
+                                    if (error == null) {
+                                        L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
+                                    } else {
+                                        L.e("[ModuleRemoteConfig] Attempt to update the remote config after enrolling to a variant failed:" + error.toString());
+                                    }
+                                }
+                            });
+                        }
+
+                        callback.callback(ImmediateRequestResponse.SUCCESS);
+                    } catch (Exception ex) {
+                        L.e("[ModuleRemoteConfig] testEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
+                    }
                 }
             }, L);
         } catch (Exception ex) {
@@ -253,7 +259,25 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     /**
+     * Checks and evaluates the response from the server
+     *
+     * @param responseJson - JSONObject response
+     * @return
+     * @throws JSONException
+     */
+    boolean isResponseValid(@NonNull JSONObject responseJson) throws JSONException {
+        boolean result = false;
+
+        if (responseJson.get("result").equals("Success")) {
+            result = true;
+        }
+
+        return result;
+    }
+
+    /**
      * Converts A/B testing variants fetched from the server (JSONObject) into a map
+     *
      * @param variantsObj - JSON Object fetched from the server
      * @return
      * @throws JSONException
@@ -519,7 +543,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (callback == null) {
                     callback = new RemoteConfigVariantCallback() {
                         @Override public void callback(Enum result) {
-                           }
+                        }
                     };
                 }
 
