@@ -225,12 +225,28 @@ public class DeviceIdTests {
         assertEquals(DeviceIdType.OPEN_UDID, did.getType());
     }
 
+    /**
+     * In case a device ID type sneaks past the migration script, there should be a fallback to the OPEN_UDID type
+     */
     @Test
-    public void xxx() {
+    public void legacyFallbackType_AdvertisingID() {
         store.clear();
 
         store.setDeviceID("xxx");
         store.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
+
+        DeviceId did = new DeviceId("123", store, mock(ModuleLog.class), openUDIDProvider);
+        assertEquals("xxx", did.getCurrentId());
+        assertEquals(DeviceIdType.OPEN_UDID, did.getType());
+    }
+
+    /**
+     * In case a device ID type becomes 'null', there should be a fallback to the OPEN_UDID type
+     */
+    @Test
+    public void legacyFallbackType_null() {
+        store.clear();
+        store.setDeviceID("xxx");
 
         DeviceId did = new DeviceId("123", store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals("xxx", did.getCurrentId());
