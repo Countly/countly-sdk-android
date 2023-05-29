@@ -1,11 +1,11 @@
 ## 23.2.0
 * Removed the deprecated enum "DeviceId.Type"
+* Removed the deprecated value "ADVERTISING_ID" from the enum "DeviceIdType"
 * Removed the deprecated function "Countly.changeDeviceIdWithoutMerge(type, deviceID)"
 * Removed the deprecated function "Countly.changeDeviceIdWithMerge(deviceID)"
 * Removed the deprecated function "Countly.getDeviceID()"
 * Removed the deprecated function "Countly.getDeviceIDType()"
 * Removed the deprecated function "Countly.enableTemporaryIdMode()"
-* Removing the deprecated value "ADVERTISING_ID" from the enum "DeviceIdType"
 * Removed the deprecated function "Countly.onCreate(activity)"
 * Removed the deprecated function "Countly.isHttpPostForced()"
 * Removed the deprecated function "Countly.isDeviceAppCrawler()"
