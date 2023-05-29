@@ -56,9 +56,8 @@ public class ActivityExampleTests extends AppCompatActivity {
         t.show();
     }
 
-
     public void onClickEnrollVariant(View v) {
-        Map<String,String[]> values = Countly.sharedInstance().remoteConfig().testingGetAllVariants();
+        Map<String, String[]> values = Countly.sharedInstance().remoteConfig().testingGetAllVariants();
         if (values == null) {
             Countly.sharedInstance().L.w("No variants present");
             return;

@@ -409,10 +409,11 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     /**
      * Get all variants for a given key if exists. Else returns an empty array.
+     *
      * @param key
      * @return
      */
-    String[] testingGetVariantsForKeyInternal(String key){
+    String[] testingGetVariantsForKeyInternal(String key) {
         if (variantContainer.containsKey(key)) {
             return variantContainer.get(key);
         }
@@ -552,6 +553,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         /**
          * Returns all variant information as a Map<String, String[]>
+         *
          * @return
          */
         public Map<String, String[]> testingGetAllVariants() {
@@ -568,6 +570,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         /**
          * Returns variant information for a key as a String[]
+         *
          * @param key - key value to get variant information for
          * @return
          */

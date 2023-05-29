@@ -90,7 +90,7 @@ public class RemoteConfigVariantControlTests {
         Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
         Assert.assertEquals(1, resultMap.size());
 
-         // Assert the values for key1
+        // Assert the values for key1
         String[] key1Variants = resultMap.get("key1");
         Assert.assertEquals(0, key1Variants.length);
     }
@@ -186,7 +186,7 @@ public class RemoteConfigVariantControlTests {
         String[] variantArray = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key");
         String[] variantArrayFalse = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key2");
 
-         //Assert the values
+        //Assert the values
         String[] key1Variants = values.get("key");
         Assert.assertEquals(1, key1Variants.length);
         Assert.assertEquals("variant", key1Variants[0]);
@@ -209,7 +209,6 @@ public class RemoteConfigVariantControlTests {
         Assert.assertEquals(1, key1Variants.length);
         Assert.assertEquals("null", key1Variants[0]); // TODO: is fine?
     }
-
 
     @Test
     public void testFilteringWrongKeys() {
