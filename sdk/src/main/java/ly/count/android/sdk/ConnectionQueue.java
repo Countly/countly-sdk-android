@@ -62,6 +62,8 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
 
+    RequestInfoProvider requestInfoProvider;
+
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
     }
@@ -772,6 +774,8 @@ class ConnectionQueue implements RequestQueueProvider {
      * process the local connection queue data.
      * Does nothing if there is connection queue data or if a ConnectionProcessor
      * is already running.
+     *
+     * Should only be called if SDK is initialized
      */
     public void tick() {
         L.v("[Connection Queue] tick, Not empty:[" + !isRequestQueueEmpty() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
@@ -789,7 +793,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, sslContext_, requestHeaderCustomValues, L);
+        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L);
     }
 
     public boolean queueContainsTemporaryIdItems() {

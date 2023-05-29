@@ -80,11 +80,6 @@ public class CountlyConfig {
     protected String deviceID = null;
 
     /**
-     * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
-     */
-    protected DeviceIdType idMode = null;
-
-    /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
      */
     protected int starRatingSessionLimit = 5;
@@ -126,7 +121,6 @@ public class CountlyConfig {
     protected boolean pushIntentAddMetadata = false;
 
     protected boolean enableRemoteConfigAutomaticDownload = false;
-    protected RemoteConfig.RemoteConfigCallback remoteConfigCallbackOld = null;
     protected RemoteConfigCallback remoteConfigCallbackNew = null;
 
     protected boolean shouldRequireConsent = false;
@@ -221,7 +215,7 @@ public class CountlyConfig {
      * user property values, breadcrumb text.
      * If those values exceed the set limit, they will be truncated.
      * @param maxValueSize
-     * @return
+     * @return Returns the same config object for convenient linking
      */
     //public synchronized CountlyConfig setMaxValueSize(int maxValueSize) {
     //    this.maxValueSize = maxValueSize;
@@ -233,7 +227,7 @@ public class CountlyConfig {
      * Values exceeding this count will be ignored.
      *
      * @param maxSegmentationValues
-     * @return
+     * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setMaxSegmentationValues(int maxSegmentationValues) {
         this.maxSegmentationValues = maxSegmentationValues;
@@ -245,7 +239,7 @@ public class CountlyConfig {
      * After exceeding the limit, the oldest values will be removed.
      *
      * @param maxBreadcrumbCount
-     * @return
+     * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
         this.maxBreadcrumbCount = maxBreadcrumbCount;
@@ -269,7 +263,6 @@ public class CountlyConfig {
      * @param context
      * @param appKey
      * @param serverURL
-     * @deprecated Please use the constructor that takes the application class
      */
     public CountlyConfig(Context context, String appKey, String serverURL) {
         setContext(context);
@@ -330,20 +323,9 @@ public class CountlyConfig {
      * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
      *
      * @return Returns the same config object for convenient linking
-     * @deprecated use this call with the other type override. The new type has the same values so a simple substitution is enough
-     */
-    public synchronized CountlyConfig setIdMode(DeviceId.Type idMode) {
-        this.idMode = ModuleDeviceId.fromOldDeviceIdToNew(idMode);
-        return this;
-    }
-
-    /**
-     * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
-     *
-     * @return Returns the same config object for convenient linking
+     * @deprecated this call should not be used anymore as it does not have any purpose anymore
      */
     public synchronized CountlyConfig setIdMode(DeviceIdType idMode) {
-        this.idMode = idMode;
         return this;
     }
 
@@ -484,20 +466,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setPushIntentAddMetadata(boolean enable) {
         pushIntentAddMetadata = enable;
-        return this;
-    }
-
-    /**
-     * If enable, will automatically download newest remote config values.
-     *
-     * @param enabled set true for enabling it
-     * @param callback callback called after the update was done
-     * @return Returns the same config object for convenient linking
-     * @deprecated use the other version of this call that uses a different callback
-     */
-    public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
-        enableRemoteConfigAutomaticDownload = enabled;
-        remoteConfigCallbackOld = callback;
         return this;
     }
 
@@ -926,7 +894,7 @@ public class CountlyConfig {
      *
      * With this mode enable, the SDK will acquire additional configuration from it's Countly server
      *
-     * @return
+     * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig enableServerConfiguration() {
         serverConfigurationEnabled = true;

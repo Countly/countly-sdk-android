@@ -22,22 +22,13 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         boolean customIDWasProvided = (config.deviceID != null);
 
-        if (customIDWasProvided) {
-            //if a custom ID was provided, set the correct type
-            config.idMode = DeviceIdType.DEVELOPER_SUPPLIED;
-        }
-
         if (config.temporaryDeviceIdEnabled && !customIDWasProvided) {
             //if we want to use temporary ID mode and no developer custom ID is provided
             //then we override that custom ID to set the temporary mode
             config.deviceID = ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId;
-
-            //change also the type to indicate that we will go into the temp ID mode
-            //type is dev supplied even for temp ID. todo type would become tempID specific
-            config.idMode = DeviceIdType.DEVELOPER_SUPPLIED;
         }
 
-        deviceIdInstance = new ly.count.android.sdk.DeviceId(config.idMode, config.deviceID, config.storageProvider, L, this);
+        deviceIdInstance = new ly.count.android.sdk.DeviceId(config.deviceID, config.storageProvider, L, this);
 
         config.deviceIdProvider = this;
 
@@ -201,38 +192,6 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
             requestQueueProvider.changeDeviceId(deviceId, _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
         }
-    }
-
-    @SuppressWarnings("deprecation")
-    static DeviceIdType fromOldDeviceIdToNew(@NonNull ly.count.android.sdk.DeviceId.Type oldType) {
-        switch (oldType) {
-            case ADVERTISING_ID:
-                return DeviceIdType.ADVERTISING_ID;
-            case OPEN_UDID:
-                return DeviceIdType.OPEN_UDID;
-            case TEMPORARY_ID:
-                return DeviceIdType.TEMPORARY_ID;
-            case DEVELOPER_SUPPLIED:
-                return DeviceIdType.DEVELOPER_SUPPLIED;
-        }
-        //should not reach this far, but in that case say it's developer supplied
-        return DeviceIdType.DEVELOPER_SUPPLIED;
-    }
-
-    @SuppressWarnings("deprecation")
-    static ly.count.android.sdk.DeviceId.Type fromNewDeviceIdToOld(@NonNull DeviceIdType newType) {
-        switch (newType) {
-            case ADVERTISING_ID:
-                return ly.count.android.sdk.DeviceId.Type.ADVERTISING_ID;
-            case OPEN_UDID:
-                return ly.count.android.sdk.DeviceId.Type.OPEN_UDID;
-            case TEMPORARY_ID:
-                return ly.count.android.sdk.DeviceId.Type.TEMPORARY_ID;
-            case DEVELOPER_SUPPLIED:
-                return ly.count.android.sdk.DeviceId.Type.DEVELOPER_SUPPLIED;
-        }
-        //should not reach this far, but in that case say it's developer supplied
-        return ly.count.android.sdk.DeviceId.Type.DEVELOPER_SUPPLIED;
     }
 
     @Override
