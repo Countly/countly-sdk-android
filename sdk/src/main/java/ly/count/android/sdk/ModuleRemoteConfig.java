@@ -127,7 +127,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                callback.callback(ImmediateRequestResponse.ERROR);
+                callback.callback(RequestResponse.ERROR);
                 return;
             }
 
@@ -144,7 +144,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        callback.callback(ImmediateRequestResponse.NETWORK_ISSUE);
+                        callback.callback(RequestResponse.NETWORK_ISSUE);
                         return;
                     }
 
@@ -155,12 +155,12 @@ public class ModuleRemoteConfig extends ModuleBase {
                         L.e("[ModuleRemoteConfig] testingFetchVariantInformationInternal - execute, Encountered internal issue while trying to fetch information from the server, [" + ex.toString() + "]");
                     }
 
-                    callback.callback(ImmediateRequestResponse.SUCCESS);
+                    callback.callback(RequestResponse.SUCCESS);
                 }
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants. " + ex.toString());
-            callback.callback(ImmediateRequestResponse.ERROR);
+            callback.callback(RequestResponse.ERROR);
         }
     }
 
@@ -170,14 +170,14 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Enrolling A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                callback.callback(ImmediateRequestResponse.ERROR);
+                callback.callback(RequestResponse.ERROR);
                 return;
             }
 
             // check Key and Variant
             if (TextUtils.isEmpty(key) || TextUtils.isEmpty(variant)) {
                 L.w("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pair is invalid. Aborting.");
-                callback.callback(ImmediateRequestResponse.ERROR);
+                callback.callback(RequestResponse.ERROR);
                 return;
             }
 
@@ -194,13 +194,13 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        callback.callback(ImmediateRequestResponse.NETWORK_ISSUE);
+                        callback.callback(RequestResponse.NETWORK_ISSUE);
                         return;
                     }
 
                     try {
                         if (!isResponseValid(checkResponse)) {
-                            callback.callback(ImmediateRequestResponse.NETWORK_ISSUE);
+                            callback.callback(RequestResponse.NETWORK_ISSUE);
                             return;
                         }
 
@@ -217,7 +217,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                             });
                         }
 
-                        callback.callback(ImmediateRequestResponse.SUCCESS);
+                        callback.callback(RequestResponse.SUCCESS);
                     } catch (Exception ex) {
                         L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
                     }
@@ -225,7 +225,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to enroll A/B test variants. " + ex.toString());
-            callback.callback(ImmediateRequestResponse.ERROR);
+            callback.callback(RequestResponse.ERROR);
         }
     }
 
@@ -601,7 +601,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (callback == null) {
                     callback = new RemoteConfigVariantCallback() {
-                        @Override public void callback(ImmediateRequestResponse result) {
+                        @Override public void callback(RequestResponse result) {
                         }
                     };
                 }
@@ -632,7 +632,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (callback == null) {
                     callback = new RemoteConfigVariantCallback() {
-                        @Override public void callback(ImmediateRequestResponse result) {
+                        @Override public void callback(RequestResponse result) {
                         }
                     };
                 }

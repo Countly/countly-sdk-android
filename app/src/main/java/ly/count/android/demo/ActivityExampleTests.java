@@ -9,7 +9,7 @@ import android.os.Bundle;
 import java.util.Arrays;
 import java.util.Map;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.ImmediateRequestResponse;
+import ly.count.android.sdk.RequestResponse;
 import ly.count.android.sdk.RemoteConfigVariantCallback;
 
 public class ActivityExampleTests extends AppCompatActivity {
@@ -24,8 +24,8 @@ public class ActivityExampleTests extends AppCompatActivity {
     public void onClickFetchAllVariants(View v) {
         Countly.sharedInstance().remoteConfig().testingFetchVariantInformation(new RemoteConfigVariantCallback() {
             @Override
-            public void callback(ImmediateRequestResponse result) {
-                if (result == ImmediateRequestResponse.SUCCESS) {
+            public void callback(RequestResponse result) {
+                if (result == RequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + result, Toast.LENGTH_SHORT).show();
@@ -75,8 +75,8 @@ public class ActivityExampleTests extends AppCompatActivity {
 
         Countly.sharedInstance().remoteConfig().testingEnrollIntoVariant(key, variant, new RemoteConfigVariantCallback() {
             @Override
-            public void callback(ImmediateRequestResponse result) {
-                if (result == ImmediateRequestResponse.SUCCESS) {
+            public void callback(RequestResponse result) {
+                if (result == RequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + result, Toast.LENGTH_SHORT).show();

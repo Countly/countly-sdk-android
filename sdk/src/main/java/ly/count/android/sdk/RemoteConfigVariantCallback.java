@@ -7,5 +7,5 @@ public interface RemoteConfigVariantCallback {
      *
      * @param result provides an enum for the result of fetch request
      */
-    void callback(ImmediateRequestResponse result);
+    void callback(RequestResponse result);
 }
