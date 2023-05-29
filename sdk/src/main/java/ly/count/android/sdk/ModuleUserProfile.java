@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -28,7 +29,20 @@ public class ModuleUserProfile extends ModuleBase {
 
     JSONObject dataStore = new JSONObject();
 
-    UserProfile userProfileInterface = null;
+    UserProfile userProfileInterface;
+
+    //fields from the old object
+    String name;
+    String username;
+    String email;
+    String org;
+    String phone;
+    String picture;
+    static String picturePath;//protected only for testing
+    String gender;
+    Map<String, String> custom;
+    Map<String, JSONObject> customMods;
+    int byear = 0;
 
     ModuleUserProfile(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -73,9 +87,9 @@ public class ModuleUserProfile extends ModuleBase {
      *
      * @return a String user_details url part with provided user data
      */
-    static String getDataForRequest() {
-        if (!UserData.isSynced) {
-            UserData.isSynced = true;
+    String getDataForRequest() {
+        if (!isSynced) {
+            isSynced = true;
             final JSONObject json = toJSON();
             if (json != null) {
                 String result = json.toString();
@@ -85,13 +99,13 @@ public class ModuleUserProfile extends ModuleBase {
 
                     if (result != null && !result.equals("")) {
                         result = "&user_details=" + result;
-                        if (UserData.picturePath != null) {
-                            result += "&" + PICTURE_PATH_KEY + "=" + java.net.URLEncoder.encode(UserData.picturePath, "UTF-8");
+                        if (picturePath != null) {
+                            result += "&" + PICTURE_PATH_KEY + "=" + java.net.URLEncoder.encode(picturePath, "UTF-8");
                         }
                     } else {
                         result = "";
-                        if (UserData.picturePath != null) {
-                            result += "&user_details&" + PICTURE_PATH_KEY + "=" + java.net.URLEncoder.encode(UserData.picturePath, "UTF-8");
+                        if (picturePath != null) {
+                            result += "&user_details&" + PICTURE_PATH_KEY + "=" + java.net.URLEncoder.encode(picturePath, "UTF-8");
                         }
                     }
                 } catch (UnsupportedEncodingException ignored) {
@@ -111,75 +125,75 @@ public class ModuleUserProfile extends ModuleBase {
      *
      * @return a JSONObject containing the user data from this object
      */
-    protected static JSONObject toJSON() {
+    protected JSONObject toJSON() {
         final JSONObject json = new JSONObject();
 
         try {
-            if (UserData.name != null) {
-                if (UserData.name.equals("")) {
+            if (name != null) {
+                if (name.equals("")) {
                     json.put(NAME_KEY, JSONObject.NULL);
                 } else {
-                    json.put(NAME_KEY, UserData.name);
+                    json.put(NAME_KEY, name);
                 }
             }
-            if (UserData.username != null) {
-                if (UserData.username.equals("")) {
+            if (username != null) {
+                if (username.equals("")) {
                     json.put(USERNAME_KEY, JSONObject.NULL);
                 } else {
-                    json.put(USERNAME_KEY, UserData.username);
+                    json.put(USERNAME_KEY, username);
                 }
             }
-            if (UserData.email != null) {
-                if (UserData.email.equals("")) {
+            if (email != null) {
+                if (email.equals("")) {
                     json.put(EMAIL_KEY, JSONObject.NULL);
                 } else {
-                    json.put(EMAIL_KEY, UserData.email);
+                    json.put(EMAIL_KEY, email);
                 }
             }
-            if (UserData.org != null) {
-                if (UserData.org.equals("")) {
+            if (org != null) {
+                if (org.equals("")) {
                     json.put(ORG_KEY, JSONObject.NULL);
                 } else {
-                    json.put(ORG_KEY, UserData.org);
+                    json.put(ORG_KEY, org);
                 }
             }
-            if (UserData.phone != null) {
-                if (UserData.phone.equals("")) {
+            if (phone != null) {
+                if (phone.equals("")) {
                     json.put(PHONE_KEY, JSONObject.NULL);
                 } else {
-                    json.put(PHONE_KEY, UserData.phone);
+                    json.put(PHONE_KEY, phone);
                 }
             }
-            if (UserData.picture != null) {
-                if (UserData.picture.equals("")) {
+            if (picture != null) {
+                if (picture.equals("")) {
                     json.put(PICTURE_KEY, JSONObject.NULL);
                 } else {
-                    json.put(PICTURE_KEY, UserData.picture);
+                    json.put(PICTURE_KEY, picture);
                 }
             }
-            if (UserData.gender != null) {
-                if (UserData.gender.equals("")) {
+            if (gender != null) {
+                if (gender.equals("")) {
                     json.put(GENDER_KEY, JSONObject.NULL);
                 } else {
-                    json.put(GENDER_KEY, UserData.gender);
+                    json.put(GENDER_KEY, gender);
                 }
             }
-            if (UserData.byear != 0) {
-                if (UserData.byear > 0) {
-                    json.put(BYEAR_KEY, UserData.byear);
+            if (byear != 0) {
+                if (byear > 0) {
+                    json.put(BYEAR_KEY, byear);
                 } else {
                     json.put(BYEAR_KEY, JSONObject.NULL);
                 }
             }
 
             JSONObject ob;
-            if (UserData.custom != null) {
-                ob = new JSONObject(UserData.custom);
+            if (custom != null) {
+                ob = new JSONObject(custom);
             } else {
                 ob = new JSONObject();
             }
-            if (UserData.customMods != null) {
-                for (Map.Entry<String, JSONObject> entry : UserData.customMods.entrySet()) {
+            if (customMods != null) {
+                for (Map.Entry<String, JSONObject> entry : customMods.entrySet()) {
                     ob.put(entry.getKey(), entry.getValue());
                 }
             }
@@ -196,29 +210,29 @@ public class ModuleUserProfile extends ModuleBase {
      *
      * @param json JSON object to extract event data from
      */
-    static void fromJSON(final JSONObject json) {
+    void fromJSON(final JSONObject json) {
         if (json != null) {
-            UserData.name = json.optString(NAME_KEY, null);
-            UserData.username = json.optString(USERNAME_KEY, null);
-            UserData.email = json.optString(EMAIL_KEY, null);
-            UserData.org = json.optString(ORG_KEY, null);
-            UserData.phone = json.optString(PHONE_KEY, null);
-            UserData.picture = json.optString(PICTURE_KEY, null);
-            UserData.gender = json.optString(GENDER_KEY, null);
-            UserData.byear = json.optInt(BYEAR_KEY, 0);
+            name = json.optString(NAME_KEY, null);
+            username = json.optString(USERNAME_KEY, null);
+            email = json.optString(EMAIL_KEY, null);
+            org = json.optString(ORG_KEY, null);
+            phone = json.optString(PHONE_KEY, null);
+            picture = json.optString(PICTURE_KEY, null);
+            gender = json.optString(GENDER_KEY, null);
+            byear = json.optInt(BYEAR_KEY, 0);
             if (!json.isNull(CUSTOM_KEY)) {
                 JSONObject customJson;
                 try {
                     customJson = json.getJSONObject(CUSTOM_KEY);
                     if (customJson.length() == 0) {
-                        UserData.custom = null;
+                        custom = null;
                     } else {
-                        UserData.custom = new HashMap<>(customJson.length());
+                        custom = new HashMap<>(customJson.length());
                         Iterator<String> nameItr = customJson.keys();
                         while (nameItr.hasNext()) {
                             final String key = nameItr.next();
                             if (!customJson.isNull(key)) {
-                                UserData.custom.put(key, customJson.getString(key));
+                                custom.put(key, customJson.getString(key));
                             }
                         }
                     }
@@ -236,30 +250,30 @@ public class ModuleUserProfile extends ModuleBase {
      * @param value String value to use in modification
      * @param mod String with modification command
      */
-    static void modifyCustomData(String key, Object value, String mod) {
+    void modifyCustomData(String key, Object value, String mod) {
         try {
             if (!(value instanceof Double || value instanceof Integer || value instanceof String)) {
                 Countly.sharedInstance().L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
                 return;
             }
 
-            if (UserData.customMods == null) {
-                UserData.customMods = new HashMap<>();
+            if (customMods == null) {
+                customMods = new HashMap<>();
             }
             JSONObject ob;
             if (!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
                 ob.put(mod, value);
             } else {
-                if (UserData.customMods.containsKey(key)) {
-                    ob = UserData.customMods.get(key);
+                if (customMods.containsKey(key)) {
+                    ob = customMods.get(key);
                 } else {
                     ob = new JSONObject();
                 }
                 ob.accumulate(mod, value);
             }
-            UserData.customMods.put(key, ob);
-            UserData.isSynced = false;
+            customMods.put(key, ob);
+            isSynced = false;
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -300,18 +314,86 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        UserData.setData(dataNamedFields);
-        UserData.setCustomData(dataCustomFields);
+        //setting predefined properties
+        setData(dataNamedFields);
+
+        //setting custom properties
+        if (custom == null) {
+            custom = new HashMap<>();
+        }
+        custom.putAll(dataCustomFields);
+
+        isSynced = false;
+    }
+
+    /**
+     * Sets user data values.
+     *
+     * @param data Map with user data
+     */
+    public void setData(Map<String, String> data) {
+        if (data.containsKey(ModuleUserProfile.NAME_KEY)) {
+            name = data.get(ModuleUserProfile.NAME_KEY);
+        }
+        if (data.containsKey(ModuleUserProfile.USERNAME_KEY)) {
+            username = data.get(ModuleUserProfile.USERNAME_KEY);
+        }
+        if (data.containsKey(ModuleUserProfile.EMAIL_KEY)) {
+            email = data.get(ModuleUserProfile.EMAIL_KEY);
+        }
+        if (data.containsKey(ModuleUserProfile.ORG_KEY)) {
+            org = data.get(ModuleUserProfile.ORG_KEY);
+        }
+        if (data.containsKey(ModuleUserProfile.PHONE_KEY)) {
+            phone = data.get(ModuleUserProfile.PHONE_KEY);
+        }
+        if (data.containsKey(ModuleUserProfile.PICTURE_PATH_KEY)) {
+            picturePath = data.get(ModuleUserProfile.PICTURE_PATH_KEY);
+        }
+        if (picturePath != null) {
+            File sourceFile = new File(picturePath);
+            if (!sourceFile.isFile()) {
+                Countly.sharedInstance().L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
+                picturePath = null;
+            }
+        }
+        if (data.containsKey(ModuleUserProfile.PICTURE_KEY)) {
+            picture = data.get(ModuleUserProfile.PICTURE_KEY);
+        }
+        if (data.containsKey(ModuleUserProfile.GENDER_KEY)) {
+            gender = data.get(ModuleUserProfile.GENDER_KEY);
+        }
+        if (data.containsKey(ModuleUserProfile.BYEAR_KEY)) {
+            try {
+                byear = Integer.parseInt(data.get(ModuleUserProfile.BYEAR_KEY));
+            } catch (NumberFormatException e) {
+                Countly.sharedInstance().L.w("[UserData] Incorrect byear number format");
+                byear = 0;
+            }
+        }
     }
 
     void saveInternal() {
         Countly.sharedInstance().L.d("[ModuleUserProfile] saveInternal");
-        Countly.userData.save();
+        requestQueueProvider.sendUserData(getDataForRequest());
+        clearInternal();
     }
 
     void clearInternal() {
         Countly.sharedInstance().L.d("[ModuleUserProfile] clearInternal");
-        Countly.userData.clear();
+
+        name = null;
+        username = null;
+        email = null;
+        org = null;
+        phone = null;
+        picture = null;
+        picturePath = null;
+        gender = null;
+        custom = null;
+        customMods = null;
+        byear = 0;
+        isSynced = true;
     }
 
     @Override
@@ -336,7 +418,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void increment(String key) {
             synchronized (_cly) {
-                Countly.userData.increment(key);
+                modifyCustomData(key, 1, "$inc");
             }
         }
 
@@ -348,7 +430,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void incrementBy(String key, int value) {
             synchronized (_cly) {
-                Countly.userData.incrementBy(key, value);
+                modifyCustomData(key, value, "$inc");
             }
         }
 
@@ -360,7 +442,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void multiply(String key, int value) {
             synchronized (_cly) {
-                Countly.userData.multiply(key, value);
+                modifyCustomData(key, value, "$mul");
             }
         }
 
@@ -372,7 +454,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void saveMax(String key, int value) {
             synchronized (_cly) {
-                Countly.userData.saveMax(key, value);
+                modifyCustomData(key, value, "$max");
             }
         }
 
@@ -384,7 +466,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void saveMin(String key, int value) {
             synchronized (_cly) {
-                Countly.userData.saveMin(key, value);
+                modifyCustomData(key, value, "$min");
             }
         }
 
@@ -396,7 +478,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void setOnce(String key, String value) {
             synchronized (_cly) {
-                Countly.userData.setOnce(key, value);
+                modifyCustomData(key, value, "$setOnce");
             }
         }
 
@@ -407,7 +489,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void push(String key, String value) {
             synchronized (_cly) {
-                Countly.userData.pushValue(key, value);
+                modifyCustomData(key, value, "$push");
             }
         }
 
@@ -418,7 +500,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void pushUnique(String key, String value) {
             synchronized (_cly) {
-                Countly.userData.pushUniqueValue(key, value);
+                modifyCustomData(key, value, "$addToSet");
             }
         }
 
@@ -429,7 +511,7 @@ public class ModuleUserProfile extends ModuleBase {
          */
         public void pull(String key, String value) {
             synchronized (_cly) {
-                Countly.userData.pullValue(key, value);
+                modifyCustomData(key, value, "$pull");
             }
         }
 

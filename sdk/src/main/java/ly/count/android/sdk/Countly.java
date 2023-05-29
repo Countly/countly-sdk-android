@@ -174,13 +174,6 @@ public class Countly {
     //reference to countly store
     CountlyStore countlyStore;
 
-    /**
-     * user data access
-     *
-     * @deprecated This user data access method will be removed. Use 'Countly.sharedInstance().userProfile();' to access the required functionality.
-     */
-    public static UserData userData;
-
     //overrides
     boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
 
@@ -238,7 +231,6 @@ public class Countly {
 
     private void staticInit() {
         connectionQueue_ = new ConnectionQueue();
-        Countly.userData = new UserData(connectionQueue_);
         startTimerService(timerService_, timerFuture, TIMER_DELAY_IN_SECONDS);
     }
 

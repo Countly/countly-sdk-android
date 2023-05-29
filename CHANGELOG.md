@@ -15,6 +15,7 @@
 * Removed the deprecated function "Countly.requestQueueOverwriteAppKeys()"
 * Removed the deprecated function "Countly.requestQueueEraseAppKeysRequests()"
 * Removed the deprecated function "CountlyConfig.setRemoteConfigAutomaticDownload(enabled, callback)"
+* Removed the deprecated user profile interface accessed on "Countly.userData"
 
 
 ## 22.09.4
