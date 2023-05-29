@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Map;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.RequestResponse;
-import ly.count.android.sdk.RemoteConfigVariantCallback;
+import ly.count.android.sdk.RCVariantCallback;
 
 public class ActivityExampleTests extends AppCompatActivity {
 
@@ -22,7 +22,7 @@ public class ActivityExampleTests extends AppCompatActivity {
 
     // For fetching all variants with a button click
     public void onClickFetchAllVariants(View v) {
-        Countly.sharedInstance().remoteConfig().testingFetchVariantInformation(new RemoteConfigVariantCallback() {
+        Countly.sharedInstance().remoteConfig().testingFetchVariantInformation(new RCVariantCallback() {
             @Override
             public void callback(RequestResponse result) {
                 if (result == RequestResponse.SUCCESS) {
@@ -73,7 +73,7 @@ public class ActivityExampleTests extends AppCompatActivity {
             break; // Get only the first key-value pair
         }
 
-        Countly.sharedInstance().remoteConfig().testingEnrollIntoVariant(key, variant, new RemoteConfigVariantCallback() {
+        Countly.sharedInstance().remoteConfig().testingEnrollIntoVariant(key, variant, new RCVariantCallback() {
             @Override
             public void callback(RequestResponse result) {
                 if (result == RequestResponse.SUCCESS) {

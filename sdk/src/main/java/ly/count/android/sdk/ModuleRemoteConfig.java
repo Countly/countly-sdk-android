@@ -121,7 +121,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param callback called after the fetch is done
      */
-    void testingFetchVariantInformationInternal(@NonNull final RemoteConfigVariantCallback callback) {
+    void testingFetchVariantInformationInternal(@NonNull final RCVariantCallback callback) {
         try {
             L.d("[ModuleRemoteConfig] Fetching all A/B test variants");
 
@@ -164,7 +164,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
-    void testingEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @NonNull final RemoteConfigVariantCallback callback) {
+    void testingEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @NonNull final RCVariantCallback callback) {
         try {
             L.d("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pairs:[" + key + "][" + variant + "]");
 
@@ -591,7 +591,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param callback
          */
-        public void testingFetchVariantInformation(RemoteConfigVariantCallback callback) {
+        public void testingFetchVariantInformation(RCVariantCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingFetchVariantInformation'");
 
@@ -600,7 +600,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
 
                 if (callback == null) {
-                    callback = new RemoteConfigVariantCallback() {
+                    callback = new RCVariantCallback() {
                         @Override public void callback(RequestResponse result) {
                         }
                     };
@@ -617,7 +617,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param variantName - name of the variant for the key to enroll
          * @param callback
          */
-        public void testingEnrollIntoVariant(String key, String variantName, RemoteConfigVariantCallback callback) {
+        public void testingEnrollIntoVariant(String key, String variantName, RCVariantCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingEnrollIntoVariant'");
 
@@ -631,7 +631,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
 
                 if (callback == null) {
-                    callback = new RemoteConfigVariantCallback() {
+                    callback = new RCVariantCallback() {
                         @Override public void callback(RequestResponse result) {
                         }
                     };

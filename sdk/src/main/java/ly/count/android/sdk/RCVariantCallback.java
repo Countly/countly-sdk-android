@@ -1,6 +1,6 @@
 package ly.count.android.sdk;
 
-public interface RemoteConfigVariantCallback {
+public interface RCVariantCallback {
 
     /**
      * Called after fetching A/B test variants
