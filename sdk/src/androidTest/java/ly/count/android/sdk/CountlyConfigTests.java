@@ -53,13 +53,6 @@ public class CountlyConfigTests {
             }
         };
 
-        RemoteConfig.RemoteConfigCallback rcc = new RemoteConfig.RemoteConfigCallback() {
-            @Override
-            public void callback(String error) {
-
-            }
-        };
-
         RemoteConfigCallback rcc2 = new RemoteConfigCallback() {
             @Override public void callback(String error) {
 
@@ -118,7 +111,7 @@ public class CountlyConfigTests {
         config.setCountlyStore(cs);
         config.checkForNativeCrashDumps(false);
         config.setDeviceId(s[2]);
-        config.setIdMode(DeviceId.Type.TEMPORARY_ID);
+        config.setIdMode(DeviceIdType.DEVELOPER_SUPPLIED);
         config.setStarRatingSessionLimit(1335);
         config.setStarRatingCallback(rc);
         config.setStarRatingTextDismiss(s[3]);
@@ -130,7 +123,6 @@ public class CountlyConfigTests {
         config.setAutoTrackingUseShortName(true);
         config.addCustomNetworkRequestHeaders(hv);
         config.setPushIntentAddMetadata(true);
-        config.setRemoteConfigAutomaticDownload(true, rcc);
         config.setRemoteConfigAutomaticDownload(true, rcc2);
         config.setRequiresConsent(true);
         config.setConsentEnabled(fn);
@@ -171,7 +163,6 @@ public class CountlyConfigTests {
         Assert.assertEquals(cs, config.countlyStore);
         Assert.assertFalse(config.checkForNativeCrashDumps);
         Assert.assertEquals(s[2], config.deviceID);
-        Assert.assertEquals(DeviceIdType.TEMPORARY_ID, config.idMode);
         Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
         Assert.assertEquals(s[3], config.starRatingTextDismiss);
@@ -184,7 +175,6 @@ public class CountlyConfigTests {
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
         Assert.assertTrue(config.pushIntentAddMetadata);
         Assert.assertTrue(config.enableRemoteConfigAutomaticDownload);
-        Assert.assertEquals(rcc, config.remoteConfigCallbackOld);
         Assert.assertEquals(rcc2, config.remoteConfigCallbackNew);
         Assert.assertTrue(config.shouldRequireConsent);
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
@@ -248,7 +238,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.countlyStore);
         Assert.assertTrue(config.checkForNativeCrashDumps);
         Assert.assertNull(config.deviceID);
-        Assert.assertNull(config.idMode);
         Assert.assertEquals(5, config.starRatingSessionLimit);
         Assert.assertNull(config.starRatingCallback);
         Assert.assertNull(config.starRatingTextDismiss);
@@ -261,7 +250,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.customNetworkRequestHeaders);
         Assert.assertFalse(config.pushIntentAddMetadata);
         Assert.assertFalse(config.enableRemoteConfigAutomaticDownload);
-        Assert.assertNull(config.remoteConfigCallbackOld);
         Assert.assertNull(config.remoteConfigCallbackNew);
         Assert.assertFalse(config.shouldRequireConsent);
         Assert.assertNull(config.enabledFeatureNames);

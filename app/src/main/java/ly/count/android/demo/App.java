@@ -225,7 +225,7 @@ public class App extends Application {
 
             .setEnableAttribution(true)
 
-            .enableServerConfiguration()
+            //.enableServerConfiguration()
 
             .setUserProperties(customUserProperties);
 

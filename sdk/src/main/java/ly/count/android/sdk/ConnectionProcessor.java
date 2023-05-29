@@ -52,6 +52,8 @@ public class ConnectionProcessor implements Runnable {
     private final StorageProvider storageProvider_;
     private final DeviceIdProvider deviceIdProvider_;
     final ConfigurationProvider configProvider_;
+
+    final RequestInfoProvider requestInfoProvider_;
     private final String serverURL_;
     private final SSLContext sslContext_;
 
@@ -66,13 +68,15 @@ public class ConnectionProcessor implements Runnable {
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
     }
 
-    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule) {
+    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider, final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues,
+        ModuleLog logModule) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
         configProvider_ = configProvider;
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
+        requestInfoProvider_ = requestInfoProvider;
         L = logModule;
     }
 
@@ -82,7 +86,7 @@ public class ConnectionProcessor implements Runnable {
             urlEndpoint = customEndpoint;
         }
 
-        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || Countly.sharedInstance().isHttpPostForced());
+        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced());
 
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
@@ -193,7 +197,8 @@ public class ConnectionProcessor implements Runnable {
             approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
         }
 
-        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + Countly.sharedInstance().isHttpPostForced() + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
+        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
+            + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
     }
 
@@ -285,7 +290,7 @@ public class ConnectionProcessor implements Runnable {
                 }
             }
 
-            if (!(Countly.sharedInstance().isDeviceAppCrawler() && Countly.sharedInstance().ifShouldIgnoreCrawlers())) {
+            if (!(requestInfoProvider_.isDeviceAppCrawler() && requestInfoProvider_.ifShouldIgnoreCrawlers())) {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 InputStream connInputStream = null;
@@ -378,7 +383,7 @@ public class ConnectionProcessor implements Runnable {
 
                         if (deviceIdChange || deviceIdOverride) {
                             L.v("[Connection Processor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
-                            Countly.sharedInstance().notifyDeviceIdChange();
+                            Countly.sharedInstance().notifyDeviceIdChange();//todo needs to be removed at some point
                         }
                     } else {
                         // will retry later

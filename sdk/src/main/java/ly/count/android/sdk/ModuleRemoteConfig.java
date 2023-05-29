@@ -34,13 +34,6 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             if (config.remoteConfigCallbackNew != null) {
                 remoteConfigInitCallback = config.remoteConfigCallbackNew;
-            } else if (config.remoteConfigCallbackOld != null) {
-                remoteConfigInitCallback = new RemoteConfigCallback() {
-                    @Override
-                    public void callback(String error) {
-                        config.remoteConfigCallbackOld.callback(error);
-                    }
-                };
             }
         }
 
