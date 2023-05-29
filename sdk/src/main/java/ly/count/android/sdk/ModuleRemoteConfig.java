@@ -11,6 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ModuleRemoteConfig extends ModuleBase {
+    ImmediateRequestGenerator immediateRequestGenerator;
     boolean updateRemoteConfigAfterIdChange = false;
     Map<String, String[]> variantContainer; // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
@@ -27,6 +28,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         L.v("[ModuleRemoteConfig] Initialising");
 
         metricOverride = config.metricOverride;
+        immediateRequestGenerator = config.immediateRequestGenerator;
 
         if (config.enableRemoteConfigAutomaticDownload) {
             L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownload);
@@ -126,7 +128,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param callback called after the fetch is done
      */
-    void testFetchAllVariantsInternal(@NonNull final RemoteConfigVariantCallback callback) {
+    void testingFetchVariantInformationInternal(@NonNull final RemoteConfigVariantCallback callback) {
         try {
             L.d("[ModuleRemoteConfig] Fetching all A/B test variants");
 
@@ -144,7 +146,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
@@ -157,7 +159,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                         Map<String, String[]> parsedResponse = convertVariantsJsonToMap(checkResponse);
                         variantContainer = parsedResponse;
                     } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testFetchAllVariantsInternal - execute, Encountered internal issue while trying to fetch information from the server, [" + ex.toString() + "]");
+                        L.e("[ModuleRemoteConfig] testingFetchVariantInformationInternal - execute, Encountered internal issue while trying to fetch information from the server, [" + ex.toString() + "]");
                     }
 
                     callback.callback(ImmediateRequestResponse.SUCCESS);
@@ -169,7 +171,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
-    void testEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @NonNull final RemoteConfigVariantCallback callback) {
+    void testingEnrollIntoVariantInternal(@NonNull final String key, @NonNull final String variant, @NonNull final RemoteConfigVariantCallback callback) {
         try {
             L.d("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pairs:[" + key + "][" + variant + "]");
 
@@ -194,7 +196,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
@@ -224,7 +226,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                         callback.callback(ImmediateRequestResponse.SUCCESS);
                     } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
+                        L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
                     }
                 }
             }, L);
@@ -283,27 +285,54 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @throws JSONException
      */
     static Map<String, String[]> convertVariantsJsonToMap(@NonNull JSONObject variantsObj) throws JSONException {
-        Map<String, String[]> map = new HashMap<>();
+        // Initialize the map to store the results
+        Map<String, String[]> resultMap = new HashMap<>();
 
-        // Iterate over the keys of the JSON object
-        Iterator<String> keys = variantsObj.keys();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            JSONArray jsonArray = variantsObj.getJSONArray(key);
+        try {
+            // Get the keys of the JSON object using names() method
+            JSONArray keys = variantsObj.names();
+            if (keys != null) {
+                for (int i = 0; i < keys.length(); i++) {
+                    String key = keys.getString(i);
+                    Object value = variantsObj.get(key);
 
-            // Extract the variant names from the JSON array
-            String[] variants = new String[jsonArray.length()];
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject variantObj = jsonArray.getJSONObject(i);
-                String variant = variantObj.getString("name");
-                variants[i] = variant;
+                    // Set the key and and an empty Array initially
+                    String[] emptyArray = new String[0];
+                    resultMap.put(key, emptyArray);
+
+                    // Check if the value is a JSON array
+                    if (value instanceof JSONArray) {
+                        JSONArray jsonArray = (JSONArray) value;
+
+                        // Check if the JSON array contains objects
+                        if (jsonArray.length() > 0 && jsonArray.get(0) instanceof JSONObject) {
+                            // Extract the values from the JSON objects
+                            String[] variants = new String[jsonArray.length()];
+                            int count = 0;
+                            for (int j = 0; j < jsonArray.length(); j++) {
+                                JSONObject variantObject = jsonArray.getJSONObject(j);
+                                if (variantObject.has("name")) {
+                                    variants[count] = variantObject.getString("name");
+                                    count++;
+                                }
+                            }
+
+                            // Map the key and its corresponding variants
+                            if (count > 0) {
+                                String[] filteredVariants = new String[count];
+                                System.arraycopy(variants, 0, filteredVariants, 0, count);
+                                resultMap.put(key, filteredVariants);
+                            } // else if the JSON object had no key 'name' we return String[0]
+                        } // else if values of JSON array are not JSON object(all?) or no values at all we return String[0]
+                    } // else if value is not JSON array we return String[0]
+                }
             }
-
-            // Add the key and variant names to the map
-            map.put(key, variants);
+        } catch (Exception ex) {
+            Countly.sharedInstance().L.e("[ModuleRemoteConfig] convertVariantsJsonToMap, failed parsing:[" + ex.toString() + "]");
+            return new HashMap<>();
         }
 
-        return map;
+        return resultMap;
     }
 
     /*
@@ -381,8 +410,21 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @return
      */
-    Map<String, String[]> getAllRemoteConfigVariantsInternal() {
+    Map<String, String[]> testingGetAllVariantsInternal() {
         return variantContainer;
+    }
+
+    /**
+     * Get all variants for a given key if exists. Else returns an empty array.
+     * @param key
+     * @return
+     */
+    String[] testingGetVariantsForKeyInternal(String key){
+        if (variantContainer.containsKey(key)) {
+            return variantContainer.get(key);
+        }
+
+        return new String[0];
     }
 
     static class RemoteConfigValueStore {
@@ -515,15 +557,36 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        public Map<String, String[]> getAllVariants() {
+        /**
+         * Returns all variant information as a Map<String, String[]>
+         * @return
+         */
+        public Map<String, String[]> testingGetAllVariants() {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'getAllVariants'");
+                L.i("[RemoteConfig] Calling 'testingGetAllVariants'");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return null;
                 }
 
-                return getAllRemoteConfigVariantsInternal();
+                return testingGetAllVariantsInternal();
+            }
+        }
+
+        /**
+         * Returns variant information for a key as a String[]
+         * @param key - key value to get variant information for
+         * @return
+         */
+        public String[] testingGetVariantsForKey(String key) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testingGetVariantsForKey'");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return null;
+                }
+
+                return testingGetVariantsForKeyInternal(key);
             }
         }
 
@@ -532,9 +595,9 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param callback
          */
-        public void testFetchAllVariants(RemoteConfigVariantCallback callback) {
+        public void testingFetchVariantInformation(RemoteConfigVariantCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testFetchAllVariants'");
+                L.i("[RemoteConfig] Calling 'testingFetchVariantInformation'");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;
@@ -547,7 +610,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     };
                 }
 
-                testFetchAllVariantsInternal(callback);
+                testingFetchVariantInformationInternal(callback);
             }
         }
 
@@ -558,9 +621,9 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param variantName - name of the variant for the key to enroll
          * @param callback
          */
-        public void testEnrollIntoVariant(String key, String variantName, RemoteConfigVariantCallback callback) {
+        public void testingEnrollIntoVariant(String key, String variantName, RemoteConfigVariantCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testEnrollIntoVariant'");
+                L.i("[RemoteConfig] Calling 'testingEnrollIntoVariant'");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;
@@ -578,7 +641,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     };
                 }
 
-                testEnrollIntoVariantInternal(key, variantName, callback);
+                testingEnrollIntoVariantInternal(key, variantName, callback);
             }
         }
 

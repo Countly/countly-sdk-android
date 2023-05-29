@@ -22,9 +22,9 @@ public class ActivityExampleTests extends AppCompatActivity {
 
     // For fetching all variants with a button click
     public void onClickFetchAllVariants(View v) {
-        Countly.sharedInstance().remoteConfig().testFetchAllVariants(new RemoteConfigVariantCallback() {
+        Countly.sharedInstance().remoteConfig().testingFetchVariantInformation(new RemoteConfigVariantCallback() {
             @Override
-            public void callback(Enum result) {
+            public void callback(ImmediateRequestResponse result) {
                 if (result == ImmediateRequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
@@ -36,7 +36,7 @@ public class ActivityExampleTests extends AppCompatActivity {
 
     // To get all variants from the storage and show them with a toast
     public void onClickVariantsPrintValues(View v) {
-        Map<String, String[]> values = Countly.sharedInstance().remoteConfig().getAllVariants();
+        Map<String, String[]> values = Countly.sharedInstance().remoteConfig().testingGetAllVariants();
         if (values == null) {
             Countly.sharedInstance().L.w("No variants present");
             return;
@@ -58,7 +58,7 @@ public class ActivityExampleTests extends AppCompatActivity {
 
 
     public void onClickEnrollVariant(View v) {
-        Map<String,String[]> values = Countly.sharedInstance().remoteConfig().getAllVariants();
+        Map<String,String[]> values = Countly.sharedInstance().remoteConfig().testingGetAllVariants();
         if (values == null) {
             Countly.sharedInstance().L.w("No variants present");
             return;
@@ -74,9 +74,9 @@ public class ActivityExampleTests extends AppCompatActivity {
             break; // Get only the first key-value pair
         }
 
-        Countly.sharedInstance().remoteConfig().testEnrollIntoVariant(key, variant, new RemoteConfigVariantCallback() {
+        Countly.sharedInstance().remoteConfig().testingEnrollIntoVariant(key, variant, new RemoteConfigVariantCallback() {
             @Override
-            public void callback(Enum result) {
+            public void callback(ImmediateRequestResponse result) {
                 if (result == ImmediateRequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {

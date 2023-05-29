@@ -6,11 +6,23 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.Mockito.mock;
+
 @RunWith(AndroidJUnit4.class)
 public class RemoteConfigVariantControlTests {
+    CountlyStore countlyStore;
+
+    @Before
+    public void setUp() {
+        Countly.sharedInstance().setLoggingEnabled(true);
+        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore.clear();
+    }
 
     @Test
     public void testConvertVariantsJsonToMap_ValidInput_Multi() throws JSONException {
@@ -44,7 +56,6 @@ public class RemoteConfigVariantControlTests {
         Assert.assertEquals("Variant 4", key2Variants[1]);
     }
 
-
     @Test
     public void testConvertVariantsJsonToMap_ValidInput_Single() throws JSONException {
         // Create a sample JSON object with valid variants
@@ -69,18 +80,22 @@ public class RemoteConfigVariantControlTests {
         Assert.assertEquals("Variant 2", key2Variants[0]);
     }
 
-    @Test(expected = JSONException.class)
+    @Test
     public void testConvertVariantsJsonToMap_InvalidInput() throws JSONException {
         // Create a sample JSON object with invalid variants (missing "name" field)
         JSONObject variantsObj = new JSONObject();
         variantsObj.put("key1", new JSONArray().put(new JSONObject().put("invalid_key", "Invalid Value")));
 
-        // Call the function to convert variants JSON to a map (expecting JSONException)
-        ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        // Call the function to convert variants JSON to a map
+        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Assert.assertEquals(1, resultMap.size());
+
+         // Assert the values for key1
+        String[] key1Variants = resultMap.get("key1");
+        Assert.assertEquals(0, key1Variants.length);
     }
 
-
-    @Test(expected = JSONException.class)
+    @Test
     public void testConvertVariantsJsonToMap_InvalidJson() throws JSONException {
         // Test with invalid JSON object
         JSONObject variantsObj = new JSONObject();
@@ -88,6 +103,14 @@ public class RemoteConfigVariantControlTests {
 
         // Call the function to convert variants JSON to a map (expecting JSONException)
         ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+
+        // Call the function to convert variants JSON to a map
+        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Assert.assertEquals(1, resultMap.size());
+
+        // Assert the values for key1
+        String[] key1Variants = resultMap.get("key1");
+        Assert.assertEquals(0, key1Variants.length);
     }
 
     @Test
@@ -138,7 +161,6 @@ public class RemoteConfigVariantControlTests {
         Assert.assertEquals("Variant 3", key3Variants[1]);
     }
 
-    // TODO: is this okay?
     @Test
     public void testConvertVariantsJsonToMap_NullJsonKey() throws JSONException {
         // Test with a null JSON key
@@ -151,5 +173,81 @@ public class RemoteConfigVariantControlTests {
         String[] key1Variants = resultMap.get("null");
         Assert.assertEquals(1, key1Variants.length);
         Assert.assertEquals("null", key1Variants[0]);
+    }
+
+    @Test
+    public void testNormalFlow() {
+        CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":\"variant\"}]}"));
+        Countly countly = (new Countly()).init(config);
+
+        // Developer did not provide a callback
+        countly.moduleRemoteConfig.remoteConfigInterface.testingFetchVariantInformation(null);
+        Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
+        String[] variantArray = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key");
+        String[] variantArrayFalse = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key2");
+
+         //Assert the values
+        String[] key1Variants = values.get("key");
+        Assert.assertEquals(1, key1Variants.length);
+        Assert.assertEquals("variant", key1Variants[0]);
+        Assert.assertEquals(1, variantArray.length);
+        Assert.assertEquals("variant", variantArray[0]);
+        Assert.assertEquals(0, variantArrayFalse.length);
+    }
+
+    @Test
+    public void testNullVariant() {
+        CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":null}]}"));
+        Countly countly = (new Countly()).init(config);
+
+        // Developer did not provide a callback
+        countly.moduleRemoteConfig.remoteConfigInterface.testingFetchVariantInformation(null);
+        Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
+
+        // Assert the values
+        String[] key1Variants = values.get("key");
+        Assert.assertEquals(1, key1Variants.length);
+        Assert.assertEquals("null", key1Variants[0]); // TODO: is fine?
+    }
+
+
+    @Test
+    public void testFilteringWrongKeys() {
+        CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"noname\":\"variant1\"},{\"name\":\"variant2\"}]}"));
+        Countly countly = (new Countly()).init(config);
+
+        // Developer did not provide a callback
+        countly.moduleRemoteConfig.remoteConfigInterface.testingFetchVariantInformation(null);
+        Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
+
+        //Assert the values
+        String[] key1Variants = values.get("key");
+        Assert.assertEquals(1, key1Variants.length);
+        Assert.assertEquals("variant2", key1Variants[0]);
+    }
+
+    ImmediateRequestGenerator createIRGForSpecificResponse(final String targetResponse) {
+        return new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return new ImmediateRequestI() {
+                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
+                        if (targetResponse == null) {
+                            callback.callback(null);
+                            return;
+                        }
+
+                        JSONObject jobj = null;
+
+                        try {
+                            jobj = new JSONObject(targetResponse);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                        callback.callback(jobj);
+                    }
+                };
+            }
+        };
     }
 }
