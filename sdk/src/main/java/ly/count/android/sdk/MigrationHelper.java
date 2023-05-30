@@ -17,6 +17,8 @@ class MigrationHelper {
     StorageProvider storage;
     ModuleLog L;
 
+    static final public String legacyDeviceIDTypeValue_AdvertisingID = "ADVERTISING_ID";
+
     public MigrationHelper(StorageProvider storage, ModuleLog moduleLog) {
         this.storage = storage;
         L = moduleLog;
@@ -142,7 +144,7 @@ class MigrationHelper {
         if (deviceIDType.equals(DeviceIdType.OPEN_UDID.toString())) {
             //current device ID is OPEN_UDID
             //nothing should change
-        } else if (deviceIDType.equals(DeviceIdType.ADVERTISING_ID.toString())) {
+        } else if (deviceIDType.equals(legacyDeviceIDTypeValue_AdvertisingID)) {
             //current device ID is ADVERTISING_ID
             //it's type should be changed to OPEN_UDID.
             storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
