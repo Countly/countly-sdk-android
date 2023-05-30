@@ -24,7 +24,7 @@ public class ActivityExampleTests extends AppCompatActivity {
     public void onClickFetchAllVariants(View v) {
         Countly.sharedInstance().remoteConfig().testingFetchVariantInformation(new RCVariantCallback() {
             @Override
-            public void callback(RequestResponse result) {
+            public void callback(RequestResponse result, String error) {
                 if (result == RequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {
@@ -75,7 +75,7 @@ public class ActivityExampleTests extends AppCompatActivity {
 
         Countly.sharedInstance().remoteConfig().testingEnrollIntoVariant(key, variant, new RCVariantCallback() {
             @Override
-            public void callback(RequestResponse result) {
+            public void callback(RequestResponse result, String error) {
                 if (result == RequestResponse.SUCCESS) {
                     Toast.makeText(getApplicationContext(), "Fetch finished", Toast.LENGTH_SHORT).show();
                 } else {

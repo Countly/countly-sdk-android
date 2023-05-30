@@ -32,7 +32,7 @@ public class UtilsTimeTests {
     @Test
     public void testInstant() {
         UtilsTime.Instant i1 = UtilsTime.Instant.get(1579463653876L);
-        Assert.assertEquals(0, i1.dow);
+        Assert.assertEquals(0, i1.dow); // TODO: "expected:<0> but was:<1>"
         Assert.assertEquals(1579463653876L, i1.timestampMs);
 
         //weird stuff to account for timezones and daylight saving
