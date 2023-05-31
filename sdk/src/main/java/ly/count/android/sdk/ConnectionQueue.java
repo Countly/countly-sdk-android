@@ -711,6 +711,26 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
+    public String prepareEnrollmentParameters(@NonNull String[] keys) {
+        String data = "method=ab"
+            + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+        return data;
+    }
+
+    public String prepareRemovalParameters(@NonNull String[] keys) {
+        String data = "method=ab_opt_out"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        if (keys.length > 0) {
+            data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys); // TODO: key? keys? /this is not settled yet, redo after its settled
+        }
+
+        return data;
+    }
+
     public String prepareRatingWidgetRequest(String widgetId) {
         String data = prepareCommonRequestData()
             + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)

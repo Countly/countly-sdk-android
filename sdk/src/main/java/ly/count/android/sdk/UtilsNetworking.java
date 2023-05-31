@@ -21,6 +21,29 @@ public class UtilsNetworking {
         return result;
     }
 
+    protected static String encodedArrayBuilder(String[] args) {
+        StringBuilder encodedUrlBuilder = new StringBuilder();
+
+        encodedUrlBuilder.append("[");
+
+        try {
+
+            for (int i = 0; i < args.length; i++) {
+                String encodedElement = java.net.URLEncoder.encode(args[i], "UTF-8");
+                encodedUrlBuilder.append("\"").append(encodedElement).append("\"");
+                if (i < args.length - 1) {
+                    encodedUrlBuilder.append(", ");
+                }
+            }
+        } catch (UnsupportedEncodingException ignored) {
+            // should never happen because Android guarantees UTF-8 support
+        }
+
+        encodedUrlBuilder.append("]");
+
+        return encodedUrlBuilder.toString();
+    }
+
     protected static String urlDecodeString(String givenValue) {
         String decodedResult = "";
 

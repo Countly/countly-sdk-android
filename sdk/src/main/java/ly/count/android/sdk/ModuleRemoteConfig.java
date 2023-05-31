@@ -125,6 +125,86 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     /**
+     * Internal function to form and send a request to enroll user for given keys
+     *
+     * @param keys
+     */
+    void enrollIntoABTestsForKeysInternal(@NonNull String[] keys) {
+        L.d("[ModuleRemoteConfig] Enrolling user for the given keys:" + keys);
+
+        if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
+            L.d("[ModuleRemoteConfig] Enrolling user was aborted, temporary device ID mode is set or device ID is null.");
+            return;
+        }
+
+        String requestData = requestQueueProvider.prepareEnrollmentParameters(keys);
+        L.d("[ModuleRemoteConfig] Enrollment requestData:[" + requestData + "]");
+
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+
+        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            @Override
+            public void callback(JSONObject checkResponse) {
+                L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    return;
+                }
+
+                try {
+                    if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
+                        L.d("[ModuleRemoteConfig]  Enrolled user for the A/B test");
+                    } else {
+                        L.w("[ModuleRemoteConfig]  Encountered a network error while enrolling the user for the A/B test.");
+                    }
+                } catch (Exception ex) {
+                    L.e("[ModuleRemoteConfig] Encountered an internal error while trying to enroll the user for A/B test. " + ex.toString());
+                }
+            }
+        }, L);
+    }
+
+    /**
+     * Internal function to form and send the request to remove user from A/B testes for given keys
+     *
+     * @param keys
+     */
+    void exitABTestsForKeysInternal(@NonNull String[] keys) {
+        L.d("[ModuleRemoteConfig] Removing user for the tests with given keys:" + keys);
+
+        if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
+            L.d("[ModuleRemoteConfig] Removing user from tests was aborted, temporary device ID mode is set or device ID is null.");
+            return;
+        }
+
+        String requestData = requestQueueProvider.prepareRemovalParameters(keys);
+        L.d("[ModuleRemoteConfig] Removal requestData:[" + requestData + "]");
+
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+
+        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            @Override
+            public void callback(JSONObject checkResponse) {
+                L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    return;
+                }
+
+                try {
+                    if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
+                        L.d("[ModuleRemoteConfig]  Removed user from the A/B test");
+                    } else {
+                        L.w("[ModuleRemoteConfig]  Encountered a network error while removing the user from A/B testing.");
+                    }
+                } catch (Exception ex) {
+                    L.e("[ModuleRemoteConfig] Encountered an internal error while trying to remove user from A/B testing. " + ex.toString());
+                }
+            }
+        }, L);
+    }
+
+    /**
      * Merge the values acquired from the server into the current values.
      * Clear if needed.
      *
@@ -437,16 +517,16 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
-                        callback.callback(RCDownloadResult.NoConsent, null);
+                        callback.callback(RequestResult.Error, null);
                     }
                     return;
                 }
                 if (keysToExclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
-                updateRemoteConfigValues(null, keysToExclude, false, callback);
+                updateRemoteConfigValues(null, keysToExclude, false, null); // TODO: this callback was not expected
             }
-        }
+        } // TODO: this is a duplicate function
 
         /**
          * Manual remote config_ update call. Will only update the keys provided.
@@ -460,16 +540,16 @@ public class ModuleRemoteConfig extends ModuleBase {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
-                        callback.callback(RCDownloadResult.NoConsent, null);
+                        callback.callback(RequestResult.Error, null);
                     }
                     return;
                 }
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
-                updateRemoteConfigValues(keysToInclude, null, false, callback);
+                updateRemoteConfigValues(keysToInclude, null, false, null); // TODO: this callback was not expected
             }
-        }
+        } // TODO: this is a duplicate function
 
         public void update(RemoteConfigDownloadCallback callback) {
             synchronized (_cly) {
@@ -477,12 +557,55 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
-                        callback.callback(RCDownloadResult.NoConsent, null);
+                        callback.callback(RequestResult.Error, null);
                     }
                     return;
                 }
 
-                updateRemoteConfigValues(null, null, false, callback);
+                updateRemoteConfigValues(null, null, false, null); // TODO: this callback was not expected
+            }
+        } // TODO: this is a duplicate function
+
+        /**
+         * Enrolls user to AB tests of the given keys.
+         *
+         * @param keys - String array of keys (parameters)
+         */
+        public void enrollIntoABTestsForKeys(String[] keys) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Enrolling user into A/B tests.");
+
+                if (keys == null || keys.length == 0) {
+                    L.w("[RemoteConfig] A key should be provided to enroll the user.");
+                    return;
+                }
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                enrollIntoABTestsForKeysInternal(keys);
+            }
+        }
+
+        /**
+         * Removes user from A/B tests for the given keys. If no key provided would remove the user from all tests.
+         *
+         * @param keys - String array of keys (parameters)
+         */
+        public void exitABTestsForKeys(String[] keys) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Removing user from A/B tests.");
+
+                if (keys == null) {
+                    keys = new String[0];
+                }
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                exitABTestsForKeysInternal(keys);
             }
         }
     }
