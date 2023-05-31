@@ -667,11 +667,11 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         /**
-         * Fetches all variants of A/B testing experiments
+         * Download all variants of A/B testing experiments
          *
          * @param callback
          */
-        public void testingFetchVariantInformation(RCVariantCallback callback) {
+        public void TestingDownloadVariantInformation(RCVariantCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingFetchVariantInformation'");
 
@@ -790,7 +790,6 @@ public class ModuleRemoteConfig extends ModuleBase {
          * Manually update remote config_ values
          *
          * @param callback
-         * @deprecated
          */
         public void update(RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -812,15 +811,14 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keysToExclude
          * @param callback
-         * @deprecated
          */
-        public void updateExceptKeys(String[] keysToExclude, RemoteConfigDownloadCallback callback) {
+        public void DownloadOmittingValues(String[] keysToExclude, RemoteConfigDownloadCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
-                        callback.callback(RequestResult.Error, null);
+                        callback.callback(RequestResult.Error, null, false, null);
                     }
                     return;
                 }
@@ -829,21 +827,20 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
                 updateRemoteConfigValues(null, keysToExclude, false, null); // TODO: this callback was not expected
             }
-        } // TODO: this is a duplicate function
+        }
 
         /**
          * Manual remote config_ update call. Will only update the keys provided.
          *
          * @param keysToInclude
          * @param callback
-         * @deprecated
          */
-        public void updateForKeysOnly(String[] keysToInclude, RemoteConfigDownloadCallback callback) {
+        public void DownloadSpecificValue(String[] keysToInclude, RemoteConfigDownloadCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
-                        callback.callback(RequestResult.Error, null);
+                        callback.callback(RequestResult.Error, null, false, null);
                     }
                     return;
                 }
@@ -852,22 +849,22 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
                 updateRemoteConfigValues(keysToInclude, null, false, null); // TODO: this callback was not expected
             }
-        } // TODO: this is a duplicate function
+        }
 
-        public void update(RemoteConfigDownloadCallback callback) {
+        public void DownloadValues(RemoteConfigDownloadCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to update Remote Config v2");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
-                        callback.callback(RequestResult.Error, null);
+                        callback.callback(RequestResult.Error, null, true, null);
                     }
                     return;
                 }
 
                 updateRemoteConfigValues(null, null, false, null); // TODO: this callback was not expected
             }
-        } // TODO: this is a duplicate function
+        }
 
         /**
          * Enrolls user to AB tests of the given keys.
@@ -910,6 +907,14 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 exitABTestsForKeysInternal(keys);
             }
+        }
+
+        public void registerDownloadCallback(RemoteConfigDownloadCallback callback) {
+
+        }
+
+        public void removeDownloadCallback(RemoteConfigDownloadCallback callback) {
+
         }
     }
 }
