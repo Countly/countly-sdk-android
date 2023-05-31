@@ -26,17 +26,11 @@ public class UtilsNetworking {
 
         encodedUrlBuilder.append("[");
 
-        try {
-
-            for (int i = 0; i < args.length; i++) {
-                String encodedElement = java.net.URLEncoder.encode(args[i], "UTF-8");
-                encodedUrlBuilder.append("\"").append(encodedElement).append("\"");
-                if (i < args.length - 1) {
-                    encodedUrlBuilder.append(", ");
-                }
+        for (int i = 0; i < args.length; i++) {
+            encodedUrlBuilder.append('"').append(args[i]).append('"');
+            if (i < args.length - 1) {
+                encodedUrlBuilder.append(", ");
             }
-        } catch (UnsupportedEncodingException ignored) {
-            // should never happen because Android guarantees UTF-8 support
         }
 
         encodedUrlBuilder.append("]");
