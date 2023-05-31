@@ -45,25 +45,7 @@ public class DeviceIdTests {
      */
     @Test(expected = IllegalStateException.class)
     public void constructorCustom_fail_1() {
-        new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "", store, mock(ModuleLog.class), null);
-    }
-
-    /**
-     * Expecting exception to be thrown when initialising with a bad value
-     * Hinting to be dev supplied but null string
-     */
-    @Test(expected = IllegalStateException.class)
-    public void constructorCustom_fail_2() {
-        new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, (String) null, store, mock(ModuleLog.class), null);
-    }
-
-    /**
-     * Expecting exception to be thrown when initialising with a bad value
-     * Null type not allowed
-     */
-    @Test(expected = IllegalStateException.class)
-    public void constructorSDKGenerated_fail_2() {
-        new DeviceId((DeviceIdType) null, (String) null, store, mock(ModuleLog.class), null);
+        new DeviceId("", store, mock(ModuleLog.class), null);
     }
 
     /**
@@ -72,7 +54,7 @@ public class DeviceIdTests {
      */
     @Test
     public void temporaryIdModeEnabled_1() {
-        DeviceId did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "dsd", store, mock(ModuleLog.class), null);
+        DeviceId did = new DeviceId("dsd", store, mock(ModuleLog.class), null);
         assertFalse(did.isTemporaryIdModeEnabled());
 
         did.setId(DeviceIdType.OPEN_UDID, DeviceId.temporaryCountlyDeviceId);
@@ -89,9 +71,6 @@ public class DeviceIdTests {
         assertEquals("12", did.getCurrentId());
         assertFalse(did.isTemporaryIdModeEnabled());
 
-        did.setId(DeviceIdType.ADVERTISING_ID, DeviceId.temporaryCountlyDeviceId);
-        assertTrue(did.isTemporaryIdModeEnabled());
-
         did.setId(DeviceIdType.DEVELOPER_SUPPLIED, "34");
         assertEquals("34", did.getCurrentId());
         assertFalse(did.isTemporaryIdModeEnabled());
@@ -105,7 +84,7 @@ public class DeviceIdTests {
      */
     @Test
     public void temporaryIdModeEnabled_2() {
-        DeviceId did2 = new DeviceId(DeviceIdType.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
+        DeviceId did2 = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
         assertTrue(did2.isTemporaryIdModeEnabled());
 
         //todo needs more work
@@ -116,24 +95,18 @@ public class DeviceIdTests {
      */
     @Test
     public void getType() {
-        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "dsd", store, mock(ModuleLog.class), null).getType());
+        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, new DeviceId("dsd", store, mock(ModuleLog.class), null).getType());
         store.clear();
 
-        assertEquals(DeviceIdType.TEMPORARY_ID, new DeviceId(DeviceIdType.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null).getType());
+        assertEquals(DeviceIdType.TEMPORARY_ID, new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null).getType());
         store.clear();
 
-        assertEquals(DeviceIdType.OPEN_UDID, new DeviceId(DeviceIdType.OPEN_UDID, null, store, mock(ModuleLog.class), new OpenUDIDProvider() {
+        assertEquals(DeviceIdType.OPEN_UDID, new DeviceId(null, store, mock(ModuleLog.class), new OpenUDIDProvider() {
             @Override public String getOpenUDID() {
                 return "abc";
             }
         }).getType());
         store.clear();
-
-        assertEquals(DeviceIdType.OPEN_UDID, new DeviceId(DeviceIdType.ADVERTISING_ID, null, store, mock(ModuleLog.class), new OpenUDIDProvider() {
-            @Override public String getOpenUDID() {
-                return "123";
-            }
-        }).getType());
     }
 
     /**
@@ -141,26 +114,19 @@ public class DeviceIdTests {
      */
     @Test
     public void getId() {
-        DeviceId did1 = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "abc", store, mock(ModuleLog.class), null);
+        DeviceId did1 = new DeviceId("abc", store, mock(ModuleLog.class), null);
         assertEquals("abc", did1.getCurrentId());
 
         store.clear();
 
-        DeviceId did2 = new DeviceId(DeviceIdType.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
+        DeviceId did2 = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
         assertEquals(DeviceId.temporaryCountlyDeviceId, did2.getCurrentId());
 
         store.clear();
 
         currentOpenUDIDValue = "ppp1";
-        DeviceId did3 = new DeviceId(DeviceIdType.OPEN_UDID, null, store, mock(ModuleLog.class), openUDIDProvider);
+        DeviceId did3 = new DeviceId(null, store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals(currentOpenUDIDValue, did3.getCurrentId());
-
-        store.clear();
-
-        currentOpenUDIDValue = "openUDIDfallbackValue";
-        DeviceId did4 = new DeviceId(DeviceIdType.ADVERTISING_ID, null, store, mock(ModuleLog.class), openUDIDProvider);
-        assertNotNull(did4.getCurrentId());
-        assertEquals(currentOpenUDIDValue, did4.getCurrentId());
     }
 
     /**
@@ -168,7 +134,7 @@ public class DeviceIdTests {
      */
     @Test
     public void changeToCustomIdAndEnterTempIDMode() {
-        DeviceId did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "abc", store, mock(ModuleLog.class), null);
+        DeviceId did = new DeviceId("abc", store, mock(ModuleLog.class), null);
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
@@ -195,23 +161,19 @@ public class DeviceIdTests {
     public void initWithDifferentValuesStartingDevID() {
         store.clear();
 
-        DeviceId did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "abc", store, mock(ModuleLog.class), null);
+        DeviceId did = new DeviceId("abc", store, mock(ModuleLog.class), null);
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "123", store, mock(ModuleLog.class), null);
+        did = new DeviceId("123", store, mock(ModuleLog.class), null);
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did = new DeviceId(DeviceIdType.OPEN_UDID, null, store, mock(ModuleLog.class), null);
+        did = new DeviceId(null, store, mock(ModuleLog.class), null);
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did = new DeviceId(DeviceIdType.ADVERTISING_ID, null, store, mock(ModuleLog.class), null);
-        assertEquals("abc", did.getCurrentId());
-        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
-
-        did = new DeviceId(DeviceIdType.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
+        did = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
     }
@@ -225,23 +187,19 @@ public class DeviceIdTests {
     @Test
     public void initWithDifferentValuesStartingOpenUDID() {
         currentOpenUDIDValue = "nmb";
-        DeviceId did = new DeviceId(DeviceIdType.OPEN_UDID, null, store, mock(ModuleLog.class), openUDIDProvider);
+        DeviceId did = new DeviceId(null, store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals(currentOpenUDIDValue, did.getCurrentId());
         assertEquals(DeviceIdType.OPEN_UDID, did.getType());
 
-        did = new DeviceId(DeviceIdType.DEVELOPER_SUPPLIED, "123", store, mock(ModuleLog.class), openUDIDProvider);
+        did = new DeviceId("123", store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals(currentOpenUDIDValue, did.getCurrentId());
         assertEquals(DeviceIdType.OPEN_UDID, did.getType());
 
-        did = new DeviceId(DeviceIdType.OPEN_UDID, null, store, mock(ModuleLog.class), openUDIDProvider);
+        did = new DeviceId(null, store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals(currentOpenUDIDValue, did.getCurrentId());
         assertEquals(DeviceIdType.OPEN_UDID, did.getType());
 
-        did = new DeviceId(DeviceIdType.ADVERTISING_ID, null, store, mock(ModuleLog.class), openUDIDProvider);
-        assertEquals(currentOpenUDIDValue, did.getCurrentId());
-        assertEquals(DeviceIdType.OPEN_UDID, did.getType());
-
-        did = new DeviceId(DeviceIdType.TEMPORARY_ID, DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), openUDIDProvider);
+        did = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals(currentOpenUDIDValue, did.getCurrentId());
         assertEquals(DeviceIdType.OPEN_UDID, did.getType());
     }
@@ -256,30 +214,42 @@ public class DeviceIdTests {
         String initialValue = currentOpenUDIDValue;
 
         //init the first time and openUDID returns one value
-        DeviceId did = new DeviceId(DeviceIdType.OPEN_UDID, null, store, mock(ModuleLog.class), openUDIDProvider);
+        DeviceId did = new DeviceId(null, store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals(currentOpenUDIDValue, did.getCurrentId());
         assertEquals(DeviceIdType.OPEN_UDID, did.getType());
 
         //init the second time and openUDID returns a different value
         currentOpenUDIDValue = "zxc";
-        did = new DeviceId(DeviceIdType.OPEN_UDID, null, store, mock(ModuleLog.class), openUDIDProvider);
+        did = new DeviceId(null, store, mock(ModuleLog.class), openUDIDProvider);
         assertEquals(initialValue, did.getCurrentId());
         assertEquals(DeviceIdType.OPEN_UDID, did.getType());
     }
 
     /**
-     * Make sure that the device ID type changer works as expected
+     * In case a device ID type sneaks past the migration script, there should be a fallback to the OPEN_UDID type
      */
     @Test
-    public void validateDeviceIdTypeConversions() {
-        assertEquals(DeviceIdType.OPEN_UDID, ModuleDeviceId.fromOldDeviceIdToNew(DeviceId.Type.OPEN_UDID));
-        assertEquals(DeviceIdType.TEMPORARY_ID, ModuleDeviceId.fromOldDeviceIdToNew(DeviceId.Type.TEMPORARY_ID));
-        assertEquals(DeviceIdType.ADVERTISING_ID, ModuleDeviceId.fromOldDeviceIdToNew(DeviceId.Type.ADVERTISING_ID));
-        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, ModuleDeviceId.fromOldDeviceIdToNew(DeviceId.Type.DEVELOPER_SUPPLIED));
+    public void legacyFallbackType_AdvertisingID() {
+        store.clear();
 
-        assertEquals(DeviceId.Type.OPEN_UDID, ModuleDeviceId.fromNewDeviceIdToOld(DeviceIdType.OPEN_UDID));
-        assertEquals(DeviceId.Type.TEMPORARY_ID, ModuleDeviceId.fromNewDeviceIdToOld(DeviceIdType.TEMPORARY_ID));
-        assertEquals(DeviceId.Type.ADVERTISING_ID, ModuleDeviceId.fromNewDeviceIdToOld(DeviceIdType.ADVERTISING_ID));
-        assertEquals(DeviceId.Type.DEVELOPER_SUPPLIED, ModuleDeviceId.fromNewDeviceIdToOld(DeviceIdType.DEVELOPER_SUPPLIED));
+        store.setDeviceID("xxx");
+        store.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
+
+        DeviceId did = new DeviceId("123", store, mock(ModuleLog.class), openUDIDProvider);
+        assertEquals("xxx", did.getCurrentId());
+        assertEquals(DeviceIdType.OPEN_UDID, did.getType());
+    }
+
+    /**
+     * In case a device ID type becomes 'null', there should be a fallback to the OPEN_UDID type
+     */
+    @Test
+    public void legacyFallbackType_null() {
+        store.clear();
+        store.setDeviceID("xxx");
+
+        DeviceId did = new DeviceId("123", store, mock(ModuleLog.class), openUDIDProvider);
+        assertEquals("xxx", did.getCurrentId());
+        assertEquals(DeviceIdType.OPEN_UDID, did.getType());
     }
 }
