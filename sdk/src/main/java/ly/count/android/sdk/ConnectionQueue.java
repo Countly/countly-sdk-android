@@ -729,6 +729,10 @@ class ConnectionQueue implements RequestQueueProvider {
         if (keys.length > 0) {
             data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys); // TODO: key? keys? /this is not settled yet, redo after its settled
         }
+
+        return data;
+    }
+
     /**
      * To fetch all variants from the server. Something like this should be formed: method=ab_fetch_variants&app_key="APP_KEY"&device_id=DEVICE_ID
      * API end point for this is /i/sdk

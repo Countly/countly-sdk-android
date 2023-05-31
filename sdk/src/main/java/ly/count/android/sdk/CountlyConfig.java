@@ -475,20 +475,6 @@ public class CountlyConfig {
      * @param enabled set true for enabling it
      * @param callback callback called after the update was done
      * @return Returns the same config object for convenient linking
-     * @deprecated use the other version of this call that uses a different callback
-     */
-    public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfig.RemoteConfigCallback callback) {
-        enableRemoteConfigAutomaticDownload = enabled;
-        remoteConfigCallbackOld = callback;
-        return this;
-    }
-
-    /**
-     * If enable, will automatically download newest remote config values.
-     *
-     * @param enabled set true for enabling it
-     * @param callback callback called after the update was done
-     * @return Returns the same config object for convenient linking
      * @deprecated
      */
     public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {

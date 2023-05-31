@@ -194,8 +194,9 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
             }
         }, L);
+    }
 
-     /**   
+    /**
      * Internal call for fetching all variants of A/B test experiments
      *
      * @param callback called after the fetch is done
@@ -223,7 +224,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        callback.callback(RequestResponse.NETWORK_ISSUE, "Received response is null." );
+                        callback.callback(RequestResponse.NETWORK_ISSUE, "Received response is null.");
                         return;
                     }
 
