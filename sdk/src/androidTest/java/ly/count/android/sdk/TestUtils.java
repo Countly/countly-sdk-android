@@ -65,6 +65,17 @@ public class TestUtils {
         return cc;
     }
 
+    public static CountlyConfig createVariantConfig(ImmediateRequestGenerator irGen) {
+        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+            .setDeviceId(commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableCrashReporting();
+
+        cc.immediateRequestGenerator = irGen;
+
+        return cc;
+    }
+
     public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)

@@ -96,6 +96,10 @@
         android:configChanges="orientation|screenSize"></activity>
 
     <activity
+        android:name=".ActivityExampleTests"
+        android:exported="false" />
+
+    <activity
         android:name=".ActivityExampleDeepLinkA"
         android:label="Deep link A"
         android:configChanges="orientation|screenSize"

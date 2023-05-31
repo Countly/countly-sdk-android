@@ -713,6 +713,30 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
+    /**
+     * To fetch all variants from the server. Something like this should be formed: method=ab_fetch_variants&app_key="APP_KEY"&device_id=DEVICE_ID
+     * API end point for this is /i/sdk
+     *
+     * @return
+     */
+    public String prepareFetchAllVariants() {
+        String data = "method=ab_fetch_variants"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        return data;
+    }
+
+    public String prepareEnrollVariant(String key, String variant) {
+        String data = "method=ab_enroll_variant"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
+            + "&key=" + UtilsNetworking.urlEncodeString(key)
+            + "&variant=" + UtilsNetworking.urlEncodeString(variant);
+
+        return data;
+    }
+
     public String prepareRatingWidgetRequest(String widgetId) {
         String data = prepareCommonRequestData()
             + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)

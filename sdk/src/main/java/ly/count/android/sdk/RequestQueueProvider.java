@@ -52,6 +52,10 @@ interface RequestQueueProvider {
 
     String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
 
+    String prepareFetchAllVariants(); // for fetching all A/B test variants
+
+    String prepareEnrollVariant(String key, String Variant); // for enrolling to an A/B test variant
+
     String prepareRatingWidgetRequest(String widgetId);
 
     String prepareFeedbackListRequest();
