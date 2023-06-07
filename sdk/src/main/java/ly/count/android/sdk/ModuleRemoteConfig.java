@@ -3,8 +3,10 @@ package ly.count.android.sdk;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,6 +21,8 @@ public class ModuleRemoteConfig extends ModuleBase {
     //if set to true, it will automatically download remote configs on module startup
     boolean remoteConfigAutomaticUpdateEnabled = false;
     RemoteConfigCallback remoteConfigInitCallback = null;
+
+    public final static String variantObjectNameKey = "name";
 
     @Nullable
     Map<String, String> metricOverride = null;
@@ -355,50 +359,46 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param variantsObj - JSON Object fetched from the server
      * @return
-     * @throws JSONException
      */
-    static Map<String, String[]> convertVariantsJsonToMap(@NonNull JSONObject variantsObj) throws JSONException {
+    static Map<String, String[]> convertVariantsJsonToMap(@NonNull JSONObject variantsObj) {
         // Initialize the map to store the results
         Map<String, String[]> resultMap = new HashMap<>();
 
+        // Get the keys of the JSON object using names() method
+        JSONArray keys = variantsObj.names();
+
+        if (keys == null) {
+            return resultMap;
+        }
+
+        List<String> tempVariantColl = new ArrayList<>(5);
+
         try {
-            // Get the keys of the JSON object using names() method
-            JSONArray keys = variantsObj.names();
-            if (keys != null) {
-                for (int i = 0; i < keys.length(); i++) {
-                    String key = keys.getString(i);
-                    Object value = variantsObj.get(key);
+            for (int i = 0; i < keys.length(); i++) {
+                String key = keys.getString(i);
+                Object value = variantsObj.get(key);
 
-                    // Set the key and and an empty Array initially
-                    String[] emptyArray = new String[0];
-                    resultMap.put(key, emptyArray);
-
-                    // Check if the value is a JSON array
-                    if (value instanceof JSONArray) {
-                        JSONArray jsonArray = (JSONArray) value;
-
-                        // Check if the JSON array contains objects
-                        if (jsonArray.length() > 0 && jsonArray.get(0) instanceof JSONObject) {
-                            // Extract the values from the JSON objects
-                            String[] variants = new String[jsonArray.length()];
-                            int count = 0;
-                            for (int j = 0; j < jsonArray.length(); j++) {
-                                JSONObject variantObject = jsonArray.getJSONObject(j);
-                                if (variantObject.has("name")) {
-                                    variants[count] = variantObject.getString("name");
-                                    count++;
-                                }
-                            }
-
-                            // Map the key and its corresponding variants
-                            if (count > 0) {
-                                String[] filteredVariants = new String[count];
-                                System.arraycopy(variants, 0, filteredVariants, 0, count);
-                                resultMap.put(key, filteredVariants);
-                            } // else if the JSON object had no key 'name' we return String[0]
-                        } // else if values of JSON array are not JSON object(all?) or no values at all we return String[0]
-                    } // else if value is not JSON array we return String[0]
+                if (!(value instanceof JSONArray)) {
+                    //we only care about json arrays, all other values are skipped
+                    continue;
                 }
+
+                tempVariantColl.clear();
+                JSONArray jsonArray = (JSONArray) value;
+
+                for (int j = 0; j < jsonArray.length(); j++) {
+                    JSONObject variantObject = jsonArray.optJSONObject(j);
+
+                    //skip for null values
+                    if (variantObject == null || variantObject.isNull(variantObjectNameKey)) {
+                        continue;
+                    }
+
+                    tempVariantColl.add(variantObject.optString(variantObjectNameKey));
+                }
+
+                //write the filtered array to map
+                resultMap.put(key, tempVariantColl.toArray(new String[0]));
             }
         } catch (Exception ex) {
             Countly.sharedInstance().L.e("[ModuleRemoteConfig] convertVariantsJsonToMap, failed parsing:[" + ex.toString() + "]");
@@ -439,7 +439,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         return res;
     }
 
-    Object getValue(String key) {
+    Object getValue(@NonNull String key) {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
             return rcvs.getValue(key);
@@ -449,7 +449,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
-    void saveConfig(RemoteConfigValueStore rcvs) throws Exception {
+    void saveConfig(@NonNull RemoteConfigValueStore rcvs) throws Exception {
         storageProvider.setRemoteConfigValues(rcvs.dataToString());
     }
 
@@ -457,7 +457,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @return
      * @throws Exception For some reason this might be throwing an exception
      */
-    RemoteConfigValueStore loadConfig() throws Exception {
+    @NonNull RemoteConfigValueStore loadConfig() throws Exception {
         String rcvsString = storageProvider.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString);
@@ -468,7 +468,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         storageProvider.setRemoteConfigValues("");
     }
 
-    Map<String, Object> getAllRemoteConfigValuesInternal() {
+    @NonNull Map<String, Object> getAllRemoteConfigValuesInternal() {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
             return rcvs.getAllValues();
@@ -483,7 +483,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @return
      */
-    Map<String, String[]> testingGetAllVariantsInternal() {
+    @NonNull Map<String, String[]> testingGetAllVariantsInternal() {
         return variantContainer;
     }
 
@@ -493,7 +493,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param key
      * @return
      */
-    String[] testingGetVariantsForKeyInternal(String key) {
+    @NonNull String[] testingGetVariantsForKeyInternal(@NonNull String key) {
         if (variantContainer.containsKey(key)) {
             return variantContainer.get(key);
         }
