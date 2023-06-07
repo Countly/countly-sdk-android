@@ -1,5 +1,5 @@
 package ly.count.android.sdk;
 
-enum RequestResult {
-    Success, NetworkIssue , Error
+public enum RequestResult {
+    Success, NetworkIssue, Error
 }
