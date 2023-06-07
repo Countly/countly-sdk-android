@@ -50,6 +50,8 @@ interface RequestQueueProvider {
 
     ConnectionProcessor createConnectionProcessor();
 
+    String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
+
     String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
 
     String prepareEnrollmentParameters(@NonNull String[] keys);

@@ -12,6 +12,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static ly.count.android.sdk.ModuleConsent.ConsentChangeSource.ChangeConsentCall;
+
 public class ModuleRemoteConfig extends ModuleBase {
     ImmediateRequestGenerator immediateRequestGenerator;
     boolean updateRemoteConfigAfterIdChange = false;
@@ -55,9 +57,9 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
      * @param callback called after the update is done
      */
-    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean requestShouldBeDelayed, @Nullable final RemoteConfigCallback callback) {
+    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean requestShouldBeDelayed, final boolean useLegacyAPI, @Nullable final RemoteConfigCallback callback) {
         try {
-            L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
+            L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "], legacyAPI:[" + useLegacyAPI + "]");
 
             // checks
             if (deviceIdProvider.getDeviceId() == null) {
@@ -81,7 +83,13 @@ public class ModuleRemoteConfig extends ModuleBase {
             //prepare metrics and request data
             String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
             String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
-            String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);
+            String requestData;
+
+            if (useLegacyAPI) {
+                requestData = requestQueueProvider.prepareRemoteConfigRequestLegacy(preparedKeys[0], preparedKeys[1], preparedMetrics);
+            } else {
+                requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);
+            }
             L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
@@ -228,7 +236,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        callback.callback(RequestResult.NetworkIssue, "Received response is null.");
+                        callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
                         return;
                     }
 
@@ -278,7 +286,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        callback.callback(RequestResult.NetworkIssue, "Received response is null.");
+                        callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
                         return;
                     }
 
@@ -290,7 +298,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                         // Update Remote Config
                         if (remoteConfigAutomaticUpdateEnabled) {
-                            updateRemoteConfigValues(null, null, false, new RemoteConfigCallback() {
+                            updateRemoteConfigValues(null, null, false, false, new RemoteConfigCallback() {
                                 @Override public void callback(String error) {
                                     if (error == null) {
                                         L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
@@ -342,13 +350,17 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param responseJson - JSONObject response
      * @return
-     * @throws JSONException
      */
-    boolean isResponseValid(@NonNull JSONObject responseJson) throws JSONException {
+    boolean isResponseValid(@NonNull JSONObject responseJson) {
         boolean result = false;
 
-        if (responseJson.get("result").equals("Success")) {
-            result = true;
+        try {
+            if (responseJson.get("result").equals("Success")) {
+                result = true;
+            }
+        } catch (JSONException e) {
+            L.e("[ModuleRemoteConfig] isResponseValid, encountered issue, " + e);
+            return false;
         }
 
         return result;
@@ -449,7 +461,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
-    void saveConfig(@NonNull RemoteConfigValueStore rcvs) throws Exception {
+    void saveConfig(@NonNull RemoteConfigValueStore rcvs) {
         storageProvider.setRemoteConfigValues(rcvs.dataToString());
     }
 
@@ -457,7 +469,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @return
      * @throws Exception For some reason this might be throwing an exception
      */
-    @NonNull RemoteConfigValueStore loadConfig() throws Exception {
+    @NonNull RemoteConfigValueStore loadConfig() {
         String rcvsString = storageProvider.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString);
@@ -571,9 +583,40 @@ public class ModuleRemoteConfig extends ModuleBase {
     void clearAndDownloadAfterIdChange() {
         L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
-        clearValueStoreInternal();
+        CacheOrClearRCValuesIfNeeded();
         if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
+        }
+    }
+
+    void CacheOrClearRCValuesIfNeeded() {
+        clearValueStoreInternal();
+    }
+
+    void RCAutomaticDownloadTrigger(boolean cacheClearOldValues) {
+        if (cacheClearOldValues) {
+            clearValueStoreInternal();//todo finish
+        }
+
+        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+            L.d("[RemoteConfig] Automatically updating remote config values");
+            updateRemoteConfigValues(null, null, false, false, remoteConfigInitCallback);
+        } else {
+            L.v("[RemoteConfig] Automatically RC update trigger skipped");
+        }
+    }
+
+    @Override
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.remoteConfig) && changeSource == ChangeConsentCall) {
+            if (newConsent) {
+                //if consent was just given trigger automatic RC download if needed
+                RCAutomaticDownloadTrigger(false);
+            } else {
+                L.d("[RemoteConfig] removing remote-config consent. Clearing stored values");
+                clearValueStoreInternal();
+                // if consent is removed, we should clear remote config values
+            }
         }
     }
 
@@ -583,16 +626,15 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         if (updateRemoteConfigAfterIdChange) {
             updateRemoteConfigAfterIdChange = false;
-            updateRemoteConfigValues(null, null, true, null);
+            RCAutomaticDownloadTrigger(true);
         }
     }
 
     @Override
     public void initFinished(@NonNull CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !deviceIdProvider.isTemporaryIdEnabled()) {
-            L.d("[RemoteConfig] Automatically updating remote config values");
-            updateRemoteConfigValues(null, null, false, remoteConfigInitCallback);
+        if (!deviceIdProvider.isTemporaryIdEnabled()) {
+            RCAutomaticDownloadTrigger(false);
         }
     }
 
@@ -610,6 +652,8 @@ public class ModuleRemoteConfig extends ModuleBase {
     public class RemoteConfig {
         /**
          * Clear all stored remote config_ values
+         *
+         * @deprecated
          */
         public void clearStoredValues() {
             synchronized (_cly) {
@@ -619,6 +663,10 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
+        /**
+         * @return
+         * @deprecated
+         */
         public Map<String, Object> getAllValues() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'getAllValues'");
@@ -636,6 +684,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param key
          * @return
+         * @deprecated
          */
         public Object getValueForKey(String key) {
             synchronized (_cly) {
@@ -669,7 +718,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToExclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
-                updateRemoteConfigValues(null, keysToExclude, false, callback);
+                updateRemoteConfigValues(null, keysToExclude, false, true, callback);
             }
         }
 
@@ -692,7 +741,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
-                updateRemoteConfigValues(keysToInclude, null, false, callback);
+                updateRemoteConfigValues(keysToInclude, null, false, true, callback);
             }
         }
 
@@ -713,7 +762,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                updateRemoteConfigValues(null, null, false, callback);
+                updateRemoteConfigValues(null, null, false, true, callback);
             }
         }
 
@@ -736,7 +785,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToOmit == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
-                updateRemoteConfigValues(null, keysToOmit, false, null); // TODO: this callback was not expected
+                updateRemoteConfigValues(null, keysToOmit, false, false, null); // TODO: this callback was not expected
             }
         }
 
@@ -758,7 +807,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
-                updateRemoteConfigValues(keysToInclude, null, false, null); // TODO: this callback was not expected
+                updateRemoteConfigValues(keysToInclude, null, false, false, null); // TODO: this callback was not expected
             }
         }
 
@@ -773,7 +822,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                updateRemoteConfigValues(null, null, false, null); // TODO: this callback was not expected
+                updateRemoteConfigValues(null, null, false, false, null); // TODO: this callback was not expected
             }
         }
 
@@ -852,6 +901,10 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         }
 
+        public void clearAll() {
+
+        }
+
         /**
          * Returns all variant information as a Map<String, String[]>
          *
@@ -901,9 +954,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
 
                 if (completionCallback == null) {
-                    completionCallback = new RCVariantCallback() {
-                        @Override public void callback(RequestResult result, String error) {
-                        }
+                    completionCallback = (result, error) -> {
                     };
                 }
 
@@ -932,9 +983,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
 
                 if (completionCallback == null) {
-                    completionCallback = new RCVariantCallback() {
-                        @Override public void callback(RequestResult result, String error) {
-                        }
+                    completionCallback = (result, error) -> {
                     };
                 }
 

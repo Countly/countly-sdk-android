@@ -86,10 +86,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         replaceTempIDWithRealIDinRQ(deviceId);
 
         //update remote config_ values if automatic update is enabled
-        _cly.moduleRemoteConfig.clearValueStoreInternal();
-        if (_cly.moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && consentProvider.anyConsentGiven()) {
-            _cly.moduleRemoteConfig.updateRemoteConfigValues(null, null, false, null);
-        }
+        _cly.moduleRemoteConfig.RCAutomaticDownloadTrigger(true);
 
         _cly.requestQueue().attemptToSendStoredRequests();
     }
