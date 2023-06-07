@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
+import ly.count.android.sdk.internal.RemoteConfigHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,7 +39,7 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key2", variantArray2);
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert the expected map values
         Assert.assertEquals(2, resultMap.size());
@@ -64,7 +65,7 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key2", new JSONArray().put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 2")));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert the expected map values
         Assert.assertEquals(2, resultMap.size());
@@ -87,7 +88,7 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key1", new JSONArray().put(new JSONObject().put("invalid_key", "Invalid Value")));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
         Assert.assertEquals(1, resultMap.size());
 
         // Assert the values for key1
@@ -102,10 +103,10 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key1", "Invalid JSON");
 
         // Call the function to convert variants JSON to a map (expecting JSONException)
-        ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
         Assert.assertEquals(0, resultMap.size());
     }
 
@@ -118,7 +119,7 @@ public class RemoteConfigVariantControlTests {
         JSONObject variantsObj = new JSONObject();
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert that the map is empty
         Assert.assertTrue(resultMap.isEmpty());
@@ -139,7 +140,7 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key3", new JSONArray().put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 2")).put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 3")));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert the expected map values
         Assert.assertEquals(3, resultMap.size());
@@ -171,7 +172,7 @@ public class RemoteConfigVariantControlTests {
         String variantsObj = "{\"null\":[{\"name\":\"null\"}]}";
 
         // Call the function to convert variants JSON to a map (expecting JSONException)
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(new JSONObject(variantsObj));
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(new JSONObject(variantsObj), mock(ModuleLog.class));
 
         // Assert the values for key1
         String[] key1Variants = resultMap.get("null");

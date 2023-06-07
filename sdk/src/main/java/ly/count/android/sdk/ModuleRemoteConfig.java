@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import ly.count.android.sdk.internal.RemoteConfigHelper;
+import ly.count.android.sdk.internal.RemoteConfigValueStore;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -82,7 +84,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             //prepare metrics and request data
             String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
-            String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
+            String[] preparedKeys = RemoteConfigHelper.prepareKeysIncludeExclude(keysOnly, keysExcept, L);
             String requestData;
 
             if (useLegacyAPI) {
@@ -240,12 +242,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                         return;
                     }
 
-                    try {
-                        Map<String, String[]> parsedResponse = convertVariantsJsonToMap(checkResponse);
-                        variantContainer = parsedResponse;
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testingFetchVariantInformationInternal - execute, Encountered internal issue while trying to fetch information from the server, [" + ex.toString() + "]");
-                    }
+                    variantContainer = RemoteConfigHelper.convertVariantsJsonToMap(checkResponse, L);
 
                     callback.callback(RequestResult.Success, null);
                 }
@@ -366,91 +363,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         return result;
     }
 
-    /**
-     * Converts A/B testing variants fetched from the server (JSONObject) into a map
-     *
-     * @param variantsObj - JSON Object fetched from the server
-     * @return
-     */
-    static Map<String, String[]> convertVariantsJsonToMap(@NonNull JSONObject variantsObj) {
-        // Initialize the map to store the results
-        Map<String, String[]> resultMap = new HashMap<>();
-
-        // Get the keys of the JSON object using names() method
-        JSONArray keys = variantsObj.names();
-
-        if (keys == null) {
-            return resultMap;
-        }
-
-        List<String> tempVariantColl = new ArrayList<>(5);
-
-        try {
-            for (int i = 0; i < keys.length(); i++) {
-                String key = keys.getString(i);
-                Object value = variantsObj.get(key);
-
-                if (!(value instanceof JSONArray)) {
-                    //we only care about json arrays, all other values are skipped
-                    continue;
-                }
-
-                tempVariantColl.clear();
-                JSONArray jsonArray = (JSONArray) value;
-
-                for (int j = 0; j < jsonArray.length(); j++) {
-                    JSONObject variantObject = jsonArray.optJSONObject(j);
-
-                    //skip for null values
-                    if (variantObject == null || variantObject.isNull(variantObjectNameKey)) {
-                        continue;
-                    }
-
-                    tempVariantColl.add(variantObject.optString(variantObjectNameKey));
-                }
-
-                //write the filtered array to map
-                resultMap.put(key, tempVariantColl.toArray(new String[0]));
-            }
-        } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[ModuleRemoteConfig] convertVariantsJsonToMap, failed parsing:[" + ex.toString() + "]");
-            return new HashMap<>();
-        }
-
-        return resultMap;
-    }
-
-    /*
-     * Decide which keys to use
-     * Useful if both 'keysExcept' and 'keysOnly' set
-     * */
-    @NonNull String[] prepareKeysIncludeExclude(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept) {
-        String[] res = new String[2];//0 - include, 1 - exclude
-
-        try {
-            if (keysOnly != null && keysOnly.length > 0) {
-                //include list takes precedence
-                //if there is at least one item, use it
-                JSONArray includeArray = new JSONArray();
-                for (String key : keysOnly) {
-                    includeArray.put(key);
-                }
-                res[0] = includeArray.toString();
-            } else if (keysExcept != null && keysExcept.length > 0) {
-                //include list was not used, use the exclude list
-                JSONArray excludeArray = new JSONArray();
-                for (String key : keysExcept) {
-                    excludeArray.put(key);
-                }
-                res[1] = excludeArray.toString();
-            }
-        } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] prepareKeysIncludeExclude, Failed at preparing keys, [" + ex.toString() + "]");
-        }
-
-        return res;
-    }
-
     Object getValue(@NonNull String key) {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
@@ -511,73 +423,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         return new String[0];
-    }
-
-    static class RemoteConfigValueStore {
-        public JSONObject values = new JSONObject();
-
-        //add new values to the current storage
-        public void mergeValues(JSONObject newValues) {
-            if (newValues == null) {
-                return;
-            }
-
-            Iterator<String> iter = newValues.keys();
-            while (iter.hasNext()) {
-                String key = iter.next();
-                try {
-                    Object value = newValues.get(key);
-                    values.put(key, value);
-                } catch (Exception e) {
-                    Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed merging new remote config values");
-                }
-            }
-        }
-
-        private RemoteConfigValueStore(JSONObject values) {
-            this.values = values;
-        }
-
-        public Object getValue(String key) {
-            return values.opt(key);
-        }
-
-        public Map<String, Object> getAllValues() {
-            Map<String, Object> ret = new HashMap<>();
-
-            Iterator<String> keys = values.keys();
-
-            while (keys.hasNext()) {
-                String key = keys.next();
-
-                try {
-                    ret.put(key, values.get(key));
-                } catch (Exception ex) {
-                    Countly.sharedInstance().L.e("[RemoteConfigValueStore] Got JSON exception while calling 'getAllValues': " + ex.toString());
-                }
-            }
-
-            return ret;
-        }
-
-        public static RemoteConfigValueStore dataFromString(String storageString) {
-            if (storageString == null || storageString.isEmpty()) {
-                return new RemoteConfigValueStore(new JSONObject());
-            }
-
-            JSONObject values;
-            try {
-                values = new JSONObject(storageString);
-            } catch (JSONException e) {
-                Countly.sharedInstance().L.e("[RemoteConfigValueStore] Couldn't decode RemoteConfigValueStore successfully: " + e.toString());
-                values = new JSONObject();
-            }
-            return new RemoteConfigValueStore(values);
-        }
-
-        public String dataToString() {
-            return values.toString();
-        }
     }
 
     void clearAndDownloadAfterIdChange() {
