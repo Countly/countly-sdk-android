@@ -3,14 +3,11 @@ package ly.count.android.sdk;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import ly.count.android.sdk.internal.RemoteConfigHelper;
 import ly.count.android.sdk.internal.RemoteConfigValueStore;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,6 +21,8 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     //if set to true, it will automatically download remote configs on module startup
     boolean remoteConfigAutomaticUpdateEnabled = false;
+
+    boolean remoteConfigValuesShouldBeCached = false;
     RemoteConfigCallback remoteConfigInitCallback = null;
 
     public final static String variantObjectNameKey = "name";
@@ -293,22 +292,12 @@ public class ModuleRemoteConfig extends ModuleBase {
                             return;
                         }
 
-                        // Update Remote Config
-                        if (remoteConfigAutomaticUpdateEnabled) {
-                            updateRemoteConfigValues(null, null, false, false, new RemoteConfigCallback() {
-                                @Override public void callback(String error) {
-                                    if (error == null) {
-                                        L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
-                                    } else {
-                                        L.e("[ModuleRemoteConfig] Attempt to update the remote config after enrolling to a variant failed:" + error.toString());
-                                    }
-                                }
-                            });
-                        }
+                        RCAutomaticDownloadTrigger(true);
 
                         callback.callback(RequestResult.Success, null);
                     } catch (Exception ex) {
                         L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
+                        callback.callback(RequestResult.Error, "Encountered internal error while trying to take care of the A/B test variant enrolment.");
                     }
                 }
             }, L);
@@ -329,11 +318,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         //merge the new values into the current ones
         RemoteConfigValueStore rcvs = loadConfig();
-        if (clearOldValues) {
-            //in case of full updates, clear old values
-            rcvs.values = new JSONObject();
-        }
-        rcvs.mergeValues(checkResponse);
+        rcvs.mergeValues(checkResponse, clearOldValues);
 
         L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
 
@@ -366,7 +351,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     Object getValue(@NonNull String key) {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
-            return rcvs.getValue(key);
+            return rcvs.getValueLegacy(key);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] getValue, Call failed:[" + ex.toString() + "]");
             return null;
@@ -384,7 +369,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     @NonNull RemoteConfigValueStore loadConfig() {
         String rcvsString = storageProvider.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString, remoteConfigValuesShouldBeCached);
         return rcvs;
     }
 
@@ -395,7 +380,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     @NonNull Map<String, Object> getAllRemoteConfigValuesInternal() {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
-            return rcvs.getAllValues();
+            return rcvs.getAllValuesLegacy();
         } catch (Exception ex) {
             Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
             return null;

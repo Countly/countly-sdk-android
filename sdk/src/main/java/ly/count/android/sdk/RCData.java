@@ -1,6 +1,6 @@
 package ly.count.android.sdk;
 
-class RCData {
+public class RCData {
     public Object value;
     boolean isCurrentUsersData;
 

@@ -31,13 +31,13 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsSerializeDeserialize() throws JSONException {
-        RemoteConfigValueStore remoteConfigValueStore = RemoteConfigValueStore.dataFromString(null);
+        RemoteConfigValueStore remoteConfigValueStore = RemoteConfigValueStore.dataFromString(null, false);
 
         remoteConfigValueStore.values.put("fd", 12);
         remoteConfigValueStore.values.put("2fd", 142);
         remoteConfigValueStore.values.put("f3d", 123);
 
-        RemoteConfigValueStore.dataFromString(remoteConfigValueStore.dataToString());
+        RemoteConfigValueStore.dataFromString(remoteConfigValueStore.dataToString(), false);
     }
 
     /**
@@ -45,12 +45,12 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsDataFromStringNullEmpty() {
-        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString(null);
+        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString(null, false);
         Assert.assertNotNull(rcvs1);
         Assert.assertNotNull(rcvs1.values);
         Assert.assertEquals(0, rcvs1.values.length());
 
-        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("");
+        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("", false);
         Assert.assertNotNull(rcvs2);
         Assert.assertNotNull(rcvs2.values);
         Assert.assertEquals(0, rcvs2.values.length());
@@ -61,13 +61,13 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsDataFromStringSamples_1() {
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}");
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
         Assert.assertEquals(2, rcvs.values.length());
 
-        Assert.assertEquals(123, rcvs.getValue("a"));
-        Assert.assertEquals("fg", rcvs.getValue("b"));
+        Assert.assertEquals(123, rcvs.getValueLegacy("a"));
+        Assert.assertEquals("fg", rcvs.getValueLegacy("b"));
     }
 
     /**
@@ -79,7 +79,7 @@ public class RemoteConfigValueStoreTests {
     @Test
     public void rcvsDataFromStringSamples_2() throws JSONException {
         String initialString = "{\"321\":123,\"\uD83D\uDE00\":\"\uD83D\uDE01\",\"c\":[3,\"44\",5.1,7.7],\"d\":6.5,\"e\":{\"q\":6,\"w\":\"op\"}}";
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(initialString);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(initialString, false);
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
 
@@ -88,12 +88,12 @@ public class RemoteConfigValueStoreTests {
         //validate values while using "get"
         Assert.assertEquals(5, rcvs.values.length());
 
-        Assert.assertEquals(123, rcvs.getValue("321"));
-        Assert.assertEquals("\uD83D\uDE01", rcvs.getValue("\uD83D\uDE00"));
-        Assert.assertEquals(6.5, rcvs.getValue("d"));
+        Assert.assertEquals(123, rcvs.getValueLegacy("321"));
+        Assert.assertEquals("\uD83D\uDE01", rcvs.getValueLegacy("\uD83D\uDE00"));
+        Assert.assertEquals(6.5, rcvs.getValueLegacy("d"));
 
-        Object v1 = rcvs.getValue("c");
-        Object v2 = rcvs.getValue("e");
+        Object v1 = rcvs.getValueLegacy("c");
+        Object v2 = rcvs.getValueLegacy("e");
 
         JSONArray jArr = (JSONArray) v1;
         Assert.assertEquals(4, jArr.length());
@@ -108,7 +108,7 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals("op", jObj.get("w"));
 
         //validate that all of the values are the same when returned with getAllValues
-        Map<String, Object> allVals = rcvs.getAllValues();
+        Map<String, Object> allVals = rcvs.getAllValuesLegacy();
 
         Assert.assertEquals(5, allVals.size());
 
@@ -134,20 +134,18 @@ public class RemoteConfigValueStoreTests {
 
     /**
      * Simple test for value merging
-     *
-     * @throws JSONException
      */
     @Test
-    public void rcvsMergeValues_1() throws JSONException {
-        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}");
-        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("{\"b\": 123.3,\"c\": \"uio\"}");
+    public void rcvsMergeValues_1() {
+        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
+        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("{\"b\": 123.3,\"c\": \"uio\"}", false);
 
-        rcvs1.mergeValues(rcvs2.values);
+        rcvs1.mergeValues(rcvs2.values, false);
 
         Assert.assertEquals(3, rcvs1.values.length());
 
-        Assert.assertEquals(123, rcvs1.getValue("a"));
-        Assert.assertEquals(123.3, rcvs1.getValue("b"));
-        Assert.assertEquals("uio", rcvs1.getValue("c"));
+        Assert.assertEquals(123, rcvs1.getValueLegacy("a"));
+        Assert.assertEquals(123.3, rcvs1.getValueLegacy("b"));
+        Assert.assertEquals("uio", rcvs1.getValueLegacy("c"));
     }
 }
