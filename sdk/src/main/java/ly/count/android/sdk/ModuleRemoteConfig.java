@@ -232,7 +232,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
