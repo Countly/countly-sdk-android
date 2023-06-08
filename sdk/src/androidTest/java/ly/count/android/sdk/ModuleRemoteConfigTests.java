@@ -78,7 +78,7 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals(0, vals.size());
 
         //add first values without clearing
-        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, rcvs1.values);
+        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs1.values));
 
         vals = countly.remoteConfig().getAllValues();
         Assert.assertEquals(2, vals.size());
@@ -86,7 +86,7 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals("fg", vals.get("b"));
 
         //add second pair of values without clearing
-        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, rcvs2.values);
+        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs2.values));
 
         vals = countly.remoteConfig().getAllValues();
         Assert.assertEquals(3, vals.size());
@@ -95,7 +95,7 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals("ww", vals.get("c"));
 
         //add third pair with full clear
-        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(true, rcvs3.values);
+        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(true, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs3.values));
 
         vals = countly.remoteConfig().getAllValues();
         Assert.assertEquals(2, vals.size());

@@ -140,7 +140,7 @@ public class RemoteConfigValueStoreTests {
         RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
         RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("{\"b\": 123.3,\"c\": \"uio\"}", false);
 
-        rcvs1.mergeValues(rcvs2.values, false);
+        rcvs1.mergeValuesToBeRemoved(rcvs2.values, false);
 
         Assert.assertEquals(3, rcvs1.values.length());
 

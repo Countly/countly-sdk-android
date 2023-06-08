@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +21,11 @@ public class ModuleRemoteConfig extends ModuleBase {
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
-    boolean remoteConfigAutomaticUpdateEnabled = false;
+    boolean automaticDownloadTriggersEnabled = false;
 
     boolean remoteConfigValuesShouldBeCached = false;
-    RemoteConfigCallback remoteConfigInitCallback = null;
+
+    List<RCDownloadCallback> downloadCallbacks = new ArrayList<>(2);
 
     public final static String variantObjectNameKey = "name";
 
@@ -37,14 +39,13 @@ public class ModuleRemoteConfig extends ModuleBase {
         metricOverride = config.metricOverride;
         immediateRequestGenerator = config.immediateRequestGenerator;
 
-        if (config.enableRemoteConfigAutomaticDownload) {
-            L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownload);
+        L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers);
+        automaticDownloadTriggersEnabled = config.enableRemoteConfigAutomaticDownloadTriggers;
 
-            remoteConfigAutomaticUpdateEnabled = config.enableRemoteConfigAutomaticDownload;
+        downloadCallbacks.addAll(config.remoteConfigGlobalCallbackList);
 
-            if (config.remoteConfigCallbackNew != null) {
-                remoteConfigInitCallback = config.remoteConfigCallbackNew;
-            }
+        if (config.remoteConfigCallbackLegacy != null) {
+            downloadCallbacks.add((downloadResult, error, fullValueUpdate, downloadedValues) -> config.remoteConfigCallbackLegacy.callback(error));
         }
 
         remoteConfigInterface = new RemoteConfig();
@@ -55,35 +56,32 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param keysOnly set if these are the only keys to update
      * @param keysExcept set if these keys should be ignored from the update
-     * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
-     * @param callback called after the update is done
+     * @param devProvidedCallback dev provided callback that is called after the update is done
      */
-    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean requestShouldBeDelayed, final boolean useLegacyAPI, @Nullable final RemoteConfigCallback callback) {
-        try {
-            L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "], legacyAPI:[" + useLegacyAPI + "]");
+    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean useLegacyAPI, @Nullable final RCDownloadCallback devProvidedCallback) {
+        L.d("[ModuleRemoteConfig] Updating remote config values, legacyAPI:[" + useLegacyAPI + "]");
 
+        String[] preparedKeys = RemoteConfigHelper.prepareKeysIncludeExclude(keysOnly, keysExcept, L);
+        boolean fullUpdate = preparedKeys[0].length() == 0 && preparedKeys[1].length() == 0;
+
+        try {
             // checks
             if (deviceIdProvider.getDeviceId() == null) {
                 //device ID is null, abort
                 L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
-                if (callback != null) {
-                    callback.callback("Can't complete call, device ID is null");
-                }
+                NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Can't complete call, device ID is null", fullUpdate, null);
                 return;
             }
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
                 //temporary id mode enabled, abort
                 L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
-                if (callback != null) {
-                    callback.callback("Can't complete call, temporary device ID is set");
-                }
+                NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Can't complete call, temporary device ID is set", fullUpdate, null);
                 return;
             }
 
             //prepare metrics and request data
             String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
-            String[] preparedKeys = RemoteConfigHelper.prepareKeysIncludeExclude(keysOnly, keysExcept, L);
             String requestData;
 
             if (useLegacyAPI) {
@@ -96,36 +94,32 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
                 @Override
                 public void callback(JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
-                        if (callback != null) {
-                            callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
-                        }
+                        NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered problem while trying to reach the server, possibly no internet connection", fullUpdate, null);
                         return;
                     }
 
                     String error = null;
+                    Map<String, Object> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse);
+
                     try {
                         boolean clearOldValues = keysExcept == null && keysOnly == null;
-                        mergeCheckResponseIntoCurrentValues(clearOldValues, checkResponse);
+                        mergeCheckResponseIntoCurrentValues(clearOldValues, newRC);
                     } catch (Exception ex) {
                         L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]");
                         error = "Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]";
                     }
 
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
+                    NotifyDownloadCallbacks(devProvidedCallback, error == null ? RequestResult.Success : RequestResult.Error, error, fullUpdate, newRC);
                 }
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to perform a remote config update. " + ex.toString());
-            if (callback != null) {
-                callback.callback("Encountered internal error while trying to perform a remote config update");
-            }
+            NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered internal error while trying to perform a remote config update", fullUpdate, null);
         }
     }
 
@@ -313,12 +307,12 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @throws Exception it throws an exception so that it is escalated upwards
      */
-    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, JSONObject checkResponse) throws Exception {
+    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, Map<String, Object> newRC) {
         //todo iterate over all response values and print a summary of the returned keys + ideally a summary of their payload.
 
         //merge the new values into the current ones
         RemoteConfigValueStore rcvs = loadConfig();
-        rcvs.mergeValues(checkResponse, clearOldValues);
+        rcvs.mergeValues(newRC, clearOldValues);
 
         L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
 
@@ -413,18 +407,23 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @return
      */
     @NonNull String[] testingGetVariantsForKeyInternal(@NonNull String key) {
+        String[] variantResponse = null;
         if (variantContainer.containsKey(key)) {
-            return variantContainer.get(key);
+            variantResponse = variantContainer.get(key);
         }
 
-        return new String[0];
+        if (variantResponse == null) {
+            variantResponse = new String[0];
+        }
+
+        return variantResponse;
     }
 
     void clearAndDownloadAfterIdChange() {
         L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
         CacheOrClearRCValuesIfNeeded();
-        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+        if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
         }
     }
@@ -433,14 +432,24 @@ public class ModuleRemoteConfig extends ModuleBase {
         clearValueStoreInternal();
     }
 
+    void NotifyDownloadCallbacks(RCDownloadCallback devProvidedCallback, RequestResult requestResult, String message, boolean fullUpdate, Map<String, Object> downloadedValues) {
+        for (RCDownloadCallback callback : downloadCallbacks) {
+            callback.callback(requestResult, message, fullUpdate, downloadedValues);
+        }
+
+        if (devProvidedCallback != null) {
+            devProvidedCallback.callback(requestResult, message, fullUpdate, downloadedValues);
+        }
+    }
+
     void RCAutomaticDownloadTrigger(boolean cacheClearOldValues) {
         if (cacheClearOldValues) {
             clearValueStoreInternal();//todo finish
         }
 
-        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+        if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             L.d("[RemoteConfig] Automatically updating remote config values");
-            updateRemoteConfigValues(null, null, false, false, remoteConfigInitCallback);
+            updateRemoteConfigValues(null, null, false, null);
         } else {
             L.v("[RemoteConfig] Automatically RC update trigger skipped");
         }
@@ -558,7 +567,14 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToExclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
-                updateRemoteConfigValues(null, keysToExclude, false, true, callback);
+
+                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                };
+
+                updateRemoteConfigValues(null, keysToExclude, true, innerCall);
             }
         }
 
@@ -581,7 +597,14 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
-                updateRemoteConfigValues(keysToInclude, null, false, true, callback);
+
+                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                };
+
+                updateRemoteConfigValues(keysToInclude, null, true, innerCall);
             }
         }
 
@@ -602,7 +625,13 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                updateRemoteConfigValues(null, null, false, true, callback);
+                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                };
+
+                updateRemoteConfigValues(null, null, true, innerCall);
             }
         }
 
@@ -625,7 +654,13 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToOmit == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
-                updateRemoteConfigValues(null, keysToOmit, false, false, null); // TODO: this callback was not expected
+
+                if (callback == null) {
+                    callback = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    };
+                }
+
+                updateRemoteConfigValues(null, keysToOmit, false, callback);
             }
         }
 
@@ -647,7 +682,13 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
-                updateRemoteConfigValues(keysToInclude, null, false, false, null); // TODO: this callback was not expected
+
+                if (callback == null) {
+                    callback = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    };
+                }
+
+                updateRemoteConfigValues(keysToInclude, null, false, callback);
             }
         }
 
@@ -662,7 +703,12 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
-                updateRemoteConfigValues(null, null, false, false, null); // TODO: this callback was not expected
+                if (callback == null) {
+                    callback = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    };
+                }
+
+                updateRemoteConfigValues(null, null, false, null);
             }
         }
 

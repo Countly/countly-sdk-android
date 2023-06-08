@@ -2,6 +2,8 @@ package ly.count.android.sdk;
 
 import android.app.Application;
 import android.content.Context;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class CountlyConfig {
@@ -120,8 +122,12 @@ public class CountlyConfig {
 
     protected boolean pushIntentAddMetadata = false;
 
-    protected boolean enableRemoteConfigAutomaticDownload = false;
-    protected RemoteConfigCallback remoteConfigCallbackNew = null;
+    protected boolean enableRemoteConfigAutomaticDownloadTriggers = false;
+
+    boolean enableRemoteConfigValueCaching = false;
+    protected RemoteConfigCallback remoteConfigCallbackLegacy = null;
+
+    protected List<RCDownloadCallback> remoteConfigGlobalCallbackList = new ArrayList<>(2);
 
     protected boolean shouldRequireConsent = false;
     protected String[] enabledFeatureNames = null;
@@ -478,16 +484,23 @@ public class CountlyConfig {
      * @deprecated
      */
     public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
-        enableRemoteConfigAutomaticDownload = enabled;
-        remoteConfigCallbackNew = callback;
+        enableRemoteConfigAutomaticDownloadTriggers = enabled;
+        remoteConfigCallbackLegacy = callback;
         return this;
     }
 
     public synchronized CountlyConfig enableRemoteConfigAutomaticTriggers() {
+        enableRemoteConfigAutomaticDownloadTriggers = true;
         return this;
     }
 
     public synchronized CountlyConfig enableRemoteConfigValueCaching() {
+        enableRemoteConfigValueCaching = true;
+        return this;
+    }
+
+    public synchronized CountlyConfig RemoteConfigRegisterGlobalCallback(RCDownloadCallback callback) {
+        remoteConfigGlobalCallbackList.add(callback);
         return this;
     }
 

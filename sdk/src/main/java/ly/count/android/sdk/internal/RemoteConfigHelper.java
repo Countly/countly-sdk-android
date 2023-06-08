@@ -4,14 +4,38 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.ModuleRemoteConfig;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class RemoteConfigHelper {
+
+    public static @NonNull Map<String, Object> DownloadedValuesIntoMap(JSONObject jsonObject) {
+        Map<String, Object> ret = new HashMap<>();
+
+        if (jsonObject == null) {
+            return ret;
+        }
+
+        Iterator<String> iter = jsonObject.keys();
+        while (iter.hasNext()) {
+            String key = iter.next();
+            try {
+                Object value = jsonObject.get(key);
+                ret.put(key, value);
+            } catch (Exception e) {
+                Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed merging new remote config values");
+            }
+        }
+
+        return ret;
+    }
+
     /*
      * Decide which keys to use
      * Useful if both 'keysExcept' and 'keysOnly' set

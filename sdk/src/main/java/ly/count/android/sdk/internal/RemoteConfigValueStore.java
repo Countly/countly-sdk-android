@@ -27,13 +27,17 @@ public class RemoteConfigValueStore {
         values = new JSONObject();
     }
 
+    public void mergeValues(Map<String, Object> newValues, boolean fullUpdate) {
+        //todo must be finished
+    }
+
     /**
      * add new values to the current storage
      *
      * @param newValues
      * @param fullUpdate clear all previous values in case of full update
      */
-    public void mergeValues(JSONObject newValues, boolean fullUpdate) {
+    public void mergeValuesToBeRemoved(JSONObject newValues, boolean fullUpdate) {
         if (fullUpdate) {
             clearValues();
         }
