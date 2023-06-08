@@ -377,13 +377,23 @@ public class ModuleRemoteConfig extends ModuleBase {
         storageProvider.setRemoteConfigValues("");
     }
 
-    @NonNull Map<String, Object> getAllRemoteConfigValuesInternal() {
+    @NonNull Map<String, Object> getAllRemoteConfigValuesInternalLegacy() {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
             return rcvs.getAllValuesLegacy();
         } catch (Exception ex) {
             Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
-            return null;
+            return new HashMap<>();
+        }
+    }
+
+    @NonNull Map<String, RCData> getAllRemoteConfigValuesInternal() {
+        try {
+            RemoteConfigValueStore rcvs = loadConfig();
+            return rcvs.getAllValues();
+        } catch (Exception ex) {
+            Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+            return new HashMap<>();
         }
     }
 
@@ -505,7 +515,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return null;
                 }
 
-                return getAllRemoteConfigValuesInternal();
+                return getAllRemoteConfigValuesInternalLegacy();
             }
         }
 
