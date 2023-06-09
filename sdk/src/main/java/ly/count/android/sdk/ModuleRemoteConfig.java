@@ -443,8 +443,12 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void RCAutomaticDownloadTrigger(boolean cacheClearOldValues) {
-        if (cacheClearOldValues) {
+        if (!cacheClearOldValues) {
             clearValueStoreInternal();//todo finish
+        } else {
+            RemoteConfigValueStore rc = loadConfig();
+            rc.cacheClearValues();
+            saveConfig(rc);
         }
 
         if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
@@ -708,7 +712,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     };
                 }
 
-                updateRemoteConfigValues(null, null, false, null);
+                updateRemoteConfigValues(null, null, false, callback);
             }
         }
 

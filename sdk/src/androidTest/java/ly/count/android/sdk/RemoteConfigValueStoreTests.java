@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
+import ly.count.android.sdk.internal.RemoteConfigHelper;
 import ly.count.android.sdk.internal.RemoteConfigValueStore;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -133,10 +134,10 @@ public class RemoteConfigValueStoreTests {
     }
 
     /**
-     * Simple test for value merging
+     * Simple test for value merging (legacy)
      */
     @Test
-    public void rcvsMergeValues_1() {
+    public void rcvsMergeValues_1_legacy() {
         RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
         RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("{\"b\": 123.3,\"c\": \"uio\"}", false);
 
@@ -147,5 +148,23 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals(123, rcvs1.getValueLegacy("a"));
         Assert.assertEquals(123.3, rcvs1.getValueLegacy("b"));
         Assert.assertEquals("uio", rcvs1.getValueLegacy("c"));
+    }
+
+    /**
+     * Simple test for value merging
+     */
+    @Test
+    public void rcvsMergeValues_1() throws JSONException {
+        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
+        JSONObject obj = new JSONObject("{\"b\": 123.3,\"c\": \"uio\"}");
+
+        Map<String, Object> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(obj);
+        rcvs1.mergeValues(newRC, false);
+
+        Assert.assertEquals(3, rcvs1.values.length());
+
+        Assert.assertEquals(123, rcvs1.getValue("a").value);
+        Assert.assertEquals(123.3, rcvs1.getValue("b").value);
+        Assert.assertEquals("uio", rcvs1.getValue("c").value);
     }
 }
