@@ -179,7 +179,7 @@ public class RemoteConfigValueStore {
     }
 
     //========================================
-    // SERIALIZATION
+    // SERIALIZATION, DESERIALIZATION
     //========================================
 
     public static RemoteConfigValueStore dataFromString(@Nullable String storageString, boolean valuesShouldBeCached) {
@@ -190,23 +190,6 @@ public class RemoteConfigValueStore {
         JSONObject values;
         try {
             values = new JSONObject(storageString);
-            //iterate through all values and check if each value an instance of json object. and if it isnt convert to new data
-            Iterator<String> iter = values.keys();
-            while (iter.hasNext()) {
-                String key = iter.next();
-                try {
-                    JSONObject value = values.optJSONObject(key);
-                    if (value != null) {
-                        continue;
-                    }
-                    value = new JSONObject();
-                    value.put(keyValue, values.get(key));
-                    value.put(keyCacheFlag, cacheValFresh);
-                    values.put(key, value);
-                } catch (Exception e) {
-                    Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed caching remote config values, dataFromString:" + e.toString());
-                }
-            }
         } catch (JSONException e) {
             Countly.sharedInstance().L.e("[RemoteConfigValueStore] Couldn't decode RemoteConfigValueStore successfully: " + e.toString());
             values = new JSONObject();

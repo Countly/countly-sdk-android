@@ -62,13 +62,18 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsDataFromStringSamples_1() {
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
+        String[] rcArr = new String[] { rcEStr("a", 123, false), rcEStr("b", "fg", false) };
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true);
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
         Assert.assertEquals(2, rcvs.values.length());
 
         Assert.assertEquals(123, rcvs.getValueLegacy("a"));
         Assert.assertEquals("fg", rcvs.getValueLegacy("b"));
+        Assert.assertEquals(123, rcvs.getValue("a").value);
+        Assert.assertEquals("fg", rcvs.getValue("b").value);
+        Assert.assertFalse(rcvs.getValue("a").isCurrentUsersData);
+        Assert.assertFalse(rcvs.getValue("b").isCurrentUsersData);
     }
 
     /**
@@ -79,12 +84,13 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsDataFromStringSamples_2() throws JSONException {
-        String initialString = "{\"321\":123,\"\uD83D\uDE00\":\"\uD83D\uDE01\",\"c\":[3,\"44\",5.1,7.7],\"d\":6.5,\"e\":{\"q\":6,\"w\":\"op\"}}";
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(initialString, false);
+        JSONArray jArrI = new JSONArray("[3,\"44\",5.1,7.7]");
+        JSONObject jObjI = new JSONObject("{\"q\":6,\"w\":\"op\"}");
+
+        String[] rcArr = new String[] { rcEStr("321", 123, false), rcEStr("😀", "😁"), rcEStr("c", jArrI), rcEStr("d", 6.5), rcEStr("e", jObjI) };
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true);
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
-
-        Assert.assertEquals(initialString, rcvs.dataToString());//quickly validate deserialization
 
         //validate values while using "get"
         Assert.assertEquals(5, rcvs.values.length());
@@ -133,12 +139,25 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals("op", jObj2.get("w"));
     }
 
+    @Test
+    public void dataFromString_CurrentStructure() {
+        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "ccx", false) };
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
+
+        Assert.assertEquals(123, rcvs.getValue("a").value);
+        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
+
+        Assert.assertEquals("ccx", rcvs.getValue("b").value);
+        Assert.assertFalse(rcvs.getValue("b").isCurrentUsersData);
+    }
+
     /**
      * Simple test for value merging
      */
     @Test
     public void rcvsMergeValues_1() throws JSONException {
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
+        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
         JSONObject obj = new JSONObject("{\"b\": 123.3,\"c\": \"uio\"}");
 
         Map<String, Object> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(obj);
@@ -151,79 +170,27 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals("uio", rcvs.getValue("c").value);
     }
 
-    @Test
-    public void dataFromString_LegacyStructure() {
-        String input = "{" + entryL("a", 123) + "," + entryL("b", "fg") + "}";
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(input, false);
-
-        Assert.assertEquals(123, rcvs.getValue("a").value);
-        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
-
-        Assert.assertEquals("fg", rcvs.getValue("b").value);
-        Assert.assertTrue(rcvs.getValue("b").isCurrentUsersData);
-    }
-
-    @Test
-    public void dataFromString_CurrentStructure() {
-        String input = "{" + entryC("a", 123, true) + "," + entryC("b", "ccx", false) + "}";
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(input, false);
-
-        Assert.assertEquals(123, rcvs.getValue("a").value);
-        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
-
-        Assert.assertEquals("ccx", rcvs.getValue("b").value);
-        Assert.assertFalse(rcvs.getValue("b").isCurrentUsersData);
-    }
-
-    @Test
-    public void dataFromString_MixedStructure() {
-        String input = "{" + entryL("a", 123) + "," + entryC("b", "ccx", false) + "}";
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(input, false);
-
-        Assert.assertEquals(123, rcvs.getValue("a").value);
-        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
-
-        Assert.assertEquals("ccx", rcvs.getValue("b").value);
-        Assert.assertFalse(rcvs.getValue("b").isCurrentUsersData);
-    }
-
     /**
-     * Create a legacy entry
+     * Create a remote config entry string
      *
      * @param key
      * @param value
      * @return
      */
-    String entryL(String key, Object value) {
-        StringBuilder ret = new StringBuilder();
-        ret.append("\"" + key + "\":");
-
-        if (value instanceof String) {
-            ret.append("\"");
-            ret.append(value);
-            ret.append("\"");
-        } else {
-            ret.append(value);
-        }
-
-        return ret.toString();
-    }
-
-    /**
-     * Create a current data format entry
-     *
-     * @param key
-     * @param value
-     * @return
-     */
-    String entryC(String key, Object value, boolean isCurrentUser) {
+    public static String rcEStr(String key, Object value, boolean isCurrentUser) {
         StringBuilder ret = new StringBuilder();
         ret.append("\"").append(key).append("\":{\"");
         ret.append(RemoteConfigValueStore.keyValue);
         ret.append("\":");
 
         if (value instanceof String) {
-            ret.append("\"").append(value).append("\"");
+            ret.append("\"");
+            ret.append(value);
+            ret.append("\"");
+        } else if (value instanceof JSONArray) {
+            ret.append(value);
+        } else if (value instanceof JSONObject) {
+            ret.append(value);
         } else {
             ret.append(value);
         }
@@ -239,5 +206,24 @@ public class RemoteConfigValueStoreTests {
         return ret.toString();
     }
 
-    //todo: test for explicit data migration from the old thing to the new thing
+    public static String rcEStr(String key, Object value) {
+        return rcEStr(key, value, true);
+    }
+
+    String rcArrIntoJSON(String[] arr) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+
+        for (int a = 0; a < arr.length; a++) {
+            if (a != 0) {
+                sb.append(",");
+            }
+
+            sb.append(arr[a]);
+        }
+        String input = "{" + rcEStr("a", 123, true) + "," + rcEStr("b", "ccx", false) + "}";
+
+        sb.append("}");
+        return sb.toString();
+    }
 }
