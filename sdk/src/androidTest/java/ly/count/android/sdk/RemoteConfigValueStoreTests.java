@@ -134,23 +134,6 @@ public class RemoteConfigValueStoreTests {
     }
 
     /**
-     * Simple test for value merging (legacy)
-     */
-    @Test
-    public void rcvsMergeValues_1_legacy() {
-        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
-        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("{\"b\": 123.3,\"c\": \"uio\"}", false);
-
-        rcvs1.mergeValuesToBeRemoved(rcvs2.values, false);
-
-        Assert.assertEquals(3, rcvs1.values.length());
-
-        Assert.assertEquals(123, rcvs1.getValueLegacy("a"));
-        Assert.assertEquals(123.3, rcvs1.getValueLegacy("b"));
-        Assert.assertEquals("uio", rcvs1.getValueLegacy("c"));
-    }
-
-    /**
      * Simple test for value merging
      */
     @Test
@@ -167,4 +150,6 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals(123.3, rcvs1.getValue("b").value);
         Assert.assertEquals("uio", rcvs1.getValue("c").value);
     }
+
+    //todo: test for explicit data migration from the old thing to the new thing
 }

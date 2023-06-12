@@ -96,7 +96,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
                 @Override
-                public void callback(JSONObject checkResponse) {
+                public void callback(@Nullable JSONObject checkResponse) {
                     L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
                     if (checkResponse == null) {
                         NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered problem while trying to reach the server, possibly no internet connection", fullUpdate, null);
@@ -307,7 +307,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @throws Exception it throws an exception so that it is escalated upwards
      */
-    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, Map<String, Object> newRC) {
+    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, @NonNull Map<String, Object> newRC) {
         //todo iterate over all response values and print a summary of the returned keys + ideally a summary of their payload.
 
         //merge the new values into the current ones

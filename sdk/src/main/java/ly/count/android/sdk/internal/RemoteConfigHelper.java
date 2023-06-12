@@ -15,7 +15,7 @@ import org.json.JSONObject;
 
 public class RemoteConfigHelper {
 
-    public static @NonNull Map<String, Object> DownloadedValuesIntoMap(JSONObject jsonObject) {
+    public static @NonNull Map<String, Object> DownloadedValuesIntoMap(@Nullable JSONObject jsonObject) {
         Map<String, Object> ret = new HashMap<>();
 
         if (jsonObject == null) {
