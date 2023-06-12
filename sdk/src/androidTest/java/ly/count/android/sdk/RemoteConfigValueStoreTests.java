@@ -138,17 +138,105 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsMergeValues_1() throws JSONException {
-        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
         JSONObject obj = new JSONObject("{\"b\": 123.3,\"c\": \"uio\"}");
 
         Map<String, Object> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(obj);
-        rcvs1.mergeValues(newRC, false);
+        rcvs.mergeValues(newRC, false);
 
-        Assert.assertEquals(3, rcvs1.values.length());
+        Assert.assertEquals(3, rcvs.values.length());
 
-        Assert.assertEquals(123, rcvs1.getValue("a").value);
-        Assert.assertEquals(123.3, rcvs1.getValue("b").value);
-        Assert.assertEquals("uio", rcvs1.getValue("c").value);
+        Assert.assertEquals(123, rcvs.getValue("a").value);
+        Assert.assertEquals(123.3, rcvs.getValue("b").value);
+        Assert.assertEquals("uio", rcvs.getValue("c").value);
+    }
+
+    @Test
+    public void dataFromString_LegacyStructure() {
+        String input = "{" + entryL("a", 123) + "," + entryL("b", "fg") + "}";
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(input, false);
+
+        Assert.assertEquals(123, rcvs.getValue("a").value);
+        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
+
+        Assert.assertEquals("fg", rcvs.getValue("b").value);
+        Assert.assertTrue(rcvs.getValue("b").isCurrentUsersData);
+    }
+
+    @Test
+    public void dataFromString_CurrentStructure() {
+        String input = "{" + entryC("a", 123, true) + "," + entryC("b", "ccx", false) + "}";
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(input, false);
+
+        Assert.assertEquals(123, rcvs.getValue("a").value);
+        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
+
+        Assert.assertEquals("ccx", rcvs.getValue("b").value);
+        Assert.assertFalse(rcvs.getValue("b").isCurrentUsersData);
+    }
+
+    @Test
+    public void dataFromString_MixedStructure() {
+        String input = "{" + entryL("a", 123) + "," + entryC("b", "ccx", false) + "}";
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(input, false);
+
+        Assert.assertEquals(123, rcvs.getValue("a").value);
+        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
+
+        Assert.assertEquals("ccx", rcvs.getValue("b").value);
+        Assert.assertFalse(rcvs.getValue("b").isCurrentUsersData);
+    }
+
+    /**
+     * Create a legacy entry
+     *
+     * @param key
+     * @param value
+     * @return
+     */
+    String entryL(String key, Object value) {
+        StringBuilder ret = new StringBuilder();
+        ret.append("\"" + key + "\":");
+
+        if (value instanceof String) {
+            ret.append("\"");
+            ret.append(value);
+            ret.append("\"");
+        } else {
+            ret.append(value);
+        }
+
+        return ret.toString();
+    }
+
+    /**
+     * Create a current data format entry
+     *
+     * @param key
+     * @param value
+     * @return
+     */
+    String entryC(String key, Object value, boolean isCurrentUser) {
+        StringBuilder ret = new StringBuilder();
+        ret.append("\"").append(key).append("\":{\"");
+        ret.append(RemoteConfigValueStore.keyValue);
+        ret.append("\":");
+
+        if (value instanceof String) {
+            ret.append("\"").append(value).append("\"");
+        } else {
+            ret.append(value);
+        }
+
+        ret.append(",\"");
+        ret.append(RemoteConfigValueStore.keyCacheFlag);
+        ret.append("\":");
+
+        ret.append(isCurrentUser ? RemoteConfigValueStore.cacheValFresh : RemoteConfigValueStore.cacheValCached);
+
+        ret.append("}");
+
+        return ret.toString();
     }
 
     //todo: test for explicit data migration from the old thing to the new thing

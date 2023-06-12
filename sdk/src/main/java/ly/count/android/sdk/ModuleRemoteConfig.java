@@ -506,7 +506,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         /**
          * Clear all stored remote config_ values
          *
-         * @deprecated
+         * @deprecated Use "clearAll"
          */
         public void clearStoredValues() {
             synchronized (_cly) {
@@ -784,15 +784,15 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         public void registerDownloadCallback(RCDownloadCallback callback) {
-
+            downloadCallbacks.add(callback);
         }
 
         public void removeDownloadCallback(RCDownloadCallback callback) {
-
+            downloadCallbacks.remove(callback);
         }
 
         public void clearAll() {
-
+            clearStoredValues();
         }
 
         /**

@@ -1,6 +1,7 @@
 package ly.count.android.sdk.internal;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -10,12 +11,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class RemoteConfigValueStore {
-    public JSONObject values = new JSONObject();
-    public boolean valuesCanBeCached = false;
-    static final String keyValue = "v";
-    static final String keyCacheFlag = "c";
-    static final int cacheValCached = 0;
-    static final int cacheValFresh = 1;
+    public JSONObject values;
+    public boolean valuesCanBeCached;
+    public static final String keyValue = "v";
+    public static final String keyCacheFlag = "c";
+    public static final int cacheValCached = 0;
+    public static final int cacheValFresh = 1;
     public boolean dirty = false;
 
     //  Structure of the JSON objects we will have
@@ -94,7 +95,7 @@ public class RemoteConfigValueStore {
     // CONSTRUCTION
     //========================================
 
-    private RemoteConfigValueStore(JSONObject values, boolean valuesShouldBeCached) {
+    private RemoteConfigValueStore(@NonNull JSONObject values, boolean valuesShouldBeCached) {
         this.values = values;
         this.valuesCanBeCached = valuesShouldBeCached;
     }
@@ -103,7 +104,7 @@ public class RemoteConfigValueStore {
     // GET VALUES
     //========================================
 
-    public @NonNull RCData getValue(String key) {
+    public @NonNull RCData getValue(@NonNull String key) {
         RCData res = new RCData(null, true);
         try {
             JSONObject rcObj = values.optJSONObject(key);
@@ -141,11 +142,16 @@ public class RemoteConfigValueStore {
         return ret;
     }
 
-    public Object getValueLegacy(String key) {
-        return values.opt(key);
+    public Object getValueLegacy(@NonNull String key) {
+        JSONObject rcObj = values.optJSONObject(key);
+        if (rcObj == null) {
+            return null;
+        }
+
+        return rcObj.opt(keyValue);
     }
 
-    public Map<String, Object> getAllValuesLegacy() {
+    public @NonNull Map<String, Object> getAllValuesLegacy() {
         Map<String, Object> ret = new HashMap<>();
 
         Iterator<String> keys = values.keys();
@@ -153,11 +159,20 @@ public class RemoteConfigValueStore {
         while (keys.hasNext()) {
             String key = keys.next();
 
-            try {
-                ret.put(key, values.get(key));
-            } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[RemoteConfigValueStore] Got JSON exception while calling 'getAllValuesLegacy': " + ex.toString());
+            JSONObject jobj = values.optJSONObject(key);
+            if (jobj == null) {
+                Countly.sharedInstance().L.e("[RemoteConfigValueStore] getAllValuesLegacy, inner object seems to be 'null', key:[" + key + "]");
+                continue;
             }
+
+            Object innerValue = jobj.opt(keyValue);
+
+            if (innerValue == null) {
+                Countly.sharedInstance().L.e("[RemoteConfigValueStore] getAllValuesLegacy, inner value seems to be 'null', key:[" + key + "]");
+                continue;
+            }
+
+            ret.put(key, innerValue);
         }
 
         return ret;
@@ -167,7 +182,7 @@ public class RemoteConfigValueStore {
     // SERIALIZATION
     //========================================
 
-    public static RemoteConfigValueStore dataFromString(String storageString, boolean valuesShouldBeCached) {
+    public static RemoteConfigValueStore dataFromString(@Nullable String storageString, boolean valuesShouldBeCached) {
         if (storageString == null || storageString.isEmpty()) {
             return new RemoteConfigValueStore(new JSONObject(), valuesShouldBeCached);
         }
