@@ -10,13 +10,14 @@ import java.util.Map;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.ModuleRemoteConfig;
+import ly.count.android.sdk.RCData;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class RemoteConfigHelper {
 
-    public static @NonNull Map<String, Object> DownloadedValuesIntoMap(@Nullable JSONObject jsonObject) {
-        Map<String, Object> ret = new HashMap<>();
+    public static @NonNull Map<String, RCData> DownloadedValuesIntoMap(@Nullable JSONObject jsonObject) {
+        Map<String, RCData> ret = new HashMap<>();
 
         if (jsonObject == null) {
             return ret;
@@ -27,7 +28,7 @@ public class RemoteConfigHelper {
             String key = iter.next();
             try {
                 Object value = jsonObject.get(key);
-                ret.put(key, value);
+                ret.put(key, new RCData(value, true));
             } catch (Exception e) {
                 Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed merging new remote config values");
             }

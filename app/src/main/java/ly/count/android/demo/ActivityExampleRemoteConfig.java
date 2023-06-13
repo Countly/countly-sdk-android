@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import ly.count.android.sdk.RCData;
 import ly.count.android.sdk.RCDownloadCallback;
 import ly.count.android.sdk.RequestResult;
 import org.json.JSONArray;
@@ -27,7 +28,7 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
     public void onClickRemoteConfigUpdate(View v) {
         Countly.sharedInstance().remoteConfig().DownloadAllKeys(new RCDownloadCallback() {
-            @Override public void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, Object> downloadedValues) {
+            @Override public void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, RCData> downloadedValues) {
                 if (error == null) {
                     Toast.makeText(getApplicationContext(), "Update finished", Toast.LENGTH_SHORT).show();
                 } else {

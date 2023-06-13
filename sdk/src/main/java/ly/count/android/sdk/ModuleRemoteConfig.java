@@ -104,7 +104,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     }
 
                     String error = null;
-                    Map<String, Object> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse);
+                    Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse);
 
                     try {
                         boolean clearOldValues = keysExcept == null && keysOnly == null;
@@ -307,7 +307,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @throws Exception it throws an exception so that it is escalated upwards
      */
-    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, @NonNull Map<String, Object> newRC) {
+    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, @NonNull Map<String, RCData> newRC) {
         //todo iterate over all response values and print a summary of the returned keys + ideally a summary of their payload.
 
         //merge the new values into the current ones
@@ -342,12 +342,22 @@ public class ModuleRemoteConfig extends ModuleBase {
         return result;
     }
 
-    Object getValue(@NonNull String key) {
+    RCData getRCValue(@NonNull String key) {
+        try {
+            RemoteConfigValueStore rcvs = loadConfig();
+            return rcvs.getValue(key);
+        } catch (Exception ex) {
+            L.e("[ModuleRemoteConfig] getValue, Call failed:[" + ex.toString() + "]");
+            return new RCData(null, true);
+        }
+    }
+
+    Object getRCValueLegacy(@NonNull String key) {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
             return rcvs.getValueLegacy(key);
         } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] getValue, Call failed:[" + ex.toString() + "]");
+            L.e("[ModuleRemoteConfig] getValueLegacy, Call failed:[" + ex.toString() + "]");
             return null;
         }
     }
@@ -432,7 +442,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         clearValueStoreInternal();
     }
 
-    void NotifyDownloadCallbacks(RCDownloadCallback devProvidedCallback, RequestResult requestResult, String message, boolean fullUpdate, Map<String, Object> downloadedValues) {
+    void NotifyDownloadCallbacks(RCDownloadCallback devProvidedCallback, RequestResult requestResult, String message, boolean fullUpdate, Map<String, RCData> downloadedValues) {
         for (RCDownloadCallback callback : downloadCallbacks) {
             callback.callback(requestResult, message, fullUpdate, downloadedValues);
         }
@@ -547,7 +557,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return null;
                 }
 
-                return getValue(key);
+                return getRCValueLegacy(key);
             }
         }
 
@@ -724,7 +734,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return new HashMap<>();
                 }
 
-                return new HashMap<>();
+                return getAllRemoteConfigValuesInternal();
             }
         }
 
@@ -736,7 +746,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return new RCData(null, true);
                 }
 
-                return new RCData(null, true);
+                return getRCValue(key);
             }
         }
 

@@ -4,5 +4,5 @@ import java.util.Map;
 import org.json.JSONObject;
 
 public interface RCDownloadCallback {
-    void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, Object> downloadedValues);
+    void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, RCData> downloadedValues);
 }

@@ -67,7 +67,7 @@ public class RemoteConfigValueStore {
     // MERGING
     //========================================
 
-    public void mergeValues(@NonNull Map<String, Object> newValues, boolean fullUpdate) {
+    public void mergeValues(@NonNull Map<String, RCData> newValues, boolean fullUpdate) {
         //Countly.sharedInstance().L.i("[RemoteConfigValueStore] mergeValues, stored values:" + values.toString() + "provided values:" + newValues);
         Countly.sharedInstance().L.v("[RemoteConfigValueStore] mergeValues, stored values C:" + values.length() + "provided values C:" + newValues.size());
 
@@ -75,9 +75,9 @@ public class RemoteConfigValueStore {
             clearValues();
         }
 
-        for (Map.Entry<String, Object> entry : newValues.entrySet()) {
+        for (Map.Entry<String, RCData> entry : newValues.entrySet()) {
             String key = entry.getKey();
-            Object newValue = entry.getValue();
+            Object newValue = entry.getValue().value;
             JSONObject newObj = new JSONObject();
             try {
                 newObj.put(keyValue, newValue);

@@ -160,7 +160,7 @@ public class RemoteConfigValueStoreTests {
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
         JSONObject obj = new JSONObject("{\"b\": 123.3,\"c\": \"uio\"}");
 
-        Map<String, Object> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(obj);
+        Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(obj);
         rcvs.mergeValues(newRC, false);
 
         Assert.assertEquals(3, rcvs.values.length());
