@@ -568,7 +568,7 @@ public class ModuleUserProfile extends ModuleBase {
         }
 
         /**
-         * Clear all submitted information
+         * Clear queued operations / modifications
          */
         public void clear() {
             synchronized (_cly) {

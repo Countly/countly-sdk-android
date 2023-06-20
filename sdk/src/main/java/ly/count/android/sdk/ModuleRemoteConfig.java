@@ -17,7 +17,7 @@ import static ly.count.android.sdk.ModuleConsent.ConsentChangeSource.ChangeConse
 public class ModuleRemoteConfig extends ModuleBase {
     ImmediateRequestGenerator immediateRequestGenerator;
     boolean updateRemoteConfigAfterIdChange = false;
-    Map<String, String[]> variantContainer; // Stores the fetched A/B test variants
+    Map<String, String[]> variantContainer = new HashMap<>(); // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
@@ -416,14 +416,10 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param key
      * @return
      */
-    @NonNull String[] testingGetVariantsForKeyInternal(@NonNull String key) {
+    @Nullable String[] testingGetVariantsForKeyInternal(@NonNull String key) {
         String[] variantResponse = null;
         if (variantContainer.containsKey(key)) {
             variantResponse = variantContainer.get(key);
-        }
-
-        if (variantResponse == null) {
-            variantResponse = new String[0];
         }
 
         return variantResponse;
@@ -655,7 +651,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param keysToOmit
          * @param callback
          */
-        public void DownloadOmittingKeys(String[] keysToOmit, RCDownloadCallback callback) {
+        public void downloadOmittingKeys(@Nullable String[] keysToOmit, @Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
 
@@ -684,7 +680,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param keysToInclude
          * @param callback
          */
-        public void DownloadSpecificKeys(String[] keysToInclude, RCDownloadCallback callback) {
+        public void downloadSpecificKeys(@Nullable String[] keysToInclude, @Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
@@ -706,7 +702,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        public void DownloadAllKeys(RCDownloadCallback callback) {
+        public void downloadAllKeys(@Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to update Remote Config v2");
 
@@ -726,7 +722,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        public @NonNull Map<String, RCData> GetAllValues() {
+        public @NonNull Map<String, RCData> getValues() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Getting all Remote config values v2");
 
@@ -738,7 +734,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        public @NonNull RCData GetValue(String key) {
+        public @NonNull RCData getValue(@Nullable String key) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2");
 
@@ -755,7 +751,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keys - String array of keys (parameters)
          */
-        public void enrollIntoABTestsForKeys(String[] keys) {
+        public void enrollIntoABTestsForKeys(@Nullable String[] keys) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Enrolling user into A/B tests.");
 
@@ -777,7 +773,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keys - String array of keys (parameters)
          */
-        public void exitABTestsForKeys(String[] keys) {
+        public void exitABTestsForKeys(@Nullable String[] keys) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Removing user from A/B tests.");
 
@@ -793,11 +789,11 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
-        public void registerDownloadCallback(RCDownloadCallback callback) {
+        public void registerDownloadCallback(@Nullable RCDownloadCallback callback) {
             downloadCallbacks.add(callback);
         }
 
-        public void removeDownloadCallback(RCDownloadCallback callback) {
+        public void removeDownloadCallback(@Nullable RCDownloadCallback callback) {
             downloadCallbacks.remove(callback);
         }
 
@@ -815,7 +811,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 L.i("[RemoteConfig] Calling 'testingGetAllVariants'");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
+                    return new HashMap<>();
                 }
 
                 return testingGetAllVariantsInternal();
@@ -828,11 +824,16 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param key - key value to get variant information for
          * @return
          */
-        public @NonNull String[] testingGetVariantsForKey(String key) {
+        public @Nullable String[] testingGetVariantsForKey(@Nullable String key) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingGetVariantsForKey'");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return null;
+                }
+
+                if (key == null) {
+                    L.i("[RemoteConfig] testingGetVariantsForKey, provided variant key can not be null");
                     return null;
                 }
 
@@ -845,7 +846,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param completionCallback
          */
-        public void TestingDownloadVariantInformation(RCVariantCallback completionCallback) {
+        public void testingDownloadVariantInformation(@Nullable RCVariantCallback completionCallback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingFetchVariantInformation'");
 
@@ -869,7 +870,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param variantName - name of the variant for the key to enroll
          * @param completionCallback
          */
-        public void testingEnrollIntoVariant(String keyName, String variantName, RCVariantCallback completionCallback) {
+        public void testingEnrollIntoVariant(@Nullable String keyName, String variantName, @Nullable RCVariantCallback completionCallback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingEnrollIntoVariant'");
 

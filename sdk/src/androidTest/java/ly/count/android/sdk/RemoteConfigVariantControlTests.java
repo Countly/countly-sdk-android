@@ -186,7 +186,7 @@ public class RemoteConfigVariantControlTests {
         Countly countly = (new Countly()).init(config);
 
         // Developer did not provide a callback
-        countly.moduleRemoteConfig.remoteConfigInterface.TestingDownloadVariantInformation(null);
+        countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
         Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
         String[] variantArray = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key");
         String[] variantArrayFalse = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key2");
@@ -197,7 +197,7 @@ public class RemoteConfigVariantControlTests {
         Assert.assertEquals("variant", key1Variants[0]);
         Assert.assertEquals(1, variantArray.length);
         Assert.assertEquals("variant", variantArray[0]);
-        Assert.assertEquals(0, variantArrayFalse.length);
+        Assert.assertNull(variantArrayFalse);
     }
 
     /**
@@ -209,7 +209,7 @@ public class RemoteConfigVariantControlTests {
         Countly countly = (new Countly()).init(config);
 
         // Developer did not provide a callback
-        countly.moduleRemoteConfig.remoteConfigInterface.TestingDownloadVariantInformation(null);
+        countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
         Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
 
         // Assert the values
@@ -226,7 +226,7 @@ public class RemoteConfigVariantControlTests {
         Countly countly = (new Countly()).init(config);
 
         // Developer did not provide a callback
-        countly.moduleRemoteConfig.remoteConfigInterface.TestingDownloadVariantInformation(null);
+        countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
         Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
 
         //Assert the values
@@ -252,5 +252,20 @@ public class RemoteConfigVariantControlTests {
 
             callback.callback(jobj);
         };
+    }
+
+    @Test
+    public void variantGetters_preDownload() {
+        CountlyConfig config = TestUtils.createVariantConfig(null);
+        Countly countly = (new Countly()).init(config);
+
+        //should return empty map of values
+        Map<String, String[]> vals = countly.remoteConfig().testingGetAllVariants();
+        Assert.assertEquals(0, vals.size());
+
+        //single getters should also not fail on requesting values
+        Assert.assertNull(countly.remoteConfig().testingGetVariantsForKey("a"));
+        Assert.assertNull(countly.remoteConfig().testingGetVariantsForKey(""));
+        Assert.assertNull(countly.remoteConfig().testingGetVariantsForKey(null));
     }
 }
