@@ -15,7 +15,7 @@ import org.json.JSONObject;
 import static ly.count.android.sdk.ModuleConsent.ConsentChangeSource.ChangeConsentCall;
 
 public class ModuleRemoteConfig extends ModuleBase {
-    ImmediateRequestGenerator immediateRequestGenerator;
+    ImmediateRequestGenerator iRGenerator;
     boolean updateRemoteConfigAfterIdChange = false;
     Map<String, String[]> variantContainer = new HashMap<>(); // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
@@ -37,7 +37,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         L.v("[ModuleRemoteConfig] Initialising");
 
         metricOverride = config.metricOverride;
-        immediateRequestGenerator = config.immediateRequestGenerator;
+        iRGenerator = config.immediateRequestGenerator;
 
         L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers);
         automaticDownloadTriggersEnabled = config.enableRemoteConfigAutomaticDownloadTriggers;
@@ -94,28 +94,25 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(@Nullable JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
-                    if (checkResponse == null) {
-                        NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered problem while trying to reach the server, possibly no internet connection", fullUpdate, null);
-                        return;
-                    }
-
-                    String error = null;
-                    Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse);
-
-                    try {
-                        boolean clearOldValues = keysExcept == null && keysOnly == null;
-                        mergeCheckResponseIntoCurrentValues(clearOldValues, newRC);
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]");
-                        error = "Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]";
-                    }
-
-                    NotifyDownloadCallbacks(devProvidedCallback, error == null ? RequestResult.Success : RequestResult.Error, error, fullUpdate, newRC);
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+                L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered problem while trying to reach the server, possibly no internet connection", fullUpdate, null);
+                    return;
                 }
+
+                String error = null;
+                Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse);
+
+                try {
+                    boolean clearOldValues = keysExcept == null && keysOnly == null;
+                    mergeCheckResponseIntoCurrentValues(clearOldValues, newRC);
+                } catch (Exception ex) {
+                    L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]");
+                    error = "Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]";
+                }
+
+                NotifyDownloadCallbacks(devProvidedCallback, error == null ? RequestResult.Success : RequestResult.Error, error, fullUpdate, newRC);
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to perform a remote config update. " + ex.toString());
@@ -142,23 +139,20 @@ public class ModuleRemoteConfig extends ModuleBase {
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-            @Override
-            public void callback(JSONObject checkResponse) {
-                L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
-                if (checkResponse == null) {
-                    return;
-                }
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+            L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
+            if (checkResponse == null) {
+                return;
+            }
 
-                try {
-                    if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
-                        L.d("[ModuleRemoteConfig]  Enrolled user for the A/B test");
-                    } else {
-                        L.w("[ModuleRemoteConfig]  Encountered a network error while enrolling the user for the A/B test.");
-                    }
-                } catch (Exception ex) {
-                    L.e("[ModuleRemoteConfig] Encountered an internal error while trying to enroll the user for A/B test. " + ex.toString());
+            try {
+                if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
+                    L.d("[ModuleRemoteConfig]  Enrolled user for the A/B test");
+                } else {
+                    L.w("[ModuleRemoteConfig]  Encountered a network error while enrolling the user for the A/B test.");
                 }
+            } catch (Exception ex) {
+                L.e("[ModuleRemoteConfig] Encountered an internal error while trying to enroll the user for A/B test. " + ex.toString());
             }
         }, L);
     }
@@ -182,23 +176,20 @@ public class ModuleRemoteConfig extends ModuleBase {
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-            @Override
-            public void callback(JSONObject checkResponse) {
-                L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
-                if (checkResponse == null) {
-                    return;
-                }
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+            L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
+            if (checkResponse == null) {
+                return;
+            }
 
-                try {
-                    if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
-                        L.d("[ModuleRemoteConfig]  Removed user from the A/B test");
-                    } else {
-                        L.w("[ModuleRemoteConfig]  Encountered a network error while removing the user from A/B testing.");
-                    }
-                } catch (Exception ex) {
-                    L.e("[ModuleRemoteConfig] Encountered an internal error while trying to remove user from A/B testing. " + ex.toString());
+            try {
+                if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
+                    L.d("[ModuleRemoteConfig]  Removed user from the A/B test");
+                } else {
+                    L.w("[ModuleRemoteConfig]  Encountered a network error while removing the user from A/B testing.");
                 }
+            } catch (Exception ex) {
+                L.e("[ModuleRemoteConfig] Encountered an internal error while trying to remove user from A/B testing. " + ex.toString());
             }
         }, L);
     }
@@ -226,19 +217,16 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
-                    if (checkResponse == null) {
-                        callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
-                        return;
-                    }
-
-                    variantContainer = RemoteConfigHelper.convertVariantsJsonToMap(checkResponse, L);
-
-                    callback.callback(RequestResult.Success, null);
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+                L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
+                    return;
                 }
+
+                variantContainer = RemoteConfigHelper.convertVariantsJsonToMap(checkResponse, L);
+
+                callback.callback(RequestResult.Success, null);
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants. " + ex.toString());
@@ -271,28 +259,25 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
-                    if (checkResponse == null) {
-                        callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+                L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
+                    return;
+                }
+
+                try {
+                    if (!isResponseValid(checkResponse)) {
+                        callback.callback(RequestResult.NetworkIssue, "Bad response from the server:" + checkResponse.toString());
                         return;
                     }
 
-                    try {
-                        if (!isResponseValid(checkResponse)) {
-                            callback.callback(RequestResult.NetworkIssue, "Bad response from the server:" + checkResponse.toString());
-                            return;
-                        }
+                    RCAutomaticDownloadTrigger(true);
 
-                        RCAutomaticDownloadTrigger(true);
-
-                        callback.callback(RequestResult.Success, null);
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
-                        callback.callback(RequestResult.Error, "Encountered internal error while trying to take care of the A/B test variant enrolment.");
-                    }
+                    callback.callback(RequestResult.Success, null);
+                } catch (Exception ex) {
+                    L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
+                    callback.callback(RequestResult.Error, "Encountered internal error while trying to take care of the A/B test variant enrolment.");
                 }
             }, L);
         } catch (Exception ex) {
@@ -449,9 +434,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void RCAutomaticDownloadTrigger(boolean cacheClearOldValues) {
-        if (!cacheClearOldValues) {
-            clearValueStoreInternal();//todo finish
-        } else {
+        if (cacheClearOldValues) {
             RemoteConfigValueStore rc = loadConfig();
             rc.cacheClearValues();
             saveConfig(rc);
@@ -461,7 +444,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             L.d("[RemoteConfig] Automatically updating remote config values");
             updateRemoteConfigValues(null, null, false, null);
         } else {
-            L.v("[RemoteConfig] Automatically RC update trigger skipped");
+            L.v("[RemoteConfig] Automatic RC update trigger skipped");
         }
     }
 

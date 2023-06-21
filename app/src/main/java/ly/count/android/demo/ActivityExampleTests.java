@@ -22,7 +22,7 @@ public class ActivityExampleTests extends AppCompatActivity {
 
     // For fetching all variants with a button click
     public void onClickFetchAllVariants(View v) {
-        Countly.sharedInstance().remoteConfig().TestingDownloadVariantInformation(new RCVariantCallback() {
+        Countly.sharedInstance().remoteConfig().testingDownloadVariantInformation(new RCVariantCallback() {
             @Override
             public void callback(RequestResult result, String error) {
                 if (result == RequestResult.Success) {

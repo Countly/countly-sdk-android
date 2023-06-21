@@ -210,7 +210,7 @@ public class RemoteConfigValueStoreTests {
         return rcEStr(key, value, true);
     }
 
-    String rcArrIntoJSON(String[] arr) {
+    public static String rcArrIntoJSON(String[] arr) {
         StringBuilder sb = new StringBuilder();
         sb.append("{");
 

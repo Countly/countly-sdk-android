@@ -27,7 +27,7 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigUpdate(View v) {
-        Countly.sharedInstance().remoteConfig().DownloadAllKeys(new RCDownloadCallback() {
+        Countly.sharedInstance().remoteConfig().downloadAllKeys(new RCDownloadCallback() {
             @Override public void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, RCData> downloadedValues) {
                 if (error == null) {
                     Toast.makeText(getApplicationContext(), "Update finished", Toast.LENGTH_SHORT).show();
