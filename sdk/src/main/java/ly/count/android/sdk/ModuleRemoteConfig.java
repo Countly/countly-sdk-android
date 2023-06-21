@@ -21,7 +21,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
-    boolean automaticDownloadTriggersEnabled = false;
+    boolean automaticDownloadTriggersEnabled;
 
     boolean remoteConfigValuesShouldBeCached = false;
 
@@ -39,8 +39,9 @@ public class ModuleRemoteConfig extends ModuleBase {
         metricOverride = config.metricOverride;
         iRGenerator = config.immediateRequestGenerator;
 
-        L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers);
+        L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching);
         automaticDownloadTriggersEnabled = config.enableRemoteConfigAutomaticDownloadTriggers;
+        remoteConfigValuesShouldBeCached = config.enableRemoteConfigValueCaching;
 
         downloadCallbacks.addAll(config.remoteConfigGlobalCallbackList);
 
@@ -410,17 +411,21 @@ public class ModuleRemoteConfig extends ModuleBase {
         return variantResponse;
     }
 
-    void clearAndDownloadAfterIdChange() {
+    void clearAndDownloadAfterIdChange(boolean valuesShouldBeCacheCleared) {
         L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
-        CacheOrClearRCValuesIfNeeded();
+        if (valuesShouldBeCacheCleared) {
+            CacheOrClearRCValuesIfNeeded();
+        }
         if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
         }
     }
 
     void CacheOrClearRCValuesIfNeeded() {
-        clearValueStoreInternal();
+        RemoteConfigValueStore rc = loadConfig();
+        rc.cacheClearValues();
+        saveConfig(rc);
     }
 
     void NotifyDownloadCallbacks(RCDownloadCallback devProvidedCallback, RequestResult requestResult, String message, boolean fullUpdate, Map<String, RCData> downloadedValues) {
@@ -435,9 +440,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     void RCAutomaticDownloadTrigger(boolean cacheClearOldValues) {
         if (cacheClearOldValues) {
-            RemoteConfigValueStore rc = loadConfig();
-            rc.cacheClearValues();
-            saveConfig(rc);
+            CacheOrClearRCValuesIfNeeded();
         }
 
         if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {

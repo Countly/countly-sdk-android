@@ -117,23 +117,63 @@ public class ModuleRemoteConfigTests {
         }
     }
 
+    /**
+     * Making sure that caching occurs on the required actions and with the required config options
+     */
     @Test
-    public void xx() {
-        for (int a = 0; a < 2; a++) {
+    public void rcValueCaching() {
+        for (int a = 0; a < 4; a++) {
             countlyStore.clear();
 
             CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
             config.enableRemoteConfigAutomaticTriggers();
-            config.setRequiresConsent(true);
-            config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.remoteConfig });
 
-            if (a == 0) {
+            if (a == 0 || a == 1) {
+                config.setRequiresConsent(true);
+                config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+            }
+
+            if (a == 0 || a == 2) {
                 config.enableRemoteConfigValueCaching();
             }
 
             Countly countly = (new Countly()).init(config);
 
             Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+
+            String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
+            countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+            Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+            assertCValueCachedState(countly.remoteConfig().getValues(), false);
+
+            countly.deviceId().changeWithMerge("dd");
+            Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+            assertCValueCachedState(countly.remoteConfig().getValues(), false);
+
+            countly.deviceId().changeWithoutMerge("dd11");
+            countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+            if (a == 0 || a == 2) {
+                //we preserve
+                Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+                assertCValueCachedState(countly.remoteConfig().getValues(), true);
+                Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+                Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+            } else {
+                Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+            }
+
+            countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+
+            countly.deviceId().enableTemporaryIdMode();
+            countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+            if (a == 0 || a == 2) {
+                Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+                assertCValueCachedState(countly.remoteConfig().getValues(), true);
+                Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+                Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+            } else {
+                Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+            }
         }
     }
 
@@ -226,6 +266,52 @@ public class ModuleRemoteConfigTests {
     }
 
     /**
+     * Just making sure nothing explodes when passing bad values
+     */
+    @Test
+    public void passingBadValues() {
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.enableRemoteConfigValueCaching();
+        config.enableRemoteConfigAutomaticTriggers();
+        Countly countly = (new Countly()).init(config);
+
+        countly.remoteConfig().getValue(null);
+        countly.remoteConfig().getValue("");
+        countly.remoteConfig().getValueForKey(null);
+        countly.remoteConfig().getValueForKey("");
+
+        countly.remoteConfig().update(null);
+        countly.remoteConfig().downloadAllKeys(null);
+
+        countly.remoteConfig().downloadOmittingKeys(null, null);
+        countly.remoteConfig().downloadOmittingKeys(new String[] {}, null);
+        countly.remoteConfig().updateExceptKeys(null, null);
+        countly.remoteConfig().updateExceptKeys(new String[] {}, null);
+
+        countly.remoteConfig().downloadSpecificKeys(null, null);
+        countly.remoteConfig().downloadSpecificKeys(new String[] {}, null);
+        countly.remoteConfig().updateForKeysOnly(null, null);
+        countly.remoteConfig().updateForKeysOnly(new String[] {}, null);
+
+        countly.remoteConfig().enrollIntoABTestsForKeys(null);
+        countly.remoteConfig().enrollIntoABTestsForKeys(new String[] {});
+
+        countly.remoteConfig().exitABTestsForKeys(null);
+        countly.remoteConfig().exitABTestsForKeys(new String[] {});
+
+        countly.remoteConfig().testingGetVariantsForKey(null);
+        countly.remoteConfig().testingGetVariantsForKey("");
+
+        countly.remoteConfig().testingEnrollIntoVariant(null, null, null);
+        countly.remoteConfig().testingEnrollIntoVariant("", "", null);
+
+        countly.remoteConfig().testingDownloadVariantInformation(null);
+
+        countly.remoteConfig().registerDownloadCallback(null);
+        countly.remoteConfig().removeDownloadCallback(null);
+    }
+
+    /**
      * validating that 'prepareKeysIncludeExclude' works as expected
      */
     @Test
@@ -304,9 +390,9 @@ public class ModuleRemoteConfigTests {
     static void assertCValueCachedState(Map<String, RCData> rcValues, boolean valuesAreCached) {
         for (Map.Entry<String, RCData> entry : rcValues.entrySet()) {
             if (valuesAreCached) {
-                Assert.assertTrue(entry.getValue().isCurrentUsersData);
-            } else {
                 Assert.assertFalse(entry.getValue().isCurrentUsersData);
+            } else {
+                Assert.assertTrue(entry.getValue().isCurrentUsersData);
             }
         }
     }
