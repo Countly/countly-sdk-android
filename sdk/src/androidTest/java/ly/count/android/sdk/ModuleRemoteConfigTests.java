@@ -44,16 +44,14 @@ public class ModuleRemoteConfigTests {
 
         //set RC
         String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
-        countlyStore.setRemoteConfigValues(rcvs.dataToString());
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
         Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
 
         countly.consent().removeConsentAll();
 
-        Assert.assertNull(countly.remoteConfig().getValue("a").value);
-        Assert.assertNull(countly.remoteConfig().getValue("b").value);
+        Assert.assertEquals(0, countly.remoteConfig().getValues().size());
     }
 
     /**
@@ -115,6 +113,114 @@ public class ModuleRemoteConfigTests {
                 Assert.assertEquals(intendedCount, triggerCounter[0]);//exiting temp ID mode with "withoutMerge" should create a request, but would not since there is no consent
             } else {
                 Assert.assertEquals(++intendedCount, triggerCounter[0]);//exiting temp ID mode with "withoutMerge" should create a request since consent mode is not prohibiting it
+            }
+        }
+    }
+
+    @Test
+    public void xx() {
+        for (int a = 0; a < 2; a++) {
+            countlyStore.clear();
+
+            CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+            config.enableRemoteConfigAutomaticTriggers();
+            config.setRequiresConsent(true);
+            config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+
+            if (a == 0) {
+                config.enableRemoteConfigValueCaching();
+            }
+
+            Countly countly = (new Countly()).init(config);
+
+            Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+        }
+    }
+
+    /**
+     * Validate the the new and old clears are clearing values after they are directly put into storage
+     */
+    @Test
+    public void validateClear() {
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.enableRemoteConfigValueCaching();
+        Countly countly = (new Countly()).init(config);
+
+        //set RC
+        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+
+        Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+        Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+
+        countly.remoteConfig().clearAll();
+
+        Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+
+        Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+        Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+
+        countly.remoteConfig().clearStoredValues();
+
+        Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+    }
+
+    /**
+     * Validate that the new and old getters return the correct values when putting them directly into storage
+     *
+     * @throws JSONException
+     */
+    @Test
+    public void validateGetters() throws JSONException {
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.enableRemoteConfigValueCaching();
+        Countly countly = (new Countly()).init(config);
+
+        //set RC
+        JSONArray jArrI = new JSONArray("[3,\"44\",5.1,7.7]");
+        JSONObject jObjI = new JSONObject("{\"q\":6,\"w\":\"op\"}");
+        String[] rcArr = new String[] { rcEStr("a", 123, false), rcEStr("b", "fg"), rcEStr("c", 222222222222L, false), rcEStr("d", 1.5d), rcEStr("e", jArrI, false), rcEStr("f", jObjI) };
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+
+        Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+        Assert.assertEquals(123, countly.remoteConfig().getValueForKey("a"));
+        Assert.assertFalse(countly.remoteConfig().getValue("a").isCurrentUsersData);
+
+        Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+        Assert.assertEquals("fg", countly.remoteConfig().getValueForKey("b"));
+        Assert.assertTrue(countly.remoteConfig().getValue("b").isCurrentUsersData);
+
+        Assert.assertEquals(222222222222L, countly.remoteConfig().getValue("c").value);
+        Assert.assertEquals(222222222222L, countly.remoteConfig().getValueForKey("c"));
+        Assert.assertFalse(countly.remoteConfig().getValue("c").isCurrentUsersData);
+
+        Assert.assertEquals(1.5d, countly.remoteConfig().getValue("d").value);
+        Assert.assertEquals(1.5d, countly.remoteConfig().getValueForKey("d"));
+        Assert.assertTrue(countly.remoteConfig().getValue("d").isCurrentUsersData);
+
+        Assert.assertEquals(jArrI.toString(), countly.remoteConfig().getValue("e").value.toString());
+        Assert.assertEquals(jArrI.toString(), countly.remoteConfig().getValueForKey("e").toString());
+        Assert.assertFalse(countly.remoteConfig().getValue("e").isCurrentUsersData);
+
+        Assert.assertEquals(jObjI.toString(), countly.remoteConfig().getValue("f").value.toString());
+        Assert.assertEquals(jObjI.toString(), countly.remoteConfig().getValueForKey("f").toString());
+        Assert.assertTrue(countly.remoteConfig().getValue("f").isCurrentUsersData);
+
+        Map<String, Object> valsOld = countly.remoteConfig().getAllValues();
+        Map<String, RCData> valsNew = countly.remoteConfig().getValues();
+
+        Assert.assertEquals(valsNew.size(), valsOld.size());
+
+        for (Map.Entry<String, RCData> entry : valsNew.entrySet()) {
+            Object valN = entry.getValue().value;
+            Object valO = valsOld.get(entry.getKey());
+
+            if (valN instanceof JSONObject || valN instanceof JSONArray) {
+                Assert.assertEquals(valN.toString(), valO.toString());
+            } else {
+                Assert.assertEquals(valN, valO);
             }
         }
     }
@@ -193,5 +299,15 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals("yy", vals.get("87"));
         Assert.assertNotNull(vals.get("t"));
         Assert.assertEquals(0, ((JSONObject) vals.get("t")).length());
+    }
+
+    static void assertCValueCachedState(Map<String, RCData> rcValues, boolean valuesAreCached) {
+        for (Map.Entry<String, RCData> entry : rcValues.entrySet()) {
+            if (valuesAreCached) {
+                Assert.assertTrue(entry.getValue().isCurrentUsersData);
+            } else {
+                Assert.assertFalse(entry.getValue().isCurrentUsersData);
+            }
+        }
     }
 }
