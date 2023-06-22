@@ -147,10 +147,10 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
 
             try {
-                if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
-                    L.d("[ModuleRemoteConfig]  Enrolled user for the A/B test");
+                if (checkResponse.has("result")) {
+                    L.d("[ModuleRemoteConfig] Assuming that user was enrolled user for the A/B test");
                 } else {
-                    L.w("[ModuleRemoteConfig]  Encountered a network error while enrolling the user for the A/B test.");
+                    L.w("[ModuleRemoteConfig] Encountered a network error while enrolling the user for the A/B test.");
                 }
             } catch (Exception ex) {
                 L.e("[ModuleRemoteConfig] Encountered an internal error while trying to enroll the user for A/B test. " + ex.toString());
@@ -177,7 +177,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i", cp, false, networkingIsEnabled, checkResponse -> {
             L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
             if (checkResponse == null) {
                 return;
@@ -187,7 +187,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
                     L.d("[ModuleRemoteConfig]  Removed user from the A/B test");
                 } else {
-                    L.w("[ModuleRemoteConfig]  Encountered a network error while removing the user from A/B testing.");
+                    L.d("[ModuleRemoteConfig]  Encountered a network error while removing the user from A/B testing.");
                 }
             } catch (Exception ex) {
                 L.e("[ModuleRemoteConfig] Encountered an internal error while trying to remove user from A/B testing. " + ex.toString());
@@ -260,7 +260,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i", cp, false, networkingIsEnabled, checkResponse -> {
                 L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
                 if (checkResponse == null) {
                     callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
@@ -516,10 +516,6 @@ public class ModuleRemoteConfig extends ModuleBase {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'getAllValues'");
 
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
-                }
-
                 return getAllRemoteConfigValuesInternalLegacy();
             }
         }
@@ -534,10 +530,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         public Object getValueForKey(String key) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling remoteConfigValueForKey, " + key);
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
-                }
 
                 return getRCValueLegacy(key);
             }
@@ -712,10 +704,6 @@ public class ModuleRemoteConfig extends ModuleBase {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Getting all Remote config values v2");
 
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return new HashMap<>();
-                }
-
                 return getAllRemoteConfigValuesInternal();
             }
         }
@@ -723,10 +711,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         public @NonNull RCData getValue(@Nullable String key) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return new RCData(null, true);
-                }
 
                 return getRCValue(key);
             }
@@ -796,10 +780,6 @@ public class ModuleRemoteConfig extends ModuleBase {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingGetAllVariants'");
 
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return new HashMap<>();
-                }
-
                 return testingGetAllVariantsInternal();
             }
         }
@@ -813,10 +793,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         public @Nullable String[] testingGetVariantsForKey(@Nullable String key) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'testingGetVariantsForKey'");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
-                }
 
                 if (key == null) {
                     L.i("[RemoteConfig] testingGetVariantsForKey, provided variant key can not be null");

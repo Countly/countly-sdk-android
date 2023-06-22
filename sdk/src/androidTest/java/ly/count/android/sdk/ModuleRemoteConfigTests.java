@@ -28,6 +28,7 @@ public class ModuleRemoteConfigTests {
         countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
 
         countlyStore.clear();
+        countlyStore.setDataSchemaVersion(MigrationHelper.DATA_SCHEMA_VERSIONS);
     }
 
     /**
@@ -119,6 +120,7 @@ public class ModuleRemoteConfigTests {
 
     /**
      * Making sure that caching occurs on the required actions and with the required config options
+     * Creating a "matrix" that goes over combinations of RC config flags and consent
      */
     @Test
     public void rcValueCaching() {
@@ -146,35 +148,65 @@ public class ModuleRemoteConfigTests {
             Assert.assertEquals(2, countly.remoteConfig().getValues().size());
             assertCValueCachedState(countly.remoteConfig().getValues(), false);
 
+            //changing with merging should leave no impact on this
             countly.deviceId().changeWithMerge("dd");
             Assert.assertEquals(2, countly.remoteConfig().getValues().size());
-            assertCValueCachedState(countly.remoteConfig().getValues(), false);
 
+            //changing without merging should trigger caching. Lack of consent should leave no impact on this
+            assertCValueCachedState(countly.remoteConfig().getValues(), false);
             countly.deviceId().changeWithoutMerge("dd11");
-            countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
-            if (a == 0 || a == 2) {
-                //we preserve
-                Assert.assertEquals(2, countly.remoteConfig().getValues().size());
-                assertCValueCachedState(countly.remoteConfig().getValues(), true);
-                Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
-                Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
-            } else {
-                Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+
+            for (int b = 0; b < 2; b++) {
+                if (b == 1) {
+                    countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+                }
+                if (a == 0 || a == 2) {
+                    //we preserve
+                    Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+                    assertCValueCachedState(countly.remoteConfig().getValues(), true);
+                    Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+                    Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+                } else {
+                    Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+                }
             }
 
+            //entering temp ID mode should trigger caching. Lack of consent should leave no impact on this
             countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
-
             countly.deviceId().enableTemporaryIdMode();
-            countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
-            if (a == 0 || a == 2) {
-                Assert.assertEquals(2, countly.remoteConfig().getValues().size());
-                assertCValueCachedState(countly.remoteConfig().getValues(), true);
-                Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
-                Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
-            } else {
-                Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+
+            for (int b = 0; b < 2; b++) {
+                if (b == 1) {
+                    countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+                }
+                if (a == 0 || a == 2) {
+                    Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+                    assertCValueCachedState(countly.remoteConfig().getValues(), true);
+                    Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+                    Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+                } else {
+                    Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+                }
             }
         }
+    }
+
+    @Test
+    public void validateValuePersistence() {
+        //set RC
+        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.enableRemoteConfigValueCaching();
+        Countly countly = (new Countly()).init(config);
+
+        Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+        Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+
+        Countly countly2 = (new Countly()).init(config);
+        Assert.assertEquals(123, countly2.remoteConfig().getValue("a").value);
+        Assert.assertEquals("fg", countly2.remoteConfig().getValue("b").value);
     }
 
     /**

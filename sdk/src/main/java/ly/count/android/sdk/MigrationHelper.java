@@ -16,7 +16,7 @@ class MigrationHelper {
      * 2 - transitioning old RC store to one that supports metadata
      * x - adding device ID to all requests
      */
-    final int DATA_SCHEMA_VERSIONS = 2;
+    static final int DATA_SCHEMA_VERSIONS = 2;
 
     static final public String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
 

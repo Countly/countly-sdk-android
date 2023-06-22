@@ -1,4 +1,10 @@
-## 23.2.0
+## 23.6.0
+* !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.
+* ! Minor breaking change ! Remote config will now return previously downloaded values when remote-config consent is not given
+
+* Introduced a new set of remote config methods
+* Deprecated old remote config methods
+
 * Removed the deprecated enum "DeviceId.Type"
 * Removed the deprecated value "ADVERTISING_ID" from the enum "DeviceIdType"
 * Removed the deprecated function "Countly.changeDeviceIdWithoutMerge(type, deviceID)"
