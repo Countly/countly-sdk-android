@@ -80,13 +80,13 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         }
 
         //start by changing stored ID
-        deviceIdInstance.changeToCustomId(deviceId);//run init because not clear if types other then dev supplied can be provided
+        deviceIdInstance.changeToCustomId(deviceId);
 
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);
 
         //update remote config_ values if automatic update is enabled
-        _cly.moduleRemoteConfig.RCAutomaticDownloadTrigger(true);
+        _cly.moduleRemoteConfig.RCAutomaticDownloadTrigger(false);
 
         _cly.requestQueue().attemptToSendStoredRequests();
     }
@@ -116,6 +116,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             // we just call our method for exiting it
             // we don't end the session, we just update the device ID and connection queue
             exitTemporaryIdMode(deviceId);
+            return;
         }
 
         // we are either making a simple ID change or entering temporary mode

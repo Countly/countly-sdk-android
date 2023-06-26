@@ -273,7 +273,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                         return;
                     }
 
-                    RCAutomaticDownloadTrigger(true);
+                    RCAutomaticDownloadTrigger(true);//todo afterwards cache only that one key
 
                     callback.callback(RequestResult.Success, null);
                 } catch (Exception ex) {
@@ -412,7 +412,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void clearAndDownloadAfterIdChange(boolean valuesShouldBeCacheCleared) {
-        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
+        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update, " + valuesShouldBeCacheCleared);
 
         if (valuesShouldBeCacheCleared) {
             CacheOrClearRCValuesIfNeeded();
@@ -423,6 +423,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void CacheOrClearRCValuesIfNeeded() {
+        L.v("[RemoteConfig] CacheOrClearRCValuesIfNeeded, cacheclearing values");
         RemoteConfigValueStore rc = loadConfig();
         rc.cacheClearValues();
         saveConfig(rc);

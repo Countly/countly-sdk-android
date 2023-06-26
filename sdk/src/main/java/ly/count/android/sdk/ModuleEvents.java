@@ -131,7 +131,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:

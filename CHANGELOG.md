@@ -5,6 +5,8 @@
 * Introduced a new set of remote config methods
 * Deprecated old remote config methods
 
+* Fixed bug where recording views would force send all stored events
+
 * Removed the deprecated enum "DeviceId.Type"
 * Removed the deprecated value "ADVERTISING_ID" from the enum "DeviceIdType"
 * Removed the deprecated function "Countly.changeDeviceIdWithoutMerge(type, deviceID)"

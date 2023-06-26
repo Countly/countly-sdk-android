@@ -17,7 +17,6 @@ public class RemoteConfigValueStore {
     public static final String keyCacheFlag = "c";
     public static final int cacheValCached = 0;
     public static final int cacheValFresh = 1;
-    public boolean dirty = false;
 
     //  Structure of the JSON objects we will have
     //   {
@@ -55,12 +54,10 @@ public class RemoteConfigValueStore {
                 Countly.sharedInstance().L.e("[RemoteConfigValueStore] cacheClearValues, Failed caching remote config values, " + e);
             }
         }
-        dirty = true;
     }
 
     public void clearValues() {
         values = new JSONObject();
-        dirty = true;
     }
 
     //========================================
@@ -87,7 +84,6 @@ public class RemoteConfigValueStore {
                 Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed merging remote config values");
             }
         }
-        dirty = true;
         Countly.sharedInstance().L.v("[RemoteConfigValueStore] merging done:" + values.toString());
     }
 
