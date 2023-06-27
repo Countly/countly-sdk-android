@@ -747,7 +747,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         if (keys.length > 0) {
-            data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys); // TODO: key? keys? /this is not settled yet, redo after its settled
+            data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys);
         }
 
         return data;

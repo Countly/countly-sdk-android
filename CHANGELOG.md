@@ -6,6 +6,7 @@
 * Deprecated old remote config methods
 
 * Fixed bug where recording views would force send all stored events
+* Fixed bug where exiting temporary ID mode would create unintended requests
 
 * Removed the deprecated enum "DeviceId.Type"
 * Removed the deprecated value "ADVERTISING_ID" from the enum "DeviceIdType"

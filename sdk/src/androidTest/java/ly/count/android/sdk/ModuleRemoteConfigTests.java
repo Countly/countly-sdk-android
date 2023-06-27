@@ -239,6 +239,79 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals(0, countly.remoteConfig().getValues().size());
     }
 
+    RCDownloadCallback createCallback(int index, int[] resArray) {
+        RCDownloadCallback ret = new RCDownloadCallback() {
+            @Override public void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, RCData> downloadedValues) {
+                resArray[index]++;
+            }
+        };
+
+        return ret;
+    }
+
+    /**
+     * Validating that the RC callbacks are called for the appropriate actions
+     */
+    @Test
+    public void rcGlobalCallback() {
+        int[] resArray = new int[10];
+        int cIndex = 0;
+
+        RemoteConfigCallback oldRCC = error -> resArray[0]++;
+        cIndex++;
+
+        RCDownloadCallback c1 = createCallback(cIndex++, resArray);
+        RCDownloadCallback c2 = createCallback(cIndex++, resArray);
+        RCDownloadCallback c3 = createCallback(cIndex++, resArray);
+        RCDownloadCallback c4 = createCallback(cIndex++, resArray);
+        RCDownloadCallback c5 = createCallback(cIndex++, resArray);
+        RCDownloadCallback c6 = createCallback(cIndex, resArray);
+
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableRemoteConfigAutomaticTriggers();
+        config.RemoteConfigRegisterGlobalCallback(c1);
+        config.RemoteConfigRegisterGlobalCallback(c2);
+        config.setRemoteConfigAutomaticDownload(true, oldRCC);
+        config.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+            callback.callback(null);
+        };
+
+        Countly countly = (new Countly()).init(config);
+
+        //check initial global ones
+        Assert.assertEquals(1, resArray[0]);
+        Assert.assertEquals(1, resArray[1]);
+        Assert.assertEquals(1, resArray[2]);
+        Assert.assertEquals(0, resArray[3]);
+
+        countly.remoteConfig().removeDownloadCallback(c1);
+        countly.remoteConfig().registerDownloadCallback(c3);
+
+        countly.remoteConfig().downloadAllKeys(c4);
+        Assert.assertEquals(2, resArray[0]);
+        Assert.assertEquals(1, resArray[1]);
+        Assert.assertEquals(2, resArray[2]);
+        Assert.assertEquals(1, resArray[3]);
+        Assert.assertEquals(1, resArray[4]);
+
+        countly.remoteConfig().downloadSpecificKeys(new String[] {}, c5);
+        Assert.assertEquals(3, resArray[0]);
+        Assert.assertEquals(1, resArray[1]);
+        Assert.assertEquals(3, resArray[2]);
+        Assert.assertEquals(2, resArray[3]);
+        Assert.assertEquals(1, resArray[4]);
+        Assert.assertEquals(1, resArray[5]);
+
+        countly.remoteConfig().removeDownloadCallback(c1);
+        countly.remoteConfig().downloadOmittingKeys(new String[] {}, c6);
+        Assert.assertEquals(4, resArray[0]);
+        Assert.assertEquals(1, resArray[1]);
+        Assert.assertEquals(4, resArray[2]);
+        Assert.assertEquals(3, resArray[3]);
+        Assert.assertEquals(1, resArray[4]);
+        Assert.assertEquals(1, resArray[5]);
+        Assert.assertEquals(1, resArray[6]);
+    }
+
     /**
      * Validate that the new and old getters return the correct values when putting them directly into storage
      *
