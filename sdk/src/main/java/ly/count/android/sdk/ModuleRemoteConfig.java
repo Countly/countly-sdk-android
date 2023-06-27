@@ -511,7 +511,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         /**
          * @return
-         * @deprecated
+         * @deprecated You should use "getValues"
          */
         public Map<String, Object> getAllValues() {
             synchronized (_cly) {
@@ -526,7 +526,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param key
          * @return
-         * @deprecated
+         * @deprecated You should use "getValue"
          */
         public Object getValueForKey(String key) {
             synchronized (_cly) {
@@ -541,7 +541,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keysToExclude
          * @param callback
-         * @deprecated
+         * @deprecated You should use "downloadOmittingKeys"
          */
         public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -568,11 +568,11 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         /**
-         * Manual remote config_ update call. Will only update the keys provided.
+         * Manual remote config update call. Will only update the keys provided.
          *
          * @param keysToInclude
          * @param callback
-         * @deprecated
+         * @deprecated You should use "downloadSpecificKeys"
          */
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -598,10 +598,10 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         /**
-         * Manually update remote config_ values
+         * Manually update remote config values
          *
          * @param callback
-         * @deprecated
+         * @deprecated You should use "downloadAllKeys"
          */
         public void update(RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -625,10 +625,11 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         /**
-         * Manual remote config update call. Will update all keys except the ones provided
+         * Manual remote config call that will initiate a download of all except the given remote config keys.
+         * If no keys are provided then it will download all available RC values
          *
-         * @param keysToOmit
-         * @param callback
+         * @param keysToOmit A list of keys that need to be downloaded
+         * @param callback This is called when the operation concludes
          */
         public void downloadOmittingKeys(@Nullable String[] keysToOmit, @Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
@@ -654,10 +655,11 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         /**
-         * Manual remote config_ update call. Will only update the keys provided.
+         * Manual remote config call that will initiate a download of only the given remote config keys.
+         * If no keys are provided then it will download all available RC values
          *
-         * @param keysToInclude
-         * @param callback
+         * @param keysToInclude Keys for which the RC should be initialized
+         * @param callback This is called when the operation concludes
          */
         public void downloadSpecificKeys(@Nullable String[] keysToInclude, @Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
@@ -681,6 +683,11 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
+        /**
+         * Manual remote config call that will initiate a download of all available remote config keys.
+         *
+         * @param callback This is called when the operation concludes
+         */
         public void downloadAllKeys(@Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to update Remote Config v2");
@@ -701,6 +708,11 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
+        /**
+         * Returns all available remote config values
+         *
+         * @return The available RC values
+         */
         public @NonNull Map<String, RCData> getValues() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Getting all Remote config values v2");
@@ -709,6 +721,12 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
+        /**
+         * Return the remote config value for a specific key
+         *
+         * @param key Key for which the remote config value needs to be returned
+         * @return The returned value. If no value existed for the key then the inner object will be returned as "null"
+         */
         public @NonNull RCData getValue(@Nullable String key) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2");
@@ -760,14 +778,27 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
+        /**
+         * Register a global callback for when download operations have finished
+         *
+         * @param callback The callback that should be added
+         */
         public void registerDownloadCallback(@Nullable RCDownloadCallback callback) {
             downloadCallbacks.add(callback);
         }
 
+        /**
+         * Unregister a global download callback
+         *
+         * @param callback The callback that should be removed
+         */
         public void removeDownloadCallback(@Nullable RCDownloadCallback callback) {
             downloadCallbacks.remove(callback);
         }
 
+        /**
+         * Clear all stored remote config values.
+         */
         public void clearAll() {
             clearStoredValues();
         }
@@ -775,7 +806,9 @@ public class ModuleRemoteConfig extends ModuleBase {
         /**
          * Returns all variant information as a Map<String, String[]>
          *
-         * @return
+         * This call is not meant for production. It should only be used to facilitate testing of A/B test experiments.
+         *
+         * @return Return the information of all available variants
          */
         public @NonNull Map<String, String[]> testingGetAllVariants() {
             synchronized (_cly) {
@@ -788,8 +821,10 @@ public class ModuleRemoteConfig extends ModuleBase {
         /**
          * Returns variant information for a key as a String[]
          *
+         * This call is not meant for production. It should only be used to facilitate testing of A/B test experiments.
+         *
          * @param key - key value to get variant information for
-         * @return
+         * @return If returns the stored variants for the given key. Returns "null" if there are no variants for that key.
          */
         public @Nullable String[] testingGetVariantsForKey(@Nullable String key) {
             synchronized (_cly) {
@@ -807,7 +842,9 @@ public class ModuleRemoteConfig extends ModuleBase {
         /**
          * Download all variants of A/B testing experiments
          *
-         * @param completionCallback
+         * This call is not meant for production. It should only be used to facilitate testing of A/B test experiments.
+         *
+         * @param completionCallback this callback will be called when the network request finished
          */
         public void testingDownloadVariantInformation(@Nullable RCVariantCallback completionCallback) {
             synchronized (_cly) {
@@ -828,6 +865,8 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         /**
          * Enrolls user for a specific variant of A/B testing experiment
+         *
+         * This call is not meant for production. It should only be used to facilitate testing of A/B test experiments.
          *
          * @param keyName - key value retrieved from the fetched variants
          * @param variantName - name of the variant for the key to enroll

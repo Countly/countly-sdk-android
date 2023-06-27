@@ -481,7 +481,7 @@ public class CountlyConfig {
      * @param enabled set true for enabling it
      * @param callback callback called after the update was done
      * @return Returns the same config object for convenient linking
-     * @deprecated
+     * @deprecated use "enableRemoteConfigAutomaticTriggers" and "RemoteConfigRegisterGlobalCallback" in it's place
      */
     public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
         enableRemoteConfigAutomaticDownloadTriggers = enabled;
@@ -489,16 +489,36 @@ public class CountlyConfig {
         return this;
     }
 
+    /**
+     * Calling this would enable automatic download triggers for remote config.
+     * This way the SDK would automatically initiate remote config download at specific points.
+     * For example, those include: the SDK finished initializing, device ID is changed, consent is given
+     *
+     * @return Returns the same config object for convenient linking
+     */
     public synchronized CountlyConfig enableRemoteConfigAutomaticTriggers() {
         enableRemoteConfigAutomaticDownloadTriggers = true;
         return this;
     }
 
+    /**
+     * If this option is not enabled then when the device ID is changed without merging, remote config values are cleared
+     * If this option is enabled then the previous values are not cleared but they are marked as not from the current user.
+     *
+     * @return Returns the same config object for convenient linking
+     */
     public synchronized CountlyConfig enableRemoteConfigValueCaching() {
         enableRemoteConfigValueCaching = true;
         return this;
     }
 
+    /**
+     * Calling this adds global listeners for remote config download callbacks.
+     * Calling this multiple times would add multiple listeners
+     *
+     * @param callback The callback that needs to be registered
+     * @return Returns the same config object for convenient linking
+     */
     public synchronized CountlyConfig RemoteConfigRegisterGlobalCallback(RCDownloadCallback callback) {
         remoteConfigGlobalCallbackList.add(callback);
         return this;
@@ -507,7 +527,7 @@ public class CountlyConfig {
     /**
      * Set if consent should be required
      *
-     * @param shouldRequireConsent
+     * @param shouldRequireConsent if set to "true" then the SDK will require consent to be used. If consent for features is not given, they would not function
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setRequiresConsent(boolean shouldRequireConsent) {

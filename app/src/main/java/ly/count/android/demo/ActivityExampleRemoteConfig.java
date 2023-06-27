@@ -39,7 +39,7 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigGetValue(View v) {
-        Object value = Countly.sharedInstance().remoteConfig().getValueForKey("aa");
+        Object value = Countly.sharedInstance().remoteConfig().getValue("aa").value;
         if (value != null) {
             Toast.makeText(getApplicationContext(), "Stored Remote Config Value with key 'a': [" + (int) value + "]", Toast.LENGTH_SHORT).show();
         } else {
@@ -48,10 +48,9 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigGetValueInclusion(View v) {
-        Countly.sharedInstance().remoteConfig().updateForKeysOnly(new String[] { "aa", "dd" }, new RemoteConfigCallback() {
-            @Override
-            public void callback(String error) {
-                if (error == null) {
+        Countly.sharedInstance().remoteConfig().downloadSpecificKeys(new String[] { "aa", "dd" }, new RCDownloadCallback() {
+            @Override public void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, RCData> downloadedValues) {
+                if (downloadResult != RequestResult.Success) {
                     Toast.makeText(getApplicationContext(), "Update with inclusion finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
@@ -61,10 +60,9 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigGetValueExclusion(View v) {
-        Countly.sharedInstance().remoteConfig().updateExceptKeys(new String[] { "aa", "dd" }, new RemoteConfigCallback() {
-            @Override
-            public void callback(String error) {
-                if (error == null) {
+        Countly.sharedInstance().remoteConfig().downloadOmittingKeys(new String[] { "aa", "dd" }, new RCDownloadCallback() {
+            @Override public void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, RCData> downloadedValues) {
+                if (downloadResult != RequestResult.Success) {
                     Toast.makeText(getApplicationContext(), "Update with exclusion finished", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(getApplicationContext(), "Error: " + error, Toast.LENGTH_SHORT).show();
@@ -74,13 +72,13 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigClearValues(View v) {
-        Countly.sharedInstance().remoteConfig().clearStoredValues();
+        Countly.sharedInstance().remoteConfig().clearAll();
     }
 
     public void onClickRemoteConfigPrintValues(View v) {
         //this sample assumes that there are 4 keys available on the server
 
-        Map<String, Object> values = Countly.sharedInstance().remoteConfig().getAllValues();
+        Map<String, RCData> values = Countly.sharedInstance().remoteConfig().getValues();
 
         Countly.sharedInstance().L.d("Get all values test: [" + values.toString() + "]");
 
@@ -90,14 +88,14 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
         Object value_3 = null;
 
         if (values != null) {
-            value_1 = values.get("aa");
-            value_2 = values.get("bb");
-            value_3 = values.get("cc");
+            value_1 = values.get("aa").value;
+            value_2 = values.get("bb").value;
+            value_3 = values.get("cc").value;
         }
 
         //access way #2
-        Object value_4 = Countly.sharedInstance().remoteConfig().getValueForKey("dd");
-        Object value_5 = Countly.sharedInstance().remoteConfig().getValueForKey("ee");
+        Object value_4 = Countly.sharedInstance().remoteConfig().getValue("dd").value;
+        Object value_5 = Countly.sharedInstance().remoteConfig().getValue("ee").value;
 
         String printValues = "";
 
