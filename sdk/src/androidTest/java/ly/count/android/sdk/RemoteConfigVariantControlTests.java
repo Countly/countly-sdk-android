@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
+import ly.count.android.sdk.internal.RemoteConfigHelper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,16 +30,16 @@ public class RemoteConfigVariantControlTests {
         // Create a sample JSON object with variants
         JSONObject variantsObj = new JSONObject();
         JSONArray variantArray1 = new JSONArray();
-        variantArray1.put(new JSONObject().put("name", "Variant 1"));
-        variantArray1.put(new JSONObject().put("name", "Variant 2"));
+        variantArray1.put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 1"));
+        variantArray1.put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 2"));
         JSONArray variantArray2 = new JSONArray();
-        variantArray2.put(new JSONObject().put("name", "Variant 3"));
-        variantArray2.put(new JSONObject().put("name", "Variant 4"));
+        variantArray2.put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 3"));
+        variantArray2.put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 4"));
         variantsObj.put("key1", variantArray1);
         variantsObj.put("key2", variantArray2);
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert the expected map values
         Assert.assertEquals(2, resultMap.size());
@@ -60,11 +61,11 @@ public class RemoteConfigVariantControlTests {
     public void testConvertVariantsJsonToMap_ValidInput_Single() throws JSONException {
         // Create a sample JSON object with valid variants
         JSONObject variantsObj = new JSONObject();
-        variantsObj.put("key1", new JSONArray().put(new JSONObject().put("name", "Variant 1")));
-        variantsObj.put("key2", new JSONArray().put(new JSONObject().put("name", "Variant 2")));
+        variantsObj.put("key1", new JSONArray().put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 1")));
+        variantsObj.put("key2", new JSONArray().put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 2")));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert the expected map values
         Assert.assertEquals(2, resultMap.size());
@@ -87,7 +88,7 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key1", new JSONArray().put(new JSONObject().put("invalid_key", "Invalid Value")));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
         Assert.assertEquals(1, resultMap.size());
 
         // Assert the values for key1
@@ -102,24 +103,23 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key1", "Invalid JSON");
 
         // Call the function to convert variants JSON to a map (expecting JSONException)
-        ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
-        Assert.assertEquals(1, resultMap.size());
-
-        // Assert the values for key1
-        String[] key1Variants = resultMap.get("key1");
-        Assert.assertEquals(0, key1Variants.length);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
+        Assert.assertEquals(0, resultMap.size());
     }
 
+    /**
+     * Empty JSON should produce an empty map
+     */
     @Test
-    public void testConvertVariantsJsonToMap_NoValues() throws JSONException {
+    public void testConvertVariantsJsonToMap_NoValues() {
         // Create an empty JSON object
         JSONObject variantsObj = new JSONObject();
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert that the map is empty
         Assert.assertTrue(resultMap.isEmpty());
@@ -134,13 +134,13 @@ public class RemoteConfigVariantControlTests {
         variantsObj.put("key1", new JSONArray());
 
         // Structure 2: Single variant as JSON object
-        variantsObj.put("key2", new JSONArray().put(new JSONObject().put("name", "Variant 1")));
+        variantsObj.put("key2", new JSONArray().put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 1")));
 
         // Structure 3: Multiple variants as JSON objects
-        variantsObj.put("key3", new JSONArray().put(new JSONObject().put("name", "Variant 2")).put(new JSONObject().put("name", "Variant 3")));
+        variantsObj.put("key3", new JSONArray().put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 2")).put(new JSONObject().put(ModuleRemoteConfig.variantObjectNameKey, "Variant 3")));
 
         // Call the function to convert variants JSON to a map
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(variantsObj);
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(variantsObj, mock(ModuleLog.class));
 
         // Assert the expected map values
         Assert.assertEquals(3, resultMap.size());
@@ -161,13 +161,18 @@ public class RemoteConfigVariantControlTests {
         Assert.assertEquals("Variant 3", key3Variants[1]);
     }
 
+    /**
+     * variant with a string test name "null" and a string variant name "null" should be let through
+     *
+     * @throws JSONException
+     */
     @Test
     public void testConvertVariantsJsonToMap_NullJsonKey() throws JSONException {
-        // Test with a null JSON key
+        // Test with a null JSON key string
         String variantsObj = "{\"null\":[{\"name\":\"null\"}]}";
 
         // Call the function to convert variants JSON to a map (expecting JSONException)
-        Map<String, String[]> resultMap = ModuleRemoteConfig.convertVariantsJsonToMap(new JSONObject(variantsObj));
+        Map<String, String[]> resultMap = RemoteConfigHelper.convertVariantsJsonToMap(new JSONObject(variantsObj), mock(ModuleLog.class));
 
         // Assert the values for key1
         String[] key1Variants = resultMap.get("null");
@@ -181,7 +186,7 @@ public class RemoteConfigVariantControlTests {
         Countly countly = (new Countly()).init(config);
 
         // Developer did not provide a callback
-        countly.moduleRemoteConfig.remoteConfigInterface.testingFetchVariantInformation(null);
+        countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
         Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
         String[] variantArray = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key");
         String[] variantArrayFalse = countly.moduleRemoteConfig.remoteConfigInterface.testingGetVariantsForKey("key2");
@@ -192,31 +197,36 @@ public class RemoteConfigVariantControlTests {
         Assert.assertEquals("variant", key1Variants[0]);
         Assert.assertEquals(1, variantArray.length);
         Assert.assertEquals("variant", variantArray[0]);
-        Assert.assertEquals(0, variantArrayFalse.length);
+        Assert.assertNull(variantArrayFalse);
     }
 
+    /**
+     * Reject a variant if it's name is a null json value
+     */
     @Test
     public void testNullVariant() {
         CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":null}]}"));
         Countly countly = (new Countly()).init(config);
 
         // Developer did not provide a callback
-        countly.moduleRemoteConfig.remoteConfigInterface.testingFetchVariantInformation(null);
+        countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
         Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
 
         // Assert the values
         String[] key1Variants = values.get("key");
-        Assert.assertEquals(1, key1Variants.length);
-        Assert.assertEquals("null", key1Variants[0]); // TODO: is fine?
+        Assert.assertEquals(0, key1Variants.length);
     }
 
+    /**
+     * Reject variant entries where the object has no entry with the "name" key
+     */
     @Test
     public void testFilteringWrongKeys() {
         CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"noname\":\"variant1\"},{\"name\":\"variant2\"}]}"));
         Countly countly = (new Countly()).init(config);
 
         // Developer did not provide a callback
-        countly.moduleRemoteConfig.remoteConfigInterface.testingFetchVariantInformation(null);
+        countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
         Map<String, String[]> values = countly.moduleRemoteConfig.remoteConfigInterface.testingGetAllVariants();
 
         //Assert the values
@@ -226,27 +236,36 @@ public class RemoteConfigVariantControlTests {
     }
 
     ImmediateRequestGenerator createIRGForSpecificResponse(final String targetResponse) {
-        return new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (targetResponse == null) {
-                            callback.callback(null);
-                            return;
-                        }
-
-                        JSONObject jobj = null;
-
-                        try {
-                            jobj = new JSONObject(targetResponse);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-
-                        callback.callback(jobj);
-                    }
-                };
+        return () -> (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+            if (targetResponse == null) {
+                callback.callback(null);
+                return;
             }
+
+            JSONObject jobj = null;
+
+            try {
+                jobj = new JSONObject(targetResponse);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            callback.callback(jobj);
         };
+    }
+
+    @Test
+    public void variantGetters_preDownload() {
+        CountlyConfig config = TestUtils.createVariantConfig(null);
+        Countly countly = (new Countly()).init(config);
+
+        //should return empty map of values
+        Map<String, String[]> vals = countly.remoteConfig().testingGetAllVariants();
+        Assert.assertEquals(0, vals.size());
+
+        //single getters should also not fail on requesting values
+        Assert.assertNull(countly.remoteConfig().testingGetVariantsForKey("a"));
+        Assert.assertNull(countly.remoteConfig().testingGetVariantsForKey(""));
+        Assert.assertNull(countly.remoteConfig().testingGetVariantsForKey(null));
     }
 }

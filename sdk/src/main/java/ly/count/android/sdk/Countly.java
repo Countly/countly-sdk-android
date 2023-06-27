@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.4";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.6.0";
 
     /**
      * Used as request meta data on every request
@@ -273,7 +273,11 @@ public class Countly {
 
         L.SetListener(config.providedLogCallback);
 
-        L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
+        if (COUNTLY_SDK_NAME.equals(DEFAULT_COUNTLY_SDK_NAME) && COUNTLY_SDK_VERSION_STRING.equals(DEFAULT_COUNTLY_SDK_VERSION_STRING)) {
+            L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
+        } else {
+            L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "] default name[" + DEFAULT_COUNTLY_SDK_NAME + "] default version[" + DEFAULT_COUNTLY_SDK_VERSION_STRING + "]");
+        }
 
         if (config.context == null) {
             if (config.application != null) {

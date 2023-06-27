@@ -174,8 +174,8 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.autoTrackingUseShortName);
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
         Assert.assertTrue(config.pushIntentAddMetadata);
-        Assert.assertTrue(config.enableRemoteConfigAutomaticDownload);
-        Assert.assertEquals(rcc2, config.remoteConfigCallbackNew);
+        Assert.assertTrue(config.enableRemoteConfigAutomaticDownloadTriggers);
+        Assert.assertEquals(rcc2, config.remoteConfigCallbackLegacy);
         Assert.assertTrue(config.shouldRequireConsent);
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
@@ -249,8 +249,8 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.autoTrackingUseShortName);
         Assert.assertNull(config.customNetworkRequestHeaders);
         Assert.assertFalse(config.pushIntentAddMetadata);
-        Assert.assertFalse(config.enableRemoteConfigAutomaticDownload);
-        Assert.assertNull(config.remoteConfigCallbackNew);
+        Assert.assertFalse(config.enableRemoteConfigAutomaticDownloadTriggers);
+        Assert.assertNull(config.remoteConfigCallbackLegacy);
         Assert.assertFalse(config.shouldRequireConsent);
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);

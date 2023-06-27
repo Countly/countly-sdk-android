@@ -3,22 +3,31 @@ package ly.count.android.sdk;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import org.json.JSONArray;
+import ly.count.android.sdk.internal.RemoteConfigHelper;
+import ly.count.android.sdk.internal.RemoteConfigValueStore;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static ly.count.android.sdk.ModuleConsent.ConsentChangeSource.ChangeConsentCall;
+
 public class ModuleRemoteConfig extends ModuleBase {
-    ImmediateRequestGenerator immediateRequestGenerator;
+    ImmediateRequestGenerator iRGenerator;
     boolean updateRemoteConfigAfterIdChange = false;
-    Map<String, String[]> variantContainer; // Stores the fetched A/B test variants
+    Map<String, String[]> variantContainer = new HashMap<>(); // Stores the fetched A/B test variants
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
-    boolean remoteConfigAutomaticUpdateEnabled = false;
-    RemoteConfigCallback remoteConfigInitCallback = null;
+    boolean automaticDownloadTriggersEnabled;
+
+    boolean remoteConfigValuesShouldBeCached = false;
+
+    List<RCDownloadCallback> downloadCallbacks = new ArrayList<>(2);
+
+    public final static String variantObjectNameKey = "name";
 
     @Nullable
     Map<String, String> metricOverride = null;
@@ -28,16 +37,16 @@ public class ModuleRemoteConfig extends ModuleBase {
         L.v("[ModuleRemoteConfig] Initialising");
 
         metricOverride = config.metricOverride;
-        immediateRequestGenerator = config.immediateRequestGenerator;
+        iRGenerator = config.immediateRequestGenerator;
 
-        if (config.enableRemoteConfigAutomaticDownload) {
-            L.d("[ModuleRemoteConfig] Setting if remote config Automatic download will be enabled, " + config.enableRemoteConfigAutomaticDownload);
+        L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching);
+        automaticDownloadTriggersEnabled = config.enableRemoteConfigAutomaticDownloadTriggers;
+        remoteConfigValuesShouldBeCached = config.enableRemoteConfigValueCaching;
 
-            remoteConfigAutomaticUpdateEnabled = config.enableRemoteConfigAutomaticDownload;
+        downloadCallbacks.addAll(config.remoteConfigGlobalCallbackList);
 
-            if (config.remoteConfigCallbackNew != null) {
-                remoteConfigInitCallback = config.remoteConfigCallbackNew;
-            }
+        if (config.remoteConfigCallbackLegacy != null) {
+            downloadCallbacks.add((downloadResult, error, fullValueUpdate, downloadedValues) -> config.remoteConfigCallbackLegacy.callback(error));
         }
 
         remoteConfigInterface = new RemoteConfig();
@@ -48,72 +57,142 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param keysOnly set if these are the only keys to update
      * @param keysExcept set if these keys should be ignored from the update
-     * @param requestShouldBeDelayed this is set to true in case of update after a deviceId change
-     * @param callback called after the update is done
+     * @param devProvidedCallback dev provided callback that is called after the update is done
      */
-    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean requestShouldBeDelayed, @Nullable final RemoteConfigCallback callback) {
-        try {
-            L.d("[ModuleRemoteConfig] Updating remote config values, requestShouldBeDelayed:[" + requestShouldBeDelayed + "]");
+    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean useLegacyAPI, @Nullable final RCDownloadCallback devProvidedCallback) {
+        L.d("[ModuleRemoteConfig] Updating remote config values, legacyAPI:[" + useLegacyAPI + "]");
 
+        String[] preparedKeys = RemoteConfigHelper.prepareKeysIncludeExclude(keysOnly, keysExcept, L);
+        boolean fullUpdate = (preparedKeys[0] == null || preparedKeys[0].length() == 0) && (preparedKeys[1] == null || preparedKeys[1].length() == 0);
+
+        try {
             // checks
             if (deviceIdProvider.getDeviceId() == null) {
                 //device ID is null, abort
                 L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, deviceID is null");
-                if (callback != null) {
-                    callback.callback("Can't complete call, device ID is null");
-                }
+                NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Can't complete call, device ID is null", fullUpdate, null);
                 return;
             }
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
                 //temporary id mode enabled, abort
                 L.d("[ModuleRemoteConfig] RemoteConfig value update was aborted, temporary device ID mode is set");
-                if (callback != null) {
-                    callback.callback("Can't complete call, temporary device ID is set");
-                }
+                NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Can't complete call, temporary device ID is set", fullUpdate, null);
                 return;
             }
 
             //prepare metrics and request data
             String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
-            String[] preparedKeys = prepareKeysIncludeExclude(keysOnly, keysExcept);
-            String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);
+            String requestData;
+
+            if (useLegacyAPI) {
+                requestData = requestQueueProvider.prepareRemoteConfigRequestLegacy(preparedKeys[0], preparedKeys[1], preparedMetrics);
+            } else {
+                requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);
+            }
             L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, requestShouldBeDelayed, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
-                    if (checkResponse == null) {
-                        if (callback != null) {
-                            callback.callback("Encountered problem while trying to reach the server, possibly no internet connection");
-                        }
-                        return;
-                    }
-
-                    String error = null;
-                    try {
-                        boolean clearOldValues = keysExcept == null && keysOnly == null;
-                        mergeCheckResponseIntoCurrentValues(clearOldValues, checkResponse);
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]");
-                        error = "Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]";
-                    }
-
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+                L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered problem while trying to reach the server, possibly no internet connection", fullUpdate, null);
+                    return;
                 }
+
+                String error = null;
+                Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse);
+
+                try {
+                    boolean clearOldValues = keysExcept == null && keysOnly == null;
+                    mergeCheckResponseIntoCurrentValues(clearOldValues, newRC);
+                } catch (Exception ex) {
+                    L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]");
+                    error = "Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]";
+                }
+
+                NotifyDownloadCallbacks(devProvidedCallback, error == null ? RequestResult.Success : RequestResult.Error, error, fullUpdate, newRC);
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to perform a remote config update. " + ex.toString());
-            if (callback != null) {
-                callback.callback("Encountered internal error while trying to perform a remote config update");
-            }
+            NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered internal error while trying to perform a remote config update", fullUpdate, null);
         }
+    }
+
+    /**
+     * Internal function to form and send a request to enroll user for given keys
+     *
+     * @param keys
+     */
+    void enrollIntoABTestsForKeysInternal(@NonNull String[] keys) {
+        L.d("[ModuleRemoteConfig] Enrolling user for the given keys:" + keys);
+
+        if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
+            L.d("[ModuleRemoteConfig] Enrolling user was aborted, temporary device ID mode is set or device ID is null.");
+            return;
+        }
+
+        String requestData = requestQueueProvider.prepareEnrollmentParameters(keys);
+        L.d("[ModuleRemoteConfig] Enrollment requestData:[" + requestData + "]");
+
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+            L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
+            if (checkResponse == null) {
+                return;
+            }
+
+            try {
+                if (checkResponse.has("result")) {
+                    L.d("[ModuleRemoteConfig] Assuming that user was enrolled user for the A/B test");
+                } else {
+                    L.w("[ModuleRemoteConfig] Encountered a network error while enrolling the user for the A/B test.");
+                }
+            } catch (Exception ex) {
+                L.e("[ModuleRemoteConfig] Encountered an internal error while trying to enroll the user for A/B test. " + ex.toString());
+            }
+        }, L);
+    }
+
+    /**
+     * Internal function to form and send the request to remove user from A/B testes for given keys
+     *
+     * @param keys
+     */
+    void exitABTestsForKeysInternal(@NonNull String[] keys) {
+        L.d("[ModuleRemoteConfig] Removing user for the tests with given keys:" + keys);
+
+        if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
+            L.d("[ModuleRemoteConfig] Removing user from tests was aborted, temporary device ID mode is set or device ID is null.");
+            return;
+        }
+
+        String requestData = requestQueueProvider.prepareRemovalParameters(keys);
+        L.d("[ModuleRemoteConfig] Removal requestData:[" + requestData + "]");
+
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i", cp, false, networkingIsEnabled, checkResponse -> {
+            L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
+            if (checkResponse == null) {
+                return;
+            }
+
+            try {
+                if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
+                    L.d("[ModuleRemoteConfig]  Removed user from the A/B test");
+                } else {
+                    L.d("[ModuleRemoteConfig]  Encountered a network error while removing the user from A/B testing.");
+                }
+            } catch (Exception ex) {
+                L.e("[ModuleRemoteConfig] Encountered an internal error while trying to remove user from A/B testing. " + ex.toString());
+            }
+        }, L);
     }
 
     /**
@@ -127,7 +206,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                callback.callback(RequestResponse.ERROR, "Temporary device ID mode is set or device ID is null.");
+                callback.callback(RequestResult.Error, "Temporary device ID mode is set or device ID is null.");
                 return;
             }
 
@@ -139,28 +218,20 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
-                    if (checkResponse == null) {
-                        callback.callback(RequestResponse.NETWORK_ISSUE, "Received response is null." );
-                        return;
-                    }
-
-                    try {
-                        Map<String, String[]> parsedResponse = convertVariantsJsonToMap(checkResponse);
-                        variantContainer = parsedResponse;
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testingFetchVariantInformationInternal - execute, Encountered internal issue while trying to fetch information from the server, [" + ex.toString() + "]");
-                    }
-
-                    callback.callback(RequestResponse.SUCCESS, null);
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
+                L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
+                    return;
                 }
+
+                variantContainer = RemoteConfigHelper.convertVariantsJsonToMap(checkResponse, L);
+
+                callback.callback(RequestResult.Success, null);
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants. " + ex.toString());
-            callback.callback(RequestResponse.ERROR, "Encountered internal error while trying to fetch all A/B test variants.");
+            callback.callback(RequestResult.Error, "Encountered internal error while trying to fetch all A/B test variants.");
         }
     }
 
@@ -170,14 +241,14 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Enrolling A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
-                callback.callback(RequestResponse.ERROR, "Temporary device ID mode is set or device ID is null.");
+                callback.callback(RequestResult.Error, "Temporary device ID mode is set or device ID is null.");
                 return;
             }
 
             // check Key and Variant
             if (TextUtils.isEmpty(key) || TextUtils.isEmpty(variant)) {
                 L.w("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pair is invalid. Aborting.");
-                callback.callback(RequestResponse.ERROR, "Provided key/variant pair is invalid.");
+                callback.callback(RequestResult.Error, "Provided key/variant pair is invalid.");
                 return;
             }
 
@@ -189,43 +260,30 @@ public class ModuleRemoteConfig extends ModuleBase {
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-                @Override
-                public void callback(JSONObject checkResponse) {
-                    L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
-                    if (checkResponse == null) {
-                        callback.callback(RequestResponse.NETWORK_ISSUE, "Received response is null.");
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i", cp, false, networkingIsEnabled, checkResponse -> {
+                L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
+                if (checkResponse == null) {
+                    callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
+                    return;
+                }
+
+                try {
+                    if (!isResponseValid(checkResponse)) {
+                        callback.callback(RequestResult.NetworkIssue, "Bad response from the server:" + checkResponse.toString());
                         return;
                     }
 
-                    try {
-                        if (!isResponseValid(checkResponse)) {
-                            callback.callback(RequestResponse.NETWORK_ISSUE, "Bad response from the server:" + checkResponse.toString());
-                            return;
-                        }
+                    RCAutomaticDownloadTrigger(true);//todo afterwards cache only that one key
 
-                        // Update Remote Config
-                        if (remoteConfigAutomaticUpdateEnabled) {
-                            updateRemoteConfigValues(null, null, false, new RemoteConfigCallback() {
-                                @Override public void callback(String error) {
-                                    if (error == null) {
-                                        L.d("[ModuleRemoteConfig] Updated remote config after enrolling to a variant");
-                                    } else {
-                                        L.e("[ModuleRemoteConfig] Attempt to update the remote config after enrolling to a variant failed:" + error.toString());
-                                    }
-                                }
-                            });
-                        }
-
-                        callback.callback(RequestResponse.SUCCESS, null);
-                    } catch (Exception ex) {
-                        L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
-                    }
+                    callback.callback(RequestResult.Success, null);
+                } catch (Exception ex) {
+                    L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");
+                    callback.callback(RequestResult.Error, "Encountered internal error while trying to take care of the A/B test variant enrolment.");
                 }
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to enroll A/B test variants. " + ex.toString());
-            callback.callback(RequestResponse.ERROR, "Encountered internal error while trying to enroll A/B test variants.");
+            callback.callback(RequestResult.Error, "Encountered internal error while trying to enroll A/B test variants.");
         }
     }
 
@@ -235,16 +293,12 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @throws Exception it throws an exception so that it is escalated upwards
      */
-    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, JSONObject checkResponse) throws Exception {
+    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, @NonNull Map<String, RCData> newRC) {
         //todo iterate over all response values and print a summary of the returned keys + ideally a summary of their payload.
 
         //merge the new values into the current ones
         RemoteConfigValueStore rcvs = loadConfig();
-        if (clearOldValues) {
-            //in case of full updates, clear old values
-            rcvs.values = new JSONObject();
-        }
-        rcvs.mergeValues(checkResponse);
+        rcvs.mergeValues(newRC, clearOldValues);
 
         L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
 
@@ -258,118 +312,43 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @param responseJson - JSONObject response
      * @return
-     * @throws JSONException
      */
-    boolean isResponseValid(@NonNull JSONObject responseJson) throws JSONException {
+    boolean isResponseValid(@NonNull JSONObject responseJson) {
         boolean result = false;
 
-        if (responseJson.get("result").equals("Success")) {
-            result = true;
+        try {
+            if (responseJson.get("result").equals("Success")) {
+                result = true;
+            }
+        } catch (JSONException e) {
+            L.e("[ModuleRemoteConfig] isResponseValid, encountered issue, " + e);
+            return false;
         }
 
         return result;
     }
 
-    /**
-     * Converts A/B testing variants fetched from the server (JSONObject) into a map
-     *
-     * @param variantsObj - JSON Object fetched from the server
-     * @return
-     * @throws JSONException
-     */
-    static Map<String, String[]> convertVariantsJsonToMap(@NonNull JSONObject variantsObj) throws JSONException {
-        // Initialize the map to store the results
-        Map<String, String[]> resultMap = new HashMap<>();
-
-        try {
-            // Get the keys of the JSON object using names() method
-            JSONArray keys = variantsObj.names();
-            if (keys != null) {
-                for (int i = 0; i < keys.length(); i++) {
-                    String key = keys.getString(i);
-                    Object value = variantsObj.get(key);
-
-                    // Set the key and and an empty Array initially
-                    String[] emptyArray = new String[0];
-                    resultMap.put(key, emptyArray);
-
-                    // Check if the value is a JSON array
-                    if (value instanceof JSONArray) {
-                        JSONArray jsonArray = (JSONArray) value;
-
-                        // Check if the JSON array contains objects
-                        if (jsonArray.length() > 0 && jsonArray.get(0) instanceof JSONObject) {
-                            // Extract the values from the JSON objects
-                            String[] variants = new String[jsonArray.length()];
-                            int count = 0;
-                            for (int j = 0; j < jsonArray.length(); j++) {
-                                JSONObject variantObject = jsonArray.getJSONObject(j);
-                                if (variantObject.has("name")) {
-                                    variants[count] = variantObject.getString("name");
-                                    count++;
-                                }
-                            }
-
-                            // Map the key and its corresponding variants
-                            if (count > 0) {
-                                String[] filteredVariants = new String[count];
-                                System.arraycopy(variants, 0, filteredVariants, 0, count);
-                                resultMap.put(key, filteredVariants);
-                            } // else if the JSON object had no key 'name' we return String[0]
-                        } // else if values of JSON array are not JSON object(all?) or no values at all we return String[0]
-                    } // else if value is not JSON array we return String[0]
-                }
-            }
-        } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[ModuleRemoteConfig] convertVariantsJsonToMap, failed parsing:[" + ex.toString() + "]");
-            return new HashMap<>();
-        }
-
-        return resultMap;
-    }
-
-    /*
-     * Decide which keys to use
-     * Useful if both 'keysExcept' and 'keysOnly' set
-     * */
-    @NonNull String[] prepareKeysIncludeExclude(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept) {
-        String[] res = new String[2];//0 - include, 1 - exclude
-
-        try {
-            if (keysOnly != null && keysOnly.length > 0) {
-                //include list takes precedence
-                //if there is at least one item, use it
-                JSONArray includeArray = new JSONArray();
-                for (String key : keysOnly) {
-                    includeArray.put(key);
-                }
-                res[0] = includeArray.toString();
-            } else if (keysExcept != null && keysExcept.length > 0) {
-                //include list was not used, use the exclude list
-                JSONArray excludeArray = new JSONArray();
-                for (String key : keysExcept) {
-                    excludeArray.put(key);
-                }
-                res[1] = excludeArray.toString();
-            }
-        } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] prepareKeysIncludeExclude, Failed at preparing keys, [" + ex.toString() + "]");
-        }
-
-        return res;
-    }
-
-    Object getValue(String key) {
+    RCData getRCValue(@NonNull String key) {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
             return rcvs.getValue(key);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] getValue, Call failed:[" + ex.toString() + "]");
+            return new RCData(null, true);
+        }
+    }
+
+    Object getRCValueLegacy(@NonNull String key) {
+        try {
+            RemoteConfigValueStore rcvs = loadConfig();
+            return rcvs.getValueLegacy(key);
+        } catch (Exception ex) {
+            L.e("[ModuleRemoteConfig] getValueLegacy, Call failed:[" + ex.toString() + "]");
             return null;
         }
     }
 
-    void saveConfig(RemoteConfigValueStore rcvs) throws Exception {
+    void saveConfig(@NonNull RemoteConfigValueStore rcvs) {
         storageProvider.setRemoteConfigValues(rcvs.dataToString());
     }
 
@@ -377,10 +356,10 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @return
      * @throws Exception For some reason this might be throwing an exception
      */
-    RemoteConfigValueStore loadConfig() throws Exception {
+    @NonNull RemoteConfigValueStore loadConfig() {
         String rcvsString = storageProvider.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString, remoteConfigValuesShouldBeCached);
         return rcvs;
     }
 
@@ -388,13 +367,23 @@ public class ModuleRemoteConfig extends ModuleBase {
         storageProvider.setRemoteConfigValues("");
     }
 
-    Map<String, Object> getAllRemoteConfigValuesInternal() {
+    @NonNull Map<String, Object> getAllRemoteConfigValuesInternalLegacy() {
+        try {
+            RemoteConfigValueStore rcvs = loadConfig();
+            return rcvs.getAllValuesLegacy();
+        } catch (Exception ex) {
+            Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+            return new HashMap<>();
+        }
+    }
+
+    @NonNull Map<String, RCData> getAllRemoteConfigValuesInternal() {
         try {
             RemoteConfigValueStore rcvs = loadConfig();
             return rcvs.getAllValues();
         } catch (Exception ex) {
             Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
-            return null;
+            return new HashMap<>();
         }
     }
 
@@ -403,7 +392,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      *
      * @return
      */
-    Map<String, String[]> testingGetAllVariantsInternal() {
+    @NonNull Map<String, String[]> testingGetAllVariantsInternal() {
         return variantContainer;
     }
 
@@ -413,87 +402,67 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param key
      * @return
      */
-    String[] testingGetVariantsForKeyInternal(String key) {
+    @Nullable String[] testingGetVariantsForKeyInternal(@NonNull String key) {
+        String[] variantResponse = null;
         if (variantContainer.containsKey(key)) {
-            return variantContainer.get(key);
+            variantResponse = variantContainer.get(key);
         }
 
-        return new String[0];
+        return variantResponse;
     }
 
-    static class RemoteConfigValueStore {
-        public JSONObject values = new JSONObject();
+    void clearAndDownloadAfterIdChange(boolean valuesShouldBeCacheCleared) {
+        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update, " + valuesShouldBeCacheCleared);
 
-        //add new values to the current storage
-        public void mergeValues(JSONObject newValues) {
-            if (newValues == null) {
-                return;
-            }
-
-            Iterator<String> iter = newValues.keys();
-            while (iter.hasNext()) {
-                String key = iter.next();
-                try {
-                    Object value = newValues.get(key);
-                    values.put(key, value);
-                } catch (Exception e) {
-                    Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed merging new remote config values");
-                }
-            }
+        if (valuesShouldBeCacheCleared) {
+            CacheOrClearRCValuesIfNeeded();
         }
-
-        private RemoteConfigValueStore(JSONObject values) {
-            this.values = values;
-        }
-
-        public Object getValue(String key) {
-            return values.opt(key);
-        }
-
-        public Map<String, Object> getAllValues() {
-            Map<String, Object> ret = new HashMap<>();
-
-            Iterator<String> keys = values.keys();
-
-            while (keys.hasNext()) {
-                String key = keys.next();
-
-                try {
-                    ret.put(key, values.get(key));
-                } catch (Exception ex) {
-                    Countly.sharedInstance().L.e("[RemoteConfigValueStore] Got JSON exception while calling 'getAllValues': " + ex.toString());
-                }
-            }
-
-            return ret;
-        }
-
-        public static RemoteConfigValueStore dataFromString(String storageString) {
-            if (storageString == null || storageString.isEmpty()) {
-                return new RemoteConfigValueStore(new JSONObject());
-            }
-
-            JSONObject values;
-            try {
-                values = new JSONObject(storageString);
-            } catch (JSONException e) {
-                Countly.sharedInstance().L.e("[RemoteConfigValueStore] Couldn't decode RemoteConfigValueStore successfully: " + e.toString());
-                values = new JSONObject();
-            }
-            return new RemoteConfigValueStore(values);
-        }
-
-        public String dataToString() {
-            return values.toString();
-        }
-    }
-
-    void clearAndDownloadAfterIdChange() {
-        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
-
-        clearValueStoreInternal();
-        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+        if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
+        }
+    }
+
+    void CacheOrClearRCValuesIfNeeded() {
+        L.v("[RemoteConfig] CacheOrClearRCValuesIfNeeded, cacheclearing values");
+        RemoteConfigValueStore rc = loadConfig();
+        rc.cacheClearValues();
+        saveConfig(rc);
+    }
+
+    void NotifyDownloadCallbacks(RCDownloadCallback devProvidedCallback, RequestResult requestResult, String message, boolean fullUpdate, Map<String, RCData> downloadedValues) {
+        for (RCDownloadCallback callback : downloadCallbacks) {
+            callback.callback(requestResult, message, fullUpdate, downloadedValues);
+        }
+
+        if (devProvidedCallback != null) {
+            devProvidedCallback.callback(requestResult, message, fullUpdate, downloadedValues);
+        }
+    }
+
+    void RCAutomaticDownloadTrigger(boolean cacheClearOldValues) {
+        if (cacheClearOldValues) {
+            CacheOrClearRCValuesIfNeeded();
+        }
+
+        if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+            L.d("[RemoteConfig] Automatically updating remote config values");
+            updateRemoteConfigValues(null, null, false, null);
+        } else {
+            L.v("[RemoteConfig] Automatic RC update trigger skipped");
+        }
+    }
+
+    @Override
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.remoteConfig) && changeSource == ChangeConsentCall) {
+            if (newConsent) {
+                //if consent was just given trigger automatic RC download if needed
+                RCAutomaticDownloadTrigger(false);
+            } else {
+                L.d("[RemoteConfig] removing remote-config consent. Clearing stored values");
+                clearValueStoreInternal();
+                // if consent is removed, we should clear remote config values
+            }
         }
     }
 
@@ -503,16 +472,15 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         if (updateRemoteConfigAfterIdChange) {
             updateRemoteConfigAfterIdChange = false;
-            updateRemoteConfigValues(null, null, true, null);
+            RCAutomaticDownloadTrigger(true);
         }
     }
 
     @Override
     public void initFinished(@NonNull CountlyConfig config) {
         //update remote config_ values if automatic update is enabled and we are not in temporary id mode
-        if (remoteConfigAutomaticUpdateEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig) && !deviceIdProvider.isTemporaryIdEnabled()) {
-            L.d("[RemoteConfig] Automatically updating remote config values");
-            updateRemoteConfigValues(null, null, false, remoteConfigInitCallback);
+        if (!deviceIdProvider.isTemporaryIdEnabled()) {
+            RCAutomaticDownloadTrigger(false);
         }
     }
 
@@ -530,6 +498,8 @@ public class ModuleRemoteConfig extends ModuleBase {
     public class RemoteConfig {
         /**
          * Clear all stored remote config_ values
+         *
+         * @deprecated Use "clearAll"
          */
         public void clearStoredValues() {
             synchronized (_cly) {
@@ -539,105 +509,15 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
         }
 
+        /**
+         * @return
+         * @deprecated
+         */
         public Map<String, Object> getAllValues() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling 'getAllValues'");
 
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
-                }
-
-                return getAllRemoteConfigValuesInternal();
-            }
-        }
-
-        /**
-         * Returns all variant information as a Map<String, String[]>
-         *
-         * @return
-         */
-        public Map<String, String[]> testingGetAllVariants() {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingGetAllVariants'");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
-                }
-
-                return testingGetAllVariantsInternal();
-            }
-        }
-
-        /**
-         * Returns variant information for a key as a String[]
-         *
-         * @param key - key value to get variant information for
-         * @return
-         */
-        public String[] testingGetVariantsForKey(String key) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingGetVariantsForKey'");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
-                }
-
-                return testingGetVariantsForKeyInternal(key);
-            }
-        }
-
-        /**
-         * Fetches all variants of A/B testing experiments
-         *
-         * @param callback
-         */
-        public void testingFetchVariantInformation(RCVariantCallback callback) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingFetchVariantInformation'");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return;
-                }
-
-                if (callback == null) {
-                    callback = new RCVariantCallback() {
-                        @Override public void callback(RequestResponse result, String error) {
-                        }
-                    };
-                }
-
-                testingFetchVariantInformationInternal(callback);
-            }
-        }
-
-        /**
-         * Enrolls user for a specific variant of A/B testing experiment
-         *
-         * @param key - key value retrieved from the fetched variants
-         * @param variantName - name of the variant for the key to enroll
-         * @param callback
-         */
-        public void testingEnrollIntoVariant(String key, String variantName, RCVariantCallback callback) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingEnrollIntoVariant'");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return;
-                }
-
-                if (key == null || variantName == null) {
-                    L.w("[RemoteConfig] testEnrollIntoVariant, passed key or variant is null. Aborting.");
-                    return;
-                }
-
-                if (callback == null) {
-                    callback = new RCVariantCallback() {
-                        @Override public void callback(RequestResponse result, String error) {
-                        }
-                    };
-                }
-
-                testingEnrollIntoVariantInternal(key, variantName, callback);
+                return getAllRemoteConfigValuesInternalLegacy();
             }
         }
 
@@ -646,16 +526,13 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param key
          * @return
+         * @deprecated
          */
         public Object getValueForKey(String key) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Calling remoteConfigValueForKey, " + key);
 
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    return null;
-                }
-
-                return getValue(key);
+                return getRCValueLegacy(key);
             }
         }
 
@@ -664,6 +541,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keysToExclude
          * @param callback
+         * @deprecated
          */
         public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -678,7 +556,14 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToExclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
                 }
-                updateRemoteConfigValues(null, keysToExclude, false, callback);
+
+                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                };
+
+                updateRemoteConfigValues(null, keysToExclude, true, innerCall);
             }
         }
 
@@ -687,6 +572,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          *
          * @param keysToInclude
          * @param callback
+         * @deprecated
          */
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
@@ -700,7 +586,14 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
                 }
-                updateRemoteConfigValues(keysToInclude, null, false, callback);
+
+                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                };
+
+                updateRemoteConfigValues(keysToInclude, null, true, innerCall);
             }
         }
 
@@ -708,16 +601,257 @@ public class ModuleRemoteConfig extends ModuleBase {
          * Manually update remote config_ values
          *
          * @param callback
+         * @deprecated
          */
         public void update(RemoteConfigCallback callback) {
             synchronized (_cly) {
                 L.i("[RemoteConfig] Manually calling to updateRemoteConfig");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback("No consent given");
+                    }
                     return;
                 }
 
+                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    if (callback != null) {
+                        callback.callback(error);
+                    }
+                };
+
+                updateRemoteConfigValues(null, null, true, innerCall);
+            }
+        }
+
+        /**
+         * Manual remote config update call. Will update all keys except the ones provided
+         *
+         * @param keysToOmit
+         * @param callback
+         */
+        public void downloadOmittingKeys(@Nullable String[] keysToOmit, @Nullable RCDownloadCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback(RequestResult.Error, null, false, null);
+                    }
+                    return;
+                }
+                if (keysToOmit == null) {
+                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+                }
+
+                if (callback == null) {
+                    callback = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    };
+                }
+
+                updateRemoteConfigValues(null, keysToOmit, false, callback);
+            }
+        }
+
+        /**
+         * Manual remote config_ update call. Will only update the keys provided.
+         *
+         * @param keysToInclude
+         * @param callback
+         */
+        public void downloadSpecificKeys(@Nullable String[] keysToInclude, @Nullable RCDownloadCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback(RequestResult.Error, null, false, null);
+                    }
+                    return;
+                }
+                if (keysToInclude == null) {
+                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+                }
+
+                if (callback == null) {
+                    callback = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    };
+                }
+
+                updateRemoteConfigValues(keysToInclude, null, false, callback);
+            }
+        }
+
+        public void downloadAllKeys(@Nullable RCDownloadCallback callback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Manually calling to update Remote Config v2");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    if (callback != null) {
+                        callback.callback(RequestResult.Error, null, true, null);
+                    }
+                    return;
+                }
+
+                if (callback == null) {
+                    callback = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                    };
+                }
+
                 updateRemoteConfigValues(null, null, false, callback);
+            }
+        }
+
+        public @NonNull Map<String, RCData> getValues() {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Getting all Remote config values v2");
+
+                return getAllRemoteConfigValuesInternal();
+            }
+        }
+
+        public @NonNull RCData getValue(@Nullable String key) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2");
+
+                return getRCValue(key);
+            }
+        }
+
+        /**
+         * Enrolls user to AB tests of the given keys.
+         *
+         * @param keys - String array of keys (parameters)
+         */
+        public void enrollIntoABTestsForKeys(@Nullable String[] keys) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Enrolling user into A/B tests.");
+
+                if (keys == null || keys.length == 0) {
+                    L.w("[RemoteConfig] A key should be provided to enroll the user.");
+                    return;
+                }
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                enrollIntoABTestsForKeysInternal(keys);
+            }
+        }
+
+        /**
+         * Removes user from A/B tests for the given keys. If no key provided would remove the user from all tests.
+         *
+         * @param keys - String array of keys (parameters)
+         */
+        public void exitABTestsForKeys(@Nullable String[] keys) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Removing user from A/B tests.");
+
+                if (keys == null) {
+                    keys = new String[0];
+                }
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                exitABTestsForKeysInternal(keys);
+            }
+        }
+
+        public void registerDownloadCallback(@Nullable RCDownloadCallback callback) {
+            downloadCallbacks.add(callback);
+        }
+
+        public void removeDownloadCallback(@Nullable RCDownloadCallback callback) {
+            downloadCallbacks.remove(callback);
+        }
+
+        public void clearAll() {
+            clearStoredValues();
+        }
+
+        /**
+         * Returns all variant information as a Map<String, String[]>
+         *
+         * @return
+         */
+        public @NonNull Map<String, String[]> testingGetAllVariants() {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testingGetAllVariants'");
+
+                return testingGetAllVariantsInternal();
+            }
+        }
+
+        /**
+         * Returns variant information for a key as a String[]
+         *
+         * @param key - key value to get variant information for
+         * @return
+         */
+        public @Nullable String[] testingGetVariantsForKey(@Nullable String key) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testingGetVariantsForKey'");
+
+                if (key == null) {
+                    L.i("[RemoteConfig] testingGetVariantsForKey, provided variant key can not be null");
+                    return null;
+                }
+
+                return testingGetVariantsForKeyInternal(key);
+            }
+        }
+
+        /**
+         * Download all variants of A/B testing experiments
+         *
+         * @param completionCallback
+         */
+        public void testingDownloadVariantInformation(@Nullable RCVariantCallback completionCallback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testingFetchVariantInformation'");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                if (completionCallback == null) {
+                    completionCallback = (result, error) -> {
+                    };
+                }
+
+                testingFetchVariantInformationInternal(completionCallback);
+            }
+        }
+
+        /**
+         * Enrolls user for a specific variant of A/B testing experiment
+         *
+         * @param keyName - key value retrieved from the fetched variants
+         * @param variantName - name of the variant for the key to enroll
+         * @param completionCallback
+         */
+        public void testingEnrollIntoVariant(@Nullable String keyName, String variantName, @Nullable RCVariantCallback completionCallback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testingEnrollIntoVariant'");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                if (keyName == null || variantName == null) {
+                    L.w("[RemoteConfig] testEnrollIntoVariant, passed key or variant is null. Aborting.");
+                    return;
+                }
+
+                if (completionCallback == null) {
+                    completionCallback = (result, error) -> {
+                    };
+                }
+
+                testingEnrollIntoVariantInternal(keyName, variantName, completionCallback);
             }
         }
     }

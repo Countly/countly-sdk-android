@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import ly.count.android.sdk.messaging.ModulePush;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -396,6 +397,50 @@ public class ModuleEventsTests {
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
         verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), any(String.class));
     }
+
+    /**
+     * Validating which event keys are triggering force sending of all queued events
+     */
+    @Test
+    public void eventsForceClearingEQIntoRQ() {
+        Countly countly = (new Countly()).init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+
+        Assert.assertEquals(0, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(0, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent("rnd_key");
+        Assert.assertEquals(1, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(0, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY);
+        Assert.assertEquals(2, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(0, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY);
+        Assert.assertEquals(0, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(1, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY);
+        Assert.assertEquals(0, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(2, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY);
+        Assert.assertEquals(1, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(2, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY);
+        Assert.assertEquals(2, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(2, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY);
+        Assert.assertEquals(3, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(2, countly.countlyStore.getRequests().length);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION);
+        Assert.assertEquals(0, countly.countlyStore.getEventQueueSize());
+        Assert.assertEquals(3, countly.countlyStore.getRequests().length);
+    }
+
 /*
     //todo should be reworked
     @Test

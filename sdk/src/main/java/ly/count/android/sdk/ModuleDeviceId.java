@@ -80,16 +80,13 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         }
 
         //start by changing stored ID
-        deviceIdInstance.changeToCustomId(deviceId);//run init because not clear if types other then dev supplied can be provided
+        deviceIdInstance.changeToCustomId(deviceId);
 
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);
 
         //update remote config_ values if automatic update is enabled
-        _cly.moduleRemoteConfig.clearValueStoreInternal();
-        if (_cly.moduleRemoteConfig.remoteConfigAutomaticUpdateEnabled && consentProvider.anyConsentGiven()) {
-            _cly.moduleRemoteConfig.updateRemoteConfigValues(null, null, false, null);
-        }
+        _cly.moduleRemoteConfig.RCAutomaticDownloadTrigger(false);
 
         _cly.requestQueue().attemptToSendStoredRequests();
     }
@@ -119,6 +116,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             // we just call our method for exiting it
             // we don't end the session, we just update the device ID and connection queue
             exitTemporaryIdMode(deviceId);
+            return;
         }
 
         // we are either making a simple ID change or entering temporary mode
@@ -128,7 +126,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
         //update remote config_ values after id change if automatic update is enabled
-        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
+        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(true);
 
         _cly.moduleSessions.endSessionInternal(getDeviceId());
 
@@ -188,7 +186,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
             //update remote config_ values after id change if automatic update is enabled
-            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
+            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(false);
 
             requestQueueProvider.changeDeviceId(deviceId, _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
         }

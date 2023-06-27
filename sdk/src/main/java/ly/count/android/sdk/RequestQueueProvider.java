@@ -50,7 +50,13 @@ interface RequestQueueProvider {
 
     ConnectionProcessor createConnectionProcessor();
 
+    String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
+
     String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
+
+    String prepareEnrollmentParameters(@NonNull String[] keys);
+
+    String prepareRemovalParameters(@NonNull String[] keys);
 
     String prepareFetchAllVariants(); // for fetching all A/B test variants
 
