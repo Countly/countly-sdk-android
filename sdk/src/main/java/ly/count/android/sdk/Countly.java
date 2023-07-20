@@ -170,6 +170,7 @@ public class Countly {
     ModuleAttribution moduleAttribution = null;
     ModuleUserProfile moduleUserProfile = null;
     ModuleConfiguration moduleConfiguration = null;
+    ModuleHealthCheck moduleHealthCheck = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -516,6 +517,7 @@ public class Countly {
             }
 
             //initialise modules
+            moduleHealthCheck = new ModuleHealthCheck(this, config);
             moduleConfiguration = new ModuleConfiguration(this, config);
             moduleRequestQueue = new ModuleRequestQueue(this, config);
             moduleConsent = new ModuleConsent(this, config);
@@ -549,6 +551,8 @@ public class Countly {
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
 
+            modules.add(moduleHealthCheck);//set this at the end to detect any health issues with other modules before sending the report
+
             if (config.testModuleListener != null) {
                 modules.add(config.testModuleListener);
             }
@@ -556,6 +560,7 @@ public class Countly {
             //add missing providers
             moduleConfiguration.consentProvider = config.consentProvider;
             moduleRequestQueue.consentProvider = config.consentProvider;
+            moduleHealthCheck.consentProvider = config.consentProvider;
             moduleRequestQueue.deviceIdProvider = config.deviceIdProvider;
             moduleConsent.eventProvider = config.eventProvider;
             moduleConsent.deviceIdProvider = config.deviceIdProvider;
@@ -565,6 +570,7 @@ public class Countly {
 
             baseInfoProvider = config.baseInfoProvider;
             requestQueueProvider = config.requestQueueProvider;
+            L.setHealthChecker(config.healthTracker);
 
             L.i("[Init] Finished initialising modules");
 
@@ -613,6 +619,7 @@ public class Countly {
 
             //initialize networking queues
             connectionQueue_.L = L;
+            connectionQueue_.healthTracker = config.healthTracker;
             connectionQueue_.configProvider = config.configProvider;
             connectionQueue_.consentProvider = moduleConsent;
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
@@ -797,6 +804,7 @@ public class Countly {
         moduleFeedback = null;
         moduleRequestQueue = null;
         moduleConfiguration = null;
+        moduleHealthCheck = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;

@@ -82,7 +82,8 @@ public class TestUtils {
             .setLoggingEnabled(true)
             .enableCrashReporting()
             .setRequiresConsent(requiresConsent)
-            .setConsentEnabled(givenConsent);
+            .setConsentEnabled(givenConsent)
+            .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
 
@@ -101,7 +102,8 @@ public class TestUtils {
             .setDirectAttribution(daType, daValue)
             .setIndirectAttribution(iaValues)
             .setRequiresConsent(requiresConsent)
-            .setConsentEnabled(givenConsent);
+            .setConsentEnabled(givenConsent)
+            .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
         return cc;

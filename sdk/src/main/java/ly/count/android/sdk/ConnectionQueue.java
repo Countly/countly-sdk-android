@@ -52,6 +52,8 @@ class ConnectionQueue implements RequestQueueProvider {
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
 
+    HealthTracker healthTracker;
+
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
 
@@ -791,6 +793,16 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
+    public String prepareHealthCheckRequest(String preparedMetrics) {
+        String data = prepareCommonRequestData();
+
+        //consent not required for these curated metrics
+        data += "&metrics=" + preparedMetrics;
+        data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        return data;
+    }
+
     @Override
     public String prepareServerConfigRequest() {
         String data = prepareCommonRequestDataShort()
@@ -832,7 +844,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L);
+        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
     }
 
     public boolean queueContainsTemporaryIdItems() {

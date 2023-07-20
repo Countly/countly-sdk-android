@@ -43,6 +43,8 @@ public class CountlyConfig {
 
     protected ImmediateRequestGenerator immediateRequestGenerator = null;
 
+    protected HealthTracker healthTracker;
+
     protected MetricProvider metricProviderOverride = null;
 
     protected DeviceInfo deviceInfo = null;
@@ -201,6 +203,8 @@ public class CountlyConfig {
     boolean explicitStorageModeEnabled = false;
 
     boolean serverConfigurationEnabled = false;
+
+    boolean healthCheckEnabled = true;
 
     //SDK internal limits
     Integer maxKeyLength;
@@ -940,6 +944,11 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableServerConfiguration() {
         serverConfigurationEnabled = true;
+        return this;
+    }
+
+    protected synchronized CountlyConfig disableHealthCheck() {
+        healthCheckEnabled = false;
         return this;
     }
 }

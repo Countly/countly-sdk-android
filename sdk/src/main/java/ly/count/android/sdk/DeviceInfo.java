@@ -540,16 +540,16 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    JSONObject getCommonMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
+    JSONObject getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
         final JSONObject json = new JSONObject();
 
         Utils.fillJSONIfValuesNotEmpty(json,
-            "_device", deviceInfo.mp.getDevice(),
-            "_os", deviceInfo.mp.getOS(),
-            "_os_version", deviceInfo.mp.getOSVersion(),
-            "_resolution", deviceInfo.mp.getResolution(context),
-            "_app_version", deviceInfo.mp.getAppVersion(context),
-            "_manufacturer", deviceInfo.mp.getManufacturer());
+            "_device", mp.getDevice(),
+            "_os", mp.getOS(),
+            "_os_version", mp.getOSVersion(),
+            "_resolution", mp.getResolution(context),
+            "_app_version", mp.getAppVersion(context),
+            "_manufacturer", mp.getManufacturer());
 
         if (metricOverride != null) {
             try {
@@ -587,16 +587,16 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    String getMetrics(@NonNull final Context context, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
+    String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
         //we set the override to null because all of the entries will be overwritten anyway
-        final JSONObject json = getCommonMetrics(context, deviceInfo, null);
+        final JSONObject json = getCommonMetrics(context, null);
 
         Utils.fillJSONIfValuesNotEmpty(json,
-            "_carrier", deviceInfo.mp.getCarrier(context),
-            "_density", deviceInfo.mp.getDensity(context),
-            "_locale", deviceInfo.mp.getLocale(),
-            "_store", deviceInfo.mp.getStore(context),
-            "_device_type", deviceInfo.mp.getDeviceType(context));
+            "_carrier", mp.getCarrier(context),
+            "_density", mp.getDensity(context),
+            "_locale", mp.getLocale(),
+            "_store", mp.getStore(context),
+            "_device_type", mp.getDeviceType(context));
 
         //override metric values
         if (metricOverride != null) {
@@ -633,36 +633,64 @@ class DeviceInfo {
         return result;
     }
 
+    @NonNull
+    String getMetricsHealthCheck(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+        final JSONObject json = new JSONObject();
+
+        Utils.fillJSONIfValuesNotEmpty(json, "_app_version", mp.getAppVersion(context));
+
+        if (metricOverride != null) {
+            try {
+                if (metricOverride.containsKey("_app_version")) {
+                    json.put("_app_version", metricOverride.get("_app_version"));
+                }
+            } catch (Exception ex) {
+                Countly.sharedInstance().L.e("[DeviceInfo] SDK encountered failure while trying to apply metric override, " + ex.toString());
+            }
+        }
+
+        String result = json.toString();
+
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            // should never happen because Android guarantees UTF-8 support
+            Countly.sharedInstance().L.e("[getMetrics] encode failed, [" + ex + "]");
+        }
+
+        return result;
+    }
+
     /**
      * Returns a JSON object containing the device crash report
      */
     @NonNull
     JSONObject getCrashDataStringJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
+        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
 
-        final JSONObject json = getCommonMetrics(context, deviceInfo, metricOverride);
+        final JSONObject json = getCommonMetrics(context, metricOverride);
 
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", error,
             "_nonfatal", Boolean.toString(nonfatal),
-            "_cpu", deviceInfo.mp.getCpu(),
-            "_opengl", deviceInfo.mp.getOpenGL(context),
-            "_root", deviceInfo.mp.isRooted(),
-            "_ram_total", deviceInfo.mp.getRamTotal(),
-            "_disk_total", deviceInfo.mp.getDiskTotal()
+            "_cpu", mp.getCpu(),
+            "_opengl", mp.getOpenGL(context),
+            "_root", mp.isRooted(),
+            "_ram_total", mp.getRamTotal(),
+            "_disk_total", mp.getDiskTotal()
         );
 
         if (!isNativeCrash) {
             //if is not a native crash
             Utils.fillJSONIfValuesNotEmpty(json,
                 "_logs", crashBreadcrumbs,
-                "_ram_current", deviceInfo.mp.getRamCurrent(context),
-                "_disk_current", deviceInfo.mp.getDiskCurrent(),
-                "_bat", deviceInfo.mp.getBatteryLevel(context),
+                "_ram_current", mp.getRamCurrent(context),
+                "_disk_current", mp.getDiskCurrent(),
+                "_bat", mp.getBatteryLevel(context),
                 "_run", getRunningTime(),
-                "_orientation", deviceInfo.mp.getOrientation(context),
-                "_online", deviceInfo.mp.isOnline(context),
-                "_muted", deviceInfo.mp.isMuted(context),
+                "_orientation", mp.getOrientation(context),
+                "_online", mp.isOnline(context),
+                "_muted", mp.isMuted(context),
                 "_background", isInBackground()
             );
         } else {
@@ -688,7 +716,7 @@ class DeviceInfo {
     @NonNull
     String getCrashDataString(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
         @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = getCrashDataStringJSON(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, deviceInfo, metricOverride);
+        final JSONObject json = getCrashDataStringJSON(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, metricOverride);
 
         return json.toString();
     }

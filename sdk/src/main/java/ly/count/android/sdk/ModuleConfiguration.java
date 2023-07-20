@@ -179,17 +179,15 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 
-        immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, true, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
-            @Override public void callback(JSONObject checkResponse) {
-                if (checkResponse == null) {
-                    L.w("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");
-                    return;
-                }
-
-                L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse.toString() + "]");
-
-                saveAndStoreDownloadedConfig(checkResponse);
+        immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, true, checkResponse -> {
+            if (checkResponse == null) {
+                L.w("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");
+                return;
             }
+
+            L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse.toString() + "]");
+
+            saveAndStoreDownloadedConfig(checkResponse);
         }, L);
     }
 

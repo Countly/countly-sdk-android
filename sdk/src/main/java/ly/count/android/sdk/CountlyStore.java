@@ -66,6 +66,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
     private static final String PREFERENCE_SERVER_CONFIG = "SERVER_CONFIG";
 
+    private static final String PREFERENCE_HEALTH_CHECK_STATE = "HEALTH_CHECK";
+
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
 
@@ -84,10 +86,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     int maxRequestQueueSize = 1000;
 
     //explicit storage fields
-    boolean explicitStorageModeEnabled = false;
+    boolean explicitStorageModeEnabled;
     boolean esDirtyFlag = false;
     String esRequestQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
     String esEventQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
+    String esHealthCheckCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
 
     /**
      * Constructs a CountlyStore object.
@@ -211,6 +214,16 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                     }
                 }
 
+                //if it's not 'null' then it means that it is written to
+                if (esHealthCheckCache != null) {
+                    //check if the cached health check state matches the one in persistent memory
+                    String currentHCValue = preferences_.getString(PREFERENCE_HEALTH_CHECK_STATE, "");
+                    if (!esEventQueueCache.equals((currentHCValue))) {
+                        writePerformed = true;
+                        spe.putString(PREFERENCE_HEALTH_CHECK_STATE, esHealthCheckCache);
+                    }
+                }
+
                 if (writePerformed) {
                     //commit the changes if needed
                     spe.commit();
@@ -316,6 +329,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             result = java.net.URLEncoder.encode(result, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             // should never happen because Android guarantees UTF-8 support
+            L.w("[CountelyStore] getEventsForRequestAndEmptyEventQueue, why is this even happening?");
         }
 
         return result;
@@ -670,6 +684,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return true;
         }
 
+        if (preferences_.getString(PREFERENCE_HEALTH_CHECK_STATE, null) != null) {
+            return true;
+        }
+
         if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_PROVIDER, -100) != -100) {
             return true;
         }
@@ -684,5 +702,32 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         return false;
+    }
+
+    public @NonNull String getHealthCheckCounterState() {
+        if (explicitStorageModeEnabled) {
+            //L.v("[CountlyStore] Returning health check state from cache");
+            if (esHealthCheckCache == null) {
+                L.v("[CountlyStore] Reading initial health check state from storage");
+                esHealthCheckCache = preferences_.getString(PREFERENCE_HEALTH_CHECK_STATE, "");
+            }
+
+            return esHealthCheckCache;
+        } else {
+            //L.v("[CountlyStore] Returning health check state from preferences");
+            return preferences_.getString(PREFERENCE_HEALTH_CHECK_STATE, "");
+        }
+    }
+
+    public void setHealthCheckCounterState(@NonNull String counterState) {
+        if (explicitStorageModeEnabled) {
+            L.v("[CountlyStore] Writing health check state to cache");
+            esHealthCheckCache = counterState;
+        } else {
+            L.v("[CountlyStore] Writing health check state to preferences");
+            SharedPreferences.Editor editor = preferences_.edit().putString(PREFERENCE_HEALTH_CHECK_STATE, counterState);
+
+            editor.apply();
+        }
     }
 }

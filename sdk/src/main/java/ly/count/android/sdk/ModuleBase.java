@@ -17,6 +17,8 @@ abstract class ModuleBase {
     ViewIdProvider viewIdProvider;
     ConfigurationProvider configProvider;
 
+    HealthTracker healthTracker;
+
     DeviceInfo deviceInfo;
 
     ModuleBase(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -30,6 +32,7 @@ abstract class ModuleBase {
         baseInfoProvider = config.baseInfoProvider;
         viewIdProvider = config.viewIdProvider;
         configProvider = config.configProvider;
+        healthTracker = config.healthTracker;
 
         deviceInfo = config.deviceInfo;
     }

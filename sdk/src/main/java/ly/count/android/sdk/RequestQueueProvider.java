@@ -67,4 +67,6 @@ interface RequestQueueProvider {
     String prepareFeedbackListRequest();
 
     String prepareServerConfigRequest();
+
+    String prepareHealthCheckRequest(String preparedMetrics);
 }

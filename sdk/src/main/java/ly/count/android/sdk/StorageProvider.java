@@ -61,4 +61,8 @@ interface StorageProvider {
     void setDataSchemaVersion(int version);
 
     boolean anythingSetInStorage();
+
+    String getHealthCheckCounterState();
+
+    void setHealthCheckCounterState(String counterState);
 }

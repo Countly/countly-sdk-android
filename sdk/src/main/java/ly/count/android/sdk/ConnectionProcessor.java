@@ -53,6 +53,8 @@ public class ConnectionProcessor implements Runnable {
     private final DeviceIdProvider deviceIdProvider_;
     final ConfigurationProvider configProvider_;
 
+    HealthTracker healthTracker;
+
     final RequestInfoProvider requestInfoProvider_;
     private final String serverURL_;
     private final SSLContext sslContext_;
@@ -68,8 +70,9 @@ public class ConnectionProcessor implements Runnable {
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
     }
 
-    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider, final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues,
-        ModuleLog logModule) {
+    ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
+        final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
+        HealthTracker healthTracker) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -78,6 +81,7 @@ public class ConnectionProcessor implements Runnable {
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
         L = logModule;
+        this.healthTracker = healthTracker;
     }
 
     synchronized public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
@@ -393,6 +397,7 @@ public class ConnectionProcessor implements Runnable {
                     } else {
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
+                        healthTracker.logFailedNetworkRequest(responseCode, responseString);//notify the health tracker of the issue
                         break;
                     }
                 } catch (Exception e) {

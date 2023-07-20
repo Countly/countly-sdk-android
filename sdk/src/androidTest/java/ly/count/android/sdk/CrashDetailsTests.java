@@ -146,7 +146,7 @@ public class CrashDetailsTests {
         boolean nonfatal = true;
         boolean isNativeCrash = false;
 
-        JSONObject cData = regularDeviceInfo.getCrashDataStringJSON(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
+        JSONObject cData = regularDeviceInfo.getCrashDataStringJSON(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, null);
         Assert.assertEquals(regularDeviceInfo.mp.getDevice(), cData.getString("_device"));
         Assert.assertEquals(regularDeviceInfo.mp.getOS(), cData.getString("_os"));
         Assert.assertEquals(regularDeviceInfo.mp.getOSVersion(), cData.getString("_os_version"));
@@ -164,7 +164,7 @@ public class CrashDetailsTests {
         metricOverride.put("_app_version", "r12");
         metricOverride.put("_manufacturer", "t12");
 
-        JSONObject cData2 = regularDeviceInfo.getCrashDataStringJSON(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, metricOverride);
+        JSONObject cData2 = regularDeviceInfo.getCrashDataStringJSON(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, metricOverride);
         Assert.assertFalse(cData2.has("a"));
         Assert.assertFalse(cData2.has("a1"));
         Assert.assertEquals(metricOverride.get("_device"), cData2.getString("_device"));
