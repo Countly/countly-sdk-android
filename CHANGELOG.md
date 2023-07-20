@@ -1,5 +1,6 @@
 ## xx.xx.xx
 * Push messaging mode is note reported anymore. Related calls have been deprecated.
+* Adding remaining request queue size information to every request
 
 ## 23.6.0
 * !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.

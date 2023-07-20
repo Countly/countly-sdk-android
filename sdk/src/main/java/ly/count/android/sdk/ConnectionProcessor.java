@@ -252,7 +252,9 @@ public class ConnectionProcessor implements Runnable {
             boolean deviceIdChange = storedRequests[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
 
             //add the device_id to the created request
-            final String eventData, newId;
+            String eventData;//todo rework to stringbuilder
+            final String newId;
+
             if (deviceIdOverride) {
                 // if the override tag is used, it means that the device_id will be changed
                 // to finish the session of the previous device_id, we have cache it into the request
@@ -289,6 +291,9 @@ public class ConnectionProcessor implements Runnable {
                     eventData = storedRequests[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                 }
             }
+
+            // add the remaining request count
+            eventData = eventData + "&rr=" + (storedRequestCount - 1);
 
             if (!(requestInfoProvider_.isDeviceAppCrawler() && requestInfoProvider_.ifShouldIgnoreCrawlers())) {
                 //continue with sending the request to the server
@@ -391,7 +396,7 @@ public class ConnectionProcessor implements Runnable {
                         break;
                     }
                 } catch (Exception e) {
-                    L.w("[Connection Processor] Got exception while trying to submit event data: [" + eventData + "] [" + e + "]");
+                    L.d("[Connection Processor] Got exception while trying to submit request data: [" + eventData + "] [" + e + "]");
                     // if exception occurred, stop processing, let next tick take care of retrying
                     break;
                 } finally {
