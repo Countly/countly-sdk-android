@@ -210,19 +210,19 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
-            final String[] storedEvents = storageProvider_.getRequests();
-            int storedEventCount = storedEvents == null ? 0 : storedEvents.length;
+            final String[] storedRequests = storageProvider_.getRequests();
+            int storedRequestCount = storedRequests == null ? 0 : storedRequests.length;
 
             if (L.logEnabled()) {
-                String msg = "[Connection Processor] Starting to run, there are [" + storedEventCount + "] requests stored";
-                if (storedEventCount == 0) {
+                String msg = "[Connection Processor] Starting to run, there are [" + storedRequestCount + "] requests stored";
+                if (storedRequestCount == 0) {
                     L.v(msg);
                 } else {
                     L.i(msg);
                 }
             }
 
-            if (storedEvents == null || storedEventCount == 0) {
+            if (storedRequests == null || storedRequestCount == 0) {
                 // currently no data to send, we are done for now
                 break;
             }
@@ -231,14 +231,14 @@ public class ConnectionProcessor implements Runnable {
             if (deviceIdProvider_.getDeviceId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
-                L.i("[Connection Processor] No Device ID available yet, skipping request " + storedEvents[0]);
+                L.i("[Connection Processor] No Device ID available yet, skipping request " + storedRequests[0]);
                 break;
             }
 
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            boolean containsTemporaryIdOverride = storedEvents[0].contains(temporaryIdOverrideTag);
-            boolean containsTemporaryId = storedEvents[0].contains(temporaryIdTag);
+            boolean containsTemporaryIdOverride = storedRequests[0].contains(temporaryIdOverrideTag);
+            boolean containsTemporaryId = storedRequests[0].contains(temporaryIdTag);
             if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
@@ -248,8 +248,8 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
-            boolean deviceIdOverride = storedEvents[0].contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = storedEvents[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+            boolean deviceIdOverride = storedRequests[0].contains("&override_id="); //if the sendable data contains a override tag
+            boolean deviceIdChange = storedRequests[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
 
             //add the device_id to the created request
             final String eventData, newId;
@@ -259,34 +259,34 @@ public class ConnectionProcessor implements Runnable {
                 // this is indicated by having the "override_id" tag. This just means that we
                 // don't use the id provided in the deviceId variable as this might have changed already.
 
-                eventData = storedEvents[0].replace("&override_id=", "&device_id=");
+                eventData = storedRequests[0].replace("&override_id=", "&device_id=");
                 newId = null;
             } else {
                 if (deviceIdChange) {
                     // this branch will be used if a new device_id is provided
                     // and a device_id merge on server has to be performed
 
-                    final int endOfDeviceIdTag = storedEvents[0].indexOf("&device_id=") + "&device_id=".length();
-                    newId = UtilsNetworking.urlDecodeString(storedEvents[0].substring(endOfDeviceIdTag));
+                    final int endOfDeviceIdTag = storedRequests[0].indexOf("&device_id=") + "&device_id=".length();
+                    newId = UtilsNetworking.urlDecodeString(storedRequests[0].substring(endOfDeviceIdTag));
 
                     if (newId.equals(deviceIdProvider_.getDeviceId())) {
                         // If the new device_id is the same as previous,
                         // we don't do anything to change it
 
-                        eventData = storedEvents[0];
+                        eventData = storedRequests[0];
                         deviceIdChange = false;
 
                         L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                     } else {
                         //new device_id provided, make sure it will be merged
-                        eventData = storedEvents[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                        eventData = storedRequests[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                     }
                 } else {
                     // this branch will be used in almost all requests.
                     // This just adds the device_id to them
 
                     newId = null;
-                    eventData = storedEvents[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                    eventData = storedRequests[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                 }
             }
 
@@ -371,7 +371,7 @@ public class ConnectionProcessor implements Runnable {
                     if (rRes == RequestResult.OK) {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
-                        storageProvider_.removeRequest(storedEvents[0]);
+                        storageProvider_.removeRequest(storedRequests[0]);
 
                         if (deviceIdChange) {
                             if (newId != null && !newId.isEmpty()) {
@@ -409,10 +409,10 @@ public class ConnectionProcessor implements Runnable {
                 }
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
-                L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedEvents[0]);
+                L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedRequests[0]);
 
                 //remove stored data
-                storageProvider_.removeRequest(storedEvents[0]);
+                storageProvider_.removeRequest(storedRequests[0]);
             }
         }
     }
