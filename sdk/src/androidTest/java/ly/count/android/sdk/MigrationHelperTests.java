@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -38,7 +40,7 @@ public class MigrationHelperTests {
     ModuleLog mockLog;
     CountlyStore cs;
     StorageProvider sp;
-    final int latestSchemaVersion = 2;
+    final int latestSchemaVersion = 3;
 
     @Before
     public void setUp() {
@@ -73,7 +75,7 @@ public class MigrationHelperTests {
      */
     @Test
     public void validateDataSchemaVersion() {
-        MigrationHelper mh = new MigrationHelper(sp, mockLog);
+        MigrationHelper mh = new MigrationHelper(sp, mockLog, getApplicationContext());
         assertEquals(latestSchemaVersion, mh.DATA_SCHEMA_VERSIONS);
     }
 
@@ -85,7 +87,7 @@ public class MigrationHelperTests {
         StorageProvider spMock = mock(StorageProvider.class);
         when(spMock.anythingSetInStorage()).thenReturn(false);
 
-        MigrationHelper mh = new MigrationHelper(spMock, mockLog);
+        MigrationHelper mh = new MigrationHelper(spMock, mockLog, getApplicationContext());
         mh.setInitialSchemaVersion();
 
         verify(spMock).anythingSetInStorage();
@@ -100,7 +102,7 @@ public class MigrationHelperTests {
         StorageProvider spMock = mock(StorageProvider.class);
         when(spMock.anythingSetInStorage()).thenReturn(true);
 
-        MigrationHelper mh = new MigrationHelper(spMock, mockLog);
+        MigrationHelper mh = new MigrationHelper(spMock, mockLog, getApplicationContext());
         mh.setInitialSchemaVersion();
 
         verify(spMock).anythingSetInStorage();
@@ -114,7 +116,7 @@ public class MigrationHelperTests {
      */
     @Test
     public void getCurrentSchemaVersionEmpty() {
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
         assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
 
         //verify a rerun
@@ -129,7 +131,7 @@ public class MigrationHelperTests {
     @Test
     public void getCurrentSchemaVersionLegacy() {
         cs.addRequest("fff", false);
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
         assertEquals(0, mh.getCurrentSchemaVersion());
 
         //verify a rerun
@@ -143,7 +145,7 @@ public class MigrationHelperTests {
      */
     @Test
     public void getCurrentSchemaVersionMisc() {
-        MigrationHelper mh = new MigrationHelper(sp, mockLog);
+        MigrationHelper mh = new MigrationHelper(sp, mockLog, getApplicationContext());
         assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
 
         sp.setDataSchemaVersion(123);
@@ -165,7 +167,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_0_doWork_id_not_provided() {
         for (int a = 0; a <= 1; a++) {
             cs.clear();
-            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
             assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
@@ -191,7 +193,7 @@ public class MigrationHelperTests {
         Assert.assertNull(cs.getDeviceID());
         Assert.assertNull(cs.getDeviceIDType());
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         validateGeneratedUUID(cs.getDeviceID());
@@ -209,7 +211,7 @@ public class MigrationHelperTests {
             cs.clear();
             cs.addRequest("fff", false);
             cs.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
-            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
             assertEquals(0, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
@@ -237,7 +239,7 @@ public class MigrationHelperTests {
             cs.clear();
             cs.addRequest("fff", false);//request added to indicate that this is not the first launch but a legacy version
             cs.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
-            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
             assertEquals(0, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
@@ -265,7 +267,7 @@ public class MigrationHelperTests {
             cs.clear();
             cs.addRequest("fff", false);//request added to indicate that this is not the first launch but a legacy version
             cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
-            MigrationHelper mh = new MigrationHelper(cs, mockLog);
+            MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
             assertEquals(0, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
@@ -291,7 +293,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_4() {
         cs.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
@@ -299,7 +301,7 @@ public class MigrationHelperTests {
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
 
         //perform a second init and confirm that everything is still stable
-        Countly countly2 = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly2 = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly2.deviceId().getType());
         Assert.assertEquals(initialID, countly2.deviceId().getID());
     }
@@ -313,14 +315,14 @@ public class MigrationHelperTests {
     public void performMigration0to1_5() {
         cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
         validateGeneratedUUID(initialID);
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
 
-        Countly countly2 = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly2 = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly2.deviceId().getType());
         Assert.assertEquals(initialID, countly2.deviceId().getID());
     }
@@ -335,7 +337,7 @@ public class MigrationHelperTests {
         cs.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
         cs.setDeviceID("ab");
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("ab", countly.deviceId().getID());
@@ -352,7 +354,7 @@ public class MigrationHelperTests {
         cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
         cs.setDeviceID("cd");
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
@@ -369,7 +371,7 @@ public class MigrationHelperTests {
         cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
         cs.setDeviceID("cd");
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
@@ -386,7 +388,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_9() {
         cs.setDeviceID("cd");
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
@@ -402,7 +404,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_10() {
         cs.addRequest("qqq", false);
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         validateGeneratedUUID(countly.deviceId().getID());
@@ -419,7 +421,7 @@ public class MigrationHelperTests {
     public void performMigration0to1_11() {
         cs.setDeviceID("cd");
 
-        Countly countly = new Countly().init(new CountlyConfig(ApplicationProvider.getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL).setDeviceId("asd"));
+        Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL).setDeviceId("asd"));
 
         assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
@@ -433,7 +435,7 @@ public class MigrationHelperTests {
      */
     @Test
     public void performMigration1To2_1() throws JSONException {
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
 
         JSONArray jsonArray = new JSONArray();
         jsonArray.put("11");
@@ -471,7 +473,7 @@ public class MigrationHelperTests {
      */
     @Test
     public void performMigration1To2_2() {
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
 
         cs.setRemoteConfigValues("");
         mh.performMigration1To2(new HashMap<>());
@@ -485,7 +487,7 @@ public class MigrationHelperTests {
      */
     @Test
     public void performMigration1To2_3() {
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
 
         cs.setRemoteConfigValues(null);
         mh.performMigration1To2(new HashMap<>());
@@ -499,13 +501,25 @@ public class MigrationHelperTests {
      */
     @Test
     public void performMigration1To2_4() {
-        MigrationHelper mh = new MigrationHelper(cs, mockLog);
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
 
         cs.setRemoteConfigValues("dsfsdf");
         mh.performMigration1To2(new HashMap<>());
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false);
 
         Assert.assertEquals(0, rcvs.values.length());
+    }
+
+    @Test
+    public void performMigration2To3_1() {
+        SharedPreferences sp = CountlyStore.createPreferencesPush(getApplicationContext());
+        sp.edit().putString(MigrationHelper.legacyCACHED_PUSH_MESSAGING_MODE, "abc").apply();
+
+        Assert.assertEquals("abc", sp.getString(MigrationHelper.legacyCACHED_PUSH_MESSAGING_MODE, null));
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration2To3(new HashMap<>());
+        Assert.assertNull(sp.getString(MigrationHelper.legacyCACHED_PUSH_MESSAGING_MODE, null));
     }
 
     /**

@@ -3,9 +3,12 @@ package ly.count.android.demo;
 import android.content.Intent;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.messaging.CountlyConfigPush;
 import ly.count.android.sdk.messaging.CountlyPush;
 
 /**
@@ -28,7 +31,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
+    public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
 
         Log.d(TAG, "got new message: " + remoteMessage.getData());
@@ -37,14 +40,9 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
         //this is a fallback in case it's impossible to initiate countly in Application onCreate
         //this is not the recommended way of handling it
         /*
-        if(!Countly.sharedInstance().isInitialized()) {
+        if (!Countly.sharedInstance().isInitialized()) {
             Countly.sharedInstance().setLoggingEnabled(true);
-            int mode = CountlyPush.getLastMessagingMethod(this);
-            if(mode == 0) {
-                CountlyPush.init(getApplication(), Countly.CountlyMessagingMode.TEST);
-            } else if(mode == 1) {
-                CountlyPush.init(getApplication(), Countly.CountlyMessagingMode.PRODUCTION);
-            }
+            CountlyPush.init(new CountlyConfigPush(getApplication()));
         }
          */
 
@@ -70,32 +68,32 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
                 // We know that it should contain 2 buttons, so we start Activity
                 // which would handle UI and report Actioned metric back to the server.
 
-//                Intent intent = new Intent(this, PromoActivity.class);
-//                intent.putExtra("countly_message", message);
-//                startActivity(intent);
-//
-//                // ... and then in PromoActivity:
-//
-//                final CountlyPush.Message msg = intent.getParcelableExtra("countly_message");
-//                if (msg != null) {
-//                    Button btn1 = new Button(this);
-//                    btn1.setText(msg.buttons().get(0).title());
-//                    btn1.setOnClickListener(new View.OnClickListener() {
-//                        @Override
-//                        public void onClick(View v) {
-//                            msg.recordAction(getApplicationContext(), 1);
-//                        }
-//                    });
-//
-//                    Button btn2 = new Button(this);
-//                    btn2.setText(msg.buttons().get(1).title());
-//                    btn2.setOnClickListener(new View.OnClickListener() {
-//                        @Override
-//                        public void onClick(View v) {
-//                            msg.recordAction(getApplicationContext(), 2);
-//                        }
-//                    });
-//                }
+                //                Intent intent = new Intent(this, PromoActivity.class);
+                //                intent.putExtra("countly_message", message);
+                //                startActivity(intent);
+                //
+                //                // ... and then in PromoActivity:
+                //
+                //                final CountlyPush.Message msg = intent.getParcelableExtra("countly_message");
+                //                if (msg != null) {
+                //                    Button btn1 = new Button(this);
+                //                    btn1.setText(msg.buttons().get(0).title());
+                //                    btn1.setOnClickListener(new View.OnClickListener() {
+                //                        @Override
+                //                        public void onClick(View v) {
+                //                            msg.recordAction(getApplicationContext(), 1);
+                //                        }
+                //                    });
+                //
+                //                    Button btn2 = new Button(this);
+                //                    btn2.setText(msg.buttons().get(1).title());
+                //                    btn2.setOnClickListener(new View.OnClickListener() {
+                //                        @Override
+                //                        public void onClick(View v) {
+                //                            msg.recordAction(getApplicationContext(), 2);
+                //                        }
+                //                    });
+                //                }
 
                 return;
             }

@@ -244,7 +244,7 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
-    public void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider) {
+    public void tokenSession(String token, Countly.CountlyMessagingProvider provider) {
         if (!checkInternalState()) {
             return;
         }
@@ -259,7 +259,6 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&token_session=1"
             + "&android_token=" + UtilsNetworking.urlEncodeString(token)
             + "&token_provider=" + provider
-            + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
             + "&locale=" + UtilsNetworking.urlEncodeString(deviceInfo.mp.getLocale());
 
         L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");

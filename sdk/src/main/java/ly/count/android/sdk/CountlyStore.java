@@ -68,7 +68,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
-    private static final String CACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
+
     private static final String CACHED_PUSH_MESSAGING_PROVIDER = "PUSH_MESSAGING_PROVIDER";
     private static final int MAX_EVENTS = 1000;//the maximum amount of events that can be held in the event queue
 
@@ -567,16 +567,6 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         spe.apply();
     }
 
-    public static void cacheLastMessagingMode(int mode, Context context) {
-        SharedPreferences sp = createPreferencesPush(context);
-        sp.edit().putInt(CACHED_PUSH_MESSAGING_MODE, mode).apply();
-    }
-
-    public static int getLastMessagingMode(Context context) {
-        SharedPreferences sp = createPreferencesPush(context);
-        return sp.getInt(CACHED_PUSH_MESSAGING_MODE, -1);
-    }
-
     public static void storeMessagingProvider(int provider, Context context) {
         SharedPreferences sp = createPreferencesPush(context);
         sp.edit().putInt(CACHED_PUSH_MESSAGING_PROVIDER, provider).apply();
@@ -677,10 +667,6 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (preferences_.getString(PREFERENCE_SERVER_CONFIG, null) != null) {
-            return true;
-        }
-
-        if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_MODE, -100) != -100) {
             return true;
         }
 

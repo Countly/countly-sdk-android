@@ -378,13 +378,6 @@ public class CountlyStoreTests {
     }
 
     @Test
-    public void setGetMessagingMode() {
-        assertEquals(-1, CountlyStore.getLastMessagingMode(getContext()));
-        CountlyStore.cacheLastMessagingMode(1234, getContext());
-        assertEquals(1234, CountlyStore.getLastMessagingMode(getContext()));
-    }
-
-    @Test
     public void setGetClearCachedPushData() {
         final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
         String keyX = "PUSH_ACTION_ID";
@@ -617,10 +610,6 @@ public class CountlyStoreTests {
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        CountlyStore.cacheLastMessagingMode(789, getContext());
-        assertTrue(sp.anythingSetInStorage());
-        store.clear();
-
         CountlyStore.storeMessagingProvider(9623, getContext());
         assertTrue(sp.anythingSetInStorage());
         store.clear();
@@ -674,9 +663,6 @@ public class CountlyStoreTests {
         assertTrue(sp.anythingSetInStorage());
 
         sp.setDataSchemaVersion(44);
-        assertTrue(sp.anythingSetInStorage());
-
-        CountlyStore.cacheLastMessagingMode(789, getContext());
         assertTrue(sp.anythingSetInStorage());
 
         CountlyStore.storeMessagingProvider(9623, getContext());

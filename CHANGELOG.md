@@ -1,3 +1,6 @@
+## xx.xx.xx
+* Push messaging mode is note reported anymore. Related calls have been deprecated.
+
 ## 23.6.0
 * !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.
 * ! Minor breaking change ! Remote config will now return previously downloaded values when remote-config consent is not given

@@ -508,7 +508,7 @@ public class Countly {
                 Map<String, Object> migrationParams = new HashMap<>();
                 migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_set, config.deviceID != null);
 
-                MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L);
+                MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L, context_);
                 mHelper.doWork(migrationParams);
             } catch (Exception ex) {
                 L.e("[Init] SDK failed while performing data migration. SDK is not capable to initialize.");
@@ -920,16 +920,16 @@ public class Countly {
     /**
      * DON'T USE THIS!!!!
      */
-    public void onRegistrationId(String registrationId, CountlyMessagingMode mode, CountlyMessagingProvider provider) {
+    public void onRegistrationId(String registrationId, CountlyMessagingProvider provider) {
         //if this call is done by CountlyPush, it is assumed that the SDK is already initialised
         if (!config_.consentProvider.getConsent(CountlyFeatureNames.push)) {
             return;
         }
 
-        connectionQueue_.tokenSession(registrationId, mode, provider);
+        connectionQueue_.tokenSession(registrationId, provider);
     }
 
-    void setLoggingEnabled(final boolean enableLogging) {
+    public void setLoggingEnabled(final boolean enableLogging) {
         enableLogging_ = enableLogging;
         L.d("Enabling logging");
     }

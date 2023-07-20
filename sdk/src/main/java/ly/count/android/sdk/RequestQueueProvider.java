@@ -11,7 +11,7 @@ interface RequestQueueProvider {
 
     void changeDeviceId(String deviceId, final int duration);
 
-    void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider);
+    void tokenSession(String token, Countly.CountlyMessagingProvider provider);
 
     void endSession(final int duration);
 

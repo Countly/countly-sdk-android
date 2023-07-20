@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import java.util.Date;
 import java.util.Iterator;
@@ -14,20 +16,26 @@ class MigrationHelper {
      * 0 - legacy version. State of the SDK before the first migration was introduced
      * 1 - version where the device ID is guaranteed and advertising ID is deprecated/removed as a type
      * 2 - transitioning old RC store to one that supports metadata
+     * 3 - removing messaging mode info
      * x - adding device ID to all requests
      */
-    static final int DATA_SCHEMA_VERSIONS = 2;
+    static final int DATA_SCHEMA_VERSIONS = 3;
 
     static final public String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
 
     StorageProvider storage;
     ModuleLog L;
 
+    Context cachedContext;
+
     static final public String legacyDeviceIDTypeValue_AdvertisingID = "ADVERTISING_ID";
 
-    public MigrationHelper(StorageProvider storage, ModuleLog moduleLog) {
+    public static final String legacyCACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
+
+    public MigrationHelper(StorageProvider storage, ModuleLog moduleLog, Context context) {
         this.storage = storage;
         L = moduleLog;
+        cachedContext = context;
         L.v("[MigrationHelper] Initialising");
     }
 
@@ -84,6 +92,10 @@ class MigrationHelper {
                 break;
             case 1:
                 performMigration1To2(migrationParams);
+                newVersion = newVersion + 1;
+                break;
+            case 2:
+                performMigration2To3(migrationParams);
                 newVersion = newVersion + 1;
                 break;
             case DATA_SCHEMA_VERSIONS:
@@ -209,5 +221,15 @@ class MigrationHelper {
         }
 
         storage.setRemoteConfigValues(newStructure.toString());
+    }
+
+    /**
+     * Removing the messaging mode info from storage
+     *
+     * @param migrationParams
+     */
+    void performMigration2To3(@NonNull Map<String, Object> migrationParams) {
+        SharedPreferences sp = CountlyStore.createPreferencesPush(cachedContext);
+        sp.edit().remove(legacyCACHED_PUSH_MESSAGING_MODE).apply();
     }
 }
