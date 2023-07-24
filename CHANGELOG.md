@@ -2,6 +2,7 @@
 * Push messaging mode is note reported anymore. Related calls have been deprecated.
 * Adding remaining request queue size information to every request
 * Adding SDK health check requests after init
+* Added protection for updating the push token. The same value can't be sent within 10 minutes it was sent last time.
 
 ## 23.6.0
 * !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.

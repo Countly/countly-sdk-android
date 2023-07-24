@@ -140,6 +140,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
+        //todo replace the /o/sdk to /i after a while
         iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
             L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
             if (checkResponse == null) {

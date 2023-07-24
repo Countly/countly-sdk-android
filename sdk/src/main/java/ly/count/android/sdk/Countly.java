@@ -195,6 +195,12 @@ public class Countly {
 
     protected CountlyConfig config_ = null;
 
+    //fields for tracking push token debounce
+    final static long lastRegistrationCallDebounceDuration = 60 * 1000;//60seconds
+    long lastRegistrationCallTs = 0;
+    String lastRegistrationCallID = null;
+    CountlyMessagingProvider lastRegistrationCallProvider = null;
+
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
         public static final String events = "events";
@@ -933,6 +939,27 @@ public class Countly {
         if (!config_.consentProvider.getConsent(CountlyFeatureNames.push)) {
             return;
         }
+
+        if (!isInitialized()) {
+            L.w("[onRegistrationId] Calling this before the SDK is initialized.");
+        }
+
+        //debouncing the call
+
+        long currentTs = UtilsTime.currentTimestampMs();
+        long timeDelta = currentTs - lastRegistrationCallTs;
+
+        if (lastRegistrationCallID != null && lastRegistrationCallID.equals(registrationId) &&
+            lastRegistrationCallProvider != null && lastRegistrationCallProvider == provider &&
+            timeDelta < lastRegistrationCallDebounceDuration) {
+            // if the values match and we are trying to resend them withing the debounce duration, ignore them
+            L.w("[onRegistrationId] Calling this with the same values within the debounce interval. elapsedT:[" + timeDelta + "] ms");
+            return;
+        }
+
+        lastRegistrationCallTs = currentTs;
+        lastRegistrationCallID = registrationId;
+        lastRegistrationCallProvider = provider;
 
         connectionQueue_.tokenSession(registrationId, provider);
     }
