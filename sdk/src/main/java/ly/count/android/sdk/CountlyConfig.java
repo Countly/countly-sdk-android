@@ -502,16 +502,7 @@ public class CountlyConfig {
      * @deprecated Use "setAutomaticViewTrackingExclusions(...)"
      */
     public synchronized CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
-        if (exceptions != null) {
-            for (Class exception : exceptions) {
-                if (exception == null) {
-                    throw new IllegalArgumentException("setAutoTrackingExceptions() does not accept 'null' activities");
-                }
-            }
-        }
-
-        automaticViewTrackingExceptions = exceptions;
-        return this;
+        return setAutomaticViewTrackingExclusions(exceptions);
     }
 
     /**

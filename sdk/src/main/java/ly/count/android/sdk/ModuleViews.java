@@ -202,12 +202,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
      */
     @Nullable String startViewInternal(String viewName, Map<String, Object> customViewSegmentation) {
         if (!_cly.isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before recordView");
+            L.e("Countly.sharedInstance().init must be called before startViewInternal");
             return null;
         }
 
         if (viewName == null || viewName.isEmpty()) {
-            L.e("[ModuleViews] Trying to record view with null or empty view name, ignoring request");
+            L.e("[ModuleViews] startViewInternal, Trying to record view with null or empty view name, ignoring request");
             return null;
         }
 
@@ -430,21 +430,36 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             synchronized (_cly) {
                 L.i("[Views] Calling recordView [" + viewName + "]");
 
+                if (autoViewTracker) {
+                    L.e("[Views] recordView, manual view call will be ignored since automatic tracking is enabled.");
+                    return _cly;
+                }
+
                 return recordViewInternalLegacy(viewName, viewSegmentation);
             }
         }
 
-        public String startView(@Nullable String viewName) {
+        public @Nullable String startView(@Nullable String viewName) {
             synchronized (_cly) {
                 L.i("[Views] Calling startView vn[" + viewName + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    return null;
+                }
 
                 return startViewInternal(viewName, null);
             }
         }
 
-        public String startView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
+        public @Nullable String startView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling startView vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    return null;
+                }
 
                 return startViewInternal(viewName, null);
             }

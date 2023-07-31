@@ -403,7 +403,7 @@ public class ModuleViewsTests {
      */
     @Test
     public void noViewRecordedWithAutomaticTurnedOffActChange() {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null).setEventQueueSizeToSend(100);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -421,7 +421,7 @@ public class ModuleViewsTests {
 
     @Test
     public void recordViewWithActivitiesAfterwardsAutoDisabled() {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null).setEventQueueSizeToSend(100);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -451,7 +451,7 @@ public class ModuleViewsTests {
 
     @Test
     public void autoSessionFlow_1() throws InterruptedException {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null).setEventQueueSizeToSend(100);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -529,5 +529,28 @@ public class ModuleViewsTests {
         segm.clear();
         segm.put("segment", "Android");
         segm.put("name", viewName);
+    }
+
+    /**
+     * Making sure that manual view recording calls are ignored when automatic view tracking is enabled
+     */
+    @Test
+    public void manualViewCallsBlocked_autoViewEnabled() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, true, null, null);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("xxx", "33");
+        segm.put("rtt", 2);
+
+        mCountly.views().recordView("abcd");
+        mCountly.views().startView("aa");
+        mCountly.views().startView("aa", segm);
+
+        mCountly.views().stopViewWithName("aa");
+        mCountly.views().stopViewWithName("aa", segm);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 }

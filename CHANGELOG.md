@@ -1,9 +1,23 @@
 ## 23.8.0
-* Push messaging mode is note reported anymore. Related calls have been deprecated.
+* ! Minor breaking change ! Manual view recording calls are now ignored when in automatic view recording mode.
+
 * Adding remaining request queue size information to every request
 * Adding SDK health check requests after init
 * Added protection for updating the push token. The same value can't be sent within 10 minutes it was sent last time.
 * View duration moved from segmentation to the event body
+* Added support for recording multiple views at the same time
+
+* Push messaging mode is not reported anymore. Related calls have been deprecated.
+* Deprecated the following calls:
+  * Countly.sharedInstance().views().recordView(viewName)
+  * Countly.sharedInstance().views().recordView(viewName, viewSegmentation)
+  * Countly.sharedInstance().views().isAutomaticViewTrackingEnabled()
+
+* Deprecated the init time configuration of 'setViewTracking(enable)'. Introduced replacement 'enableAutomaticViewTracking()'
+* Deprecated the init time configuration of 'setAutoTrackingUseShortName(enable)'. Introduced replacement 'enableAutomaticViewShortNames()'
+* Deprecated the init time configuration of 'setAutomaticViewSegmentation(segmentation)'. Introduced replacement 'setGlobalViewSegmentation(segmentation)'
+* Deprecated the init time configuration of 'setAutoTrackingExceptions(exceptions)'. Introduced replacement 'setAutomaticViewTrackingExclusions(exclusions)'
+
 
 ## 23.6.0
 * !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.
