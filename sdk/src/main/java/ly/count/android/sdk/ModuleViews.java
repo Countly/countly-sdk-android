@@ -126,8 +126,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         //if the PreviousViewStart is equal to 0, the duration would be set to the current timestamp
         //and therefore will be ignored
         if (vd.viewName != null && vd.viewStartTime > 0) {
-            Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, true, null);
-            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, vd.viewID);
+            long viewDurationSeconds = UtilsTime.currentTimestampSeconds() - vd.viewStartTime;
+            Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, null);
+            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, viewDurationSeconds, null, vd.viewID);
             viewDataMap.remove(vd.viewID);
         }
     }
@@ -158,7 +159,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         firstView = true;
     }
 
-    Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, boolean duration, Map<String, Object> customViewSegmentation) {
+    Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, Map<String, Object> customViewSegmentation) {
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
             viewSegmentation.putAll(customViewSegmentation);
@@ -227,7 +228,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         previousViewID = currentViewID;
         currentViewID = currentViewData.viewID;
 
-        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, false, customViewSegmentation);
+        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, customViewSegmentation);
 
         if (firstView) {
             L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");

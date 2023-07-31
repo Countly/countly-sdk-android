@@ -244,7 +244,7 @@ public class ModuleViewsTests {
         mCountly.moduleViews.onActivityStarted(act);//activity count = 1
         Thread.sleep(100);
         mCountly.moduleViews.onActivityStopped(0);//activity count = 0
-        String dur = String.valueOf(UtilsTime.currentTimestampSeconds() - start);
+        double viewDuration = UtilsTime.currentTimestampSeconds() - start;
 
         final Map<String, Object> segm = new HashMap<>();
         ClearFillSegmentationViewStart(segm, act.getClass().getSimpleName(), true);
@@ -255,9 +255,9 @@ public class ModuleViewsTests {
         segm.put("3", true);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
-        ClearFillSegmentationViewEnd(segm, act.getClass().getSimpleName(), dur);
+        ClearFillSegmentationViewEnd(segm, act.getClass().getSimpleName());
 
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 1, 2);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, viewDuration, segm, vals[0], 1, 2);
     }
 
     @Test
@@ -278,8 +278,8 @@ public class ModuleViewsTests {
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1]);
-        ClearFillSegmentationViewEnd(segm, viewNames[0], "1");
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
+        ClearFillSegmentationViewEnd(segm, viewNames[0]);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 0, 2);
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
@@ -287,8 +287,8 @@ public class ModuleViewsTests {
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2]);
-        ClearFillSegmentationViewEnd(segm, viewNames[1], "1");
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 2);//todo this test has issues sometimes
+        ClearFillSegmentationViewEnd(segm, viewNames[1]);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);//todo this test has issues sometimes
 
         ClearFillSegmentationViewStart(segm, viewNames[2], false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
@@ -341,8 +341,8 @@ public class ModuleViewsTests {
         Thread.sleep(2000);
 
         mCountly.views().recordView(viewNames[1], cSegm2);
-        ClearFillSegmentationViewEnd(segm, viewNames[0], "2");
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2); // duration comes off sometimes
+        ClearFillSegmentationViewEnd(segm, viewNames[0]);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 2); // duration comes off sometimes
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
         segm.put("start", "33");
@@ -355,9 +355,9 @@ public class ModuleViewsTests {
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2], cSegm3);
-        ClearFillSegmentationViewEnd(segm, viewNames[1], "1");
+        ClearFillSegmentationViewEnd(segm, viewNames[1]);
 
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 2);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);
 
         ClearFillSegmentationViewStart(segm, viewNames[2], false);
         segm.put("doddnker", "m123ag");
@@ -487,8 +487,8 @@ public class ModuleViewsTests {
         //we are transitioning to the next view
         //first the next activities 'onStart' is called
         //we would report the duration of the first view and then start the next one
-        ClearFillSegmentationViewEnd(segm, viewNames[0], "1");
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
+        ClearFillSegmentationViewEnd(segm, viewNames[0]);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 0, 2);
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
@@ -500,8 +500,8 @@ public class ModuleViewsTests {
         mCountly.onStop();
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
-        ClearFillSegmentationViewEnd(segm, viewNames[1], "2");
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 2);
+        ClearFillSegmentationViewEnd(segm, viewNames[1]);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[1], 0, 2);
 
         ClearFillSegmentationViewStart(segm, viewNames[2], false);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
@@ -511,8 +511,8 @@ public class ModuleViewsTests {
         mCountly.onStop();
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
-        ClearFillSegmentationViewEnd(segm, viewNames[2], "1");
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 0, 1);
+        ClearFillSegmentationViewEnd(segm, viewNames[2]);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[2], 0, 1);
     }
 
     void ClearFillSegmentationViewStart(final Map<String, Object> segm, String viewName, boolean firstView) {
@@ -525,9 +525,8 @@ public class ModuleViewsTests {
         segm.put("name", viewName);
     }
 
-    void ClearFillSegmentationViewEnd(final Map<String, Object> segm, String viewName, String duration) {
+    void ClearFillSegmentationViewEnd(final Map<String, Object> segm, String viewName) {
         segm.clear();
-        segm.put("dur", duration);
         segm.put("segment", "Android");
         segm.put("name", viewName);
     }
