@@ -112,13 +112,15 @@ public class CountlyConfig {
 
     protected boolean enableUnhandledCrashReporting = false;
 
-    protected boolean enableViewTracking = false;
+    protected boolean enableAutomaticViewTracking = false;
 
     protected boolean autoTrackingUseShortName = false;
 
-    protected Class[] autoTrackingExceptions = null;
+    protected Class[] automaticViewTrackingExceptions = null;
 
-    protected Map<String, Object> automaticViewSegmentation = null;
+    protected Map<String, Object> globalViewSegmentation = null;
+
+    boolean useMultipleViewFlow = false;
 
     protected Map<String, String> customNetworkRequestHeaders = null;
 
@@ -415,9 +417,30 @@ public class CountlyConfig {
      *
      * @param enable
      * @return Returns the same config object for convenient linking
+     * @deprecated Use "enableAutomaticViewTracking()"
      */
     public synchronized CountlyConfig setViewTracking(boolean enable) {
-        this.enableViewTracking = enable;
+        this.enableAutomaticViewTracking = enable;
+        return this;
+    }
+
+    /**
+     * Enable automatic view tracking
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enableAutomaticViewTracking() {
+        this.enableAutomaticViewTracking = true;
+        return this;
+    }
+
+    /**
+     * Enable short names for automatic view tracking
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enableAutomaticViewShortNames() {
+        this.autoTrackingUseShortName = true;
         return this;
     }
 
@@ -426,6 +449,7 @@ public class CountlyConfig {
      *
      * @param enable set true if you want short names
      * @return Returns the same config object for convenient linking
+     * @deprecated use "enableAutomaticViewShortNames()"
      */
     public synchronized CountlyConfig setAutoTrackingUseShortName(boolean enable) {
         this.autoTrackingUseShortName = enable;
@@ -433,11 +457,40 @@ public class CountlyConfig {
     }
 
     /**
-     * @param segmentation
+     * @param segmentation segmentation values that will be added for all recorded views (manual and automatic)
      * @return Returns the same config object for convenient linking
      */
+    public synchronized CountlyConfig setGlobalViewSegmentation(Map<String, Object> segmentation) {
+        globalViewSegmentation = segmentation;
+        return this;
+    }
+
+    /**
+     * @param segmentation
+     * @return Returns the same config object for convenient linking
+     * @deprecated Use "setAutomaticViewSegmentation(...)"
+     */
     public synchronized CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation) {
-        automaticViewSegmentation = segmentation;
+        globalViewSegmentation = segmentation;
+        return this;
+    }
+
+    /**
+     * Set which activities should be excluded from automatic view tracking
+     *
+     * @param exclusions activities which should be ignored
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setAutomaticViewTrackingExclusions(Class[] exclusions) {
+        if (exclusions != null) {
+            for (Class exception : exclusions) {
+                if (exception == null) {
+                    throw new IllegalArgumentException("setAutomaticViewTrackingExclusions(...) does not accept 'null' activities");
+                }
+            }
+        }
+
+        automaticViewTrackingExceptions = exclusions;
         return this;
     }
 
@@ -446,6 +499,7 @@ public class CountlyConfig {
      *
      * @param exceptions activities which should be ignored
      * @return Returns the same config object for convenient linking
+     * @deprecated Use "setAutomaticViewTrackingExclusions(...)"
      */
     public synchronized CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
         if (exceptions != null) {
@@ -456,7 +510,18 @@ public class CountlyConfig {
             }
         }
 
-        autoTrackingExceptions = exceptions;
+        automaticViewTrackingExceptions = exceptions;
+        return this;
+    }
+
+    /**
+     * Enabling this will allow multiple views to be recorded at the same time
+     * This can only be used with manual view recording. If automatic view tracking is enabled, this will do nothing.
+     *
+     * @return
+     */
+    public synchronized CountlyConfig enableMultipleViewFlow() {
+        useMultipleViewFlow = true;
         return this;
     }
 

@@ -116,10 +116,14 @@ public class TestUtils {
             .enableCrashReporting()
             .setTrackOrientationChanges(orientationTracking);
 
-        cc.setAutoTrackingUseShortName(useShortNames);
+        if (useShortNames) {
+            cc.enableAutomaticViewShortNames();
+        }
         cc.safeViewIDGenerator = safeViewIDGenerator;
-        cc.setAutomaticViewSegmentation(autoViewSegms);
-        cc.setViewTracking(automaticViewTracking);
+        cc.setGlobalViewSegmentation(autoViewSegms);
+        if (automaticViewTracking) {
+            cc.enableAutomaticViewTracking();
+        }
         return cc;
     }
 
@@ -129,8 +133,8 @@ public class TestUtils {
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
-        cc.setAutoTrackingUseShortName(true);
-        cc.setViewTracking(true);
+        cc.enableAutomaticViewShortNames();
+        cc.enableAutomaticViewTracking();
         cc.safeViewIDGenerator = safeViewIDGenerator;
         cc.safeEventIDGenerator = safeEventIDGenerator;
         return cc;
@@ -392,6 +396,10 @@ public class TestUtils {
 
     public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation, String idOverride, int index, Integer interactionCount) {
         validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, idOverride, index, interactionCount);
+    }
+
+    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, double duration, Map<String, Object> segmentation, String idOverride, int index, Integer interactionCount) {
+        validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, duration, null, idOverride, index, interactionCount);
     }
 
     public static void validateRecordEventInternalMockInteractions(EventProvider ep, int interactionCount) {
