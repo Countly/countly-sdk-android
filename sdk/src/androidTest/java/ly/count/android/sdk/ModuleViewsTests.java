@@ -54,6 +54,9 @@ public class ModuleViewsTests {
     public void tearDown() {
     }
 
+    /**
+     * Make sure the random value generator matches the required pattern
+     */
     @Test
     public void testSafeRandomVal() {
         @NonNull String result1 = Utils.safeRandomVal();
@@ -67,11 +70,17 @@ public class ModuleViewsTests {
         Assert.assertNotEquals(result1, result2);
     }
 
+    /**
+     * Make sure that long names are recorded when required
+     */
     @Test
     public void onActivityStartedViewTrackingLongNames() {
         activityStartedViewTracking(false);
     }
 
+    /**
+     * Make sure that short names are recorded when required
+     */
     @Test
     public void onActivityStartedViewTrackingShortNames() {
         activityStartedViewTracking(true);
@@ -95,11 +104,17 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
     }
 
+    /**
+     * Make sure that the view exception works with the long view name mode
+     */
     @Test
     public void onActivityStartedViewTrackingLongNamesException() {
         activityStartedViewTrackingException(false);
     }
 
+    /**
+     * Make sure that the view exception works with the short view name mode
+     */
     @Test
     public void onActivityStartedViewTrackingShortNamesException() {
         activityStartedViewTrackingException(true);
@@ -130,6 +145,9 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
     }
 
+    /**
+     * Make sure that no orientation events are recorded when the feature is not enabled
+     */
     @Test
     public void onActivityStartedDisabledOrientationView() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
@@ -142,6 +160,9 @@ public class ModuleViewsTests {
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class), any(String.class));
     }
 
+    /**
+     * Validate that the orientation event is recorded correctly when the activity starts
+     */
     @Test
     public void onActivityStartedOrientation() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, false, false, null, null);
@@ -166,6 +187,9 @@ public class ModuleViewsTests {
         Assert.assertEquals(Configuration.ORIENTATION_PORTRAIT, mView.currentOrientation);
     }
 
+    /**
+     * Validate that no orientation event is recorded with the "onConfigurationChanged" call when orientation tracking is not enabled
+     */
     @Test
     public void onConfigurationChangedOrientationDisabled() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
@@ -186,6 +210,9 @@ public class ModuleViewsTests {
         Assert.assertEquals(-1, mView.currentOrientation);
     }
 
+    /**
+     * Validate that the correct orientation event is recorded with the "onConfigurationChanged" call when orientation tracking is enabled
+     */
     @Test
     public void onConfigurationChangedOrientation() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, false, null, null);
@@ -225,15 +252,24 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStartedStopped() throws InterruptedException {
-        Map<String, Object> segms = new HashMap<>();
-        segms.put("aa", "11");
-        segms.put("aagfg", "1133");
-        segms.put("1", 123);
-        segms.put("2", 234.0d);
-        segms.put("3", true);
+    public void onActivityStartedStopped_WithMultipleViews() throws InterruptedException {
+        onActivityStartedStopped_base(true);
+    }
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, true, safeViewIDGenerator, segms);
+    @Test
+    public void onActivityStartedStopped_WithoutMultipleViews() throws InterruptedException {
+        onActivityStartedStopped_base(false);
+    }
+
+    public void onActivityStartedStopped_base(boolean useMultipleViews) throws InterruptedException {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("aa", "11");
+        globalSegm.put("aagfg", "1133");
+        globalSegm.put("1", 123);
+        globalSegm.put("2", 234.0d);
+        globalSegm.put("3", true);
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, useMultipleViews, safeViewIDGenerator, globalSegm);
         Countly mCountly = new Countly().init(cc);
 
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -253,10 +289,11 @@ public class ModuleViewsTests {
         segm.put("1", 123);
         segm.put("2", 234.0d);
         segm.put("3", true);
+        segm.putAll(globalSegm);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
-        ClearFillSegmentationViewEnd(segm, act.getClass().getSimpleName());
 
+        ClearFillSegmentationViewEnd(segm, act.getClass().getSimpleName(), globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, viewDuration, segm, vals[0], 1, 2);
     }
 
@@ -278,7 +315,7 @@ public class ModuleViewsTests {
         Thread.sleep(1000);
 
         mCountly.views().recordView(viewNames[1]);
-        ClearFillSegmentationViewEnd(segm, viewNames[0]);
+        ClearFillSegmentationViewEnd(segm, viewNames[0], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 0, 2);
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
@@ -287,7 +324,7 @@ public class ModuleViewsTests {
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2]);
-        ClearFillSegmentationViewEnd(segm, viewNames[1]);
+        ClearFillSegmentationViewEnd(segm, viewNames[1], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);//todo this test has issues sometimes
 
         ClearFillSegmentationViewStart(segm, viewNames[2], false);
@@ -296,12 +333,12 @@ public class ModuleViewsTests {
 
     @Test
     public void recordViewWithSegm() throws InterruptedException {
-        Map<String, Object> segms = new HashMap<>();
-        segms.put("aa", "11");
-        segms.put("aagfg", "1133");
-        segms.put("1", 123);
-        segms.put("2", 234.0d);
-        segms.put("3", true);
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("aa", "11");
+        globalSegm.put("aagfg", "1133");
+        globalSegm.put("1", 123);
+        globalSegm.put("2", 234.0d);
+        globalSegm.put("3", true);
 
         //{"name", "segment", "visit", "start", "bounce", "exit", "view", "domain", "dur"};
         Map<String, Object> cSegm1 = new HashMap<>();
@@ -325,7 +362,7 @@ public class ModuleViewsTests {
         cSegm3.put("cannndy", 9534.33d);
         cSegm3.put("calaaling", true);
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, segms);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -335,13 +372,14 @@ public class ModuleViewsTests {
         mCountly.views().recordView(viewNames[0], cSegm1);
 
         ClearFillSegmentationViewStart(segm, viewNames[0], true);
+        segm.putAll(globalSegm);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
         clearInvocations(ep);
         Thread.sleep(2000);
 
         mCountly.views().recordView(viewNames[1], cSegm2);
-        ClearFillSegmentationViewEnd(segm, viewNames[0]);
+        ClearFillSegmentationViewEnd(segm, viewNames[0], globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 2); // duration comes off sometimes
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
@@ -350,12 +388,13 @@ public class ModuleViewsTests {
         segm.put("big", 1337);
         segm.put("candy", 954.33d);
         segm.put("calling", false);
+        segm.putAll(globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
         clearInvocations(ep);
 
         Thread.sleep(1000);
         mCountly.views().recordView(viewNames[2], cSegm3);
-        ClearFillSegmentationViewEnd(segm, viewNames[1]);
+        ClearFillSegmentationViewEnd(segm, viewNames[1], globalSegm);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);
 
@@ -368,6 +407,7 @@ public class ModuleViewsTests {
         segm.put("biffg", 132137);
         segm.put("cannndy", 9534.33d);
         segm.put("calaaling", true);
+        segm.putAll(globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
     }
 
@@ -394,6 +434,15 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().recordView(null);
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("xxx", "33");
+        segm.put("rtt", 2);
+        mCountly.views().startView("aa");
+        mCountly.views().startView("aa", segm);
+
+        mCountly.views().stopViewWithName("aa");
+        mCountly.views().stopViewWithName("aa", segm);
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
@@ -487,7 +536,7 @@ public class ModuleViewsTests {
         //we are transitioning to the next view
         //first the next activities 'onStart' is called
         //we would report the duration of the first view and then start the next one
-        ClearFillSegmentationViewEnd(segm, viewNames[0]);
+        ClearFillSegmentationViewEnd(segm, viewNames[0], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 0, 2);
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
@@ -500,7 +549,7 @@ public class ModuleViewsTests {
         mCountly.onStop();
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
-        ClearFillSegmentationViewEnd(segm, viewNames[1]);
+        ClearFillSegmentationViewEnd(segm, viewNames[1], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[1], 0, 2);
 
         ClearFillSegmentationViewStart(segm, viewNames[2], false);
@@ -511,7 +560,7 @@ public class ModuleViewsTests {
         mCountly.onStop();
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
-        ClearFillSegmentationViewEnd(segm, viewNames[2]);
+        ClearFillSegmentationViewEnd(segm, viewNames[2], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[2], 0, 1);
     }
 
@@ -525,8 +574,11 @@ public class ModuleViewsTests {
         segm.put("name", viewName);
     }
 
-    void ClearFillSegmentationViewEnd(final Map<String, Object> segm, String viewName) {
+    void ClearFillSegmentationViewEnd(final Map<String, Object> segm, String viewName, final Map<String, Object> globalSegmentation) {
         segm.clear();
+        if (globalSegmentation != null) {
+            segm.putAll(globalSegmentation);
+        }
         segm.put("segment", "Android");
         segm.put("name", viewName);
     }
@@ -553,4 +605,61 @@ public class ModuleViewsTests {
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
+
+    /**
+     * Only single view. Making sure all ways of ending a view work
+     */
+    @Test
+    public void x() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, false, null, null);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("xxx", "33");
+        segm.put("rtt", 2);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
+        mCountly.views().recordView("a");
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
+
+        mCountly.views().recordView("b", segm);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 3);
+
+        mCountly.views().startView("c");
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 5);
+
+        String id = mCountly.views().startView("d", segm);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 7);
+
+        mCountly.views().stopViewWithID(id);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 8);
+
+        id = mCountly.views().startView("e", segm);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 9);
+
+        mCountly.views().stopViewWithID(id, segm);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 10);
+
+        mCountly.views().startView("f");
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 11);
+
+        mCountly.views().stopViewWithName("f");
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 12);
+
+        mCountly.views().startView("g");
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 13);
+
+        mCountly.views().stopViewWithName("f", segm);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 14);
+    }
+
+    //making sure global segmentation is added correctly, even when changing in the middle
+
+    //basic multiple view stuff
+
+    //stop a paused view
+
+    //todo extract orientation tests
 }

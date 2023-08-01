@@ -109,7 +109,11 @@ public class TestUtils {
         return cc;
     }
 
-    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeViewIDGenerator, Map<String, Object> autoViewSegms) {
+    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeViewIDGenerator, Map<String, Object> globalViewSegms) {
+        return createViewCountlyConfig(orientationTracking, useShortNames, automaticViewTracking, false, safeViewIDGenerator, globalViewSegms);
+    }
+
+    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, boolean useMultipleViews, SafeIDGenerator safeViewIDGenerator, Map<String, Object> globalViewSegms) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
@@ -120,7 +124,7 @@ public class TestUtils {
             cc.enableAutomaticViewShortNames();
         }
         cc.safeViewIDGenerator = safeViewIDGenerator;
-        cc.setGlobalViewSegmentation(autoViewSegms);
+        cc.setGlobalViewSegmentation(globalViewSegms);
         if (automaticViewTracking) {
             cc.enableAutomaticViewTracking();
         }
@@ -134,7 +138,6 @@ public class TestUtils {
             .enableCrashReporting();
 
         cc.enableAutomaticViewShortNames();
-        cc.enableAutomaticViewTracking();
         cc.safeViewIDGenerator = safeViewIDGenerator;
         cc.safeEventIDGenerator = safeEventIDGenerator;
         return cc;

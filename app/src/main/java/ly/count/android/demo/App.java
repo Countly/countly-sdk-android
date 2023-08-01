@@ -180,10 +180,10 @@ public class App extends Application {
                 }
             })
 
-            .setViewTracking(true)
-            .setAutoTrackingUseShortName(true)
-            .setAutomaticViewSegmentation(automaticViewSegmentation)
-            .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
+            .enableAutomaticViewTracking()
+            .setGlobalViewSegmentation(automaticViewSegmentation)
+            .setAutomaticViewTrackingExclusions(new Class[] { ActivityExampleCustomEvents.class })
+            //.enableMultipleViewFlow()
 
             .setPushIntentAddMetadata(true)
 
@@ -205,14 +205,11 @@ public class App extends Application {
             //.enableCertificatePinning(certificates)
             //.enablePublicKeyPinning(certificates)
 
-            .setRemoteConfigAutomaticDownload(true, new RemoteConfigCallback() {
-                @Override
-                public void callback(String error) {
-                    if (error == null) {
-                        Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
-                    } else {
-                        Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
-                    }
+            .RemoteConfigRegisterGlobalCallback((downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                if (error == null) {
+                    Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
+                } else {
+                    Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
                 }
             })
 
@@ -222,8 +219,6 @@ public class App extends Application {
             .setAppStartTimestampOverride(applicationStartTimestamp)
 
             //.setMetricOverride(metricOverride)
-
-            .setEnableAttribution(true)
 
             //.enableServerConfiguration()
 
