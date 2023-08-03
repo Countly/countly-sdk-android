@@ -594,7 +594,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             synchronized (_cly) {
                 L.i("[Views] Calling resumeViewWithID vi[" + viewID + "]");
 
-                resumeViewWithID(viewID);
+                resumeViewWithIDInternal(viewID);
             }
         }
 

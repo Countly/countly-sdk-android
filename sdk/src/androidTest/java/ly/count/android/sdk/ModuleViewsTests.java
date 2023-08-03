@@ -655,6 +655,36 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMockInteractions(ep, 14);
     }
 
+    @Test
+    public void viewCallsWithBadValues() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, false, null, null);
+        Countly mCountly = new Countly().init(cc);
+
+        mCountly.views().startView(null);
+        mCountly.views().startView("");
+        mCountly.views().startView(null, null);
+        mCountly.views().startView("", null);
+
+        mCountly.views().resumeViewWithID(null);
+        mCountly.views().resumeViewWithID("");
+        mCountly.views().resumeViewWithID("xx");
+
+        mCountly.views().pauseViewWithID(null);
+        mCountly.views().pauseViewWithID("");
+        mCountly.views().pauseViewWithID("zz");
+
+        mCountly.views().stopViewWithID(null);
+        mCountly.views().stopViewWithID("");
+        mCountly.views().stopViewWithID("cc");
+
+        mCountly.views().stopViewWithName(null);
+        mCountly.views().stopViewWithName("");
+        mCountly.views().stopViewWithName("vv");
+
+        mCountly.views().setGlobalViewSegmentation(null);
+        mCountly.views().updateGlobalViewSegmentation(null);
+    }
+
     //making sure global segmentation is added correctly, even when changing in the middle
 
     //basic multiple view stuff
