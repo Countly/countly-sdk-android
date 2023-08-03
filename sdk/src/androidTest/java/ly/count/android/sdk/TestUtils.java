@@ -123,6 +123,11 @@ public class TestUtils {
         if (useShortNames) {
             cc.enableAutomaticViewShortNames();
         }
+
+        if (useMultipleViews) {
+            cc.enableMultipleViewFlow();
+        }
+
         cc.safeViewIDGenerator = safeViewIDGenerator;
         cc.setGlobalViewSegmentation(globalViewSegms);
         if (automaticViewTracking) {

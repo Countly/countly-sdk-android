@@ -236,6 +236,18 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         String viewID = null;
 
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (vd != null && viewName.equals(vd.viewName)) {
+                viewID = entry.getKey();
+            }
+        }
+
+        if (viewID == null) {
+            L.e("[ModuleViews] stopViewWithNameInternal, No view entry found with the provided name :[" + viewName + "]");
+            return;
+        }
+
         stopViewWithIDInternal(viewID, customViewSegmentation);
     }
 
@@ -245,14 +257,14 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
         //todo extract common checks
-        if (!viewDataMap.containsKey(currentViewID)) {
+        if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] stopViewWithIDInternal, there is no view with the provided view id to close");
             return;
         }
 
-        ViewData vd = viewDataMap.get(currentViewID);
+        ViewData vd = viewDataMap.get(viewID);
         if (vd == null) {
-            L.e("[ModuleViews] stopViewWithIDInternal, view id:[" + currentViewID + "] has a 'null' value. This should not be happening");
+            L.e("[ModuleViews] stopViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening");
             return;
         }
 
@@ -298,14 +310,14 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        if (!viewDataMap.containsKey(currentViewID)) {
+        if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] pauseViewWithIDInternal, there is no view with the provided view id to close");
             return;
         }
 
-        ViewData vd = viewDataMap.get(currentViewID);
+        ViewData vd = viewDataMap.get(viewID);
         if (vd == null) {
-            L.e("[ModuleViews] pauseViewWithIDInternal, view id:[" + currentViewID + "] has a 'null' value. This should not be happening");
+            L.e("[ModuleViews] pauseViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening");
             return;
         }
 
@@ -313,7 +325,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        L.w("[ModuleViews] pauseViewWithIDInternal, pausing view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
+        L.d("[ModuleViews] pauseViewWithIDInternal, pausing view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
+
+        if (vd.viewStartTimeSeconds == 0) {
+            L.w("[ModuleViews] pauseViewWithIDInternal, pausing a view that is already paused. ID:[" + viewID + "], name:[" + vd.viewName + "]");
+            return;
+        }
 
         long lastElapsedDurationSeconds = 0;
         //we sanity check the time component and print error in case of problem
@@ -333,14 +350,14 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        if (!viewDataMap.containsKey(currentViewID)) {
+        if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] resumeViewWithIDInternal, there is no view with the provided view id to close");
             return;
         }
 
-        ViewData vd = viewDataMap.get(currentViewID);
+        ViewData vd = viewDataMap.get(viewID);
         if (vd == null) {
-            L.e("[ModuleViews] resumeViewWithIDInternal, view id:[" + currentViewID + "] has a 'null' value. This should not be happening");
+            L.e("[ModuleViews] resumeViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening");
             return;
         }
 
@@ -348,7 +365,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        L.w("[ModuleViews] resumeViewWithIDInternal, resuming view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
+        L.d("[ModuleViews] resumeViewWithIDInternal, resuming view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
+
+        if (vd.viewStartTimeSeconds > 0) {
+            L.w("[ModuleViews] resumeViewWithIDInternal, resuming a view that is already running. ID:[" + viewID + "], name:[" + vd.viewName + "]");
+            return;
+        }
 
         vd.viewStartTimeSeconds = UtilsTime.currentTimestampSeconds();
     }
@@ -554,7 +576,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vn[" + viewName + "]");
 
-                stopViewWithIDInternal(viewName, null);
+                stopViewWithNameInternal(viewName, null);
             }
         }
 
@@ -562,7 +584,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
 
-                stopViewWithIDInternal(viewName, null);
+                stopViewWithNameInternal(viewName, null);
             }
         }
 
