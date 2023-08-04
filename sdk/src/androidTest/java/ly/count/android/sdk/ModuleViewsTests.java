@@ -873,17 +873,28 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void recordViewsWithSegmentationWithID() throws InterruptedException {
-        recordViewsWithSegmentationBase(true);
+    public void recordViewsWithSegmentationWithID_setSegmentation() throws InterruptedException {
+        recordViewsWithSegmentationBase(true, true);
     }
 
     @Test
-    public void recordViewsWithSegmentationWithName() throws InterruptedException {
-        recordViewsWithSegmentationBase(false);
+    public void recordViewsWithSegmentationWithName_setSegmentation() throws InterruptedException {
+        recordViewsWithSegmentationBase(false, true);
     }
 
-    public void recordViewsWithSegmentationBase(boolean useID) throws InterruptedException {
+    @Test
+    public void recordViewsWithSegmentationWithID_updateSegmentation() throws InterruptedException {
+        recordViewsWithSegmentationBase(true, false);
+    }
+
+    @Test
+    public void recordViewsWithSegmentationWithName_updateSegmentation() throws InterruptedException {
+        recordViewsWithSegmentationBase(false, false);
+    }
+
+    public void recordViewsWithSegmentationBase(boolean useID, boolean setSegmentation) throws InterruptedException {
         Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("0", 4);
         globalSegm.put("1", "v1");
 
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, true, safeViewIDGenerator, globalSegm);
@@ -903,21 +914,33 @@ public class ModuleViewsTests {
         mCountly.views().pauseViewWithID(viewID[0]);
         Thread.sleep(1000);
 
+        Map<String, Object> expectedEndSegm = new HashMap<>();
+
+        if (!setSegmentation) {
+            expectedEndSegm.putAll(globalSegm);
+        }
+
         globalSegm = new HashMap<>();
+        globalSegm.put("1", false);
         globalSegm.put("3", 3);
-        mCountly.views().setGlobalViewSegmentation(globalSegm);
+
+        expectedEndSegm.putAll(globalSegm);
+
+        if (setSegmentation) {
+            mCountly.views().setGlobalViewSegmentation(globalSegm);
+        } else {
+            mCountly.views().updateGlobalViewSegmentation(globalSegm);
+        }
 
         Map<String, Object> givenEndSegm = new HashMap<>();
         givenEndSegm.put("4", false);
 
-        stopViewInFlow(viewNames[0], viewID[0], givenEndSegm, globalSegm, 1, useID, mCountly, ep);
+        stopViewInFlow(viewNames[0], viewID[0], givenEndSegm, expectedEndSegm, 1, useID, mCountly, ep);
     }
 
     //make sure reserved segmentation keys can't be overiden
 
     //test for segmentation precedence
-
-    //making sure global segmentation is added correctly, even when changing in the middle
 
     //stop a paused view
 
