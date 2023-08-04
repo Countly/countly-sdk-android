@@ -568,7 +568,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                     return null;
                 }
 
-                return startViewInternal(viewName, null);
+                return startViewInternal(viewName, viewSegmentation);
             }
         }
 
@@ -584,7 +584,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
 
-                stopViewWithNameInternal(viewName, null);
+                stopViewWithNameInternal(viewName, viewSegmentation);
             }
         }
 
@@ -600,7 +600,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vi[" + viewID + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
 
-                stopViewWithIDInternal(viewID, null);
+                stopViewWithIDInternal(viewID, viewSegmentation);
             }
         }
 

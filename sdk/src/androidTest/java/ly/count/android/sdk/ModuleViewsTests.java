@@ -33,6 +33,8 @@ public class ModuleViewsTests {
     //Countly mCountly;
     CountlyStore countlyStore;
 
+    String[] viewNames = new String[] { "a", "b", "c", "e", "f", "g", "h", "i" };
+
     int idx = 0;
     final String[] vals = TestUtils.viewIDVals;
     String base64Regex = "^[A-Za-z0-9+/]*={0,2}$";
@@ -707,10 +709,10 @@ public class ModuleViewsTests {
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        String viewId = mCountly.views().startView("A");
+        String viewId = mCountly.views().startView(viewNames[0]);
         Assert.assertEquals(viewId, vals[0]);
 
-        ClearFillSegmentationViewStart(segm, "A", true);
+        ClearFillSegmentationViewStart(segm, viewNames[0], true);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
         clearInvocations(ep);
 
@@ -734,11 +736,11 @@ public class ModuleViewsTests {
         mCountly.views().resumeViewWithID(viewId);
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        ClearFillSegmentationViewEnd(segm, "A", null);
+        ClearFillSegmentationViewEnd(segm, viewNames[0], null);
         if (useID) {
             mCountly.views().stopViewWithID(viewId);
         } else {
-            mCountly.views().stopViewWithName("A");
+            mCountly.views().stopViewWithName(viewNames[0]);
         }
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 1);
     }
@@ -758,41 +760,50 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        String[] viewID = new String[3];
-        String[] viewName = new String[] { "a", "b", "c" };
+        String[] viewID = new String[viewNames.length];
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        viewID[0] = viewID[1] = startViewInFlow(viewName[0], vals[0], null, true, mCountly, ep);
+        viewID[0] = startViewInFlow(viewNames[0], vals[0], null, null, true, mCountly, ep);
 
         Thread.sleep(1000);
 
         //start second view
-        viewID[1] = startViewInFlow(viewName[1], vals[1], null, false, mCountly, ep);
+        viewID[1] = startViewInFlow(viewNames[1], vals[1], null, null, false, mCountly, ep);
 
         Thread.sleep(1000);
 
         //start third view
-        viewID[2] = startViewInFlow(viewName[2], vals[2], null, false, mCountly, ep);
+        viewID[2] = startViewInFlow(viewNames[2], vals[2], null, null, false, mCountly, ep);
 
         Thread.sleep(1000);
 
         //stop second view
-        stopViewInFlow(viewName[1], viewID[1], null, 2, useID, mCountly, ep);
+        stopViewInFlow(viewNames[1], viewID[1], null, null, 2, useID, mCountly, ep);
 
         //stop first view
-        stopViewInFlow(viewName[0], viewID[0], null, 3, useID, mCountly, ep);
+        stopViewInFlow(viewNames[0], viewID[0], null, null, 3, useID, mCountly, ep);
 
         //stop third view
-        stopViewInFlow(viewName[2], viewID[2], null, 1, useID, mCountly, ep);
+        stopViewInFlow(viewNames[2], viewID[2], null, null, 1, useID, mCountly, ep);
     }
 
-    String startViewInFlow(String viewName, String plannedViewID, Map<String, Object> givenSegm, boolean firstView, Countly mCountly, EventProvider ep) {
-        String returnedID = mCountly.views().startView(viewName);
+    String startViewInFlow(String viewName, String plannedViewID, Map<String, Object> givenSegm, Map<String, Object> globalSegm, boolean firstView, Countly mCountly, EventProvider ep) {
+        String returnedID;
+
+        if (givenSegm != null) {
+            returnedID = mCountly.views().startView(viewName, givenSegm);
+        } else {
+            returnedID = mCountly.views().startView(viewName);
+        }
         Assert.assertEquals(returnedID, plannedViewID);
 
         Map<String, Object> segm = new HashMap<>();
         ClearFillSegmentationViewStart(segm, viewName, firstView);
+
+        if (globalSegm != null) {
+            segm.putAll(globalSegm);
+        }
 
         if (givenSegm != null) {
             segm.putAll(givenSegm);
@@ -803,30 +814,112 @@ public class ModuleViewsTests {
         return returnedID;
     }
 
-    void stopViewInFlow(String viewName, String plannedViewID, Map<String, Object> givenSegm, double duration, boolean stopWithID, Countly mCountly, EventProvider ep) {
+    void stopViewInFlow(String viewName, String plannedViewID, Map<String, Object> givenSegm, Map<String, Object> globalSegm, double duration, boolean stopWithID, Countly mCountly, EventProvider ep) {
         Map<String, Object> segm = new HashMap<>();
         ClearFillSegmentationViewEnd(segm, viewName, null);
+
+        if (globalSegm != null) {
+            segm.putAll(globalSegm);
+        }
 
         if (givenSegm != null) {
             segm.putAll(givenSegm);
         }
-        
+
         if (stopWithID) {
-            mCountly.views().stopViewWithID(plannedViewID);
+            if (givenSegm != null) {
+                mCountly.views().stopViewWithID(plannedViewID, givenSegm);
+            } else {
+                mCountly.views().stopViewWithID(plannedViewID);
+            }
         } else {
-            mCountly.views().stopViewWithName(viewName);
+            if (givenSegm != null) {
+                mCountly.views().stopViewWithName(viewName, givenSegm);
+            } else {
+                mCountly.views().stopViewWithName(viewName);
+            }
         }
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, duration, segm, plannedViewID, 0, 1);
         clearInvocations(ep);
     }
 
-    //making sure global segmentation is added correctly, even when changing in the middle
+    @Test
+    public void stopPausedViewWithID() throws InterruptedException {
+        stopPausedViewBase(true);
+    }
 
-    //basic multiple view stuff
+    @Test
+    public void stopPausedViewWithName() throws InterruptedException {
+        stopPausedViewBase(false);
+    }
+
+    public void stopPausedViewBase(boolean useID) throws InterruptedException {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, true, safeViewIDGenerator, null);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        String[] viewID = new String[viewNames.length];
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
+        viewID[0] = startViewInFlow(viewNames[0], vals[0], null, null, true, mCountly, ep);
+
+        Thread.sleep(1000);
+
+        mCountly.views().pauseViewWithID(viewID[0]);
+        Thread.sleep(1000);
+
+        stopViewInFlow(viewNames[0], viewID[0], null, null, 1, useID, mCountly, ep);
+    }
+
+    @Test
+    public void recordViewsWithSegmentationWithID() throws InterruptedException {
+        recordViewsWithSegmentationBase(true);
+    }
+
+    @Test
+    public void recordViewsWithSegmentationWithName() throws InterruptedException {
+        recordViewsWithSegmentationBase(false);
+    }
+
+    public void recordViewsWithSegmentationBase(boolean useID) throws InterruptedException {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("1", "v1");
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, true, safeViewIDGenerator, globalSegm);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        String[] viewID = new String[viewNames.length];
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
+        Map<String, Object> givenStartSegm = new HashMap<>();
+        givenStartSegm.put("2", "v2");
+        viewID[0] = startViewInFlow(viewNames[0], vals[0], givenStartSegm, globalSegm, true, mCountly, ep);
+
+        Thread.sleep(1000);
+
+        mCountly.views().pauseViewWithID(viewID[0]);
+        Thread.sleep(1000);
+
+        globalSegm = new HashMap<>();
+        globalSegm.put("3", 3);
+        mCountly.views().setGlobalViewSegmentation(globalSegm);
+
+        Map<String, Object> givenEndSegm = new HashMap<>();
+        givenEndSegm.put("4", false);
+
+        stopViewInFlow(viewNames[0], viewID[0], givenEndSegm, globalSegm, 1, useID, mCountly, ep);
+    }
+
+    //make sure reserved segmentation keys can't be overiden
+
+    //test for segmentation precedence
+
+    //making sure global segmentation is added correctly, even when changing in the middle
 
     //stop a paused view
 
     //todo extract orientation tests
-
-    //validate double start and stop
 }
