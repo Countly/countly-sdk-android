@@ -254,16 +254,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStartedStopped_WithMultipleViews() throws InterruptedException {
-        onActivityStartedStopped_base(true);
-    }
-
-    @Test
-    public void onActivityStartedStopped_WithoutMultipleViews() throws InterruptedException {
-        onActivityStartedStopped_base(false);
-    }
-
-    public void onActivityStartedStopped_base(boolean useMultipleViews) throws InterruptedException {
+    public void onActivityStartedStopped() throws InterruptedException {
         Map<String, Object> globalSegm = new HashMap<>();
         globalSegm.put("aa", "11");
         globalSegm.put("aagfg", "1133");
@@ -271,7 +262,7 @@ public class ModuleViewsTests {
         globalSegm.put("2", 234.0d);
         globalSegm.put("3", true);
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, useMultipleViews, safeViewIDGenerator, globalSegm);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, globalSegm);
         Countly mCountly = new Countly().init(cc);
 
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -299,6 +290,11 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, viewDuration, segm, vals[0], 1, 2);
     }
 
+    /**
+     * Validate pure "recordView" flow without using segmentation
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void recordViewNoSegm() throws InterruptedException {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, true, false, safeViewIDGenerator, null);
@@ -333,6 +329,11 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
     }
 
+    /**
+     * Validate pure "recordView" flow with using segmentation
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void recordViewWithSegm() throws InterruptedException {
         Map<String, Object> globalSegm = new HashMap<>();
@@ -385,7 +386,6 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 2); // duration comes off sometimes
 
         ClearFillSegmentationViewStart(segm, viewNames[1], false);
-        segm.put("start", "33");
         segm.put("donker", "mag");
         segm.put("big", 1337);
         segm.put("candy", 954.33d);
@@ -470,6 +470,9 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
+    /**
+     * Make sure automatic session related calls don't do anything if automatic view tracking is disabled
+     */
     @Test
     public void recordViewWithActivitiesAfterwardsAutoDisabled() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
@@ -500,14 +503,17 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
+    /**
+     * Validating that automatic session flow works as expected
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void autoSessionFlow_1() throws InterruptedException {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
-        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        @NonNull EventProvider ep;
 
-        //mCountly.views().recordView("abcd");
-        //TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY);
         ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
@@ -601,6 +607,8 @@ public class ModuleViewsTests {
         mCountly.views().recordView("abcd");
         mCountly.views().startView("aa");
         mCountly.views().startView("aa", segm);
+        mCountly.views().startAutoStoppedView("bb");
+        mCountly.views().startAutoStoppedView("bb", segm);
 
         mCountly.views().stopViewWithName("aa");
         mCountly.views().stopViewWithName("aa", segm);
@@ -613,7 +621,7 @@ public class ModuleViewsTests {
      */
     @Test
     public void validatingEventCountFromViewCalls() {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, false, null, null);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -623,38 +631,38 @@ public class ModuleViewsTests {
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        mCountly.views().recordView("a");
+        mCountly.views().recordView("a");//starting a view
         TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
 
-        mCountly.views().recordView("b", segm);
+        mCountly.views().recordView("b", segm);//starting a new view, stopping the previous one
         TestUtils.validateRecordEventInternalMockInteractions(ep, 3);
 
-        mCountly.views().startView("c");
+        mCountly.views().startView("c");//starting a new view, stopping the previous one
         TestUtils.validateRecordEventInternalMockInteractions(ep, 5);
 
-        String id = mCountly.views().startView("d", segm);
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 7);
+        String id = mCountly.views().startView("d", segm);//starting a new view
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 6);
 
         mCountly.views().stopViewWithID(id);
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 8);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 7);
 
         id = mCountly.views().startView("e", segm);
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 9);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 8);
 
         mCountly.views().stopViewWithID(id, segm);
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 10);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 9);
 
         mCountly.views().startView("f");
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 11);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 10);
 
         mCountly.views().stopViewWithName("f");
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 12);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 11);
 
         mCountly.views().startView("g");
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 13);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 12);
 
         mCountly.views().stopViewWithName("g", segm);
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 14);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 13);
     }
 
     /**
@@ -662,13 +670,18 @@ public class ModuleViewsTests {
      */
     @Test
     public void viewCallsWithBadValues() {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, false, null, null);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
         Countly mCountly = new Countly().init(cc);
 
         mCountly.views().startView(null);
         mCountly.views().startView("");
         mCountly.views().startView(null, null);
         mCountly.views().startView("", null);
+
+        mCountly.views().startAutoStoppedView(null);
+        mCountly.views().startAutoStoppedView("");
+        mCountly.views().startAutoStoppedView(null, null);
+        mCountly.views().startAutoStoppedView("", null);
 
         mCountly.views().resumeViewWithID(null);
         mCountly.views().resumeViewWithID("");
@@ -690,18 +703,56 @@ public class ModuleViewsTests {
         mCountly.views().updateGlobalViewSegmentation(null);
     }
 
+    /**
+     * Testing the start,pause,resume, stop flow
+     * use ID to stop view: yes
+     * start view as auto close view: no
+     *
+     * @throws InterruptedException
+     */
     @Test
-    public void performFullViewFlowStopWithId() throws InterruptedException {
-        performFullViewFlowBase(true);
+    public void performFullViewFlowStopWithId_regularStart() throws InterruptedException {
+        performFullViewFlowBase(true, false);
     }
 
+    /**
+     * Testing the start,pause,resume, stop flow
+     * use ID to stop view: no
+     * start view as auto close view: no
+     *
+     * @throws InterruptedException
+     */
     @Test
-    public void performFullViewFlowStopWithName() throws InterruptedException {
-        performFullViewFlowBase(false);
+    public void performFullViewFlowStopWithName_regularStart() throws InterruptedException {
+        performFullViewFlowBase(false, false);
     }
 
-    public void performFullViewFlowBase(boolean useID) throws InterruptedException {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, false, safeViewIDGenerator, null);
+    /**
+     * Testing the start,pause,resume, stop flow
+     * use ID to stop view: yes
+     * start view as auto close view: yes
+     *
+     * @throws InterruptedException
+     */
+    @Test
+    public void performFullViewFlowStopWithId_autoCloseStart() throws InterruptedException {
+        performFullViewFlowBase(true, true);
+    }
+
+    /**
+     * Testing the start,pause,resume, stop flow
+     * use ID to stop view: no
+     * start view as auto close view: yes
+     *
+     * @throws InterruptedException
+     */
+    @Test
+    public void performFullViewFlowStopWithName_autoCloseStart() throws InterruptedException {
+        performFullViewFlowBase(false, true);
+    }
+
+    public void performFullViewFlowBase(boolean useID, boolean startAutoCloseView) throws InterruptedException {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -709,7 +760,12 @@ public class ModuleViewsTests {
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        String viewId = mCountly.views().startView(viewNames[0]);
+        String viewId;
+        if (startAutoCloseView) {
+            viewId = mCountly.views().startAutoStoppedView(viewNames[0]);
+        } else {
+            viewId = mCountly.views().startView(viewNames[0]);
+        }
         Assert.assertEquals(viewId, vals[0]);
 
         ClearFillSegmentationViewStart(segm, viewNames[0], true);
@@ -745,18 +801,30 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 1);
     }
 
+    /**
+     * Test flow when having 3 views in paralell
+     * use ID to stop views: no
+     *
+     * @throws InterruptedException
+     */
     @Test
-    public void trippleViewWithName() throws InterruptedException {
+    public void tripleViewWithName() throws InterruptedException {
         tripleViewBase(false);
     }
 
+    /**
+     * Test flow when having 3 views in paralell
+     * use ID to stop views: yes
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void trippleViewWithId() throws InterruptedException {
         tripleViewBase(true);
     }
 
     public void tripleViewBase(boolean useID) throws InterruptedException {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, true, safeViewIDGenerator, null);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -843,18 +911,30 @@ public class ModuleViewsTests {
         clearInvocations(ep);
     }
 
+    /**
+     * Stop a view that has been paused
+     * Use ID to stop view: yes
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void stopPausedViewWithID() throws InterruptedException {
         stopPausedViewBase(true);
     }
 
+    /**
+     * Stop a view that has been paused
+     * Use ID to stop view: no
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void stopPausedViewWithName() throws InterruptedException {
         stopPausedViewBase(false);
     }
 
     public void stopPausedViewBase(boolean useID) throws InterruptedException {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, true, safeViewIDGenerator, null);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -872,21 +952,49 @@ public class ModuleViewsTests {
         stopViewInFlow(viewNames[0], viewID[0], null, null, 1, useID, mCountly, ep);
     }
 
+    /**
+     * Validate that segmentation can be provided as expected
+     * Use ID to stop view: yes
+     * Use the "set" and not "update" segmentation call: yes
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void recordViewsWithSegmentationWithID_setSegmentation() throws InterruptedException {
         recordViewsWithSegmentationBase(true, true);
     }
 
+    /**
+     * Validate that segmentation can be provided as expected
+     * Use ID to stop view: no
+     * Use the "set" and not "update" segmentation call: yes
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void recordViewsWithSegmentationWithName_setSegmentation() throws InterruptedException {
         recordViewsWithSegmentationBase(false, true);
     }
 
+    /**
+     * Validate that segmentation can be provided as expected
+     * Use ID to stop view: yes
+     * Use the "set" and not "update" segmentation call: no
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void recordViewsWithSegmentationWithID_updateSegmentation() throws InterruptedException {
         recordViewsWithSegmentationBase(true, false);
     }
 
+    /**
+     * Validate that segmentation can be provided as expected
+     * Use ID to stop view: no
+     * Use the "set" and not "update" segmentation call: no
+     *
+     * @throws InterruptedException
+     */
     @Test
     public void recordViewsWithSegmentationWithName_updateSegmentation() throws InterruptedException {
         recordViewsWithSegmentationBase(false, false);
@@ -897,7 +1005,7 @@ public class ModuleViewsTests {
         globalSegm.put("0", 4);
         globalSegm.put("1", "v1");
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, true, safeViewIDGenerator, globalSegm);
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
@@ -938,11 +1046,134 @@ public class ModuleViewsTests {
         stopViewInFlow(viewNames[0], viewID[0], givenEndSegm, expectedEndSegm, 1, useID, mCountly, ep);
     }
 
-    //make sure reserved segmentation keys can't be overiden
+    /**
+     * Make sure that an "auto closed view" is closed correctly when starting another view
+     */
+    @Test
+    public void validateStartAutoClosedView() {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("0", 4);
+        globalSegm.put("1", "v1");
 
-    //test for segmentation precedence
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-    //stop a paused view
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
+        mCountly.views().startView("a", null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
+
+        mCountly.views().startAutoStoppedView("b", null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 2);
+
+        mCountly.views().startAutoStoppedView("c", null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 4);
+
+        mCountly.views().startView("d", null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 6);
+    }
+
+    /**
+     * Validating that the "stopAllViews" stops started views
+     */
+    @Test
+    public void validateStopAllViews() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
+        mCountly.views().startView("a", null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
+
+        mCountly.views().stopAllViews(null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 2);
+
+        mCountly.views().startAutoStoppedView("b", null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 3);
+
+        mCountly.views().stopAllViews(null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 4);
+
+        mCountly.views().startView("c", null);
+        mCountly.views().startAutoStoppedView("d", null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 6);
+
+        mCountly.views().stopAllViews(null);
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 8);
+    }
+
+    @Test
+    public void validateSegmentationPrecedence() {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("xx", 1);
+        globalSegm.put("yy", 2);
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Map<String, Object> viewSegm = new HashMap<>();
+        viewSegm.put("yy", 3);
+        viewSegm.put("zz", 4);
+
+        mCountly.views().startView("a", viewSegm);
+
+        Map<String, Object> segm = new HashMap<>();
+        ClearFillSegmentationViewStart(segm, "a", true);
+        segm.put("xx", 1);
+        segm.put("yy", 3);
+        segm.put("zz", 4);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
+        clearInvocations(ep);
+
+        mCountly.views().stopViewWithID(vals[0], viewSegm);
+        ClearFillSegmentationViewEnd(segm, "a", null);
+        segm.put("xx", 1);
+        segm.put("yy", 3);
+        segm.put("zz", 4);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
+    }
+
+    @Test
+    public void overridingViewProtectedSegmentation() {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("name", 999);
+        globalSegm.put("visit", 999);
+        globalSegm.put("start", 999);
+        globalSegm.put("segment", 999);
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        mCountly.views().startView("a", globalSegm);
+
+        Map<String, Object> segm = new HashMap<>();
+        ClearFillSegmentationViewStart(segm, "a", true);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
+        clearInvocations(ep);
+
+        mCountly.views().startView("b", globalSegm);
+        ClearFillSegmentationViewStart(segm, "b", false);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
+    }
 
     //todo extract orientation tests
 }

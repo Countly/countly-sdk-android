@@ -120,8 +120,6 @@ public class CountlyConfig {
 
     protected Map<String, Object> globalViewSegmentation = null;
 
-    boolean useMultipleViewFlow = false;
-
     protected Map<String, String> customNetworkRequestHeaders = null;
 
     protected boolean pushIntentAddMetadata = false;
@@ -503,17 +501,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
         return setAutomaticViewTrackingExclusions(exceptions);
-    }
-
-    /**
-     * Enabling this will allow multiple views to be recorded at the same time
-     * This can only be used with manual view recording. If automatic view tracking is enabled, this will do nothing.
-     *
-     * @return
-     */
-    public synchronized CountlyConfig enableMultipleViewFlow() {
-        useMultipleViewFlow = true;
-        return this;
     }
 
     /**

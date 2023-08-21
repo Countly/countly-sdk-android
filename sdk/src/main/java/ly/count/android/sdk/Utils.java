@@ -211,6 +211,27 @@ public class Utils {
     }
 
     /**
+     * Used to remove reserved keys from segmentation map
+     *
+     * @param segmentation
+     * @param reservedKeys
+     * @param messagePrefix
+     * @param L
+     */
+    static void removeReservedKeysFromSegmentation(@Nullable Map<String, Object> segmentation, @NonNull String[] reservedKeys, @NonNull String messagePrefix, @NonNull ModuleLog L) {
+        if (segmentation == null) {
+            return;
+        }
+
+        for (String rKey : reservedKeys) {
+            if (segmentation.containsKey(rKey)) {
+                L.w(messagePrefix + " provided segmentation contains protected key [" + rKey + "]");
+                segmentation.remove(rKey);
+            }
+        }
+    }
+
+    /**
      * Used for quickly sorting segments into their respective data type
      *
      * @param allSegm
@@ -308,10 +329,10 @@ public class Utils {
      *
      * @param maxCount Int @NonNull - max number of keys allowed
      * @param L ModuleLog @NonNull - Logger function
-     * @param moduleTag String @NonNull - name of the module this function was called
+     * @param messagePrefix String @NonNull - name of the module this function was called
      * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
      */
-    static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String moduleTag, final @NonNull ModuleLog L) {
+    static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
         if (segmentation == null) {
             return;
         }
@@ -321,7 +342,7 @@ public class Utils {
             if (segmentation.size() > maxCount) {
                 Map.Entry<String, Object> value = iterator.next();
                 String key = value.getKey();
-                L.w(moduleTag + ", Value exceeded the maximum segmentation count key:[" + key + "]");
+                L.w(messagePrefix + ", Value exceeded the maximum segmentation count key:[" + key + "]");
                 iterator.remove();
             } else {
                 break;

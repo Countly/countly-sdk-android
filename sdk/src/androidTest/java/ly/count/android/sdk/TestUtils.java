@@ -110,10 +110,6 @@ public class TestUtils {
     }
 
     public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeViewIDGenerator, Map<String, Object> globalViewSegms) {
-        return createViewCountlyConfig(orientationTracking, useShortNames, automaticViewTracking, false, safeViewIDGenerator, globalViewSegms);
-    }
-
-    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, boolean useMultipleViews, SafeIDGenerator safeViewIDGenerator, Map<String, Object> globalViewSegms) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
@@ -122,10 +118,6 @@ public class TestUtils {
 
         if (useShortNames) {
             cc.enableAutomaticViewShortNames();
-        }
-
-        if (useMultipleViews) {
-            cc.enableMultipleViewFlow();
         }
 
         cc.safeViewIDGenerator = safeViewIDGenerator;
