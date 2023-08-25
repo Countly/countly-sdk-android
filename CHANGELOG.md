@@ -6,6 +6,7 @@
 * Added protection for updating the push token. The same value can't be sent within 10 minutes it was sent last time.
 * View duration moved from segmentation to the event body
 * Added support for recording multiple views at the same time
+* First view flag is now reset when a session ends and not when a session starts
 
 * Push messaging mode is not reported anymore. Related calls have been deprecated.
 * Deprecated the following calls:

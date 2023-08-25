@@ -1175,5 +1175,91 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
     }
 
+    public void clearFirstViewFlagSessionEndBase(boolean manualSessions) {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
+        if (manualSessions) {
+            cc.enableManualSessionControl();
+        }
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        mCountly.views().startView("a", null);
+        Map<String, Object> segm = new HashMap<>();
+        ClearFillSegmentationViewStart(segm, "a", true);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
+        clearInvocations(ep);
+
+        if (manualSessions) {
+            mCountly.sessions().beginSession();
+        } else {
+            mCountly.onStart(mock(TestUtils.Activity2.class));
+        }
+
+        mCountly.views().startView("b", null);
+        ClearFillSegmentationViewStart(segm, "b", false);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
+        clearInvocations(ep);
+
+        if (manualSessions) {
+            mCountly.sessions().endSession();
+        } else {
+            mCountly.onStop();
+        }
+
+        mCountly.views().startView("c", null);
+        ClearFillSegmentationViewStart(segm, "c", true);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 0, 1);
+        clearInvocations(ep);
+    }
+
+    @Test
+    public void clearFirstViewFlagSessionEndManual() {
+        clearFirstViewFlagSessionEndBase(true);
+    }
+
+    @Test
+    public void clearFirstViewFlagSessionEndAutomatic() {
+        clearFirstViewFlagSessionEndBase(false);
+    }
+
+    @Test
+    public void clearFirstViewFlagSessionConsentRemoved() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
+        cc.setRequiresConsent(true);
+        cc.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.views });
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        mCountly.views().startView("a", null);
+        Map<String, Object> segm = new HashMap<>();
+        ClearFillSegmentationViewStart(segm, "a", true);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
+        clearInvocations(ep);
+
+        //nothing should happen when session consent is given
+        mCountly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.sessions });
+
+        mCountly.views().startView("b", null);
+        ClearFillSegmentationViewStart(segm, "b", false);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
+        clearInvocations(ep);
+
+        //internal flag should be reset whens session consent is removed
+        mCountly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.sessions });
+
+        mCountly.views().startView("c", null);
+        ClearFillSegmentationViewStart(segm, "c", true);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 0, 1);
+        clearInvocations(ep);
+    }
+
+    //test for sessions when consent removed
+
     //todo extract orientation tests
 }

@@ -90,7 +90,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
      * and transfers the data into an internal Segmentation Object.
      */
     void setGlobalViewSegmentationInternal(@Nullable Map<String, Object> segmentation) {
-        L.d("[ModuleViews] Calling setGlobalViewSegmentationInternal");
+        L.d("[ModuleViews] Calling setGlobalViewSegmentationInternal with[" + (segmentation == null ? "null" : segmentation.size()) + "] entries");
 
         automaticViewSegmentation.clear();
 

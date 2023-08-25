@@ -7,6 +7,8 @@ import java.util.Map;
 
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
+
+    boolean manualSessionControlHybridModeEnabled = false;
     long prevSessionDurationStartTime_ = 0;
 
     final Sessions sessionInterface;
@@ -25,6 +27,11 @@ public class ModuleSessions extends ModuleBase {
             L.d("[ModuleSessions] Enabling manual session control");
         }
 
+        manualSessionControlHybridModeEnabled = config.manualSessionControlHybridModeEnabled;
+        if (manualSessionControlHybridModeEnabled) {
+            L.d("[ModuleSessions] Enabling manual session control hybrid mode");
+        }
+
         if (config.disableUpdateSessionRequests) {
             L.d("[ModuleSessions] Disabling periodic session time updates");
             _cly.disableUpdateSessionRequests_ = config.disableUpdateSessionRequests;
@@ -36,7 +43,9 @@ public class ModuleSessions extends ModuleBase {
     void beginSessionInternal() {
         L.d("[ModuleSessions] 'beginSessionInternal'");
 
-        _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
 
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
@@ -48,6 +57,10 @@ public class ModuleSessions extends ModuleBase {
     void updateSessionInternal() {
         L.d("[ModuleSessions] 'updateSessionInternal'");
 
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
+
         if (!_cly.disableUpdateSessionRequests_) {
             requestQueueProvider.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
         }
@@ -58,10 +71,27 @@ public class ModuleSessions extends ModuleBase {
      */
     void endSessionInternal(String deviceIdOverride) {
         L.d("[ModuleSessions] 'endSessionInternal'");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
+
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
         requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
         prevSessionDurationStartTime_ = 0;
+
+        _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+    }
+
+    /**
+     * If a session has been started and is still running
+     *
+     * @return
+     */
+    public boolean sessionIsRunning() {
+        //if the start timestamp is set then assume that the session is running
+        return prevSessionDurationStartTime_ > 0;
     }
 
     /**
@@ -118,6 +148,11 @@ public class ModuleSessions extends ModuleBase {
 
                 if (!manualSessionControlEnabled) {
                     L.w("[Sessions] 'updateSession' will be ignored since manual session control is not enabled");
+                    return;
+                }
+
+                if (manualSessionControlHybridModeEnabled) {
+                    L.w("[Sessions] 'updateSession' will be ignored since manual session control hybrid mode is enabled");
                     return;
                 }
 

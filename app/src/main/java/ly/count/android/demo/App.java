@@ -183,12 +183,14 @@ public class App extends Application {
             .enableAutomaticViewTracking()
             .setGlobalViewSegmentation(automaticViewSegmentation)
             .setAutomaticViewTrackingExclusions(new Class[] { ActivityExampleCustomEvents.class })
-            //.enableMultipleViewFlow()
 
             .setPushIntentAddMetadata(true)
 
             .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
             //.setDisableLocation()
+
+            //.enableManualSessionControl()
+            //.enableManualSessionControlHybridMode()
 
             //.enableTemporaryDeviceIdMode()
 

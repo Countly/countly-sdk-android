@@ -146,6 +146,8 @@ public class CountlyConfig {
 
     protected boolean manualSessionControlEnabled = false;
 
+    protected boolean manualSessionControlHybridModeEnabled = false;
+
     protected boolean recordAllThreadsWithCrash = false;
 
     protected boolean disableUpdateSessionRequests = false;
@@ -722,6 +724,11 @@ public class CountlyConfig {
 
     public synchronized CountlyConfig enableManualSessionControl() {
         manualSessionControlEnabled = true;
+        return this;
+    }
+
+    public synchronized CountlyConfig enableManualSessionControlHybridMode() {
+        manualSessionControlHybridModeEnabled = true;
         return this;
     }
 

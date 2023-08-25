@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.8.0-RC7";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.8.0-RC8";
 
     /**
      * Used as request meta data on every request
@@ -740,6 +740,8 @@ public class Countly {
                     }
                 });
  */
+            } else {
+                L.d("[Countly] Global activity listeners not registred due to no Application class");
             }
 
             L.i("[Init] About to call module 'initFinished'");
@@ -919,14 +921,19 @@ public class Countly {
 
         if (isInitialized()) {
             final boolean hasActiveSession = activityCount_ > 0;
-            if (hasActiveSession) {
-                if (!moduleSessions.manualSessionControlEnabled) {
-                    moduleSessions.updateSessionInternal();
-                }
+            if (hasActiveSession && !moduleSessions.manualSessionControlEnabled) {
+                //if we have automatic session control and we are in the foreground, record an update
+                moduleSessions.updateSessionInternal();
+            } else if (moduleSessions.manualSessionControlEnabled && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
+                // if we are in manual session control mode with hybrid sessions enabled (SDK takes care of update requests) and there is a session running,
+                // let's create the update request
+                moduleSessions.updateSessionInternal();
             }
 
             //on every timer tick we collect all events and attempt to send requests
-            moduleRequestQueue.sendEventsIfNeeded(true);
+            {
+                moduleRequestQueue.sendEventsIfNeeded(true);
+            }
             requestQueueProvider.tick();
         }
     }

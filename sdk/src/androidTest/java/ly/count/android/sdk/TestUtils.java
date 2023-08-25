@@ -51,10 +51,7 @@ public class TestUtils {
     }
 
     public static CountlyConfig createConfigurationConfig(boolean enableServerConfig, ImmediateRequestGenerator irGen) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+        CountlyConfig cc = createBaseConfig();
 
         cc.immediateRequestGenerator = irGen;
 
@@ -66,10 +63,7 @@ public class TestUtils {
     }
 
     public static CountlyConfig createVariantConfig(ImmediateRequestGenerator irGen) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+        CountlyConfig cc = createBaseConfig();
 
         cc.immediateRequestGenerator = irGen;
 
@@ -77,11 +71,8 @@ public class TestUtils {
     }
 
     public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting()
-            .setRequiresConsent(requiresConsent)
+        CountlyConfig cc = createBaseConfig();
+        cc.setRequiresConsent(requiresConsent)
             .setConsentEnabled(givenConsent)
             .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
@@ -95,11 +86,8 @@ public class TestUtils {
     }
 
     public static CountlyConfig createAttributionCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp, String daType, String daValue, Map<String, String> iaValues) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting()
-            .setDirectAttribution(daType, daValue)
+        CountlyConfig cc = createBaseConfig();
+        cc.setDirectAttribution(daType, daValue)
             .setIndirectAttribution(iaValues)
             .setRequiresConsent(requiresConsent)
             .setConsentEnabled(givenConsent)
@@ -110,11 +98,8 @@ public class TestUtils {
     }
 
     public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeViewIDGenerator, Map<String, Object> globalViewSegms) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting()
-            .setTrackOrientationChanges(orientationTracking);
+        CountlyConfig cc = createBaseConfig();
+        cc.setTrackOrientationChanges(orientationTracking);
 
         if (useShortNames) {
             cc.enableAutomaticViewShortNames();
@@ -129,14 +114,20 @@ public class TestUtils {
     }
 
     public static CountlyConfig createScenarioEventIDConfig(SafeIDGenerator safeViewIDGenerator, SafeIDGenerator safeEventIDGenerator) {
+        CountlyConfig cc = createBaseConfig();
+
+        cc.enableAutomaticViewShortNames();
+        cc.safeViewIDGenerator = safeViewIDGenerator;
+        cc.safeEventIDGenerator = safeEventIDGenerator;
+        return cc;
+    }
+
+    public static CountlyConfig createBaseConfig() {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
-        cc.enableAutomaticViewShortNames();
-        cc.safeViewIDGenerator = safeViewIDGenerator;
-        cc.safeEventIDGenerator = safeEventIDGenerator;
         return cc;
     }
 
