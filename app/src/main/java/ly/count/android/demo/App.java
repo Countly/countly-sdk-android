@@ -29,9 +29,7 @@ import java.util.Map;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
-import ly.count.android.sdk.DeviceIdType;
 import ly.count.android.sdk.ModuleLog;
-import ly.count.android.sdk.RemoteConfigCallback;
 import ly.count.android.sdk.messaging.CountlyConfigPush;
 import ly.count.android.sdk.messaging.CountlyPush;
 
@@ -194,12 +192,18 @@ public class App extends Application {
 
             //.enableTemporaryDeviceIdMode()
 
-            .setRequiresConsent(true).setConsentEnabled(new String[] {
-                Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
-                Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
-                Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
-                Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
-            })
+            .setRequiresConsent(true)
+            
+            //for giving all consent values
+            .giveAllConsents()
+
+            //in case you want to control what consent is given during init
+            //.setConsentEnabled(new String[] {
+            //    Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
+            //    Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
+            //    Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
+            //    Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
+            //})
 
             .setHttpPostForced(false)
             .setParameterTamperingProtectionSalt("test-salt-checksum")

@@ -602,7 +602,7 @@ public class CountlyConfig {
      *
      * @return
      */
-    public synchronized CountlyConfig enableAllConsents() {
+    public synchronized CountlyConfig giveAllConsents() {
         allConsentGiven = true;
         return this;
     }
