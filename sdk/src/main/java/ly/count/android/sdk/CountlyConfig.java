@@ -133,7 +133,7 @@ public class CountlyConfig {
 
     protected boolean shouldRequireConsent = false;
 
-    protected boolean allConsentGiven = false;
+    protected boolean enableAllConsents = false;
     protected String[] enabledFeatureNames = null;
 
     protected boolean httpPostForced = false;
@@ -603,7 +603,7 @@ public class CountlyConfig {
      * @return
      */
     public synchronized CountlyConfig giveAllConsents() {
-        allConsentGiven = true;
+        enableAllConsents = true;
         return this;
     }
 
