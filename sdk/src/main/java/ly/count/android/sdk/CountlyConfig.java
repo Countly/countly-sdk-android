@@ -132,6 +132,8 @@ public class CountlyConfig {
     protected List<RCDownloadCallback> remoteConfigGlobalCallbackList = new ArrayList<>(2);
 
     protected boolean shouldRequireConsent = false;
+
+    protected boolean allConsentGiven = false;
     protected String[] enabledFeatureNames = null;
 
     protected boolean httpPostForced = false;
@@ -592,6 +594,16 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setConsentEnabled(String[] featureNames) {
         enabledFeatureNames = featureNames;
+        return this;
+    }
+
+    /**
+     * Give consent to all features
+     *
+     * @return
+     */
+    public synchronized CountlyConfig enableAllConsents() {
+        allConsentGiven = true;
         return this;
     }
 
