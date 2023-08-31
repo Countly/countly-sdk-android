@@ -28,18 +28,6 @@ public class ActivityExampleFeedback extends AppCompatActivity {
         setContentView(R.layout.activity_example_feedback);
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop() {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
     public void onClickViewOther02(View v) {
         //show star rating
         Countly.sharedInstance().ratings().showStarRating(this, new StarRatingCallback() {
@@ -327,11 +315,5 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                 });
             }
         });
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
 }

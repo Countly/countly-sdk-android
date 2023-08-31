@@ -87,7 +87,7 @@ public class ModuleSessionsTests {
         TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
         Thread.sleep(1000);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
 
         verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
         verify(requestQueueProvider, never()).endSession(anyInt());
@@ -99,12 +99,12 @@ public class ModuleSessionsTests {
         Countly mCountly = (new Countly()).init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
-        mCountly.onStart(null);
+        mCountly.onStartInternal(null);
 
         TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
         Thread.sleep(1000);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
 
         verify(requestQueueProvider, times(1)).endSession(1, null);
         verify(requestQueueProvider, never()).endSession(anyInt());
@@ -121,7 +121,7 @@ public class ModuleSessionsTests {
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(mock(TestUtils.Activity2.class));
-        mCountly.onStop();
+        mCountly.onStopInternal();
         mCountly.sessions().beginSession();
         mCountly.sessions().updateSession();
         mCountly.sessions().endSession();

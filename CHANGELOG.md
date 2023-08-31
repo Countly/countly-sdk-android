@@ -1,5 +1,9 @@
 ## 23.8.0
 * ! Minor breaking change ! Manual view recording calls are now ignored when in automatic view recording mode.
+* ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "UpdateSession"
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "EndSession"
+* ! Minor breaking change ! If Application class is provided, the SDK will use the Application Activity lifecycle callbacks to react to "onStart", "onStop" and "onConfigurationChanged" callbacks. The manual calls will be ignored.
 
 * Adding remaining request queue size information to every request
 * Adding SDK health check requests after init

@@ -60,7 +60,7 @@ public class ScenarioEventIDTests {
     @After
     public void tearDown() {
     }
-    
+
     /**
      * Simulate a 2 automatic activity scenario
      * Making sure that ID's are correct
@@ -74,12 +74,12 @@ public class ScenarioEventIDTests {
         //no events initially
         verifyRecordEventToEventQueueNotCalled(eqp);
 
-        mCountly.onStart(act);
+        mCountly.onStartInternal(act);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 1);
 
         clearInvocations(eqp);
 
-        mCountly.onStart(act2);
+        mCountly.onStartInternal(act2);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 2);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 1, 2);
         clearInvocations(eqp);
@@ -89,7 +89,7 @@ public class ScenarioEventIDTests {
         verifyRecordEventToEventQueueIDs(eqp, eKeys[0], idE[0], idV[1], null, "", 0, 1);
         clearInvocations(eqp);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
         verifyRecordEventToEventQueueNotCalled(eqp);
         clearInvocations(eqp);
 
@@ -98,7 +98,7 @@ public class ScenarioEventIDTests {
         verifyRecordEventToEventQueueIDs(eqp, ModuleFeedback.RATING_EVENT_KEY, idE[1], idV[1], null, null, 0, 1);
         clearInvocations(eqp);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 0, 1);
         clearInvocations(eqp);
 

@@ -47,6 +47,10 @@ public class ModuleSessions extends ModuleBase {
             return;
         }
 
+        if (sessionIsRunning()) {
+            L.d("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
+        }
+
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
 
@@ -59,6 +63,10 @@ public class ModuleSessions extends ModuleBase {
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             return;
+        }
+
+        if (!sessionIsRunning()) {
+            L.d("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
@@ -74,6 +82,10 @@ public class ModuleSessions extends ModuleBase {
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             return;
+        }
+
+        if (!sessionIsRunning()) {
+            L.d("[ModuleSessions] No session is running, this 'endSessionInternal' will be ignored");
         }
 
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
@@ -108,8 +120,8 @@ public class ModuleSessions extends ModuleBase {
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if (newConsent) {
-                //if consent was just given and manual sessions sessions are not enabled, start a session
-                if (!manualSessionControlEnabled) {
+                //if consent was just given and manual sessions sessions are not enabled, start a session if we are in the foreground
+                if (!manualSessionControlEnabled && _cly.lifecycleStateAtLeastStarted()) {
                     beginSessionInternal();
                 }
             } else {
@@ -119,7 +131,23 @@ public class ModuleSessions extends ModuleBase {
 
                     _cly.moduleLocation.sendCurrentLocationIfValid();
                 }
+
+                //if a session was running (manual or automatic), stop it
+                if (sessionIsRunning()) {
+                    endSessionInternal(null);
+                } else {
+                    //reset the first view counter even if there was no session
+                    _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+                }
             }
+        }
+    }
+
+    @Override
+    void initFinished(@NonNull CountlyConfig config) {
+        if (!manualSessionControlEnabled && _cly.lifecycleStateAtLeastStarted()) {
+            //start a session if we initialized in the foreground
+            beginSessionInternal();
         }
     }
 

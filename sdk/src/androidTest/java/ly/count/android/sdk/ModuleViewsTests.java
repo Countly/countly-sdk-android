@@ -526,7 +526,7 @@ public class ModuleViewsTests {
         //go from one activity to another in the expected way and then "go to background"
         ///////// 1
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, "", "");
-        mCountly.onStart(act);
+        mCountly.onStartInternal(act);
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[0], "");
 
         // there should be the first view start
@@ -536,9 +536,9 @@ public class ModuleViewsTests {
 
         ///////// 2
         Thread.sleep(1000);
-        mCountly.onStart(act2);
+        mCountly.onStartInternal(act2);
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[1], vals[0]);
-        mCountly.onStop();
+        mCountly.onStopInternal();
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[1], vals[0]);
 
         //we are transitioning to the next view
@@ -552,9 +552,9 @@ public class ModuleViewsTests {
         clearInvocations(ep);
 
         Thread.sleep(2000);
-        mCountly.onStart(act3);
+        mCountly.onStartInternal(act3);
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
-        mCountly.onStop();
+        mCountly.onStopInternal();
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
         ClearFillSegmentationViewEnd(segm, viewNames[1], null);
@@ -565,7 +565,7 @@ public class ModuleViewsTests {
         clearInvocations(ep);
 
         Thread.sleep(1000);
-        mCountly.onStop();
+        mCountly.onStopInternal();
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
         ClearFillSegmentationViewEnd(segm, viewNames[2], null);
@@ -1193,7 +1193,7 @@ public class ModuleViewsTests {
         if (manualSessions) {
             mCountly.sessions().beginSession();
         } else {
-            mCountly.onStart(mock(TestUtils.Activity2.class));
+            mCountly.onStartInternal(mock(TestUtils.Activity2.class));
         }
 
         mCountly.views().startView("b", null);
@@ -1205,7 +1205,7 @@ public class ModuleViewsTests {
         if (manualSessions) {
             mCountly.sessions().endSession();
         } else {
-            mCountly.onStop();
+            mCountly.onStopInternal();
         }
 
         mCountly.views().startView("c", null);

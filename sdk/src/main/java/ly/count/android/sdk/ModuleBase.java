@@ -61,26 +61,27 @@ abstract class ModuleBase {
     void onActivityStopped(int updatedActivityCount) {
     }
 
-    void callbackOnActivityCreated(Activity activity) {
-    }
-
-    void callbackOnActivityStarted(Activity activity) {
-    }
-
+    //void callbackOnActivityCreated(Activity activity) {
+    //}
+    //
+    //void callbackOnActivityStarted(Activity activity) {
+    //}
+    //
     void callbackOnActivityResumed(Activity activity) {
     }
 
-    void callbackOnActivityPaused(Activity activity) {
-    }
-
+    //
+    //void callbackOnActivityPaused(Activity activity) {
+    //}
+    //
     void callbackOnActivityStopped(Activity activity) {
     }
-
-    void callbackOnActivitySaveInstanceState(Activity activity) {
-    }
-
-    void callbackOnActivityDestroyed(Activity activity) {
-    }
+    //
+    //void callbackOnActivitySaveInstanceState(Activity activity) {
+    //}
+    //
+    //void callbackOnActivityDestroyed(Activity activity) {
+    //}
 
     //notify the SDK modules that the device ID has changed
     void deviceIdChanged() {

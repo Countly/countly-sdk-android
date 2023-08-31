@@ -483,7 +483,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
      * @param conf
      * @return
      */
-    Integer getOrientationFromConfiguration(Configuration conf) {
+    Integer getOrientationFromConfiguration(@Nullable Configuration conf) {
         if (conf == null) {
             return null;
         }

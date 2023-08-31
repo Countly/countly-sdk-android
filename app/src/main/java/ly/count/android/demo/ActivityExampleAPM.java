@@ -18,31 +18,7 @@ public class ActivityExampleAPM extends AppCompatActivity {
     int[] failureCodes = new int[] { 400, 402, 405, 408, 500, 501, 502, 505 };
 
     Random rnd = new Random();
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_example_apm);
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop() {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged(@NonNull Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
-    }
-
+    
     public void onClickStartTrace_1(View v) {
         Countly.sharedInstance().apm().startTrace("Some_trace_key_1");
     }
