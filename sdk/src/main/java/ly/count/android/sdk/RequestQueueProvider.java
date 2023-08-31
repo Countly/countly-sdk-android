@@ -60,6 +60,8 @@ interface RequestQueueProvider {
 
     String prepareFetchAllVariants(); // for fetching all A/B test variants
 
+    String prepareFetchAllExperiments(); // for fetching all A/B test information (like with exp ID, definition etc, including variants)
+
     String prepareEnrollVariant(String key, String Variant); // for enrolling to an A/B test variant
 
     String prepareRatingWidgetRequest(String widgetId);

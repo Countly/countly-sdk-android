@@ -18,6 +18,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     ImmediateRequestGenerator iRGenerator;
     boolean updateRemoteConfigAfterIdChange = false;
     Map<String, String[]> variantContainer = new HashMap<>(); // Stores the fetched A/B test variants
+    Map<String, ExperimentInformation> experimentContainer = new HashMap<>(); // Stores the fetched A/B test information (includes exp ID, description etc.)
     RemoteConfig remoteConfigInterface = null;
 
     //if set to true, it will automatically download remote configs on module startup
@@ -198,12 +199,14 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     /**
      * Internal call for fetching all variants of A/B test experiments
+     * There are 2 endpoints that can be used:
      *
      * @param callback called after the fetch is done
+     * @param shouldFetchExperimentInfo if true this call would fetch experiment information including the variants
      */
-    void testingFetchVariantInformationInternal(@NonNull final RCVariantCallback callback) {
+    void testingFetchVariantInformationInternal(@NonNull final RCVariantCallback callback, @NonNull final boolean shouldFetchExperimentInfo) {
         try {
-            L.d("[ModuleRemoteConfig] Fetching all A/B test variants");
+            L.d("[ModuleRemoteConfig] Fetching all A/B test variants/info");
 
             if (deviceIdProvider.isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems() || deviceIdProvider.getDeviceId() == null) {
                 L.d("[ModuleRemoteConfig] Fetching all A/B test variants was aborted, temporary device ID mode is set or device ID is null.");
@@ -212,27 +215,31 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
 
             // prepare request data
-            String requestData = requestQueueProvider.prepareFetchAllVariants();
+            String requestData = shouldFetchExperimentInfo ? requestQueueProvider.prepareFetchAllExperiments(): requestQueueProvider.prepareFetchAllVariants();
 
-            L.d("[ModuleRemoteConfig] Fetching all A/B test variants requestData:[" + requestData + "]");
+            L.d("[ModuleRemoteConfig] Fetching all A/B test variants/info requestData:[" + requestData + "]");
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
             iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
-                L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants received response, received response is null:[" + (checkResponse == null) + "]");
+                L.d("[ModuleRemoteConfig] Processing Fetching all A/B test variants/info received response, received response is null:[" + (checkResponse == null) + "]");
                 if (checkResponse == null) {
                     callback.callback(RequestResult.NetworkIssue, "Encountered problem while trying to reach the server, possibly no internet connection");
                     return;
                 }
 
-                variantContainer = RemoteConfigHelper.convertVariantsJsonToMap(checkResponse, L);
+                if (shouldFetchExperimentInfo) {
+                  experimentContainer =  RemoteConfigHelper.convertExperimentInfoJsonToMap(checkResponse, L);
+                } else {
+                    variantContainer = RemoteConfigHelper.convertVariantsJsonToMap(checkResponse, L);
+                }
 
                 callback.callback(RequestResult.Success, null);
             }, L);
         } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants. " + ex.toString());
-            callback.callback(RequestResult.Error, "Encountered internal error while trying to fetch all A/B test variants.");
+            L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants/info. " + ex.toString());
+            callback.callback(RequestResult.Error, "Encountered internal error while trying to fetch all A/B test variants/info.");
         }
     }
 
@@ -820,6 +827,21 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
 
         /**
+         * Returns all experiment information as a Map<String, ExperimentInformation>
+         *
+         * This call is not meant for production. It should only be used to facilitate testing of A/B test experiments.
+         *
+         * @return Return the information of all available variants
+         */
+        public @NonNull Map<String, ExperimentInformation> testingGetAllExperimentInfo() {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testingGetAllExperimentInfo'");
+
+                return experimentContainer;
+            }
+        }
+
+        /**
          * Returns variant information for a key as a String[]
          *
          * This call is not meant for production. It should only be used to facilitate testing of A/B test experiments.
@@ -860,7 +882,31 @@ public class ModuleRemoteConfig extends ModuleBase {
                     };
                 }
 
-                testingFetchVariantInformationInternal(completionCallback);
+                testingFetchVariantInformationInternal(completionCallback, false);
+            }
+        }
+
+        /**
+         * Download all A/B testing experiments information
+         *
+         * This call is not meant for production. It should only be used to facilitate testing of A/B test experiments.
+         *
+         * @param completionCallback this callback will be called when the network request finished
+         */
+        public void testingDownloadExperimentInformation(@Nullable RCVariantCallback completionCallback) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] Calling 'testingDownloadExperimentInformation'");
+
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+                    return;
+                }
+
+                if (completionCallback == null) {
+                    completionCallback = (result, error) -> {
+                    };
+                }
+
+                testingFetchVariantInformationInternal(completionCallback, true);
             }
         }
 

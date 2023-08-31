@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -117,6 +118,12 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
 
             if (wasSuccess) {
                 L.d("[ImmediateRequestMaker] Received the following response, :[" + receivedBuffer + "]");
+
+                // we check if the result was a json array or json object and convert the array into an object if necessary
+                char firstChar = receivedBuffer.trim().charAt(0);
+                if (firstChar == '[') {
+                    return new JSONObject("{\"jsonArray\":" + receivedBuffer + "}");
+                }
                 return new JSONObject(receivedBuffer);
             } else {
                 L.e("[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + receivedBuffer + "]");

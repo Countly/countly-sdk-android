@@ -756,12 +756,27 @@ class ConnectionQueue implements RequestQueueProvider {
 
     /**
      * To fetch all variants from the server. Something like this should be formed: method=ab_fetch_variants&app_key="APP_KEY"&device_id=DEVICE_ID
-     * API end point for this is /i/sdk
+     * API end point for this is /i/sdk (also o/sdk)
      *
      * @return
      */
     public String prepareFetchAllVariants() {
         String data = "method=ab_fetch_variants"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        return data;
+    }
+
+    /**
+     * To fetch all experiments from the server. Something like this should be formed: method=ab_fetch_experiments&app_key="APP_KEY"&device_id=DEVICE_ID
+     * Provides detailed experiment and variant information
+     * API end point for this is /o/sdk
+     *
+     * @return
+     */
+    public String prepareFetchAllExperiments() {
+        String data = "method=ab_fetch_experiments"
             + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
