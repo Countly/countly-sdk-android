@@ -39,7 +39,7 @@ public class ModuleSessions extends ModuleBase {
         _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
 
         //prepare metrics
-        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, deviceInfo, metricOverride);
+        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
 
         prevSessionDurationStartTime_ = System.nanoTime();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);

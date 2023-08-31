@@ -52,6 +52,8 @@ class ConnectionQueue implements RequestQueueProvider {
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
 
+    HealthTracker healthTracker;
+
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
 
@@ -244,7 +246,7 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
-    public void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider) {
+    public void tokenSession(String token, Countly.CountlyMessagingProvider provider) {
         if (!checkInternalState()) {
             return;
         }
@@ -259,7 +261,6 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&token_session=1"
             + "&android_token=" + UtilsNetworking.urlEncodeString(token)
             + "&token_provider=" + provider
-            + "&test_mode=" + (mode == Countly.CountlyMessagingMode.TEST ? 2 : 0)
             + "&locale=" + UtilsNetworking.urlEncodeString(deviceInfo.mp.getLocale());
 
         L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
@@ -693,7 +694,7 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
-    public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
+    public String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
         String data = prepareCommonRequestData()
             + "&method=fetch_remote_config"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
@@ -713,6 +714,70 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
+    public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
+        String data = prepareCommonRequestData()
+            + "&method=rc"
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            //add session data if consent given
+            data += "&metrics=" + preparedMetrics;
+        }
+
+        //add key filters
+        if (keysInclude != null) {
+            data += "&keys=" + UtilsNetworking.urlEncodeString(keysInclude);
+        } else if (keysExclude != null) {
+            data += "&omit_keys=" + UtilsNetworking.urlEncodeString(keysExclude);
+        }
+
+        return data;
+    }
+
+    public String prepareEnrollmentParameters(@NonNull String[] keys) {
+        String data = "method=ab"
+            + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+        return data;
+    }
+
+    public String prepareRemovalParameters(@NonNull String[] keys) {
+        String data = "method=ab_opt_out"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        if (keys.length > 0) {
+            data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys);
+        }
+
+        return data;
+    }
+
+    /**
+     * To fetch all variants from the server. Something like this should be formed: method=ab_fetch_variants&app_key="APP_KEY"&device_id=DEVICE_ID
+     * API end point for this is /i/sdk
+     *
+     * @return
+     */
+    public String prepareFetchAllVariants() {
+        String data = "method=ab_fetch_variants"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        return data;
+    }
+
+    public String prepareEnrollVariant(String key, String variant) {
+        String data = "method=ab_enroll_variant"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
+            + "&key=" + UtilsNetworking.urlEncodeString(key)
+            + "&variant=" + UtilsNetworking.urlEncodeString(variant);
+
+        return data;
+    }
+
     public String prepareRatingWidgetRequest(String widgetId) {
         String data = prepareCommonRequestData()
             + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)
@@ -724,6 +789,16 @@ class ConnectionQueue implements RequestQueueProvider {
         String data = prepareCommonRequestData()
             + "&method=feedback"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        return data;
+    }
+
+    public String prepareHealthCheckRequest(String preparedMetrics) {
+        String data = prepareCommonRequestData();
+
+        //consent not required for these curated metrics
+        data += "&metrics=" + preparedMetrics;
+        data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         return data;
     }
@@ -769,7 +844,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L);
+        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
     }
 
     public boolean queueContainsTemporaryIdItems() {

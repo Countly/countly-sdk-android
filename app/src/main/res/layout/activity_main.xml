@@ -99,5 +99,13 @@
         android:onClick="onClickButtonOthers"
         />
 
+    <Button
+        android:id="@+id/tests_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickButtonTests"
+        android:text="Tests"
+        />
+
   </LinearLayout>
 </RelativeLayout>

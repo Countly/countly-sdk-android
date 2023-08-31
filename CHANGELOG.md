@@ -1,4 +1,19 @@
-## 23.2.0
+## xx.xx.xx
+* Push messaging mode is note reported anymore. Related calls have been deprecated.
+* Adding remaining request queue size information to every request
+* Adding SDK health check requests after init
+* Added protection for updating the push token. The same value can't be sent within 10 minutes it was sent last time.
+
+## 23.6.0
+* !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.
+* ! Minor breaking change ! Remote config will now return previously downloaded values when remote-config consent is not given
+
+* Introduced a new set of remote config methods
+* Deprecated old remote config methods
+
+* Fixed bug where recording views would force send all stored events
+* Fixed bug where exiting temporary ID mode would create unintended requests
+
 * Removed the deprecated enum "DeviceId.Type"
 * Removed the deprecated value "ADVERTISING_ID" from the enum "DeviceIdType"
 * Removed the deprecated function "Countly.changeDeviceIdWithoutMerge(type, deviceID)"

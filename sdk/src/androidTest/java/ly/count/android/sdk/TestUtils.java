@@ -65,13 +65,25 @@ public class TestUtils {
         return cc;
     }
 
+    public static CountlyConfig createVariantConfig(ImmediateRequestGenerator irGen) {
+        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+            .setDeviceId(commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableCrashReporting();
+
+        cc.immediateRequestGenerator = irGen;
+
+        return cc;
+    }
+
     public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp) {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting()
             .setRequiresConsent(requiresConsent)
-            .setConsentEnabled(givenConsent);
+            .setConsentEnabled(givenConsent)
+            .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
 
@@ -90,7 +102,8 @@ public class TestUtils {
             .setDirectAttribution(daType, daValue)
             .setIndirectAttribution(iaValues)
             .setRequiresConsent(requiresConsent)
-            .setConsentEnabled(givenConsent);
+            .setConsentEnabled(givenConsent)
+            .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
         return cc;

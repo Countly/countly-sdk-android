@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "22.09.4";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.6.0";
 
     /**
      * Used as request meta data on every request
@@ -170,6 +170,7 @@ public class Countly {
     ModuleAttribution moduleAttribution = null;
     ModuleUserProfile moduleUserProfile = null;
     ModuleConfiguration moduleConfiguration = null;
+    ModuleHealthCheck moduleHealthCheck = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -193,6 +194,12 @@ public class Countly {
     String[] locationFallback;//temporary used until location can't be set before init
 
     protected CountlyConfig config_ = null;
+
+    //fields for tracking push token debounce
+    final static long lastRegistrationCallDebounceDuration = 60 * 1000;//60seconds
+    long lastRegistrationCallTs = 0;
+    String lastRegistrationCallID = null;
+    CountlyMessagingProvider lastRegistrationCallProvider = null;
 
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
@@ -273,7 +280,11 @@ public class Countly {
 
         L.SetListener(config.providedLogCallback);
 
-        L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
+        if (COUNTLY_SDK_NAME.equals(DEFAULT_COUNTLY_SDK_NAME) && COUNTLY_SDK_VERSION_STRING.equals(DEFAULT_COUNTLY_SDK_VERSION_STRING)) {
+            L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
+        } else {
+            L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "] default name[" + DEFAULT_COUNTLY_SDK_NAME + "] default version[" + DEFAULT_COUNTLY_SDK_VERSION_STRING + "]");
+        }
 
         if (config.context == null) {
             if (config.application != null) {
@@ -504,7 +515,7 @@ public class Countly {
                 Map<String, Object> migrationParams = new HashMap<>();
                 migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_set, config.deviceID != null);
 
-                MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L);
+                MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L, context_);
                 mHelper.doWork(migrationParams);
             } catch (Exception ex) {
                 L.e("[Init] SDK failed while performing data migration. SDK is not capable to initialize.");
@@ -512,6 +523,7 @@ public class Countly {
             }
 
             //initialise modules
+            moduleHealthCheck = new ModuleHealthCheck(this, config);
             moduleConfiguration = new ModuleConfiguration(this, config);
             moduleRequestQueue = new ModuleRequestQueue(this, config);
             moduleConsent = new ModuleConsent(this, config);
@@ -545,6 +557,8 @@ public class Countly {
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
 
+            modules.add(moduleHealthCheck);//set this at the end to detect any health issues with other modules before sending the report
+
             if (config.testModuleListener != null) {
                 modules.add(config.testModuleListener);
             }
@@ -552,6 +566,7 @@ public class Countly {
             //add missing providers
             moduleConfiguration.consentProvider = config.consentProvider;
             moduleRequestQueue.consentProvider = config.consentProvider;
+            moduleHealthCheck.consentProvider = config.consentProvider;
             moduleRequestQueue.deviceIdProvider = config.deviceIdProvider;
             moduleConsent.eventProvider = config.eventProvider;
             moduleConsent.deviceIdProvider = config.deviceIdProvider;
@@ -561,6 +576,7 @@ public class Countly {
 
             baseInfoProvider = config.baseInfoProvider;
             requestQueueProvider = config.requestQueueProvider;
+            L.setHealthChecker(config.healthTracker);
 
             L.i("[Init] Finished initialising modules");
 
@@ -609,6 +625,7 @@ public class Countly {
 
             //initialize networking queues
             connectionQueue_.L = L;
+            connectionQueue_.healthTracker = config.healthTracker;
             connectionQueue_.configProvider = config.configProvider;
             connectionQueue_.consentProvider = moduleConsent;
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
@@ -793,6 +810,7 @@ public class Countly {
         moduleFeedback = null;
         moduleRequestQueue = null;
         moduleConfiguration = null;
+        moduleHealthCheck = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
@@ -916,16 +934,37 @@ public class Countly {
     /**
      * DON'T USE THIS!!!!
      */
-    public void onRegistrationId(String registrationId, CountlyMessagingMode mode, CountlyMessagingProvider provider) {
+    public void onRegistrationId(String registrationId, CountlyMessagingProvider provider) {
         //if this call is done by CountlyPush, it is assumed that the SDK is already initialised
         if (!config_.consentProvider.getConsent(CountlyFeatureNames.push)) {
             return;
         }
 
-        connectionQueue_.tokenSession(registrationId, mode, provider);
+        if (!isInitialized()) {
+            L.w("[onRegistrationId] Calling this before the SDK is initialized.");
+        }
+
+        //debouncing the call
+
+        long currentTs = UtilsTime.currentTimestampMs();
+        long timeDelta = currentTs - lastRegistrationCallTs;
+
+        if (lastRegistrationCallID != null && lastRegistrationCallID.equals(registrationId) &&
+            lastRegistrationCallProvider != null && lastRegistrationCallProvider == provider &&
+            timeDelta < lastRegistrationCallDebounceDuration) {
+            // if the values match and we are trying to resend them withing the debounce duration, ignore them
+            L.w("[onRegistrationId] Calling this with the same values within the debounce interval. elapsedT:[" + timeDelta + "] ms");
+            return;
+        }
+
+        lastRegistrationCallTs = currentTs;
+        lastRegistrationCallID = registrationId;
+        lastRegistrationCallProvider = provider;
+
+        connectionQueue_.tokenSession(registrationId, provider);
     }
 
-    void setLoggingEnabled(final boolean enableLogging) {
+    public void setLoggingEnabled(final boolean enableLogging) {
         enableLogging_ = enableLogging;
         L.d("Enabling logging");
     }

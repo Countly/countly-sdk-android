@@ -21,6 +21,23 @@ public class UtilsNetworking {
         return result;
     }
 
+    protected static String encodedArrayBuilder(String[] args) {
+        StringBuilder encodedUrlBuilder = new StringBuilder();
+
+        encodedUrlBuilder.append("[");
+
+        for (int i = 0; i < args.length; i++) {
+            encodedUrlBuilder.append('"').append(args[i]).append('"');
+            if (i < args.length - 1) {
+                encodedUrlBuilder.append(", ");
+            }
+        }
+
+        encodedUrlBuilder.append("]");
+
+        return encodedUrlBuilder.toString();
+    }
+
     protected static String urlDecodeString(String givenValue) {
         String decodedResult = "";
 

@@ -9,14 +9,21 @@ import ly.count.android.sdk.Countly;
 
 public class CountlyConfigPush {
     Application application;
-    Countly.CountlyMessagingMode mode;
     Countly.CountlyMessagingProvider provider;
     Set<String> allowedIntentClassNames = new HashSet<>();
     Set<String> allowedIntentPackageNames = new HashSet<>();
 
+    /**
+     * @param application
+     * @param mode
+     * @deprecated use the other init
+     */
     public CountlyConfigPush(final Application application, Countly.CountlyMessagingMode mode) {
         this.application = application;
-        this.mode = mode;
+    }
+
+    public CountlyConfigPush(final Application application) {
+        this.application = application;
     }
 
     /**

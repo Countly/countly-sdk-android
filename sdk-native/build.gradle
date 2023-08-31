@@ -2,49 +2,48 @@ apply plugin: 'com.android.library'
 apply plugin: "com.vanniktech.maven.publish"
 
 buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.vanniktech:gradle-maven-publish-plugin:0.21.0' //for publishing
-    }
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.21.0' //for publishing
+  }
 }
 
 android {
-    compileSdkVersion 31
+  compileSdkVersion 33
 
-    defaultConfig {
-        minSdkVersion 17
-        targetSdkVersion 31
+  defaultConfig {
+    minSdkVersion 17
+    targetSdkVersion 33
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+  }
 
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-    buildToolsVersion '33.0.0'
+  }
+  buildToolsVersion '33.0.0'
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+  implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    //testImplementation 'junit:junit:4.13.2'
-    //androidTestImplementation 'androidx.test:runner:1.3.0'
-    //androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+  //testImplementation 'junit:junit:4.13.2'
+  //androidTestImplementation 'androidx.test:runner:1.3.0'
+  //androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
 
 task copyLibs(type: Copy) {
-    from "libs"
-    into "src/main/jniLibs"
+  from "libs"
+  into "src/main/jniLibs"
 }
 
 tasks.whenTaskAdded { task ->
-    if (task.name.startsWith('assemble')) {
-        task.dependsOn('copyLibs')
-    }
+  if (task.name.startsWith('assemble')) {
+    task.dependsOn('copyLibs')
+  }
 }

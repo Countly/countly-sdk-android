@@ -11,8 +11,49 @@ public class ModuleLog {
 
     LogCallback logListener = null;
 
+    HealthTracker healthTracker;
+
+    int countWarnings = 0;
+    int countErrors = 0;
+
     void SetListener(LogCallback logListener) {
         this.logListener = logListener;
+    }
+
+    void trackWarning() {
+        if (healthTracker == null) {
+            countWarnings++;
+        } else {
+            healthTracker.logWarning();
+        }
+    }
+
+    void trackError() {
+        if (healthTracker == null) {
+            countErrors++;
+        } else {
+            healthTracker.logError();
+        }
+    }
+
+    void setHealthChecker(HealthTracker healthTracker) {
+        v("[ModuleLog] Setting healthTracker W:" + countWarnings + " E:" + countErrors);
+        this.healthTracker = healthTracker;
+
+        if (healthTracker == null) {
+            return;
+        }
+
+        for (int a = 0; a < countErrors; a++) {
+            healthTracker.logError();
+        }
+
+        for (int a = 0; a < countWarnings; a++) {
+            healthTracker.logWarning();
+        }
+
+        countWarnings = 0;
+        countErrors = 0;
     }
 
     public void v(String msg) {
@@ -50,6 +91,7 @@ public class ModuleLog {
     }
 
     public void w(String msg, Throwable t) {
+        trackWarning();
         if (!logEnabled()) {
             return;
         }
@@ -64,6 +106,7 @@ public class ModuleLog {
     }
 
     public void e(String msg, Throwable t) {
+        trackError();
         if (!logEnabled()) {
             return;
         }

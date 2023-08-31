@@ -237,7 +237,7 @@ public class App extends Application {
         List<String> allowedPackageNames = new ArrayList<>();
         allowedPackageNames.add(getPackageName());
 
-        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(this, Countly.CountlyMessagingMode.PRODUCTION)
+        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(this)
             .setProvider(Countly.CountlyMessagingProvider.FCM)
             .setAllowedIntentClassNames(allowedClassNames)
             .setAllowedIntentPackageNames(allowedPackageNames);

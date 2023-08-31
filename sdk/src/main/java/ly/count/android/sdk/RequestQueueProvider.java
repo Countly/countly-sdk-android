@@ -11,7 +11,7 @@ interface RequestQueueProvider {
 
     void changeDeviceId(String deviceId, final int duration);
 
-    void tokenSession(String token, Countly.CountlyMessagingMode mode, Countly.CountlyMessagingProvider provider);
+    void tokenSession(String token, Countly.CountlyMessagingProvider provider);
 
     void endSession(final int duration);
 
@@ -50,11 +50,23 @@ interface RequestQueueProvider {
 
     ConnectionProcessor createConnectionProcessor();
 
+    String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
+
     String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
+
+    String prepareEnrollmentParameters(@NonNull String[] keys);
+
+    String prepareRemovalParameters(@NonNull String[] keys);
+
+    String prepareFetchAllVariants(); // for fetching all A/B test variants
+
+    String prepareEnrollVariant(String key, String Variant); // for enrolling to an A/B test variant
 
     String prepareRatingWidgetRequest(String widgetId);
 
     String prepareFeedbackListRequest();
 
     String prepareServerConfigRequest();
+
+    String prepareHealthCheckRequest(String preparedMetrics);
 }

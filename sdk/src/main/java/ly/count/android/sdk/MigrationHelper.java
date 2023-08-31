@@ -1,27 +1,41 @@
 package ly.count.android.sdk;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
+import ly.count.android.sdk.internal.RemoteConfigValueStore;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 class MigrationHelper {
     /**
      * 0 - legacy version. State of the SDK before the first migration was introduced
-     * 1 - adding device ID to all requests
+     * 1 - version where the device ID is guaranteed and advertising ID is deprecated/removed as a type
+     * 2 - transitioning old RC store to one that supports metadata
+     * 3 - removing messaging mode info
+     * x - adding device ID to all requests
      */
-    final int DATA_SCHEMA_VERSIONS = 1;
+    static final int DATA_SCHEMA_VERSIONS = 3;
 
     static final public String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
 
     StorageProvider storage;
     ModuleLog L;
 
+    Context cachedContext;
+
     static final public String legacyDeviceIDTypeValue_AdvertisingID = "ADVERTISING_ID";
 
-    public MigrationHelper(StorageProvider storage, ModuleLog moduleLog) {
+    public static final String legacyCACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
+
+    public MigrationHelper(StorageProvider storage, ModuleLog moduleLog, Context context) {
         this.storage = storage;
         L = moduleLog;
+        cachedContext = context;
         L.v("[MigrationHelper] Initialising");
     }
 
@@ -76,6 +90,14 @@ class MigrationHelper {
                 performMigration0To1(migrationParams);
                 newVersion = newVersion + 1;
                 break;
+            case 1:
+                performMigration1To2(migrationParams);
+                newVersion = newVersion + 1;
+                break;
+            case 2:
+                performMigration2To3(migrationParams);
+                newVersion = newVersion + 1;
+                break;
             case DATA_SCHEMA_VERSIONS:
                 L.w("[MigrationHelper] performMigrationStep, attempting to perform migration while already having the latest schema version, skipping [" + currentVersion + "]");
                 break;
@@ -111,6 +133,8 @@ class MigrationHelper {
 
     /**
      * Specific migration from schema version 0 to 1
+     * This should make sure that a device ID exists and
+     * that the advertising_ID type is transformed to open_udid
      */
     void performMigration0To1(@NonNull Map<String, Object> migrationParams) {
         String deviceIDType = storage.getDeviceIDType();
@@ -158,5 +182,54 @@ class MigrationHelper {
                 storage.setDeviceID(UUID.randomUUID().toString());
             }
         }
+    }
+
+    /**
+     * Tranforming the old RC structure date store to one that supports metadata
+     *
+     * @param migrationParams
+     */
+    void performMigration1To2(@NonNull Map<String, Object> migrationParams) {
+        String currentRC = storage.getRemoteConfigValues();
+
+        JSONObject initialStructure;
+
+        try {
+            initialStructure = new JSONObject(currentRC);
+        } catch (JSONException e) {
+            L.w("[MigrationHelper] performMigration1To2, failed at parsing old RC data. Clearing data structure and continuing. " + e);
+            storage.setRemoteConfigValues("");
+            return;
+        }
+
+        JSONObject newStructure = new JSONObject();
+        Iterator<String> iter = initialStructure.keys();
+        while (iter.hasNext()) {
+            String key = iter.next();
+            try {
+                Object value = initialStructure.opt(key);
+                if (value == null) {
+                    continue;
+                }
+                JSONObject migratedValue = new JSONObject();
+                migratedValue.put(RemoteConfigValueStore.keyValue, initialStructure.get(key));
+                migratedValue.put(RemoteConfigValueStore.keyCacheFlag, RemoteConfigValueStore.cacheValFresh);
+                newStructure.put(key, migratedValue);
+            } catch (Exception e) {
+                Countly.sharedInstance().L.e("[MigrationHelper] performMigration1To2, transforming remote config values, " + e.toString());
+            }
+        }
+
+        storage.setRemoteConfigValues(newStructure.toString());
+    }
+
+    /**
+     * Removing the messaging mode info from storage
+     *
+     * @param migrationParams
+     */
+    void performMigration2To3(@NonNull Map<String, Object> migrationParams) {
+        SharedPreferences sp = CountlyStore.createPreferencesPush(cachedContext);
+        sp.edit().remove(legacyCACHED_PUSH_MESSAGING_MODE).apply();
     }
 }

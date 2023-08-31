@@ -233,7 +233,7 @@ public class CountlyPush {
     public static class ConsentBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent broadcast) {
-            if (countlyConfigPush.mode != null && countlyConfigPush.provider != null && getPushConsent(context)) {
+            if (countlyConfigPush.provider != null && getPushConsent(context)) {
                 String token = getToken(context, countlyConfigPush.provider, Countly.sharedInstance().L);
                 if (token != null && !"".equals(token)) {
                     onTokenRefresh(token, countlyConfigPush.provider);
@@ -660,8 +660,8 @@ public class CountlyPush {
             return;
         }
 
-        Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] Refreshing FCM push token, with mode: [" + countlyConfigPush.mode + "] for [" + provider + "]");
-        Countly.sharedInstance().onRegistrationId(token, countlyConfigPush.mode, provider);
+        Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] Refreshing FCM push token, with for [" + provider + "]");
+        Countly.sharedInstance().onRegistrationId(token, provider);
     }
 
     static final String FIREBASE_MESSAGING_CLASS = "com.google.firebase.messaging.FirebaseMessaging";
@@ -693,7 +693,7 @@ public class CountlyPush {
      * @deprecated use 'CountlyConfigPush' object to init Countly Push: 'init(CountlyConfigPush countlyConfigPush)'.
      */
     public static void init(@Nullable final Application application, @Nullable Countly.CountlyMessagingMode mode, @Nullable Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
-        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(application, mode)
+        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(application)
             .setProvider(preferredProvider);
         init(countlyConfigPush);
     }
@@ -710,7 +710,7 @@ public class CountlyPush {
             return;
         }
 
-        Countly.sharedInstance().L.i("[CountlyPush, init] Initializing Countly Push, App:[" + (countlyConfigPush.application != null) + "], mode:[" + countlyConfigPush.mode + "] provider:[" + countlyConfigPush.provider + "]");
+        Countly.sharedInstance().L.i("[CountlyPush, init] Initializing Countly Push, App:[" + (countlyConfigPush.application != null) + "], provider:[" + countlyConfigPush.provider + "]");
 
         if (countlyConfigPush.application == null) {
             throw new IllegalStateException("Non 'null' application must be provided!");
@@ -742,7 +742,6 @@ public class CountlyPush {
             return;
         }
 
-        CountlyStore.cacheLastMessagingMode(countlyConfigPush.mode == Countly.CountlyMessagingMode.TEST ? 0 : 1, countlyConfigPush.application);
         CountlyStore.storeMessagingProvider(countlyConfigPush.provider == Countly.CountlyMessagingProvider.FCM ? 1 : 2, countlyConfigPush.application);
 
         if (callbacks == null) {
@@ -838,9 +837,11 @@ public class CountlyPush {
      * -1 - no data / no init has happened
      * 0 - test mode
      * 1 - production mode
+     *
+     * @deprecated this call will always return "0". It should not be used anymore. There is no need for it
      */
     public static int getLastMessagingMethod(Context context) {
-        return CountlyStore.getLastMessagingMode(context);
+        return 0;
     }
 
     public static void setNotificationAccentColor(int alpha, int red, int green, int blue) {

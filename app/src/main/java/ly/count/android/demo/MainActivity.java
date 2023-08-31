@@ -130,6 +130,10 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, ActivityExampleRemoteConfig.class));
     }
 
+    public void onClickButtonTests(View v) {
+        startActivity(new Intent(this, ActivityExampleTests.class));
+    }
+
     public void onClickButtonDeviceId(View v) {
         startActivity(new Intent(this, ActivityExampleDeviceId.class));
     }
