@@ -52,7 +52,7 @@ abstract class ModuleBase {
     /**
      * Called manually by a countly call from the developer
      */
-    void onActivityStarted(Activity activity) {
+    void onActivityStarted(Activity activity, int updatedActivityCount) {
     }
 
     /**

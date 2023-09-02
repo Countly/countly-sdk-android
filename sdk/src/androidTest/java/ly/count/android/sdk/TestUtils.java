@@ -416,6 +416,7 @@ public class TestUtils {
         ArgumentCaptor<UtilsTime.Instant> arg6 = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<String> arg7 = ArgumentCaptor.forClass(String.class);
         verify(ep, times(interactionCount)).recordEventInternal(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture());
+        //verify(ep).recordEventInternal(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture());
 
         if (interactionCount == 0) {
             return;

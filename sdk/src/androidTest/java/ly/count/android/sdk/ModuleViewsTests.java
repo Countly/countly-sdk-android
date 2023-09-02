@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -94,7 +95,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
-        mCountly.moduleViews.onActivityStarted(act);
+        mCountly.moduleViews.onActivityStarted(act, 1);
 
         final Map<String, Object> segm = new HashMap<>();
         if (shortNames) {
@@ -131,11 +132,11 @@ public class ModuleViewsTests {
 
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.moduleViews.onActivityStarted(act1);
+        mCountly.moduleViews.onActivityStarted(act1, 1);
 
         verify(ep, never()).recordEventInternal(anyString(), any(Map.class), anyInt(), anyDouble(), anyDouble(), any(UtilsTime.Instant.class), any(String.class));
 
-        mCountly.moduleViews.onActivityStarted(act2);
+        mCountly.moduleViews.onActivityStarted(act2, 2);
 
         final Map<String, Object> segm = new HashMap<>();
         if (shortNames) {
@@ -157,7 +158,7 @@ public class ModuleViewsTests {
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
-        mCountly.moduleViews.onActivityStarted(act);
+        mCountly.moduleViews.onActivityStarted(act, 1);
 
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(UtilsTime.Instant.class), any(String.class));
     }
@@ -179,7 +180,7 @@ public class ModuleViewsTests {
 
         Assert.assertEquals(-1, mView.currentOrientation);
 
-        mCountly.moduleViews.onActivityStarted(act);
+        mCountly.moduleViews.onActivityStarted(act, 1);
 
         final Map<String, Object> segm = new HashMap<>();
         segm.put("mode", "portrait");
@@ -270,7 +271,7 @@ public class ModuleViewsTests {
         @NonNull Activity act = mock(Activity.class);
 
         int start = UtilsTime.currentTimestampSeconds();
-        mCountly.moduleViews.onActivityStarted(act);//activity count = 1
+        mCountly.moduleViews.onActivityStarted(act, 1);//activity count = 1
         Thread.sleep(100);
         mCountly.moduleViews.onActivityStopped(0);//activity count = 0
         double viewDuration = UtilsTime.currentTimestampSeconds() - start;
@@ -775,7 +776,7 @@ public class ModuleViewsTests {
         Thread.sleep(1000);
 
         mCountly.views().pauseViewWithID(viewId);
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+        validatePausedViewInFlow(viewNames[0], vals[0], null, 1, ep);
 
         Thread.sleep(1000);
 
@@ -786,7 +787,7 @@ public class ModuleViewsTests {
         mCountly.views().resumeViewWithID(viewId);
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         //double resume to make sure nothing changes
         mCountly.views().resumeViewWithID(viewId);
@@ -882,6 +883,18 @@ public class ModuleViewsTests {
         return returnedID;
     }
 
+    void validatePausedViewInFlow(String viewName, String plannedViewID, Map<String, Object> globalSegm, double duration, EventProvider ep) {
+        Map<String, Object> segm = new HashMap<>();
+        ClearFillSegmentationViewEnd(segm, viewName, null);
+
+        if (globalSegm != null) {
+            segm.putAll(globalSegm);
+        }
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, duration, segm, plannedViewID, 0, 1);
+        clearInvocations(ep);
+    }
+
     void stopViewInFlow(String viewName, String plannedViewID, Map<String, Object> givenSegm, Map<String, Object> globalSegm, double duration, boolean stopWithID, Countly mCountly, EventProvider ep) {
         Map<String, Object> segm = new HashMap<>();
         ClearFillSegmentationViewEnd(segm, viewName, null);
@@ -947,9 +960,11 @@ public class ModuleViewsTests {
         Thread.sleep(1000);
 
         mCountly.views().pauseViewWithID(viewID[0]);
+        validatePausedViewInFlow(viewNames[0], viewID[0], null, 1, ep);
+
         Thread.sleep(1000);
 
-        stopViewInFlow(viewNames[0], viewID[0], null, null, 1, useID, mCountly, ep);
+        stopViewInFlow(viewNames[0], viewID[0], null, null, 0, useID, mCountly, ep);
     }
 
     /**
@@ -1020,6 +1035,14 @@ public class ModuleViewsTests {
         Thread.sleep(1000);
 
         mCountly.views().pauseViewWithID(viewID[0]);
+
+        Map<String, Object> expectedPauseSegm = new HashMap<>();
+        expectedPauseSegm.putAll(globalSegm);
+
+        mockingDetails(ep).printInvocations();
+
+        validatePausedViewInFlow(viewNames[0], viewID[0], expectedPauseSegm, 1, ep);
+
         Thread.sleep(1000);
 
         Map<String, Object> expectedEndSegm = new HashMap<>();
@@ -1043,7 +1066,7 @@ public class ModuleViewsTests {
         Map<String, Object> givenEndSegm = new HashMap<>();
         givenEndSegm.put("4", false);
 
-        stopViewInFlow(viewNames[0], viewID[0], givenEndSegm, expectedEndSegm, 1, useID, mCountly, ep);
+        stopViewInFlow(viewNames[0], viewID[0], givenEndSegm, expectedEndSegm, 0, useID, mCountly, ep);
     }
 
     /**
@@ -1175,7 +1198,7 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
     }
 
-    public void clearFirstViewFlagSessionEndBase(boolean manualSessions) {
+    public void clearFirstViewFlagSessionEndBase(boolean manualSessions) throws InterruptedException {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
         if (manualSessions) {
             cc.enableManualSessionControl();
@@ -1202,10 +1225,21 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
         clearInvocations(ep);
 
+        Thread.sleep(1000);
+
         if (manualSessions) {
             mCountly.sessions().endSession();
         } else {
             mCountly.onStopInternal();
+
+            //in this situation we would pause all views
+            ClearFillSegmentationViewEnd(segm, "a", null);
+            TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 1, 2);
+
+            ClearFillSegmentationViewEnd(segm, "b", null);
+            TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);
+
+            clearInvocations(ep);
         }
 
         mCountly.views().startView("c", null);
@@ -1216,12 +1250,12 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void clearFirstViewFlagSessionEndManual() {
+    public void clearFirstViewFlagSessionEndManual() throws InterruptedException {
         clearFirstViewFlagSessionEndBase(true);
     }
 
     @Test
-    public void clearFirstViewFlagSessionEndAutomatic() {
+    public void clearFirstViewFlagSessionEndAutomatic() throws InterruptedException {
         clearFirstViewFlagSessionEndBase(false);
     }
 
