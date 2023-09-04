@@ -714,7 +714,7 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
-    public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
+    public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics, boolean autoEnroll) {
         String data = prepareCommonRequestData()
             + "&method=rc"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
@@ -729,6 +729,11 @@ class ConnectionQueue implements RequestQueueProvider {
             data += "&keys=" + UtilsNetworking.urlEncodeString(keysInclude);
         } else if (keysExclude != null) {
             data += "&omit_keys=" + UtilsNetworking.urlEncodeString(keysExclude);
+        }
+
+        // if auto enroll was enabled add oi=1 to the request
+        if(autoEnroll){
+            data += "&oi=1";
         }
 
         return data;
