@@ -1077,7 +1077,6 @@ public class Countly {
             L.e("Countly.sharedInstance().init must be called before accessing ratings");
             return null;
         }
-
         return moduleRatings.ratingsInterface;
     }
 
