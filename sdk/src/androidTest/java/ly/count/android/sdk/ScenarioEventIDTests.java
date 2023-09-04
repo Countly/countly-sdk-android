@@ -62,97 +62,24 @@ public class ScenarioEventIDTests {
     }
 
     /**
-     * Making sure that id's are correct in a mixed view (automatic, manual) scenario
-     */
-    @Test
-    public void eventIDScenario_mixedViews_1() {
-        CountlyConfig cc = TestUtils.createScenarioEventIDConfig(safeViewIDGenerator, safeEventIDGenerator);
-        Countly mCountly = new Countly().init(cc);
-        EventQueueProvider eqp = TestUtils.setCreateEventQueueProviderMock(mCountly);
-
-        //no events initially
-        verifyRecordEventToEventQueueNotCalled(eqp);
-
-        //record custom event
-        mCountly.events().recordEvent(eKeys[0]);
-        verifyRecordEventToEventQueueIDs(eqp, eKeys[0], idE[0], "", null, "", 0, 1);
-        clearInvocations(eqp);
-
-        //record internal non view event
-        mCountly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleFeedback.NPS_EVENT_KEY, idE[1], "", null, null, 0, 1);
-        clearInvocations(eqp);
-
-        //record custom event
-        mCountly.events().recordEvent(eKeys[1]);
-        verifyRecordEventToEventQueueIDs(eqp, eKeys[1], idE[2], "", null, idE[0], 0, 1);
-        clearInvocations(eqp);
-
-        //- Record view A manually
-        mCountly.views().recordView(vNames[0]);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 1);
-        clearInvocations(eqp);
-
-        //record custom event
-        mCountly.events().recordEvent(eKeys[2]);
-        verifyRecordEventToEventQueueIDs(eqp, eKeys[2], idE[3], idV[0], null, idE[2], 0, 1);
-        clearInvocations(eqp);
-
-        //record internal non view event
-        mCountly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleFeedback.SURVEY_EVENT_KEY, idE[4], idV[0], null, null, 0, 1);
-        clearInvocations(eqp);
-
-        //- Start view B automatically
-        mCountly.onStart(act);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 2);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 1, 2);
-        clearInvocations(eqp);
-
-        //record custom event
-        mCountly.events().recordEvent(eKeys[3]);
-        verifyRecordEventToEventQueueIDs(eqp, eKeys[3], idE[5], idV[1], null, idE[3], 0, 1);
-        clearInvocations(eqp);
-
-        //record internal non view event
-        mCountly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.ORIENTATION_EVENT_KEY, idE[6], idV[1], null, null, 0, 1);
-        clearInvocations(eqp);
-
-        //- Close view B automatically
-        mCountly.onStop();
-        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 0, 1);
-        clearInvocations(eqp);
-
-        //record custom event
-        mCountly.events().recordEvent(eKeys[4]);
-        verifyRecordEventToEventQueueIDs(eqp, eKeys[4], idE[7], idV[1], null, idE[5], 0, 1);
-        clearInvocations(eqp);
-
-        //record internal non view event
-        mCountly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION);
-        verifyRecordEventToEventQueueIDs(eqp, ModulePush.PUSH_EVENT_ACTION, idE[8], idV[1], null, null, 0, 1);
-    }
-
-    /**
      * Simulate a 2 automatic activity scenario
      * Making sure that ID's are correct
      */
     @Test
     public void eventIDScenario_automaticViews() {
-        CountlyConfig cc = TestUtils.createScenarioEventIDConfig(safeViewIDGenerator, safeEventIDGenerator);
+        CountlyConfig cc = TestUtils.createScenarioEventIDConfig(safeViewIDGenerator, safeEventIDGenerator).enableAutomaticViewTracking();
         Countly mCountly = new Countly().init(cc);
         EventQueueProvider eqp = TestUtils.setCreateEventQueueProviderMock(mCountly);
 
         //no events initially
         verifyRecordEventToEventQueueNotCalled(eqp);
 
-        mCountly.onStart(act);
+        mCountly.onStartInternal(act);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 1);
 
         clearInvocations(eqp);
 
-        mCountly.onStart(act2);
+        mCountly.onStartInternal(act2);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 2);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 1, 2);
         clearInvocations(eqp);
@@ -162,7 +89,7 @@ public class ScenarioEventIDTests {
         verifyRecordEventToEventQueueIDs(eqp, eKeys[0], idE[0], idV[1], null, "", 0, 1);
         clearInvocations(eqp);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
         verifyRecordEventToEventQueueNotCalled(eqp);
         clearInvocations(eqp);
 
@@ -171,7 +98,7 @@ public class ScenarioEventIDTests {
         verifyRecordEventToEventQueueIDs(eqp, ModuleFeedback.RATING_EVENT_KEY, idE[1], idV[1], null, null, 0, 1);
         clearInvocations(eqp);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 0, 1);
         clearInvocations(eqp);
 

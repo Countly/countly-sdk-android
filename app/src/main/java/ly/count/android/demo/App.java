@@ -29,9 +29,7 @@ import java.util.Map;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
-import ly.count.android.sdk.DeviceIdType;
 import ly.count.android.sdk.ModuleLog;
-import ly.count.android.sdk.RemoteConfigCallback;
 import ly.count.android.sdk.messaging.CountlyConfigPush;
 import ly.count.android.sdk.messaging.CountlyPush;
 
@@ -180,24 +178,32 @@ public class App extends Application {
                 }
             })
 
-            .setViewTracking(true)
-            .setAutoTrackingUseShortName(true)
-            .setAutomaticViewSegmentation(automaticViewSegmentation)
-            .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
+            .enableAutomaticViewTracking()
+            .setGlobalViewSegmentation(automaticViewSegmentation)
+            .setAutomaticViewTrackingExclusions(new Class[] { ActivityExampleCustomEvents.class })
 
             .setPushIntentAddMetadata(true)
 
             .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
             //.setDisableLocation()
 
+            //.enableManualSessionControl()
+            //.enableManualSessionControlHybridMode()
+
             //.enableTemporaryDeviceIdMode()
 
-            .setRequiresConsent(true).setConsentEnabled(new String[] {
-                Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
-                Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
-                Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
-                Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
-            })
+            .setRequiresConsent(true)
+            
+            //for giving all consent values
+            .giveAllConsents()
+
+            //in case you want to control what consent is given during init
+            //.setConsentEnabled(new String[] {
+            //    Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
+            //    Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
+            //    Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
+            //    Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
+            //})
 
             .setHttpPostForced(false)
             .setParameterTamperingProtectionSalt("test-salt-checksum")
@@ -205,14 +211,11 @@ public class App extends Application {
             //.enableCertificatePinning(certificates)
             //.enablePublicKeyPinning(certificates)
 
-            .setRemoteConfigAutomaticDownload(true, new RemoteConfigCallback() {
-                @Override
-                public void callback(String error) {
-                    if (error == null) {
-                        Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
-                    } else {
-                        Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
-                    }
+            .RemoteConfigRegisterGlobalCallback((downloadResult, error, fullValueUpdate, downloadedValues) -> {
+                if (error == null) {
+                    Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
+                } else {
+                    Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
                 }
             })
 
@@ -222,8 +225,6 @@ public class App extends Application {
             .setAppStartTimestampOverride(applicationStartTimestamp)
 
             //.setMetricOverride(metricOverride)
-
-            .setEnableAttribution(true)
 
             //.enableServerConfiguration()
 

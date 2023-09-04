@@ -24,10 +24,15 @@ package ly.count.android.sdk;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
+import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.6.0";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.8.0-RC11";
 
     /**
      * Used as request meta data on every request
@@ -201,6 +206,8 @@ public class Countly {
     String lastRegistrationCallID = null;
     CountlyMessagingProvider lastRegistrationCallProvider = null;
 
+    boolean applicationClassProvided = false;
+
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
         public static final String events = "events";
@@ -311,8 +318,9 @@ public class Countly {
         }
 
         if (config.application == null) {
-            L.i("[Init] Initialising the SDK without providing the application class");
+            L.w("[Init] Initialising the SDK without providing the application class. Some functionality will not work.");
         }
+        applicationClassProvided = config.application != null;
 
         if (config.deviceID != null && config.deviceID.length() == 0) {
             //device ID is provided but it's a empty string
@@ -662,9 +670,9 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityCreated, " + activity.getClass().getSimpleName());
                         }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityCreated(activity);
-                        }
+                        //for (ModuleBase module : modules) {
+                        //    module.callbackOnActivityCreated(activity);
+                        //}
                     }
 
                     @Override
@@ -672,9 +680,10 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityStarted, " + activity.getClass().getSimpleName());
                         }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityStarted(activity);
-                        }
+                        onStartInternal(activity);
+                        //for (ModuleBase module : modules) {
+                        //    module.callbackOnActivityStarted(activity);
+                        //}
                     }
 
                     @Override
@@ -682,6 +691,7 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityResumed, " + activity.getClass().getSimpleName());
                         }
+                        //for star rating
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityResumed(activity);
                         }
@@ -692,9 +702,9 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityPaused, " + activity.getClass().getSimpleName());
                         }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityPaused(activity);
-                        }
+                        //for (ModuleBase module : modules) {
+                        //    module.callbackOnActivityPaused(activity);
+                        //}
                     }
 
                     @Override
@@ -702,6 +712,8 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityStopped, " + activity.getClass().getSimpleName());
                         }
+                        onStopInternal();
+                        //for APM
                         for (ModuleBase module : modules) {
                             module.callbackOnActivityStopped(activity);
                         }
@@ -712,9 +724,9 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivitySaveInstanceState, " + activity.getClass().getSimpleName());
                         }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivitySaveInstanceState(activity);
-                        }
+                        //for (ModuleBase module : modules) {
+                        //    module.callbackOnActivitySaveInstanceState(activity);
+                        //}
                     }
 
                     @Override
@@ -722,24 +734,31 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
                         }
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityDestroyed(activity);
-                        }
+                        //for (ModuleBase module : modules) {
+                        //    module.callbackOnActivityDestroyed(activity);
+                        //}
                     }
                 });
-/*
+
                 config.application.registerComponentCallbacks(new ComponentCallbacks() {
                     @Override
                     public void onConfigurationChanged(Configuration configuration) {
-
+                        L.d("[Countly] ComponentCallbacks, onConfigurationChanged");
+                        onConfigurationChangedInternal(configuration);
                     }
 
                     @Override
                     public void onLowMemory() {
-
+                        L.d("[Countly] ComponentCallbacks, onLowMemory");
                     }
                 });
- */
+            } else {
+                L.d("[Countly] Global activity listeners not registred due to no Application class");
+            }
+
+            if (lifecycleStateAtLeastStarted()) {
+                L.d("[Countly] SDK detects that the app is in the foreground. Increasing the activity counter.");
+                activityCount_++;
             }
 
             L.i("[Init] About to call module 'initFinished'");
@@ -768,6 +787,10 @@ public class Countly {
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean isInitialized() {
         return sdkIsInitialised;
+    }
+
+    boolean lifecycleStateAtLeastStarted() {
+        return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 
     /**
@@ -826,24 +849,13 @@ public class Countly {
         }
     }
 
-    /**
-     * Tells the Countly SDK that an Activity has started. Since Android does not have an
-     * easy way to determine when an application instance starts and stops, you must call this
-     * method from every one of your Activity's onStart methods for accurate application
-     * session tracking.
-     */
-    public synchronized void onStart(Activity activity) {
+    void onStartInternal(Activity activity) {
         if (L.logEnabled()) {
             String activityName = "NULL ACTIVITY PROVIDED";
             if (activity != null) {
                 activityName = activity.getClass().getSimpleName();
             }
-            L.d("Countly onStart called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
-        }
-
-        if (!isInitialized()) {
-            L.e("init must be called before onStart");
-            return;
+            L.d("Countly onStartInternal called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
         }
 
         ++activityCount_;
@@ -858,26 +870,15 @@ public class Countly {
         config_.deviceInfo.inForeground();
 
         for (ModuleBase module : modules) {
-            module.onActivityStarted(activity);
+            module.onActivityStarted(activity, activityCount_);
         }
 
         calledAtLeastOnceOnStart = true;
     }
 
-    /**
-     * Tells the Countly SDK that an Activity has stopped. Since Android does not have an
-     * easy way to determine when an application instance starts and stops, you must call this
-     * method from every one of your Activity's onStop methods for accurate application
-     * session tracking.
-     * unbalanced calls to onStart/onStop are detected
-     */
-    public synchronized void onStop() {
-        L.d("Countly onStop called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
+    void onStopInternal() {
+        L.d("Countly onStopInternal called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
 
-        if (!isInitialized()) {
-            L.e("init must be called before onStop");
-            return;
-        }
         if (activityCount_ == 0) {
             L.e("must call onStart before onStop");
             return;
@@ -898,16 +899,67 @@ public class Countly {
         }
     }
 
+    public synchronized void onConfigurationChangedInternal(Configuration newConfig) {
+        L.i("Calling [onConfigurationChangedInternal]");
+
+        for (ModuleBase module : modules) {
+            module.onConfigurationChanged(newConfig);
+        }
+    }
+
+    /**
+     * Tells the Countly SDK that an Activity has started. Since Android does not have an
+     * easy way to determine when an application instance starts and stops, you must call this
+     * method from every one of your Activity's onStart methods for accurate application
+     * session tracking.
+     */
+    public synchronized void onStart(Activity activity) {
+        if (!isInitialized()) {
+            L.e("init must be called before onStart");
+            return;
+        }
+
+        if (applicationClassProvided) {
+            L.w("Manual calls to 'onStart' will be ignored since the application class ir provided. SDK will handle these callbacks automatically");
+            return;
+        }
+
+        onStartInternal(activity);
+    }
+
+    /**
+     * Tells the Countly SDK that an Activity has stopped. Since Android does not have an
+     * easy way to determine when an application instance starts and stops, you must call this
+     * method from every one of your Activity's onStop methods for accurate application
+     * session tracking.
+     * unbalanced calls to onStart/onStop are detected
+     */
+    public synchronized void onStop() {
+        if (!isInitialized()) {
+            L.e("init must be called before onStop");
+            return;
+        }
+
+        if (applicationClassProvided) {
+            L.w("Manual calls to 'onStart' will be ignored since the application class ir provided. SDK will handle these callbacks automatically");
+            return;
+        }
+
+        onStopInternal();
+    }
+
     public synchronized void onConfigurationChanged(Configuration newConfig) {
-        L.d("Calling [onConfigurationChanged]");
         if (!isInitialized()) {
             L.e("init must be called before onConfigurationChanged");
             return;
         }
 
-        for (ModuleBase module : modules) {
-            module.onConfigurationChanged(newConfig);
+        if (applicationClassProvided) {
+            L.w("Manual calls to 'onConfigurationChanged' will be ignored since the application class ir provided. SDK will handle these callbacks automatically");
+            return;
         }
+
+        onConfigurationChangedInternal(newConfig);
     }
 
     /**
@@ -918,15 +970,20 @@ public class Countly {
         L.v("[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
 
         if (isInitialized()) {
-            final boolean hasActiveSession = activityCount_ > 0;
-            if (hasActiveSession) {
-                if (!moduleSessions.manualSessionControlEnabled) {
-                    moduleSessions.updateSessionInternal();
-                }
+            final boolean appIsInForeground = activityCount_ > 0;
+            if (appIsInForeground && !moduleSessions.manualSessionControlEnabled) {
+                //if we have automatic session control and we are in the foreground, record an update
+                moduleSessions.updateSessionInternal();
+            } else if (moduleSessions.manualSessionControlEnabled && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
+                // if we are in manual session control mode with hybrid sessions enabled (SDK takes care of update requests) and there is a session running,
+                // let's create the update request
+                moduleSessions.updateSessionInternal();
             }
 
             //on every timer tick we collect all events and attempt to send requests
-            moduleRequestQueue.sendEventsIfNeeded(true);
+            {
+                moduleRequestQueue.sendEventsIfNeeded(true);
+            }
             requestQueueProvider.tick();
         }
     }
@@ -982,6 +1039,7 @@ public class Countly {
      * Returns if the countly sdk onStart function has been called at least once
      *
      * @return true - yes, it has, false - no it has not
+     * @deprecated This will be removed
      */
     public boolean hasBeenCalledOnStart() {
         return calledAtLeastOnceOnStart;

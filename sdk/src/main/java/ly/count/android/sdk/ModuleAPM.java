@@ -22,7 +22,7 @@ public class ModuleAPM extends ModuleBase {
 
     long lastScreenSwitchTime = -1;// timestamp of when the app last changed from foreground to background
 
-    int activitiesOpen = -1;
+    int activitiesOpen;
 
     boolean useManualAppLoadedTrigger = false;
     long appStartTimestamp;
@@ -38,6 +38,11 @@ public class ModuleAPM extends ModuleBase {
         networkTraces = new HashMap<>();
 
         activitiesOpen = 0;
+
+        if (_cly.lifecycleStateAtLeastStarted()) {
+            L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
+            activitiesOpen++;
+        }
 
         useManualAppLoadedTrigger = config.appLoadedManualTrigger;
         if (config.appStartTimestampOverride != null) {

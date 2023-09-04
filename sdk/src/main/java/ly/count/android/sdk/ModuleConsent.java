@@ -53,12 +53,21 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         //react to given consent during init
         if (config.shouldRequireConsent) {
             requiresConsent = config.shouldRequireConsent;
-            if (config.enabledFeatureNames == null) {
-                L.i("[Init] Consent has been required but no consent was given during init");
+            if (config.enabledFeatureNames == null && !config.enableAllConsents) {
+                L.i("[ModuleConsent] Consent has been required but no consent was given during init");
             } else {
-                //set provided consent values
-                for (String providedFeature : config.enabledFeatureNames) {
-                    featureConsentValues.put(providedFeature, true);
+
+                if (config.enableAllConsents) {
+                    //set all consent values to "true"
+                    L.i("[ModuleConsent] Giving consent for all features");
+                    for (String featureName : validFeatureNames) {
+                        featureConsentValues.put(featureName, true);
+                    }
+                } else {
+                    //set provided consent values
+                    for (String providedFeature : config.enabledFeatureNames) {
+                        featureConsentValues.put(providedFeature, true);
+                    }
                 }
             }
         }

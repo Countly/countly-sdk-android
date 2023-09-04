@@ -131,7 +131,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
             }
 
             if (!storedRequest.contains(searchablePart)) {
-                L.d("[ModuleRequestQueue], requestQueueEraseAppKeysRequests, Found a entry to remove: [" + storedRequest + "]");
+                L.d("[ModuleRequestQueue] requestQueueEraseAppKeysRequests, Found a entry to remove: [" + storedRequest + "]");
             } else {
                 filteredRequests.add(storedRequest);
             }
@@ -146,7 +146,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      */
     protected void sendEventsIfNeeded(boolean forceSendingEvents) {
         int eventsInEventQueue = storageProvider.getEventQueueSize();
-        L.v("[Countly] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
+        L.v("[ModuleRequestQueue] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
 
         if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= Countly.EVENT_QUEUE_SIZE_THRESHOLD) {
             requestQueueProvider.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue());

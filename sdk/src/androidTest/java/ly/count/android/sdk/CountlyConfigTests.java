@@ -170,7 +170,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(s[5], config.starRatingTextTitle);
         Assert.assertTrue(config.loggingEnabled);
         Assert.assertTrue(config.enableUnhandledCrashReporting);
-        Assert.assertTrue(config.enableViewTracking);
+        Assert.assertTrue(config.enableAutomaticViewTracking);
         Assert.assertTrue(config.autoTrackingUseShortName);
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
         Assert.assertTrue(config.pushIntentAddMetadata);
@@ -182,8 +182,8 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.temporaryDeviceIdEnabled);
         Assert.assertEquals(callback, config.crashFilterCallback);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
-        Assert.assertEquals(vs, config.automaticViewSegmentation);
-        Assert.assertArrayEquals(act, config.autoTrackingExceptions);
+        Assert.assertEquals(vs, config.globalViewSegmentation);
+        Assert.assertArrayEquals(act, config.automaticViewTrackingExceptions);
         Assert.assertFalse(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
         Assert.assertTrue(config.manualSessionControlEnabled);
@@ -245,7 +245,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.starRatingTextTitle);
         Assert.assertFalse(config.loggingEnabled);
         Assert.assertFalse(config.enableUnhandledCrashReporting);
-        Assert.assertFalse(config.enableViewTracking);
+        Assert.assertFalse(config.enableAutomaticViewTracking);
         Assert.assertFalse(config.autoTrackingUseShortName);
         Assert.assertNull(config.customNetworkRequestHeaders);
         Assert.assertFalse(config.pushIntentAddMetadata);
@@ -257,7 +257,7 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.temporaryDeviceIdEnabled);
         Assert.assertNull(config.crashFilterCallback);
         Assert.assertNull(config.tamperingProtectionSalt);
-        Assert.assertNull(config.automaticViewSegmentation);
+        Assert.assertNull(config.globalViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);
         Assert.assertTrue(config.trackOrientationChange);
         Assert.assertFalse(config.manualSessionControlEnabled);

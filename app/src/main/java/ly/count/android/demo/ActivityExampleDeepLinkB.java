@@ -27,22 +27,4 @@ public class ActivityExampleDeepLinkB extends AppCompatActivity {
         }
         int actionIndex = intent.getIntExtra(CountlyPush.EXTRA_ACTION_INDEX, -100);
     }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop() {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
-    }
 }
