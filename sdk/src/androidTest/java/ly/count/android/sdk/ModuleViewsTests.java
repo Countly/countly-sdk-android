@@ -45,7 +45,7 @@ public class ModuleViewsTests {
     public void setUp() {
         countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
-        idx = 0;
+        idx = 0;//reset the index for the view ID generator
         safeViewIDGenerator = new SafeIDGenerator() {
             @NonNull @Override public String GenerateValue() {
                 return vals[idx++];
@@ -74,22 +74,22 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Make sure that long names are recorded when required
+     * Make sure that long names for Activities are recorded when required
      */
     @Test
     public void onActivityStartedViewTrackingLongNames() {
-        activityStartedViewTracking(false);
+        activityStartedViewTrackingBase(false);
     }
 
     /**
-     * Make sure that short names are recorded when required
+     * Make sure that short names for Activities are recorded when required
      */
     @Test
     public void onActivityStartedViewTrackingShortNames() {
-        activityStartedViewTracking(true);
+        activityStartedViewTrackingBase(true);
     }
 
-    void activityStartedViewTracking(boolean shortNames) {
+    void activityStartedViewTrackingBase(boolean shortNames) {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeViewIDGenerator, null);
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -108,22 +108,22 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Make sure that the view exception works with the long view name mode
+     * Make sure that the Activity view exception works with the long view name mode
      */
     @Test
     public void onActivityStartedViewTrackingLongNamesException() {
-        activityStartedViewTrackingException(false);
+        activityStartedViewTrackingExceptionBase(false);
     }
 
     /**
-     * Make sure that the view exception works with the short view name mode
+     * Make sure that the Activity view exception works with the short view name mode
      */
     @Test
     public void onActivityStartedViewTrackingShortNamesException() {
-        activityStartedViewTrackingException(true);
+        activityStartedViewTrackingExceptionBase(true);
     }
 
-    void activityStartedViewTrackingException(boolean shortNames) {
+    void activityStartedViewTrackingExceptionBase(boolean shortNames) {
         @NonNull Activity act1 = mock(Activity.class);
         @NonNull Activity act2 = mock(TestUtils.Activity2.class);
 
