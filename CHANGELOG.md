@@ -1,8 +1,28 @@
-## xx.xx.xx
-* Push messaging mode is note reported anymore. Related calls have been deprecated.
+## 23.8.0
+* ! Minor breaking change ! Manual view recording calls are now ignored when in automatic view recording mode.
+* ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "UpdateSession"
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "EndSession"
+* ! Minor breaking change ! If Application class is provided, the SDK will use the Application Activity lifecycle callbacks to react to "onStart", "onStop" and "onConfigurationChanged" callbacks. The manual calls will be ignored.
+
 * Adding remaining request queue size information to every request
 * Adding SDK health check requests after init
 * Added protection for updating the push token. The same value can't be sent within 10 minutes it was sent last time.
+* View duration moved from segmentation to the event body
+* Added support for recording multiple views at the same time
+* First view flag is now reset when a session ends and not when a session starts
+
+* Push messaging mode is not reported anymore. Related calls have been deprecated.
+* Deprecated the following calls:
+  * Countly.sharedInstance().views().recordView(viewName)
+  * Countly.sharedInstance().views().recordView(viewName, viewSegmentation)
+  * Countly.sharedInstance().views().isAutomaticViewTrackingEnabled()
+
+* Deprecated the init time configuration of 'setViewTracking(enable)'. Introduced replacement 'enableAutomaticViewTracking()'
+* Deprecated the init time configuration of 'setAutoTrackingUseShortName(enable)'. Introduced replacement 'enableAutomaticViewShortNames()'
+* Deprecated the init time configuration of 'setAutomaticViewSegmentation(segmentation)'. Introduced replacement 'setGlobalViewSegmentation(segmentation)'
+* Deprecated the init time configuration of 'setAutoTrackingExceptions(exceptions)'. Introduced replacement 'setAutomaticViewTrackingExclusions(exclusions)'
+
 
 ## 23.6.0
 * !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.

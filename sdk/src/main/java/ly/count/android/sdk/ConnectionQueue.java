@@ -174,28 +174,25 @@ class ConnectionQueue implements RequestQueueProvider {
         }
         L.d("[Connection Queue] beginSession");
 
-        boolean dataAvailable = false;//will only send data if there is something valuable to send
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
+
         String data = prepareCommonRequestData();
 
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            //add session data if consent given
-            data += "&begin_session=1"
-                + "&metrics=" + preparedMetrics;//can be only sent with begin session
+        //add session data if consent given
+        data += "&begin_session=1"
+            + "&metrics=" + preparedMetrics;//can be only sent with begin session
 
-            String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
-            if (!locationData.isEmpty()) {
-                data += locationData;
-            }
-
-            dataAvailable = true;
+        String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+        if (!locationData.isEmpty()) {
+            data += locationData;
         }
 
         Countly.sharedInstance().isBeginSessionSent = true;
 
-        if (dataAvailable) {
-            addRequestToQueue(data, false);
-            tick();
-        }
+        addRequestToQueue(data, false);
+        tick();
     }
 
     /**
@@ -211,19 +208,16 @@ class ConnectionQueue implements RequestQueueProvider {
         }
         L.d("[Connection Queue] updateSession");
 
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
+
         if (duration > 0) {
-            boolean dataAvailable = false;//will only send data if there is something valuable to send
             String data = prepareCommonRequestData();
+            data += "&session_duration=" + duration;
 
-            if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-                data += "&session_duration=" + duration;
-                dataAvailable = true;
-            }
-
-            if (dataAvailable) {
-                addRequestToQueue(data, false);
-                tick();
-            }
+            addRequestToQueue(data, false);
+            tick();
         }
     }
 
@@ -294,27 +288,25 @@ class ConnectionQueue implements RequestQueueProvider {
         }
         L.d("[Connection Queue] endSession");
 
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
+
         boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
 
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            data += "&end_session=1";
-            if (duration > 0) {
-                data += "&session_duration=" + duration;
-            }
-            dataAvailable = true;
+        data += "&end_session=1";
+        if (duration > 0) {
+            data += "&session_duration=" + duration;
         }
 
-        if (deviceIdOverride != null && consentProvider.anyConsentGiven()) {
+        if (deviceIdOverride != null) {
             //if no consent is given, device ID override is not sent
             data += "&override_id=" + UtilsNetworking.urlEncodeString(deviceIdOverride);
-            dataAvailable = true;
         }
 
-        if (dataAvailable) {
-            addRequestToQueue(data, false);
-            tick();
-        }
+        addRequestToQueue(data, false);
+        tick();
     }
 
     /**

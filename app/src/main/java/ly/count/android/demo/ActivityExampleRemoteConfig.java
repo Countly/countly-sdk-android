@@ -130,22 +130,4 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
         t.setGravity(Gravity.BOTTOM, 0, 0);
         t.show();
     }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop() {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
-    }
 }

@@ -7,8 +7,6 @@ import ly.count.android.sdk.Countly
 class ActivityExampleKotlin : AppCompatActivity() {
   override fun onStart() {
     super.onStart()
-    Countly.sharedInstance().onStart(this);
-
     Countly.sharedInstance().apm().startTrace("fff");
     Countly.sharedInstance().consent().checkAllConsent();
     Countly.sharedInstance().crashes().addCrashBreadcrumb("ddd");
@@ -19,15 +17,5 @@ class ActivityExampleKotlin : AppCompatActivity() {
     Countly.sharedInstance().views().isAutomaticViewTrackingEnabled;
     val id = Countly.sharedInstance().deviceId().id;
 
-  }
-
-  override fun onStop() {
-    Countly.sharedInstance().onStop();
-    super.onStop()
-  }
-
-  override fun onConfigurationChanged(newConfig: Configuration) {
-    super.onConfigurationChanged(newConfig)
-    Countly.sharedInstance().onConfigurationChanged(newConfig);
   }
 }

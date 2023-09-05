@@ -103,22 +103,4 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
             Utility.AnotherRecursiveCall(3);
         }
     }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
-    }
-
-    @Override
-    public void onStop() {
-        Countly.sharedInstance().onStop();
-        super.onStop();
-    }
-
-    @Override
-    public void onConfigurationChanged(@NonNull Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
-    }
 }

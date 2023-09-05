@@ -7,6 +7,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -14,15 +17,10 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleSessionsTests {
-    Countly mCountly;
-
     @Before
     public void setUp() {
         final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
         countlyStore.clear();
-
-        mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @After
@@ -31,10 +29,8 @@ public class ModuleSessionsTests {
 
     @Test
     public void manualSessionBegin() {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
-
-        mCountly.init(config);
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
+        Countly mCountly = (new Countly()).init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
@@ -44,10 +40,8 @@ public class ModuleSessionsTests {
 
     @Test
     public void manualSessionBeginUpdateEnd() throws InterruptedException {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
-
-        mCountly.init(config);
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
+        Countly mCountly = (new Countly()).init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
@@ -60,14 +54,13 @@ public class ModuleSessionsTests {
         Thread.sleep(2000);
         mCountly.sessions().endSession();
         verify(requestQueueProvider, times(1)).endSession(2, null);
+        verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
     @Test
     public void manualSessionBeginUpdateEndManualDisabled() throws InterruptedException {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-
-        mCountly.init(config);
+        CountlyConfig config = TestUtils.createBaseConfig().enableCrashReporting();
+        Countly mCountly = (new Countly()).init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
@@ -76,18 +69,17 @@ public class ModuleSessionsTests {
         Thread.sleep(1000);
         mCountly.sessions().updateSession();
 
-        verify(requestQueueProvider, never()).updateSession(1);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        verify(requestQueueProvider, never()).endSession(2, null);
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
     @Test
     public void automaticSessionBeginEndWithManualEnabled() throws InterruptedException {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().enableManualSessionControl();
-
-        mCountly.init(config);
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
+        Countly mCountly = (new Countly()).init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(null);
@@ -95,28 +87,51 @@ public class ModuleSessionsTests {
         TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
         Thread.sleep(1000);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
 
-        verify(requestQueueProvider, never()).endSession(1, null);
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
     @Test
     public void automaticSessionBeginEndWithManualDisabled() throws InterruptedException {
-        Countly mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-
-        mCountly.init(config);
+        CountlyConfig config = TestUtils.createBaseConfig();
+        Countly mCountly = (new Countly()).init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
-        mCountly.onStart(null);
+        mCountly.onStartInternal(null);
 
         TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
         Thread.sleep(1000);
 
-        mCountly.onStop();
+        mCountly.onStopInternal();
 
         verify(requestQueueProvider, times(1)).endSession(1, null);
+        verify(requestQueueProvider, never()).endSession(anyInt());
+    }
+
+    /**
+     * No session related requests should be done when no session consent is given
+     */
+    @Test
+    public void consentNotGivenNothingHappens() {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.setRequiresConsent(true);
+        Countly mCountly = (new Countly()).init(config);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        mCountly.onStart(mock(TestUtils.Activity2.class));
+        mCountly.onStopInternal();
+        mCountly.sessions().beginSession();
+        mCountly.sessions().updateSession();
+        mCountly.sessions().endSession();
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
     //TODO add tests that make sure that init time consent is handled correctly
+    //todo react to receiving consent and removing consent
 }

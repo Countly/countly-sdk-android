@@ -5,7 +5,9 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ModuleViews extends ModuleBase implements ViewIdProvider {
@@ -18,7 +20,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     boolean automaticTrackingShouldUseShortName = false;
 
     //track orientation changes
-    boolean trackOrientationChanges = false;
+    boolean trackOrientationChanges;
+
     int currentOrientation = -1;
     final static String ORIENTATION_EVENT_KEY = "[CLY]_orientation";
 
@@ -32,6 +35,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     SafeIDGenerator safeViewIDGenerator;
 
+    String[] reservedSegmentationKeysViews = new String[] { "name", "visit", "start", "segment" };
+
     public @NonNull String getCurrentViewId() {
         return currentViewID == null ? "" : currentViewID;
     }
@@ -42,8 +47,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     static class ViewData {
         String viewID;
-        long viewStartTime;
+        long viewStartTimeSeconds; // if this is 0 then the view is not started yet or was paused
         String viewName;
+        boolean isAutoStoppedView = false;//views started with "startAutoStoppedView" would have this as "true". If set to "true" views should be automatically closed when another one is started.
+        boolean isAutoPaused = false;//this marks that this view automatically paused when going to the background
     }
 
     //interface for SDK users
@@ -57,9 +64,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         super(cly, config);
         L.v("[ModuleViews] Initializing");
 
-        if (config.enableViewTracking) {
+        if (config.enableAutomaticViewTracking) {
             L.d("[ModuleViews] Enabling automatic view tracking");
-            autoViewTracker = config.enableViewTracking;
+            autoViewTracker = config.enableAutomaticViewTracking;
         }
 
         if (config.autoTrackingUseShortName) {
@@ -70,8 +77,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         config.viewIdProvider = this;
         safeViewIDGenerator = config.safeViewIDGenerator;
 
-        setAutomaticViewSegmentationInternal(config.automaticViewSegmentation);
-        autoTrackingActivityExceptions = config.autoTrackingExceptions;
+        setGlobalViewSegmentationInternal(config.globalViewSegmentation);
+        autoTrackingActivityExceptions = config.automaticViewTrackingExceptions;
         trackOrientationChanges = config.trackOrientationChange;
 
         viewsInterface = new Views();
@@ -81,55 +88,33 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
      * Checks the provided Segmentation by the user. Sanitizes it
      * and transfers the data into an internal Segmentation Object.
      */
-    void setAutomaticViewSegmentationInternal(Map<String, Object> segmentation) {
-        L.d("[ModuleViews] Calling setAutomaticViewSegmentationInternal");
+    void setGlobalViewSegmentationInternal(@Nullable Map<String, Object> segmentation) {
+        L.d("[ModuleViews] Calling setGlobalViewSegmentationInternal with[" + (segmentation == null ? "null" : segmentation.size()) + "] entries");
 
         automaticViewSegmentation.clear();
 
         if (segmentation != null) {
+
+            Utils.removeReservedKeysFromSegmentation(segmentation, reservedSegmentationKeysViews, "[ModuleViews] setGlobalViewSegmentationInternal, ", L);
+
             if (Utils.removeUnsupportedDataTypes(segmentation)) {
                 //found an unsupported type, print warning
-                L.w("[ModuleViews] You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
+                L.w("[ModuleViews] setGlobalViewSegmentationInternal, You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
             }
 
             automaticViewSegmentation.putAll(segmentation);
         }
     }
 
-    /**
-     * Records last view with duration (ignores first view)
-     */
-    void reportViewDuration() {
-        if (currentViewID == null || !viewDataMap.containsKey(currentViewID)) {
-            L.w("[ModuleViews] reportViewDuration, view id is null or not inside of viewDataMap");
-            return;
+    public void updateGlobalViewSegmentationInternal(@NonNull Map<String, Object> segmentation) {
+        if (Utils.removeUnsupportedDataTypes(segmentation)) {
+            //found an unsupported type, print warning
+            L.w("[ModuleViews] updateGlobalViewSegmentationInternal, You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
         }
 
-        ViewData vd = viewDataMap.get(currentViewID);
-        if (vd == null) {
-            L.w("[ModuleViews] reportViewDuration, view id:[" + currentViewID + "] has a null value");
-            return;
-        }
+        Utils.removeReservedKeysFromSegmentation(segmentation, reservedSegmentationKeysViews, "[ModuleViews] updateGlobalViewSegmentationInternal, ", L);
 
-        L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - vd.viewStartTime) + "] ms, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
-
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
-            return;
-        }
-
-        //we sanity check the time component and print error in case of problem
-        if (vd.viewStartTime <= 0) {
-            L.e("[ModuleViews] Last view start value is not normal: [" + vd.viewStartTime + "]");
-        }
-
-        //only record view if the view name is not null and if it has a reasonable duration
-        //if the PreviousViewStart is equal to 0, the duration would be set to the current timestamp
-        //and therefore will be ignored
-        if (vd.viewName != null && vd.viewStartTime > 0) {
-            Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, true, null);
-            eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, 0, null, vd.viewID);
-            viewDataMap.remove(vd.viewID);
-        }
+        automaticViewSegmentation.putAll(segmentation);
     }
 
     /**
@@ -158,7 +143,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         firstView = true;
     }
 
-    Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, boolean duration, Map<String, Object> customViewSegmentation) {
+    Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, Map<String, Object> customViewSegmentation) {
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
             viewSegmentation.putAll(customViewSegmentation);
@@ -168,15 +153,34 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (visit) {
             viewSegmentation.put("visit", "1");
         }
-        if (duration) {
-            viewSegmentation.put("dur", String.valueOf(UtilsTime.currentTimestampSeconds() - vd.viewStartTime));
-        }
         if (firstView) {
             viewSegmentation.put("start", "1");
         }
         viewSegmentation.put("segment", "Android");
 
         return viewSegmentation;
+    }
+
+    void autoCloseRequiredViews(boolean closeAllViews, Map<String, Object> customViewSegmentation) {
+        L.d("[ModuleViews] autoCloseRequiredViews");
+        List<String> viewsToRemove = new ArrayList<>(1);
+
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (closeAllViews || vd.isAutoStoppedView) {
+                viewsToRemove.add(vd.viewID);
+            }
+        }
+
+        if (viewsToRemove.size() > 0) {
+            L.d("[ModuleViews] autoCloseRequiredViews, about to close [" + viewsToRemove.size() + "] views");
+        }
+
+        Utils.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
+
+        for (int a = 0; a < viewsToRemove.size(); a++) {
+            stopViewWithIDInternal(viewsToRemove.get(a), customViewSegmentation);
+        }
     }
 
     /**
@@ -189,45 +193,50 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
      * @param customViewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
      * @return Returns link to Countly for call chaining
      */
-    synchronized Countly recordViewInternal(String viewName, Map<String, Object> customViewSegmentation) {
+    @Nullable String startViewInternal(@Nullable String viewName, @Nullable Map<String, Object> customViewSegmentation, boolean viewShouldBeAutomaticallyStopped) {
         if (!_cly.isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before recordView");
-            return _cly;
+            L.e("Countly.sharedInstance().init must be called before startViewInternal");
+            return null;
         }
 
         if (viewName == null || viewName.isEmpty()) {
-            L.e("[ModuleViews] Trying to record view with null or empty view name, ignoring request");
-            return _cly;
+            L.e("[ModuleViews] startViewInternal, Trying to record view with null or empty view name, ignoring request");
+            return null;
         }
 
         // if segmentation is null this just returns so no null check necessary
-        Utils.truncateSegmentationValues(customViewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] recordViewInternal", L);
+        Utils.truncateSegmentationValues(customViewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] startViewInternal", L);
+
+        Utils.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
 
         if (L.logEnabled()) {
             int segmCount = 0;
             if (customViewSegmentation != null) {
                 segmCount = customViewSegmentation.size();
             }
-            L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view ID:[" + currentViewID + "] custom view segment count:[" + segmCount + "], first:[" + firstView + "]");
+            L.d("[ModuleViews] Recording view with name: [" + viewName + "], previous view ID:[" + currentViewID + "] custom view segment count:[" + segmCount + "], first:[" + firstView + "], autoStop:[" + viewShouldBeAutomaticallyStopped + "]");
         }
 
-        if (viewDataMap.size() > 0) {
-            //there is only a point in calling this if there are any open views
-            reportViewDuration();
-        } else {
-            L.i("[ModuleViews] Skipping to call 'reportViewDuration' due to having no open views");
-        }
+        //stop views that should be automatically stopped
+        //no segmentation should be used in this case
+        autoCloseRequiredViews(false, null);
 
         ViewData currentViewData = new ViewData();
         currentViewData.viewID = safeViewIDGenerator.GenerateValue();
         currentViewData.viewName = viewName;
-        currentViewData.viewStartTime = UtilsTime.currentTimestampSeconds();
+        currentViewData.viewStartTimeSeconds = UtilsTime.currentTimestampSeconds();
+        currentViewData.isAutoStoppedView = viewShouldBeAutomaticallyStopped;
 
         viewDataMap.put(currentViewData.viewID, currentViewData);
         previousViewID = currentViewID;
         currentViewID = currentViewData.viewID;
 
-        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, false, customViewSegmentation);
+        Map<String, Object> accumulatedEventSegm = new HashMap<String, Object>(automaticViewSegmentation);
+        if (customViewSegmentation != null) {
+            accumulatedEventSegm.putAll(customViewSegmentation);
+        }
+
+        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, accumulatedEventSegm);
 
         if (firstView) {
             L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");
@@ -236,7 +245,161 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, currentViewData.viewID);
 
-        return _cly;
+        return currentViewData.viewID;
+    }
+
+    void stopViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> customViewSegmentation) {
+        if (viewName == null || viewName.isEmpty()) {
+            L.e("[ModuleViews] stopViewWithNameInternal, Trying to record view with null or empty view name, ignoring request");
+            return;
+        }
+
+        String viewID = null;
+
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (vd != null && viewName.equals(vd.viewName)) {
+                viewID = entry.getKey();
+            }
+        }
+
+        if (viewID == null) {
+            L.e("[ModuleViews] stopViewWithNameInternal, No view entry found with the provided name :[" + viewName + "]");
+            return;
+        }
+
+        stopViewWithIDInternal(viewID, customViewSegmentation);
+    }
+
+    void stopViewWithIDInternal(@Nullable String viewID, @Nullable Map<String, Object> customViewSegmentation) {
+        if (viewID == null || viewID.isEmpty()) {
+            L.e("[ModuleViews] stopViewWithNameInternal, Trying to record view with null or empty view ID, ignoring request");
+            return;
+        }
+        //todo extract common checks
+        if (!viewDataMap.containsKey(viewID)) {
+            L.w("[ModuleViews] stopViewWithIDInternal, there is no view with the provided view id to close");
+            return;
+        }
+
+        ViewData vd = viewDataMap.get(viewID);
+        if (vd == null) {
+            L.e("[ModuleViews] stopViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening");
+            return;
+        }
+
+        L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - vd.viewStartTimeSeconds) + "] s, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
+        }
+
+        // if segmentation is null this just returns so no null check necessary
+        Utils.truncateSegmentationValues(customViewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] stopViewWithIDInternal", L);
+
+        recordViewEndEvent(vd, customViewSegmentation, "stopViewWithIDInternal");
+
+        viewDataMap.remove(vd.viewID);
+    }
+
+    void recordViewEndEvent(ViewData vd, @Nullable Map<String, Object> filteredCustomViewSegmentation, String viewRecordingSource) {
+        long lastElapsedDurationSeconds = 0;
+        //we sanity check the time component and print error in case of problem
+        if (vd.viewStartTimeSeconds < 0) {
+            L.e("[ModuleViews] " + viewRecordingSource + ", view start time value is not normal: [" + vd.viewStartTimeSeconds + "], ignoring that duration");
+        } else if (vd.viewStartTimeSeconds == 0) {
+            L.i("[ModuleViews] " + viewRecordingSource + ", view is either paused or didn't run, ignoring start timestamp");
+        } else {
+            lastElapsedDurationSeconds = UtilsTime.currentTimestampSeconds() - vd.viewStartTimeSeconds;
+        }
+
+        //only record view if the view name is not null
+        if (vd.viewName == null) {
+            L.e("[ModuleViews] stopViewWithIDInternal, view has no internal name, ignoring it");
+            return;
+        }
+
+        Map<String, Object> accumulatedEventSegm = new HashMap<String, Object>(automaticViewSegmentation);
+        if (filteredCustomViewSegmentation != null) {
+            accumulatedEventSegm.putAll(filteredCustomViewSegmentation);
+        }
+
+        long viewDurationSeconds = lastElapsedDurationSeconds;
+        Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, accumulatedEventSegm);
+        eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, viewDurationSeconds, null, vd.viewID);
+    }
+
+    void pauseViewWithIDInternal(String viewID, boolean pausedAutomatically) {
+        if (viewID == null || viewID.isEmpty()) {
+            L.e("[ModuleViews] pauseViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
+            return;
+        }
+
+        if (!viewDataMap.containsKey(viewID)) {
+            L.w("[ModuleViews] pauseViewWithIDInternal, there is no view with the provided view id to close");
+            return;
+        }
+
+        ViewData vd = viewDataMap.get(viewID);
+        if (vd == null) {
+            L.e("[ModuleViews] pauseViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening, auto paused:[" + pausedAutomatically + "]");
+            return;
+        }
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
+        }
+
+        L.d("[ModuleViews] pauseViewWithIDInternal, pausing view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
+
+        if (vd.viewStartTimeSeconds == 0) {
+            L.w("[ModuleViews] pauseViewWithIDInternal, pausing a view that is already paused. ID:[" + viewID + "], name:[" + vd.viewName + "]");
+            return;
+        }
+
+        vd.isAutoPaused = pausedAutomatically;
+
+        recordViewEndEvent(vd, null, "pauseViewWithIDInternal");
+
+        vd.viewStartTimeSeconds = 0;
+    }
+
+    void resumeViewWithIDInternal(String viewID) {
+        if (viewID == null || viewID.isEmpty()) {
+            L.e("[ModuleViews] resumeViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
+            return;
+        }
+
+        if (!viewDataMap.containsKey(viewID)) {
+            L.w("[ModuleViews] resumeViewWithIDInternal, there is no view with the provided view id to close");
+            return;
+        }
+
+        ViewData vd = viewDataMap.get(viewID);
+        if (vd == null) {
+            L.e("[ModuleViews] resumeViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening");
+            return;
+        }
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
+        }
+
+        L.d("[ModuleViews] resumeViewWithIDInternal, resuming view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
+
+        if (vd.viewStartTimeSeconds > 0) {
+            L.w("[ModuleViews] resumeViewWithIDInternal, resuming a view that is already running. ID:[" + viewID + "], name:[" + vd.viewName + "]");
+            return;
+        }
+
+        vd.viewStartTimeSeconds = UtilsTime.currentTimestampSeconds();
+        vd.isAutoPaused = false;
+    }
+
+    void stopAllViewsInternal(Map<String, Object> viewSegmentation) {
+        L.d("[ModuleViews] stopAllViewsInternal");
+
+        autoCloseRequiredViews(true, viewSegmentation);
     }
 
     void updateOrientation(int newOrientation) {
@@ -262,6 +425,30 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
     }
 
+    void pauseRunningViewsAndSend() {
+        L.d("[ModuleViews] pauseRunningViewsAndSend, going to the background and pausing");
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+
+            if (vd.viewStartTimeSeconds > 0) {
+                //if the view is running
+                pauseViewWithIDInternal(vd.viewID, true);
+            }
+        }
+    }
+
+    void resumeAutoPausedViews() {
+        L.d("[ModuleViews] resumeAutoPausedViews, going to the foreground and resuming");
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+
+            if (vd.isAutoPaused) {
+                //if the view was automatically paused, resume it
+                resumeViewWithIDInternal(vd.viewID);
+            }
+        }
+    }
+
     @Override
     void onConfigurationChanged(Configuration newConfig) {
         if (trackOrientationChanges) {
@@ -278,13 +465,19 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             //main purpose of this is handling transitions when the app is getting closed/minimised
             //for cases when going from one view to another we would report the duration there
             if (updatedActivityCount <= 0) {
-                reportViewDuration();
+                //try to close the last open view with the current view ID
+                stopViewWithIDInternal(currentViewID, null);
             }
+        }
+
+        if (updatedActivityCount <= 0) {
+            //if we go to the background, pause all running views
+            pauseRunningViewsAndSend();
         }
     }
 
     @Override
-    void onActivityStarted(Activity activity) {
+    void onActivityStarted(Activity activity, int updatedActivityCount) {
         //automatic view tracking
         if (autoViewTracker) {
             if (!isActivityInExceptionList(activity)) {
@@ -298,7 +491,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                     }
                 }
 
-                recordViewInternal(usedActivityName, automaticViewSegmentation);
+                startViewInternal(usedActivityName, automaticViewSegmentation, true);
             } else {
                 L.d("[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
             }
@@ -311,6 +504,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 updateOrientation(orient);
             }
         }
+
+        if (updatedActivityCount == 1) {
+            //if we go to the background, pause all running views
+            resumeAutoPausedViews();
+        }
     }
 
     /**
@@ -319,7 +517,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
      * @param conf
      * @return
      */
-    Integer getOrientationFromConfiguration(Configuration conf) {
+    Integer getOrientationFromConfiguration(@Nullable Configuration conf) {
         if (conf == null) {
             return null;
         }
@@ -360,6 +558,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
          * Check state of automatic view tracking
          *
          * @return boolean - true if enabled, false if disabled
+         * @deprecated this call will be removed. There is no replacement
          */
         public boolean isAutomaticViewTrackingEnabled() {
             synchronized (_cly) {
@@ -376,6 +575,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
          *
          * @param viewName String - name of the view
          * @return Returns link to Countly for call chaining
+         * @deprecated Use "Countly.view().startAutoClosedView(...)" in place of this
          */
         public Countly recordView(@Nullable String viewName) {
             synchronized (_cly) {
@@ -392,12 +592,161 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
          *
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
+         * @deprecated Use "Countly.view().startAutoClosedView(...)" in place of this
          */
         public Countly recordView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling recordView [" + viewName + "]");
 
-                return recordViewInternal(viewName, viewSegmentation);
+                if (autoViewTracker) {
+                    L.e("[Views] recordView, manual view call will be ignored since automatic tracking is enabled.");
+                    return _cly;
+                }
+
+                startViewInternal(viewName, viewSegmentation, true);
+
+                return _cly;
+            }
+        }
+
+        /**
+         * Record a view manually, without automatic tracking
+         * or tracks a view that is not automatically tracked
+         * like a fragment, Message box or a transparent Activity
+         *
+         * @param viewName String - name of the view
+         * @return Returns View ID
+         */
+        public String startAutoStoppedView(@Nullable String viewName) {
+            synchronized (_cly) {
+                // call the general function that has two parameters
+                return startAutoStoppedView(viewName, null);
+            }
+        }
+
+        /**
+         * Record a view manually, without automatic tracking
+         * or tracks a view that is not automatically tracked
+         * like a fragment, Message box or a transparent Activity
+         * with segmentation. (This is the main function that is used)
+         *
+         * @param viewName String - name of the view
+         * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
+         * @return Returns view ID
+         */
+        public String startAutoStoppedView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling startAutoStoppedView [" + viewName + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] startAutoStoppedView, manual view call will be ignored since automatic tracking is enabled.");
+                    return null;
+                }
+
+                return startViewInternal(viewName, viewSegmentation, true);
+            }
+        }
+
+        public @Nullable String startView(@Nullable String viewName) {
+            synchronized (_cly) {
+                L.i("[Views] Calling startView vn[" + viewName + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    return null;
+                }
+
+                return startViewInternal(viewName, null, false);
+            }
+        }
+
+        public @Nullable String startView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling startView vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    return null;
+                }
+
+                return startViewInternal(viewName, viewSegmentation, false);
+            }
+        }
+
+        public void stopViewWithName(@Nullable String viewName) {
+            synchronized (_cly) {
+                L.i("[startAutoClosedView] Calling stopViewWithName vn[" + viewName + "]");
+
+                stopViewWithNameInternal(viewName, null);
+            }
+        }
+
+        public void stopViewWithName(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling stopViewWithName vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+
+                stopViewWithNameInternal(viewName, viewSegmentation);
+            }
+        }
+
+        public void stopViewWithID(@Nullable String viewID) {
+            synchronized (_cly) {
+                L.i("[Views] Calling stopViewWithID vi[" + viewID + "]");
+
+                stopViewWithIDInternal(viewID, null);
+            }
+        }
+
+        public void stopViewWithID(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling stopViewWithName vi[" + viewID + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+
+                stopViewWithIDInternal(viewID, viewSegmentation);
+            }
+        }
+
+        public void pauseViewWithID(@Nullable String viewID) {
+            synchronized (_cly) {
+                L.i("[Views] Calling pauseViewWithID vi[" + viewID + "]");
+
+                pauseViewWithIDInternal(viewID, false);
+            }
+        }
+
+        public void resumeViewWithID(@Nullable String viewID) {
+            synchronized (_cly) {
+                L.i("[Views] Calling resumeViewWithID vi[" + viewID + "]");
+
+                resumeViewWithIDInternal(viewID);
+            }
+        }
+
+        public void setGlobalViewSegmentation(@Nullable Map<String, Object> segmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling setGlobalViewSegmentation sg[" + (segmentation == null ? segmentation : segmentation.size()) + "]");
+
+                setGlobalViewSegmentationInternal(segmentation);
+            }
+        }
+
+        public void updateGlobalViewSegmentation(@Nullable Map<String, Object> segmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling updateGlobalViewSegmentation sg[" + (segmentation == null ? segmentation : segmentation.size()) + "]");
+
+                if (segmentation == null) {
+                    L.w("[View] When updating segmentation values, they can't be 'null'.");
+                    return;
+                }
+
+                updateGlobalViewSegmentationInternal(segmentation);
+            }
+        }
+
+        public void stopAllViews(Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling stopAllViews sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+
+                stopAllViewsInternal(viewSegmentation);
             }
         }
     }

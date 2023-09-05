@@ -112,13 +112,13 @@ public class CountlyConfig {
 
     protected boolean enableUnhandledCrashReporting = false;
 
-    protected boolean enableViewTracking = false;
+    protected boolean enableAutomaticViewTracking = false;
 
     protected boolean autoTrackingUseShortName = false;
 
-    protected Class[] autoTrackingExceptions = null;
+    protected Class[] automaticViewTrackingExceptions = null;
 
-    protected Map<String, Object> automaticViewSegmentation = null;
+    protected Map<String, Object> globalViewSegmentation = null;
 
     protected Map<String, String> customNetworkRequestHeaders = null;
 
@@ -134,6 +134,8 @@ public class CountlyConfig {
     protected List<RCDownloadCallback> remoteConfigGlobalCallbackList = new ArrayList<>(2);
 
     protected boolean shouldRequireConsent = false;
+
+    protected boolean enableAllConsents = false;
     protected String[] enabledFeatureNames = null;
 
     protected boolean httpPostForced = false;
@@ -147,6 +149,8 @@ public class CountlyConfig {
     protected boolean trackOrientationChange = true;
 
     protected boolean manualSessionControlEnabled = false;
+
+    protected boolean manualSessionControlHybridModeEnabled = false;
 
     protected boolean recordAllThreadsWithCrash = false;
 
@@ -417,9 +421,30 @@ public class CountlyConfig {
      *
      * @param enable
      * @return Returns the same config object for convenient linking
+     * @deprecated Use "enableAutomaticViewTracking()"
      */
     public synchronized CountlyConfig setViewTracking(boolean enable) {
-        this.enableViewTracking = enable;
+        this.enableAutomaticViewTracking = enable;
+        return this;
+    }
+
+    /**
+     * Enable automatic view tracking
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enableAutomaticViewTracking() {
+        this.enableAutomaticViewTracking = true;
+        return this;
+    }
+
+    /**
+     * Enable short names for automatic view tracking
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enableAutomaticViewShortNames() {
+        this.autoTrackingUseShortName = true;
         return this;
     }
 
@@ -428,6 +453,7 @@ public class CountlyConfig {
      *
      * @param enable set true if you want short names
      * @return Returns the same config object for convenient linking
+     * @deprecated use "enableAutomaticViewShortNames()"
      */
     public synchronized CountlyConfig setAutoTrackingUseShortName(boolean enable) {
         this.autoTrackingUseShortName = enable;
@@ -435,11 +461,40 @@ public class CountlyConfig {
     }
 
     /**
-     * @param segmentation
+     * @param segmentation segmentation values that will be added for all recorded views (manual and automatic)
      * @return Returns the same config object for convenient linking
      */
+    public synchronized CountlyConfig setGlobalViewSegmentation(Map<String, Object> segmentation) {
+        globalViewSegmentation = segmentation;
+        return this;
+    }
+
+    /**
+     * @param segmentation
+     * @return Returns the same config object for convenient linking
+     * @deprecated Use "setAutomaticViewSegmentation(...)"
+     */
     public synchronized CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation) {
-        automaticViewSegmentation = segmentation;
+        globalViewSegmentation = segmentation;
+        return this;
+    }
+
+    /**
+     * Set which activities should be excluded from automatic view tracking
+     *
+     * @param exclusions activities which should be ignored
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setAutomaticViewTrackingExclusions(Class[] exclusions) {
+        if (exclusions != null) {
+            for (Class exception : exclusions) {
+                if (exception == null) {
+                    throw new IllegalArgumentException("setAutomaticViewTrackingExclusions(...) does not accept 'null' activities");
+                }
+            }
+        }
+
+        automaticViewTrackingExceptions = exclusions;
         return this;
     }
 
@@ -448,18 +503,10 @@ public class CountlyConfig {
      *
      * @param exceptions activities which should be ignored
      * @return Returns the same config object for convenient linking
+     * @deprecated Use "setAutomaticViewTrackingExclusions(...)"
      */
     public synchronized CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
-        if (exceptions != null) {
-            for (Class exception : exceptions) {
-                if (exception == null) {
-                    throw new IllegalArgumentException("setAutoTrackingExceptions() does not accept 'null' activities");
-                }
-            }
-        }
-
-        autoTrackingExceptions = exceptions;
-        return this;
+        return setAutomaticViewTrackingExclusions(exceptions);
     }
 
     /**
@@ -559,6 +606,16 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setConsentEnabled(String[] featureNames) {
         enabledFeatureNames = featureNames;
+        return this;
+    }
+
+    /**
+     * Give consent to all features
+     *
+     * @return
+     */
+    public synchronized CountlyConfig giveAllConsents() {
+        enableAllConsents = true;
         return this;
     }
 
@@ -691,6 +748,11 @@ public class CountlyConfig {
 
     public synchronized CountlyConfig enableManualSessionControl() {
         manualSessionControlEnabled = true;
+        return this;
+    }
+
+    public synchronized CountlyConfig enableManualSessionControlHybridMode() {
+        manualSessionControlHybridModeEnabled = true;
         return this;
     }
 

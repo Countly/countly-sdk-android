@@ -264,4 +264,5 @@ public class ModuleConsentTests {
     // TODO make sure that the consent request is correctly created after init
     // TODO test that consent given / removed triggers are played correctly
     // TODO ?make tests for formatConsentState
+    // TODO test give all consent
 }

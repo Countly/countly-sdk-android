@@ -98,4 +98,28 @@
       android:text="Attribution test"
       />
 
+  <Button
+      android:id="@+id/button71"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickBeginSession"
+      android:text="Begin Session"
+      />
+
+  <Button
+      android:id="@+id/button72"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickUpdateSession"
+      android:text="Update Session"
+      />
+
+  <Button
+      android:id="@+id/button73"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickEndSession"
+      android:text="End Session"
+      />
+
 </LinearLayout>

@@ -130,21 +130,15 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "{'test_object':'some value', 'other value':'123'}");
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        Countly.sharedInstance().onStart(this);
+    public void onClickBeginSession(View v) {
+        Countly.sharedInstance().sessions().beginSession();
     }
 
-    @Override
-    public void onStop() {
-        Countly.sharedInstance().onStop();
-        super.onStop();
+    public void onClickUpdateSession(View v) {
+        Countly.sharedInstance().sessions().updateSession();
     }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        Countly.sharedInstance().onConfigurationChanged(newConfig);
+    public void onClickEndSession(View v) {
+        Countly.sharedInstance().sessions().endSession();
     }
 }

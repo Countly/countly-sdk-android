@@ -51,10 +51,7 @@ public class TestUtils {
     }
 
     public static CountlyConfig createConfigurationConfig(boolean enableServerConfig, ImmediateRequestGenerator irGen) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+        CountlyConfig cc = createBaseConfig();
 
         cc.immediateRequestGenerator = irGen;
 
@@ -66,10 +63,7 @@ public class TestUtils {
     }
 
     public static CountlyConfig createVariantConfig(ImmediateRequestGenerator irGen) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+        CountlyConfig cc = createBaseConfig();
 
         cc.immediateRequestGenerator = irGen;
 
@@ -77,11 +71,8 @@ public class TestUtils {
     }
 
     public static CountlyConfig createConsentCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting()
-            .setRequiresConsent(requiresConsent)
+        CountlyConfig cc = createBaseConfig();
+        cc.setRequiresConsent(requiresConsent)
             .setConsentEnabled(givenConsent)
             .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
@@ -95,11 +86,8 @@ public class TestUtils {
     }
 
     public static CountlyConfig createAttributionCountlyConfig(boolean requiresConsent, String[] givenConsent, ModuleBase testModuleListener, RequestQueueProvider rqp, String daType, String daValue, Map<String, String> iaValues) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting()
-            .setDirectAttribution(daType, daValue)
+        CountlyConfig cc = createBaseConfig();
+        cc.setDirectAttribution(daType, daValue)
             .setIndirectAttribution(iaValues)
             .setRequiresConsent(requiresConsent)
             .setConsentEnabled(givenConsent)
@@ -109,30 +97,37 @@ public class TestUtils {
         return cc;
     }
 
-    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeViewIDGenerator, Map<String, Object> autoViewSegms) {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting()
-            .setTrackOrientationChanges(orientationTracking);
+    public static CountlyConfig createViewCountlyConfig(boolean orientationTracking, boolean useShortNames, boolean automaticViewTracking, SafeIDGenerator safeViewIDGenerator, Map<String, Object> globalViewSegms) {
+        CountlyConfig cc = createBaseConfig();
+        cc.setTrackOrientationChanges(orientationTracking);
 
-        cc.setAutoTrackingUseShortName(useShortNames);
+        if (useShortNames) {
+            cc.enableAutomaticViewShortNames();
+        }
+
         cc.safeViewIDGenerator = safeViewIDGenerator;
-        cc.setAutomaticViewSegmentation(autoViewSegms);
-        cc.setViewTracking(automaticViewTracking);
+        cc.setGlobalViewSegmentation(globalViewSegms);
+        if (automaticViewTracking) {
+            cc.enableAutomaticViewTracking();
+        }
         return cc;
     }
 
     public static CountlyConfig createScenarioEventIDConfig(SafeIDGenerator safeViewIDGenerator, SafeIDGenerator safeEventIDGenerator) {
+        CountlyConfig cc = createBaseConfig();
+
+        cc.enableAutomaticViewShortNames();
+        cc.safeViewIDGenerator = safeViewIDGenerator;
+        cc.safeEventIDGenerator = safeEventIDGenerator;
+        return cc;
+    }
+
+    public static CountlyConfig createBaseConfig() {
         CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
-        cc.setAutoTrackingUseShortName(true);
-        cc.setViewTracking(true);
-        cc.safeViewIDGenerator = safeViewIDGenerator;
-        cc.safeEventIDGenerator = safeEventIDGenerator;
         return cc;
     }
 
@@ -394,6 +389,10 @@ public class TestUtils {
         validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, idOverride, index, interactionCount);
     }
 
+    public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, double duration, Map<String, Object> segmentation, String idOverride, int index, Integer interactionCount) {
+        validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, duration, null, idOverride, index, interactionCount);
+    }
+
     public static void validateRecordEventInternalMockInteractions(EventProvider ep, int interactionCount) {
         ArgumentCaptor<String> arg1 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Map> arg2 = ArgumentCaptor.forClass(Map.class);
@@ -417,6 +416,7 @@ public class TestUtils {
         ArgumentCaptor<UtilsTime.Instant> arg6 = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<String> arg7 = ArgumentCaptor.forClass(String.class);
         verify(ep, times(interactionCount)).recordEventInternal(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture());
+        //verify(ep).recordEventInternal(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture());
 
         if (interactionCount == 0) {
             return;
