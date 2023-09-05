@@ -181,6 +181,8 @@ public class App extends Application {
             })
 
             .setViewTracking(true)
+            // uncomment the line below to enable auto enrolling the user to experiments while downloading the RC data
+            //.enrollABOnRCDownload()
             .setAutoTrackingUseShortName(true)
             .setAutomaticViewSegmentation(automaticViewSegmentation)
             .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
