@@ -126,6 +126,8 @@ public class CountlyConfig {
 
     protected boolean enableRemoteConfigAutomaticDownloadTriggers = false;
 
+    protected boolean enableAutoEnrollFlag = false;
+
     boolean enableRemoteConfigValueCaching = false;
     protected RemoteConfigCallback remoteConfigCallbackLegacy = null;
 
@@ -549,6 +551,16 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableRemoteConfigAutomaticTriggers() {
         enableRemoteConfigAutomaticDownloadTriggers = true;
+        return this;
+    }
+
+    /**
+     * Calling this would enable automatic enrollment of the user to the available experiments when RC is downloaded.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enrollABOnRCDownload() {
+        enableAutoEnrollFlag = true;
         return this;
     }
 

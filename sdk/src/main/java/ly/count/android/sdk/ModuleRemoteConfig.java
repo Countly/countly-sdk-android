@@ -23,6 +23,9 @@ public class ModuleRemoteConfig extends ModuleBase {
     //if set to true, it will automatically download remote configs on module startup
     boolean automaticDownloadTriggersEnabled;
 
+    // if set to true we should add 'oi=1' to our RC download call
+    boolean autoEnrollEnabled;
+
     boolean remoteConfigValuesShouldBeCached = false;
 
     List<RCDownloadCallback> downloadCallbacks = new ArrayList<>(2);
@@ -39,9 +42,10 @@ public class ModuleRemoteConfig extends ModuleBase {
         metricOverride = config.metricOverride;
         iRGenerator = config.immediateRequestGenerator;
 
-        L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching);
+        L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
         automaticDownloadTriggersEnabled = config.enableRemoteConfigAutomaticDownloadTriggers;
         remoteConfigValuesShouldBeCached = config.enableRemoteConfigValueCaching;
+        autoEnrollEnabled = config.enableAutoEnrollFlag;
 
         downloadCallbacks.addAll(config.remoteConfigGlobalCallbackList);
 
@@ -88,7 +92,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             if (useLegacyAPI) {
                 requestData = requestQueueProvider.prepareRemoteConfigRequestLegacy(preparedKeys[0], preparedKeys[1], preparedMetrics);
             } else {
-                requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics);
+                requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics, autoEnrollEnabled);
             }
             L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 

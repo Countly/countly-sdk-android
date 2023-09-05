@@ -179,8 +179,12 @@ public class App extends Application {
             })
 
             .enableAutomaticViewTracking()
-            .setGlobalViewSegmentation(automaticViewSegmentation)
-            .setAutomaticViewTrackingExclusions(new Class[] { ActivityExampleCustomEvents.class })
+            // uncomment the line below to enable auto enrolling the user to AB experiments when downloading RC data
+            //.enrollABOnRCDownload()
+            .setAutoTrackingUseShortName(true)
+            .setAutomaticViewSegmentation(automaticViewSegmentation)
+            .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
+
 
             .setPushIntentAddMetadata(true)
 
