@@ -83,6 +83,11 @@
         android:configChanges="orientation|screenSize"></activity>
 
     <activity
+        android:name=".ActivityExampleAutoViewTracking"
+        android:label="Multiple view tracking options"
+        android:configChanges="orientation|screenSize"></activity>
+
+    <activity
         android:name=".ActivityExampleRemoteConfig"
         android:label="@string/activity_name_remote_config"
         android:configChanges="orientation|screenSize"></activity>

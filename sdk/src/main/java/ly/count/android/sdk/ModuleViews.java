@@ -632,7 +632,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
          *
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
-         * @return Returns view ID
+         * @return String - view ID
          */
         public String startAutoStoppedView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
@@ -647,6 +647,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Starts a view which would not close automatically (For multi view tracking)
+         * @param viewName - String
+         * @return String - View ID
+         */
         public @Nullable String startView(@Nullable String viewName) {
             synchronized (_cly) {
                 L.i("[Views] Calling startView vn[" + viewName + "]");
@@ -660,6 +665,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Starts a view which would not close automatically (For multi view tracking)
+         * @param viewName String - name of the view
+         * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
+         * @return String - View ID
+         */
         public @Nullable String startView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling startView vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
@@ -673,6 +684,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Stops a view with the given name if it was open
+         * @param viewName String - view name
+         */
         public void stopViewWithName(@Nullable String viewName) {
             synchronized (_cly) {
                 L.i("[startAutoClosedView] Calling stopViewWithName vn[" + viewName + "]");
@@ -681,6 +696,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Stops a view with the given name if it was open
+         * @param viewName String - view name
+         * @param viewSegmentation Map<String, Object> - view segmentation
+         */
         public void stopViewWithName(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
@@ -689,6 +709,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Stops a view with the given ID if it was open
+         * @param viewID String - view ID
+         */
         public void stopViewWithID(@Nullable String viewID) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithID vi[" + viewID + "]");
@@ -697,6 +721,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Stops a view with the given ID if it was open
+         * @param viewID String - view ID
+         * @param viewSegmentation Map<String, Object> - view segmentation
+         */
         public void stopViewWithID(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vi[" + viewID + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
@@ -705,6 +734,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Pauses a view with the given ID
+         * @param viewID String - view ID
+         */
         public void pauseViewWithID(@Nullable String viewID) {
             synchronized (_cly) {
                 L.i("[Views] Calling pauseViewWithID vi[" + viewID + "]");
@@ -713,6 +746,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Resumes a view with the given ID
+         * @param viewID String - view ID
+         */
         public void resumeViewWithID(@Nullable String viewID) {
             synchronized (_cly) {
                 L.i("[Views] Calling resumeViewWithID vi[" + viewID + "]");
@@ -721,6 +758,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Set a segmentation to be recorded with all views
+         * @param segmentation Map<String, Object> - global view segmentation
+         */
         public void setGlobalViewSegmentation(@Nullable Map<String, Object> segmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling setGlobalViewSegmentation sg[" + (segmentation == null ? segmentation : segmentation.size()) + "]");
@@ -729,6 +770,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
+        /**
+         * Updates the global segmentation for views
+         * @param segmentation Map<String, Object> - global view segmentation
+         */
         public void updateGlobalViewSegmentation(@Nullable Map<String, Object> segmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling updateGlobalViewSegmentation sg[" + (segmentation == null ? segmentation : segmentation.size()) + "]");
@@ -742,7 +787,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        public void stopAllViews(Map<String, Object> viewSegmentation) {
+        /**
+         * Stops all views and records a segmentation if set
+         * @param viewSegmentation Map<String, Object> - view segmentation
+         */
+        public void stopAllViews(@Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopAllViews sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
 
