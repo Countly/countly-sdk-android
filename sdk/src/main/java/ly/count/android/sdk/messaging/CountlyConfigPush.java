@@ -16,7 +16,7 @@ public class CountlyConfigPush {
     /**
      * @param application
      * @param mode
-     * @deprecated use the other init
+     * @deprecated use the other constructor
      */
     public CountlyConfigPush(final Application application, Countly.CountlyMessagingMode mode) {
         this.application = application;

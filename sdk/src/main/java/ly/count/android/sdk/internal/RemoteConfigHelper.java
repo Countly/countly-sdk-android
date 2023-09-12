@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.ExperimentInformation;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.ModuleRemoteConfig;
 import ly.count.android.sdk.RCData;
@@ -116,5 +117,69 @@ public class RemoteConfigHelper {
         }
 
         return resultMap;
+    }
+
+    /**
+     * Converts A/B testing info  fetched from the server (JSONObject) into a map
+     *
+     * @param experimentObj - JSON Object fetched from the server
+     * @return
+     */
+    public static @NonNull Map<String, ExperimentInformation> convertExperimentInfoJsonToMap(@NonNull JSONObject experimentObj, @NonNull ModuleLog L) {
+        Map<String, ExperimentInformation> experimentInfoMap = new HashMap<>();
+        L.i("[ModuleRemoteConfig] convertExperimentInfoJsonToMap, parsing:[" + experimentObj + "]");
+
+        if (!experimentObj.has("jsonArray")) {
+            L.e("[ModuleRemoteConfig] convertVariantsJsonToMap, no json array found ");
+            return experimentInfoMap;
+        }
+
+        JSONArray jsonArray = experimentObj.optJSONArray("jsonArray");
+
+        L.i("[ModuleRemoteConfig] convertExperimentInfoJsonToMap, array:[" + jsonArray + "]");
+
+        if (jsonArray == null) {
+            return experimentInfoMap;
+        }
+
+        try {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                L.i("[ModuleRemoteConfig] convertExperimentInfoJsonToMap, object:[" + jsonObject + "]");
+                String expID = jsonObject.getString("id");
+                String expName = jsonObject.getString("name");
+                String expDescription = jsonObject.getString("description");
+                String currentVariant = jsonObject.optString("currentVariant");
+
+                JSONObject variantsObject = jsonObject.getJSONObject("variants");
+                Map<String, Map<String, Object>> variantsMap = new HashMap<>();
+
+                Iterator<String> variantNames = variantsObject.keys();
+                while (variantNames.hasNext()) {
+
+                    String variantName = variantNames.next();
+                    JSONObject variantDetails = variantsObject.getJSONObject(variantName);
+                    L.i("[ModuleRemoteConfig] convertExperimentInfoJsonToMap, details:[" + variantDetails + "]");
+                    Map<String, Object> variantMap = new HashMap<>();
+
+                    Iterator<String> variantKeys = variantDetails.keys();
+                    while (variantKeys.hasNext()) {
+                        String key = variantKeys.next();
+                        variantMap.put(key, variantDetails.get(key));
+                    }
+
+                    variantsMap.put(variantName, variantMap);
+                }
+
+                ExperimentInformation experimentInfo = new ExperimentInformation(expID, expName, expDescription, currentVariant, variantsMap);
+                experimentInfoMap.put(expID, experimentInfo);
+            }
+        } catch (Exception ex) {
+            L.e("[ModuleRemoteConfig] convertVariantsJsonToMap, failed parsing:[" + ex.toString() + "]");
+            return new HashMap<>();
+        }
+
+        L.i("[ModuleRemoteConfig] convertExperimentInfoJsonToMap, conversion result:[" + experimentInfoMap + "]");
+        return experimentInfoMap;
     }
 }

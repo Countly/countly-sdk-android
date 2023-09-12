@@ -39,5 +39,19 @@
         android:onClick="onClickFetchAllVariants"
         android:text="Fetch All vARIANTS"
         />
+    <Button
+        android:id="@+id/ab_fetch_experiments"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickFetchAllExperiments"
+        android:text="Fetch all experiments"
+        />
+    <Button
+        android:id="@+id/ab_get_exps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickExperimentsPrintValues"
+        android:text="get all experiments"
+        />
   </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
