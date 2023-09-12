@@ -575,7 +575,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
          *
          * @param viewName String - name of the view
          * @return Returns link to Countly for call chaining
-         * @deprecated Use "Countly.view().startAutoClosedView(...)" in place of this
+         * @deprecated Use "Countly.view().startAutoStoppedView(...)" in place of this
          */
         public Countly recordView(@Nullable String viewName) {
             synchronized (_cly) {
@@ -592,7 +592,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
          *
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
-         * @deprecated Use "Countly.view().startAutoClosedView(...)" in place of this
+         * @deprecated Use "Countly.view().startAutoStoppedView(...)" in place of this
          */
         public Countly recordView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
@@ -675,7 +675,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         public void stopViewWithName(@Nullable String viewName) {
             synchronized (_cly) {
-                L.i("[startAutoClosedView] Calling stopViewWithName vn[" + viewName + "]");
+                L.i("[Views] Calling stopViewWithName vn[" + viewName + "]");
 
                 stopViewWithNameInternal(viewName, null);
             }
