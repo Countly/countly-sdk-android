@@ -9,7 +9,7 @@ public class ExperimentInformation {
     public String currentVariant;
     public Map<String, Map<String, Object>> variants;
 
-    public ExperimentInformation(String experimentID, String experimentName, String experimentDescription, String currentVariant, Map<String, Map<String, Object>> variants){
+    public ExperimentInformation(String experimentID, String experimentName, String experimentDescription, String currentVariant, Map<String, Map<String, Object>> variants) {
         this.experimentID = experimentID;
         this.experimentName = experimentName;
         this.experimentDescription = experimentDescription;

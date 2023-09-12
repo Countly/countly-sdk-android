@@ -215,7 +215,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
 
             // prepare request data
-            String requestData = shouldFetchExperimentInfo ? requestQueueProvider.prepareFetchAllExperiments(): requestQueueProvider.prepareFetchAllVariants();
+            String requestData = shouldFetchExperimentInfo ? requestQueueProvider.prepareFetchAllExperiments() : requestQueueProvider.prepareFetchAllVariants();
 
             L.d("[ModuleRemoteConfig] Fetching all A/B test variants/info requestData:[" + requestData + "]");
 
@@ -230,7 +230,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
 
                 if (shouldFetchExperimentInfo) {
-                  experimentContainer =  RemoteConfigHelper.convertExperimentInfoJsonToMap(checkResponse, L);
+                    experimentContainer = RemoteConfigHelper.convertExperimentInfoJsonToMap(checkResponse, L);
                 } else {
                     variantContainer = RemoteConfigHelper.convertVariantsJsonToMap(checkResponse, L);
                 }

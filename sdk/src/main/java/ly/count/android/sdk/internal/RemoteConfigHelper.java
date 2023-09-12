@@ -132,7 +132,6 @@ public class RemoteConfigHelper {
         if (!experimentObj.has("jsonArray")) {
             L.e("[ModuleRemoteConfig] convertVariantsJsonToMap, no json array found ");
             return experimentInfoMap;
-
         }
 
         JSONArray jsonArray = experimentObj.optJSONArray("jsonArray");
@@ -142,7 +141,6 @@ public class RemoteConfigHelper {
         if (jsonArray == null) {
             return experimentInfoMap;
         }
-
 
         try {
             for (int i = 0; i < jsonArray.length(); i++) {
