@@ -675,7 +675,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         public void stopViewWithName(@Nullable String viewName) {
             synchronized (_cly) {
-                L.i("[startAutoStoppedView] Calling stopViewWithName vn[" + viewName + "]");
+                L.i("[Views] Calling stopViewWithName vn[" + viewName + "]");
 
                 stopViewWithNameInternal(viewName, null);
             }
