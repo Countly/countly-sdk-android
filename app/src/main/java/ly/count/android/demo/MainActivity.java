@@ -118,6 +118,8 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, ActivityExampleViewTracking.class));
     }
 
+    public void onClickButtonAutoViewTracking(View v) { startActivity(new Intent(this, ActivityExampleAutoViewTracking.class)); }
+
     public void onClickButtonMultiThreading(View v) {
         //
     }
