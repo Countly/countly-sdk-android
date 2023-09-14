@@ -1,3 +1,6 @@
+## 23.8.1
+* Adding an additional testing call for retrieving AB test experiment information
+
 ## 23.8.0
 * ! Minor breaking change ! Manual view recording calls are now ignored when in automatic view recording mode.
 * ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
