@@ -39,11 +39,6 @@ public class ModuleAPM extends ModuleBase {
 
         activitiesOpen = 0;
 
-        if (_cly.lifecycleStateAtLeastStarted()) {
-            L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
-            activitiesOpen++;
-        }
-
         useManualAppLoadedTrigger = config.appLoadedManualTrigger;
         if (config.appStartTimestampOverride != null) {
             //if there is a app start time override, use it
@@ -353,7 +348,7 @@ public class ModuleAPM extends ModuleBase {
         boolean goingToBackground = (previousCount == 1 && newCount == 0);
         boolean goingToForeground = (previousCount == 0 && newCount == 1);
 
-        L.v("[ModuleAPM] calculateAppRunningTimes, toBG[" + goingToBackground + "] toFG[" + goingToForeground + "]");
+        L.v("[ModuleAPM] calculateAppRunningTimes, going toBG[" + goingToBackground + "] going toFG[" + goingToForeground + "] | [" + previousCount + "][" + newCount + "]");
 
         doForegroundBackgroundCalculations(goingToBackground, goingToForeground);
     }
@@ -459,6 +454,18 @@ public class ModuleAPM extends ModuleBase {
                 _cly.moduleAPM.clearNetworkTraces();
                 _cly.moduleAPM.cancelAllTracesInternal();
             }
+        }
+    }
+
+    @Override
+    void initFinished(@NonNull CountlyConfig config) {
+        // we only do this adjustment if we track it automatically
+        if (!manualForegroundBackgroundTriggers && _cly.lifecycleStateAtLeastStarted()) {
+            L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
+
+            calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
+
+            activitiesOpen++;
         }
     }
 

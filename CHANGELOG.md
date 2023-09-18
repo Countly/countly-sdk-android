@@ -1,3 +1,6 @@
+## 23.8.2
+* Fixed APM bug where automatic foreground, background tracking would track wrong if the SDK was not initialized while the app was not in the foreground
+
 ## 23.8.1
 * Adding an additional testing call for retrieving AB test experiment information
 
