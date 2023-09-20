@@ -741,7 +741,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public @NonNull Map<String, RCData> getAllValuesAndEnroll() {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Getting all Remote config values v2 and enrolling");
+                L.i("[RemoteConfig] Getting all Remote config values and enrolling");
                 Map<String, RCData> values = getAllRemoteConfigValuesInternal();
 
                 if (!values.isEmpty()) {
@@ -796,7 +796,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return new RCData(null, true);
                 }
 
-                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2 and enrolling");
+                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] and enrolling");
 
                 RCData value = getRCValue(key);
 
