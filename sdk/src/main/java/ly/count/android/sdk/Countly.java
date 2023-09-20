@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.8.1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "23.8.2";
 
     /**
      * Used as request meta data on every request
@@ -664,6 +664,7 @@ public class Countly {
 
             //set global application listeners
             if (config.application != null) {
+                L.d("[Countly] Calling registerActivityLifecycleCallbacks");
                 config.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
                     @Override
                     public void onActivityCreated(Activity activity, Bundle bundle) {
