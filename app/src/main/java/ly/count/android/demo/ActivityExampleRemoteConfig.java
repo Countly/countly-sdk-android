@@ -41,7 +41,16 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     public void onClickRemoteConfigGetValue(View v) {
         Object value = Countly.sharedInstance().remoteConfig().getValue("aa").value;
         if (value != null) {
-            Toast.makeText(getApplicationContext(), "Stored Remote Config Value with key 'a': [" + (int) value + "]", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Stored Remote Config Value with key 'aa': [" + (int) value + "]", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(getApplicationContext(), "No value stored for this key", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void onClickRemoteConfigGetValueAndEnroll(View v) {
+        Object value = Countly.sharedInstance().remoteConfig().getValueAndEnroll("aa").value;
+        if (value != null) {
+            Toast.makeText(getApplicationContext(), "Stored Remote Config Value with key 'aa': [" + (int) value + "]", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(getApplicationContext(), "No value stored for this key", Toast.LENGTH_SHORT).show();
         }
@@ -76,7 +85,7 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigPrintValues(View v) {
-        //this sample assumes that there are 4 keys available on the server
+        //this sample assumes that there are 5 keys available on the server
 
         Map<String, RCData> values = Countly.sharedInstance().remoteConfig().getValues();
 
@@ -125,6 +134,32 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
             JSONObject jobj = (JSONObject) value_5;
             printValues += "| " + jobj.toString();
         }
+
+        Toast t = Toast.makeText(getApplicationContext(), "Stored Remote Config Values: [" + printValues + "]", Toast.LENGTH_LONG);
+        t.setGravity(Gravity.BOTTOM, 0, 0);
+        t.show();
+    }
+
+    public void onClickRemoteConfigPrintValuesAndEnroll(View v) {
+        //this sample assumes that there is 1 key available on the server
+
+        Map<String, RCData> values = Countly.sharedInstance().remoteConfig().getAllValuesAndEnroll();
+
+        Countly.sharedInstance().L.d("Get all values test: [" + values.toString() + "]");
+
+        Object value_1 = null;
+
+        if (values != null && values.containsKey("aa")) {
+            value_1 = values.get("aa").value;
+        }
+
+        String printValues = "";
+
+        if (value_1 instanceof Integer) {
+            int intValue = (int) value_1;
+            printValues += intValue;
+        }
+
 
         Toast t = Toast.makeText(getApplicationContext(), "Stored Remote Config Values: [" + printValues + "]", Toast.LENGTH_LONG);
         t.setGravity(Gravity.BOTTOM, 0, 0);

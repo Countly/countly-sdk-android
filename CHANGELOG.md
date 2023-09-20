@@ -1,3 +1,7 @@
+## X.X.X
+* Added a call to enroll users to A/B tests when getting a remote config value: 'getValueAndEnroll'
+* Added a call to enroll users to A/B tests when getting all remote config values: 'getAllValuesAndEnroll'
+
 ## 23.8.1
 * Adding an additional testing call for retrieving AB test experiment information
 
