@@ -241,6 +241,8 @@ public class ConnectionProcessor implements Runnable {
 
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
+            String endPointOverrideTag = "&new_end_point=";
+            String newEndPoint = "";
             boolean containsTemporaryIdOverride = storedRequests[0].contains(temporaryIdOverrideTag);
             boolean containsTemporaryId = storedRequests[0].contains(temporaryIdTag);
             if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
@@ -254,6 +256,15 @@ public class ConnectionProcessor implements Runnable {
 
             boolean deviceIdOverride = storedRequests[0].contains("&override_id="); //if the sendable data contains a override tag
             boolean deviceIdChange = storedRequests[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+            int newEndPointIndex = storedRequests[0].indexOf(endPointOverrideTag); // we should change this request's API end point
+
+            if (newEndPointIndex > 0) {
+                // extract tag and endpoint
+                newEndPoint = storedRequests[0].substring(newEndPointIndex);
+
+                // extract endpoint
+                newEndPoint = newEndPoint.replaceFirst(endPointOverrideTag, "");
+            }
 
             //add the device_id to the created request
             String eventData;//todo rework to stringbuilder
@@ -305,7 +316,13 @@ public class ConnectionProcessor implements Runnable {
                 InputStream connInputStream = null;
                 try {
                     // initialize and open connection
-                    conn = urlConnectionForServerRequest(eventData, null);
+                    if (newEndPointIndex > 0) {
+                        // remove end point override from the request
+                        eventData = eventData.replaceFirst(endPointOverrideTag + newEndPoint, "");
+                        conn = urlConnectionForServerRequest(eventData, newEndPoint);
+                    } else {
+                        conn = urlConnectionForServerRequest(eventData, null);
+                    }
                     conn.connect();
 
                     int responseCode = 0;

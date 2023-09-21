@@ -75,6 +75,12 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
         Countly.sharedInstance().remoteConfig().clearAll();
     }
 
+    public void onClickRemoteConfigEnrollForKeys(View v) {
+        String[] keys = { "aa", "bb" };
+        Countly.sharedInstance().remoteConfig().enrollIntoABTestsForKeys(keys);
+        Toast.makeText(getApplicationContext(), "Enrolling for Keys", Toast.LENGTH_SHORT).show();
+    }
+
     public void onClickRemoteConfigPrintValues(View v) {
         //this sample assumes that there are 4 keys available on the server
 

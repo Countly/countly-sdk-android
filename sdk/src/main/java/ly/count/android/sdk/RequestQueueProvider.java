@@ -43,6 +43,8 @@ interface RequestQueueProvider {
 
     void sendDirectRequest(@NonNull final Map<String, String> requestData);
 
+    void enrollToKeys(@NonNull String data);
+
     //todo these should be moved or replaced in the future
     boolean queueContainsTemporaryIdItems();
 

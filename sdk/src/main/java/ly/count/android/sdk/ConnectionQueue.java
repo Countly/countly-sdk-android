@@ -196,6 +196,25 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     /**
+     * Enrolls the user for given keys
+     *
+     * @throws IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    public void enrollToKeys(@NonNull String data) {
+        if (!checkInternalState()) {
+            return;
+        }
+        L.d("[Connection Queue] enrollToKeys");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+            return;
+        }
+
+        addRequestToQueue(data, false);
+        tick();
+    }
+
+    /**
      * Records a session duration event for the app and sends it to the server. This method does nothing
      * if passed a negative or zero duration.
      *
@@ -735,7 +754,8 @@ class ConnectionQueue implements RequestQueueProvider {
         String data = "method=ab"
             + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
             + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
+            + "&new_end_point=/o/sdk";
         return data;
     }
 

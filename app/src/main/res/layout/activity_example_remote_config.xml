@@ -58,4 +58,11 @@
       android:onClick="onClickRemoteConfigPrintValues"
       android:text="Remote Config Print Stored Values"
       />
+  <Button
+      android:id="@+id/enroll_for_keys_main"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRemoteConfigEnrollForKeys"
+      android:text="Enroll For Keys"
+      />
 </LinearLayout>
