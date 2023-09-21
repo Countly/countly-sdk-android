@@ -744,21 +744,23 @@ public class ModuleRemoteConfig extends ModuleBase {
                 L.i("[RemoteConfig] Getting all Remote config values and enrolling");
                 Map<String, RCData> values = getAllRemoteConfigValuesInternal();
 
-                if (!values.isEmpty()) {
-
-                    Set<String> setOfKeys = values.keySet();
-                    String[] arrayOfKeys = new String[setOfKeys.size()];
-
-                    // set to array
-                    int i = 0;
-                    for (String key : setOfKeys)
-                        arrayOfKeys[i++] = key;
-
-                    // enroll
-                    enrollIntoABTestsForKeys(arrayOfKeys);
-                } else {
-                    L.w("[RemoteConfig] No value to enroll");
+                if (values.isEmpty()) {
+                    L.i("[RemoteConfig] No value to enroll");
+                    return values;
                 }
+
+                // assuming the values is not empty enroll for the keys
+                Set<String> setOfKeys = values.keySet();
+                String[] arrayOfKeys = new String[setOfKeys.size()];
+
+                // set to array
+                int i = 0;
+                for (String key : setOfKeys) {
+                    arrayOfKeys[i++] = key;
+                }
+
+                // enroll
+                enrollIntoABTestsForKeys(arrayOfKeys);
 
                 return values;
             }
@@ -768,16 +770,16 @@ public class ModuleRemoteConfig extends ModuleBase {
          * Return the remote config value for a specific key
          *
          * @param key Key for which the remote config value needs to be returned
-         * @return The returned value. If no value existed for the key then the inner object will be returned as "null"
+         * @return The returned value. If no value existed for the key then the inner object (value) will be returned as "null"
          */
-        public @NonNull RCData getValue(@NonNull String key) {
+        public @NonNull RCData getValue(final @Nullable String key) {
             synchronized (_cly) {
-                if (key.equals("")) {
-                    L.w("[RemoteConfig] A valid key should be provided to get its value.");
+                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2");
+
+                if (key == null || key.equals("")) {
+                    L.i("[RemoteConfig] A valid key should be provided to get its value.");
                     return new RCData(null, true);
                 }
-
-                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2");
 
                 return getRCValue(key);
             }
@@ -789,24 +791,27 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param key Key for which the remote config value needs to be returned
          * @return The returned value. If no value existed for the key then the inner object will be returned as "null"
          */
-        public @NonNull RCData getValueAndEnroll(@NonNull String key) {
+        public @NonNull RCData getValueAndEnroll(@Nullable String key) {
             synchronized (_cly) {
-                if (key.equals("")) {
-                    L.w("[RemoteConfig] A valid key should be provided to get its value.");
+                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] and enrolling");
+
+                if (key == null || key.equals("")) {
+                    L.i("[RemoteConfig] A valid key should be provided to get its value.");
                     return new RCData(null, true);
                 }
 
-                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] and enrolling");
+                RCData data = getRCValue(key);
 
-                RCData value = getRCValue(key);
-
-                if (value.value != null) {
-                    String[] arrayOfKeys = new String[] { key };
-                    enrollIntoABTestsForKeys(arrayOfKeys);
-                } else {
-                    L.w("[RemoteConfig] No value to enroll");
+                if (data.value == null) {
+                    L.i("[RemoteConfig] No value to enroll");
+                    return data;
                 }
-                return value;
+
+                // assuming value is not null enroll to key
+                String[] arrayOfKeys = { key };
+                enrollIntoABTestsForKeys(arrayOfKeys);
+
+                return data;
             }
         }
 
