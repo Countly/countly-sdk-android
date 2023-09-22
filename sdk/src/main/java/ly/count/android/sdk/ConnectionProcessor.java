@@ -63,6 +63,10 @@ public class ConnectionProcessor implements Runnable {
 
     protected static String salt;
 
+    static String endPointOverrideTag = "&new_end_point=";
+
+    static int endPointOverrideTagLength = endPointOverrideTag.length();
+
     ModuleLog L;
 
     private enum RequestResult {
@@ -239,12 +243,13 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            String eventData = storedRequests[0];//todo rework to stringbuilder
+
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            String endPointOverrideTag = "&new_end_point=";
-            String newEndPoint = "";
-            boolean containsTemporaryIdOverride = storedRequests[0].contains(temporaryIdOverrideTag);
-            boolean containsTemporaryId = storedRequests[0].contains(temporaryIdTag);
+            String customEndpoint = null;
+            boolean containsTemporaryIdOverride = eventData.contains(temporaryIdOverrideTag);
+            boolean containsTemporaryId = eventData.contains(temporaryIdTag);
             if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
@@ -254,20 +259,49 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
-            boolean deviceIdOverride = storedRequests[0].contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = storedRequests[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
-            int newEndPointIndex = storedRequests[0].indexOf(endPointOverrideTag); // we should change this request's API end point
+            boolean deviceIdOverride = eventData.contains("&override_id="); //if the sendable data contains a override tag
+            boolean deviceIdChange = eventData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+            int newEndPointIndex = eventData.indexOf(endPointOverrideTag); // we should change this request's API end point
 
             if (newEndPointIndex > 0) {
-                // extract tag and endpoint
-                newEndPoint = storedRequests[0].substring(newEndPointIndex);
+                String requestFirstHalf = eventData.substring(0, newEndPointIndex);
+                // endpoint and the second half
+                String requestEndpointAndSecondHalf = eventData.substring(newEndPointIndex + endPointOverrideTagLength);
 
-                // extract endpoint
-                newEndPoint = newEndPoint.replaceFirst(endPointOverrideTag, "");
+                String requestSecondHalf = "";
+
+                int endpointTagLength = requestEndpointAndSecondHalf.indexOf("&");
+
+                if (endpointTagLength == -1) {
+                    //no params found afterwards
+
+                    if (requestEndpointAndSecondHalf.length() > 0) {
+                        customEndpoint = requestEndpointAndSecondHalf;
+                    } else {
+                        //nothing set, print warning
+                        customEndpoint = null;
+                    }
+                } else {
+                    //there are params here
+                    // potential url:
+                    // [endpoint&param=1]
+                    // [&param=1]
+                    String potentialEndpoint = requestEndpointAndSecondHalf.substring(0, endpointTagLength);
+
+                    if (potentialEndpoint.length() > 0) {
+                        customEndpoint = potentialEndpoint;
+                    } else {
+                        //nothing set, print warning
+                        customEndpoint = null;
+                    }
+
+                    requestSecondHalf = requestEndpointAndSecondHalf.substring(endpointTagLength);
+                }
+
+                eventData = requestFirstHalf + requestSecondHalf;
             }
 
             //add the device_id to the created request
-            String eventData;//todo rework to stringbuilder
             final String newId;
 
             if (deviceIdOverride) {
@@ -276,34 +310,34 @@ public class ConnectionProcessor implements Runnable {
                 // this is indicated by having the "override_id" tag. This just means that we
                 // don't use the id provided in the deviceId variable as this might have changed already.
 
-                eventData = storedRequests[0].replace("&override_id=", "&device_id=");
+                eventData = eventData.replace("&override_id=", "&device_id=");
                 newId = null;
             } else {
                 if (deviceIdChange) {
                     // this branch will be used if a new device_id is provided
                     // and a device_id merge on server has to be performed
 
-                    final int endOfDeviceIdTag = storedRequests[0].indexOf("&device_id=") + "&device_id=".length();
-                    newId = UtilsNetworking.urlDecodeString(storedRequests[0].substring(endOfDeviceIdTag));
+                    final int endOfDeviceIdTag = eventData.indexOf("&device_id=") + "&device_id=".length();
+                    newId = UtilsNetworking.urlDecodeString(eventData.substring(endOfDeviceIdTag));
 
                     if (newId.equals(deviceIdProvider_.getDeviceId())) {
                         // If the new device_id is the same as previous,
                         // we don't do anything to change it
 
-                        eventData = storedRequests[0];
+                        eventData = eventData;
                         deviceIdChange = false;
 
                         L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                     } else {
                         //new device_id provided, make sure it will be merged
-                        eventData = storedRequests[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                        eventData = eventData + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                     }
                 } else {
                     // this branch will be used in almost all requests.
                     // This just adds the device_id to them
 
                     newId = null;
-                    eventData = storedRequests[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                    eventData = eventData + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                 }
             }
 
@@ -316,13 +350,7 @@ public class ConnectionProcessor implements Runnable {
                 InputStream connInputStream = null;
                 try {
                     // initialize and open connection
-                    if (newEndPointIndex > 0) {
-                        // remove end point override from the request
-                        eventData = eventData.replaceFirst(endPointOverrideTag + newEndPoint, "");
-                        conn = urlConnectionForServerRequest(eventData, newEndPoint);
-                    } else {
-                        conn = urlConnectionForServerRequest(eventData, null);
-                    }
+                    conn = urlConnectionForServerRequest(eventData, customEndpoint);
                     conn.connect();
 
                     int responseCode = 0;
