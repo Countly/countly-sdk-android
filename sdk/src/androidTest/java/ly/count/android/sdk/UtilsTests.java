@@ -267,18 +267,18 @@ public class UtilsTests {
 
     @Test
     public void timeFormatterTests() {
-        Assert.assertEquals("0 milliseconds", Utils.formatTimeDifference(0));
-        Assert.assertEquals("5 milliseconds", Utils.formatTimeDifference(5));
-        Assert.assertEquals("1 seconds", Utils.formatTimeDifference(1000));
-        Assert.assertEquals("2 seconds", Utils.formatTimeDifference(2000));
-        Assert.assertEquals("1 minutes", Utils.formatTimeDifference(60000));
-        Assert.assertEquals("20 minutes", Utils.formatTimeDifference(1200000));
-        Assert.assertEquals("1 hours", Utils.formatTimeDifference(3600000));
-        Assert.assertEquals("2 hours", Utils.formatTimeDifference(9600000)); // instead of ~2.5
-        Assert.assertEquals("1 days and 0 hours", Utils.formatTimeDifference(86400000));
-        Assert.assertEquals("9 days and 7 hours", Utils.formatTimeDifference(804000000));
-        Assert.assertEquals("1 months and 0 days", Utils.formatTimeDifference(2592000000L));
-        Assert.assertEquals("2 months and 27 days", Utils.formatTimeDifference(7522090000L));
+        Assert.assertEquals("0 millisecond(s)", Utils.formatTimeDifference(0));
+        Assert.assertEquals("5 millisecond(s)", Utils.formatTimeDifference(5));
+        Assert.assertEquals("1 second(s)", Utils.formatTimeDifference(1000));
+        Assert.assertEquals("2 second(s)", Utils.formatTimeDifference(2000));
+        Assert.assertEquals("1 minute(s)", Utils.formatTimeDifference(60000));
+        Assert.assertEquals("20 minute(s)", Utils.formatTimeDifference(1200000));
+        Assert.assertEquals("1 hour(s)", Utils.formatTimeDifference(3600000));
+        Assert.assertEquals("2 hour(s)", Utils.formatTimeDifference(9600000)); // instead of ~2.5
+        Assert.assertEquals("1 day(s) and 0 hour(s)", Utils.formatTimeDifference(86400000));
+        Assert.assertEquals("9 day(s) and 7 hour(s)", Utils.formatTimeDifference(804000000));
+        Assert.assertEquals("1 month(s) and 0 day(s)", Utils.formatTimeDifference(2592000000L));
+        Assert.assertEquals("2 month(s) and 27 day(s)", Utils.formatTimeDifference(7522090000L));
     }
 
     @Test

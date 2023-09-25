@@ -411,18 +411,18 @@ public class Utils {
 
         if (months > 0) {
             long remainingDays = days % 30;
-            return months + " months and " + remainingDays + " days";
+            return months + " month(s) and " + remainingDays + " day(s)";
         } else if (days > 0) {
             long remainingHours = hours % 24;
-            return days + " days and " + remainingHours + " hours";
+            return days + " day(s) and " + remainingHours + " hour(s)";
         } else if (hours > 0) {
-            return hours + " hours";
+            return hours + " hour(s)";
         } else if (minutes > 0) {
-            return minutes + " minutes";
+            return minutes + " minute(s)";
         } else if (seconds > 0){
-            return seconds + " seconds";
+            return seconds + " second(s)";
         } else {
-            return differenceMs + " milliseconds";
+            return differenceMs + " millisecond(s)";
         }
     }
 }
