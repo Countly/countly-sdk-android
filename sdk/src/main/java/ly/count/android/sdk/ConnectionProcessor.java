@@ -62,6 +62,8 @@ public class ConnectionProcessor implements Runnable {
     private final Map<String, String> requestHeaderCustomValues_;
 
     protected static String salt;
+    static int dropAgeHours = 0;
+    static boolean isRequestOld = false;
 
     ModuleLog L;
 
@@ -239,6 +241,9 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            L.i("[Connection Processor] Checking if the request is older than:[" + dropAgeHours + "] hours");
+            isRequestOld = Utils.isRequestTooOld(storedRequests[0], dropAgeHours, "[Connection Processor]", L);
+
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
             boolean containsTemporaryIdOverride = storedRequests[0].contains(temporaryIdOverrideTag);
@@ -299,7 +304,7 @@ public class ConnectionProcessor implements Runnable {
             // add the remaining request count
             eventData = eventData + "&rr=" + (storedRequestCount - 1);
 
-            if (!(requestInfoProvider_.isDeviceAppCrawler() && requestInfoProvider_.ifShouldIgnoreCrawlers())) {
+            if (!(requestInfoProvider_.isDeviceAppCrawler() && requestInfoProvider_.ifShouldIgnoreCrawlers()) && !isRequestOld) {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 InputStream connInputStream = null;
@@ -419,7 +424,7 @@ public class ConnectionProcessor implements Runnable {
                 }
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
-                L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedRequests[0]);
+                L.i("[Connection Processor] Device identified as an app crawler or request is too old, removing request " + storedRequests[0]);
 
                 //remove stored data
                 storageProvider_.removeRequest(storedRequests[0]);

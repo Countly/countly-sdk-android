@@ -503,6 +503,14 @@ public class Countly {
                 L.d("[Init] Parameter tampering protection salt set");
             }
 
+            if (config.dropAgeHours < 0) {
+                config.dropAgeHours = 0;
+                L.d("[Init] Drop older requests threshold can not be negative. No threshold will be set.");
+            }
+            if (config.dropAgeHours > 0) {
+                L.d("[Init] Drop older requests threshold set to:[" + config.dropAgeHours + "] hours");
+            }
+
             if (connectionQueue_ == null) {
                 L.e("[Init] SDK failed to initialize because the connection queue failed to be created");
                 return this;
@@ -603,6 +611,12 @@ public class Countly {
             if (config.tamperingProtectionSalt != null) {
                 L.d("[Init] Enabling tamper protection");
                 ConnectionProcessor.salt = config.tamperingProtectionSalt;
+            }
+
+            if (config.dropAgeHours > 0) {
+                L.d("[Init] Enabling drop older request threshold");
+                ConnectionProcessor.dropAgeHours = config.dropAgeHours;
+                CountlyStore.dropAgeHours = config.dropAgeHours;
             }
 
             if (config.pushIntentAddMetadata) {

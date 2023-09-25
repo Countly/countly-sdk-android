@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -84,6 +85,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     ConfigurationProvider configurationProvider;
 
     int maxRequestQueueSize = 1000;
+    static int dropAgeHours = 0;
 
     //explicit storage fields
     boolean explicitStorageModeEnabled;
@@ -361,7 +363,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), writeInSync);
             } else {
                 //reached the limit, start deleting oldest requests
-                L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
+                L.w("[CountlyStore] Store reached it's limit, deleting oldest request(s)");
 
                 deleteOldestRequest();
                 addRequest(requestStr, writeInSync);
@@ -373,7 +375,29 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     synchronized void deleteOldestRequest() {
         final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
-        connections.remove(0);
+
+        int removedReqs = 0;
+        // if there is a request age limit set, check the whole queue for older requests
+        if (dropAgeHours > 0) {
+            L.i("[CountlyStore] deleteOldestRequest, will remove outdated requests from the queue");
+            Iterator<String> iterator = connections.iterator();
+            while (iterator.hasNext()) {
+                String request = iterator.next();
+
+                // check if the request is too old, and remove it from the list
+                if (Utils.isRequestTooOld(request, dropAgeHours, "[CountlyStore]", L)) {
+                    iterator.remove();
+                    removedReqs++;
+                }
+            }
+        }
+
+        // if no age limit or no old reqs in queue. just remove single request
+        if (removedReqs == 0) {
+            L.i("[CountlyStore] deleteOldestRequest, no request age limit or no too old requests. Will remove the oldest request only");
+            connections.remove(0);
+        }
+
         storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), false);
     }
 

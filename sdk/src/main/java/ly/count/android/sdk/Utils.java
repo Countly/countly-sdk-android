@@ -349,4 +349,47 @@ public class Utils {
             }
         }
     }
+
+    /**
+     * This function checks if a request is older than an accepted duration.
+     * As the expected duration you should use the developer provided 'dropAgeHours'
+     *
+     * @param request request string to check
+     * @param dropAgeHours oldness threshold (in hours)
+     * @return true if old, false if not
+     */
+    public static boolean isRequestTooOld(@NonNull String request, @NonNull int dropAgeHours, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+        if (dropAgeHours <= 0) {
+            L.d(messagePrefix + " isRequestTooOld, No request drop age set. Request will bypass age checks");
+            return false;
+        }
+
+        // starting index
+        int timestampStartIndex = request.indexOf("&timestamp=");
+
+        if (timestampStartIndex == -1) {
+            L.w(messagePrefix + " isRequestTooOld, No timestamp in request");
+            return false;
+        }
+
+        try {
+            // starting index +11 gets to the end of the tag and then +13 to get timestamp
+            long requestTimestampMs = Long.parseLong(request.substring(timestampStartIndex + 11, timestampStartIndex + 24));
+
+            // calculate the threshold timestamp by subtracting dropAgeHours from the current time
+            long thresholdTimestampMs = UtilsTime.currentTimestampMs() - (dropAgeHours * 3600000L); // 1 hour = 3600000 milliseconds
+
+            // check if the request's timestamp is older than the threshold
+            boolean result = requestTimestampMs < thresholdTimestampMs;
+
+            if (result) {
+                L.v(messagePrefix + " isRequestTooOld, Request:[" + (thresholdTimestampMs - requestTimestampMs) + "] ms older than accepted.");
+            }
+
+            return result;
+        } catch (NumberFormatException e) {
+            L.w(messagePrefix + " isRequestTooOld, Timestamp is not long");
+            return false;
+        }
+    }
 }
