@@ -386,6 +386,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
                 // check if the request is too old, and remove it from the list
                 if (Utils.isRequestTooOld(request, dropAgeHours, "[CountlyStore]", L)) {
+                    L.v("[CountlyStore] deleteOldestRequest, removing:" + request);
                     iterator.remove();
                     removedReqs++;
                 }

@@ -383,13 +383,46 @@ public class Utils {
             boolean result = requestTimestampMs < thresholdTimestampMs;
 
             if (result) {
-                L.v(messagePrefix + " isRequestTooOld, Request:[" + (thresholdTimestampMs - requestTimestampMs) + "] ms older than accepted.");
+                long timeGapMs = thresholdTimestampMs - requestTimestampMs;
+                String message = formatTimeDifference(timeGapMs);
+
+                L.v(messagePrefix + " isRequestTooOld, This request is " + message + " older than acceptable time frame");
             }
 
             return result;
         } catch (NumberFormatException e) {
             L.w(messagePrefix + " isRequestTooOld, Timestamp is not long");
             return false;
+        }
+    }
+
+    /**
+     * For a given milliseconds this returns a String message that gives the closest coherent timeframe back
+     *
+     * @param differenceMs - long milliseconds
+     * @return String message
+     */
+    public static String formatTimeDifference(long differenceMs) {
+        long seconds = differenceMs / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+        long months = days / 30;
+
+        if (months > 0) {
+            long remainingDays = days % 30;
+            return months + " months and " + remainingDays + " days";
+        } else if (days > 0) {
+            long remainingHours = hours % 24;
+            return days + " days and " + remainingHours + " hours";
+        } else if (hours > 0) {
+            return hours + " hours";
+        } else if (minutes > 0) {
+            return minutes + " minutes";
+        } else if (seconds > 0){
+            return seconds + " seconds";
+        } else {
+            return differenceMs + " milliseconds";
         }
     }
 }

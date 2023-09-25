@@ -264,4 +264,49 @@ public class UtilsTests {
         Assert.assertTrue(values.containsKey("b"));
         Assert.assertTrue(values.containsKey("c"));
     }
+
+    @Test
+    public void timeFormatterTests() {
+        Assert.assertEquals("0 milliseconds", Utils.formatTimeDifference(0));
+        Assert.assertEquals("5 milliseconds", Utils.formatTimeDifference(5));
+        Assert.assertEquals("1 seconds", Utils.formatTimeDifference(1000));
+        Assert.assertEquals("2 seconds", Utils.formatTimeDifference(2000));
+        Assert.assertEquals("1 minutes", Utils.formatTimeDifference(60000));
+        Assert.assertEquals("20 minutes", Utils.formatTimeDifference(1200000));
+        Assert.assertEquals("1 hours", Utils.formatTimeDifference(3600000));
+        Assert.assertEquals("2 hours", Utils.formatTimeDifference(9600000)); // instead of ~2.5
+        Assert.assertEquals("1 days and 0 hours", Utils.formatTimeDifference(86400000));
+        Assert.assertEquals("9 days and 7 hours", Utils.formatTimeDifference(804000000));
+        Assert.assertEquals("1 months and 0 days", Utils.formatTimeDifference(2592000000L));
+        Assert.assertEquals("2 months and 27 days", Utils.formatTimeDifference(7522090000L));
+    }
+
+    @Test
+    public void testValidRequest() {
+        String request = "request&timestamp=1692963331000";
+        boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testNoTimestampInRequest() {
+        String request = "request";
+        boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testNegativeDropAge() {
+        String request = "request&timestamp=1692963331000";
+        boolean result = Utils.isRequestTooOld(request, -1, "Test",mock(ModuleLog.class));
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testInvalidTimestamp() {
+        String request = "request&timestamp=invalid_timestamp";
+        boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
+        Assert.assertFalse(result);
+    }
+
 }
