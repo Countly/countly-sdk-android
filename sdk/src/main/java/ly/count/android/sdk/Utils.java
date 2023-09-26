@@ -351,29 +351,36 @@ public class Utils {
     }
 
     /**
-     * Given a String value, it would return a part of with respect to the beginning and possible end
+     * Given a String value, it would return a part of it and the given string without that part
+     * Ex. extractValueFromString("hey&a=b&c", "a=", "&") would return ["hey&c","b"]
      *
      * @param data - string value to be precessed
      * @param startStr - the string that comes just before the thing you want to extract
      * @param endStr - the string that where you would like to en your extraction
-     * @return - extracted string or "" if it does not exist
+     * @return - returns a  [data, null] if no extraction. Else String[] with the (data - startStr - extractedStr) and extracted str as second item.
      */
-    static String extractValueFromString(@NonNull String data, String startStr, String endStr) {
+    static String[] extractValueFromString(@NonNull String data, @NonNull String startStr, @NonNull String endStr) {
         int startingIndex = data.indexOf(startStr);
         if (startingIndex != -1) {
+            // capture first part without starting str
+            String initialPart = data.substring(0, startingIndex);
+
+            // end of starting string
             startingIndex += startStr.length();
+
+            // check if ending string exists
             int endingStrIndex = data.indexOf(endStr, startingIndex);
 
-            // if ending str does not exist return the part after startStr
+            // the string we are looking for is at the end
             if (endingStrIndex == -1) {
-                return data.substring(startingIndex);
+                return new String[] { initialPart, data.substring(startingIndex) };
             }
 
-            // if ending str exists return the string in between
-            return data.substring(startingIndex, endingStrIndex);
+            // if ending str exists
+            return new String[] { initialPart + data.substring(endingStrIndex), data.substring(startingIndex, endingStrIndex) };
         }
 
-        // if startStr does not exist just return empty string
-        return "";
+        // if startStr does not exist just return empty string[]
+        return new String[] { data, null };
     }
 }

@@ -266,47 +266,16 @@ public class ConnectionProcessor implements Runnable {
 
             String customEndpoint = null;
             String endPointOverrideTag = "&new_end_point=";
-            int newEndPointIndex = eventData.indexOf(endPointOverrideTag); // we should change this request's API end point
 
-            customEndpoint = Utils.extractValueFromString(eventData, endPointOverrideTag, "&");
+            // checks if endPointOverrideTag exists in the eventData, and if so, extracts the endpoint and removes the tag from the evenData
+            String[] extractionResult = Utils.extractValueFromString(eventData, endPointOverrideTag, "&");
+            if (extractionResult[1] != null) {
+                eventData = extractionResult[0];
 
-            if (newEndPointIndex > 0) {
-                L.v("[Connection Processor] new endpoint detected");
-                String requestFirstHalf = eventData.substring(0, newEndPointIndex);
-                // endpoint and the second half
-                String requestEndpointAndSecondHalf = eventData.substring(newEndPointIndex + endPointOverrideTagLength);
-
-                String requestSecondHalf = "";
-
-                int endpointTagLength = requestEndpointAndSecondHalf.indexOf("&");
-
-                if (endpointTagLength == -1) {
-                    //no params found afterwards
-
-                    if (requestEndpointAndSecondHalf.length() > 0) {
-                        customEndpoint = requestEndpointAndSecondHalf;
-                    } else {
-                        //nothing set, print warning
-                        customEndpoint = null;
-                    }
-                } else {
-                    //there are params here
-                    // potential url:
-                    // [endpoint&param=1]
-                    // [&param=1]
-                    String potentialEndpoint = requestEndpointAndSecondHalf.substring(0, endpointTagLength);
-
-                    if (potentialEndpoint.length() > 0) {
-                        customEndpoint = potentialEndpoint;
-                    } else {
-                        //nothing set, print warning
-                        customEndpoint = null;
-                    }
-
-                    requestSecondHalf = requestEndpointAndSecondHalf.substring(endpointTagLength);
+                if (extractionResult[1] != "") {
+                    customEndpoint = extractionResult[1];
                 }
-
-                eventData = requestFirstHalf + requestSecondHalf;
+                L.v("[Connection Processor] Custom end point detected for the request:[" + customEndpoint + "]");
             }
 
             //add the device_id to the created request
@@ -332,7 +301,6 @@ public class ConnectionProcessor implements Runnable {
                         // If the new device_id is the same as previous,
                         // we don't do anything to change it
 
-                        eventData = eventData;
                         deviceIdChange = false;
 
                         L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");

@@ -267,10 +267,20 @@ public class UtilsTests {
 
     @Test
     public void extractValuesFromString() {
-        Assert.assertEquals("o/sdk", Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse", "&new_end_point=", "&"));
-        Assert.assertEquals("o/sdk", Utils.extractValueFromString("sth&new_end_point=o/sdk", "&new_end_point=", "&"));
-        Assert.assertEquals("o/sdk", Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse&", "&new_end_point=", "&"));
-        Assert.assertEquals("", Utils.extractValueFromString("sth&", "&new_end_point=", "&"));
-        Assert.assertEquals("", Utils.extractValueFromString("&new_end_point=", "&new_end_point=", "&"));
+        String[] extractResult = Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse", "&new_end_point=", "&");
+        Assert.assertEquals("sth&sthelse", extractResult[0]);
+        Assert.assertEquals("o/sdk", extractResult[1]);
+
+        extractResult = Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse&", "&new_end_point=", "&");
+        Assert.assertEquals("sth&sthelse&", extractResult[0]);
+        Assert.assertEquals("o/sdk", extractResult[1]);
+
+        extractResult = Utils.extractValueFromString("sth&", "&new_end_point=", "&");
+        Assert.assertEquals("sth&", extractResult[0]);
+        Assert.assertEquals(null, extractResult[1]);
+
+        extractResult = Utils.extractValueFromString("&new_end_point=", "&new_end_point=", "&");
+        Assert.assertEquals("", extractResult[0]);
+        Assert.assertEquals("", extractResult[1]);
     }
 }
