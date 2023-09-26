@@ -349,4 +349,31 @@ public class Utils {
             }
         }
     }
+
+    /**
+     * Given a String value, it would return a part of with respect to the beginning and possible end
+     *
+     * @param data - string value to be precessed
+     * @param startStr - the string that comes just before the thing you want to extract
+     * @param endStr - the string that where you would like to en your extraction
+     * @return - extracted string or "" if it does not exist
+     */
+    static String extractValueFromString(@NonNull String data, String startStr, String endStr) {
+        int startingIndex = data.indexOf(startStr);
+        if (startingIndex != -1) {
+            startingIndex += startStr.length();
+            int endingStrIndex = data.indexOf(endStr, startingIndex);
+
+            // if ending str does not exist return the part after startStr
+            if (endingStrIndex == -1) {
+                return data.substring(startingIndex);
+            }
+
+            // if ending str exists return the string in between
+            return data.substring(startingIndex, endingStrIndex);
+        }
+
+        // if startStr does not exist just return empty string
+        return "";
+    }
 }

@@ -218,6 +218,7 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            // get stored requests
             final String[] storedRequests = storageProvider_.getRequests();
             int storedRequestCount = storedRequests == null ? 0 : storedRequests.length;
 
@@ -231,11 +232,11 @@ public class ConnectionProcessor implements Runnable {
             }
 
             if (storedRequests == null || storedRequestCount == 0) {
+                L.i("[Connection Processor] No requests in the queue, request queue skipped");
                 // currently no data to send, we are done for now
                 break;
             }
 
-            // get first event from collection
             if (deviceIdProvider_.getDeviceId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
@@ -243,11 +244,12 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            // get first request
             String eventData = storedRequests[0];//todo rework to stringbuilder
 
+            // temp ID checks
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            String customEndpoint = null;
             boolean containsTemporaryIdOverride = eventData.contains(temporaryIdOverrideTag);
             boolean containsTemporaryId = eventData.contains(temporaryIdTag);
             if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
@@ -261,9 +263,15 @@ public class ConnectionProcessor implements Runnable {
 
             boolean deviceIdOverride = eventData.contains("&override_id="); //if the sendable data contains a override tag
             boolean deviceIdChange = eventData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+
+            String customEndpoint = null;
+            String endPointOverrideTag = "&new_end_point=";
             int newEndPointIndex = eventData.indexOf(endPointOverrideTag); // we should change this request's API end point
 
+            customEndpoint = Utils.extractValueFromString(eventData, endPointOverrideTag, "&");
+
             if (newEndPointIndex > 0) {
+                L.v("[Connection Processor] new endpoint detected");
                 String requestFirstHalf = eventData.substring(0, newEndPointIndex);
                 // endpoint and the second half
                 String requestEndpointAndSecondHalf = eventData.substring(newEndPointIndex + endPointOverrideTagLength);

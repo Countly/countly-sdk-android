@@ -264,4 +264,13 @@ public class UtilsTests {
         Assert.assertTrue(values.containsKey("b"));
         Assert.assertTrue(values.containsKey("c"));
     }
+
+    @Test
+    public void extractValuesFromString() {
+        Assert.assertEquals("o/sdk", Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse", "&new_end_point=", "&"));
+        Assert.assertEquals("o/sdk", Utils.extractValueFromString("sth&new_end_point=o/sdk", "&new_end_point=", "&"));
+        Assert.assertEquals("o/sdk", Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse&", "&new_end_point=", "&"));
+        Assert.assertEquals("", Utils.extractValueFromString("sth&", "&new_end_point=", "&"));
+        Assert.assertEquals("", Utils.extractValueFromString("&new_end_point=", "&new_end_point=", "&"));
+    }
 }
