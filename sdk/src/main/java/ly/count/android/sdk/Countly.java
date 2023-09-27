@@ -616,7 +616,7 @@ public class Countly {
             if (config.dropAgeHours > 0) {
                 L.d("[Init] Enabling drop older request threshold");
                 ConnectionProcessor.dropAgeHours = config.dropAgeHours;
-                CountlyStore.dropAgeHours = config.dropAgeHours;
+                countlyStore.setRequestAgeLimit(config.dropAgeHours);
             }
 
             if (config.pushIntentAddMetadata) {

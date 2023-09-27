@@ -36,6 +36,7 @@ public class TestUtils {
     public static final String[] eKeys = new String[] { "eventKey1", "eventKey2", "eventKey3", "eventKey4", "eventKey5", "eventKey6", "eventKey7" };
     public static final String[] vNames = new String[] { "vienName1", "vienName2", "vienName3", "vienName4", "vienName5", "vienName6", "vienName7" };
     public static final String[] requestEntries = new String[] { "blah", "blah1", "blah2", "123", "456", "678", "890" };
+    public static final String[] tooOldRequestEntries = new String[] { "&timestamp=1664273584000", "&timestamp=1664273554000", "&timestamp=1664272584000" };
     public static final String[] viewIDVals = new String[] { "idv1", "idv2", "idv3", "idv4", "idv5", "idv6", "idv7", "idv8", "idv9", "idv10" };
     public static final String[] eventIDVals = new String[] { "ide1", "ide2", "ide3", "ide4", "ide5", "ide6", "ide7", "ide8", "ide9", "ide10" };
 
