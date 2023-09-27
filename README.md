@@ -3,7 +3,7 @@
 
 # Countly Android SDK
 
-This repository contains the Countly Android SDK, which can be integrated into Android applications. The Countly Android SDK is intended to be used with [Countly Lite](https://github.com/Countly/countly-server), [Countly Flex](https://countly.com/flex), [Countly Enterprise](https://countly.com/enterprise).
+This repository contains the Countly Android SDK, which can be integrated into Android applications. The Countly Android SDK is intended to be used with [Countly Lite](https://countly.com/lite), [Countly Flex](https://countly.com/flex), [Countly Enterprise](https://countly.com/enterprise).
 
 ## What is Countly?
 [Countly](https://count.ly) is a product analytics solution and innovation enabler that helps teams track product performance and customer journey and behavior across [mobile](https://count.ly/mobile-analytics), [web](http://count.ly/web-analytics),
