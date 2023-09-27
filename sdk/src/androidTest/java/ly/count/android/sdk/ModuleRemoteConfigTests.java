@@ -331,35 +331,56 @@ public class ModuleRemoteConfigTests {
         countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
+        Assert.assertEquals(123, countly.remoteConfig().getValueAndEnroll("a").value);
         Assert.assertEquals(123, countly.remoteConfig().getValueForKey("a"));
         Assert.assertFalse(countly.remoteConfig().getValue("a").isCurrentUsersData);
 
         Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
+        Assert.assertEquals("fg", countly.remoteConfig().getValueAndEnroll("b").value);
         Assert.assertEquals("fg", countly.remoteConfig().getValueForKey("b"));
         Assert.assertTrue(countly.remoteConfig().getValue("b").isCurrentUsersData);
 
         Assert.assertEquals(222222222222L, countly.remoteConfig().getValue("c").value);
+        Assert.assertEquals(222222222222L, countly.remoteConfig().getValueAndEnroll("c").value);
         Assert.assertEquals(222222222222L, countly.remoteConfig().getValueForKey("c"));
         Assert.assertFalse(countly.remoteConfig().getValue("c").isCurrentUsersData);
 
         Assert.assertEquals(1.5d, countly.remoteConfig().getValue("d").value);
+        Assert.assertEquals(1.5d, countly.remoteConfig().getValueAndEnroll("d").value);
         Assert.assertEquals(1.5d, countly.remoteConfig().getValueForKey("d"));
         Assert.assertTrue(countly.remoteConfig().getValue("d").isCurrentUsersData);
 
         Assert.assertEquals(jArrI.toString(), countly.remoteConfig().getValue("e").value.toString());
+        Assert.assertEquals(jArrI.toString(), countly.remoteConfig().getValueAndEnroll("e").value.toString());
         Assert.assertEquals(jArrI.toString(), countly.remoteConfig().getValueForKey("e").toString());
         Assert.assertFalse(countly.remoteConfig().getValue("e").isCurrentUsersData);
 
         Assert.assertEquals(jObjI.toString(), countly.remoteConfig().getValue("f").value.toString());
+        Assert.assertEquals(jObjI.toString(), countly.remoteConfig().getValueAndEnroll("f").value.toString());
         Assert.assertEquals(jObjI.toString(), countly.remoteConfig().getValueForKey("f").toString());
         Assert.assertTrue(countly.remoteConfig().getValue("f").isCurrentUsersData);
 
         Map<String, Object> valsOld = countly.remoteConfig().getAllValues();
         Map<String, RCData> valsNew = countly.remoteConfig().getValues();
+        Map<String, RCData> valsNewEnroll = countly.remoteConfig().getAllValuesAndEnroll();
 
         Assert.assertEquals(valsNew.size(), valsOld.size());
+        Assert.assertEquals(valsNew.size(), valsNewEnroll.size());
 
+        // for getValues
         for (Map.Entry<String, RCData> entry : valsNew.entrySet()) {
+            Object valN = entry.getValue().value;
+            Object valO = valsOld.get(entry.getKey());
+
+            if (valN instanceof JSONObject || valN instanceof JSONArray) {
+                Assert.assertEquals(valN.toString(), valO.toString());
+            } else {
+                Assert.assertEquals(valN, valO);
+            }
+        }
+
+        // for getAllValuesAndEnroll
+        for (Map.Entry<String, RCData> entry : valsNewEnroll.entrySet()) {
             Object valN = entry.getValue().value;
             Object valO = valsOld.get(entry.getKey());
 
@@ -383,6 +404,8 @@ public class ModuleRemoteConfigTests {
 
         countly.remoteConfig().getValue(null);
         countly.remoteConfig().getValue("");
+        countly.remoteConfig().getValueAndEnroll(null);
+        countly.remoteConfig().getValueAndEnroll("");
         countly.remoteConfig().getValueForKey(null);
         countly.remoteConfig().getValueForKey("");
 
