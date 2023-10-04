@@ -63,6 +63,8 @@ public class ConnectionProcessor implements Runnable {
 
     protected static String salt;
 
+    static String endPointOverrideTag = "&new_end_point=";
+
     ModuleLog L;
 
     private enum RequestResult {
@@ -214,6 +216,7 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            // get stored requests
             final String[] storedRequests = storageProvider_.getRequests();
             int storedRequestCount = storedRequests == null ? 0 : storedRequests.length;
 
@@ -227,11 +230,11 @@ public class ConnectionProcessor implements Runnable {
             }
 
             if (storedRequests == null || storedRequestCount == 0) {
+                L.i("[Connection Processor] No requests in the queue, request queue skipped");
                 // currently no data to send, we are done for now
                 break;
             }
 
-            // get first event from collection
             if (deviceIdProvider_.getDeviceId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
@@ -239,10 +242,14 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            // get first request in a separate variable to modify and keep the original intact
+            String eventData = storedRequests[0];//todo rework to stringbuilder
+
+            // temp ID checks
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            boolean containsTemporaryIdOverride = storedRequests[0].contains(temporaryIdOverrideTag);
-            boolean containsTemporaryId = storedRequests[0].contains(temporaryIdTag);
+            boolean containsTemporaryIdOverride = eventData.contains(temporaryIdOverrideTag);
+            boolean containsTemporaryId = eventData.contains(temporaryIdTag);
             if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
@@ -252,11 +259,23 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
-            boolean deviceIdOverride = storedRequests[0].contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = storedRequests[0].contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+            boolean deviceIdOverride = eventData.contains("&override_id="); //if the sendable data contains a override tag
+            boolean deviceIdChange = eventData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+
+            String customEndpoint = null;
+
+            // checks if endPointOverrideTag exists in the eventData, and if so, extracts the endpoint and removes the tag from the evenData
+            String[] extractionResult = Utils.extractValueFromString(eventData, endPointOverrideTag, "&");
+            if (extractionResult[1] != null) {
+                eventData = extractionResult[0];
+
+                if (!extractionResult[1].equals("")) {
+                    customEndpoint = extractionResult[1];
+                }
+                L.v("[Connection Processor] Custom end point detected for the request:[" + customEndpoint + "]");
+            }
 
             //add the device_id to the created request
-            String eventData;//todo rework to stringbuilder
             final String newId;
 
             if (deviceIdOverride) {
@@ -265,34 +284,33 @@ public class ConnectionProcessor implements Runnable {
                 // this is indicated by having the "override_id" tag. This just means that we
                 // don't use the id provided in the deviceId variable as this might have changed already.
 
-                eventData = storedRequests[0].replace("&override_id=", "&device_id=");
+                eventData = eventData.replace("&override_id=", "&device_id=");
                 newId = null;
             } else {
                 if (deviceIdChange) {
                     // this branch will be used if a new device_id is provided
                     // and a device_id merge on server has to be performed
 
-                    final int endOfDeviceIdTag = storedRequests[0].indexOf("&device_id=") + "&device_id=".length();
-                    newId = UtilsNetworking.urlDecodeString(storedRequests[0].substring(endOfDeviceIdTag));
+                    final int endOfDeviceIdTag = eventData.indexOf("&device_id=") + "&device_id=".length();
+                    newId = UtilsNetworking.urlDecodeString(eventData.substring(endOfDeviceIdTag));
 
                     if (newId.equals(deviceIdProvider_.getDeviceId())) {
                         // If the new device_id is the same as previous,
                         // we don't do anything to change it
 
-                        eventData = storedRequests[0];
                         deviceIdChange = false;
 
                         L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
                     } else {
                         //new device_id provided, make sure it will be merged
-                        eventData = storedRequests[0] + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                        eventData = eventData + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                     }
                 } else {
                     // this branch will be used in almost all requests.
                     // This just adds the device_id to them
 
                     newId = null;
-                    eventData = storedRequests[0] + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                    eventData = eventData + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                 }
             }
 
@@ -305,7 +323,7 @@ public class ConnectionProcessor implements Runnable {
                 InputStream connInputStream = null;
                 try {
                     // initialize and open connection
-                    conn = urlConnectionForServerRequest(eventData, null);
+                    conn = urlConnectionForServerRequest(eventData, customEndpoint);
                     conn.connect();
 
                     int responseCode = 0;

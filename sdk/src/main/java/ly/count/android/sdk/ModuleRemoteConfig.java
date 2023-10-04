@@ -140,29 +140,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             return;
         }
 
-        String requestData = requestQueueProvider.prepareEnrollmentParameters(keys);
-        L.d("[ModuleRemoteConfig] Enrollment requestData:[" + requestData + "]");
-
-        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
-
-        //todo replace the /o/sdk to /i after a while
-        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
-            L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
-            if (checkResponse == null) {
-                return;
-            }
-
-            try {
-                if (checkResponse.has("result")) {
-                    L.d("[ModuleRemoteConfig] Assuming that user was enrolled user for the A/B test");
-                } else {
-                    L.w("[ModuleRemoteConfig] Encountered a network error while enrolling the user for the A/B test.");
-                }
-            } catch (Exception ex) {
-                L.e("[ModuleRemoteConfig] Encountered an internal error while trying to enroll the user for A/B test. " + ex.toString());
-            }
-        }, L);
+        requestQueueProvider.enrollToKeys(keys);
     }
 
     /**

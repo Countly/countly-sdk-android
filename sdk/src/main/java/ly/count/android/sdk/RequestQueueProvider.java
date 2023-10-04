@@ -43,6 +43,8 @@ interface RequestQueueProvider {
 
     void sendDirectRequest(@NonNull final Map<String, String> requestData);
 
+    void enrollToKeys(@NonNull String[] keys);
+
     //todo these should be moved or replaced in the future
     boolean queueContainsTemporaryIdItems();
 
@@ -53,8 +55,6 @@ interface RequestQueueProvider {
     String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
 
     String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics, boolean autoEnroll);
-
-    String prepareEnrollmentParameters(@NonNull String[] keys);
 
     String prepareRemovalParameters(@NonNull String[] keys);
 
