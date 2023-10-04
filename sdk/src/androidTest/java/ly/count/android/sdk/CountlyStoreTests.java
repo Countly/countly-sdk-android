@@ -530,6 +530,32 @@ public class CountlyStoreTests {
         assertArrayEquals(new String[] { requestEntries[0] }, store.getRequests());
     }
 
+    @Test
+    public void deleteOldRequests_emptyQueue() {
+        int removedReqs = store.checkAndRemoveTooOldRequests();
+        assertEquals(0, removedReqs);
+    }
+
+    @Test
+    public void addRequest_MaxQueueLimit_requestAge() {
+        store.setLimits(3);
+        store.setRequestAgeLimit(1);
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        store.addRequest(requestEntries[2], false);
+        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1], requestEntries[2] }, store.getRequests());
+
+        store.addRequest(oldRequestEntries[0], false);
+
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2], oldRequestEntries[0] }, store.getRequests());
+
+        store.addRequest(oldRequestEntries[1], false);
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2], oldRequestEntries[1] }, store.getRequests());
+
+        store.addRequest(requestEntries[3], false);
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2], requestEntries[3] }, store.getRequests());
+    }
+
     /**
      * Validating that the max request queue size is respected,
      * And that it removes the oldest entry when it is about to be exceeded
