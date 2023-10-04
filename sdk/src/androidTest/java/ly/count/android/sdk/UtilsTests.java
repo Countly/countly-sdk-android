@@ -271,6 +271,7 @@ public class UtilsTests {
      */
     @Test
     public void timeFormatterTests() {
+        assertEquals("-1 millisecond(s)", Utils.formatTimeDifference(-1));
         assertEquals("0 millisecond(s)", Utils.formatTimeDifference(0));
         assertEquals("5 millisecond(s)", Utils.formatTimeDifference(5));
         assertEquals("1 second(s)", Utils.formatTimeDifference(1000));
@@ -309,9 +310,12 @@ public class UtilsTests {
      * Verifying if the isRequestTooOld works correctly if a negative dropAge provided
      */
     @Test
-    public void isRequestTooOld_negativeDropAge() {
+    public void isRequestTooOld_negativeZeroDropAge() {
         String request = "request&timestamp=1692963331000";
         boolean result = Utils.isRequestTooOld(request, -1, "Test", mock(ModuleLog.class));
+        assertFalse(result);
+
+        result = Utils.isRequestTooOld(request, 0, "Test", mock(ModuleLog.class));
         assertFalse(result);
     }
 
@@ -324,7 +328,7 @@ public class UtilsTests {
         boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
         assertFalse(result);
     }
-  
+
     /**
      * Verify if the extractValueFromString works correctly with different requests
      */
@@ -343,7 +347,7 @@ public class UtilsTests {
         // extraction part does not exist
         extractResult = Utils.extractValueFromString("sth&", "&new_end_point=", "&");
         Assert.assertEquals("sth&", extractResult[0]);
-        Assert.assertEquals(null, extractResult[1]);
+        Assert.assertNull(extractResult[1]);
 
         // only starting string
         extractResult = Utils.extractValueFromString("&new_end_point=", "&new_end_point=", "&");

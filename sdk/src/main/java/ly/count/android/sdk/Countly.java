@@ -610,12 +610,10 @@ public class Countly {
 
             if (config.tamperingProtectionSalt != null) {
                 L.d("[Init] Enabling tamper protection");
-                ConnectionProcessor.salt = config.tamperingProtectionSalt;
             }
 
             if (config.dropAgeHours > 0) {
                 L.d("[Init] Enabling drop older request threshold");
-                ConnectionProcessor.dropAgeHours = config.dropAgeHours;
                 countlyStore.setRequestAgeLimit(config.dropAgeHours);
             }
 
@@ -670,6 +668,14 @@ public class Countly {
 
                 @Override public boolean ifShouldIgnoreCrawlers() {
                     return requestQueue().ifShouldIgnoreCrawlers();
+                }
+
+                @Override public int getRequestDropAgeHours() {
+                    return config.dropAgeHours;
+                }
+
+                @Override public String getRequestSalt() {
+                    return config.tamperingProtectionSalt;
                 }
             };
 

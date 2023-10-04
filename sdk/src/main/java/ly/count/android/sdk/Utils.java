@@ -360,7 +360,7 @@ public class Utils {
      */
     public static boolean isRequestTooOld(@NonNull final String request, @NonNull final int dropAgeHours, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
         if (dropAgeHours <= 0) {
-            L.d(messagePrefix + " isRequestTooOld, No request drop age set. Request will bypass age checks");
+            L.v(messagePrefix + " isRequestTooOld, No request drop age set. Request will bypass age checks");
             return false;
         }
 

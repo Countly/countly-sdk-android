@@ -210,7 +210,6 @@ public class App extends Application {
             //})
 
             .setHttpPostForced(false)
-            // .setRequestDropAgeHours(10) // set this if you want to drop any request that was not sent in a certain timeframe
             .setParameterTamperingProtectionSalt("test-salt-checksum")
             .addCustomNetworkRequestHeaders(customHeaderValues)
             //.enableCertificatePinning(certificates)
