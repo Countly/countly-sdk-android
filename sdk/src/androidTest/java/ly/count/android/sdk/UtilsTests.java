@@ -324,4 +324,30 @@ public class UtilsTests {
         boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
         assertFalse(result);
     }
+  
+    /**
+     * Verify if the extractValueFromString works correctly with different requests
+     */
+    @Test
+    public void extractValuesFromString() {
+        // extraction part is at the center
+        String[] extractResult = Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse", "&new_end_point=", "&");
+        Assert.assertEquals("sth&sthelse", extractResult[0]);
+        Assert.assertEquals("o/sdk", extractResult[1]);
+
+        // extraction part is at the center with double ending string
+        extractResult = Utils.extractValueFromString("sth&new_end_point=o/sdk&sthelse&", "&new_end_point=", "&");
+        Assert.assertEquals("sth&sthelse&", extractResult[0]);
+        Assert.assertEquals("o/sdk", extractResult[1]);
+
+        // extraction part does not exist
+        extractResult = Utils.extractValueFromString("sth&", "&new_end_point=", "&");
+        Assert.assertEquals("sth&", extractResult[0]);
+        Assert.assertEquals(null, extractResult[1]);
+
+        // only starting string
+        extractResult = Utils.extractValueFromString("&new_end_point=", "&new_end_point=", "&");
+        Assert.assertEquals("", extractResult[0]);
+        Assert.assertEquals("", extractResult[1]);
+    }
 }
