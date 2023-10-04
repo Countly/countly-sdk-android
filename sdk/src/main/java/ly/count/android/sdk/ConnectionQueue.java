@@ -200,7 +200,7 @@ class ConnectionQueue implements RequestQueueProvider {
      *
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
-    public void enrollToKeys(@NonNull String data) {
+    public void enrollToKeys(@NonNull String[] keys) {
         if (!checkInternalState()) {
             return;
         }
@@ -209,6 +209,12 @@ class ConnectionQueue implements RequestQueueProvider {
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             return;
         }
+
+        String data = "method=ab"
+            + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
+            + "&new_end_point=/o/sdk";
 
         addRequestToQueue(data, false);
         tick();
@@ -743,19 +749,10 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         // if auto enroll was enabled add oi=1 to the request
-        if(autoEnroll){
+        if (autoEnroll) {
             data += "&oi=1";
         }
 
-        return data;
-    }
-
-    public String prepareEnrollmentParameters(@NonNull String[] keys) {
-        String data = "method=ab"
-            + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
-            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
-            + "&new_end_point=/o/sdk";
         return data;
     }
 

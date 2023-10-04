@@ -139,10 +139,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             return;
         }
 
-        String requestData = requestQueueProvider.prepareEnrollmentParameters(keys);
-        L.d("[ModuleRemoteConfig] Enrollment requestData:[" + requestData + "]");
-
-        requestQueueProvider.enrollToKeys(requestData);
+        requestQueueProvider.enrollToKeys(keys);
     }
 
     /**
