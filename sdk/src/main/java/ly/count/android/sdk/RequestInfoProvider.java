@@ -6,4 +6,8 @@ interface RequestInfoProvider {
     boolean isDeviceAppCrawler();
 
     boolean ifShouldIgnoreCrawlers();
+
+    int getRequestDropAgeHours();
+
+    String getRequestSalt();
 }

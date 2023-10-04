@@ -181,10 +181,10 @@ public class App extends Application {
             .enableAutomaticViewTracking()
             // uncomment the line below to enable auto enrolling the user to AB experiments when downloading RC data
             //.enrollABOnRCDownload()
+            // .setMaxRequestQueueSize(5)
             .setAutoTrackingUseShortName(true)
             .setAutomaticViewSegmentation(automaticViewSegmentation)
             .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
-
 
             .setPushIntentAddMetadata(true)
 
@@ -197,7 +197,7 @@ public class App extends Application {
             //.enableTemporaryDeviceIdMode()
 
             .setRequiresConsent(true)
-            
+
             //for giving all consent values
             .giveAllConsents()
 

@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
@@ -84,6 +85,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     ConfigurationProvider configurationProvider;
 
     int maxRequestQueueSize = 1000;
+    int dropAgeHours = 0;
 
     //explicit storage fields
     boolean explicitStorageModeEnabled;
@@ -113,6 +115,15 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public void setLimits(final int maxRequestQueueSize) {
         this.maxRequestQueueSize = maxRequestQueueSize;
+    }
+
+    /**
+     * For testing purposes. Sets the dropAgeHours
+     *
+     * @param dropAgeHours
+     */
+    public void setRequestAgeLimit(final int dropAgeHours) {
+        this.dropAgeHours = dropAgeHours;
     }
 
     public void setConfigurationProvider(ConfigurationProvider configurationProvider) {
@@ -361,9 +372,13 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), writeInSync);
             } else {
                 //reached the limit, start deleting oldest requests
-                L.w("[CountlyStore] Store reached it's limit, deleting oldest request");
+                L.w("[CountlyStore] Store reached it's limit, deleting oldest request(s)");
 
-                deleteOldestRequest();
+                // TODO: too much I/O?
+                int removedRequests = checkAndRemoveTooOldRequests(); // remove too old requests
+                if (removedRequests == 0) { // remove oldest if nothing is too old
+                    deleteOldestRequest();
+                }
                 addRequest(requestStr, writeInSync);
             }
         } else {
@@ -371,10 +386,59 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
     }
 
+    /**
+     * Removes the oldest request:
+     * 1. Gets the current requests from storage
+     * 2. Copies it to a List
+     * 3. Removes the first entry
+     * 4. Saves the list to the storage
+     */
     synchronized void deleteOldestRequest() {
         final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
+
+        L.i("[CountlyStore] deleteOldestRequest, Will remove the oldest request");
         connections.remove(0);
+
         storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), false);
+    }
+
+    /**
+     * Removes too old requests from the queue:
+     * 1. Checks if there is a request age limit set
+     * - If not returns 0
+     * - If there is:
+     * 1. Gets the current requests from storage
+     * 2. Copies it to a List
+     * 3. Iterates over it and removes the old ones
+     * 4. Saves the list to the storage
+     * 5. Returns the number of removed requests
+     */
+    synchronized int checkAndRemoveTooOldRequests() {
+        int removedRequests = 0;
+
+        // if there is a request age limit set, check the whole queue for older requests
+        if (dropAgeHours > 0) {
+            final List<String> connectionsList = new ArrayList<>(Arrays.asList(getRequests()));
+            L.i("[CountlyStore] checkAndRemoveTooOldRequests, will remove outdated requests from the queue");
+            Iterator<String> iterator = connectionsList.iterator();
+            while (iterator.hasNext()) {
+                String request = iterator.next();
+
+                // check if the request is too old, and remove it from the list
+                if (Utils.isRequestTooOld(request, dropAgeHours, "[CountlyStore]", L)) {
+                    L.v("[CountlyStore] checkAndRemoveTooOldRequests, removing:" + request);
+                    iterator.remove();
+                    removedRequests++;
+                }
+            }
+
+            // save the new request queue
+            if (removedRequests > 0) {
+                storageWriteRequestQueue(Utils.joinCountlyStore(connectionsList, DELIMITER), false);
+            }
+        }
+
+        return removedRequests;
     }
 
     /**

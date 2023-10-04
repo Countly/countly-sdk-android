@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
@@ -31,7 +32,7 @@ public class UtilsTests {
     }
 
     @Test
-    public void testIsEmpty() {
+    public void isEmpty() {
         Assert.assertTrue(Utils.isEmpty(""));
         Assert.assertTrue(Utils.isEmpty(null));
 
@@ -40,7 +41,7 @@ public class UtilsTests {
     }
 
     @Test
-    public void testIsNotEmpty() {
+    public void isNotEmpty() {
         Assert.assertFalse(Utils.isNotEmpty(""));
         Assert.assertFalse(Utils.isNotEmpty(null));
 
@@ -52,7 +53,7 @@ public class UtilsTests {
      * A simple verification that 'join' is performing as expected
      */
     @Test
-    public void testJoin() {
+    public void join() {
         List<String> a = new ArrayList<>();
         a.add("a");
         a.add("b");
@@ -76,7 +77,7 @@ public class UtilsTests {
     }
 
     @Test
-    public void testAPI() {
+    public void APITargeting() {
         //The version the SDK is targeting should be above these values
         Assert.assertTrue(Utils.API(28));
         Assert.assertTrue(Utils.API(27));
@@ -157,7 +158,7 @@ public class UtilsTests {
      * Make sure that nothing bad happens when providing null segmentation
      */
     @Test
-    public void testTruncateSegmentationValues_null() {
+    public void truncateSegmentationValues_null() {
         Utils.truncateSegmentationValues(null, 10, "someTag", mock(ModuleLog.class));
         Assert.assertTrue(true);
     }
@@ -166,7 +167,7 @@ public class UtilsTests {
      * Make sure that nothing bad happens when providing empty segmentation
      */
     @Test
-    public void testTruncateSegmentationValues_empty() {
+    public void truncateSegmentationValues_empty() {
         Map<String, Object> values = new HashMap<>();
         Utils.truncateSegmentationValues(values, 10, "someTag", mock(ModuleLog.class));
         Assert.assertTrue(true);
@@ -176,7 +177,7 @@ public class UtilsTests {
      * Make sure that nothing bad happens when providing segmentation with values under limit
      */
     @Test
-    public void testTruncateSegmentationValues_underLimit() {
+    public void truncateSegmentationValues_underLimit() {
         Map<String, Object> values = new HashMap<>();
         values.put("a1", "1");
         values.put("a2", "2");
@@ -195,7 +196,7 @@ public class UtilsTests {
      * Make sure that values are truncated when they are more then the limit
      */
     @Test
-    public void testTruncateSegmentationValues_aboveLimit() {
+    public void truncateSegmentationValues_aboveLimit() {
         Map<String, Object> values = new HashMap<>();
         values.put("a1", "1");
         values.put("a2", "2");
@@ -266,6 +267,69 @@ public class UtilsTests {
     }
 
     /**
+     * For verifying if formatTimeDifference returns correct time information from milliseconds
+     */
+    @Test
+    public void timeFormatterTests() {
+        assertEquals("-1 millisecond(s)", Utils.formatTimeDifference(-1));
+        assertEquals("0 millisecond(s)", Utils.formatTimeDifference(0));
+        assertEquals("5 millisecond(s)", Utils.formatTimeDifference(5));
+        assertEquals("1 second(s)", Utils.formatTimeDifference(1000));
+        assertEquals("2 second(s)", Utils.formatTimeDifference(2000));
+        assertEquals("1 minute(s)", Utils.formatTimeDifference(60_000));
+        assertEquals("20 minute(s)", Utils.formatTimeDifference(1_200_000));
+        assertEquals("1 hour(s)", Utils.formatTimeDifference(3_600_000));
+        assertEquals("2 hour(s)", Utils.formatTimeDifference(9_600_000)); // instead of ~2.5
+        assertEquals("1 day(s) and 0 hour(s)", Utils.formatTimeDifference(86_400_000));
+        assertEquals("9 day(s) and 7 hour(s)", Utils.formatTimeDifference(804_000_000));
+        assertEquals("1 month(s) and 0 day(s)", Utils.formatTimeDifference(2_592_000_000L));
+        assertEquals("2 month(s) and 27 day(s)", Utils.formatTimeDifference(7_522_090_000L));
+    }
+
+    /**
+     * Verifying if the isRequestTooOld works correctly if a request has a timestamp
+     */
+    @Test
+    public void isRequestTooOld_validRequest() {
+        String request = "request&timestamp=1692963331000";
+        boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
+        assertTrue(result);
+    }
+
+    /**
+     * Verifying if the isRequestTooOld works correctly if a request does not have a timestamp
+     */
+    @Test
+    public void isRequestTooOld_noTimestampInRequest() {
+        String request = "request";
+        boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
+        assertFalse(result);
+    }
+
+    /**
+     * Verifying if the isRequestTooOld works correctly if a negative dropAge provided
+     */
+    @Test
+    public void isRequestTooOld_negativeZeroDropAge() {
+        String request = "request&timestamp=1692963331000";
+        boolean result = Utils.isRequestTooOld(request, -1, "Test", mock(ModuleLog.class));
+        assertFalse(result);
+
+        result = Utils.isRequestTooOld(request, 0, "Test", mock(ModuleLog.class));
+        assertFalse(result);
+    }
+
+    /**
+     * Verifying if the isRequestTooOld works correctly if the request has an invalid timestamp
+     */
+    @Test
+    public void isRequestTooOld_invalidTimestamp() {
+        String request = "request&timestamp=invalid_timestamp";
+        boolean result = Utils.isRequestTooOld(request, 1, "Test", mock(ModuleLog.class));
+        assertFalse(result);
+    }
+
+    /**
      * Verify if the extractValueFromString works correctly with different requests
      */
     @Test
@@ -283,7 +347,7 @@ public class UtilsTests {
         // extraction part does not exist
         extractResult = Utils.extractValueFromString("sth&", "&new_end_point=", "&");
         Assert.assertEquals("sth&", extractResult[0]);
-        Assert.assertEquals(null, extractResult[1]);
+        Assert.assertNull(extractResult[1]);
 
         // only starting string
         extractResult = Utils.extractValueFromString("&new_end_point=", "&new_end_point=", "&");

@@ -61,8 +61,6 @@ public class ConnectionProcessor implements Runnable {
 
     private final Map<String, String> requestHeaderCustomValues_;
 
-    protected static String salt;
-
     static String endPointOverrideTag = "&new_end_point=";
 
     ModuleLog L;
@@ -97,13 +95,13 @@ public class ConnectionProcessor implements Runnable {
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
         if (usingHttpPost) {
-            String checksum = UtilsNetworking.sha256Hash(requestData + salt);
+            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
             requestData += "&checksum256=" + checksum;
             approximateDateSize += requestData.length();
             L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
         } else {
             urlStr += "?" + requestData;
-            String checksum = UtilsNetworking.sha256Hash(requestData + salt);
+            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
             urlStr += "&checksum256=" + checksum;
             L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
         }
@@ -242,6 +240,9 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            L.i("[Connection Processor] Checking if the request is older than:[" + requestInfoProvider_.getRequestDropAgeHours() + "] hours");
+            boolean isRequestOld = Utils.isRequestTooOld(storedRequests[0], requestInfoProvider_.getRequestDropAgeHours(), "[Connection Processor]", L);
+
             // get first request in a separate variable to modify and keep the original intact
             String eventData = storedRequests[0];//todo rework to stringbuilder
 
@@ -317,7 +318,7 @@ public class ConnectionProcessor implements Runnable {
             // add the remaining request count
             eventData = eventData + "&rr=" + (storedRequestCount - 1);
 
-            if (!(requestInfoProvider_.isDeviceAppCrawler() && requestInfoProvider_.ifShouldIgnoreCrawlers())) {
+            if (!(requestInfoProvider_.isDeviceAppCrawler() && requestInfoProvider_.ifShouldIgnoreCrawlers()) && !isRequestOld) {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 InputStream connInputStream = null;
@@ -437,7 +438,11 @@ public class ConnectionProcessor implements Runnable {
                 }
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
-                L.i("[Connection Processor] Device identified as a app crawler, skipping request " + storedRequests[0]);
+                if (isRequestOld) {
+                    L.i("[Connection Processor] request is too old, removing request " + storedRequests[0]);
+                } else {
+                    L.i("[Connection Processor] Device identified as an app crawler, removing request " + storedRequests[0]);
+                }
 
                 //remove stored data
                 storageProvider_.removeRequest(storedRequests[0]);

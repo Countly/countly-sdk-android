@@ -63,6 +63,10 @@ public class ConnectionProcessorTests {
 
     RequestInfoProvider rip;
 
+    String testSaltValue;
+
+    String testSaltValueDefult = "123qwerty";
+
     @Before
     public void setUp() {
         configurationProviderFake = new ConfigurationProvider() {
@@ -80,6 +84,7 @@ public class ConnectionProcessorTests {
         mockDeviceId = mock(DeviceIdProvider.class);
         moduleLog = mock(ModuleLog.class);
         healthTrackerMock = mock(HealthTracker.class);
+        testSaltValue = testSaltValueDefult;//in case a test wants to override the value
 
         rip = new RequestInfoProvider() {
             @Override public boolean isHttpPostForced() {
@@ -92,6 +97,14 @@ public class ConnectionProcessorTests {
 
             @Override public boolean ifShouldIgnoreCrawlers() {
                 return false;
+            }
+
+            @Override public int getRequestDropAgeHours() {
+                return 0;
+            }
+
+            @Override public String getRequestSalt() {
+                return testSaltValue;
             }
         };
 
@@ -117,7 +130,7 @@ public class ConnectionProcessorTests {
      */
     @Test
     public void testUrlConnectionForEventData() throws IOException {
-        ConnectionProcessor.salt = null;
+        testSaltValue = null;
         final String eventData = "blahblahblah";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
         assertEquals(30000, urlConnection.getConnectTimeout());
@@ -137,9 +150,8 @@ public class ConnectionProcessorTests {
     @Test
     public void urlConnectionForEventDataWithSalt() throws IOException {
         final String eventData = "blahblahblahasd";
-        ConnectionProcessor.salt = "123";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
-        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + ConnectionProcessor.salt)), urlConnection.getURL());
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue)), urlConnection.getURL());
     }
 
     /**
@@ -152,9 +164,8 @@ public class ConnectionProcessorTests {
     public void urlConnectionForEventDataWithSaltCustomEndpoint() throws IOException {
         final String eventData = "blahblahblah123";
         final String endpoint = "/thisthat";
-        ConnectionProcessor.salt = "456";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, endpoint);
-        assertEquals(new URL(connectionProcessor.getServerURL() + endpoint + "?" + eventData + "&checksum256=" + sha256Hash(eventData + ConnectionProcessor.salt)), urlConnection.getURL());
+        assertEquals(new URL(connectionProcessor.getServerURL() + endpoint + "?" + eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue)), urlConnection.getURL());
     }
 
     /**

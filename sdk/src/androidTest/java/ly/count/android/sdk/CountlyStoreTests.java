@@ -58,6 +58,7 @@ public class CountlyStoreTests {
 
     final String[] eKeys = TestUtils.eKeys;
     final String[] requestEntries = TestUtils.requestEntries;
+    final String[] oldRequestEntries = TestUtils.tooOldRequestEntries;
 
     @Before
     public void setUp() {
@@ -503,6 +504,56 @@ public class CountlyStoreTests {
         assertArrayEquals(new String[] { requestEntries[0], requestEntries[1], requestEntries[2] }, store.getRequests());
         store.deleteOldestRequest();
         assertArrayEquals(new String[] { requestEntries[1], requestEntries[2] }, store.getRequests());
+    }
+
+    /**
+     * Validating that 'checkAndRemoveTooOldRequests' would delete old requests
+     */
+    @Test
+    public void deleteOldRequests() {
+        // add requests with old timestamps and a new/weird one
+        store.addRequest(oldRequestEntries[0], false);
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(oldRequestEntries[1], false);
+        store.addRequest(oldRequestEntries[2], false);
+
+        // nothing erased as no age limit set
+        assertArrayEquals(new String[] { oldRequestEntries[0], requestEntries[0], oldRequestEntries[1], oldRequestEntries[2] }, store.getRequests());
+        int removedReqs = store.checkAndRemoveTooOldRequests();
+        assertEquals(0, removedReqs);
+        assertArrayEquals(new String[] { oldRequestEntries[0], requestEntries[0], oldRequestEntries[1], oldRequestEntries[2] }, store.getRequests());
+
+        // with age limit, all but weird/new one removed
+        store.setRequestAgeLimit(1);
+        int removedReqsWithLimit = store.checkAndRemoveTooOldRequests();
+        assertEquals(3, removedReqsWithLimit);
+        assertArrayEquals(new String[] { requestEntries[0] }, store.getRequests());
+    }
+
+    @Test
+    public void deleteOldRequests_emptyQueue() {
+        int removedReqs = store.checkAndRemoveTooOldRequests();
+        assertEquals(0, removedReqs);
+    }
+
+    @Test
+    public void addRequest_MaxQueueLimit_requestAge() {
+        store.setLimits(3);
+        store.setRequestAgeLimit(1);
+        store.addRequest(requestEntries[0], false);
+        store.addRequest(requestEntries[1], false);
+        store.addRequest(requestEntries[2], false);
+        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1], requestEntries[2] }, store.getRequests());
+
+        store.addRequest(oldRequestEntries[0], false);
+
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2], oldRequestEntries[0] }, store.getRequests());
+
+        store.addRequest(oldRequestEntries[1], false);
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2], oldRequestEntries[1] }, store.getRequests());
+
+        store.addRequest(requestEntries[3], false);
+        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2], requestEntries[3] }, store.getRequests());
     }
 
     /**

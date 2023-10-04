@@ -351,6 +351,82 @@ public class Utils {
     }
 
     /**
+     * This function checks if a request is older than an accepted duration.
+     * As the expected duration you should use the developer provided 'dropAgeHours'
+     *
+     * @param request request string to check
+     * @param dropAgeHours oldness threshold (in hours)
+     * @return true if old, false if not
+     */
+    public static boolean isRequestTooOld(@NonNull final String request, @NonNull final int dropAgeHours, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+        if (dropAgeHours <= 0) {
+            L.v(messagePrefix + " isRequestTooOld, No request drop age set. Request will bypass age checks");
+            return false;
+        }
+
+        // starting index
+        int timestampStartIndex = request.indexOf("&timestamp=");
+
+        if (timestampStartIndex == -1) {
+            L.w(messagePrefix + " isRequestTooOld, No timestamp in request");
+            return false;
+        }
+
+        try {
+            // starting index +11 gets to the end of the tag and then +13 to get timestamp
+            long requestTimestampMs = Long.parseLong(request.substring(timestampStartIndex + 11, timestampStartIndex + 24));
+
+            // calculate the threshold timestamp by subtracting dropAgeHours from the current time
+            long thresholdTimestampMs = UtilsTime.currentTimestampMs() - (dropAgeHours * 3600000L); // 1 hour = 3600000 milliseconds
+
+            // check if the request's timestamp is older than the threshold
+            boolean result = requestTimestampMs < thresholdTimestampMs;
+
+            if (result) {
+                long timeGapMs = thresholdTimestampMs - requestTimestampMs;
+                String message = formatTimeDifference(timeGapMs);
+
+                L.v(messagePrefix + " isRequestTooOld, This request is " + message + " older than acceptable time frame");
+            }
+
+            return result;
+        } catch (NumberFormatException e) {
+            L.w(messagePrefix + " isRequestTooOld, Timestamp is not long");
+            return false;
+        }
+    }
+
+    /**
+     * For a given milliseconds this returns a String message that gives the closest coherent timeframe back
+     *
+     * @param differenceMs - long milliseconds
+     * @return String message
+     */
+    public static String formatTimeDifference(final long differenceMs) {
+        long seconds = differenceMs / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+        long months = days / 30;
+
+        if (months > 0) {
+            long remainingDays = days % 30;
+            return months + " month(s) and " + remainingDays + " day(s)";
+        } else if (days > 0) {
+            long remainingHours = hours % 24;
+            return days + " day(s) and " + remainingHours + " hour(s)";
+        } else if (hours > 0) {
+            return hours + " hour(s)";
+        } else if (minutes > 0) {
+            return minutes + " minute(s)";
+        } else if (seconds > 0) {
+            return seconds + " second(s)";
+        } else {
+            return differenceMs + " millisecond(s)";
+        }
+    }
+
+    /**
      * Given a String value, it would return a part of it and the given string without that part
      * Ex. extractValueFromString("hey&a=b&c", "a=", "&") would return ["hey&c","b"]
      *

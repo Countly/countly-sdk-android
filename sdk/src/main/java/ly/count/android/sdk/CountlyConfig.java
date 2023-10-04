@@ -221,6 +221,9 @@ public class CountlyConfig {
     Integer maxStackTraceLineLength;
     int maxStackTraceThreadCount = 30;
 
+    // Requests older than this value in hours would be dropped (0 means this feature is disabled)
+    int dropAgeHours = 0;
+
     //public synchronized CountlyConfig setMaxKeyLength(int maxKeyLength) {
     //    this.maxKeyLength = maxKeyLength;
     //    return this;
@@ -561,6 +564,18 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enrollABOnRCDownload() {
         enableAutoEnrollFlag = true;
+        return this;
+    }
+
+    /**
+     * This would set a time frame in which the requests older than the given hours would be dropped while sending a request
+     * Ex: Setting this to 10 would mean any requests created more than 10 hours ago would be dropped if they were in the queue
+     *
+     * @param dropAgeHours A positive integer. Requests older than the 'dropAgeHours' (with respect to now) would be dropped
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setRequestDropAgeHours(int dropAgeHours) {
+        this.dropAgeHours = dropAgeHours;
         return this;
     }
 
