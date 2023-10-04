@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import ly.count.android.sdk.internal.RemoteConfigHelper;
 import ly.count.android.sdk.internal.RemoteConfigValueStore;
 import org.json.JSONException;
@@ -493,7 +494,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void clearStoredValues() {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'clearStoredValues'");
+                L.i("[RemoteConfig] clearStoredValues");
 
                 clearValueStoreInternal();
             }
@@ -505,7 +506,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public Map<String, Object> getAllValues() {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'getAllValues'");
+                L.i("[RemoteConfig] getAllValues");
 
                 return getAllRemoteConfigValuesInternalLegacy();
             }
@@ -520,7 +521,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public Object getValueForKey(String key) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling remoteConfigValueForKey, " + key);
+                L.i("[RemoteConfig] remoteConfigValueForKey, " + key);
 
                 return getRCValueLegacy(key);
             }
@@ -535,7 +536,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
+                L.i("[RemoteConfig] updateExceptKeys");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
@@ -544,7 +545,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
                 if (keysToExclude == null) {
-                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+                    L.w("[RemoteConfig] updateExceptKeys passed 'keys to ignore' array is null");
                 }
 
                 RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
@@ -566,7 +567,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
+                L.i("[RemoteConfig] updateForKeysOnly");
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
                         callback.callback("No consent given");
@@ -574,7 +575,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
                 if (keysToInclude == null) {
-                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+                    L.w("[RemoteConfig] updateForKeysOnly passed 'keys to include' array is null");
                 }
 
                 RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
@@ -595,7 +596,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void update(RemoteConfigCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Manually calling to updateRemoteConfig");
+                L.i("[RemoteConfig] update");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
@@ -623,7 +624,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void downloadOmittingKeys(@Nullable String[] keysToOmit, @Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with exclude keys");
+                L.i("[RemoteConfig] downloadOmittingKeys");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
@@ -632,7 +633,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
                 if (keysToOmit == null) {
-                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to ignore' array is null");
+                    L.w("[RemoteConfig] downloadOmittingKeys passed 'keys to ignore' array is null");
                 }
 
                 if (callback == null) {
@@ -653,7 +654,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void downloadSpecificKeys(@Nullable String[] keysToInclude, @Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Manually calling to updateRemoteConfig with include keys");
+                L.i("[RemoteConfig] downloadSpecificKeys");
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
                         callback.callback(RequestResult.Error, null, false, null);
@@ -661,7 +662,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
                 if (keysToInclude == null) {
-                    L.w("[RemoteConfig] updateRemoteConfigExceptKeys passed 'keys to include' array is null");
+                    L.w("[RemoteConfig] downloadSpecificKeys passed 'keys to include' array is null");
                 }
 
                 if (callback == null) {
@@ -680,7 +681,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void downloadAllKeys(@Nullable RCDownloadCallback callback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Manually calling to update Remote Config v2");
+                L.i("[RemoteConfig] downloadAllKeys");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     if (callback != null) {
@@ -705,9 +706,40 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public @NonNull Map<String, RCData> getValues() {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Getting all Remote config values v2");
+                L.i("[RemoteConfig] getValues");
 
                 return getAllRemoteConfigValuesInternal();
+            }
+        }
+
+        /**
+         * Returns all available remote config values and enrolls to A/B tests for those values
+         *
+         * @return The available RC values
+         */
+        public @NonNull Map<String, RCData> getAllValuesAndEnroll() {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] getAllValuesAndEnroll");
+                Map<String, RCData> values = getAllRemoteConfigValuesInternal();
+
+                if (values.isEmpty()) {
+                    L.i("[RemoteConfig] getAllValuesAndEnroll, No value to enroll");
+                } else {
+                    // assuming the values is not empty enroll for the keys
+                    Set<String> setOfKeys = values.keySet();
+                    String[] arrayOfKeys = new String[setOfKeys.size()];
+
+                    // set to array
+                    int i = 0;
+                    for (String key : setOfKeys) {
+                        arrayOfKeys[i++] = key;
+                    }
+
+                    // enroll
+                    enrollIntoABTestsForKeys(arrayOfKeys);
+                }
+
+                return values;
             }
         }
 
@@ -715,13 +747,47 @@ public class ModuleRemoteConfig extends ModuleBase {
          * Return the remote config value for a specific key
          *
          * @param key Key for which the remote config value needs to be returned
-         * @return The returned value. If no value existed for the key then the inner object will be returned as "null"
+         * @return The returned value. If no value existed for the key then the inner object (value) will be returned as "null"
          */
-        public @NonNull RCData getValue(@Nullable String key) {
+        public @NonNull RCData getValue(final @Nullable String key) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Getting Remote config values for key:[" + key + "] v2");
+                L.i("[RemoteConfig] getValue, key:[" + key + "]");
+
+                if (key == null || key.equals("")) {
+                    L.i("[RemoteConfig] getValue, A valid key should be provided to get its value.");
+                    return new RCData(null, true);
+                }
 
                 return getRCValue(key);
+            }
+        }
+
+        /**
+         * Returns the remote config value for a specific key and enrolls to A/B tests for it
+         *
+         * @param key Key for which the remote config value needs to be returned
+         * @return The returned value. If no value existed for the key then the inner object will be returned as "null"
+         */
+        public @NonNull RCData getValueAndEnroll(@Nullable String key) {
+            synchronized (_cly) {
+                L.i("[RemoteConfig] getValueAndEnroll, key:[" + key + "]");
+
+                if (key == null || key.equals("")) {
+                    L.i("[RemoteConfig] getValueAndEnroll, A valid key should be provided to get its value.");
+                    return new RCData(null, true);
+                }
+
+                RCData data = getRCValue(key);
+
+                if (data.value == null) {
+                    L.i("[RemoteConfig] getValueAndEnroll, No value to enroll");
+                } else {
+                    // assuming value is not null enroll to key
+                    String[] arrayOfKeys = { key };
+                    enrollIntoABTestsForKeys(arrayOfKeys);
+                }
+
+                return data;
             }
         }
 
@@ -732,10 +798,10 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void enrollIntoABTestsForKeys(@Nullable String[] keys) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Enrolling user into A/B tests.");
+                L.i("[RemoteConfig] enrollIntoABTestsForKeys");
 
                 if (keys == null || keys.length == 0) {
-                    L.w("[RemoteConfig] A key should be provided to enroll the user.");
+                    L.w("[RemoteConfig] enrollIntoABTestsForKeys, A key should be provided to enroll the user.");
                     return;
                 }
 
@@ -754,7 +820,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void exitABTestsForKeys(@Nullable String[] keys) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Removing user from A/B tests.");
+                L.i("[RemoteConfig] exitABTestsForKeys");
 
                 if (keys == null) {
                     keys = new String[0];
@@ -774,7 +840,10 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param callback The callback that should be added
          */
         public void registerDownloadCallback(@Nullable RCDownloadCallback callback) {
-            downloadCallbacks.add(callback);
+            synchronized (_cly) {
+                L.i("[RemoteConfig] registerDownloadCallback");
+                downloadCallbacks.add(callback);
+            }
         }
 
         /**
@@ -783,14 +852,20 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @param callback The callback that should be removed
          */
         public void removeDownloadCallback(@Nullable RCDownloadCallback callback) {
-            downloadCallbacks.remove(callback);
+            synchronized (_cly) {
+                L.i("[RemoteConfig] removeDownloadCallback");
+                downloadCallbacks.remove(callback);
+            }
         }
 
         /**
          * Clear all stored remote config values.
          */
         public void clearAll() {
-            clearStoredValues();
+            synchronized (_cly) {
+                L.i("[RemoteConfig] clearAll");
+                clearStoredValues();
+            }
         }
 
         /**
@@ -802,7 +877,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public @NonNull Map<String, String[]> testingGetAllVariants() {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingGetAllVariants'");
+                L.i("[RemoteConfig] testingGetAllVariants");
 
                 return testingGetAllVariantsInternal();
             }
@@ -817,7 +892,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public @NonNull Map<String, ExperimentInformation> testingGetAllExperimentInfo() {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingGetAllExperimentInfo'");
+                L.i("[RemoteConfig] testingGetAllExperimentInfo");
 
                 return experimentContainer;
             }
@@ -833,7 +908,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public @Nullable String[] testingGetVariantsForKey(@Nullable String key) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingGetVariantsForKey'");
+                L.i("[RemoteConfig] testingGetVariantsForKey");
 
                 if (key == null) {
                     L.i("[RemoteConfig] testingGetVariantsForKey, provided variant key can not be null");
@@ -853,7 +928,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void testingDownloadVariantInformation(@Nullable RCVariantCallback completionCallback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingFetchVariantInformation'");
+                L.i("[RemoteConfig] testingFetchVariantInformation");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;
@@ -877,7 +952,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void testingDownloadExperimentInformation(@Nullable RCVariantCallback completionCallback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingDownloadExperimentInformation'");
+                L.i("[RemoteConfig] testingDownloadExperimentInformation");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;
@@ -903,7 +978,7 @@ public class ModuleRemoteConfig extends ModuleBase {
          */
         public void testingEnrollIntoVariant(@Nullable String keyName, String variantName, @Nullable RCVariantCallback completionCallback) {
             synchronized (_cly) {
-                L.i("[RemoteConfig] Calling 'testingEnrollIntoVariant'");
+                L.i("[RemoteConfig] testingEnrollIntoVariant");
 
                 if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
                     return;
