@@ -65,8 +65,6 @@ public class ConnectionProcessor implements Runnable {
 
     static String endPointOverrideTag = "&new_end_point=";
 
-    static int endPointOverrideTagLength = endPointOverrideTag.length();
-
     ModuleLog L;
 
     private enum RequestResult {
@@ -244,7 +242,7 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
-            // get first request
+            // get first request in a separate variable to modify and keep the original intact
             String eventData = storedRequests[0];//todo rework to stringbuilder
 
             // temp ID checks
@@ -265,14 +263,13 @@ public class ConnectionProcessor implements Runnable {
             boolean deviceIdChange = eventData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
 
             String customEndpoint = null;
-            String endPointOverrideTag = "&new_end_point=";
 
             // checks if endPointOverrideTag exists in the eventData, and if so, extracts the endpoint and removes the tag from the evenData
             String[] extractionResult = Utils.extractValueFromString(eventData, endPointOverrideTag, "&");
             if (extractionResult[1] != null) {
                 eventData = extractionResult[0];
 
-                if (extractionResult[1] != "") {
+                if (!extractionResult[1].equals("")) {
                     customEndpoint = extractionResult[1];
                 }
                 L.v("[Connection Processor] Custom end point detected for the request:[" + customEndpoint + "]");
