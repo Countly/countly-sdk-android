@@ -1,4 +1,4 @@
-## X.X.X
+## 23.8.3
 * Added a config method to set a time limit after which the requests would be removed if not sent to the server: 'setRequestDropAgeHours'
 * Added a call to enroll users to A/B tests when getting a remote config value: 'getValueAndEnroll'
 * Added a call to enroll users to A/B tests when getting all remote config values: 'getAllValuesAndEnroll'
