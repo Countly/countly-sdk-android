@@ -85,9 +85,14 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
     }
 
     public void onClickRemoteConfigEnrollForKeys(View v) {
-        String[] keys = { "aa", "bb" };
+        String[] keys = { "kk", "bb" };
         Countly.sharedInstance().remoteConfig().enrollIntoABTestsForKeys(keys);
         Toast.makeText(getApplicationContext(), "Enrolling for Keys", Toast.LENGTH_SHORT).show();
+    }
+
+    public void onClickRemoteConfigExitForKeys(View v) {
+        Countly.sharedInstance().remoteConfig().exitABTestsForKeys(null); // exit all
+        Toast.makeText(getApplicationContext(), "Exiting for Keys", Toast.LENGTH_SHORT).show();
     }
 
     public void onClickRemoteConfigPrintValues(View v) {
