@@ -4,6 +4,7 @@
 * Added a call to enroll users to A/B tests when getting all remote config values: 'getAllValuesAndEnroll'
 
 * Mitigated an issue where users could not enroll to an A/B tests if enrollment request has failed
+* Mitigated an issue where users could not exit from A/B tests if removal request has failed
 
 ## 23.8.2
 * Fixed APM bug where automatic foreground, background tracking would track wrong if the SDK was not initialized while the app was not in the foreground

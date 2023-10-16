@@ -156,28 +156,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             return;
         }
 
-        String requestData = requestQueueProvider.prepareRemovalParameters(keys);
-        L.d("[ModuleRemoteConfig] Removal requestData:[" + requestData + "]");
-
-        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
-
-        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i", cp, false, networkingIsEnabled, checkResponse -> {
-            L.d("[ModuleRemoteConfig] Processing received response, received response is null:[" + (checkResponse == null) + "]");
-            if (checkResponse == null) {
-                return;
-            }
-
-            try {
-                if (checkResponse.has("result") && checkResponse.getString("result").equals("Success")) {
-                    L.d("[ModuleRemoteConfig]  Removed user from the A/B test");
-                } else {
-                    L.d("[ModuleRemoteConfig]  Encountered a network error while removing the user from A/B testing.");
-                }
-            } catch (Exception ex) {
-                L.e("[ModuleRemoteConfig] Encountered an internal error while trying to remove user from A/B testing. " + ex.toString());
-            }
-        }, L);
+        requestQueueProvider.exitForKeys(keys);
     }
 
     /**

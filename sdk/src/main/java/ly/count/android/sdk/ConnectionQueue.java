@@ -221,6 +221,33 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     /**
+     * Exits/removes the user for given keys from A/B tests
+     *
+     * @throws IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    public void exitForKeys(@NonNull String[] keys) {
+        if (!checkInternalState()) {
+            return;
+        }
+        L.d("[Connection Queue] exitForKeys");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+            return;
+        }
+
+        String data = "method=ab_opt_out"
+            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+
+        if (keys.length > 0) { // exits all otherwise
+            data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys);
+        }
+
+        addRequestToQueue(data, false);
+        tick();
+    }
+
+    /**
      * Records a session duration event for the app and sends it to the server. This method does nothing
      * if passed a negative or zero duration.
      *
@@ -751,18 +778,6 @@ class ConnectionQueue implements RequestQueueProvider {
         // if auto enroll was enabled add oi=1 to the request
         if (autoEnroll) {
             data += "&oi=1";
-        }
-
-        return data;
-    }
-
-    public String prepareRemovalParameters(@NonNull String[] keys) {
-        String data = "method=ab_opt_out"
-            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-
-        if (keys.length > 0) {
-            data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys);
         }
 
         return data;

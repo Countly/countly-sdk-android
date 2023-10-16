@@ -45,6 +45,8 @@ interface RequestQueueProvider {
 
     void enrollToKeys(@NonNull String[] keys);
 
+    void exitForKeys(@NonNull String[] keys);
+
     //todo these should be moved or replaced in the future
     boolean queueContainsTemporaryIdItems();
 
@@ -55,8 +57,6 @@ interface RequestQueueProvider {
     String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
 
     String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics, boolean autoEnroll);
-
-    String prepareRemovalParameters(@NonNull String[] keys);
 
     String prepareFetchAllVariants(); // for fetching all A/B test variants
 
