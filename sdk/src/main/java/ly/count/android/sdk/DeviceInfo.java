@@ -204,6 +204,12 @@ class DeviceInfo {
                         carrier = "";
                         Countly.sharedInstance().L.i("[DeviceInfo] No carrier found");
                     }
+
+                    if (carrier.equals("--")) {
+                        //if for some reason the carrier is returned as "--", just clear it and set to empty string
+                        carrier = "";
+                    }
+
                     return carrier;
                 }
 
