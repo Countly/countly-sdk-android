@@ -784,7 +784,12 @@ public class CountlyPush {
             IntentFilter filter = new IntentFilter();
             filter.addAction(Countly.CONSENT_BROADCAST);
             BroadcastReceiver consentReceiver = new ConsentBroadcastReceiver();
-            countlyConfigPush.application.registerReceiver(consentReceiver, filter, countlyConfigPush.application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                countlyConfigPush.application.registerReceiver(consentReceiver, filter, countlyConfigPush.application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null, Context.RECEIVER_NOT_EXPORTED);
+            }
+            else {
+                countlyConfigPush.application.registerReceiver(consentReceiver, filter, countlyConfigPush.application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
+            }
         }
 
         if (countlyConfigPush.provider == Countly.CountlyMessagingProvider.HMS && getPushConsent(countlyConfigPush.application)) {

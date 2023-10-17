@@ -12,12 +12,12 @@ buildscript {
 }
 
 android {
-  compileSdkVersion 33
-  buildToolsVersion "33.0.0"
+  compileSdk 34
+  buildToolsVersion "34.0.0"
 
   defaultConfig {
-    minSdkVersion 17
-    targetSdkVersion 33
+    minSdk 17
+    targetSdk 34
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true

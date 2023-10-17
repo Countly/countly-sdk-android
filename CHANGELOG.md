@@ -4,6 +4,8 @@
 * Added a call to enroll users to A/B tests when getting all remote config values: 'getAllValuesAndEnroll'
 * Adding app version to every request
 
+* Fixed crash for SDK34 BroadcastReceivers, now declared broadcast receiver not exported if API is 34 and up.
+
 * Mitigated an issue where users could not enroll to an A/B tests if enrollment request has failed
 * Mitigated an issue where users could not exit from A/B tests if removal request has failed
 
