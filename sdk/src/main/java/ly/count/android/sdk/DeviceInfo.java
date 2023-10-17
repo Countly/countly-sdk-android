@@ -431,7 +431,13 @@ class DeviceInfo {
                 @Override
                 public String getBatteryLevel(Context context) {
                     try {
-                        Intent batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                        Intent batteryIntent;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                        }
+                        else {
+                            batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                        }
                         if (batteryIntent != null) {
                             int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                             int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);

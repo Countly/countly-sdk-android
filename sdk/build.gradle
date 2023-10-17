@@ -12,12 +12,12 @@ buildscript {
 }
 
 android {
-  compileSdkVersion 33
-  buildToolsVersion "33.0.0"
+  compileSdk 34
+  buildToolsVersion "34.0.0"
 
   defaultConfig {
-    minSdkVersion 17
-    targetSdkVersion 33
+    minSdk 17
+    targetSdk 34
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true
@@ -49,6 +49,7 @@ def mockitoVersion = "2.28.2"
 
 dependencies {
   api fileTree(dir: 'libs', include: ['*.jar'])
+  implementation 'androidx.core:core-ktx:1.9.0'
   implementation 'androidx.annotation:annotation:1.6.0'
   implementation 'androidx.lifecycle:lifecycle-common:2.6.1'
   implementation 'androidx.lifecycle:lifecycle-process:2.6.1'

@@ -293,6 +293,11 @@ public class App extends Application {
         };
         IntentFilter filter = new IntentFilter();
         filter.addAction(CountlyPush.SECURE_NOTIFICATION_BROADCAST);
-        registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null, Context.RECEIVER_NOT_EXPORTED);
+        }
+        else {
+            registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
+        }
     }
 }
