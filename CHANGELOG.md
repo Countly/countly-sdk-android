@@ -2,6 +2,7 @@
 * Added a config method to set a time limit after which the requests would be removed if not sent to the server: 'setRequestDropAgeHours'
 * Added a call to enroll users to A/B tests when getting a remote config value: 'getValueAndEnroll'
 * Added a call to enroll users to A/B tests when getting all remote config values: 'getAllValuesAndEnroll'
+* Adding app version to every request
 
 * Mitigated an issue where users could not enroll to an A/B tests if enrollment request has failed
 * Mitigated an issue where users could not exit from A/B tests if removal request has failed
@@ -36,7 +37,6 @@
 * Deprecated the init time configuration of 'setAutoTrackingUseShortName(enable)'. Introduced replacement 'enableAutomaticViewShortNames()'
 * Deprecated the init time configuration of 'setAutomaticViewSegmentation(segmentation)'. Introduced replacement 'setGlobalViewSegmentation(segmentation)'
 * Deprecated the init time configuration of 'setAutoTrackingExceptions(exceptions)'. Introduced replacement 'setAutomaticViewTrackingExclusions(exclusions)'
-
 
 ## 23.6.0
 * !! Major breaking change !! Automatically downloaded remote config values will no longer be automatically enrolled in their AB tests.

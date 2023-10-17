@@ -107,9 +107,13 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
         Object value_2 = null;
         Object value_3 = null;
 
-        if (values != null) {
+        if (values.containsKey("aa")) {
             value_1 = values.get("aa").value;
+        }
+        if (values.containsKey("aa")) {
             value_2 = values.get("bb").value;
+        }
+        if (values.containsKey("aa")) {
             value_3 = values.get("cc").value;
         }
 
@@ -170,7 +174,6 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
             int intValue = (int) value_1;
             printValues += intValue;
         }
-
 
         Toast t = Toast.makeText(getApplicationContext(), "Stored Remote Config Values: [" + printValues + "]", Toast.LENGTH_LONG);
         t.setGravity(Gravity.BOTTOM, 0, 0);

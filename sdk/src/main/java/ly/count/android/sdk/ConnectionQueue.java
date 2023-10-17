@@ -210,9 +210,9 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        String data = "method=ab"
+        String data = prepareCommonRequestDataShort()
+            + "&method=ab"
             + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
-            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
             + "&new_end_point=/o/sdk";
 
@@ -235,8 +235,8 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        String data = "method=ab_opt_out"
-            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+        String data = prepareCommonRequestDataShort()
+            + "&method=ab_opt_out"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         if (keys.length > 0) { // exits all otherwise
@@ -344,7 +344,6 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        boolean dataAvailable = false;//will only send data if there is something valuable to send
         String data = prepareCommonRequestData();
 
         data += "&end_session=1";
@@ -686,25 +685,29 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
+    @NonNull
     String prepareCommonRequestData() {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
-        return "app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
-            + "&timestamp=" + instant.timestampMs
+        return prepareCommonRequestDataShort(instant)
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
-            + "&tz=" + deviceInfo.mp.getTimezoneOffset()
-            + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
-            + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
+            + "&tz=" + deviceInfo.mp.getTimezoneOffset();
     }
 
+    @NonNull
     String prepareCommonRequestDataShort() {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        return prepareCommonRequestDataShort(instant);
+    }
 
+    @NonNull
+    String prepareCommonRequestDataShort(@NonNull UtilsTime.Instant instant) {
         return "app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
             + "&timestamp=" + instant.timestampMs
             + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
-            + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME;
+            + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME
+            + "&av=" + UtilsNetworking.urlEncodeString(deviceInfo.getAppVersionWithOverride(context_, metricOverride));
     }
 
     private String prepareLocationData(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress) {
@@ -790,8 +793,8 @@ class ConnectionQueue implements RequestQueueProvider {
      * @return
      */
     public String prepareFetchAllVariants() {
-        String data = "method=ab_fetch_variants"
-            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+        String data = prepareCommonRequestDataShort()
+            + "&method=ab_fetch_variants"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         return data;
@@ -805,16 +808,16 @@ class ConnectionQueue implements RequestQueueProvider {
      * @return
      */
     public String prepareFetchAllExperiments() {
-        String data = "method=ab_fetch_experiments"
-            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+        String data = prepareCommonRequestDataShort()
+            + "&method=ab_fetch_experiments"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
 
         return data;
     }
 
     public String prepareEnrollVariant(String key, String variant) {
-        String data = "method=ab_enroll_variant"
-            + "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+        String data = prepareCommonRequestDataShort()
+            + "&method=ab_enroll_variant"
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
             + "&key=" + UtilsNetworking.urlEncodeString(key)
             + "&variant=" + UtilsNetworking.urlEncodeString(variant);

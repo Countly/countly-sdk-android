@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 
 interface MetricProvider {
     String getOS();
@@ -21,6 +22,7 @@ interface MetricProvider {
 
     String getLocale();
 
+    @NonNull
     String getAppVersion(final Context context);
 
     String getStore(final Context context);

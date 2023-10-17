@@ -727,6 +727,21 @@ class DeviceInfo {
         return json.toString();
     }
 
+    @NonNull
+    public String getAppVersionWithOverride(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+        String appVersion = mp.getAppVersion(context);
+
+        if (metricOverride != null && metricOverride.containsKey("_app_version")) {
+            String overrideVersion = metricOverride.get("_app_version");
+
+            if (overrideVersion != null) {
+                appVersion = overrideVersion;
+            }
+        }
+
+        return appVersion;
+    }
+
     /**
      * Notify when app is in foreground
      */

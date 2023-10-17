@@ -39,6 +39,7 @@ import java.util.Locale;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -297,5 +298,20 @@ public class DeviceInfoTests {
         String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
+    }
+
+    @Test
+    public void getAppVersionWithOverride() {
+        Map<String, String> metricOverride = new HashMap<>();
+        metricOverride.put("_app_version", "d5");
+        Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(getContext(), null));
+
+        Assert.assertEquals("d5", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
+
+        metricOverride.put("_app_version", null);
+        Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
+
+        metricOverride.put("_app_version", "");
+        Assert.assertEquals("", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
     }
 }
