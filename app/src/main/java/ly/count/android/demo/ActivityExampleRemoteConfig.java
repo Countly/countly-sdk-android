@@ -110,10 +110,10 @@ public class ActivityExampleRemoteConfig extends AppCompatActivity {
         if (values.containsKey("aa")) {
             value_1 = values.get("aa").value;
         }
-        if (values.containsKey("aa")) {
+        if (values.containsKey("bb")) {
             value_2 = values.get("bb").value;
         }
-        if (values.containsKey("aa")) {
+        if (values.containsKey("cc")) {
             value_3 = values.get("cc").value;
         }
 
