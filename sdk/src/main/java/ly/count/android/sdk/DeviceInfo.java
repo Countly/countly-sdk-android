@@ -433,7 +433,7 @@ class DeviceInfo {
                     try {
                         Intent batteryIntent;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+                            batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED), null, null, Context.RECEIVER_NOT_EXPORTED);
                         }
                         else {
                             batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));

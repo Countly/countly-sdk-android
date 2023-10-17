@@ -95,7 +95,7 @@ dependencies {
   //required for FCM push
   implementation 'com.google.firebase:firebase-messaging:22.0.0'
   //required for huawei push
-  implementation 'com.huawei.hms:push:5.3.0.304'
+  implementation 'com.huawei.hms:push:6.3.0.304'
 
   implementation 'com.google.android.material:material:1.6.0-alpha02'
   implementation 'androidx.appcompat:appcompat:1.6.1'
