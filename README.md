@@ -1,4 +1,4 @@
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b26d1acc435c47af88b4e4b9eb94f59f)](https://www.codacy.com/gh/Countly/countly-sdk-android/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Countly/countly-sdk-android&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b26d1acc435c47af88b4e4b9eb94f59f)](https://app.codacy.com/gh/Countly/countly-sdk-android/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![API](https://img.shields.io/badge/API-9%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=9)
 
 # Countly Android SDK
