@@ -17,8 +17,8 @@ public class ModuleUserProfile extends ModuleBase {
     static final String EMAIL_KEY = "email";
     static final String ORG_KEY = "organization";
     static final String PHONE_KEY = "phone";
-    static final String PICTURE_KEY = "picture";
-    static final String PICTURE_PATH_KEY = "picturePath";
+    static final String PICTURE_KEY = "picture";//the one sending the url
+    static final String PICTURE_PATH_KEY = "picturePath";//path to a local file
     static final String GENDER_KEY = "gender";
     static final String BYEAR_KEY = "byear";
     static final String CUSTOM_KEY = "custom";
