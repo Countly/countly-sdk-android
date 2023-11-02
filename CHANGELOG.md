@@ -1,5 +1,5 @@
 ## 23.8.4
-* Mitigated an issue where the device ID was changed temporarily while exiting an AB experiment
+* Mitigated an issue where the device ID was changed after exiting an AB experiment
 
 ## 23.8.3
 * Added a config method to set a time limit after which the requests would be removed if not sent to the server: 'setRequestDropAgeHours'
