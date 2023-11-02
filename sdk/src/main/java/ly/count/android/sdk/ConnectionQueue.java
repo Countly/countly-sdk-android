@@ -213,7 +213,6 @@ class ConnectionQueue implements RequestQueueProvider {
         String data = prepareCommonRequestDataShort()
             + "&method=ab"
             + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
             + "&new_end_point=/o/sdk";
 
         addRequestToQueue(data, false);
@@ -236,8 +235,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestDataShort()
-            + "&method=ab_opt_out"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+            + "&method=ab_opt_out";
 
         if (keys.length > 0) { // exits all otherwise
             data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys);

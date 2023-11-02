@@ -79,4 +79,11 @@
       android:onClick="onClickRemoteConfigPrintValuesAndEnroll"
       android:text="Get all and enroll"
       />
+  <Button
+      android:id="@+id/exit_all"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRemoteConfigExitForKeys"
+      android:text="Exit all keys"
+      />
 </LinearLayout>
