@@ -191,7 +191,8 @@ public class ConnectionProcessor implements Runnable {
         }
 
         //calculating header field size
-        try{ //just after init, because of background operations, this might fail
+        try { 
+            //just after init, because of background operations, this might fail
             // HttpUrl::Builder of okhttp might give null pointer error because it may not be initialized yet
             int headerIndex = 0;
     
