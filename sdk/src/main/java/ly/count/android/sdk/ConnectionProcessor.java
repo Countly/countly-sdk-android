@@ -191,14 +191,21 @@ public class ConnectionProcessor implements Runnable {
         }
 
         //calculating header field size
-        int headerIndex = 0;
-        while (true) {
-            String key = conn.getHeaderFieldKey(headerIndex);
-            if (key == null) {
-                break;
+        try { 
+            //just after init, because of background operations, this might fail
+            // HttpUrl::Builder of okhttp might give null pointer error because it may not be initialized yet
+            int headerIndex = 0;
+    
+            while (true) {
+                String key = conn.getHeaderFieldKey(headerIndex);
+                if (key == null) {
+                    break;
+                }
+                String value = conn.getHeaderField(headerIndex++);
+                approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
             }
-            String value = conn.getHeaderField(headerIndex++);
-            approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
+        } catch (Exception e) {
+            L.e("[ConnectionProcessor] urlConnectionForServerRequest, exception while calculating header field size: " + e);
         }
 
         L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()

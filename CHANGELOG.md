@@ -1,3 +1,6 @@
+## xx.x.x
+* Mitigated a rare issue related to handling request headers
+  
 ## 23.8.4
 * Mitigated an issue where the device ID was changed after exiting an AB experiment
 
