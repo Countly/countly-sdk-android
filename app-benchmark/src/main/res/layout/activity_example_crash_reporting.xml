@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context=".ActivityExampleCrashReporting"
+    android:gravity="center_vertical"
+    >
+
+  <Button
+      android:text="@string/out_of_bounds"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/button21"
+      android:onClick="onClickOutOfBounds"
+      />
+
+  <Button
+      android:text="@string/null_pointer"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/button22"
+      android:onClick="onClickNullPointer"
+      />
+
+  <Button
+      android:text="@string/kill"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/button25"
+      android:onClick="onClickCrashReporting06"
+      android:enabled="false"
+      />
+
+  <Button
+      android:id="@+id/button26"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickDivZero"
+      android:text="@string/custom_crash_log"
+      />
+
+  <Button
+      android:text="@string/record_handled_exception"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/button27"
+      android:onClick="onClickHandledException"
+      />
+
+  <Button
+      android:text="@string/unhandled_exception"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:id="@+id/button28"
+      android:onClick="onClickUNhandledException"
+      />
+
+  <Button
+      android:id="@+id/button49"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickDeepUnhandled"
+      android:text="@string/deep_unhandled_exception"
+      />
+
+  <Button
+      android:id="@+id/button48"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickDeepHandled"
+      android:text="@string/deep_handled_exception"
+      />
+
+  <Button
+      android:id="@+id/button50"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickLargeBreadcrumb"
+      android:text="@string/add_a_breadcrumb"
+      />
+</LinearLayout>

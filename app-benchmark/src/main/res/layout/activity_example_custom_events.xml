@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    tools:context=".ActivityExampleCustomEvents"
+    >
+
+  <ScrollView
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:clipToPadding="false"
+      android:paddingBottom="16dp"
+      android:paddingTop="48dp"
+      tools:ignore="UselessParent"
+      >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        >
+
+      <Button
+          android:id="@+id/button4"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent01"
+          android:text="@string/record_event"
+          />
+
+      <Button
+          android:id="@+id/button10"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent02"
+          android:text="@string/record_event_with_count"
+          />
+
+      <Button
+          android:id="@+id/button11"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent03"
+          android:text="@string/record_event_with_sum"
+          />
+
+      <Button
+          android:id="@+id/button12"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent04"
+          android:text="@string/record_event_with_duration"
+          />
+
+      <Button
+          android:id="@+id/button13"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent05"
+          android:text="@string/record_event_with_segm"
+          />
+
+      <Button
+          android:id="@+id/button14"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent06"
+          android:text="@string/record_event_with_segm_count"
+          />
+
+      <Button
+          android:id="@+id/button15"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent07"
+          android:text="@string/record_event_with_segm_count_sum"
+          />
+
+      <Button
+          android:id="@+id/button16"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent08"
+          android:text="@string/record_event_with_segm_count_sum_dur"
+          />
+
+      <Button
+          android:id="@+id/button17"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent09"
+          android:text="@string/start_event"
+          />
+
+      <Button
+          android:id="@+id/button18"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent10"
+          android:text="@string/end_event"
+          />
+
+      <Button
+          android:id="@+id/button67"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent12"
+          android:text="Cancel Timed Event"
+          />
+
+      <Button
+          android:id="@+id/button19"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickRecordEvent11"
+          android:text="@string/end_event_with_segm_count_sum"
+          />
+      <Button
+          android:id="@+id/btnTriggerSendingEvents"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickTriggerSendingEvents"
+          android:text="Trigger sending events"
+          />
+    </LinearLayout>
+  </ScrollView>
+
+</LinearLayout>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    >
+
+  <Button
+      android:id="@+id/button42"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickViewOther02"
+      android:text="@string/ask_for_star_rating"
+      />
+
+  <Button
+      android:id="@+id/button46"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickViewOther07"
+      android:text="@string/ask_for_rating_widget"
+      />
+
+  <Button
+      android:id="@+id/button71"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickSendManualRating"
+      android:text="Send Manual Rating"
+      />
+  <Button
+      android:id="@+id/button63"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickShowSurvey"
+      android:text="Show survey"
+      />
+  <Button
+      android:id="@+id/button69"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickShowNPS"
+      android:text="Show NPS"
+      />
+  <Button
+      android:id="@+id/button37"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickShowRating"
+      android:text="show rating"
+      />
+  <Button
+      android:id="@+id/btnAvailableWidgets"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickShowAvailableFeedbackWidgets"
+      android:text="Available feedback widgets"
+      />
+  <Button
+      android:id="@+id/button61"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickReportSurveyManually"
+      android:text="Report Survey Manually"
+      />
+  <Button
+      android:id="@+id/button38"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickReportRatingManually"
+      android:text="Report Rating Manually"
+      />
+  <Button
+      android:id="@+id/button62"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickReportNPSManually"
+      android:text="Report NPS manually"
+      />
+  <Button
+      android:id="@+id/button34"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRetrieveSurveyDataManually"
+      android:text="Retrieve survey data manually"
+      />
+  <Button
+      android:id="@+id/button35"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRetrieveNPSDataManually"
+      android:text="Retrieve nps data manually"
+      />
+
+</LinearLayout>

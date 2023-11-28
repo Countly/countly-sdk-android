@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    >
+
+  <Button
+      android:id="@+id/btnRecordViewA"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRecordViewA"
+      android:text="record view A"
+      />
+
+  <Button
+      android:id="@+id/btnRecordViewASegm"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRecordViewWithSegmentationA"
+      android:text="record view A with segmentation"
+      />
+
+  <Button
+      android:id="@+id/btnRecordViewB"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="15dp"
+      android:onClick="onClickRecordViewB"
+      android:text="record view B"
+      />
+
+  <Button
+      android:id="@+id/btnRecordViewBSegm"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRecordViewWithSegmentationB"
+      android:text="record view B with segmentation"
+      />
+
+  <Button
+      android:id="@+id/btnRecordViewC"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="15dp"
+      android:onClick="onClickRecordViewC"
+      android:text="record view C"
+      />
+
+  <Button
+      android:id="@+id/btnRecordViewCSegm"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:onClick="onClickRecordViewWithSegmentationC"
+      android:text="record view C with segmentation"
+      />
+
+  <Button
+      android:id="@+id/btndMiscTest"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="15dp"
+      android:onClick="onClickMiscTest"
+      android:text="Misc Test"
+      />
+
+</LinearLayout>

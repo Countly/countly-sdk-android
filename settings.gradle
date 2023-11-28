@@ -1,2 +1,3 @@
 include ':app', ':sdk', ':sdk-native', ':app-native', ':upload-plugin'
 include ':app-kotlin'
+include ':app-benchmark'

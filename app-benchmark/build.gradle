@@ -1,0 +1,57 @@
+apply plugin: 'com.android.application'
+
+//required for huawei push
+//apply plugin: 'com.huawei.agconnect'
+
+apply plugin: 'kotlin-android'
+
+android {
+  namespace 'ly.count.android.benchmark'
+  compileSdk 34
+
+  defaultConfig {
+    applicationId "ly.count.android.benchmark"
+    minSdk 17
+    targetSdk 34
+    versionCode 1
+    versionName "1.0"
+
+    testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  signingConfigs {
+    release {
+      storeFile file('keys')
+      keyAlias 'HWDemo'
+      keyPassword 'countly'
+      storePassword 'countly'
+      v1SigningEnabled true
+      v2SigningEnabled true
+    }
+  }
+
+  buildTypes {
+    debug {
+      signingConfig signingConfigs.release
+      minifyEnabled false
+      //shrinkResources true
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+    release {
+      signingConfig signingConfigs.release
+      minifyEnabled true
+      //shrinkResources true
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+
+  implementation 'androidx.appcompat:appcompat:1.6.1'
+  implementation 'com.google.android.material:material:1.8.0'
+  implementation project(path: ':sdk')
+}
