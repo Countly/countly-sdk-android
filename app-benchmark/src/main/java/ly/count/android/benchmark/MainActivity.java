@@ -14,10 +14,13 @@ public class MainActivity extends AppCompatActivity {
 
     InstallReferrerClient referrerClient;
 
+    Benchmark benchmark;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        benchmark = new Benchmark();
 
         referrerClient = InstallReferrerClient.newBuilder(this).build();
         referrerClient.startConnection(new InstallReferrerStateListener() {
@@ -77,6 +80,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onClickBenchmark(View v) {
-
+        benchmark.scenario_A();
     }
 }
