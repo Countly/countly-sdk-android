@@ -53,5 +53,6 @@ dependencies {
 
   implementation 'androidx.appcompat:appcompat:1.6.1'
   implementation 'com.google.android.material:material:1.8.0'
+  implementation 'com.android.installreferrer:installreferrer:2.2'
   implementation project(path: ':sdk')
 }
