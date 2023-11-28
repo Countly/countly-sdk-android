@@ -18,12 +18,34 @@
       tools:ignore="UselessParent"
   >
 
+    <EditText
+        android:id="@+id/segmentSize"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="number" android:text="SegmentSize"/>
+    <EditText
+        android:id="@+id/loop"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="number" android:minHeight="48dp" android:text="Loop"/>
+    <EditText
+        android:id="@+id/eventSize"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="number" android:minHeight="48dp" android:text="EventSize "/>
+    <Button
+        android:id="@+id/button9"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:onClick="onClickFillRequestQueue" android:text="Fill RQ" android:visibility="visible" tools:visibility="visible"/>
     <Button
         android:id="@+id/tests_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickBenchmark"
-        android:text="Benchmark"
+        android:text="Send Requests"
     />
 
   </LinearLayout>

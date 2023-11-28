@@ -3,6 +3,8 @@ package ly.count.android.benchmark;
 import android.app.Application;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
+import ly.count.android.sdk.CountlyStore;
+import ly.count.android.sdk.ModuleLog;
 
 public class App extends Application {
     final String COUNTLY_SERVER_URL = "https://try.count.ly";
@@ -20,5 +22,6 @@ public class App extends Application {
             .setParameterTamperingProtectionSalt("test-benchmark-salt");
 
         Countly.sharedInstance().init(config);
+        Benchmark.countlyStore = new CountlyStore(this, new ModuleLog());
     }
 }
