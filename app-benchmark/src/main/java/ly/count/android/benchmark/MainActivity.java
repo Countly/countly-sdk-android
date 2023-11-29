@@ -11,6 +11,9 @@ import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
 import java.net.URLDecoder;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import ly.count.android.sdk.Countly;
 
 public class MainActivity extends AppCompatActivity {
@@ -68,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
                             referrerClient.endConnection();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            Countly.sharedInstance().L.e("[MainActivity] onInstallReferrerSetupFinished, Failed to get install referrer", e);
                         }
                         break;
                     case InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED:
@@ -91,46 +94,58 @@ public class MainActivity extends AppCompatActivity {
         android.os.Process.killProcess(id);
     }
 
+    public void onSchedulerPressed(View v) {
+        readLoopSegmentEventSize();
+        futureWrapper(() -> {
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            // Schedule the task to run every 10 seconds
+            scheduler.scheduleAtFixedRate(() -> {
+                benchmark.fillRequestQueue(1, eventSize, segmentSize);
+                BENCHMARK(1, eventSize, segmentSize);
+            }, 0, 10, TimeUnit.SECONDS);
+        });
+    }
+
     public void onClickFillRequestQueue(View v) {
-        loop = Integer.parseInt(((EditText) findViewById(R.id.loop)).getText().toString());
-        segmentSize = Integer.parseInt(((EditText) findViewById(R.id.segmentSize)).getText().toString());
-        eventSize = Integer.parseInt(((EditText) findViewById(R.id.eventSize)).getText().toString());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            CompletableFuture.runAsync(() -> {
-                try {
-                    benchmark.fillRequestQueue(loop, eventSize, segmentSize);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
+        readLoopSegmentEventSize();
+        futureWrapper(() -> benchmark.fillRequestQueue(loop, eventSize, segmentSize));
     }
 
     public void onClickBenchmark(View v) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            CompletableFuture.runAsync(() -> {
-                try {
-                    scenario_A(loop, eventSize, segmentSize);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
+        futureWrapper(() -> BENCHMARK(loop, eventSize, segmentSize));
     }
 
-    protected void scenario_A(int loop, int eventSize, int segmentSize) {
+    protected void BENCHMARK(int loop, int eventSize, int segmentSize) {
         benchmark.print("------------------------------------------------------------");
-        benchmark.print("[Benchmark] scenario_A");
+        benchmark.print("[MainActivity] BENCHMARK");
         benchmark.print("------------------------------------------------------------");
-        benchmark.print("[Benchmark] scenario_A: rqSize: " + Benchmark.countlyStore.getRequests().length);
+        benchmark.print("[MainActivity] BENCHMARK, rqSize: " + Benchmark.countlyStore.getRequests().length);
 
-        benchmark.print("[Benchmark] scenario_A: loop: " + loop + ", events size: " + eventSize + ", segment size: " + segmentSize);
-        benchmark.print("[Benchmark] scenario_A: Triggering sending");
+        benchmark.print("[MainActivity] BENCHMARK loop: " + loop + ", events size: " + eventSize + ", segment size: " + segmentSize);
+        benchmark.print("[MainActivity] BENCHMARK Triggering sending");
         long startTime = System.currentTimeMillis();
         Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
         while (Benchmark.countlyStore.getRequests().length > 0) ; // wait for RQ to finish sending
         long endTime = System.currentTimeMillis();
-        benchmark.print("[Benchmark] scenario_A: SENDING TOOK: " + (endTime - startTime) + "MS");
+        benchmark.print("[MainActivity] BENCHMARK, SENDING TOOK: " + (endTime - startTime) + "MS");
         benchmark.print("------------------------------------------------------------");
+    }
+
+    private void readLoopSegmentEventSize() {
+        loop = Integer.parseInt(((EditText) findViewById(R.id.loop)).getText().toString());
+        segmentSize = Integer.parseInt(((EditText) findViewById(R.id.segmentSize)).getText().toString());
+        eventSize = Integer.parseInt(((EditText) findViewById(R.id.eventSize)).getText().toString());
+    }
+
+    private void futureWrapper(Runnable runnable) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    runnable.run();
+                } catch (Exception e) {
+                    Countly.sharedInstance().L.e("[MainActivity] futureWrapper, Failed to run scheduler", e);
+                }
+            });
+        }
     }
 }

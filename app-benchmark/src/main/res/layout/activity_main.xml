@@ -51,6 +51,10 @@
         android:id="@+id/button20"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" android:onClick="onHardKillPressed" android:text="Exit"/>
+    <Button
+        android:id="@+id/button23"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:onClick="onSchedulerPressed" android:text="Schedule"/>
 
   </LinearLayout>
 </RelativeLayout>
