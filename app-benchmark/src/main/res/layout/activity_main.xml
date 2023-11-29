@@ -23,30 +23,34 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:inputType="number" android:text="SegmentSize"/>
+        android:inputType="number" android:minHeight="48dp" android:text="SegmentSize" android:autofillHints=""/>
     <EditText
         android:id="@+id/loop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:inputType="number" android:minHeight="48dp" android:text="Loop"/>
+        android:inputType="number" android:minHeight="48dp" android:text="Loop" android:autofillHints=""/>
     <EditText
         android:id="@+id/eventSize"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:inputType="number" android:minHeight="48dp" android:text="EventSize "/>
+        android:inputType="number" android:minHeight="48dp" android:text="EventSize " android:importantForAutofill="no"/>
     <Button
         android:id="@+id/button9"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:onClick="onClickFillRequestQueue" android:text="Fill RQ" android:visibility="visible" tools:visibility="visible"/>
+        android:layout_height="wrap_content" android:onClick="onClickFillRequestQueue" android:text="@string/fill_rq" android:visibility="visible" tools:visibility="visible"/>
     <Button
         android:id="@+id/tests_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickBenchmark"
-        android:text="Send Requests"
+        android:text="@string/send_requests"
     />
+    <Button
+        android:id="@+id/button20"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:onClick="onHardKillPressed" android:text="Exit"/>
 
   </LinearLayout>
 </RelativeLayout>

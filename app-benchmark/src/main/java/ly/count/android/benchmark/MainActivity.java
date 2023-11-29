@@ -86,6 +86,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public void onHardKillPressed(View v) {
+        int id = android.os.Process.myPid();
+        android.os.Process.killProcess(id);
+    }
+
     public void onClickFillRequestQueue(View v) {
         loop = Integer.parseInt(((EditText) findViewById(R.id.loop)).getText().toString());
         segmentSize = Integer.parseInt(((EditText) findViewById(R.id.segmentSize)).getText().toString());
