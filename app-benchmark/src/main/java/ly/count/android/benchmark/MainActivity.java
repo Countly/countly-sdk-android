@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Switch;
 import androidx.appcompat.app.AppCompatActivity;
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
             // Schedule the task to run every 10 seconds
             scheduler.scheduleAtFixedRate(() -> {
                 benchmark.fillRequestQueue(1, eventSize, segmentSize);
-                BENCHMARK(1, eventSize, segmentSize);
+                BENCHMARK(1, Countly.sharedInstance().requestQueue()::attemptToSendStoredRequests);
             }, 0, 10, TimeUnit.SECONDS);
         });
     }
@@ -109,13 +110,23 @@ public class MainActivity extends AppCompatActivity {
     public void onClickFillRequestQueue(View v) {
         readLoopSegmentEventSize();
         futureWrapper(() -> benchmark.fillRequestQueue(loop, eventSize, segmentSize));
+        if (((Switch) findViewById(R.id.switch1)).isChecked()) {
+            futureWrapper(this::standByForOnTimer);
+        }
+    }
+
+    private void standByForOnTimer() {
+        benchmark.print("[MainActivity] standByForOnTimer, wait is true, waiting for onTimer to be called");
+        //while (Countly.sharedInstance().standBy.get()) ;
+        benchmark.print("[MainActivity] standByForOnTimer, standBy is false, sending requests");
+        BENCHMARK(loop, null);
     }
 
     public void onClickBenchmark(View v) {
-        futureWrapper(() -> BENCHMARK(loop, eventSize, segmentSize));
+        futureWrapper(() -> BENCHMARK(loop, Countly.sharedInstance().requestQueue()::attemptToSendStoredRequests));
     }
 
-    protected void BENCHMARK(int loop, int eventSize, int segmentSize) {
+    protected void BENCHMARK(int loop, Runnable runnable) {
         benchmark.print("------------------------------------------------------------");
         benchmark.print("[MainActivity] BENCHMARK");
         benchmark.print("------------------------------------------------------------");
@@ -124,7 +135,9 @@ public class MainActivity extends AppCompatActivity {
         benchmark.print("[MainActivity] BENCHMARK loop: " + loop + ", events size: " + eventSize + ", segment size: " + segmentSize);
         benchmark.print("[MainActivity] BENCHMARK Triggering sending");
         long startTime = System.currentTimeMillis();
-        Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
+        if (runnable != null) {
+            runnable.run();
+        }
         while (Benchmark.countlyStore.getRequests().length > 0) ; // wait for RQ to finish sending
         long endTime = System.currentTimeMillis();
         benchmark.print("[MainActivity] BENCHMARK, SENDING TOOK: " + (endTime - startTime) + "MS");
