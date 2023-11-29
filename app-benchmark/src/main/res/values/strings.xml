@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Countly Benchmarking App</string>
+  <string name="fill_rq">Fill RQ</string>
+  <string name="send_requests">Send Requests</string>
+</resources>
