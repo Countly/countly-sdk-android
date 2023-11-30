@@ -94,6 +94,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     String esEventQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
     String esHealthCheckCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
 
+    public PerformanceCounterCollector pcc;
+
     /**
      * Constructs a CountlyStore object.
      *
@@ -268,22 +270,48 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * Returns an unsorted array of the current stored connections.
      */
     public synchronized String[] getRequests() {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         final String joinedConnStr = storageReadRequestQueue();
-        return joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
+        String[] ret = joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_getRequests", UtilsTime.currentTimestampMs() - tsStart);
+        }
+
+        return ret;
     }
 
     /**
      * Returns an unsorted array of the current stored event JSON strings.
      */
     public synchronized String[] getEvents() {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         final String joinedEventsStr = storageReadEventQueue();
-        return joinedEventsStr.length() == 0 ? new String[0] : joinedEventsStr.split(DELIMITER);
+        String[] ret = joinedEventsStr.length() == 0 ? new String[0] : joinedEventsStr.split(DELIMITER);
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_getEvents", UtilsTime.currentTimestampMs() - tsStart);
+        }
+        return ret;
     }
 
     /**
      * Returns a list of the current stored events, sorted by timestamp from oldest to newest.
      */
     public synchronized List<Event> getEventList() {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         final String[] array = getEvents();
         final List<Event> events = new ArrayList<>(array.length);
         for (String s : array) {
@@ -304,6 +332,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 return (int) (e1.timestamp - e2.timestamp);
             }
         });
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_getEventList", UtilsTime.currentTimestampMs() - tsStart);
+        }
+
         return events;
     }
 
@@ -313,7 +346,17 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @return the number of events in the local event queue
      */
     public synchronized int getEventQueueSize() {
-        return getEvents().length;
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
+        int ret = getEvents().length;
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_getEventQueueSize", UtilsTime.currentTimestampMs() - tsStart);
+        }
+        return ret;
     }
 
     /**
@@ -323,6 +366,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @return URL-encoded JSON string of event data from the local event queue
      */
     public synchronized String getEventsForRequestAndEmptyEventQueue() {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         String result;
 
         final List<Event> events = getEventList();
@@ -343,6 +391,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             L.w("[CountelyStore] getEventsForRequestAndEmptyEventQueue, why is this even happening?");
         }
 
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_getEventsForRequestAndEmptyEventQueue", UtilsTime.currentTimestampMs() - tsStart);
+        }
         return result;
     }
 
@@ -357,6 +408,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      */
     @SuppressLint("ApplySharedPref")
     public synchronized void addRequest(@NonNull final String requestStr, final boolean writeInSync) {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
             L.w("[CountlyStore] addRequest, Tracking config is disabled, request will not be added to the request queue.");
             return;
@@ -383,6 +439,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             }
         } else {
             L.w("[CountlyStore] addRequest, providing null or empty request string");
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_addRequest", UtilsTime.currentTimestampMs() - tsStart);
         }
     }
 
@@ -448,24 +508,51 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * or if a matching connection cannot be found
      */
     public synchronized void removeRequest(final String requestStr) {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         if (requestStr != null && requestStr.length() > 0) {
             final List<String> connections = new ArrayList<>(Arrays.asList(getRequests()));
             if (connections.remove(requestStr)) {
                 storageWriteRequestQueue(Utils.joinCountlyStore(connections, DELIMITER), false);
             }
         }
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_removeRequest", UtilsTime.currentTimestampMs() - tsStart);
+        }
     }
 
     public synchronized void replaceRequests(final String[] newConns) {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         if (newConns != null) {
             final List<String> connections = new ArrayList<>(Arrays.asList(newConns));
             replaceRequestList(connections);
         }
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_replaceRequests", UtilsTime.currentTimestampMs() - tsStart);
+        }
     }
 
     public synchronized void replaceRequestList(final List<String> newConns) {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         if (newConns != null) {
             storageWriteRequestQueue(Utils.joinCountlyStore(newConns, DELIMITER), false);
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_replaceRequestList", UtilsTime.currentTimestampMs() - tsStart);
         }
     }
 
@@ -554,6 +641,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      */
     public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
         final @Nullable String currentViewId, final @Nullable String previousEventId) {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         Map<String, String> segmentationString = null;
         Map<String, Integer> segmentationInt = null;
         Map<String, Double> segmentationDouble = null;
@@ -587,6 +679,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         event.peid = previousEventId;
 
         addEvent(event);
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_recordEventToEventQueue", UtilsTime.currentTimestampMs() - tsStart);
+        }
     }
 
     /**
@@ -596,11 +692,20 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param eventsToRemove collection containing the events to remove from the local store
      */
     public synchronized void removeEvents(final Collection<Event> eventsToRemove) {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.currentTimestampMs();
+        }
+
         if (eventsToRemove != null && eventsToRemove.size() > 0) {
             final List<Event> events = getEventList();
             if (events.removeAll(eventsToRemove)) {
                 storageWriteEventQueue(joinEvents(events, DELIMITER), false);
             }
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounter("CountlyStore_removeEvents", UtilsTime.currentTimestampMs() - tsStart);
         }
     }
 

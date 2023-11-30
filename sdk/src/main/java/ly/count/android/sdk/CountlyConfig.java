@@ -224,6 +224,13 @@ public class CountlyConfig {
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
 
+    /**
+     * THIS VARIABLE SHOULD NOT BE USED
+     * IT IS ONLY FOR INTERNAL TESTING
+     * BREAKING CHANGES WILL BE DONE WITHOUT WARNING
+     */
+    public PerformanceCounterCollector pcc;
+
     //public synchronized CountlyConfig setMaxKeyLength(int maxKeyLength) {
     //    this.maxKeyLength = maxKeyLength;
     //    return this;

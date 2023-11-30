@@ -54,6 +54,8 @@ class ConnectionQueue implements RequestQueueProvider {
 
     HealthTracker healthTracker;
 
+    public PerformanceCounterCollector pcc;
+
     private Map<String, String> requestHeaderCustomValues;
     Map<String, String> metricOverride = null;
 
@@ -889,7 +891,9 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        return new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
+        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
+        cp.pcc = pcc;
+        return cp;
     }
 
     public boolean queueContainsTemporaryIdItems() {

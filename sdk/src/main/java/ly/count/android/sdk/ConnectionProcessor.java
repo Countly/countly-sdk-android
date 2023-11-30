@@ -65,6 +65,8 @@ public class ConnectionProcessor implements Runnable {
 
     ModuleLog L;
 
+    public PerformanceCounterCollector pcc;
+
     private enum RequestResult {
         OK,         // success
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
@@ -191,11 +193,11 @@ public class ConnectionProcessor implements Runnable {
         }
 
         //calculating header field size
-        try { 
+        try {
             //just after init, because of background operations, this might fail
             // HttpUrl::Builder of okhttp might give null pointer error because it may not be initialized yet
             int headerIndex = 0;
-    
+
             while (true) {
                 String key = conn.getHeaderFieldKey(headerIndex);
                 if (key == null) {
@@ -216,9 +218,19 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         while (true) {
+            Long pccTsStartWholeQueue = 0L;
+            Long pccTsStartOnlyInternet = 0L;
+            Long pccTsStartTempIdCheck = 0L;
+            Long pccTsStartEndpointCheck = 0L;
+            Long pccTsStartOldRCheck = 0L;
+
             if (!configProvider_.getNetworkingEnabled()) {
                 L.w("[Connection Processor] run, Networking config is disabled, request queue skipped");
                 break;
+            }
+
+            if (pcc != null) {
+                pccTsStartWholeQueue = UtilsTime.currentTimestampMs();
             }
 
             // get stored requests
@@ -247,12 +259,23 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            if (pcc != null) {
+                pccTsStartOldRCheck = UtilsTime.currentTimestampMs();
+            }
+
             L.i("[Connection Processor] Checking if the request is older than:[" + requestInfoProvider_.getRequestDropAgeHours() + "] hours");
             boolean isRequestOld = Utils.isRequestTooOld(storedRequests[0], requestInfoProvider_.getRequestDropAgeHours(), "[Connection Processor]", L);
+
+            if (pcc != null) {
+                pcc.TrackCounter("NetworkOldReq", UtilsTime.currentTimestampMs() - pccTsStartOldRCheck);
+            }
 
             // get first request in a separate variable to modify and keep the original intact
             String eventData = storedRequests[0];//todo rework to stringbuilder
 
+            if (pcc != null) {
+                pccTsStartTempIdCheck = UtilsTime.currentTimestampMs();
+            }
             // temp ID checks
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
@@ -266,9 +289,13 @@ public class ConnectionProcessor implements Runnable {
                 L.i("[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
                 break;
             }
+            if (pcc != null) {
+                pcc.TrackCounter("NetworkTempID", UtilsTime.currentTimestampMs() - pccTsStartTempIdCheck);
+            }
 
-            boolean deviceIdOverride = eventData.contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = eventData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+            if (pcc != null) {
+                pccTsStartEndpointCheck = UtilsTime.currentTimestampMs();
+            }
 
             String customEndpoint = null;
 
@@ -283,7 +310,14 @@ public class ConnectionProcessor implements Runnable {
                 L.v("[Connection Processor] Custom end point detected for the request:[" + customEndpoint + "]");
             }
 
+            if (pcc != null) {
+                pcc.TrackCounter("NetworkCustomEndpoint", UtilsTime.currentTimestampMs() - pccTsStartEndpointCheck);
+            }
+
             //add the device_id to the created request
+            boolean deviceIdOverride = eventData.contains("&override_id="); //if the sendable data contains a override tag
+            boolean deviceIdChange = eventData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+
             final String newId;
 
             if (deviceIdOverride) {
@@ -330,9 +364,17 @@ public class ConnectionProcessor implements Runnable {
                 URLConnection conn = null;
                 InputStream connInputStream = null;
                 try {
+                    if (pcc != null) {
+                        pccTsStartOnlyInternet = UtilsTime.currentTimestampMs();
+                    }
+
                     // initialize and open connection
                     conn = urlConnectionForServerRequest(eventData, customEndpoint);
                     conn.connect();
+
+                    if (pcc != null) {
+                        pcc.TrackCounter("NetworkOnlyInternet", UtilsTime.currentTimestampMs() - pccTsStartOnlyInternet);
+                    }
 
                     int responseCode = 0;
                     String responseString = "";
@@ -453,6 +495,10 @@ public class ConnectionProcessor implements Runnable {
 
                 //remove stored data
                 storageProvider_.removeRequest(storedRequests[0]);
+            }
+
+            if (pcc != null) {
+                pcc.TrackCounter("NetworkWholeQueue", UtilsTime.currentTimestampMs() - pccTsStartWholeQueue);
             }
         }
     }

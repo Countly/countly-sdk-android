@@ -442,6 +442,11 @@ public class Countly {
                 config.setCountlyStore(countlyStore);
             }
 
+            if (config.pcc != null) {
+                L.i("[Init] Attaching a performance counter collector");
+                countlyStore.pcc = config.pcc;
+            }
+
             if (config.maxRequestQueueSize < 1) {
                 L.e("[Init] provided request queue size is less than 1. Replacing it with 1.");
                 config.maxRequestQueueSize = 1;
@@ -650,6 +655,7 @@ public class Countly {
             connectionQueue_.consentProvider = moduleConsent;
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
             connectionQueue_.deviceInfo = config.deviceInfo;
+            connectionQueue_.pcc = config.pcc;
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);

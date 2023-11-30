@@ -67,6 +67,18 @@ public class MainActivity extends AppCompatActivity {
         futureWrapper(() -> BENCHMARK(loop, Countly.sharedInstance().requestQueue()::attemptToSendStoredRequests));
     }
 
+    public void onClearCounters(View v) {
+        benchmark.print("[MainActivity] clear counters");
+        App.appPcc.Clear();
+    }
+
+    public void onPrintCounters(View v) {
+        benchmark.print("[MainActivity] print counters");
+        String res = App.appPcc.ReturnResults();
+
+        benchmark.print(res);
+    }
+
     protected void BENCHMARK(int loop, Runnable runnable) {
         benchmark.print("------------------------------------------------------------");
         benchmark.print("[MainActivity] BENCHMARK");
