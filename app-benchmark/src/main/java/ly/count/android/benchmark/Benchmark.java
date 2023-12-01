@@ -33,6 +33,16 @@ public class Benchmark {
         print("[Benchmark] fillRequestQueue, Request queue size: " + countlyStore.getRequests().length);
     }
 
+    public void fillEventQueue(int eventSize, int segmentSize) {
+        Countly.sharedInstance().requestQueue().flushQueues();
+        print("[Benchmark] fillEventQueue, Filling event queue, rq is flushed");
+        for (int i = 0; i < eventSize; i++) {
+            Object[] randomEvent = benchmarkUtil.generateRandomEventBase(segmentSize);
+            Countly.sharedInstance().events().recordEvent(randomEvent[0].toString(), (Map<String, Object>) randomEvent[1], (int) randomEvent[2], (double) randomEvent[3], (double) randomEvent[4]);
+        }
+        print("[Benchmark] fillEventQueue, Request queue size: " + countlyStore.getRequests().length);
+    }
+
     protected void print(String message) {
         System.err.println(message);
     }

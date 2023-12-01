@@ -1,14 +1,24 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity"
-    >
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:paddingTop="@dimen/activity_vertical_margin"
+                android:paddingBottom="@dimen/activity_vertical_margin"
+                tools:context=".MainActivity"
+>
 
+  <Switch
+      android:id="@+id/eventQ"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" android:layout_alignBottom="@+id/wait" android:layout_marginBottom="-46dp" android:minHeight="48dp" android:text="Manual Event"/>
+  <Switch
+      android:id="@+id/wait"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:minHeight="48dp"
+      android:text="Wait"/>
   <LinearLayout
       android:orientation="vertical"
       android:layout_width="match_parent"
@@ -16,7 +26,7 @@
       android:layout_centerVertical="true"
       android:layout_centerHorizontal="true"
       tools:ignore="UselessParent"
-      >
+  >
 
     <EditText
         android:id="@+id/segmentSize"
@@ -27,7 +37,7 @@
         android:minHeight="48dp"
         android:text="SegmentSize"
         android:autofillHints=""
-        />
+    />
     <EditText
         android:id="@+id/loop"
         android:layout_width="match_parent"
@@ -37,7 +47,7 @@
         android:minHeight="48dp"
         android:text="Loop"
         android:autofillHints=""
-        />
+    />
     <EditText
         android:id="@+id/eventSize"
         android:layout_width="match_parent"
@@ -47,7 +57,7 @@
         android:minHeight="48dp"
         android:text="EventSize "
         android:importantForAutofill="no"
-        />
+    />
     <Button
         android:id="@+id/button9"
         android:layout_width="match_parent"
@@ -56,28 +66,28 @@
         android:text="@string/fill_rq"
         android:visibility="visible"
         tools:visibility="visible"
-        />
+    />
     <Button
         android:id="@+id/tests_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onClickBenchmark"
         android:text="@string/send_requests"
-        />
+    />
     <Button
         android:id="@+id/button20"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onHardKillPressed"
         android:text="Exit"
-        />
+    />
     <Button
         android:id="@+id/button23"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="onSchedulerPressed"
         android:text="Schedule"
-        />
+    />
 
     <Button
         android:id="@+id/button24"
@@ -85,7 +95,7 @@
         android:layout_height="wrap_content"
         android:onClick="onClearCounters"
         android:text="Clear Counter"
-        />
+    />
 
     <Button
         android:id="@+id/button25"
@@ -93,13 +103,7 @@
         android:layout_height="wrap_content"
         android:onClick="onPrintCounters"
         android:text="Print Counter"
-        />
+    />
 
   </LinearLayout>
-  <Switch
-      android:id="@+id/switch1"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="Wait"
-      />
 </RelativeLayout>
