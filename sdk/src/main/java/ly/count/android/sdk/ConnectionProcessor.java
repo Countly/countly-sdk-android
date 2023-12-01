@@ -223,11 +223,17 @@ public class ConnectionProcessor implements Runnable {
             Long pccTsStartTempIdCheck = 0L;
             Long pccTsStartEndpointCheck = 0L;
             Long pccTsStartOldRCheck = 0L;
+            Long pccTsStartGetURLConnection = 0L;
+            Long pccTsStartDeviceIDOverride = 0L;
+            Long pccTsStartRemainingRequests = 0L;
+            Long pccTsStartHandlingResponse = 0L;
 
             if (!configProvider_.getNetworkingEnabled()) {
                 L.w("[Connection Processor] run, Networking config is disabled, request queue skipped");
                 break;
             }
+
+            //------------------------
 
             if (pcc != null) {
                 pccTsStartWholeQueue = UtilsTime.getNanoTime();
@@ -259,19 +265,27 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
 
+            // get first request in a separate variable to modify and keep the original intact
+            String eventData = storedRequests[0];//todo rework to another param approach
+
+            if (pcc != null) {
+                pcc.TrackCounterTimeNs("ConnectionProcessorRun_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
+            }
+
+            //------------------------
+
             if (pcc != null) {
                 pccTsStartOldRCheck = UtilsTime.getNanoTime();
             }
 
             L.i("[Connection Processor] Checking if the request is older than:[" + requestInfoProvider_.getRequestDropAgeHours() + "] hours");
-            boolean isRequestOld = Utils.isRequestTooOld(storedRequests[0], requestInfoProvider_.getRequestDropAgeHours(), "[Connection Processor]", L);
+            boolean isRequestOld = Utils.isRequestTooOld(eventData, requestInfoProvider_.getRequestDropAgeHours(), "[Connection Processor]", L);
 
             if (pcc != null) {
-                pcc.TrackCounterTimeNs("NetworkOldReq", UtilsTime.getNanoTime() - pccTsStartOldRCheck);
+                pcc.TrackCounterTimeNs("ConnectionProcessorRun_NetworkOldReq", UtilsTime.getNanoTime() - pccTsStartOldRCheck);
             }
 
-            // get first request in a separate variable to modify and keep the original intact
-            String eventData = storedRequests[0];//todo rework to stringbuilder
+            //------------------------
 
             if (pcc != null) {
                 pccTsStartTempIdCheck = UtilsTime.getNanoTime();
@@ -290,8 +304,10 @@ public class ConnectionProcessor implements Runnable {
                 break;
             }
             if (pcc != null) {
-                pcc.TrackCounterTimeNs("NetworkTempID", UtilsTime.getNanoTime() - pccTsStartTempIdCheck);
+                pcc.TrackCounterTimeNs("ConnectionProcessorRun_NetworkTempID", UtilsTime.getNanoTime() - pccTsStartTempIdCheck);
             }
+
+            //------------------------
 
             if (pcc != null) {
                 pccTsStartEndpointCheck = UtilsTime.getNanoTime();
@@ -311,7 +327,13 @@ public class ConnectionProcessor implements Runnable {
             }
 
             if (pcc != null) {
-                pcc.TrackCounterTimeNs("NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartEndpointCheck);
+                pcc.TrackCounterTimeNs("ConnectionProcessorRun_NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartEndpointCheck);
+            }
+
+            //------------------------
+
+            if (pcc != null) {
+                pccTsStartDeviceIDOverride = UtilsTime.getNanoTime();
             }
 
             //add the device_id to the created request
@@ -356,8 +378,24 @@ public class ConnectionProcessor implements Runnable {
                 }
             }
 
+            if (pcc != null) {
+                pcc.TrackCounterTimeNs("ConnectionProcessorRun_NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartDeviceIDOverride);
+            }
+
+            //------------------------
+
+            if (pcc != null) {
+                pccTsStartRemainingRequests = UtilsTime.getNanoTime();
+            }
+
             // add the remaining request count
             eventData = eventData + "&rr=" + (storedRequestCount - 1);
+
+            if (pcc != null) {
+                pcc.TrackCounterTimeNs("ConnectionProcessorRun_remainingRequests", UtilsTime.getNanoTime() - pccTsStartRemainingRequests);
+            }
+
+            //------------------------
 
             if (!(requestInfoProvider_.isDeviceAppCrawler() && requestInfoProvider_.ifShouldIgnoreCrawlers()) && !isRequestOld) {
                 //continue with sending the request to the server
@@ -365,15 +403,20 @@ public class ConnectionProcessor implements Runnable {
                 InputStream connInputStream = null;
                 try {
                     if (pcc != null) {
-                        pccTsStartOnlyInternet = UtilsTime.getNanoTime();
+                        pccTsStartGetURLConnection = UtilsTime.getNanoTime();
                     }
 
                     // initialize and open connection
                     conn = urlConnectionForServerRequest(eventData, customEndpoint);
+                    if (pcc != null) {
+                        pcc.TrackCounterTimeNs("ConnectionProcessorRun_SetupServerRequest", UtilsTime.getNanoTime() - pccTsStartGetURLConnection);
+                        pccTsStartOnlyInternet = UtilsTime.getNanoTime();
+                    }
                     conn.connect();
 
                     if (pcc != null) {
-                        pcc.TrackCounterTimeNs("NetworkOnlyInternet", UtilsTime.getNanoTime() - pccTsStartOnlyInternet);
+                        pcc.TrackCounterTimeNs("ConnectionProcessorRun_NetworkOnlyInternet", UtilsTime.getNanoTime() - pccTsStartOnlyInternet);
+                        pccTsStartHandlingResponse = UtilsTime.getNanoTime();
                     }
 
                     int responseCode = 0;
@@ -485,6 +528,9 @@ public class ConnectionProcessor implements Runnable {
                         ((HttpURLConnection) conn).disconnect();
                     }
                 }
+                if (pcc != null) {
+                    pcc.TrackCounterTimeNs("ConnectionProcessorRun_HandlingResponse", UtilsTime.getNanoTime() - pccTsStartHandlingResponse);
+                }
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
                 if (isRequestOld) {
@@ -498,7 +544,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             if (pcc != null) {
-                pcc.TrackCounterTimeNs("NetworkWholeQueue", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
+                pcc.TrackCounterTimeNs("ConnectionProcessorRun_NetworkWholeQueue", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
         }
     }

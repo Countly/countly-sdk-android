@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +39,10 @@ public class PerformanceCounterCollector {
             String key = entry.getKey();
             Double value = entry.getValue();
 
-            res.append(key).append(" - ").append(value).append("\n");
+            @SuppressLint("DefaultLocale")
+            String strValue = String.format("%.6f", value);
+
+            res.append(key).append(" - ").append(strValue).append("\n");
         }
 
         return res.toString();
