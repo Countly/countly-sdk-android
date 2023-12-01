@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,11 +11,15 @@ public class PerformanceCounterCollector {
         perfCounter.clear();
     }
 
-    public void TrackCounter(String key, long value) {
-        TrackCounter(key, value / 1000.0);
+    public void TrackCounterTimeNs(String key, long valueNs) {
+        TrackCounter(key, valueNs / 1000000000.0);
     }
 
     public void TrackCounter(String key, double value) {
+        if (value < 0) {
+            Log.w("Countly", "Problem, we should only log positive values");
+        }
+
         Double retrievedValue = perfCounter.get(key);
 
         if (retrievedValue == null) {

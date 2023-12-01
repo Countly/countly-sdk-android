@@ -272,14 +272,14 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized String[] getRequests() {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         final String joinedConnStr = storageReadRequestQueue();
         String[] ret = joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_getRequests", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_getRequests", UtilsTime.getNanoTime() - tsStart);
         }
 
         return ret;
@@ -291,14 +291,14 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized String[] getEvents() {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         final String joinedEventsStr = storageReadEventQueue();
         String[] ret = joinedEventsStr.length() == 0 ? new String[0] : joinedEventsStr.split(DELIMITER);
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_getEvents", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_getEvents", UtilsTime.getNanoTime() - tsStart);
         }
         return ret;
     }
@@ -309,7 +309,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized List<Event> getEventList() {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         final String[] array = getEvents();
@@ -334,7 +334,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         });
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_getEventList", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_getEventList", UtilsTime.getNanoTime() - tsStart);
         }
 
         return events;
@@ -348,13 +348,13 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized int getEventQueueSize() {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         int ret = getEvents().length;
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_getEventQueueSize", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_getEventQueueSize", UtilsTime.getNanoTime() - tsStart);
         }
         return ret;
     }
@@ -368,7 +368,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized String getEventsForRequestAndEmptyEventQueue() {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         String result;
@@ -392,7 +392,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_getEventsForRequestAndEmptyEventQueue", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_getEventsForRequestAndEmptyEventQueue", UtilsTime.getNanoTime() - tsStart);
         }
         return result;
     }
@@ -410,7 +410,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized void addRequest(@NonNull final String requestStr, final boolean writeInSync) {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
@@ -442,7 +442,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_addRequest", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_addRequest", UtilsTime.getNanoTime() - tsStart);
         }
     }
 
@@ -510,7 +510,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized void removeRequest(final String requestStr) {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         if (requestStr != null && requestStr.length() > 0) {
@@ -521,14 +521,14 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_removeRequest", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_removeRequest", UtilsTime.getNanoTime() - tsStart);
         }
     }
 
     public synchronized void replaceRequests(final String[] newConns) {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         if (newConns != null) {
@@ -537,14 +537,14 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_replaceRequests", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_replaceRequests", UtilsTime.getNanoTime() - tsStart);
         }
     }
 
     public synchronized void replaceRequestList(final List<String> newConns) {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         if (newConns != null) {
@@ -552,7 +552,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_replaceRequestList", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_replaceRequestList", UtilsTime.getNanoTime() - tsStart);
         }
     }
 
@@ -643,7 +643,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         final @Nullable String currentViewId, final @Nullable String previousEventId) {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         Map<String, String> segmentationString = null;
@@ -681,7 +681,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         addEvent(event);
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_recordEventToEventQueue", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_recordEventToEventQueue", UtilsTime.getNanoTime() - tsStart);
         }
     }
 
@@ -694,7 +694,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     public synchronized void removeEvents(final Collection<Event> eventsToRemove) {
         long tsStart = 0L;
         if (pcc != null) {
-            tsStart = UtilsTime.currentTimestampMs();
+            tsStart = UtilsTime.getNanoTime();
         }
 
         if (eventsToRemove != null && eventsToRemove.size() > 0) {
@@ -705,7 +705,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (pcc != null) {
-            pcc.TrackCounter("CountlyStore_removeEvents", UtilsTime.currentTimestampMs() - tsStart);
+            pcc.TrackCounterTimeNs("CountlyStore_removeEvents", UtilsTime.getNanoTime() - tsStart);
         }
     }
 

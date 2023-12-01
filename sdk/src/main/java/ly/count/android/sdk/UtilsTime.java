@@ -50,6 +50,10 @@ public class UtilsTime {
         return timeGenerator.uniqueTimestamp();
     }
 
+    public static synchronized long getNanoTime() {
+        return System.nanoTime();
+    }
+
     /**
      * Utility method to return a current timestamp in seconds.
      */
