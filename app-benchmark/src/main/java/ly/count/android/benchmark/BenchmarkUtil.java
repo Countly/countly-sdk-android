@@ -39,7 +39,7 @@ public class BenchmarkUtil {
         return request;
     }
 
-    private Map<String, Object> generateSegmentationMap(int segmentSize) {
+    protected Map<String, Object> generateSegmentationMap(int segmentSize) {
         Map<String, Object> segment = new ConcurrentHashMap<>();
 
         for (int i = 0; i < segmentSize; i++) {
@@ -49,20 +49,30 @@ public class BenchmarkUtil {
         return segment;
     }
 
+    protected Object[] generateRandomEventBase(int segmentSize) {
+        Object[] values = new Object[5];
+        values[0] = random.generateRandomString(8); // key
+        values[1] = generateSegmentationMap(segmentSize); // segmentation
+        values[2] = random.generateRandomInt(1000) + 1; // count
+        values[3] = random.generateRandomDouble() * 1000; // sum
+        values[4] = random.generateRandomDouble() * 1000; // dur
+        return values;
+    }
+
     protected JSONObject generateRandomEvent(int segmentSize) throws JSONException {
         JSONObject event = new JSONObject();
-        event.put("key", random.generateRandomString(8));
-        event.put("count", random.generateRandomInt(1000) + 1);
-        event.put("sum", random.generateRandomDouble() * 1000);
-        event.put("dur", random.generateRandomInt(1000) + 1);
+        Object[] values = generateRandomEventBase(segmentSize);
+        event.put("key", values[0]);
+        event.put("count", values[2]);
+        event.put("sum", values[3]);
+        event.put("dur", values[4]);
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
         event.put("timestamp", instant.timestampMs);
         event.put("hour", instant.hour);
         event.put("dow", instant.dow);
 
         if (segmentSize > 0) {
-            Map<String, Object> segment = generateSegmentationMap(segmentSize);
-            event.put("segment", segment);
+            event.put("segment", values[1]);
         }
 
         return event;

@@ -2,15 +2,10 @@ package ly.count.android.benchmark;
 
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Switch;
 import androidx.appcompat.app.AppCompatActivity;
-import com.android.installreferrer.api.InstallReferrerClient;
-import com.android.installreferrer.api.InstallReferrerStateListener;
-import com.android.installreferrer.api.ReferrerDetails;
-import java.net.URLDecoder;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,8 +45,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickFillRequestQueue(View v) {
         readLoopSegmentEventSize();
-        futureWrapper(() -> benchmark.fillRequestQueue(loop, eventSize, segmentSize));
-        if (((Switch) findViewById(R.id.switch1)).isChecked()) {
+        if (getSwitchValue(R.id.eventQ)) {
+            futureWrapper(() -> benchmark.fillEventQueue(eventSize, segmentSize));
+        } else {
+            futureWrapper(() -> benchmark.fillRequestQueue(loop, eventSize, segmentSize));
+        }
+        if (getSwitchValue(R.id.wait)) {
             futureWrapper(this::standByForOnTimer);
         }
     }
@@ -113,5 +112,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private boolean getSwitchValue(int id) {
+        return ((Switch) findViewById(id)).isChecked();
     }
 }
