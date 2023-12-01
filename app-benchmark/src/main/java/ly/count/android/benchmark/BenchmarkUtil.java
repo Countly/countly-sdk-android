@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import ly.count.android.sdk.RandomUtil;
 import ly.count.android.sdk.UtilsTime;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,8 +43,7 @@ public class BenchmarkUtil {
         Map<String, Object> segment = new ConcurrentHashMap<>();
 
         for (int i = 0; i < segmentSize; i++) {
-            Map.Entry<String, Object> entry = random.generateRandomKeyValuePair();
-            segment.put(entry.getKey(), entry.getValue());
+            segment.put(random.generateRandomString(8), random.generateRandomObject());
         }
 
         return segment;

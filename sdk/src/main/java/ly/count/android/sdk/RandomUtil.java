@@ -1,17 +1,15 @@
-package ly.count.android.benchmark;
+package ly.count.android.sdk;
 
-import java.util.AbstractMap;
-import java.util.Map;
 import java.util.Random;
 
 public class RandomUtil {
     private final Random random;
 
-    protected RandomUtil() {
+    public RandomUtil() {
         random = new Random();
     }
 
-    protected String generateRandomString(int size) {
+    public String generateRandomString(int size) {
         int length = random.nextInt(size) + 1; // Random string length between 1 and 20
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
@@ -21,16 +19,12 @@ public class RandomUtil {
         return sb.toString();
     }
 
-    protected int generateRandomInt(int bound) {
+    public int generateRandomInt(int bound) {
         return random.nextInt(bound);
     }
 
-    protected double generateRandomDouble() {
+    public double generateRandomDouble() {
         return random.nextDouble();
-    }
-
-    protected Map.Entry<String, Object> generateRandomKeyValuePair() {
-        return new AbstractMap.SimpleEntry<>(generateRandomString(8), generateRandomObject());
     }
 
     protected Object generateRandomImmutable() {
@@ -62,7 +56,7 @@ public class RandomUtil {
         return value;
     }
 
-    protected Object generateRandomObject() {
+    public Object generateRandomObject() {
         int randomInt = random.nextInt(8);
         Object value;
 
