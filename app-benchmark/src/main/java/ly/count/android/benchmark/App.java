@@ -22,6 +22,8 @@ public class App extends Application {
             .setDeviceId(DEVICE_ID)
             .setLoggingEnabled(true)
             .giveAllConsents()
+            .setRequestDropAgeHours(10)//to trigger the age blocks
+            .setEventQueueSizeToSend(10)//for testing the main use case
             .setParameterTamperingProtectionSalt("test-benchmark-salt");
 
         appPcc = new PerformanceCounterCollector();
@@ -30,4 +32,11 @@ public class App extends Application {
         Countly.sharedInstance().init(config);
         Benchmark.countlyStore = new CountlyStore(this, new ModuleLog());
     }
+
+    /**
+     * Benchmark scenario - 1
+     * EQ size 10
+     * 5 segm values
+     * Fill to 1000 requests which equals to 10000 events generated
+     */
 }

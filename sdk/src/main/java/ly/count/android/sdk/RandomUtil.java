@@ -38,8 +38,8 @@ public class RandomUtil {
                 value = random.nextBoolean();
                 break;
             case 2:
-                value = random.nextLong();
-                break;
+                //value = random.nextLong();
+                //break;
             case 3:
                 value = random.nextFloat();
                 break;
@@ -71,9 +71,9 @@ public class RandomUtil {
             case 6:
                 value = generateRandomImmutable();
                 break;
-            case 7:
-                value = generateRandomArray(this::generateRandomImmutable, random.nextInt(10) + 1);
-                break;
+            //case 7:
+            //                value = generateRandomArray(this::generateRandomImmutable, random.nextInt(10) + 1);
+            //                break;
             default:
                 value = generateRandomObject();
         }

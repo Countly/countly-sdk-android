@@ -1,8 +1,13 @@
 package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
+import android.os.Build;
 import android.util.Log;
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class PerformanceCounterCollector {
@@ -33,8 +38,9 @@ public class PerformanceCounterCollector {
     }
 
     public String ReturnResults() {
-        StringBuilder res = new StringBuilder();
+        List<String> entries = new ArrayList<>(perfCounter.size());
 
+        //create all string entries
         for (Map.Entry<String, Double> entry : perfCounter.entrySet()) {
             String key = entry.getKey();
             Double value = entry.getValue();
@@ -42,7 +48,18 @@ public class PerformanceCounterCollector {
             @SuppressLint("DefaultLocale")
             String strValue = String.format("%.6f", value);
 
-            res.append(key).append(" - ").append(strValue).append("\n");
+            entries.add(key + " - " + strValue + "\n");
+        }
+
+        //sort if possible
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            entries.sort(String::compareTo);
+        }
+
+        //combine into printable String
+        StringBuilder res = new StringBuilder();
+        for (String s : entries) {
+            res.append(s);
         }
 
         return res.toString();

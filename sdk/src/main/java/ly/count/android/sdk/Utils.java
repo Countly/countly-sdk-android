@@ -197,9 +197,15 @@ public class Utils {
             Object value = entry.getValue();
 
             if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
-                //found unsupported data type or null key or value, removing
-                it.remove();
-                removed = true;
+
+                if (value instanceof Float) {
+                    //transform to double
+                    data.put(key, ((Float) value).doubleValue());
+                } else {
+                    //found unsupported data type or null key or value, removing
+                    it.remove();
+                    removed = true;
+                }
             }
         }
 
