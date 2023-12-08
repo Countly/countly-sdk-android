@@ -31,6 +31,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
+    // This is used to keep a view segmentation in memory while an autoStoppedView is on. This way the dev can update the segmentation after starting the view.
+    Map<String, Object> autoStoppedViewSegmentation = new HashMap<>();
+
     Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
 
     SafeIDGenerator safeViewIDGenerator;
@@ -82,6 +85,31 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         trackOrientationChanges = config.trackOrientationChange;
 
         viewsInterface = new Views();
+    }
+
+    /**
+     * Update a segmentation with another one by replacing values of existing keys and adding key/value pairs that dont exist
+     * @param segmentationToUpdate Map<String, Object> - This is the segmentation we want to update
+     * @param newSegmentation Map<String, Object> - This is the segmentation that will modify the first one
+     */
+    void updateSegmentation(@NonNull Map<String, Object> segmentationToUpdate, @Nullable Map<String, Object> newSegmentation) {
+        if (newSegmentation == null) {
+            return;
+        }
+
+        for (Map.Entry<String, Object> entry : newSegmentation.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            // Check if segmentation in memory contains the key
+            if (segmentationToUpdate.containsKey(key)) {
+                // If key exists, update the value
+                segmentationToUpdate.put(key, value);
+            } else {
+                // If key is new, add it
+                segmentationToUpdate.put(key, value);
+            }
+        }
     }
 
     /**
@@ -165,9 +193,19 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         L.d("[ModuleViews] autoCloseRequiredViews");
         List<String> viewsToRemove = new ArrayList<>(1);
 
+        // todo: move to stopViewWithIDInternal?
+        Utils.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
+
         for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
             ViewData vd = entry.getValue();
-            if (closeAllViews || vd.isAutoStoppedView) {
+            if (vd.isAutoStoppedView) {
+                // there is only one autoStoppedView at a time.
+                L.d("[ModuleViews] autoCloseRequiredViews, about to close autoStoppedView: [" + vd.viewID + "]");
+                // We can update its in-memory segmentation with the end of view segmentation
+                updateSegmentation(autoStoppedViewSegmentation, customViewSegmentation);
+                stopViewWithIDInternal(vd.viewID, autoStoppedViewSegmentation);
+                autoStoppedViewSegmentation.clear(); // reset
+            } else if (closeAllViews) {
                 viewsToRemove.add(vd.viewID);
             }
         }
@@ -176,7 +214,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.d("[ModuleViews] autoCloseRequiredViews, about to close [" + viewsToRemove.size() + "] views");
         }
 
-        Utils.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
 
         for (int a = 0; a < viewsToRemove.size(); a++) {
             stopViewWithIDInternal(viewsToRemove.get(a), customViewSegmentation);
@@ -241,6 +278,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (firstView) {
             L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");
             firstView = false;
+        }
+
+        // If this is an autoStoppedView then we also update its segmentation in memory for future updates
+        if (viewShouldBeAutomaticallyStopped) {
+            updateSegmentation(automaticViewSegmentation, viewSegmentation);
         }
 
         eventProvider.recordEventInternal(VIEW_EVENT_KEY, viewSegmentation, 1, 0, 0, null, currentViewData.viewID);
@@ -644,6 +686,34 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 }
 
                 return startViewInternal(viewName, viewSegmentation, true);
+            }
+        }
+
+        /**
+         * Updates the segmentation of autoStoppedView in memory
+         * @param viewID String - View ID of the autoStoppedView
+         * @param viewSegmentation Map<String, Object> - New segmentation to update the segmentation of autoStoppedView in memory
+         */
+        public void addSegmentationToAutoStoppedView(@NonNull String viewID, @NonNull Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling addSegmentationToAutoStoppedView for view ID: [" + viewID + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] startAutoStoppedView, manual view call will be ignored since automatic tracking is enabled.");
+                    return;
+                }
+
+                updateSegmentation(autoStoppedViewSegmentation, viewSegmentation);
+            }
+        }
+
+        /**
+         * Return the in-memory autoStoppedView segmentation
+         * @return Map<String, Object> - returns the current autoStoppedView segmentation
+         */
+        public Map<String, Object> getCurrentAutoStoppedViewSegmentation() {
+            synchronized (_cly) {
+                return autoStoppedViewSegmentation;
             }
         }
 

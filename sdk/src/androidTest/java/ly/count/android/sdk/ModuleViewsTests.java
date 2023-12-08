@@ -415,6 +415,53 @@ public class ModuleViewsTests {
     }
 
     /**
+     * Test if autoStoppedView segmentation is updated correctly
+     *
+     */
+    @Test
+    public void recordAutoStoppedViewWithSegments(){
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("aa", "11");
+        globalSegm.put("aagfg", "1133");
+        globalSegm.put("1", 123);
+        globalSegm.put("2", 234.0d);
+        globalSegm.put("3", true);
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        Countly mCountly = new Countly().init(cc.setLoggingEnabled(true));
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        // Start autoStoppedView
+        Map<String, Object> segm = new HashMap<>();
+        String viewID = mCountly.views().startAutoStoppedView("aView");
+
+        // add segmentation to it
+        segm.put("aa", "12");
+        mCountly.views().addSegmentationToAutoStoppedView(viewID, segm);
+        Assert.assertEquals(mCountly.views().getCurrentAutoStoppedViewSegmentation(), segm);
+
+        // override the key
+        segm.clear();
+        segm.put("aa", "13");
+        mCountly.views().addSegmentationToAutoStoppedView(viewID, segm);
+        Assert.assertEquals(mCountly.views().getCurrentAutoStoppedViewSegmentation(), segm);
+
+        // add a new key/value
+        segm.clear();
+        segm.put("bb", "11");
+        mCountly.views().addSegmentationToAutoStoppedView(viewID, segm);
+        // add null segmentation
+        mCountly.views().addSegmentationToAutoStoppedView(viewID, null);
+        segm.put("aa", "13");
+        Assert.assertEquals(mCountly.views().getCurrentAutoStoppedViewSegmentation(), segm);
+
+        // stop the view and check if segmentation was reset
+        mCountly.views().stopAllViews(globalSegm);
+        segm.clear();
+        Assert.assertEquals(mCountly.views().getCurrentAutoStoppedViewSegmentation(), segm);
+    }
+
+    /**
      * Make sure that, when recording an event with an empty string key, that no event is creted
      */
     @Test
