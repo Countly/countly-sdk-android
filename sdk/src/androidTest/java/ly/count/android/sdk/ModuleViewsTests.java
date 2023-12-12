@@ -277,13 +277,12 @@ public class ModuleViewsTests {
         double viewDuration = UtilsTime.currentTimestampSeconds() - start;
 
         final Map<String, Object> segm = new HashMap<>();
-        ClearFillSegmentationViewStart(segm, act.getClass().getSimpleName(), true);
+        ClearFillSegmentationViewStart(segm, act.getClass().getSimpleName(), true, globalSegm);
         segm.put("aa", "11");
         segm.put("aagfg", "1133");
         segm.put("1", 123);
         segm.put("2", 234.0d);
         segm.put("3", true);
-        segm.putAll(globalSegm);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
 
@@ -375,8 +374,7 @@ public class ModuleViewsTests {
 
         mCountly.views().recordView(viewNames[0], cSegm1);
 
-        ClearFillSegmentationViewStart(segm, viewNames[0], true);
-        segm.putAll(globalSegm);
+        ClearFillSegmentationViewStart(segm, viewNames[0], true, globalSegm);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
         clearInvocations(ep);
@@ -386,12 +384,11 @@ public class ModuleViewsTests {
         ClearFillSegmentationViewEnd(segm, viewNames[0], globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 2); // duration comes off sometimes
 
-        ClearFillSegmentationViewStart(segm, viewNames[1], false);
+        ClearFillSegmentationViewStart(segm, viewNames[1], false, globalSegm);
         segm.put("donker", "mag");
         segm.put("big", 1337);
         segm.put("candy", 954.33d);
         segm.put("calling", false);
-        segm.putAll(globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
         clearInvocations(ep);
 
@@ -401,7 +398,7 @@ public class ModuleViewsTests {
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);
 
-        ClearFillSegmentationViewStart(segm, viewNames[2], false);
+        ClearFillSegmentationViewStart(segm, viewNames[2], false, globalSegm);
         segm.put("doddnker", "m123ag");
         segm.put("exit", "33");
         segm.put("view", "33");
@@ -410,10 +407,14 @@ public class ModuleViewsTests {
         segm.put("biffg", 132137);
         segm.put("cannndy", 9534.33d);
         segm.put("calaaling", true);
-        segm.putAll(globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
     }
 
+    /**
+     * Validate that "addSegmentationToViewWithName" and "addSegmentationToViewWithID" does not break with wrong inputs
+     * Both functions are called with "null" values and "empty string"
+     * The SDK should not throw null pointer exceptions
+     */
     @Test
     public void addSegmentationToRunningView() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
@@ -422,108 +423,66 @@ public class ModuleViewsTests {
         mCountly.views().addSegmentationToViewWithName(null, null);
         mCountly.views().addSegmentationToViewWithID(null, null);
 
+        mCountly.views().addSegmentationToViewWithName("", null);
+        mCountly.views().addSegmentationToViewWithID("", null);
+
         mCountly.views().startView("a");
 
         mCountly.views().addSegmentationToViewWithName(null, null);
         mCountly.views().addSegmentationToViewWithID(null, null);
+
+        mCountly.views().addSegmentationToViewWithName("", null);
+        mCountly.views().addSegmentationToViewWithID("", null);
     }
 
     /**
      * Test if autoStoppedView segmentation is updated correctly
-     *
      */
-    /*
     @Test
-    public void recordAutoStoppedViewWithSegments(){
+    public void addSegmentationToView() throws InterruptedException {
         Map<String, Object> globalSegm = new HashMap<>();
         globalSegm.put("aa", "11");
         globalSegm.put("aagfg", "1133");
-        globalSegm.put("1", 123);
-        globalSegm.put("2", 234.0d);
-        globalSegm.put("3", true);
 
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
         Countly mCountly = new Countly().init(cc.setLoggingEnabled(true));
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        Map<String, Object> segm = new HashMap<>();
+
+        //set segmentation before starting to record the view
+        segm.put("bb", "22");
+        mCountly.views().addSegmentationToViewWithName(viewNames[0], segm);
 
         // Start autoStoppedView
-        Map<String, Object> segm = new HashMap<>();
-        String viewID = mCountly.views().startAutoStoppedView("aView");
+        String viewID = mCountly.views().startAutoStoppedView(viewNames[0]);
 
-        // add segmentation to it
-        segm.put("aa", "12");
+        //make sure the first view event is recorded correctly
+        ClearFillSegmentationViewStart(segm, viewNames[0], true, globalSegm);
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
+        clearInvocations(ep);
+
+        // add segmentation to it by name
+        segm = new HashMap<>();
+        segm.put("cc1", "12");
+        segm.put("cc2", "as");
+        mCountly.views().addSegmentationToViewWithName(viewNames[0], segm);
+
+        segm = new HashMap<>();
+        segm.put("cc2", "as_new");//make sure we can override the previous value
+        segm.put("dd", "qq");
         mCountly.views().addSegmentationToViewWithID(viewID, segm);
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
 
-        // override the key
-        segm.clear();
-        segm.put("aa", "13");
-        mCountly.views().addSegmentationToViewWithID(viewID, segm);
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
+        Thread.sleep(2000);
+        mCountly.views().stopViewWithName(viewNames[0]);
 
-        // add a new key/value
-        segm.clear();
-        segm.put("bb", "11");
-        mCountly.views().addSegmentationToViewWithID(viewID, segm);
-        // add null segmentation
-        mCountly.views().addSegmentationToViewWithID(viewID, null);
-        segm.put("aa", "13");
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
-
-        // stop the view and check if segmentation was reset
-        mCountly.views().stopAllViews(globalSegm);
-        segm.clear();
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
+        //make sure the second view event is correctly recorded
+        ClearFillSegmentationViewEnd(segm, viewNames[0], globalSegm);
+        segm.put("cc1", "12");
+        segm.put("cc2", "as_new");
+        segm.put("dd", "qq");
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 1); // duration comes off sometimes
     }
-*/
-    /**
-     * Test if adding segmentation with view name works
-     *
-     */
-    /*
-    @Test
-    public void recordViewWithSegmentsAndName(){
-        Map<String, Object> globalSegm = new HashMap<>();
-        globalSegm.put("aa", "11");
-        globalSegm.put("aagfg", "1133");
-        globalSegm.put("1", 123);
-        globalSegm.put("2", 234.0d);
-        globalSegm.put("3", true);
-
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
-        Countly mCountly = new Countly().init(cc.setLoggingEnabled(true));
-        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
-
-        // Start view
-        Map<String, Object> segm = new HashMap<>();
-        String viewID = mCountly.views().startView("aView");
-
-        // add segmentation to it
-        segm.put("aa", "12");
-        mCountly.views().addSegmentationToViewWithName("aView", segm);
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
-
-        // override the key
-        segm.clear();
-        segm.put("aa", "13");
-        mCountly.views().addSegmentationToViewWithName("aView", segm);
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
-
-        // add a new key/value
-        segm.clear();
-        segm.put("bb", "11");
-        mCountly.views().addSegmentationToViewWithName("aView", segm);
-        // add null segmentation
-        mCountly.views().addSegmentationToViewWithName("aView", null);
-        segm.put("aa", "13");
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
-
-        // stop the view and check if segmentation was reset
-        mCountly.views().stopAllViews(globalSegm);
-        segm.clear();
-        Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
-    }
-    */
 
     /**
      * Make sure that, when recording an event with an empty string key, that no event is creted
@@ -685,7 +644,16 @@ public class ModuleViewsTests {
     }
 
     void ClearFillSegmentationViewStart(final Map<String, Object> segm, String viewName, boolean firstView) {
+        ClearFillSegmentationViewStart(segm, viewName, firstView, null);
+    }
+
+    void ClearFillSegmentationViewStart(final Map<String, Object> segm, String viewName, boolean firstView, final Map<String, Object> globalSegmentation) {
         segm.clear();
+
+        if (globalSegmentation != null) {
+            segm.putAll(globalSegmentation);
+        }
+
         segm.put("segment", "Android");
         if (firstView) {
             segm.put("start", "1");
@@ -979,11 +947,7 @@ public class ModuleViewsTests {
         Assert.assertEquals(returnedID, plannedViewID);
 
         Map<String, Object> segm = new HashMap<>();
-        ClearFillSegmentationViewStart(segm, viewName, firstView);
-
-        if (globalSegm != null) {
-            segm.putAll(globalSegm);
-        }
+        ClearFillSegmentationViewStart(segm, viewName, firstView, globalSegm);
 
         if (givenSegm != null) {
             segm.putAll(givenSegm);
