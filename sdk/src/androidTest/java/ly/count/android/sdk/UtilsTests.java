@@ -112,7 +112,7 @@ public class UtilsTests {
         Assert.assertTrue(segm.containsKey("1"));
         Assert.assertTrue(segm.containsKey("2"));
         Assert.assertTrue(segm.containsKey("3"));
-        Assert.assertFalse(segm.containsKey("4"));
+        Assert.assertTrue(segm.containsKey("4"));
         Assert.assertFalse(segm.containsKey("41"));
         Assert.assertFalse(segm.containsKey("42"));
     }

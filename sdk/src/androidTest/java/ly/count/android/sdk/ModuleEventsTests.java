@@ -171,6 +171,7 @@ public class ModuleEventsTests {
         segm.put("1", 1234);
         segm.put("2", 1234.55d);
         segm.put("3", true);
+        segm.put("4", (double) 45.4f);
 
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
@@ -384,6 +385,7 @@ public class ModuleEventsTests {
         segm2.put("1", 1234);
         segm2.put("2", 1234.55d);
         segm2.put("3", true);
+        segm2.put("4", (double) 45.4f);
 
         Map<String, Object> segm3 = new HashMap<>(segm1);
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
