@@ -1,6 +1,7 @@
 ## xx.x.x
 * Mitigated a rare issue related to handling request headers
-* Added 'addSegmentationToAutoStoppedView' for adding segmentations to autoStoppedViews while they are on
+* Added 'addSegmentationToViewWithID' for adding segmentations to views while they are on
+* Added 'addSegmentationToViewWithName' for adding segmentations to views while they are on
   
 ## 23.8.4
 * Mitigated an issue where the device ID was changed after exiting an AB experiment
