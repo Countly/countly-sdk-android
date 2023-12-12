@@ -414,10 +414,25 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
     }
 
+    @Test
+    public void addSegmentationToRunningView() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
+        Countly mCountly = new Countly().init(cc);
+
+        mCountly.views().addSegmentationToViewWithName(null, null);
+        mCountly.views().addSegmentationToViewWithID(null, null);
+
+        mCountly.views().startView("a");
+
+        mCountly.views().addSegmentationToViewWithName(null, null);
+        mCountly.views().addSegmentationToViewWithID(null, null);
+    }
+
     /**
      * Test if autoStoppedView segmentation is updated correctly
      *
      */
+    /*
     @Test
     public void recordAutoStoppedViewWithSegments(){
         Map<String, Object> globalSegm = new HashMap<>();
@@ -460,11 +475,12 @@ public class ModuleViewsTests {
         segm.clear();
         Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
     }
-
+*/
     /**
      * Test if adding segmentation with view name works
      *
      */
+    /*
     @Test
     public void recordViewWithSegmentsAndName(){
         Map<String, Object> globalSegm = new HashMap<>();
@@ -507,6 +523,7 @@ public class ModuleViewsTests {
         segm.clear();
         Assert.assertEquals(mCountly.views().getCurrentViewSegmentationWithID(viewID), segm);
     }
+    */
 
     /**
      * Make sure that, when recording an event with an empty string key, that no event is creted

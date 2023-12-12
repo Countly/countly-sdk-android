@@ -402,6 +402,53 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         vd.isAutoPaused = false;
     }
 
+    public void addSegmentationToViewWithIDInternal(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
+        if (viewID == null || viewSegmentation == null || viewID.isEmpty() || viewSegmentation.isEmpty()) {
+            L.e("[Views] addSegmentationToViewWithID, null or empty parameters provided");
+            return;
+        }
+
+        if (!viewDataMap.containsKey(viewID)) {
+            L.w("[ModuleViews] addSegmentationToViewWithID, there is no view with the provided view id");
+            return;
+        }
+
+        ViewData vd = viewDataMap.get(viewID);
+        if (vd == null) {
+            L.e("[ModuleViews] addSegmentationToViewWithID, view id:[" + viewID + "] has a 'null' view data. This should not be happening");
+            return;
+        }
+
+        Utils.truncateSegmentationValues(viewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] addSegmentationToViewWithID", L);
+        Utils.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] addSegmentationToViewWithID, ", L);
+
+        if (vd.viewSegmentation == null) {
+            vd.viewSegmentation = new HashMap<>(viewSegmentation);
+        } else {
+            vd.viewSegmentation.putAll(viewSegmentation);
+        }
+    }
+
+    public void addSegmentationToViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
+        String viewID = null;
+
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (vd != null && viewName.equals(vd.viewName)) {
+                viewID = entry.getKey();
+            }
+        }
+
+        if (viewID == null) {
+            L.e("[ModuleViews] addSegmentationToViewWithName, No view entry found with the provided name :[" + viewName + "]");
+            return;
+        }
+
+        L.i("[ModuleViews] Will add segmentation for view: [" + viewName + "] with ID:[" + viewID + "]");
+
+        addSegmentationToViewWithIDInternal(viewID, viewSegmentation);
+    }
+
     void stopAllViewsInternal(Map<String, Object> viewSegmentation) {
         L.d("[ModuleViews] stopAllViewsInternal");
 
@@ -668,95 +715,32 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                     return;
                 }
 
-                if (viewID == null || viewSegmentation == null || viewID.isEmpty() || viewSegmentation.isEmpty()) {
-                    L.e("[Views] addSegmentationToViewWithID, null or empty parameters provided");
-                    return;
-                }
-
-                if (!viewDataMap.containsKey(viewID)) {
-                    L.w("[ModuleViews] addSegmentationToViewWithID, there is no view with the provided view id");
-                    return;
-                }
-
-                ViewData vd = viewDataMap.get(viewID);
-                if (vd == null) {
-                    L.e("[ModuleViews] addSegmentationToViewWithID, view id:[" + viewID + "] has a 'null' view data. This should not be happening");
-                    return;
-                }
-
-                Utils.truncateSegmentationValues(viewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] addSegmentationToViewWithID", L);
-                Utils.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] addSegmentationToViewWithID, ", L);
-
-                if (vd.viewSegmentation == null) {
-                    vd.viewSegmentation = new HashMap<>(viewSegmentation);
-                } else {
-                    vd.viewSegmentation.putAll(viewSegmentation);
-                }
+                addSegmentationToViewWithIDInternal(viewID, viewSegmentation);
             }
         }
 
         /**
          * Updates the segmentation of a view
          *
-         * @param Name String - Name of the view
+         * @param viewName String - Name of the view
          * @param viewSegmentation Map<String, Object> - New segmentation to update the segmentation of a view in memory
          */
-        public void addSegmentationToViewWithName(@NonNull String Name, @NonNull Map<String, Object> viewSegmentation) {
+        public void addSegmentationToViewWithName(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
-                L.i("[Views] Calling addSegmentationToViewWithName for Name: [" + Name + "]");
+                L.i("[Views] Calling addSegmentationToViewWithName for Name: [" + viewName + "]");
 
                 if (autoViewTracker) {
                     L.e("[Views] addSegmentationToViewWithName, manual view call will be ignored since automatic tracking is enabled.");
                     return;
                 }
 
-                String viewID = null;
-
-                for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
-                    ViewData vd = entry.getValue();
-                    if (vd != null && Name.equals(vd.viewName)) {
-                        viewID = entry.getKey();
-                    }
-                }
-
-                if (viewID == null) {
-                    L.e("[ModuleViews] addSegmentationToViewWithName, No view entry found with the provided name :[" + Name + "]");
-                    return;
-                }
-
-                L.i("[Views] Will add segmentation for view: [" + Name + "] with ID:[" + viewID + "]");
-
-                addSegmentationToViewWithID(viewID, viewSegmentation);
-            }
-        }
-
-        /**
-         * Return a view's transient segmentation
-         *
-         * @return Map<String, Object> - returns the current segmentation of the view (empty map indicates no segmentation set yest)
-         */
-        public Map<String, Object> getCurrentViewSegmentationWithID(@NonNull String viewID) {
-            synchronized (_cly) {
-                if (!viewDataMap.containsKey(viewID)) {
-                    L.w("[ModuleViews] getCurrentViewSegmentationWithID, there is no view with the provided view id");
-                    return new HashMap<>();
-                }
-
-                ViewData vd = viewDataMap.get(viewID);
-                if (vd == null) {
-                    L.e("[ModuleViews] getCurrentViewSegmentationWithID, view id:[" + viewID + "] has a 'null' view data. This should not be happening");
-                    return new HashMap<>();
-                }
-                if (vd.viewSegmentation == null) {
-                    return new HashMap<>();
-                }
-
-                return vd.viewSegmentation;
+                addSegmentationToViewWithNameInternal(viewName, viewSegmentation);
             }
         }
 
         /**
          * Starts a view which would not close automatically (For multi view tracking)
+         *
          * @param viewName - String
          * @return String - View ID
          */
@@ -775,6 +759,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Starts a view which would not close automatically (For multi view tracking)
+         *
          * @param viewName String - name of the view
          * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
          * @return String - View ID
@@ -794,6 +779,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Stops a view with the given name if it was open
+         *
          * @param viewName String - view name
          */
         public void stopViewWithName(@Nullable String viewName) {
@@ -806,6 +792,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Stops a view with the given name if it was open
+         *
          * @param viewName String - view name
          * @param viewSegmentation Map<String, Object> - view segmentation
          */
@@ -819,6 +806,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Stops a view with the given ID if it was open
+         *
          * @param viewID String - view ID
          */
         public void stopViewWithID(@Nullable String viewID) {
@@ -831,6 +819,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Stops a view with the given ID if it was open
+         *
          * @param viewID String - view ID
          * @param viewSegmentation Map<String, Object> - view segmentation
          */
@@ -844,6 +833,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Pauses a view with the given ID
+         *
          * @param viewID String - view ID
          */
         public void pauseViewWithID(@Nullable String viewID) {
@@ -856,6 +846,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Resumes a view with the given ID
+         *
          * @param viewID String - view ID
          */
         public void resumeViewWithID(@Nullable String viewID) {
@@ -868,6 +859,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Set a segmentation to be recorded with all views
+         *
          * @param segmentation Map<String, Object> - global view segmentation
          */
         public void setGlobalViewSegmentation(@Nullable Map<String, Object> segmentation) {
@@ -880,6 +872,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Updates the global segmentation for views
+         *
          * @param segmentation Map<String, Object> - global view segmentation
          */
         public void updateGlobalViewSegmentation(@Nullable Map<String, Object> segmentation) {
@@ -897,6 +890,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         /**
          * Stops all views and records a segmentation if set
+         *
          * @param viewSegmentation Map<String, Object> - view segmentation
          */
         public void stopAllViews(@Nullable Map<String, Object> viewSegmentation) {
