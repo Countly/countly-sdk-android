@@ -434,7 +434,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
             ViewData vd = entry.getValue();
-            if (vd != null && viewName.equals(vd.viewName)) {
+            if (vd != null && viewName != null && viewName.equals(vd.viewName)) {
                 viewID = entry.getKey();
             }
         }
