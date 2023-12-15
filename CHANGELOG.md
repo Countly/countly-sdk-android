@@ -1,4 +1,4 @@
-## xx.x.x
+## 23.12.0
 * Mitigated a rare issue related to handling request headers
 * Added 'addSegmentationToViewWithID' method for adding segmentation to an ongoing view
 * Added 'addSegmentationToViewWithName' method for adding segmentation to an ongoing view
