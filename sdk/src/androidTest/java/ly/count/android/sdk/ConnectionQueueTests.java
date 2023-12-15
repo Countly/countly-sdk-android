@@ -502,7 +502,7 @@ public class ConnectionQueueTests {
                         break;
                     case "sdk_version":
                         if (a == 0) {
-                            Assert.assertTrue(pair[1].equals("23.8.4"));
+                            Assert.assertTrue(pair[1].equals("23.12.0"));
                         } else if (a == 1) {
                             Assert.assertTrue(pair[1].equals("123sdf.v-213"));
                         }

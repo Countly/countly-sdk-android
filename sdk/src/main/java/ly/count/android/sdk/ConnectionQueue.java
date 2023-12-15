@@ -529,6 +529,9 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         StringBuilder data = new StringBuilder(prepareCommonRequestData());
+
+        data.append("&dr=1");
+
         for (Map.Entry<String, String> entry : requestData.entrySet()) {
             if (data.length() > 0) {
                 data.append("&");

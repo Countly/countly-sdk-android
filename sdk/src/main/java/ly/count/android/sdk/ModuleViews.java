@@ -51,6 +51,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         String viewName;
         boolean isAutoStoppedView = false;//views started with "startAutoStoppedView" would have this as "true". If set to "true" views should be automatically closed when another one is started.
         boolean isAutoPaused = false;//this marks that this view automatically paused when going to the background
+        Map<String, Object> viewSegmentation = null; // segmentation that can be updated while a view is on
     }
 
     //interface for SDK users
@@ -176,6 +177,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.d("[ModuleViews] autoCloseRequiredViews, about to close [" + viewsToRemove.size() + "] views");
         }
 
+        // todo: move to stopViewWithIDInternal?
         Utils.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
 
         for (int a = 0; a < viewsToRemove.size(); a++) {
@@ -323,6 +325,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (filteredCustomViewSegmentation != null) {
             accumulatedEventSegm.putAll(filteredCustomViewSegmentation);
         }
+        // add view segmentation too
+        if (vd.viewSegmentation != null) {
+            accumulatedEventSegm.putAll(vd.viewSegmentation);
+        }
 
         long viewDurationSeconds = lastElapsedDurationSeconds;
         Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, accumulatedEventSegm);
@@ -394,6 +400,53 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         vd.viewStartTimeSeconds = UtilsTime.currentTimestampSeconds();
         vd.isAutoPaused = false;
+    }
+
+    public void addSegmentationToViewWithIDInternal(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
+        if (viewID == null || viewSegmentation == null || viewID.isEmpty() || viewSegmentation.isEmpty()) {
+            L.e("[Views] addSegmentationToViewWithID, null or empty parameters provided");
+            return;
+        }
+
+        if (!viewDataMap.containsKey(viewID)) {
+            L.w("[ModuleViews] addSegmentationToViewWithID, there is no view with the provided view id");
+            return;
+        }
+
+        ViewData vd = viewDataMap.get(viewID);
+        if (vd == null) {
+            L.e("[ModuleViews] addSegmentationToViewWithID, view id:[" + viewID + "] has a 'null' view data. This should not be happening");
+            return;
+        }
+
+        Utils.truncateSegmentationValues(viewSegmentation, _cly.config_.maxSegmentationValues, "[ModuleViews] addSegmentationToViewWithID", L);
+        Utils.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] addSegmentationToViewWithID, ", L);
+
+        if (vd.viewSegmentation == null) {
+            vd.viewSegmentation = new HashMap<>(viewSegmentation);
+        } else {
+            vd.viewSegmentation.putAll(viewSegmentation);
+        }
+    }
+
+    public void addSegmentationToViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
+        String viewID = null;
+
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (vd != null && viewName != null && viewName.equals(vd.viewName)) {
+                viewID = entry.getKey();
+            }
+        }
+
+        if (viewID == null) {
+            L.e("[ModuleViews] addSegmentationToViewWithName, No view entry found with the provided name :[" + viewName + "]");
+            return;
+        }
+
+        L.i("[ModuleViews] Will add segmentation for view: [" + viewName + "] with ID:[" + viewID + "]");
+
+        addSegmentationToViewWithIDInternal(viewID, viewSegmentation);
     }
 
     void stopAllViewsInternal(Map<String, Object> viewSegmentation) {
@@ -644,6 +697,44 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 }
 
                 return startViewInternal(viewName, viewSegmentation, true);
+            }
+        }
+
+        /**
+         * Updates the segmentation of a view
+         *
+         * @param viewID String - View ID of the view
+         * @param viewSegmentation Map<String, Object> - New segmentation to update the segmentation of a view in memory
+         */
+        public void addSegmentationToViewWithID(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling addSegmentationToViewWithID for view ID: [" + viewID + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] addSegmentationToViewWithID, manual view call will be ignored since automatic tracking is enabled.");
+                    return;
+                }
+
+                addSegmentationToViewWithIDInternal(viewID, viewSegmentation);
+            }
+        }
+
+        /**
+         * Updates the segmentation of a view
+         *
+         * @param viewName String - Name of the view
+         * @param viewSegmentation Map<String, Object> - New segmentation to update the segmentation of a view in memory
+         */
+        public void addSegmentationToViewWithName(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
+            synchronized (_cly) {
+                L.i("[Views] Calling addSegmentationToViewWithName for Name: [" + viewName + "]");
+
+                if (autoViewTracker) {
+                    L.e("[Views] addSegmentationToViewWithName, manual view call will be ignored since automatic tracking is enabled.");
+                    return;
+                }
+
+                addSegmentationToViewWithNameInternal(viewName, viewSegmentation);
             }
         }
 

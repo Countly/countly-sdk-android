@@ -1,5 +1,7 @@
 ## xx.x.x
 * Mitigated a rare issue related to handling request headers
+* Added 'addSegmentationToViewWithID' method for adding segmentation to an ongoing view
+* Added 'addSegmentationToViewWithName' method for adding segmentation to an ongoing view
   
 ## 23.8.4
 * Mitigated an issue where the device ID was changed after exiting an AB experiment
