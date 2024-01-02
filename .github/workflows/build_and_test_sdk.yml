@@ -1,4 +1,4 @@
-name: Java Gradle Build and Test
+name: Android SDK Build and Test
 
 permissions:
   checks: write
@@ -16,11 +16,17 @@ on:
 
 jobs:
   build:
-    name: Build and Test
+    name: Build and Test the SDK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Setup docker
+        run: sudo apt-get install docker
+
+      - name: Setup emulator container
+        run: docker pull us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+    
+      - name: Checkout SDK code
         uses: actions/checkout@v4
 
       - name: Set up JDK 11
@@ -29,23 +35,32 @@ jobs:
           java-version: '11'
           distribution: 'corretto'
 
-      - name: Build and Test with Gradle
+      - name: Start android emulator container
+        run: docker run -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 8554:8554/tcp --publish 5554:5554/tcp --publish 5555:5555/tcp us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+
+      - name: Build the SDK
         run: ./gradlew sdk:build
 
-      - name: Run connected tests
-        uses: ReactiveCircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          script: ./gradlew sdk:connectedAndroidTest
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3.2.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
 
-      - name: Publish Test Results
+      - name: Connect to android container
+        run: adb connect localhost:5555
+
+      - name: Wait for android emulator
+        run: adb wait-for-device
+
+      - name: Run android tests
+        run: ./gradlew app:connectedCheck && ./gradlew sdk:connectedAndroidTest
+
+      - name: Publish Test Results to PR
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
           check_name: "Unit Test Results :rocket:"
           comment_title: "Unit Test Results :rocket:"
           files: |
-            sdk/build/outputs/androidTests-results/connected/*.html
+            sdk/build/outputs/androidTests-results/**/*.xml
 
