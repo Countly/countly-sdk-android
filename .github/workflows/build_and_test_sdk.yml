@@ -21,10 +21,7 @@ jobs:
     name: Build and Test the SDK
     runs-on: macos-latest
 
-    steps:
-      - name: Dive into the folder
-        run: cd sdk
-        
+    steps:        
       - name: Checkout code
         uses: actions/checkout@v4
 
