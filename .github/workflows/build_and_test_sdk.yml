@@ -36,7 +36,7 @@ jobs:
           distribution: 'corretto'
 
       - name: Start android emulator container
-        run: docker run -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 8554:8554/tcp --publish 5554:5554/tcp --publish 5555:5555/tcp us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+        run: docker run --device /dev/kvm --publish 8554:8554/tcp --publish 5554:5554/tcp --publish 5555:5555/tcp us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
 
       - name: Build the SDK
         run: ./gradlew sdk:build
