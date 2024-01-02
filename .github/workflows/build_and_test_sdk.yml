@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     name: Build and Test
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -47,5 +47,5 @@ jobs:
           check_name: "Unit Test Results :rocket:"
           comment_title: "Unit Test Results :rocket:"
           files: |
-            sdk/build/reports/androidTests/connected/*.html
+            sdk/build/outputs/androidTests-results/connected/*.html
 
