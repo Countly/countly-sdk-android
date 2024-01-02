@@ -1,0 +1,50 @@
+name: Java Gradle Build and Test
+
+permissions:
+  checks: write
+  pull-requests: write
+
+on:
+  push:
+    branches:
+      - master
+      - staging
+  pull_request:
+    branches:
+      - master
+      - staging
+
+jobs:
+  build:
+    name: Build and Test the SDK
+    runs-on: macos-latest
+
+    steps:
+      - name: Dive into the folder
+        run: cd sdk
+        
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'corretto'
+
+      - name: Run connected tests
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          script: ./gradlew connectedCheck
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: "Unit Test Results :rocket:"
+          comment_title: "Unit Test Results :rocket:"
+          files: |
+            sdk-java/build/test-results/**/*.xml
