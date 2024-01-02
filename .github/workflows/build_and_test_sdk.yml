@@ -9,10 +9,12 @@ on:
     branches:
       - master
       - staging
+      - build_and_test_action
   pull_request:
     branches:
       - master
       - staging
+      - build_and_test_action
 
 jobs:
   build:
