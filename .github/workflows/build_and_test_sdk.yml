@@ -62,5 +62,5 @@ jobs:
           check_name: "Unit Test Results :rocket:"
           comment_title: "Unit Test Results :rocket:"
           files: |
-            sdk/build/outputs/androidTests-results/**/*.xml
+            file:///home/runner/work/countly-sdk-android/countly-sdk-android/sdk/build/outputs/androidTests-results/connected/*.xml
 
