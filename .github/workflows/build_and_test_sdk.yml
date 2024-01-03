@@ -41,17 +41,14 @@ jobs:
       - name: Start android emulator container
         run: docker run -d -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 8554:8554/tcp --publish 5554:5554/tcp --publish 5555:5555/tcp us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
       
+      - name: Setup ADB
+        run: |
+          adb start-server
+          adb devices
+      
       - name: Build the SDK
         if: always()
         run: ./gradlew sdk:build
-
-      - name: Connect to android container
-        if: always()
-        run: adb connect localhost:5555
-
-      - name: Wait for android emulator
-        if: always()
-        run: adb wait-for-device
 
       - name: Run android tests
         if: always()
