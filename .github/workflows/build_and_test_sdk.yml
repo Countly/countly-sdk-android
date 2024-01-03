@@ -1,4 +1,9 @@
-name: Android SDK Build and Test
+name: The Countly Android SDK Unit Test
+
+env:
+  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+  JAVA_V: 11
+  JAVA_DIST: corretto
 
 permissions:
   checks: write
@@ -15,43 +20,43 @@ on:
       - staging
 
 jobs:
-  build:
-    name: Build and Test the SDK
+  setup:
     runs-on: ubuntu-latest
+    name: Build and Test the SDK
 
     steps:
-      - name: Setup docker
+      - name: Install Docker to the Runner
         run: sudo apt-get install docker
 
-      - name: Setup emulator container
-        run: docker pull us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+      - name: Pull Emulator from the Repo
+        run: docker pull ${{ env.EMULATOR_REPO }}
     
       - name: Checkout SDK code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 11
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
-          distribution: 'corretto'
+          java-version: ${{ env.JAVA_V }}
+          distribution: ${{ env.JAVA_DIST }}
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.10
 
-      - name: Setup ADB
+      - name: Start ADB Server
         run: adb start-server
 
-      - name: Start android emulator container
-        run: docker run -d -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 8554:8554/tcp --publish 5554:5554/tcp --publish 5555:5555/tcp us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+      - name: Run Android Emulator Container
+        run: docker run -d -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 5555:5555/tcp ${{ env.EMULATOR_REPO }}
       
-      - name: Connect to the emulator
+      - name: Connect to the Emulator
         run: adb connect localhost:5555
   
       - name: Build the SDK
         if: always()
         run: ./gradlew sdk:build
 
-      - name: Run android tests
+      - name: Run the Android Unit Tests
         if: always()
         run: ./gradlew sdk:connectedAndroidTest
 
@@ -63,4 +68,3 @@ jobs:
           comment_title: "Unit Test Results :rocket:"
           files: |
             sdk/build/outputs/androidTest-results/**/*.xml
-
