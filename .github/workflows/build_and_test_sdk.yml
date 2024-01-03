@@ -38,10 +38,8 @@ jobs:
       - name: Start android emulator container
         run: docker run -d --device /dev/kvm --publish 8554:8554/tcp --publish 5554:5554/tcp --publish 5555:5555/tcp us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
         
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.2.0
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+      - name: Setup ADB command
+        run: sudo apt-get install adb
       
       - name: Build the SDK
         if: always()
