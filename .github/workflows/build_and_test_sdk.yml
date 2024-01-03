@@ -55,7 +55,7 @@ jobs:
 
       - name: Run android tests
         if: always()
-        run: ./gradlew app:connectedCheck && ./gradlew sdk:connectedAndroidTest
+        run: ./gradlew sdk:connectedCheck && ./gradlew sdk:connectedAndroidTest
 
       - name: Publish Test Results to PR
         uses: EnricoMi/publish-unit-test-result-action@v2
