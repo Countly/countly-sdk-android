@@ -199,9 +199,6 @@ public class ConnectionProcessor implements Runnable {
     }
 
     String addChecksum(String gonnaAdd, String gonnaCalculate) {
-        if (requestInfoProvider_.getRequestSalt().isEmpty()) {
-            return gonnaAdd;
-        }
         String checksum = UtilsNetworking.sha256Hash(gonnaCalculate + requestInfoProvider_.getRequestSalt());
         gonnaAdd += "&checksum256=" + checksum;
         L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
