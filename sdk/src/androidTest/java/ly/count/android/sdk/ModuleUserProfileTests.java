@@ -1,8 +1,6 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -20,9 +18,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleUserProfileTests {
@@ -417,13 +412,6 @@ public class ModuleUserProfileTests {
 
         mCountly.moduleUserProfile.fromJSON(json);
         assertAllValuesNull(mCountly.moduleUserProfile);
-    }
-
-    @Test
-    public void testPicturePath() throws MalformedURLException {
-        String path = "http://test.com/?key1=val1&picturePath=%2Fmnt%2Fsdcard%2Fpic.jpg&key2=val2";
-        String picturePath = ModuleUserProfile.getPicturePathFromQuery(new URL(path));
-        assertEquals("/mnt/sdcard/pic.jpg", picturePath);
     }
 
     @Test
