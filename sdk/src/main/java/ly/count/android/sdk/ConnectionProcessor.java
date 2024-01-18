@@ -49,6 +49,8 @@ public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
 
+    private static String CRLF = "\r\n";
+    private static String charset = "UTF-8";
     private final StorageProvider storageProvider_;
     private final DeviceIdProvider deviceIdProvider_;
     final ConfigurationProvider configProvider_;
@@ -92,22 +94,21 @@ public class ConnectionProcessor implements Runnable {
             urlEndpoint = customEndpoint;
         }
 
-        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced());
+        boolean hasPicturePath = hasPicturePath(requestData);
+        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced()) || hasPicturePath;
 
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
-        if (usingHttpPost) {
-            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
-            requestData += "&checksum256=" + checksum;
-            approximateDateSize += requestData.length();
-            L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+        approximateDateSize += urlStr.length();
+
+        if (usingHttpPost && !hasPicturePath) {
+            requestData = addChecksum(requestData, requestData);
         } else {
             urlStr += "?" + requestData;
-            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
-            urlStr += "&checksum256=" + checksum;
-            L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+            urlStr = addChecksum(urlStr, requestData);
         }
-        approximateDateSize += urlStr.length();
+
+        approximateDateSize += requestData.length();
 
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
@@ -118,11 +119,6 @@ public class ConnectionProcessor implements Runnable {
             c.setSSLSocketFactory(sslContext_.getSocketFactory());
             conn = c;
         }
-        conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
-        conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
-        conn.setUseCaches(false);
-        conn.setDoInput(true);
-        conn.setRequestMethod("GET");
 
         if (requestHeaderCustomValues_ != null) {
             //if there are custom header values, add them
@@ -136,59 +132,42 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        String picturePath = ModuleUserProfile.getPicturePathFromQuery(url);
-        L.v("[Connection Processor] Got picturePath: " + picturePath);
-        //Log.v(Countly.TAG, "Used url: " + urlStr);
-        if (!picturePath.equals("")) {
-            //Uploading files:
-            //http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
-
-            File binaryFile = new File(picturePath);
-            conn.setDoOutput(true);
-            // Just generate some unique random value.
+        if (hasPicturePath(requestData)) {
+            requestData = addChecksum(requestData, UtilsNetworking.urlDecodeString(requestData));
+            L.v("[Connection Processor] Has picturePath,  if (hasPicturePath(requestData))");
             String boundary = Long.toHexString(System.currentTimeMillis());
-            // Line separator required by multipart/form-data.
-            String CRLF = "\r\n";
-            String charset = "UTF-8";
-            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            setupConnection(conn, usingHttpPost, "multipart/form-data; boundary=" + boundary);
+
             OutputStream output = conn.getOutputStream();
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
+
             // Send binary file.
-            writer.append("--").append(boundary).append(CRLF);
-            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
-            writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
-            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-            writer.append(CRLF).flush();
-            FileInputStream fileInputStream = new FileInputStream(binaryFile);
-            byte[] buffer = new byte[1024];
-            int len;
-            try {
-                while ((len = fileInputStream.read(buffer)) != -1) {
-                    output.write(buffer, 0, len);
-                    approximateDateSize += len;
+            String[] map = requestData.split("&");
+            for (String key : map) {
+                String[] kv = key.split("=");
+                String value = UtilsNetworking.urlDecodeString(kv[1]);
+                if (kv[0].equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
+                    File binaryFile = new File(value);
+                    approximateDateSize += addMultipart(output, writer, boundary, URLConnection.guessContentTypeFromName(binaryFile.getName()), "file", binaryFile.getName(), binaryFile);
+                } else {
+                    addMultipart(output, writer, boundary, "text/plain", kv[0], UtilsNetworking.urlDecodeString(kv[1]), null);
                 }
-            } catch (IOException ex) {
-                ex.printStackTrace();
             }
-            output.flush(); // Important before continuing with writer!
-            writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
-            fileInputStream.close();
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
         } else {
             if (usingHttpPost) {
-                conn.setDoOutput(true);
-                conn.setRequestMethod("POST");
+                setupConnection(conn, true, "application/x-www-form-urlencoded");
+
                 OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, charset));
                 writer.write(requestData);
                 writer.flush();
                 writer.close();
                 os.close();
             } else {
-                L.v("[Connection Processor] Using HTTP GET");
-                conn.setDoOutput(false);
+                setupConnection(conn, false, null);
             }
         }
 
@@ -213,6 +192,69 @@ public class ConnectionProcessor implements Runnable {
         L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
             + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
+    }
+
+    boolean hasPicturePath(String requestData) {
+        return requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
+    }
+
+    String addChecksum(String gonnaAdd, String gonnaCalculate) {
+        if (requestInfoProvider_.getRequestSalt().isEmpty()) {
+            return gonnaAdd;
+        }
+        String checksum = UtilsNetworking.sha256Hash(gonnaCalculate + requestInfoProvider_.getRequestSalt());
+        gonnaAdd += "&checksum256=" + checksum;
+        L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+
+        return gonnaAdd;
+    }
+
+    void setupConnection(HttpURLConnection conn, boolean usingHttpPost, String contentType) throws IOException {
+        conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
+        conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
+        conn.setUseCaches(false);
+        conn.setDoInput(true);
+        if (usingHttpPost) {
+            L.v("[Connection Processor] Using HTTP POST");
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", contentType);
+        } else {
+            L.v("[Connection Processor] Using HTTP GET");
+            conn.setDoOutput(false);
+            conn.setRequestMethod("GET");
+        }
+    }
+
+    int addMultipart(OutputStream output, PrintWriter writer, final String boundary, final String contentType, final String name, final String value, final File file) throws IOException {
+        int approximateDataSize = 0;
+        writer.append("--").append(boundary).append(CRLF);
+        if (file != null) {
+            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"; filename=\"").append(value).append("\"").append(CRLF);
+            writer.append("Content-Type: ").append(contentType).append(CRLF);
+            writer.append(CRLF).flush();
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                byte[] buffer = new byte[1024];
+                int len;
+                try {
+                    while ((len = fileInputStream.read(buffer)) != -1) {
+                        output.write(buffer, 0, len);
+                        approximateDataSize += len;
+                    }
+                } catch (IOException ex) {
+                    for (StackTraceElement e : ex.getStackTrace()) {
+                        L.e("[ConnectionProcessor] addMultipart, error: " + e);
+                    }
+                }
+            }
+            output.flush();
+            writer.append(CRLF).flush();
+        } else {
+            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(CRLF);
+            writer.append(CRLF).append(value).append(CRLF).flush();
+        }
+
+        return approximateDataSize;
     }
 
     @Override
