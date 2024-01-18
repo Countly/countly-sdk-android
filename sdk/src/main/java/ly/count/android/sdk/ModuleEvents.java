@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import ly.count.android.sdk.messaging.ModulePush;
 
 public class ModuleEvents extends ModuleBase implements EventProvider {
@@ -87,7 +86,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         //record the current event timestamps
         //if a past event is recorded, instant value will not be null
         if (instant == null) {
-            instant = UtilsTime.getCurrentInstant();
+            instant = UtilsTime.getCurrentInstantUnique();
         }
 
         String eventId;
@@ -171,7 +170,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             return false;
         }
         L.d("[ModuleEvents] Starting event: [" + key + "]");
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstantUnique();
         timedEvents.put(key, new Event(key, instant.timestampMs, instant.hour, instant.dow));
         return true;
     }

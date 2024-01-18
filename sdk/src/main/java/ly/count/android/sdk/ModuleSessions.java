@@ -54,7 +54,7 @@ public class ModuleSessions extends ModuleBase {
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
 
-        prevSessionDurationStartTime_ = System.nanoTime();
+        prevSessionDurationStartTime_ = UtilsTime.currentTimestampMs();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
     }
 
@@ -110,10 +110,10 @@ public class ModuleSessions extends ModuleBase {
      * Calculates the unsent session duration in seconds, rounded to the nearest int.
      */
     int roundedSecondsSinceLastSessionDurationUpdate() {
-        final long currentTimestampInNanoseconds = System.nanoTime();
-        final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
-        prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
+        final long currentTimestampInMs = UtilsTime.currentTimestampMs();
+        final long unsentSessionLengthInMs = currentTimestampInMs - prevSessionDurationStartTime_;
+        prevSessionDurationStartTime_ = currentTimestampInMs;
+        return (int) Math.round(unsentSessionLengthInMs / 1000.0d);
     }
 
     @Override

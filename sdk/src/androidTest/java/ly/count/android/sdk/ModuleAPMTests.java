@@ -125,7 +125,7 @@ public class ModuleAPMTests {
     }
 
     @Test
-    public void recordNetworkTraceStartStop() {
+    public void recordNetworkTraceStartStop() throws InterruptedException {
         ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Long> start = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Long> stop = ArgumentCaptor.forClass(Long.class);
@@ -135,6 +135,7 @@ public class ModuleAPMTests {
         mCountly.apm().startNetworkRequest("abc", "111");
         Assert.assertTrue(mCountly.moduleAPM.networkTraces.containsKey(internalTraceKey));
         Long starVal = mCountly.moduleAPM.networkTraces.get(internalTraceKey);
+        Thread.sleep(1);
 
         mCountly.apm().endNetworkRequest("abc", "111", 345, 222, 555);
 
@@ -148,10 +149,12 @@ public class ModuleAPMTests {
     }
 
     @Test
-    public void customTrace() {
+    public void customTrace() throws InterruptedException {
         String key = "ddd";
         Long ts1 = UtilsTime.currentTimestampMs();
+        Thread.sleep(1);
         mCountly.apm().startTrace(key);
+        Thread.sleep(1);
         Long ts2 = UtilsTime.currentTimestampMs();
 
         Assert.assertTrue(mCountly.moduleAPM.codeTraces.containsKey(key));

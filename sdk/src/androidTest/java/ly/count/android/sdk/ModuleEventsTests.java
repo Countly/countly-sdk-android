@@ -17,7 +17,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -172,8 +171,6 @@ public class ModuleEventsTests {
         segm.put("2", 1234.55d);
         segm.put("3", true);
         segm.put("4", (double) 45.4f);
-
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
         ArgumentCaptor<Integer> arg1 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Double> arg2 = ArgumentCaptor.forClass(Double.class);

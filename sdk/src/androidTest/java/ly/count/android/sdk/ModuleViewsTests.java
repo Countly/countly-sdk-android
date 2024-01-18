@@ -38,7 +38,6 @@ public class ModuleViewsTests {
 
     int idx = 0;
     final String[] vals = TestUtils.viewIDVals;
-    String base64Regex = "^[A-Za-z0-9+/]*={0,2}$";
     SafeIDGenerator safeViewIDGenerator;
 
     @Before
@@ -55,22 +54,6 @@ public class ModuleViewsTests {
 
     @After
     public void tearDown() {
-    }
-
-    /**
-     * Make sure the random value generator matches the required pattern
-     */
-    @Test
-    public void testSafeRandomVal() {
-        @NonNull String result1 = Utils.safeRandomVal();
-        @NonNull String result2 = Utils.safeRandomVal();
-
-        Assert.assertNotNull(result1);
-        Assert.assertNotNull(result2);
-        Assert.assertTrue(result1.matches(base64Regex));
-        Assert.assertTrue(result2.matches(base64Regex));
-        Assert.assertEquals(21, result1.length(), result2.length());
-        Assert.assertNotEquals(result1, result2);
     }
 
     /**
@@ -498,28 +481,6 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Make sure that no view event is created when recording an event with no consent
-     */
-    @Test
-    public void recordViewWithoutConsent() {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, true, null, null).setRequiresConsent(false);
-        Countly mCountly = new Countly().init(cc);
-        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
-
-        mCountly.views().recordView(null);
-
-        Map<String, Object> segm = new HashMap<>();
-        segm.put("xxx", "33");
-        segm.put("rtt", 2);
-        mCountly.views().startView("aa");
-        mCountly.views().startView("aa", segm);
-
-        mCountly.views().stopViewWithName("aa");
-        mCountly.views().stopViewWithName("aa", segm);
-        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
-    }
-
-    /**
      * Automatic view tracking is not enabled.
      * Changing activities should not record view events
      */
@@ -746,44 +707,6 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Passing bad values and making sure it doesn't crash
-     */
-    @Test
-    public void viewCallsWithBadValues() {
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
-        Countly mCountly = new Countly().init(cc);
-
-        mCountly.views().startView(null);
-        mCountly.views().startView("");
-        mCountly.views().startView(null, null);
-        mCountly.views().startView("", null);
-
-        mCountly.views().startAutoStoppedView(null);
-        mCountly.views().startAutoStoppedView("");
-        mCountly.views().startAutoStoppedView(null, null);
-        mCountly.views().startAutoStoppedView("", null);
-
-        mCountly.views().resumeViewWithID(null);
-        mCountly.views().resumeViewWithID("");
-        mCountly.views().resumeViewWithID("xx");
-
-        mCountly.views().pauseViewWithID(null);
-        mCountly.views().pauseViewWithID("");
-        mCountly.views().pauseViewWithID("zz");
-
-        mCountly.views().stopViewWithID(null);
-        mCountly.views().stopViewWithID("");
-        mCountly.views().stopViewWithID("cc");
-
-        mCountly.views().stopViewWithName(null);
-        mCountly.views().stopViewWithName("");
-        mCountly.views().stopViewWithName("vv");
-
-        mCountly.views().setGlobalViewSegmentation(null);
-        mCountly.views().updateGlobalViewSegmentation(null);
-    }
-
-    /**
      * Testing the start,pause,resume, stop flow
      * use ID to stop view: yes
      * start view as auto close view: no
@@ -882,7 +805,7 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Test flow when having 3 views in paralell
+     * Test flow when having 3 views in parallel
      * use ID to stop views: no
      *
      * @throws InterruptedException

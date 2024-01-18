@@ -24,7 +24,6 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -690,7 +689,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
     @NonNull
     String prepareCommonRequestData() {
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstantUnique();
 
         return prepareCommonRequestDataShort(instant)
             + "&hour=" + instant.hour
@@ -700,7 +699,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
     @NonNull
     String prepareCommonRequestDataShort() {
-        UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
+        UtilsTime.Instant instant = UtilsTime.getCurrentInstantUnique();
         return prepareCommonRequestDataShort(instant);
     }
 

@@ -50,11 +50,30 @@ public class UtilsTimeTests {
     }
 
     @Test
+    public void testSecondsUnique() {
+        long tms = UtilsTime.currentTimestampMsUnique();
+        int tsec = UtilsTime.currentTimestampSeconds();
+
+        long diff = tms / 1000 - tsec;
+        Assert.assertTrue(diff < 1);
+    }
+
+    @Test
     public void testDiff() throws InterruptedException {
         long tms = UtilsTime.currentTimestampMs();
         Thread.sleep(250);
 
         long tms2 = UtilsTime.currentTimestampMs();
+
+        Assert.assertTrue(tms2 - tms < 260);
+    }
+
+    @Test
+    public void testDiffUnique() throws InterruptedException {
+        long tms = UtilsTime.currentTimestampMsUnique();
+        Thread.sleep(250);
+
+        long tms2 = UtilsTime.currentTimestampMsUnique();
 
         Assert.assertTrue(tms2 - tms < 260);
     }

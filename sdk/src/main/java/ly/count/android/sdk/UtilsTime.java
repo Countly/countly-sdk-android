@@ -36,6 +36,11 @@ public class UtilsTime {
      *
      * @return
      */
+    public static synchronized Instant getCurrentInstantUnique() {
+        long timestamp = currentTimestampMsUnique();
+        return Instant.get(timestamp);
+    }
+
     public static synchronized Instant getCurrentInstant() {
         long timestamp = currentTimestampMs();
         return Instant.get(timestamp);
@@ -46,8 +51,12 @@ public class UtilsTime {
      *
      * @return
      */
-    public static synchronized long currentTimestampMs() {
+    public static synchronized long currentTimestampMsUnique() {
         return timeGenerator.uniqueTimestamp();
+    }
+
+    public static synchronized long currentTimestampMs() {
+        return System.currentTimeMillis();
     }
 
     public static synchronized long getNanoTime() {
@@ -66,7 +75,7 @@ public class UtilsTime {
         final long addition = 0;
 
         long currentTimeMillis() {
-            return System.currentTimeMillis() + addition;
+            return currentTimestampMs() + addition;
         }
 
         synchronized long uniqueTimestamp() {

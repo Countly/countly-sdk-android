@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.util.TimeUtils;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import org.junit.After;
@@ -550,19 +551,19 @@ public class CountlyTests {
 
     @Test
     public void testRoundedSecondsSinceLastSessionDurationUpdate() {
-        long prevSessionDurationStartTime = System.nanoTime() - 1000000000;
+        long prevSessionDurationStartTime = UtilsTime.currentTimestampMs() - 1000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(1, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
-        prevSessionDurationStartTime = System.nanoTime() - 2000000000;
+        prevSessionDurationStartTime = UtilsTime.currentTimestampMs() - 2000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(2, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
-        prevSessionDurationStartTime = System.nanoTime() - 1600000000;
+        prevSessionDurationStartTime = UtilsTime.currentTimestampMs() - 1600;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(2, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
-        prevSessionDurationStartTime = System.nanoTime() - 1200000000;
+        prevSessionDurationStartTime = UtilsTime.currentTimestampMs() - 1200;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(1, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
     }
