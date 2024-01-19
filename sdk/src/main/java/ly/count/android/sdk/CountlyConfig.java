@@ -178,8 +178,6 @@ public class CountlyConfig {
 
     protected Application application = null;
 
-    protected boolean recordAppStartTime = false;
-
     boolean disableLocation = false;
 
     String locationCountyCode = null;
@@ -191,12 +189,6 @@ public class CountlyConfig {
     String locationIpAddress = null;
 
     Map<String, String> metricOverride = null;
-
-    Long appStartTimestampOverride = null;
-
-    boolean appLoadedManualTrigger = false;
-
-    boolean manualForegroundBackgroundTrigger = false;
 
     int maxRequestQueueSize = 1000;
 
@@ -884,11 +876,12 @@ public class CountlyConfig {
     /**
      * Enable the recording of the app start time
      *
-     * @param recordAppStartTime
+     * @param recordAppStartTime set true if you want to enable the recording of the app start time
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, use <pre>apm.enableAppStartTracking()</pre> instead
      */
     public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime) {
-        this.recordAppStartTime = recordAppStartTime;
+        apm.enableAppStartTimeTracking(recordAppStartTime);
         return this;
     }
 
@@ -933,11 +926,12 @@ public class CountlyConfig {
     /**
      * Override the app start timestamp in case you have a more precise way to measure it
      *
-     * @param appStartTimestampOverride
+     * @param appStartTimestampOverride The timestamp to use as the app start timestamp
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, use <pre>apm.setAppStartTimestampOverride()</pre> instead
      */
     public synchronized CountlyConfig setAppStartTimestampOverride(long appStartTimestampOverride) {
-        this.appStartTimestampOverride = appStartTimestampOverride;
+        apm.setAppStartTimestampOverride(appStartTimestampOverride);
         return this;
     }
 
@@ -945,9 +939,10 @@ public class CountlyConfig {
      * Set to manually trigger the moment when the app has finished loading
      *
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, use <pre>apm.enableManualAppLoadedTrigger()</pre> instead
      */
     public synchronized CountlyConfig enableManualAppLoadedTrigger() {
-        appLoadedManualTrigger = true;
+        apm.enableManualAppLoadedTrigger();
         return this;
     }
 
@@ -955,9 +950,10 @@ public class CountlyConfig {
      * Set this in case you want to control these triggers manually
      *
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated and will be removed in the future
      */
     public synchronized CountlyConfig enableManualForegroundBackgroundTriggerAPM() {
-        manualForegroundBackgroundTrigger = true;
+        apm.manualForegroundBackgroundTrigger = true;
         return this;
     }
 
@@ -1047,4 +1043,9 @@ public class CountlyConfig {
         healthCheckEnabled = false;
         return this;
     }
+
+    /**
+     * APM configuration interface to be used with CountlyConfig
+     */
+    public final ApmConfig apm = new ApmConfig();
 }

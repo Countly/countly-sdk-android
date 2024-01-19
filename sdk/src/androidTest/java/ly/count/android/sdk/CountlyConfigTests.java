@@ -199,16 +199,16 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.starRatingShownAutomatically);
         Assert.assertTrue(config.starRatingDisableAskingForEachAppVersion);
         Assert.assertEquals(app, config.application);
-        Assert.assertTrue(config.recordAppStartTime);
+        Assert.assertTrue(config.apm.trackAppStartTime);
         Assert.assertTrue(config.disableLocation);
         Assert.assertEquals("CC", config.locationCountyCode);
         Assert.assertEquals("city", config.locationCity);
         Assert.assertEquals("loc", config.locationLocation);
         Assert.assertEquals("ip", config.locationIpAddress);
         Assert.assertEquals(metricOverride, config.metricOverride);
-        Assert.assertEquals((Long) 123l, config.appStartTimestampOverride);
-        Assert.assertTrue(config.appLoadedManualTrigger);
-        Assert.assertTrue(config.manualForegroundBackgroundTrigger);
+        Assert.assertEquals((Long) 123l, config.apm.appStartTimestampOverride);
+        Assert.assertTrue(config.apm.appLoadedManualTrigger);
+        Assert.assertTrue(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertEquals(logCallback, config.providedLogCallback);
 
         config.setLocation("CC", "city", "loc", "ip");
@@ -272,16 +272,16 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.starRatingDialogIsCancellable);
         Assert.assertFalse(config.starRatingShownAutomatically);
         Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
-        Assert.assertFalse(config.recordAppStartTime);
+        Assert.assertFalse(config.apm.trackAppStartTime);
         Assert.assertFalse(config.disableLocation);
         Assert.assertNull(config.locationCountyCode);
         Assert.assertNull(config.locationCity);
         Assert.assertNull(config.locationLocation);
         Assert.assertNull(config.locationIpAddress);
         Assert.assertNull(config.metricOverride);
-        Assert.assertNull(config.appStartTimestampOverride);
-        Assert.assertFalse(config.appLoadedManualTrigger);
-        Assert.assertFalse(config.manualForegroundBackgroundTrigger);
+        Assert.assertNull(config.apm.appStartTimestampOverride);
+        Assert.assertFalse(config.apm.appLoadedManualTrigger);
+        Assert.assertFalse(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertNull(config.providedLogCallback);
     }
 }
