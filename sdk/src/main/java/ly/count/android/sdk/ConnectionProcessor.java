@@ -98,23 +98,23 @@ public class ConnectionProcessor implements Runnable {
         }
 
         // determine whether or not request has a binary image file, if it has request will be sent as POST request
-        boolean hasPicturePath = hasPicturePath(requestData);
+        boolean hasPicturePath = requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
         boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced()) || hasPicturePath;
 
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
-        approximateDateSize += urlStr.length();
+        
 
         if (usingHttpPost && !hasPicturePath) { 
             // for binary images, checksum will be calculated without url encoded value of the requestData
             // because they sent as form-data and server calculates it that way
             requestData = addChecksum(requestData, requestData);
+            approximateDateSize += requestData.length(); // add request data to the estimated data size
         } else {
             urlStr += "?" + requestData;
             urlStr = addChecksum(urlStr, requestData);
         }
-
-        approximateDateSize += requestData.length(); // add request data to the estimated data size
+        approximateDateSize += urlStr.length();
 
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
@@ -200,10 +200,6 @@ public class ConnectionProcessor implements Runnable {
         L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
             + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
-    }
-
-    boolean hasPicturePath(String requestData) {
-        return requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
     }
 
     String addChecksum(String gonnaAdd, String gonnaCalculate) {
