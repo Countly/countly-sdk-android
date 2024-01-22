@@ -96,6 +96,8 @@ public class ConnectionProcessor implements Runnable {
             urlEndpoint = customEndpoint;
         }
 
+        // determine whether or not request has a binary image file, if it has request will be sent as POST request
+        boolean hasPicturePath = requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
         boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced());
 
         long approximateDateSize = 0L;
@@ -103,7 +105,7 @@ public class ConnectionProcessor implements Runnable {
         if (usingHttpPost) {
             String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
             requestData += "&checksum256=" + checksum;
-            approximateDateSize += requestData.length();
+            approximateDateSize += requestData.length(); // add request data to the estimated data size
             L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
         } else {
             urlStr += "?" + requestData;
