@@ -134,6 +134,7 @@ public class ConnectionProcessor implements Runnable {
         conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
         conn.setUseCaches(false);
         conn.setDoInput(true);
+        conn.setRequestMethod("GET");
 
         if (requestHeaderCustomValues_ != null) {
             //if there are custom header values, add them
