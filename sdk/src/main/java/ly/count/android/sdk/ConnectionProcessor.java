@@ -21,6 +21,8 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -49,8 +51,9 @@ public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
 
-    private static String CRLF = "\r\n";
-    private static String charset = "UTF-8";
+    private static final String CRLF = "\r\n";
+    private static final String charset = "UTF-8";
+
     private final StorageProvider storageProvider_;
     private final DeviceIdProvider deviceIdProvider_;
     final ConfigurationProvider configProvider_;
@@ -88,7 +91,7 @@ public class ConnectionProcessor implements Runnable {
         this.healthTracker = healthTracker;
     }
 
-    synchronized public URLConnection urlConnectionForServerRequest(String requestData, final String customEndpoint) throws IOException {
+    synchronized public @NonNull URLConnection urlConnectionForServerRequest(@NonNull String requestData, @Nullable final String customEndpoint) throws IOException {
         String urlEndpoint = "/i";
         if (customEndpoint != null) {
             urlEndpoint = customEndpoint;
