@@ -126,6 +126,10 @@ public class ConnectionProcessor implements Runnable {
             c.setSSLSocketFactory(sslContext_.getSocketFactory());
             conn = c;
         }
+        conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
+        conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
+        conn.setUseCaches(false);
+        conn.setDoInput(true);
 
         if (requestHeaderCustomValues_ != null) {
             //if there are custom header values, add them
@@ -143,7 +147,9 @@ public class ConnectionProcessor implements Runnable {
             requestData = addChecksum(requestData, UtilsNetworking.urlDecodeString(requestData)); // add checksum with url decoded version of request data
             L.v("[Connection Processor] Has picturePath,  if (hasPicturePath(requestData))");
             String boundary = Long.toHexString(System.currentTimeMillis());
-            setupConnection(conn, usingHttpPost, "multipart/form-data; boundary=" + boundary); // setup url connection by POST and content-type
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
 
             OutputStream output = conn.getOutputStream(); // setup streams for form-data writing
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
@@ -165,8 +171,9 @@ public class ConnectionProcessor implements Runnable {
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
         } else {
             if (usingHttpPost) {
-                // setup connection for post
-                setupConnection(conn, true, "application/x-www-form-urlencoded");
+                conn.setDoOutput(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                 OutputStream os = conn.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, charset));
@@ -175,8 +182,8 @@ public class ConnectionProcessor implements Runnable {
                 writer.close();
                 os.close();
             } else {
-                // setup connection for get
-                setupConnection(conn, false, null);
+                L.v("[Connection Processor] Using HTTP GET");
+                conn.setDoOutput(false);
             }
         }
 
@@ -209,27 +216,6 @@ public class ConnectionProcessor implements Runnable {
         L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
 
         return gonnaAdd;
-    }
-
-    /**
-     * Setup connection for HTTP method, first 4 option is same for every method.
-     * Only method and doOutput changes, if it is POST request contentType is also added
-     */
-    void setupConnection(HttpURLConnection conn, boolean usingHttpPost, String contentType) throws IOException {
-        conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
-        conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
-        conn.setUseCaches(false);
-        conn.setDoInput(true);
-        if (usingHttpPost) {
-            L.v("[Connection Processor] Using HTTP POST");
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", contentType);
-        } else {
-            L.v("[Connection Processor] Using HTTP GET");
-            conn.setDoOutput(false);
-            conn.setRequestMethod("GET");
-        }
     }
 
     /**
