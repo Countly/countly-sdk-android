@@ -881,7 +881,7 @@ public class CountlyConfig {
      * @deprecated this call is deprecated, use <pre>apm.enableAppStartTracking()</pre> instead
      */
     public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime) {
-        apm.enableAppStartTimeTracking(recordAppStartTime);
+        apm.trackAppStartTime = recordAppStartTime;
         return this;
     }
 
@@ -1047,5 +1047,5 @@ public class CountlyConfig {
     /**
      * APM configuration interface to be used with CountlyConfig
      */
-    public final ApmConfig apm = new ApmConfig();
+    public final ConfigApm apm = new ConfigApm();
 }
