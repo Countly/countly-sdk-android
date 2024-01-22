@@ -342,7 +342,6 @@ public class ModuleUserProfile extends ModuleBase {
 
     void saveInternal() {
         Countly.sharedInstance().L.d("[ModuleUserProfile] saveInternal");
-        Countly.sharedInstance().requestQueue().flushQueues();
         requestQueueProvider.sendUserData(getDataForRequest());
         clearInternal();
     }
