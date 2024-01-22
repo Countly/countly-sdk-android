@@ -94,6 +94,7 @@ public class ConnectionProcessor implements Runnable {
             urlEndpoint = customEndpoint;
         }
 
+        // determine whether or not request has a binary image file, if it has request will be sent as POST request
         boolean hasPicturePath = hasPicturePath(requestData);
         boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced()) || hasPicturePath;
 
@@ -101,14 +102,16 @@ public class ConnectionProcessor implements Runnable {
         String urlStr = serverURL_ + urlEndpoint;
         approximateDateSize += urlStr.length();
 
-        if (usingHttpPost && !hasPicturePath) {
+        if (usingHttpPost && !hasPicturePath) { 
+            // for binary images, checksum will be calculated without url encoded value of the requestData
+            // because they sent as form-data and server calculates it that way
             requestData = addChecksum(requestData, requestData);
         } else {
             urlStr += "?" + requestData;
             urlStr = addChecksum(urlStr, requestData);
         }
 
-        approximateDateSize += requestData.length();
+        approximateDateSize += requestData.length(); // add request data to the estimated data size
 
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
@@ -132,24 +135,24 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        if (hasPicturePath(requestData)) {
-            requestData = addChecksum(requestData, UtilsNetworking.urlDecodeString(requestData));
+        if (hasPicturePath) {
+            requestData = addChecksum(requestData, UtilsNetworking.urlDecodeString(requestData)); // add checksum with url decoded version of request data
             L.v("[Connection Processor] Has picturePath,  if (hasPicturePath(requestData))");
             String boundary = Long.toHexString(System.currentTimeMillis());
-            setupConnection(conn, usingHttpPost, "multipart/form-data; boundary=" + boundary);
+            setupConnection(conn, usingHttpPost, "multipart/form-data; boundary=" + boundary); // setup url connection by POST and content-type
 
-            OutputStream output = conn.getOutputStream();
+            OutputStream output = conn.getOutputStream(); // setup streams for form-data writing
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 
             // Send binary file.
-            String[] map = requestData.split("&");
+            String[] map = requestData.split("&"); // split request data by key value pairs
             for (String key : map) {
                 String[] kv = key.split("=");
                 String value = UtilsNetworking.urlDecodeString(kv[1]);
                 if (kv[0].equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
-                    File binaryFile = new File(value);
+                    File binaryFile = new File(value); // add picture to the form-data
                     approximateDateSize += addMultipart(output, writer, boundary, URLConnection.guessContentTypeFromName(binaryFile.getName()), "file", binaryFile.getName(), binaryFile);
-                } else {
+                } else {  // ad key value pair as form-data entry and add decoded value of it, estimated data size not added because it is already added above in requestData.lenghth()
                     addMultipart(output, writer, boundary, "text/plain", kv[0], UtilsNetworking.urlDecodeString(kv[1]), null);
                 }
             }
@@ -157,7 +160,8 @@ public class ConnectionProcessor implements Runnable {
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
         } else {
-            if (usingHttpPost) {
+            if (usingHttpPost) { 
+                // setup connection for post
                 setupConnection(conn, true, "application/x-www-form-urlencoded");
 
                 OutputStream os = conn.getOutputStream();
@@ -167,6 +171,7 @@ public class ConnectionProcessor implements Runnable {
                 writer.close();
                 os.close();
             } else {
+                // setup connection for get
                 setupConnection(conn, false, null);
             }
         }
@@ -206,6 +211,10 @@ public class ConnectionProcessor implements Runnable {
         return gonnaAdd;
     }
 
+    /**
+    * Setup connection for HTTP method, first 4 option is same for every method.
+    * Only method and doOutput changes, if it is POST request contentType is also added
+    */
     void setupConnection(HttpURLConnection conn, boolean usingHttpPost, String contentType) throws IOException {
         conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
         conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -223,14 +232,20 @@ public class ConnectionProcessor implements Runnable {
         }
     }
 
+    /**
+    * Adds a form-data entry to the stream
+    * @return estimated data size for the file entries
+    */
     int addMultipart(OutputStream output, PrintWriter writer, final String boundary, final String contentType, final String name, final String value, final File file) throws IOException {
         int approximateDataSize = 0;
         writer.append("--").append(boundary).append(CRLF);
         if (file != null) {
+            // entry for file
             writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"; filename=\"").append(value).append("\"").append(CRLF);
             writer.append("Content-Type: ").append(contentType).append(CRLF);
             writer.append(CRLF).flush();
             try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                // write file to the buffer and stream
                 byte[] buffer = new byte[1024];
                 int len;
                 try {
