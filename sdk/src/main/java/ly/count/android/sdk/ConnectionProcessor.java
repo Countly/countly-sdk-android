@@ -108,12 +108,16 @@ public class ConnectionProcessor implements Runnable {
             // for binary images, checksum will be calculated without url encoded value of the requestData
             // because they sent as form-data and server calculates it that way
             if (!hasPicturePath) {
-                requestData = addChecksum(requestData, requestData);
+                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+                requestData += "&checksum256=" + checksum;
+                L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
             }
             approximateDateSize += requestData.length(); // add request data to the estimated data size
         } else {
             urlStr += "?" + requestData;
-            urlStr = addChecksum(urlStr, requestData);
+            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+            urlStr += "&checksum256=" + checksum;
+            L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
         }
         approximateDateSize += urlStr.length();
 
@@ -144,8 +148,11 @@ public class ConnectionProcessor implements Runnable {
         }
 
         if (hasPicturePath) {
-            requestData = addChecksum(requestData, UtilsNetworking.urlDecodeString(requestData)); // add checksum with url decoded version of request data
             L.v("[Connection Processor] Has picturePath,  if (hasPicturePath(requestData))");
+
+            String checksum = UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt()); // add checksum with url decoded version of request data
+            requestData += "&checksum256=" + checksum;
+
             String boundary = Long.toHexString(System.currentTimeMillis());
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
@@ -208,14 +215,6 @@ public class ConnectionProcessor implements Runnable {
         L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
             + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
-    }
-
-    String addChecksum(String gonnaAdd, String gonnaCalculate) {
-        String checksum = UtilsNetworking.sha256Hash(gonnaCalculate + requestInfoProvider_.getRequestSalt());
-        gonnaAdd += "&checksum256=" + checksum;
-        L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
-
-        return gonnaAdd;
     }
 
     /**
