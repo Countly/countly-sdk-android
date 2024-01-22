@@ -103,12 +103,13 @@ public class ConnectionProcessor implements Runnable {
 
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
-        
 
-        if (usingHttpPost && !hasPicturePath) { 
+        if (usingHttpPost) {
             // for binary images, checksum will be calculated without url encoded value of the requestData
             // because they sent as form-data and server calculates it that way
-            requestData = addChecksum(requestData, requestData);
+            if (!hasPicturePath) {
+                requestData = addChecksum(requestData, requestData);
+            }
             approximateDateSize += requestData.length(); // add request data to the estimated data size
         } else {
             urlStr += "?" + requestData;
@@ -163,7 +164,7 @@ public class ConnectionProcessor implements Runnable {
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
         } else {
-            if (usingHttpPost) { 
+            if (usingHttpPost) {
                 // setup connection for post
                 setupConnection(conn, true, "application/x-www-form-urlencoded");
 
@@ -211,9 +212,9 @@ public class ConnectionProcessor implements Runnable {
     }
 
     /**
-    * Setup connection for HTTP method, first 4 option is same for every method.
-    * Only method and doOutput changes, if it is POST request contentType is also added
-    */
+     * Setup connection for HTTP method, first 4 option is same for every method.
+     * Only method and doOutput changes, if it is POST request contentType is also added
+     */
     void setupConnection(HttpURLConnection conn, boolean usingHttpPost, String contentType) throws IOException {
         conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
         conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -232,9 +233,10 @@ public class ConnectionProcessor implements Runnable {
     }
 
     /**
-    * Adds a form-data entry to the stream
-    * @return estimated data size for the file entries
-    */
+     * Adds a form-data entry to the stream
+     *
+     * @return estimated data size for the file entries
+     */
     int addMultipart(OutputStream output, PrintWriter writer, final String boundary, final String contentType, final String name, final String value, final File file) throws IOException {
         int approximateDataSize = 0;
         writer.append("--").append(boundary).append(CRLF);
