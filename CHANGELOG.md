@@ -1,3 +1,6 @@
+## 24.1.0
+* Fixed a bug where sending a local picture with checksum was not possible
+
 ## 23.12.0
 * Mitigated a rare issue related to handling request headers
 * Added 'addSegmentationToViewWithID' method for adding segmentation to an ongoing view
