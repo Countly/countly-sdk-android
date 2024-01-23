@@ -143,20 +143,21 @@ public class ConnectionProcessor implements Runnable {
         }
 
         String picturePath = ModuleUserProfile.getPicturePathFromQuery(url);
-        L.v("[Connection Processor] Got picturePath: " + picturePath);
+        L.v("[Connection Processor] Has picturePath [" + hasPicturePath + "]");
         //Log.v(Countly.TAG, "Used url: " + urlStr);
         if (!picturePath.equals("")) {
             //Uploading files:
             //http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
 
-            File binaryFile = new File(picturePath);
+            String boundary = Long.toHexString(System.currentTimeMillis());// Just generate some unique random value as the boundary
             conn.setDoOutput(true);
-            // Just generate some unique random value.
-            String boundary = Long.toHexString(System.currentTimeMillis());
-            // Line separator required by multipart/form-data.
-            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);// Line separator required by multipart/form-data.
+
             OutputStream output = conn.getOutputStream();
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
+            
+            File binaryFile = new File(picturePath);
+
             // Send binary file.
             writer.append("--").append(boundary).append(CRLF);
             writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
@@ -184,6 +185,8 @@ public class ConnectionProcessor implements Runnable {
             if (usingHttpPost) {
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
                 OutputStream os = conn.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, charset));
                 writer.write(requestData);
