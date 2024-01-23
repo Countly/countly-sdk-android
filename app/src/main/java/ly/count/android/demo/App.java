@@ -11,21 +11,17 @@ import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
-import android.os.StrictMode;
-import androidx.annotation.NonNull;
-
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
-
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-
 import com.google.firebase.messaging.FirebaseMessaging;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
@@ -182,9 +178,9 @@ public class App extends Application {
             // uncomment the line below to enable auto enrolling the user to AB experiments when downloading RC data
             //.enrollABOnRCDownload()
             // .setMaxRequestQueueSize(5)
-            .setAutoTrackingUseShortName(true)
-            .setAutomaticViewSegmentation(automaticViewSegmentation)
-            .setAutoTrackingExceptions(new Class[] { ActivityExampleCustomEvents.class })
+            .enableAutomaticViewShortNames()
+            .setGlobalViewSegmentation(automaticViewSegmentation)
+            .setAutomaticViewTrackingExclusions(new Class[] { ActivityExampleCustomEvents.class })
 
             .setPushIntentAddMetadata(true)
 
@@ -217,22 +213,22 @@ public class App extends Application {
 
             .RemoteConfigRegisterGlobalCallback((downloadResult, error, fullValueUpdate, downloadedValues) -> {
                 if (error == null) {
-                    Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getAllValues());
+                    Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getValues());
                 } else {
                     Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
                 }
             })
 
             .setTrackOrientationChanges(true)
-
-            .setRecordAppStartTime(true)
-            .setAppStartTimestampOverride(applicationStartTimestamp)
-
             //.setMetricOverride(metricOverride)
 
             //.enableServerConfiguration()
 
             .setUserProperties(customUserProperties);
+
+        config.apm.enableAppStartTimeTracking()
+            .enableForegroundBackgroundTracking()
+            .setAppStartTimestampOverride(applicationStartTimestamp);
 
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
