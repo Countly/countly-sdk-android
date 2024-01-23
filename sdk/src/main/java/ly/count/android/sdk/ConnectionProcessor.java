@@ -148,6 +148,8 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
+        L.v("[Connection Processor] Has picturePath [" + hasPicturePath + "]");
+
         if (hasPicturePath) {
             L.v("[Connection Processor] Has picturePath,  if (hasPicturePath(requestData))");
 
