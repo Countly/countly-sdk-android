@@ -1,3 +1,17 @@
+## XX.X.X
+* ! Minor breaking change ! Tracking of foreground and background reporting for APM is disabled by default
+  
+* Added a way to enable tracking of foreground and background reporting for APM
+  
+* Deprecated the following calls from "Apm" interface:
+    * "triggerBackground"
+    * "triggerForeground"
+* Deprecated following functions from "CountlyConfig":
+    * "setRecordAppStartTime(recordAppStartTime)" instead use "apm.enableAppStartTimeTracking()"
+    * "setAppStartTimestampOverride(appStartTimestampOverride)" instead use "apm.setAppStartTimestampOverride(appStartTimestampOverride)"
+    * "enableManualAppLoadedTrigger()" instead use "apm.enableManualAppLoadedTrigger()"
+    * "enableManualForegroundBackgroundTriggerAPM()" will be deleted in the future
+
 ## 23.12.0
 * Mitigated a rare issue related to handling request headers
 * Added 'addSegmentationToViewWithID' method for adding segmentation to an ongoing view
