@@ -151,17 +151,15 @@ public class ConnectionProcessor implements Runnable {
         L.v("[Connection Processor] Has picturePath [" + hasPicturePath + "]");
 
         if (hasPicturePath) {
-            L.v("[Connection Processor] Has picturePath,  if (hasPicturePath(requestData))");
-
             String decodedRequestData = UtilsNetworking.urlDecodeString(requestData);
             String checksum = UtilsNetworking.sha256Hash(decodedRequestData + requestInfoProvider_.getRequestSalt()); // add checksum with url decoded version of request data
             decodedRequestData += "&checksum256=" + checksum;
             approximateDateSize += decodedRequestData.length(); // add request data to the estimated data size
 
-            String boundary = Long.toHexString(System.currentTimeMillis());
+            String boundary = Long.toHexString(System.currentTimeMillis());// Just generate some unique random value as the boundary
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);// Line separator required by multipart/form-data.
 
             OutputStream output = conn.getOutputStream(); // setup streams for form-data writing
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
