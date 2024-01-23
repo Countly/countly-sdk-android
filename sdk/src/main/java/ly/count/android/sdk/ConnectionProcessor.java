@@ -111,8 +111,8 @@ public class ConnectionProcessor implements Runnable {
                 String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
                 requestData += "&checksum256=" + checksum;
                 L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+                approximateDateSize += requestData.length(); // add request data to the estimated data size
             }
-            approximateDateSize += requestData.length(); // add request data to the estimated data size
         } else {
             urlStr += "?" + requestData;
             String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
@@ -151,8 +151,10 @@ public class ConnectionProcessor implements Runnable {
         if (hasPicturePath) {
             L.v("[Connection Processor] Has picturePath,  if (hasPicturePath(requestData))");
 
-            String checksum = UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt()); // add checksum with url decoded version of request data
-            requestData += "&checksum256=" + checksum;
+            String decodedRequestData = UtilsNetworking.urlDecodeString(requestData);
+            String checksum = UtilsNetworking.sha256Hash(decodedRequestData + requestInfoProvider_.getRequestSalt()); // add checksum with url decoded version of request data
+            decodedRequestData += "&checksum256=" + checksum;
+            approximateDateSize += decodedRequestData.length(); // add request data to the estimated data size
 
             String boundary = Long.toHexString(System.currentTimeMillis());
             conn.setDoOutput(true);
@@ -163,16 +165,16 @@ public class ConnectionProcessor implements Runnable {
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 
             // Send binary file.
-            String[] map = requestData.split("&"); // split request data by key value pairs
+            String[] map = decodedRequestData.split("&"); // split request data by key value pairs
             for (String key : map) {
                 String[] kv = key.split("=");
-                String value = UtilsNetworking.urlDecodeString(kv[1]);
                 if (kv[0].equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
-                    File binaryFile = new File(value); // add picture to the form-data
+                    File binaryFile = new File(kv[1]); // add picture to the form-data
                     approximateDateSize += addMultipart(output, writer, boundary, URLConnection.guessContentTypeFromName(binaryFile.getName()), "file", binaryFile.getName(), binaryFile);
-                } else {  // ad key value pair as form-data entry and add decoded value of it, estimated data size not added because it is already added above in requestData.lenghth()
-                    addMultipart(output, writer, boundary, "text/plain", kv[0], UtilsNetworking.urlDecodeString(kv[1]), null);
                 }
+
+                // ad key value pair as form-data entry and add decoded value of it, estimated data size not added because it is already added above in requestData.lenghth()
+                addMultipart(output, writer, boundary, "text/plain", kv[0], kv[1], null);
             }
 
             // End of multipart/form-data.
