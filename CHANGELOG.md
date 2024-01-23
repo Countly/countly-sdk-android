@@ -7,8 +7,8 @@
     * "triggerBackground"
     * "triggerForeground"
 * Deprecated following functions from "CountlyConfig":
-    * "setRecordAppStartTime(boolean recordAppStartTime)" instead use "apm.enableAppStartTimeTracking()"
-    * "setAppStartTimestampOverride(long appStartTimestampOverride)" instead use "apm.setAppStartTimestampOverride(long appStartTimestampOverride)"
+    * "setRecordAppStartTime(recordAppStartTime)" instead use "apm.enableAppStartTimeTracking()"
+    * "setAppStartTimestampOverride(appStartTimestampOverride)" instead use "apm.setAppStartTimestampOverride(appStartTimestampOverride)"
     * "enableManualAppLoadedTrigger()" instead use "apm.enableManualAppLoadedTrigger()"
     * "enableManualForegroundBackgroundTriggerAPM()" will be deleted in the future
 
