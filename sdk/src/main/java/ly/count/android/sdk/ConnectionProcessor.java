@@ -165,15 +165,15 @@ public class ConnectionProcessor implements Runnable {
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 
             // Send binary file.
-            String[] map = decodedRequestData.split("&"); // split request data by key value pairs
-            for (String key : map) {
+            String[] params = decodedRequestData.split("&"); // split request data by key value pairs
+            for (String key : params) {
                 String[] kv = key.split("=");
                 if (kv[0].equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
                     File binaryFile = new File(kv[1]); // add picture to the form-data
                     approximateDateSize += addMultipart(output, writer, boundary, URLConnection.guessContentTypeFromName(binaryFile.getName()), "file", binaryFile.getName(), binaryFile);
                 }
 
-                // ad key value pair as form-data entry and add decoded value of it, estimated data size not added because it is already added above in requestData.lenghth()
+                // add key value pair as form-data entry and add decoded value of it, estimated data size not added because it is already added above in requestData.lenghth()
                 addMultipart(output, writer, boundary, "text/plain", kv[0], kv[1], null);
             }
 
