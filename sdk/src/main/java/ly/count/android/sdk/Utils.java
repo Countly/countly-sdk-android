@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -464,5 +465,55 @@ public class Utils {
 
         // if startStr does not exist just return empty string[]
         return new String[] { data, null };
+    }
+
+    /**
+     * todo, test this
+     *
+     * @param request
+     * @return
+     */
+    public static Map<String, String> splitIntoParams(String request) {
+        Map<String, String> params = new HashMap<>();
+
+        if (request == null || request.isEmpty()) {
+            return params;
+        }
+
+        String[] entries = request.split("&");
+
+        for (String entry : entries) {
+            String[] parts = entry.split("=");
+            if (parts.length != 2) {
+                Countly.sharedInstance().L.w("splitIntoParams, Param entry can't be split: [" + entry + "]");
+                continue;
+            }
+
+            params.put(parts[0], parts[1]);
+        }
+
+        return params;
+    }
+
+    /**
+     * todo, test this
+     *
+     * @param params
+     * @return
+     */
+    public static String combineParamsIntoRequest(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder(100);
+
+        for (Map.Entry<String, String> pair : params.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append("&");
+            }
+
+            sb.append(pair.getKey());
+            sb.append("=");
+            sb.append(pair.getValue());
+        }
+
+        return sb.toString();
     }
 }

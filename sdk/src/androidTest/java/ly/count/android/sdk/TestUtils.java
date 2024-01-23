@@ -498,4 +498,9 @@ public class TestUtils {
         Assert.assertEquals(current, mv.getCurrentViewId());
         Assert.assertEquals(previous, mv.getPreviousViewId());
     }
+
+    public static void assertQueueSizes(int rqSize, int eqSize, CountlyStore cs) {
+        Assert.assertEquals(rqSize, cs.getRequests().length);
+        Assert.assertEquals(eqSize, cs.getEventQueueSize());
+    }
 }

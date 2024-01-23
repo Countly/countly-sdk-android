@@ -9,7 +9,7 @@ public class HealthCheckCounter implements HealthTracker {
     public long countLogError = 0;
     public int statusCode = -1;
     public String errorMessage = "";
-
+    
     final String keyLogError = "LErr";
     final String keyLogWarning = "LWar";
     final String keyStatusCode = "RStatC";

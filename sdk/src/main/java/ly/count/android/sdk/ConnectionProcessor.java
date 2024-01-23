@@ -347,10 +347,10 @@ public class ConnectionProcessor implements Runnable {
             final String newId;
 
             if (deviceIdOverride) {
-                // if the override tag is used, it means that the device_id will be changed
+                // if the override tag is used, it means that the device_id will be changed after this request
                 // to finish the session of the previous device_id, we have cache it into the request
                 // this is indicated by having the "override_id" tag. This just means that we
-                // don't use the id provided in the deviceId variable as this might have changed already.
+                // don't use the id provided in the deviceId variable (as set in the SDK) as this might have changed already.
 
                 eventData = eventData.replace("&override_id=", "&device_id=");
                 newId = null;

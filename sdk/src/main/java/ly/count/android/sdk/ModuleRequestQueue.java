@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONObject;
 
 public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
@@ -27,11 +26,11 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     static final String SDK_VERSION_KEY = "sdk_version";
     static final String SDK_NAME_KEY = "sdk_name";
     static final String DEVICE_ID_KEY = "device_id";
-    static final String OVVERIDE_KEY = "override_id";
+    static final String OVERRIDE_KEY = "override_id";
     static final String OLD_DEVICE_ID_KEY = "old_device_id";
     static final String CHECKSUM_KEY = "checksum";
     static final String CHECKSUM_256_KEY = "checksum256";
-    String[] preDefinedKeys = new String[] { APP_KEY_KEY, HOUR_KEY, DOW_KEY, TZ_KEY, SDK_VERSION_KEY, SDK_NAME_KEY, DEVICE_ID_KEY, OVVERIDE_KEY, OLD_DEVICE_ID_KEY, CHECKSUM_KEY, CHECKSUM_256_KEY };
+    String[] preDefinedKeys = new String[] { APP_KEY_KEY, HOUR_KEY, DOW_KEY, TZ_KEY, SDK_VERSION_KEY, SDK_NAME_KEY, DEVICE_ID_KEY, OVERRIDE_KEY, OLD_DEVICE_ID_KEY, CHECKSUM_KEY, CHECKSUM_256_KEY };
 
     ModuleRequestQueue(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
