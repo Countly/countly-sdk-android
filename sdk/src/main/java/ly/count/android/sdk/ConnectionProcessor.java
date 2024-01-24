@@ -151,11 +151,6 @@ public class ConnectionProcessor implements Runnable {
         L.v("[Connection Processor] Has picturePath [" + hasPicturePath + "]");
 
         if (hasPicturePath) {
-            String decodedRequestData = UtilsNetworking.urlDecodeString(requestData);
-            String checksum = UtilsNetworking.sha256Hash(decodedRequestData + requestInfoProvider_.getRequestSalt()); // add checksum with url decoded version of request data
-            decodedRequestData += "&checksum256=" + checksum;
-            approximateDateSize += decodedRequestData.length(); // add request data to the estimated data size
-
             String boundary = Long.toHexString(System.currentTimeMillis());// Just generate some unique random value as the boundary
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
@@ -164,19 +159,22 @@ public class ConnectionProcessor implements Runnable {
             OutputStream output = conn.getOutputStream(); // setup streams for form-data writing
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 
-            // Send binary file.
-            String[] params = decodedRequestData.split("&"); // split request data by key value pairs
+            String[] params = requestData.split("&"); // split request data by key value pairs
             for (String key : params) {
                 String[] kv = key.split("=");
-                writer.append("--").append(boundary).append(CRLF);
                 approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
 
-                if (kv[0].equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
-                    approximateDateSize += addFileMultipart(output, writer, kv[1]);
+                String param = UtilsNetworking.urlDecodeString(kv[0]);
+                String value = UtilsNetworking.urlDecodeString(kv[1]);
+                if (param.equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
+                    approximateDateSize += addFileMultipart(output, writer, value, boundary);
                 }
 
-                approximateDateSize += addTextMultipart(writer, kv[0], kv[1]);
+                approximateDateSize += addTextMultipart(writer, param, value, boundary);
             }
+
+            approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
+            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt()), boundary);
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
@@ -230,10 +228,11 @@ public class ConnectionProcessor implements Runnable {
      * @param value of the entry
      * @return size of the entry
      */
-    int addTextMultipart(PrintWriter writer, final String name, final String value) {
+    int addTextMultipart(PrintWriter writer, final String name, final String value, final String boundary) {
+        writer.append("--").append(boundary).append(CRLF);
         writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(CRLF);
         writer.append(CRLF).append(value).append(CRLF).flush();
-        return 45 + name.length() + value.length(); // 45 is the length of the static parts of the entry
+        return 49 + boundary.length() + name.length() + value.length(); // 45 is the length of the static parts of the entry
     }
 
     /**
@@ -245,10 +244,11 @@ public class ConnectionProcessor implements Runnable {
      * @return size of the entry
      * @throws IOException if there is an error while reading the file
      */
-    int addFileMultipart(OutputStream output, PrintWriter writer, final String filePath) throws IOException {
+    int addFileMultipart(OutputStream output, PrintWriter writer, final String filePath, final String boundary) throws IOException {
         if (Utils.isEmpty(filePath)) {
             return 0;
         }
+        writer.append("--").append(boundary).append(CRLF);
         File file = new File(filePath);
         String contentType = URLConnection.guessContentTypeFromName(file.getName());
         int approximateDataSize = 0;
@@ -271,9 +271,10 @@ public class ConnectionProcessor implements Runnable {
                 }
             }
         }
+
         output.flush();
         writer.append(CRLF).flush();
-        return 78 + approximateDataSize + file.getName().length() + contentType.length(); // 78 is the length of the static parts of the entry
+        return 82 + boundary.length() + approximateDataSize + file.getName().length() + contentType.length(); // 78 is the length of the static parts of the entry
     }
 
     @Override
