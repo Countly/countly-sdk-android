@@ -164,7 +164,7 @@ public class ConnectionProcessor implements Runnable {
                 String[] kv = key.split("=");
                 approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
 
-                String param = UtilsNetworking.urlDecodeString(kv[0]);
+                String param = kv[0];
                 String value = UtilsNetworking.urlDecodeString(kv[1]);
                 if (param.equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
                     approximateDateSize += addFileMultipart(output, writer, value, boundary);
