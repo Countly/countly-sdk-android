@@ -18,7 +18,13 @@ public class ActivityExampleAPM extends AppCompatActivity {
     int[] failureCodes = new int[] { 400, 402, 405, 408, 500, 501, 502, 505 };
 
     Random rnd = new Random();
-    
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_example_apm);
+    }
+
     public void onClickStartTrace_1(View v) {
         Countly.sharedInstance().apm().startTrace("Some_trace_key_1");
     }
