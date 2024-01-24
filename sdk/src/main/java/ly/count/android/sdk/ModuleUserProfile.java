@@ -3,8 +3,6 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -49,37 +47,6 @@ public class ModuleUserProfile extends ModuleBase {
         L.v("[ModuleUserProfile] Initialising");
 
         userProfileInterface = new UserProfile();
-    }
-
-    //todo refactor these calls after UserData.java has been removed
-
-    //for url query parsing
-    //this looks to be for internal use only
-    //used when performing requests to get the set picture path
-    static String getPicturePathFromQuery(URL url) {
-        String query = url.getQuery();
-
-        if (query == null) {
-            //assume no query part in url
-            return "";
-        }
-
-        String[] pairs = query.split("&");
-        String ret = "";
-        if (url.getQuery().contains(PICTURE_PATH_KEY)) {
-            for (String pair : pairs) {
-                int idx = pair.indexOf("=");
-                if (pair.substring(0, idx).equals(PICTURE_PATH_KEY)) {
-                    try {
-                        ret = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        ret = "";
-                    }
-                    break;
-                }
-            }
-        }
-        return ret;
     }
 
     /**

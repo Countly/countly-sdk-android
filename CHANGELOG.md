@@ -2,6 +2,8 @@
 * ! Minor breaking change ! Tracking of foreground and background reporting for APM is disabled by default
   
 * Added a way to enable tracking of foreground and background reporting for APM
+
+* Fixed a bug where sending a local picture with checksum was not possible
   
 * Deprecated the following calls from "Apm" interface:
     * "triggerBackground"
