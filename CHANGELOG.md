@@ -1,4 +1,4 @@
-## XX.X.X
+## 24.1.0
 * ! Minor breaking change ! Tracking of foreground and background reporting for APM is disabled by default
   
 * Added a way to enable tracking of foreground and background reporting for APM
