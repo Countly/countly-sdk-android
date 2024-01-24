@@ -153,9 +153,9 @@ public class ConnectionProcessor implements Runnable {
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);// Line separator required by multipart/form-data.
 
-            OutputStream output = conn.getOutputStream();
+            OutputStream output = conn.getOutputStream(); // setup streams for form-data writing
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
-            
+
             File binaryFile = new File(picturePath);
 
             // Send binary file.
