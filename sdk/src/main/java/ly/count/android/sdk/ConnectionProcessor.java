@@ -168,17 +168,19 @@ public class ConnectionProcessor implements Runnable {
             String[] params = decodedRequestData.split("&"); // split request data by key value pairs
             for (String key : params) {
                 String[] kv = key.split("=");
+                writer.append("--").append(boundary).append(CRLF);
+                approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
+
                 if (kv[0].equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
-                    File binaryFile = new File(kv[1]); // add picture to the form-data
-                    approximateDateSize += addMultipart(output, writer, boundary, URLConnection.guessContentTypeFromName(binaryFile.getName()), "file", binaryFile.getName(), binaryFile);
+                    approximateDateSize += addFileMultipart(output, writer, kv[1]);
                 }
 
-                // add key value pair as form-data entry and add decoded value of it, estimated data size not added because it is already added above in requestData.lenghth()
-                addMultipart(output, writer, boundary, "text/plain", kv[0], kv[1], null);
+                approximateDateSize += addTextMultipart(writer, kv[0], kv[1]);
             }
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
+            approximateDateSize += 6 + boundary.length(); // 6 is the length of the static parts of the entry
         } else {
             if (usingHttpPost) {
                 conn.setDoOutput(true);
@@ -221,41 +223,57 @@ public class ConnectionProcessor implements Runnable {
     }
 
     /**
-     * Adds a form-data entry to the stream
+     * Return the size of the text multipart entry
      *
-     * @return estimated data size for the file entries
+     * @param writer to write to
+     * @param name of the entry
+     * @param value of the entry
+     * @return size of the entry
      */
-    int addMultipart(OutputStream output, PrintWriter writer, final String boundary, final String contentType, final String name, final String value, final File file) throws IOException {
+    int addTextMultipart(PrintWriter writer, final String name, final String value) {
+        writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(CRLF);
+        writer.append(CRLF).append(value).append(CRLF).flush();
+        return 45 + name.length() + value.length(); // 45 is the length of the static parts of the entry
+    }
+
+    /**
+     * Return the size of the file multipart entry
+     *
+     * @param output stream to write to
+     * @param writer to write to
+     * @param filePath of the file
+     * @return size of the entry
+     * @throws IOException if there is an error while reading the file
+     */
+    int addFileMultipart(OutputStream output, PrintWriter writer, final String filePath) throws IOException {
+        if (Utils.isEmpty(filePath)) {
+            return 0;
+        }
+        File file = new File(filePath);
+        String contentType = URLConnection.guessContentTypeFromName(file.getName());
         int approximateDataSize = 0;
-        writer.append("--").append(boundary).append(CRLF);
-        if (file != null) {
-            // entry for file
-            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"; filename=\"").append(value).append("\"").append(CRLF);
-            writer.append("Content-Type: ").append(contentType).append(CRLF);
-            writer.append(CRLF).flush();
-            try (FileInputStream fileInputStream = new FileInputStream(file)) {
-                // write file to the buffer and stream
-                byte[] buffer = new byte[1024];
-                int len;
-                try {
-                    while ((len = fileInputStream.read(buffer)) != -1) {
-                        output.write(buffer, 0, len);
-                        approximateDataSize += len;
-                    }
-                } catch (IOException ex) {
-                    for (StackTraceElement e : ex.getStackTrace()) {
-                        L.e("[ConnectionProcessor] addMultipart, error: " + e);
-                    }
+
+        writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(file.getName()).append("\"").append(CRLF);
+        writer.append("Content-Type: ").append(contentType).append(CRLF);
+        writer.append(CRLF).flush();
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            // write file to the buffer and stream
+            byte[] buffer = new byte[1024];
+            int len;
+            try {
+                while ((len = fileInputStream.read(buffer)) != -1) {
+                    output.write(buffer, 0, len);
+                    approximateDataSize += len;
+                }
+            } catch (IOException ex) {
+                for (StackTraceElement e : ex.getStackTrace()) {
+                    L.e("[ConnectionProcessor] addMultipart, error: " + e);
                 }
             }
-            output.flush();
-            writer.append(CRLF).flush();
-        } else {
-            writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(CRLF);
-            writer.append(CRLF).append(value).append(CRLF).flush();
         }
-
-        return approximateDataSize;
+        output.flush();
+        writer.append(CRLF).flush();
+        return 78 + approximateDataSize + file.getName().length() + contentType.length(); // 78 is the length of the static parts of the entry
     }
 
     @Override
