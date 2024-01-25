@@ -30,6 +30,8 @@ public class ModuleAPM extends ModuleBase {
     boolean trackForegroundBackground;
     boolean manualOverrideInForeground = false;//app starts in background
 
+    boolean appStartRecorded = false;
+
     ModuleAPM(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleAPM] Initialising");
@@ -336,17 +338,27 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void recordAppStart(long appLoadedTimestamp) {
-        L.d("[ModuleAPM] Calling 'recordAppStart'");
-        if (_cly.config_.apm.trackAppStartTime) {
-            long durationMs = appLoadedTimestamp - appStartTimestamp;
-
-            if (durationMs <= 0) {
-                L.e("[ModuleAPM] Encountered negative app start duration:[" + durationMs + "] dropping app start duration request");
-                return;
-            }
-
-            requestQueueProvider.sendAPMAppStart(durationMs, appStartTimestamp, appLoadedTimestamp);
+        if (!_cly.config_.apm.trackAppStartTime) {
+            L.d("[ModuleAPM] Calling 'recordAppStart', call will be ignored due to app start tracking not being enabled");
+            return;
         }
+
+        if (appStartRecorded) {
+            L.w("[ModuleAPM] Calling 'recordAppStart', call will be ignored due to it already being registered before");
+            return;
+        }
+
+        L.d("[ModuleAPM] Calling 'recordAppStart' [" + appLoadedTimestamp + "] [" + appStartTimestamp + "]");
+
+        long durationMs = appLoadedTimestamp - appStartTimestamp;
+
+        if (durationMs <= 0) {
+            L.e("[ModuleAPM] Encountered negative app start duration:[" + durationMs + "] dropping app start duration request");
+            return;
+        }
+
+        requestQueueProvider.sendAPMAppStart(durationMs, appStartTimestamp, appLoadedTimestamp);
+        appStartRecorded = true;
     }
 
     void calculateAppRunningTimes(int previousCount, int newCount) {
@@ -467,6 +479,11 @@ public class ModuleAPM extends ModuleBase {
         // we only do this adjustment if we track it automatically
         if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.lifecycleStateAtLeastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
+
+            if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger) {
+                long currentTimestamp = System.currentTimeMillis();
+                recordAppStart(currentTimestamp);
+            }
 
             calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
 
