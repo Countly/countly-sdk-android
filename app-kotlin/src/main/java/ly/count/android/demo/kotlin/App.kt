@@ -1,6 +1,7 @@
 package ly.count.android.demo.kotlin
 
 import android.app.Application
+import android.util.Log
 import ly.count.android.sdk.Countly
 import ly.count.android.sdk.CountlyConfig
 
@@ -12,7 +13,7 @@ class App : Application() {
   override fun onCreate() {
 
     if (COUNTLY_SERVER_URL == "https://your.server.ly" || COUNTLY_APP_KEY == "YOUR_APP_KEY") {
-      println("Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY")
+      Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY")
       return
     }
 

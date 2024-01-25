@@ -45,7 +45,7 @@ public class App extends Application {
         super.onCreate();
 
         if (COUNTLY_SERVER_URL.equals("https://your.server.ly") || COUNTLY_APP_KEY.equals("YOUR_APP_KEY")) {
-            System.err.println("Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
+            Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
             return;
         }
 
