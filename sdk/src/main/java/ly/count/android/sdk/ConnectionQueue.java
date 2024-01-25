@@ -177,6 +177,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] beginSession");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            L.d("[Connection Queue] request ignored, 'sessions' consent not given");
             return;
         }
 
@@ -209,6 +210,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] enrollToKeys");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+            L.d("[Connection Queue] request ignored, 'remoteConfig' consent not given");
             return;
         }
 
@@ -233,6 +235,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] exitForKeys");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
+            L.d("[Connection Queue] request ignored, 'remoteConfig' consent not given");
             return;
         }
 
@@ -261,6 +264,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] updateSession");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            L.d("[Connection Queue] request ignored, 'sessions' consent not given");
             return;
         }
 
@@ -341,6 +345,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] endSession");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            L.d("[Connection Queue] request ignored, 'sessions' consent not given");
             return;
         }
 
@@ -390,7 +395,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendUserData");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-            L.d("[Connection Queue] request ignored, 'user' consent not given");
+            L.d("[Connection Queue] request ignored, 'users' consent not given");
             return;
         }
 
@@ -646,7 +651,7 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[Connection Queue] sendAPMAppStart");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.apm)) {
-            L.d("[Connection Queue] request ignored, consent not given");
+            L.d("[Connection Queue] request ignored, 'apm' consent not given");
             return;
         }
         //https://abc.count.ly/i?app_key=xyz&device_id=pts911&apm={"type":"device","name":"app_start","apm_metrics":{"duration": 15000}, "stz": 1584698900, "etz": 1584699900}
