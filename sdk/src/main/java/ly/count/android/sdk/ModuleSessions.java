@@ -121,7 +121,7 @@ public class ModuleSessions extends ModuleBase {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if (newConsent) {
                 //if consent was just given and manual sessions sessions are not enabled, start a session if we are in the foreground
-                if (!manualSessionControlEnabled && _cly.lifecycleStateAtLeastStarted()) {
+                if (!manualSessionControlEnabled && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
                     beginSessionInternal();
                 }
             } else {
@@ -145,7 +145,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (!manualSessionControlEnabled && _cly.lifecycleStateAtLeastStarted()) {
+        if (!manualSessionControlEnabled && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             //start a session if we initialized in the foreground
             beginSessionInternal();
         }

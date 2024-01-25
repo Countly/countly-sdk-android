@@ -37,7 +37,7 @@ public class ModuleAPMTests {
     }
 
     @Test
-    public void customMetricFilter_invlidFields() {
+    public void customMetricFilter_invalidFields() {
         Map<String, Integer> customMetrics = new HashMap<>();
 
         mCountly.moduleAPM.removeReservedInvalidKeys(customMetrics);

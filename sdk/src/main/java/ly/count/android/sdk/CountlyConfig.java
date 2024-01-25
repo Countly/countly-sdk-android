@@ -55,6 +55,8 @@ public class CountlyConfig {
 
     protected Map<String, Object> providedUserProperties = null;
 
+    protected Countly.LifecycleObserver lifecycleObserver = null;
+
     //used to deliver this object to connection queue
     //protected DeviceId deviceIdInstance = null;
 

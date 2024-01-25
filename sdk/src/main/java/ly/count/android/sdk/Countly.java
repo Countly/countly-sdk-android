@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.1.0-RC2";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.1.0-RC3";
 
     /**
      * Used as request meta data on every request
@@ -103,6 +103,10 @@ public class Countly {
 
     protected static String[] publicKeyPinCertificates;
     protected static String[] certificatePinCertificates;
+
+    interface LifecycleObserver {
+        boolean LifeCycleAtleastStarted();
+    }
 
     /**
      * Enum used in Countly.initMessaging() method which controls what kind of
@@ -499,6 +503,14 @@ public class Countly {
                 };
             }
 
+            if (config.lifecycleObserver == null) {
+                config.lifecycleObserver = new LifecycleObserver() {
+                    @Override public boolean LifeCycleAtleastStarted() {
+                        return lifecycleStateAtLeastStartedInternal();
+                    }
+                };
+            }
+
             if (config.metricProviderOverride != null) {
                 L.d("[Init] Custom metric provider was provided");
             }
@@ -783,7 +795,7 @@ public class Countly {
                 L.d("[Countly] Global activity listeners not registred due to no Application class");
             }
 
-            if (lifecycleStateAtLeastStarted()) {
+            if (config_.lifecycleObserver.LifeCycleAtleastStarted()) {
                 L.d("[Countly] SDK detects that the app is in the foreground. Increasing the activity counter.");
                 activityCount_++;
             }
@@ -816,7 +828,7 @@ public class Countly {
         return sdkIsInitialised;
     }
 
-    boolean lifecycleStateAtLeastStarted() {
+    boolean lifecycleStateAtLeastStartedInternal() {
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 

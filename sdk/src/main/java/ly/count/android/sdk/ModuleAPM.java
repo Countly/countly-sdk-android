@@ -431,7 +431,12 @@ public class ModuleAPM extends ModuleBase {
      */
     @Override
     void callbackOnActivityResumed(Activity activity) {
-        L.d("[Apm] Calling 'callbackOnActivityResumed', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
+        L.d("[Apm] Calling 'callbackOnActivityResumed'");
+    }
+
+    @Override
+    void onActivityStarted(Activity activity, int updatedActivityCount) {
+        L.d("[Apm] Calling 'onActivityStarted', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
 
         long currentTimestamp = System.currentTimeMillis();
 
@@ -476,18 +481,23 @@ public class ModuleAPM extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        // we only do this adjustment if we track it automatically
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.lifecycleStateAtLeastStarted()) {
+        if (_cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
 
-            if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger) {
-                long currentTimestamp = System.currentTimeMillis();
-                recordAppStart(currentTimestamp);
-            }
-
-            calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
-
             activitiesOpen++;
+        }
+
+        // we only do this adjustment if we track it automatically
+        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+            L.d("[ModuleAPM] SDK detects that the app is in the foreground. Starting to track foreground time");
+
+            calculateAppRunningTimes(activitiesOpen - 1, activitiesOpen);
+        }
+
+        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+            L.d("[ModuleAPM] SDK detects that the app is in the foreground. Recording automatic app start duration");
+            long currentTimestamp = System.currentTimeMillis();
+            recordAppStart(currentTimestamp);
         }
     }
 
