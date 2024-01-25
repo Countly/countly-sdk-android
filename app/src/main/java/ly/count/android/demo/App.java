@@ -34,8 +34,8 @@ import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_BROADCAST_PERMI
 
 public class App extends Application {
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
-    final String COUNTLY_SERVER_URL = "YOUR_SERVER";
-    final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+    final static String COUNTLY_SERVER_URL = "https://your.server.ly";
+    final static String COUNTLY_APP_KEY = "YOUR_APP_KEY";
     static long applicationStartTimestamp = System.currentTimeMillis();
 
     private BroadcastReceiver messageReceiver;
@@ -43,6 +43,11 @@ public class App extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        if (COUNTLY_SERVER_URL.equals("https://your.server.ly") || COUNTLY_APP_KEY.equals("YOUR_APP_KEY")) {
+            System.err.println("Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
+            return;
+        }
 
         if (false) {
             //setting up strict mode for additional validation
