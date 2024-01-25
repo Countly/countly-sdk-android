@@ -53,6 +53,7 @@ public class ConnectionProcessor implements Runnable {
 
     private static final String CRLF = "\r\n";
     private static final String charset = "UTF-8";
+
     private final StorageProvider storageProvider_;
     private final DeviceIdProvider deviceIdProvider_;
     final ConfigurationProvider configProvider_;
@@ -98,15 +99,20 @@ public class ConnectionProcessor implements Runnable {
 
         // determine whether or not request has a binary image file, if it has request will be sent as POST request
         boolean hasPicturePath = requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
-        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced());
+        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced()) || hasPicturePath;
 
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
+
         if (usingHttpPost) {
-            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
-            requestData += "&checksum256=" + checksum;
-            approximateDateSize += requestData.length(); // add request data to the estimated data size
-            L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+            // for binary images, checksum will be calculated without url encoded value of the requestData
+            // because they sent as form-data and server calculates it that way
+            if (!hasPicturePath) {
+                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+                requestData += "&checksum256=" + checksum;
+                L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+                approximateDateSize += requestData.length(); // add request data to the estimated data size
+            }
         } else {
             urlStr += "?" + requestData;
             String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
@@ -142,45 +148,37 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        String picturePath = ModuleUserProfile.getPicturePathFromQuery(url);
         L.v("[Connection Processor] Has picturePath [" + hasPicturePath + "]");
-        //Log.v(Countly.TAG, "Used url: " + urlStr);
-        if (!picturePath.equals("")) {
-            //Uploading files:
-            //http://stackoverflow.com/questions/2793150/how-to-use-java-net-urlconnection-to-fire-and-handle-http-requests
 
+        if (hasPicturePath) {
             String boundary = Long.toHexString(System.currentTimeMillis());// Just generate some unique random value as the boundary
             conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);// Line separator required by multipart/form-data.
 
             OutputStream output = conn.getOutputStream(); // setup streams for form-data writing
             PrintWriter writer = new PrintWriter(new OutputStreamWriter(output, charset), true);
 
-            File binaryFile = new File(picturePath);
+            String[] params = requestData.split("&"); // split request data by key value pairs
+            for (String key : params) {
+                String[] kv = key.split("=");
+                approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
 
-            // Send binary file.
-            writer.append("--").append(boundary).append(CRLF);
-            writer.append("Content-Disposition: form-data; name=\"binaryFile\"; filename=\"").append(binaryFile.getName()).append("\"").append(CRLF);
-            writer.append("Content-Type: ").append(URLConnection.guessContentTypeFromName(binaryFile.getName())).append(CRLF);
-            writer.append("Content-Transfer-Encoding: binary").append(CRLF);
-            writer.append(CRLF).flush();
-            FileInputStream fileInputStream = new FileInputStream(binaryFile);
-            byte[] buffer = new byte[1024];
-            int len;
-            try {
-                while ((len = fileInputStream.read(buffer)) != -1) {
-                    output.write(buffer, 0, len);
-                    approximateDateSize += len;
+                String param = kv[0];
+                String value = UtilsNetworking.urlDecodeString(kv[1]);
+                if (param.equals(ModuleUserProfile.PICTURE_PATH_KEY)) {
+                    approximateDateSize += addFileMultipart(output, writer, value, boundary);
                 }
-            } catch (IOException ex) {
-                ex.printStackTrace();
+
+                approximateDateSize += addTextMultipart(writer, param, value, boundary);
             }
-            output.flush(); // Important before continuing with writer!
-            writer.append(CRLF).flush(); // CRLF is important! It indicates end of boundary.
-            fileInputStream.close();
+
+            approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
+            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt()), boundary);
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
+            approximateDateSize += 6 + boundary.length(); // 6 is the length of the static parts of the entry
         } else {
             if (usingHttpPost) {
                 conn.setDoOutput(true);
@@ -220,6 +218,63 @@ public class ConnectionProcessor implements Runnable {
         L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
             + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
+    }
+
+    /**
+     * Return the size of the text multipart entry
+     *
+     * @param writer to write to
+     * @param name of the entry
+     * @param value of the entry
+     * @return size of the entry
+     */
+    int addTextMultipart(PrintWriter writer, final String name, final String value, final String boundary) {
+        writer.append("--").append(boundary).append(CRLF);
+        writer.append("Content-Disposition: form-data; name=\"").append(name).append("\"").append(CRLF);
+        writer.append(CRLF).append(value).append(CRLF).flush();
+        return 49 + boundary.length() + name.length() + value.length(); // 45 is the length of the static parts of the entry
+    }
+
+    /**
+     * Return the size of the file multipart entry
+     *
+     * @param output stream to write to
+     * @param writer to write to
+     * @param filePath of the file
+     * @return size of the entry
+     * @throws IOException if there is an error while reading the file
+     */
+    int addFileMultipart(OutputStream output, PrintWriter writer, final String filePath, final String boundary) throws IOException {
+        if (Utils.isEmpty(filePath)) {
+            return 0;
+        }
+        writer.append("--").append(boundary).append(CRLF);
+        File file = new File(filePath);
+        String contentType = URLConnection.guessContentTypeFromName(file.getName());
+        int approximateDataSize = 0;
+
+        writer.append("Content-Disposition: form-data; name=\"file\"; filename=\"").append(file.getName()).append("\"").append(CRLF);
+        writer.append("Content-Type: ").append(contentType).append(CRLF);
+        writer.append(CRLF).flush();
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            // write file to the buffer and stream
+            byte[] buffer = new byte[1024];
+            int len;
+            try {
+                while ((len = fileInputStream.read(buffer)) != -1) {
+                    output.write(buffer, 0, len);
+                    approximateDataSize += len;
+                }
+            } catch (IOException ex) {
+                for (StackTraceElement e : ex.getStackTrace()) {
+                    L.e("[ConnectionProcessor] addMultipart, error: " + e);
+                }
+            }
+        }
+
+        output.flush();
+        writer.append(CRLF).flush();
+        return 82 + boundary.length() + approximateDataSize + file.getName().length() + contentType.length(); // 78 is the length of the static parts of the entry
     }
 
     @Override
