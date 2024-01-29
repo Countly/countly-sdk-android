@@ -1,17 +1,24 @@
 package ly.count.android.demo.crash;
 
 import android.app.Application;
+import android.util.Log;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdknative.CountlyNative;
 
 public class App extends Application {
 
-    final String COUNTLY_SERVER_URL = "https://try.count.ly";
-    final String COUNTLY_APP_KEY = "xxxxxxx";
+    final String COUNTLY_SERVER_URL = "https://your.server.ly";
+    final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
 
     @Override public void onCreate() {
         super.onCreate();
+        
+        if (COUNTLY_SERVER_URL.equals("https://your.server.ly") || COUNTLY_APP_KEY.equals("YOUR_APP_KEY")) {
+            Log.e("CountlyCrashDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
+            return;
+        }
+
         Countly.applicationOnCreate();
 
         CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)).setDeviceId("4432")
