@@ -52,4 +52,6 @@ interface MetricProvider {
     String isOnline(Context context);
 
     String isMuted(Context context);
+
+    String hasHinge(Context context);
 }
