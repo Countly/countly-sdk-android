@@ -31,10 +31,7 @@ import android.view.WindowManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import org.json.JSONException;
@@ -46,10 +43,7 @@ import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -233,6 +227,7 @@ public class DeviceInfoTests {
         json.put("_locale", regularDeviceInfo.mp.getLocale());
         json.put("_app_version", regularDeviceInfo.mp.getAppVersion(getContext()));
         json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
+        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(getContext()));
         json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
 
         String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), null), "UTF-8");
@@ -260,6 +255,7 @@ public class DeviceInfoTests {
         json.put("_app_version", regularDeviceInfo.mp.getAppVersion(getContext()));
         json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
         json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
+        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(getContext()));
         json.put("123", "bb");
         json.put("456", "cc");
         json.put("Test", "aa");
@@ -292,6 +288,7 @@ public class DeviceInfoTests {
         json.put("_locale", "d4");
         json.put("_app_version", "d5");
         json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
+        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(getContext()));
         json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
         json.put("asd", "123");
 
