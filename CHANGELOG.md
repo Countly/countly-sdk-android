@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Added a new metric for detecting whether or not a device has a hinge
+
 ## 24.1.0
 * ! Minor breaking change ! Tracking of foreground and background reporting for APM is now disabled by default
   

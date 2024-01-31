@@ -440,8 +440,7 @@ class DeviceInfo {
                         Intent batteryIntent;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED), null, null, Context.RECEIVER_NOT_EXPORTED);
-                        }
-                        else {
+                        } else {
                             batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
                         }
                         if (batteryIntent != null) {
@@ -539,6 +538,21 @@ class DeviceInfo {
                         return "false";
                     }
                 }
+
+                /**
+                 * Check if device is foldable
+                 * requires API level 30
+                 *
+                 * @param context to use
+                 * @return true if device is foldable
+                 */
+                @Override
+                public String hasHinge(Context context) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE) + "";
+                    }
+                    return "false";
+                }
             };
         }
     }
@@ -561,7 +575,8 @@ class DeviceInfo {
             "_os_version", mp.getOSVersion(),
             "_resolution", mp.getResolution(context),
             "_app_version", mp.getAppVersion(context),
-            "_manufacturer", mp.getManufacturer());
+            "_manufacturer", mp.getManufacturer(),
+            "_has_hinge", mp.hasHinge(context));
 
         if (metricOverride != null) {
             try {
@@ -582,6 +597,9 @@ class DeviceInfo {
                 }
                 if (metricOverride.containsKey("_manufacturer")) {
                     json.put("_manufacturer", metricOverride.get("_manufacturer"));
+                }
+                if (metricOverride.containsKey("_has_hinge")) {
+                    json.put("_has_hinge", metricOverride.get("_has_hinge"));
                 }
             } catch (Exception ex) {
                 Countly.sharedInstance().L.e("[DeviceInfo] SDK encountered failure while trying to apply metric override, " + ex.toString());
