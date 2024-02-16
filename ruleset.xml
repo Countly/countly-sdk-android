@@ -93,7 +93,9 @@
         </properties>
     </rule>
     <rule ref="category/java/codestyle.xml/MDBAndSessionBeanNamingConvention" />
-    <!--rule ref="category/java/codestyle.xml/MethodArgumentCouldBeFinal" /-->
+    <!--
+    <rule ref="category/java/codestyle.xml/MethodArgumentCouldBeFinal" />
+    -->
     <rule ref="category/java/codestyle.xml/NoPackage" />    
     <rule ref="category/java/codestyle.xml/PrematureDeclaration" />
     <rule ref="category/java/codestyle.xml/RemoteInterfaceNamingConvention" />
@@ -284,7 +286,8 @@
 
     <!-- Documentation rules -->
     <rule ref="category/java/documentation.xml/CommentContent" />
-    <!--rule ref="category/java/documentation.xml/CommentRequired">
+    <!--
+    <rule ref="category/java/documentation.xml/CommentRequired">
         <properties>
             <property name="methodWithOverrideCommentRequirement" value="Ignored" />
             <property name="accessorCommentRequirement" value="Ignored" />
@@ -296,7 +299,8 @@
             <property name="serialVersionUIDCommentRequired" value="Ignored" />
             <property name="serialPersistentFieldsCommentRequired" value="Ignored" />
         </properties>
-    </rule-->
+    </rule>
+    -->
     <rule ref="category/java/documentation.xml/CommentSize">
         <properties>
             <property name="maxLines" value="10" />
@@ -319,7 +323,9 @@
     <rule ref="category/java/errorprone.xml/AvoidCatchingNPE" />
     <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable" /><!--???-->
     <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor" />
-    <!--rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals" /-->
+    <!--
+    <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals" />
+    -->
     <rule ref="category/java/errorprone.xml/AvoidEnumAsIdentifier" />
     <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName" />
     <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingTypeName" />
