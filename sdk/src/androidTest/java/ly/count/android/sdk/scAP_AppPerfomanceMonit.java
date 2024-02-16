@@ -36,7 +36,7 @@ public class scAP_AppPerfomanceMonit {
     @Test
     public void AP_200_notEnabledNothingWorking() {
         CountlyConfig config = createAPMConfig();
-        config.apm.appStartTimestampOverride = 10000L;
+        config.apm.appStartTimestampOverride = 10_000L;
 
         Assert.assertEquals(0, countlyStore.getRequests().length);
 

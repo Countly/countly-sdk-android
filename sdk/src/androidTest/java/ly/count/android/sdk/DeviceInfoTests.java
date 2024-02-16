@@ -140,7 +140,7 @@ public class DeviceInfoTests {
         assertEquals("XXXHDPI", regularDeviceInfo.mp.getDensity(mockContext));
         mockContext = mockContextForTestingDensity(0);
         assertEquals("other", regularDeviceInfo.mp.getDensity(mockContext));
-        mockContext = mockContextForTestingDensity(1234567890);
+        mockContext = mockContextForTestingDensity(1_234_567_890);
         assertEquals("other", regularDeviceInfo.mp.getDensity(mockContext));
     }
 

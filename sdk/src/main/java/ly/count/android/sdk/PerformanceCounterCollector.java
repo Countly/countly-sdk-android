@@ -18,7 +18,7 @@ public class PerformanceCounterCollector {
     }
 
     public void TrackCounterTimeNs(String key, long valueNs) {
-        TrackCounter(key, valueNs / 1000000000.0);
+        TrackCounter(key, valueNs / 1_000_000_000.0);
     }
 
     public void TrackCounter(String key, double value) {

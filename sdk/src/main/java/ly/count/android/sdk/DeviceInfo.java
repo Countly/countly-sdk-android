@@ -215,7 +215,7 @@ class DeviceInfo {
 
                 @Override
                 public int getTimezoneOffset() {
-                    return TimeZone.getDefault().getOffset(new Date().getTime()) / 60000;
+                    return TimeZone.getDefault().getOffset(new Date().getTime()) / 60_000;
                 }
 
                 /**
@@ -343,7 +343,7 @@ class DeviceInfo {
                     ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
                     ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
                     activityManager.getMemoryInfo(mi);
-                    return Long.toString(getTotalRAM() - (mi.availMem / 1048576L));
+                    return Long.toString(getTotalRAM() - (mi.availMem / 1_048_576L));
                 }
 
                 /**
@@ -403,7 +403,7 @@ class DeviceInfo {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
                         long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
                         long free = ((long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize());
-                        return Long.toString((total - free) / 1048576L);
+                        return Long.toString((total - free) / 1_048_576L);
                     } else {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
                         long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());

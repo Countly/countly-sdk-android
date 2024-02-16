@@ -181,7 +181,7 @@ public class ModuleUserProfileTests {
         data.put("phone", "+1234567890" + rnd.nextInt());
         data.put("gender", "M" + rnd.nextInt());
         data.put("picture", "http://domain.com/test.png" + rnd.nextInt());
-        data.put("byear", "" + rnd.nextInt(100000));
+        data.put("byear", "" + rnd.nextInt(100_000));
 
         return data;
     }

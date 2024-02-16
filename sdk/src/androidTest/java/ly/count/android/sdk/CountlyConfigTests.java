@@ -75,7 +75,7 @@ public class CountlyConfigTests {
         Map<String, Object> vs = new HashMap<>();
         vs.put("ss", "fdf");
         vs.put("s22s", 2323);
-        vs.put("s44s", 33434.33d);
+        vs.put("s44s", 33_434.33d);
         vs.put("dds44s", true);
 
         Class[] act = new Class[] { Activity.class };
@@ -88,7 +88,7 @@ public class CountlyConfigTests {
         Map<String, Object> crashSegments = new HashMap<>();
         crashSegments.put("s2s", "fdf");
         crashSegments.put("s224s", 2323);
-        crashSegments.put("s434s", 33434.33d);
+        crashSegments.put("s434s", 33_434.33d);
         crashSegments.put("ddsa44s", true);
 
         Map<String, String> metricOverride = new HashMap<>();

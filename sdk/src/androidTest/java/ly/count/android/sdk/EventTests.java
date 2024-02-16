@@ -65,8 +65,8 @@ public class EventTests {
         assertNull(event.peid);
         assertNull(event.pvid);
         assertEquals(0, event.count);
-        assertEquals(0.0d, event.sum, 0.0000001);
-        assertEquals(0.0d, event.dur, 0.0000001);
+        assertEquals(0.0d, event.sum, 0.000_000_1);
+        assertEquals(0.0d, event.dur, 0.000_000_1);
         assertEquals(0, event.timestamp);
         assertEquals(0, event.hour);
         assertEquals(0, event.dow);
@@ -88,8 +88,8 @@ public class EventTests {
         assertNull(event.peid);
         assertNull(event.pvid);
         assertEquals(0, event.count);
-        assertEquals(0.0d, event.sum, 0.0000001);
-        assertEquals(0.0d, event.dur, 0.0000001);
+        assertEquals(0.0d, event.sum, 0.000_000_1);
+        assertEquals(0.0d, event.dur, 0.000_000_1);
         assertEquals(123L, event.timestamp);
         assertEquals(5, event.hour);
         assertEquals(7, event.dow);
@@ -202,7 +202,7 @@ public class EventTests {
         }
 
         if (!jsonObj.isNull(Event.DUR_KEY)) {
-            assertEquals(expectedEvent.dur, parsedEvent.dur, 0.000001);
+            assertEquals(expectedEvent.dur, parsedEvent.dur, 0.000_001);
         }
 
         if (!jsonObj.isNull(Event.COUNT_KEY)) {
@@ -210,7 +210,7 @@ public class EventTests {
         }
 
         if (!jsonObj.isNull(Event.SUM_KEY)) {
-            assertEquals(expectedEvent.sum, parsedEvent.sum, 0.000001);
+            assertEquals(expectedEvent.sum, parsedEvent.sum, 0.000_001);
         }
 
         if (!jsonObj.isNull(Event.ID_KEY)) {
@@ -239,7 +239,7 @@ public class EventTests {
         //finally compare to the given expected event
         assertEquals(expectedEvent, parsedEvent);
         assertEquals(expectedEvent.count, parsedEvent.count);
-        assertEquals(expectedEvent.sum, parsedEvent.sum, 0.0000001);
+        assertEquals(expectedEvent.sum, parsedEvent.sum, 0.000_000_1);
     }
 
     /**
@@ -633,7 +633,7 @@ public class EventTests {
         assertEquals(segmentsInt.get(keys[0]).intValue(), 2);
         assertEquals(segmentsInt.get(keys[1]).intValue(), 12);
         assertEquals(segmentsInt.get(keys[2]).intValue(), 123);
-        assertEquals(segmentsDouble.get(keys[3]), 4.44d, 0.00001);
+        assertEquals(segmentsDouble.get(keys[3]), 4.44d, 0.000_01);
         assertEquals(segmentsString.get(keys[4]), "Six");
         assertEquals(segmentsString.get(keys[5]), "asdSix");
         assertEquals(segmentsBoolean.get(keys[6]), false);

@@ -48,8 +48,8 @@ import org.json.JSONObject;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class ConnectionProcessor implements Runnable {
-    private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30000;
-    private static final int READ_TIMEOUT_IN_MILLISECONDS = 30000;
+    private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30_000;
+    private static final int READ_TIMEOUT_IN_MILLISECONDS = 30_000;
 
     private static final String CRLF = "\r\n";
     private static final String charset = "UTF-8";

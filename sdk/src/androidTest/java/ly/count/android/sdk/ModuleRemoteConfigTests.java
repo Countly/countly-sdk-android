@@ -340,9 +340,9 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals("fg", countly.remoteConfig().getValueForKey("b"));
         Assert.assertTrue(countly.remoteConfig().getValue("b").isCurrentUsersData);
 
-        Assert.assertEquals(222222222222L, countly.remoteConfig().getValue("c").value);
-        Assert.assertEquals(222222222222L, countly.remoteConfig().getValueAndEnroll("c").value);
-        Assert.assertEquals(222222222222L, countly.remoteConfig().getValueForKey("c"));
+        Assert.assertEquals(222_222_222_222L, countly.remoteConfig().getValue("c").value);
+        Assert.assertEquals(222_222_222_222L, countly.remoteConfig().getValueAndEnroll("c").value);
+        Assert.assertEquals(222_222_222_222L, countly.remoteConfig().getValueForKey("c"));
         Assert.assertFalse(countly.remoteConfig().getValue("c").isCurrentUsersData);
 
         Assert.assertEquals(1.5d, countly.remoteConfig().getValue("d").value);

@@ -383,7 +383,7 @@ public class Utils {
             long requestTimestampMs = Long.parseLong(request.substring(timestampStartIndex + 11, timestampStartIndex + 24));
 
             // calculate the threshold timestamp by subtracting dropAgeHours from the current time
-            long thresholdTimestampMs = UtilsTime.currentTimestampMs() - (dropAgeHours * 3600000L); // 1 hour = 3600000 milliseconds
+            long thresholdTimestampMs = UtilsTime.currentTimestampMs() - (dropAgeHours * 3_600_000L); // 1 hour = 3600000 milliseconds
 
             // check if the request's timestamp is older than the threshold
             boolean result = requestTimestampMs < thresholdTimestampMs;
