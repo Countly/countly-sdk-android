@@ -1,7 +1,6 @@
 package ly.count.android.demo;
 
 import android.app.Activity;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
@@ -11,8 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.AttributionIndirectKey;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.CountlyConfig;
-import ly.count.android.sdk.DeviceIdType;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

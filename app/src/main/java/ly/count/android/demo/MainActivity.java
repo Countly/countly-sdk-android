@@ -1,22 +1,17 @@
 package ly.count.android.demo;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
 import java.net.URLDecoder;
-import java.util.HashMap;
 
 import ly.count.android.sdk.Countly;
-import org.json.JSONObject;
 
 @SuppressWarnings("UnusedParameters")
 public class MainActivity extends AppCompatActivity {

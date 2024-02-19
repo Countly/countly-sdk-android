@@ -1,10 +1,8 @@
 package ly.count.android.demo;
 
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.HashMap;
 import java.util.Map;

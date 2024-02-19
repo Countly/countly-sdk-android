@@ -1,6 +1,5 @@
 package ly.count.android.demo;
 
-import android.content.res.Configuration;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;

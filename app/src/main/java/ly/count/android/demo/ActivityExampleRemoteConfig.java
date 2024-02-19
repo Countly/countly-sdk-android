@@ -1,6 +1,5 @@
 package ly.count.android.demo;
 
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -16,7 +15,6 @@ import org.json.JSONObject;
 import java.util.Map;
 
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.RemoteConfigCallback;
 
 public class ActivityExampleRemoteConfig extends AppCompatActivity {
 
