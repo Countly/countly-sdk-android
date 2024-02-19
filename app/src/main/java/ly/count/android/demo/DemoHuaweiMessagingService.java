@@ -1,7 +1,6 @@
 package ly.count.android.demo;
 
 import android.annotation.SuppressLint;
-import android.app.Service;
 import android.content.Intent;
 import android.util.Log;
 import ly.count.android.sdk.Countly;
