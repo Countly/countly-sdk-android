@@ -303,12 +303,12 @@ public class DeviceInfoTests {
         metricOverride.put("_app_version", "d5");
         Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(getContext(), null));
 
-        Assert.assertEquals("d5", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
+        assertEquals("d5", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
 
         metricOverride.put("_app_version", null);
         Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
 
         metricOverride.put("_app_version", "");
-        Assert.assertEquals("", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
+        assertEquals("", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
     }
 }

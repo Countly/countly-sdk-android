@@ -483,30 +483,30 @@ public class ConnectionQueueTests {
                 String[] pair = part.split("=");
                 switch (pair[0]) {
                     case "app_key":
-                        Assert.assertTrue(pair[1].equals(appKey));
+                        assertEquals(appKey, pair[1]);
                         break;
                     case "tz":
-                        Assert.assertTrue(pair[1].equals("" + regularDeviceInfo.mp.getTimezoneOffset()));
+                        assertEquals(pair[1], "" + regularDeviceInfo.mp.getTimezoneOffset());
                         break;
                     case "sdk_version":
                         if (a == 0) {
-                            Assert.assertTrue(pair[1].equals("24.1.0"));
-                        } else if (a == 1) {
-                            Assert.assertTrue(pair[1].equals("123sdf.v-213"));
+                            assertEquals("24.1.0", pair[1]);
+                        } else {
+                            assertEquals("123sdf.v-213", pair[1]);
                         }
                         break;
                     case "sdk_name":
                         if (a == 0) {
-                            Assert.assertTrue(pair[1].equals("java-native-android"));
-                        } else if (a == 1) {
-                            Assert.assertTrue(pair[1].equals("someBigNew123-+name"));
+                            assertEquals("java-native-android", pair[1]);
+                        } else {
+                            assertEquals("someBigNew123-+name", pair[1]);
                         }
                         break;
                     case "hour":
-                        Assert.assertTrue(pair[1].equals("" + instant.hour));
+                        assertEquals(pair[1], "" + instant.hour);
                         break;
                     case "dow":
-                        Assert.assertTrue(pair[1].equals("" + instant.dow));
+                        assertEquals(pair[1], "" + instant.dow);
                         break;
                 }
             }

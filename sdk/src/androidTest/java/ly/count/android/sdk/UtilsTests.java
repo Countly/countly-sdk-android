@@ -13,7 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -228,11 +227,11 @@ public class UtilsTests {
     public void fillJSONIfValuesNotEmpty() throws JSONException {
         final JSONObject json = new JSONObject();
         Utils.fillJSONIfValuesNotEmpty(json, "key1", "value1", "key2", null, "key3", "value3", "key4", "", "key5", "value5");
-        assertEquals("value1", json.get("key1"));
+        Assert.assertEquals("value1", json.get("key1"));
         assertFalse(json.has("key2"));
-        assertEquals("value3", json.get("key3"));
+        Assert.assertEquals("value3", json.get("key3"));
         assertFalse(json.has("key4"));
-        assertEquals("value5", json.get("key5"));
+        Assert.assertEquals("value5", json.get("key5"));
     }
 
     @Test
@@ -271,19 +270,19 @@ public class UtilsTests {
      */
     @Test
     public void timeFormatterTests() {
-        assertEquals("-1 millisecond(s)", Utils.formatTimeDifference(-1));
-        assertEquals("0 millisecond(s)", Utils.formatTimeDifference(0));
-        assertEquals("5 millisecond(s)", Utils.formatTimeDifference(5));
-        assertEquals("1 second(s)", Utils.formatTimeDifference(1000));
-        assertEquals("2 second(s)", Utils.formatTimeDifference(2000));
-        assertEquals("1 minute(s)", Utils.formatTimeDifference(60_000));
-        assertEquals("20 minute(s)", Utils.formatTimeDifference(1_200_000));
-        assertEquals("1 hour(s)", Utils.formatTimeDifference(3_600_000));
-        assertEquals("2 hour(s)", Utils.formatTimeDifference(9_600_000)); // instead of ~2.5
-        assertEquals("1 day(s) and 0 hour(s)", Utils.formatTimeDifference(86_400_000));
-        assertEquals("9 day(s) and 7 hour(s)", Utils.formatTimeDifference(804_000_000));
-        assertEquals("1 month(s) and 0 day(s)", Utils.formatTimeDifference(2_592_000_000L));
-        assertEquals("2 month(s) and 27 day(s)", Utils.formatTimeDifference(7_522_090_000L));
+        Assert.assertEquals("-1 millisecond(s)", Utils.formatTimeDifference(-1));
+        Assert.assertEquals("0 millisecond(s)", Utils.formatTimeDifference(0));
+        Assert.assertEquals("5 millisecond(s)", Utils.formatTimeDifference(5));
+        Assert.assertEquals("1 second(s)", Utils.formatTimeDifference(1000));
+        Assert.assertEquals("2 second(s)", Utils.formatTimeDifference(2000));
+        Assert.assertEquals("1 minute(s)", Utils.formatTimeDifference(60_000));
+        Assert.assertEquals("20 minute(s)", Utils.formatTimeDifference(1_200_000));
+        Assert.assertEquals("1 hour(s)", Utils.formatTimeDifference(3_600_000));
+        Assert.assertEquals("2 hour(s)", Utils.formatTimeDifference(9_600_000)); // instead of ~2.5
+        Assert.assertEquals("1 day(s) and 0 hour(s)", Utils.formatTimeDifference(86_400_000));
+        Assert.assertEquals("9 day(s) and 7 hour(s)", Utils.formatTimeDifference(804_000_000));
+        Assert.assertEquals("1 month(s) and 0 day(s)", Utils.formatTimeDifference(2_592_000_000L));
+        Assert.assertEquals("2 month(s) and 27 day(s)", Utils.formatTimeDifference(7_522_090_000L));
     }
 
     /**

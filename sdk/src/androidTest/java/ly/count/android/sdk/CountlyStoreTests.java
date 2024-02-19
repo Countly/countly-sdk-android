@@ -220,7 +220,7 @@ public class CountlyStoreTests {
         final List<Event> expected = new ArrayList<>(1);
         expected.add(event1);
         final List<Event> actual = store.getEventList();
-        Assert.assertEquals(expected, actual);
+        assertEquals(expected, actual);
     }
 
     /**
@@ -755,7 +755,7 @@ public class CountlyStoreTests {
         store.setEventData("");
         final String expected = URLEncoder.encode("[]", "UTF-8");
         assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
-        Assert.assertEquals(0, sp.getEventQueueSize());
+        assertEquals(0, sp.getEventQueueSize());
     }
 
     /**
@@ -774,14 +774,14 @@ public class CountlyStoreTests {
         final String jsonToEncode = "[" + event1.toJSON().toString() + "," + event2.toJSON().toString() + "]";
         final String expected = URLEncoder.encode(jsonToEncode, "UTF-8");
         assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
-        Assert.assertEquals(0, sp.getEventQueueSize());
+        assertEquals(0, sp.getEventQueueSize());
     }
 
     @Test
     public void getSetServerConfig() {
         store.clear();
-        Assert.assertNull(sp.getServerConfig());
+        assertNull(sp.getServerConfig());
         sp.setServerConfig("qwe");
-        Assert.assertEquals("qwe", sp.getServerConfig());
+        assertEquals("qwe", sp.getServerConfig());
     }
 }
