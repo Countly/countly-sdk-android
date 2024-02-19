@@ -9,7 +9,6 @@ import org.junit.runner.RunWith;
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
