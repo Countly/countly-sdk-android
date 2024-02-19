@@ -106,7 +106,7 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals(4, jArr.length());
         Assert.assertEquals(3, jArr.getInt(0));
         Assert.assertEquals("44", jArr.getString(1));
-        Assert.assertEquals(5.1, jArr.getDouble(2), 0.000001);
+        Assert.assertEquals(5.1, jArr.getDouble(2), 0.000_001);
         Assert.assertEquals(7.7, jArr.get(3));
 
         JSONObject jObj = (JSONObject) v2;
@@ -130,7 +130,7 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals(4, jArr2.length());
         Assert.assertEquals(3, jArr2.getInt(0));
         Assert.assertEquals("44", jArr2.getString(1));
-        Assert.assertEquals(5.1, jArr2.getDouble(2), 0.000001);
+        Assert.assertEquals(5.1, jArr2.getDouble(2), 0.000_001);
         Assert.assertEquals(7.7, jArr2.get(3));
 
         JSONObject jObj2 = (JSONObject) v4;

@@ -133,7 +133,7 @@ public class ModuleCrash extends ModuleBase {
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
-            error = error.substring(0, Math.min(20000, error.length()));
+            error = error.substring(0, Math.min(20_000, error.length()));
         }
 
         final String crashData;

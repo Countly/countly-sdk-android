@@ -113,7 +113,7 @@ public class ModuleSessions extends ModuleBase {
         final long currentTimestampInNanoseconds = System.nanoTime();
         final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
         prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
+        return (int) Math.round(unsentSessionLengthInNanoseconds / 1_000_000_000.0d);
     }
 
     @Override

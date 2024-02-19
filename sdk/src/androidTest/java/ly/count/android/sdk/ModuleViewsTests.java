@@ -361,8 +361,8 @@ public class ModuleViewsTests {
         cSegm3.put("domain", "33");
         cSegm3.put("dur", "33");
         cSegm3.put("doddnker", "m123ag");
-        cSegm3.put("biffg", 132137);
-        cSegm3.put("cannndy", 9534.33d);
+        cSegm3.put("biffg", 132_137);
+        cSegm3.put("cannndy", 9_534.33d);
         cSegm3.put("calaaling", true);
 
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
@@ -404,8 +404,8 @@ public class ModuleViewsTests {
         segm.put("view", "33");
         segm.put("domain", "33");
         segm.put("dur", "33");
-        segm.put("biffg", 132137);
-        segm.put("cannndy", 9534.33d);
+        segm.put("biffg", 132_137);
+        segm.put("cannndy", 9_534.33d);
         segm.put("calaaling", true);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
     }

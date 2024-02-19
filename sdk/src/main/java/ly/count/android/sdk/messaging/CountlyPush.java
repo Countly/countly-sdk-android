@@ -68,7 +68,7 @@ public class CountlyPush {
     /**
      * Read & connection timeout for rich push media download
      */
-    static int MEDIA_DOWNLOAD_TIMEOUT = 15000;
+    static int MEDIA_DOWNLOAD_TIMEOUT = 15_000;
 
     /**
      * Maximum attempts to download a media for a rich push

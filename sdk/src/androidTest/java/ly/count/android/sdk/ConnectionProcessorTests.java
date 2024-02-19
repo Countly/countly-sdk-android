@@ -133,8 +133,8 @@ public class ConnectionProcessorTests {
         testSaltValue = null;
         final String eventData = "blahblahblah";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
-        assertEquals(30000, urlConnection.getConnectTimeout());
-        assertEquals(30000, urlConnection.getReadTimeout());
+        assertEquals(30_000, urlConnection.getConnectTimeout());
+        assertEquals(30_000, urlConnection.getReadTimeout());
         assertFalse(urlConnection.getUseCaches());
         assertTrue(urlConnection.getDoInput());
         assertFalse(urlConnection.getDoOutput());

@@ -69,18 +69,18 @@ public class ActivityExampleOthers extends AppCompatActivity {
 
             JSONObject ffJson = new JSONObject();
             ffJson.putOpt("type", "FF");
-            ffJson.putOpt("start_time", 123456789);
-            ffJson.putOpt("end_time", 123456789);
+            ffJson.putOpt("start_time", 123_456_789);
+            ffJson.putOpt("end_time", 123_456_789);
 
             JSONObject skipJson = new JSONObject();
             skipJson.putOpt("type", "skip");
-            skipJson.putOpt("start_time", 123456789);
-            skipJson.putOpt("end_time", 123456789);
+            skipJson.putOpt("start_time", 123_456_789);
+            skipJson.putOpt("end_time", 123_456_789);
 
             JSONObject resumeJson = new JSONObject();
             resumeJson.putOpt("type", "resume_play");
-            resumeJson.putOpt("start_time", 123456789);
-            resumeJson.putOpt("end_time", 123456789);
+            resumeJson.putOpt("start_time", 123_456_789);
+            resumeJson.putOpt("end_time", 123_456_789);
 
             JSONArray trickPlay = new JSONArray();
             trickPlay.put(ffJson);

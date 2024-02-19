@@ -231,9 +231,9 @@ public class CountlyStoreTests {
         final Event event1 = CreateEvent(eKeys[0]);
         event1.timestamp = UtilsTime.currentTimestampMs();
         final Event event2 = CreateEvent(eKeys[1]);
-        event2.timestamp = UtilsTime.currentTimestampMs() - 60000;
+        event2.timestamp = UtilsTime.currentTimestampMs() - 60_000;
         final Event event3 = CreateEvent(eKeys[2]);
-        event3.timestamp = UtilsTime.currentTimestampMs() - 30000;
+        event3.timestamp = UtilsTime.currentTimestampMs() - 30_000;
 
         RecordEvent(event1, store);
         RecordEvent(event2, store);
@@ -256,7 +256,7 @@ public class CountlyStoreTests {
         event1.timestamp = UtilsTime.getCurrentInstant().timestampMs;
 
         final Event event2 = CreateEvent(eKeys[1]);
-        event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60000;
+        event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60_000;
 
         //insert bad entry
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::blah:::" + event2.toJSON().toString();
@@ -280,7 +280,7 @@ public class CountlyStoreTests {
         event1.timestamp = UtilsTime.getCurrentInstant().timestampMs;
 
         final Event event2 = CreateEvent(eKeys[3]);
-        event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60000;
+        event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60_000;
 
         //insert null entry
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::{\"key\":null}:::" + event2.toJSON().toString();
@@ -327,16 +327,16 @@ public class CountlyStoreTests {
         final Event addedEvent = addedEvents.get(0);
         assertEquals(event, addedEvent);
         assertEquals(event.count, addedEvent.count);
-        assertEquals(event.sum, addedEvent.sum, 0.0000001);
+        assertEquals(event.sum, addedEvent.sum, 0.000_000_1);
     }
 
     @Test
     public void testRemoveEvents() {
         final Event event1 = CreateEvent(eKeys[1]);
-        event1.timestamp = UtilsTime.currentTimestampMs() - 60000;
+        event1.timestamp = UtilsTime.currentTimestampMs() - 60_000;
 
         final Event event2 = CreateEvent(eKeys[2]);
-        event2.timestamp = UtilsTime.currentTimestampMs() - 30000;
+        event2.timestamp = UtilsTime.currentTimestampMs() - 30_000;
 
         final Event event3 = CreateEvent(eKeys[3]);
         event3.timestamp = UtilsTime.currentTimestampMs();
@@ -633,7 +633,7 @@ public class CountlyStoreTests {
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34545L, 4, 2, null, null, null, null);
+        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34_545L, 4, 2, null, null, null, null);
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
@@ -695,7 +695,7 @@ public class CountlyStoreTests {
         sp.replaceRequestList(new ArrayList<String>());
         assertTrue(sp.anythingSetInStorage());
 
-        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34545L, 4, 2, null, null, null, null);
+        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34_545L, 4, 2, null, null, null, null);
         assertTrue(sp.anythingSetInStorage());
 
         sp.setStarRatingPreferences("dfg");

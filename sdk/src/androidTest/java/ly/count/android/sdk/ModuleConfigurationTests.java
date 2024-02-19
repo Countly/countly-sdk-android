@@ -276,7 +276,7 @@ public class ModuleConfigurationTests {
         jsonObjectConfig.put("networking", networking);
 
         jsonObject.put("v", 1);
-        jsonObject.put("t", 1681808287464L);
+        jsonObject.put("t", 1_681_808_287_464L);
         jsonObject.put("c", jsonObjectConfig);
 
         return jsonObject.toString();
