@@ -13,7 +13,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.InstrumentationRegistry.getContext;
-import static java.lang.Thread.sleep;
 import static ly.count.android.sdk.RemoteConfigValueStoreTests.rcArrIntoJSON;
 import static ly.count.android.sdk.RemoteConfigValueStoreTests.rcEStr;
 import static org.mockito.Mockito.mock;
