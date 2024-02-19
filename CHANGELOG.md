@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 24.1.1
 * Added a new metric for detecting whether or not a device has a hinge
 
 ## 24.1.0
