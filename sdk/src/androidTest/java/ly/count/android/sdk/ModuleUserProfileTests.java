@@ -16,7 +16,6 @@ import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -83,7 +82,7 @@ public class ModuleUserProfileTests {
         String[] reqs = store.getRequests();
         assertEquals(0, store.getEvents().length);
         assertEquals(2, reqs.length);
-        assertTrue(reqs[0].contains("events"));
+        Assert.assertTrue(reqs[0].contains("events"));
         assertFalse(reqs[1].contains("events"));
     }
 

@@ -29,7 +29,6 @@ import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.messaging.CountlyConfigPush;
 import ly.count.android.sdk.messaging.CountlyPush;
 
-import static ly.count.android.sdk.Countly.TAG;
 import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_BROADCAST_PERMISSION_POSTFIX;
 
 public class App extends Application {
@@ -257,7 +256,7 @@ public class App extends Application {
                 @Override
                 public void onComplete(@NonNull Task<String> task) {
                     if (!task.isSuccessful()) {
-                        Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+                        Log.w(Countly.TAG, "Fetching FCM registration token failed", task.getException());
                         return;
                     }
 

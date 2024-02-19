@@ -20,8 +20,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -55,8 +53,8 @@ public class MigrationHelperTests {
 
     void validateGeneratedUUID(String deviceId) {
         assertNotNull(deviceId);
-        assertTrue(deviceId.length() > 10);
-        assertTrue(deviceId.length() < 100);
+        Assert.assertTrue(deviceId.length() > 10);
+        Assert.assertTrue(deviceId.length() < 100);
     }
 
     /**
@@ -65,7 +63,7 @@ public class MigrationHelperTests {
     @Test
     public void validateDataSchemaVersion() {
         MigrationHelper mh = new MigrationHelper(sp, mockLog, getApplicationContext());
-        assertEquals(latestSchemaVersion, mh.DATA_SCHEMA_VERSIONS);
+        Assert.assertEquals(latestSchemaVersion, mh.DATA_SCHEMA_VERSIONS);
     }
 
     /**
@@ -106,10 +104,10 @@ public class MigrationHelperTests {
     @Test
     public void getCurrentSchemaVersionEmpty() {
         MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
-        assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
 
         //verify a rerun
-        assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
     }
 
     /**
@@ -121,10 +119,10 @@ public class MigrationHelperTests {
     public void getCurrentSchemaVersionLegacy() {
         cs.addRequest("fff", false);
         MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
-        assertEquals(0, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(0, mh.getCurrentSchemaVersion());
 
         //verify a rerun
-        assertEquals(0, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(0, mh.getCurrentSchemaVersion());
     }
 
     /**
@@ -135,16 +133,16 @@ public class MigrationHelperTests {
     @Test
     public void getCurrentSchemaVersionMisc() {
         MigrationHelper mh = new MigrationHelper(sp, mockLog, getApplicationContext());
-        assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
 
         sp.setDataSchemaVersion(123);
-        assertEquals(123, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(123, mh.getCurrentSchemaVersion());
 
         //verify a rerun
-        assertEquals(123, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(123, mh.getCurrentSchemaVersion());
 
         sp.setDataSchemaVersion(-333);
-        assertEquals(-333, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(-333, mh.getCurrentSchemaVersion());
     }
 
     /**
@@ -157,7 +155,7 @@ public class MigrationHelperTests {
         for (int a = 0; a <= 1; a++) {
             cs.clear();
             MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
-            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
                 mh.doWork(GetMigrationParams_0_1(false));
@@ -165,7 +163,7 @@ public class MigrationHelperTests {
                 mh.doWork(GetMigrationParams_0_1(true));
             }
 
-            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
             //we started at the latest version and the device ID type and value should be null
             Assert.assertNull(cs.getDeviceID());
             Assert.assertNull(cs.getDeviceIDType());
@@ -184,7 +182,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         validateGeneratedUUID(cs.getDeviceID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
@@ -201,7 +199,7 @@ public class MigrationHelperTests {
             cs.addRequest("fff", false);
             cs.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
             MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
-            assertEquals(0, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(0, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
                 mh.doWork(GetMigrationParams_0_1(false));
@@ -209,7 +207,7 @@ public class MigrationHelperTests {
                 mh.doWork(GetMigrationParams_0_1(true));
             }
 
-            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
             Assert.assertNull(cs.getDeviceID());
             Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED.toString(), cs.getDeviceIDType());
         }
@@ -229,7 +227,7 @@ public class MigrationHelperTests {
             cs.addRequest("fff", false);//request added to indicate that this is not the first launch but a legacy version
             cs.setDeviceIDType(MigrationHelper.legacyDeviceIDTypeValue_AdvertisingID);
             MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
-            assertEquals(0, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(0, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
                 mh.doWork(GetMigrationParams_0_1(false));
@@ -237,7 +235,7 @@ public class MigrationHelperTests {
                 mh.doWork(GetMigrationParams_0_1(true));
             }
 
-            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
             validateGeneratedUUID(cs.getDeviceID());
             Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
         }
@@ -257,7 +255,7 @@ public class MigrationHelperTests {
             cs.addRequest("fff", false);//request added to indicate that this is not the first launch but a legacy version
             cs.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
             MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
-            assertEquals(0, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(0, mh.getCurrentSchemaVersion());
 
             if (a == 0) {
                 mh.doWork(GetMigrationParams_0_1(false));
@@ -265,7 +263,7 @@ public class MigrationHelperTests {
                 mh.doWork(GetMigrationParams_0_1(true));
             }
 
-            assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+            Assert.assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
             validateGeneratedUUID(cs.getDeviceID());
             Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
         }
@@ -284,7 +282,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
         validateGeneratedUUID(initialID);
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
@@ -306,7 +304,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         String initialID = countly.deviceId().getID();
         validateGeneratedUUID(initialID);
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
@@ -328,7 +326,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("ab", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
@@ -345,7 +343,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
@@ -362,7 +360,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
@@ -379,7 +377,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
@@ -395,7 +393,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         validateGeneratedUUID(countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
     }
@@ -412,7 +410,7 @@ public class MigrationHelperTests {
 
         Countly countly = new Countly().init(new CountlyConfig(getApplicationContext(), TestUtils.commonAppKey, TestUtils.commonURL).setDeviceId("asd"));
 
-        assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
+        Assert.assertEquals(latestSchemaVersion, cs.getDataSchemaVersion());
         Assert.assertEquals("cd", countly.deviceId().getID());
         Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, countly.deviceId().getType());
     }

@@ -77,7 +77,7 @@ public class CountlyTests {
         assertNull(mUninitedCountly.moduleSessions);
         assertFalse(mUninitedCountly.getDisableUpdateSessionRequests());
         assertFalse(mUninitedCountly.isLoggingEnabled());
-        Assert.assertTrue(mCountly.isInitialized());
+        assertTrue(mCountly.isInitialized());
     }
 
     @Test
@@ -255,7 +255,7 @@ public class CountlyTests {
         assertEquals(serverURL, mUninitedCountly.getConnectionQueue().baseInfoProvider.getServerURL());
         assertEquals(appKey, mUninitedCountly.getConnectionQueue().baseInfoProvider.getAppKey());
         assertNotNull(mUninitedCountly.getConnectionQueue().getStorageProvider());
-        Assert.assertTrue(mCountly.isInitialized());
+        assertTrue(mCountly.isInitialized());
         assertSame(mUninitedCountly.getConnectionQueue().getStorageProvider(), mUninitedCountly.countlyStore);
     }
 
@@ -267,7 +267,7 @@ public class CountlyTests {
         assertNull(mUninitedCountly.getConnectionQueue().baseInfoProvider);
         assertNull(mUninitedCountly.getConnectionQueue().getStorageProvider());
         assertNotNull(mUninitedCountly.getTimerService());
-        Assert.assertTrue(mCountly.isInitialized());
+        assertTrue(mCountly.isInitialized());
         assertEquals(0, mUninitedCountly.getActivityCount());
         assertNull(mUninitedCountly.moduleSessions);
     }
