@@ -12,8 +12,8 @@ import ly.count.android.sdk.Countly;
 
 public class ActivityExampleAPM extends AppCompatActivity {
 
-    int[] successCodes = new int[] { 100, 101, 200, 201, 202, 205, 300, 301, 303, 305 };
-    int[] failureCodes = new int[] { 400, 402, 405, 408, 500, 501, 502, 505 };
+    int[] successCodes = { 100, 101, 200, 201, 202, 205, 300, 301, 303, 305 };
+    int[] failureCodes = { 400, 402, 405, 408, 500, 501, 502, 505 };
 
     Random rnd = new Random();
 

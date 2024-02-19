@@ -595,12 +595,12 @@ public class EventTests {
      */
     @Test
     public void segmentationSorterFull() {
-        String[] keys = new String[] { "a", "b", "c", "d", "e", "f", "l", "r", "q", "w", "m" };
+        String[] keys = { "a", "b", "c", "d", "e", "f", "l", "r", "q", "w", "m" };
 
         Map<String, Object> automaticViewSegmentation = new HashMap<>();
 
         Object obj = new Object();
-        int[] arr = new int[] { 1, 2, 3 };
+        int[] arr = { 1, 2, 3 };
 
         automaticViewSegmentation.put(keys[0], 2);
         automaticViewSegmentation.put(keys[1], 12);

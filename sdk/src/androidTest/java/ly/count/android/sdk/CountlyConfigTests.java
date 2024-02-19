@@ -36,7 +36,7 @@ public class CountlyConfigTests {
 
     @Test
     public void settingAllValues() {
-        String[] s = new String[] { "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd" };
+        String[] s = { "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd" };
         Context c = getContext();
         CountlyConfig config = new CountlyConfig();
         CountlyStore cs = new CountlyStore(c, mock(ModuleLog.class));
@@ -63,7 +63,7 @@ public class CountlyConfigTests {
         hv.put("11", "22");
         hv.put("1331", "2332");
 
-        String[] fn = new String[] { "ds dsd", "434f", "ngfhg" };
+        String[] fn = { "ds dsd", "434f", "ngfhg" };
 
         CrashFilterCallback callback = new CrashFilterCallback() {
             @Override
@@ -78,12 +78,12 @@ public class CountlyConfigTests {
         vs.put("s44s", 33_434.33d);
         vs.put("dds44s", true);
 
-        Class[] act = new Class[] { Activity.class };
+        Class[] act = { Activity.class };
 
-        String[] appCrawlerNames = new String[] { "Some", "Crazy", "name" };
+        String[] appCrawlerNames = { "Some", "Crazy", "name" };
 
-        String[] publicKeyCerts = new String[] { "ddd", "111", "ffd" };
-        String[] certificateCerts = new String[] { "ddsd", "vvcv", "mbnb" };
+        String[] publicKeyCerts = { "ddd", "111", "ffd" };
+        String[] certificateCerts = { "ddsd", "vvcv", "mbnb" };
 
         Map<String, Object> crashSegments = new HashMap<>();
         crashSegments.put("s2s", "fdf");

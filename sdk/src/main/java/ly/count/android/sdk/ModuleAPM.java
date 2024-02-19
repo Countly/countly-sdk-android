@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ModuleAPM extends ModuleBase {
 
-    final static String[] reservedKeys = new String[] { "response_time", "response_payload_size", "response_code", "request_payload_size", "duration", "slow_rendering_frames", "frozen_frames" };
+    final static String[] reservedKeys = { "response_time", "response_payload_size", "response_code", "request_payload_size", "duration", "slow_rendering_frames", "frozen_frames" };
 
     Apm apmInterface = null;
 

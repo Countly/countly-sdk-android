@@ -56,7 +56,7 @@ public class TemporaryIDTests {
         assertEquals(req2, reqs1[1]);
         assertEquals(req3, reqs1[2]);
 
-        String[] ret = new String[] { req1, req2, req3 };
+        String[] ret = { req1, req2, req3 };
 
         for (int a = 0; a < ret.length; a++) {
             ret[a] = ret[a].replace("&device_id=" + DeviceId.temporaryCountlyDeviceId, "&device_id=" + replaceDid);

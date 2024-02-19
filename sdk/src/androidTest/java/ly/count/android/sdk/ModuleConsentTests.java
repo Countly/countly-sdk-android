@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @RunWith(AndroidJUnit4.class)
 public class ModuleConsentTests {
 
-    protected static final String[] usedFeatureNames = new String[] {
+    protected static final String[] usedFeatureNames = {
         Countly.CountlyFeatureNames.sessions,
         Countly.CountlyFeatureNames.events,
         Countly.CountlyFeatureNames.views,
@@ -205,7 +205,7 @@ public class ModuleConsentTests {
     @Test
     public void initTimeSetConsentRQ_2() throws JSONException {
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
-        String[] initialConsent = new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback };
+        String[] initialConsent = { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback };
         Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, initialConsent, null, rqp));
 
         //this should send consent state and empty location
@@ -222,7 +222,7 @@ public class ModuleConsentTests {
     @Test
     public void initTimeSetConsentRQ_3() throws JSONException {
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
-        String[] initialConsent = new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback, Countly.CountlyFeatureNames.location };
+        String[] initialConsent = { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback, Countly.CountlyFeatureNames.location };
         Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(true, initialConsent, null, rqp));
 
         TestUtils.verifyConsentValuesInRQMock(1, initialConsent, TestUtils.getReminderConsent(initialConsent), rqp);
@@ -238,7 +238,7 @@ public class ModuleConsentTests {
     @Test
     public void initTimeSetConsentRQ_4() throws JSONException {
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
-        String[] initialConsent = new String[] { Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback, Countly.CountlyFeatureNames.location };
+        String[] initialConsent = { Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.feedback, Countly.CountlyFeatureNames.location };
         CountlyConfig cc = TestUtils.createConsentCountlyConfig(true, initialConsent, null, rqp);
         cc.setLocation("qw", "Böston 墨尔本", "123.9009", "qwe890");
         Countly mCountly = new Countly().init(cc);

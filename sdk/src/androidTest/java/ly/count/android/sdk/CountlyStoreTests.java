@@ -582,8 +582,8 @@ public class CountlyStoreTests {
      */
     @Test
     public void testDeviceIDStorage() {
-        String[] values = new String[] { "aa", null, "bb", "", "cc" };
-        String[] values2 = new String[] { "11", "22", null, "33", "" };
+        String[] values = { "aa", null, "bb", "", "cc" };
+        String[] values2 = { "11", "22", null, "33", "" };
 
         assertNull(sp.getDeviceID());
         assertNull(sp.getDeviceIDType());

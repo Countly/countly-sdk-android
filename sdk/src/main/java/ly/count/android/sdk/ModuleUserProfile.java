@@ -21,7 +21,7 @@ public class ModuleUserProfile extends ModuleBase {
     static final String BYEAR_KEY = "byear";
     static final String CUSTOM_KEY = "custom";
 
-    String[] namedFields = new String[] { NAME_KEY, USERNAME_KEY, EMAIL_KEY, ORG_KEY, PHONE_KEY, PICTURE_KEY, PICTURE_PATH_KEY, GENDER_KEY, BYEAR_KEY };
+    String[] namedFields = { NAME_KEY, USERNAME_KEY, EMAIL_KEY, ORG_KEY, PHONE_KEY, PICTURE_KEY, PICTURE_PATH_KEY, GENDER_KEY, BYEAR_KEY };
 
     boolean isSynced = true;
 

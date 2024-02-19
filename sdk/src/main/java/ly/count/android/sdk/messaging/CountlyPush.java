@@ -891,7 +891,7 @@ public class CountlyPush {
     private static void loadImage(@NonNull final Context context, @NonNull final Message msg, @NonNull final BitmapCallback callback, final int attempt) {
         Utils.runInBackground(new Runnable() {
             @Override public void run() {
-                final Bitmap[] bitmap = new Bitmap[] { null };
+                final Bitmap[] bitmap = { null };
 
                 if (msg.media() != null) {
                     HttpURLConnection connection = null;

@@ -43,7 +43,7 @@ public class ModuleRemoteConfigTests {
         Countly countly = (new Countly()).init(config);
 
         //set RC
-        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
+        String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
         countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
@@ -62,7 +62,7 @@ public class ModuleRemoteConfigTests {
     public void automaticRCTriggers() {
         for (int a = 0; a < 2; a++) {
             countlyStore.clear();
-            final int[] triggerCounter = new int[] { 0 };
+            final int[] triggerCounter = { 0 };
             int intendedCount = 0;
 
             CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
