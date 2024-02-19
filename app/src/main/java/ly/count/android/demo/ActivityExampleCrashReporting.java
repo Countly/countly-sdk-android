@@ -33,7 +33,7 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
     public void onClickOutOfBounds(View v) {
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Out of bounds crash");
         //noinspection MismatchedReadAndWriteOfArray
-        int[] data = new int[] {};
+        int[] data = {};
         data[0] = 9;
     }
 

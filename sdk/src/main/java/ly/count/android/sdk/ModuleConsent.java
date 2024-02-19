@@ -13,7 +13,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     Consent consentInterface = null;
 
     //a list of valid feature names that are used for checking
-    protected static final String[] validFeatureNames = new String[] {
+    protected static final String[] validFeatureNames = {
         Countly.CountlyFeatureNames.sessions,
         Countly.CountlyFeatureNames.events,
         Countly.CountlyFeatureNames.views,

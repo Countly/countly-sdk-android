@@ -87,7 +87,7 @@ public class RemoteConfigValueStoreTests {
         JSONArray jArrI = new JSONArray("[3,\"44\",5.1,7.7]");
         JSONObject jObjI = new JSONObject("{\"q\":6,\"w\":\"op\"}");
 
-        String[] rcArr = new String[] { rcEStr("321", 123, false), rcEStr("😀", "😁"), rcEStr("c", jArrI), rcEStr("d", 6.5), rcEStr("e", jObjI) };
+        String[] rcArr = { rcEStr("321", 123, false), rcEStr("😀", "😁"), rcEStr("c", jArrI), rcEStr("d", 6.5), rcEStr("e", jObjI) };
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true);
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
@@ -141,7 +141,7 @@ public class RemoteConfigValueStoreTests {
 
     @Test
     public void dataFromString_CurrentStructure() {
-        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "ccx", false) };
+        String[] rcArr = { rcEStr("a", 123), rcEStr("b", "ccx", false) };
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
 
         Assert.assertEquals(123, rcvs.getValue("a").value);
@@ -156,7 +156,7 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsMergeValues_1() throws JSONException {
-        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
+        String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
         JSONObject obj = new JSONObject("{\"b\": 123.3,\"c\": \"uio\"}");
 

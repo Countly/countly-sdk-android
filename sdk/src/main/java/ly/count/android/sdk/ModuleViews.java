@@ -35,7 +35,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     SafeIDGenerator safeViewIDGenerator;
 
-    String[] reservedSegmentationKeysViews = new String[] { "name", "visit", "start", "segment" };
+    String[] reservedSegmentationKeysViews = { "name", "visit", "start", "segment" };
 
     public @NonNull String getCurrentViewId() {
         return currentViewID == null ? "" : currentViewID;

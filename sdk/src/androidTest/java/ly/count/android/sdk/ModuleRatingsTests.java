@@ -38,7 +38,7 @@ public class ModuleRatingsTests {
     public void recordManualRating() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        String[] vals = new String[] { "aa", "bb", "cc" };
+        String[] vals = { "aa", "bb", "cc" };
         mCountly.ratings().recordManualRating(vals[0], 3, vals[1], vals[2], true);
 
         final Map<String, Object> segm = new HashMap<>();

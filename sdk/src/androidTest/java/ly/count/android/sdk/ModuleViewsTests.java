@@ -31,7 +31,7 @@ public class ModuleViewsTests {
     //Countly mCountly;
     CountlyStore countlyStore;
 
-    String[] viewNames = new String[] { "a", "b", "c", "e", "f", "g", "h", "i" };
+    String[] viewNames = { "a", "b", "c", "e", "f", "g", "h", "i" };
 
     int idx = 0;
     final String[] vals = TestUtils.viewIDVals;
@@ -298,7 +298,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        String[] viewNames = new String[] { "DSD", "32", "DSD" };
+        String[] viewNames = { "DSD", "32", "DSD" };
 
         final Map<String, Object> segm = new HashMap<>();
         ClearFillSegmentationViewStart(segm, viewNames[0], true);
@@ -588,7 +588,7 @@ public class ModuleViewsTests {
         @NonNull Activity act2 = mock(TestUtils.Activity2.class);
         @NonNull Activity act3 = mock(TestUtils.Activity3.class);
 
-        String viewNames[] = new String[] { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
+        String viewNames[] = { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
         final Map<String, Object> segm = new HashMap<>();
 
         //go from one activity to another in the expected way and then "go to background"
