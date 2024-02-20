@@ -124,7 +124,7 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig() {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+        CountlyConfig cc = new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();

@@ -401,13 +401,13 @@ class DeviceInfo {
                 public String getDiskCurrent() {
                     if (android.os.Build.VERSION.SDK_INT < 18) {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
-                        long free = ((long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize());
+                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
+                        long free = (long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize();
                         return Long.toString((total - free) / 1_048_576L);
                     } else {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
-                        long free = (statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong());
+                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
+                        long free = statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong();
                         return Long.toString((total - free) / 1048576L);
                     }
                 }
@@ -421,11 +421,11 @@ class DeviceInfo {
                 public String getDiskTotal() {
                     if (android.os.Build.VERSION.SDK_INT < 18) {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
+                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
                         return Long.toString(total / 1048576L);
                     } else {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
                         return Long.toString(total / 1048576L);
                     }
                 }

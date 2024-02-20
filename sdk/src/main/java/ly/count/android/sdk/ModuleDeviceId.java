@@ -20,7 +20,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         super(cly, config);
         L.v("[ModuleDeviceId] Initialising");
 
-        boolean customIDWasProvided = (config.deviceID != null);
+        boolean customIDWasProvided = config.deviceID != null;
 
         if (config.temporaryDeviceIdEnabled && !customIDWasProvided) {
             //if we want to use temporary ID mode and no developer custom ID is provided

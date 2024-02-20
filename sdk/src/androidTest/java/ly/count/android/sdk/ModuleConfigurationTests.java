@@ -147,7 +147,7 @@ public class ModuleConfigurationTests {
 
         //third init is lacking a connection but still has the previously saved values
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
-        countly = (new Countly()).init(config);
+        countly = new Countly().init(config);
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
 

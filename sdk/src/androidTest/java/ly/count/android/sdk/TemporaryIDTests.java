@@ -70,7 +70,7 @@ public class TemporaryIDTests {
         String[] ret = CreateInitialTmpIDState("abc", DeviceIdType.OPEN_UDID, "abc", store);
 
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setLoggingEnabled(true));
+        mCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setLoggingEnabled(true));
 
         String[] reqs = store.getRequests();
         assertArrayEquals(ret, reqs);
@@ -88,7 +88,7 @@ public class TemporaryIDTests {
         String[] ret = CreateInitialTmpIDState("abc", DeviceIdType.OPEN_UDID, "abc", store);
 
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setLoggingEnabled(true).enableTemporaryDeviceIdMode());
+        mCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setLoggingEnabled(true).enableTemporaryDeviceIdMode());
 
         String[] reqs = store.getRequests();
         assertArrayEquals(ret, reqs);
@@ -99,7 +99,7 @@ public class TemporaryIDTests {
         String[] ret = CreateInitialTmpIDState("abc", DeviceIdType.OPEN_UDID, "abc", store);
 
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setLoggingEnabled(true).setDeviceId("a123d"));
+        mCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setLoggingEnabled(true).setDeviceId("a123d"));
 
         String[] reqs = store.getRequests();
         assertArrayEquals(ret, reqs);
