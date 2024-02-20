@@ -35,12 +35,12 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void valuesClearedOnConsentRemoval() {
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.setRequiresConsent(true);
         config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.remoteConfig });
         config.enableRemoteConfigValueCaching();
         config.enableRemoteConfigAutomaticTriggers();
-        Countly countly = new Countly().init(config);
+        Countly countly = (new Countly()).init(config);
 
         //set RC
         String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
@@ -65,7 +65,7 @@ public class ModuleRemoteConfigTests {
             final int[] triggerCounter = { 0 };
             int intendedCount = 0;
 
-            CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+            CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
             config.disableHealthCheck();//mocked tests fail without disabling this
             config.enableRemoteConfigAutomaticTriggers();
             if (a == 0) {
@@ -127,7 +127,7 @@ public class ModuleRemoteConfigTests {
         for (int a = 0; a < 4; a++) {
             countlyStore.clear();
 
-            CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+            CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
             config.enableRemoteConfigAutomaticTriggers();
 
             if (a == 0 || a == 1) {
@@ -139,7 +139,7 @@ public class ModuleRemoteConfigTests {
                 config.enableRemoteConfigValueCaching();
             }
 
-            Countly countly = new Countly().init(config);
+            Countly countly = (new Countly()).init(config);
 
             Assert.assertEquals(0, countly.remoteConfig().getValues().size());
 
@@ -197,14 +197,14 @@ public class ModuleRemoteConfigTests {
         String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
         countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
 
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.enableRemoteConfigValueCaching();
-        Countly countly = new Countly().init(config);
+        Countly countly = (new Countly()).init(config);
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
         Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
 
-        Countly countly2 = new Countly().init(config);
+        Countly countly2 = (new Countly()).init(config);
         Assert.assertEquals(123, countly2.remoteConfig().getValue("a").value);
         Assert.assertEquals("fg", countly2.remoteConfig().getValue("b").value);
     }
@@ -214,9 +214,9 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void validateClear() {
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.enableRemoteConfigValueCaching();
-        Countly countly = new Countly().init(config);
+        Countly countly = (new Countly()).init(config);
 
         //set RC
         String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
@@ -267,7 +267,7 @@ public class ModuleRemoteConfigTests {
         RCDownloadCallback c5 = createCallback(cIndex++, resArray);
         RCDownloadCallback c6 = createCallback(cIndex, resArray);
 
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableRemoteConfigAutomaticTriggers();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableRemoteConfigAutomaticTriggers();
         config.RemoteConfigRegisterGlobalCallback(c1);
         config.RemoteConfigRegisterGlobalCallback(c2);
         config.setRemoteConfigAutomaticDownload(true, oldRCC);
@@ -275,7 +275,7 @@ public class ModuleRemoteConfigTests {
             callback.callback(null);
         };
 
-        Countly countly = new Countly().init(config);
+        Countly countly = (new Countly()).init(config);
 
         //check initial global ones
         Assert.assertEquals(1, resArray[0]);
@@ -319,9 +319,9 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void validateGetters() throws JSONException {
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.enableRemoteConfigValueCaching();
-        Countly countly = new Countly().init(config);
+        Countly countly = (new Countly()).init(config);
 
         //set RC
         JSONArray jArrI = new JSONArray("[3,\"44\",5.1,7.7]");
@@ -396,10 +396,10 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void passingBadValues() {
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.enableRemoteConfigValueCaching();
         config.enableRemoteConfigAutomaticTriggers();
-        Countly countly = new Countly().init(config);
+        Countly countly = (new Countly()).init(config);
 
         countly.remoteConfig().getValue(null);
         countly.remoteConfig().getValue("");
