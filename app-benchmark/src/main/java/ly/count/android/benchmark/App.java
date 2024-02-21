@@ -18,7 +18,7 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
 
-        CountlyConfig config = (new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL))
+        CountlyConfig config = new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)
             .setDeviceId(DEVICE_ID)
             .setLoggingEnabled(true)
             .giveAllConsents()

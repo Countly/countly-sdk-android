@@ -29,7 +29,7 @@ public class ModuleSessionsTests {
     @Test
     public void manualSessionBegin() {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
-        Countly mCountly = (new Countly()).init(config);
+        Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
@@ -40,7 +40,7 @@ public class ModuleSessionsTests {
     @Test
     public void manualSessionBeginUpdateEnd() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
-        Countly mCountly = (new Countly()).init(config);
+        Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
@@ -59,7 +59,7 @@ public class ModuleSessionsTests {
     @Test
     public void manualSessionBeginUpdateEndManualDisabled() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig().enableCrashReporting();
-        Countly mCountly = (new Countly()).init(config);
+        Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.sessions().beginSession();
@@ -78,7 +78,7 @@ public class ModuleSessionsTests {
     @Test
     public void automaticSessionBeginEndWithManualEnabled() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
-        Countly mCountly = (new Countly()).init(config);
+        Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(null);
@@ -95,7 +95,7 @@ public class ModuleSessionsTests {
     @Test
     public void automaticSessionBeginEndWithManualDisabled() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig();
-        Countly mCountly = (new Countly()).init(config);
+        Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStartInternal(null);
@@ -116,7 +116,7 @@ public class ModuleSessionsTests {
     public void consentNotGivenNothingHappens() {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.setRequiresConsent(true);
-        Countly mCountly = (new Countly()).init(config);
+        Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         mCountly.onStart(mock(TestUtils.Activity2.class));

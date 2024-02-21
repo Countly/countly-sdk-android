@@ -58,7 +58,7 @@ public class UtilsTime {
      * Utility method to return a current timestamp in seconds.
      */
     public static int currentTimestampSeconds() {
-        return ((int) (System.currentTimeMillis() / 1000L));
+        return (int) (System.currentTimeMillis() / 1000L);
     }
 
     private static class TimeUniquesEnsurer {

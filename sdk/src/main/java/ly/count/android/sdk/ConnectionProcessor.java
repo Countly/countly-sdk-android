@@ -99,7 +99,7 @@ public class ConnectionProcessor implements Runnable {
 
         // determine whether or not request has a binary image file, if it has request will be sent as POST request
         boolean hasPicturePath = requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
-        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced()) || hasPicturePath;
+        boolean usingHttpPost = requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced() || hasPicturePath;
 
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
