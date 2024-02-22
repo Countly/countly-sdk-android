@@ -16,12 +16,10 @@
 #   public *;
 #}
 
+# This renames the file name on stack traces from "UnknownSource" to "SourceFile"
 -renamesourcefileattribute SourceFile
+# This values are kept on stack traces to debug any issue easily
 -keepattributes SourceFile,LineNumberTable
-
-# Rules to keep the FCM dependency optional
--dontwarn com.google.firebase.messaging.RemoteMessage
--keep class com.google.firebase.messaging.RemoteMessage
 
 # Rules recommended for Huawei PushKit
 -ignorewarnings
