@@ -109,18 +109,21 @@ public class ModuleAPMTests {
     public void recordNetworkTraceBasic() {
         //ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
         mCountly.apm().recordNetworkTrace("aaa", 234, 123, 456, 7654, 8765);
+        // value 1111 has gotten by subtraction of values (8765 - 7654)
         verify(requestQueueProvider).sendAPMNetworkTrace("aaa", 1111L, 234, 123, 456, 7654L, 8765L);
     }
 
     @Test
     public void recordNetworkTraceFalseValues_1() {
         mCountly.apm().recordNetworkTrace("aaa", -100, -123, 456, 7654, 8765);
+        // value 1111 has gotten by subtraction of values (8765 - 7654)
         verify(requestQueueProvider).sendAPMNetworkTrace("aaa", 1111L, 0, 0, 456, 7654L, 8765L);
     }
 
     @Test
     public void recordNetworkTraceFalseValues_2() {
         mCountly.apm().recordNetworkTrace("aaa", 999, 123, -456, 8765, 7654);
+        // value 1111 has gotten by subtraction of values (8765 - 7654)
         verify(requestQueueProvider).sendAPMNetworkTrace("aaa", 1111L, 0, 123, 0, 7654L, 8765L);
     }
 
