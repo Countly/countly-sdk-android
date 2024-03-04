@@ -66,8 +66,6 @@ public class HealthCheckCounter implements HealthTracker {
         } else {
             this.errorMessage = errorResponse;
         }
-
-        saveState();
     }
 
     @Override public void clearAndSave() {

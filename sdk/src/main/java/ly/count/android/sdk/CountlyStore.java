@@ -317,6 +317,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         final String joinedConnStr = storageReadRequestQueue();
+        L.v("[CountlyStore] getRequests, size:" + joinedConnStr.length());
+
         String[] ret = joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
 
         if (pcc != null) {

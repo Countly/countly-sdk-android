@@ -571,6 +571,7 @@ public class ConnectionProcessor implements Runnable {
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
                         healthTracker.logFailedNetworkRequest(responseCode, responseString);//notify the health tracker of the issue
+                        healthTracker.saveState();
                         break;
                     }
                 } catch (Exception e) {
