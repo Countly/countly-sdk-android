@@ -476,7 +476,7 @@ public class CountlyConfig {
     /**
      * @param segmentation
      * @return Returns the same config object for convenient linking
-     * @deprecated Use "setAutomaticViewSegmentation(...)"
+     * @deprecated please use "setGlobalViewSegmentation(Map<String, Object>)"
      */
     public synchronized CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation) {
         globalViewSegmentation = segmentation;
@@ -507,7 +507,7 @@ public class CountlyConfig {
      *
      * @param exceptions activities which should be ignored
      * @return Returns the same config object for convenient linking
-     * @deprecated Use "setAutomaticViewTrackingExclusions(...)"
+     * @deprecated Use "setAutomaticViewTrackingExclusions(Class[])"
      */
     public synchronized CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
         return setAutomaticViewTrackingExclusions(exceptions);
