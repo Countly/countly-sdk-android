@@ -223,7 +223,7 @@ public class CountlyStoreExplicitModeTests {
         assertEquals(0, store.getRequests().length);
 
         Countly countly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableExplicitStorageMode();
+        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableExplicitStorageMode();
         countly.init(config);
 
         esWriteCachesToPersistenceValidateWrite(countly, false);//this should perform no write

@@ -362,8 +362,8 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void calculateAppRunningTimes(int previousCount, int newCount) {
-        boolean goingToBackground = (previousCount == 1 && newCount == 0);
-        boolean goingToForeground = (previousCount == 0 && newCount == 1);
+        boolean goingToBackground = previousCount == 1 && newCount == 0;
+        boolean goingToForeground = previousCount == 0 && newCount == 1;
 
         L.v("[ModuleAPM] calculateAppRunningTimes, going toBG[" + goingToBackground + "] going toFG[" + goingToForeground + "] | [" + previousCount + "][" + newCount + "]");
 

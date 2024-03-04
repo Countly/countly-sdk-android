@@ -26,7 +26,7 @@ public class ModuleRatingsTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
     }
 
@@ -112,7 +112,7 @@ public class ModuleRatingsTests {
         Assert.assertFalse(mCountly.moduleRatings.getIfStarRatingShouldBeShownAutomatically());
 
         Countly countly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setIfStarRatingShownAutomatically(true);
+        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setIfStarRatingShownAutomatically(true);
         countly.init(config);
 
         Assert.assertTrue(countly.moduleRatings.getIfStarRatingShouldBeShownAutomatically());

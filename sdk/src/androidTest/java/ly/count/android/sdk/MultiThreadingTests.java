@@ -23,9 +23,9 @@ public class MultiThreadingTests {
 
         mCountly = new Countly();
         mCountly.halt();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "https://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(new CountlyConfig(getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
         mCountly.halt();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "https://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(new CountlyConfig(getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @Test

@@ -30,7 +30,7 @@ public class ModuleCrashTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
@@ -53,7 +53,7 @@ public class ModuleCrashTests {
         };
 
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.setCrashFilterCallback(callback);
 
         countly.init(cConfig);

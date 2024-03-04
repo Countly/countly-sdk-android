@@ -262,7 +262,7 @@ class Event {
 
         final Event e = (Event) o;
 
-        return (Objects.equals(key, e.key)) &&
+        return Objects.equals(key, e.key) &&
             timestamp == e.timestamp &&
             hour == e.hour &&
             dow == e.dow &&
@@ -270,7 +270,7 @@ class Event {
             Objects.equals(pvid, e.pvid) &&
             Objects.equals(cvid, e.cvid) &&
             Objects.equals(peid, e.peid) &&
-            (Objects.equals(segmentation, e.segmentation));
+            Objects.equals(segmentation, e.segmentation);
     }
 
     @Override
