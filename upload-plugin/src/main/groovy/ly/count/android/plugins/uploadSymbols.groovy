@@ -1,18 +1,17 @@
 package ly.count.android.plugins
 
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
+import org.gradle.api.Plugin
+import org.gradle.api.Project
 import org.gradle.api.tasks.StopActionException
 import org.gradle.api.tasks.StopExecutionException
-import org.gradle.api.GradleException
-import static groovy.io.FileType.*
-import static groovy.io.FileVisitResult.*
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.MultipartBody;
+import static groovy.io.FileType.*
+
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.Response
+import okhttp3.MultipartBody
 import okhttp3.MediaType
 
 class UploadSymbolsPluginExtension {
@@ -30,7 +29,7 @@ class UploadSymbolsPlugin implements Plugin<Project> {
     OkHttpClient client = null
     Request request = null
     def ext = project.extensions.create('countly', UploadSymbolsPluginExtension)
-    project.task('uploadJavaSymbols') {
+    project.tasks.register('uploadJavaSymbols') {
       group = "countly"
       description = "Upload Java minification mapping file mapping.txt to Countly server"
       doFirst {
@@ -65,22 +64,22 @@ class UploadSymbolsPlugin implements Plugin<Project> {
         // println("request constructed")
       }
       doLast {
+        if (request == null) {
+          logger.error("Request not constructed")
+          throw new StopActionException("Something happened while constructing the request. Please try again.")
+        }
         client = new OkHttpClient()
-        Response response = client.newCall(request).execute();
-        def result = response.body().string()
-        // println response.code()
-        // println result
-        if (response.code != 200) {
-          logger.error("An error occured while uploading the mapping file: {}", result)
-          // throw new GradleException("An error occured while uploading the symbol file: " + logger.error(response.body().string()))
+        Response response = client.newCall(request).execute()
+
+        if (response.code() != 200) {
+          logger.error("An error occurred while uploading the mapping file: {}", response.body().string())
         } else {
           logger.debug("File upload successful")
         }
-        // println "DONE"
       }
     }
 
-    project.task('uploadNativeSymbols') {
+    project.tasks.register('uploadNativeSymbols') {
       group = "countly"
       description = "Upload breakpad symbols folder to Countly server"
       doFirst {
@@ -106,15 +105,15 @@ class UploadSymbolsPlugin implements Plugin<Project> {
           def cmd = "$ext.dumpSymsPath/dump_syms $it"
           println cmd
           def proc = cmd.execute()
-          def outputStream = new StringBuffer();
+          def outputStream = new StringBuffer()
           def currentSymbolFile = new File("$countlyDirStr/current_$i")
-          proc.waitForProcessOutput(outputStream, System.err);
-          BufferedWriter bwr = new BufferedWriter(new FileWriter(currentSymbolFile));
+          proc.waitForProcessOutput(outputStream, System.err)
+          BufferedWriter bwr = new BufferedWriter(new FileWriter(currentSymbolFile))
           bwr.write(outputStream.toString())
           bwr.flush()
           bwr.close()
           // println it
-          def line
+          def line = ""
           currentSymbolFile.withReader { line = it.readLine() }
           // println line
           def words = line.split()
@@ -139,17 +138,14 @@ class UploadSymbolsPlugin implements Plugin<Project> {
             .addFormDataPart("note", ext.noteNative)
             .addFormDataPart("sym_tool_ver", breakpadVersion)
             .build()
-        request = new Request.Builder().url(url).post(formBody).build();
+        request = new Request.Builder().url(url).post(formBody).build()
       }
       doLast {
         client = new OkHttpClient()
-        Response response = client.newCall(request).execute();
-        def result = response.body().string()
-        // println response.code()
-        // println result
-        if (response.code != 200) {
-          logger.error("An error occured while uploading the symbols folder: {}", result)
-          // throw new GradleException("An error occured while uploading the symbol file: " + logger.error(response.body().string()))
+        Response response = client.newCall(request).execute()
+
+        if (response.code() != 200) {
+          logger.error("An error occurred while uploading the symbols folder: {}", response.body().string())
         } else {
           logger.debug("File upload successful")
         }
