@@ -51,8 +51,6 @@ public class CountlyConfig {
 
     protected ModuleBase testModuleListener = null;
 
-    protected boolean checkForNativeCrashDumps = true;
-
     protected Map<String, Object> providedUserProperties = null;
 
     protected Countly.LifecycleObserver lifecycleObserver = null;
@@ -112,8 +110,6 @@ public class CountlyConfig {
 
     protected boolean loggingEnabled = false;
 
-    protected boolean enableUnhandledCrashReporting = false;
-
     protected boolean enableAutomaticViewTracking = false;
 
     protected boolean autoTrackingUseShortName = false;
@@ -154,8 +150,6 @@ public class CountlyConfig {
 
     protected boolean manualSessionControlHybridModeEnabled = false;
 
-    protected boolean recordAllThreadsWithCrash = false;
-
     protected boolean disableUpdateSessionRequests = false;
 
     protected boolean shouldIgnoreAppCrawlers = false;
@@ -166,11 +160,7 @@ public class CountlyConfig {
 
     protected String[] certificatePinningCertificates = null;
 
-    protected Map<String, Object> customCrashSegment = null;
-
     protected Integer sessionUpdateTimerDelay = null;
-
-    protected GlobalCrashFilterCallback globalCrashFilterCallback;
 
     protected boolean starRatingDialogIsCancellable = false;
 
@@ -210,10 +200,7 @@ public class CountlyConfig {
     Integer maxKeyLength;
     Integer maxValueSize;
     Integer maxSegmentationValues;
-    Integer maxBreadcrumbCount;
-    Integer maxStackTraceLinesPerThread;
-    Integer maxStackTraceLineLength;
-    int maxStackTraceThreadCount = 30;
+
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
@@ -260,9 +247,10 @@ public class CountlyConfig {
      *
      * @param maxBreadcrumbCount
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.setMaxBreadcrumbCount(int)</pre> instead
      */
     public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
-        this.maxBreadcrumbCount = maxBreadcrumbCount;
+        crashes.setMaxBreadcrumbCount(maxBreadcrumbCount);
         return this;
     }
 
@@ -414,9 +402,10 @@ public class CountlyConfig {
      * Call to enable uncaught crash reporting
      *
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.enableCrashReporting()</pre> instead
      */
     public synchronized CountlyConfig enableCrashReporting() {
-        this.enableUnhandledCrashReporting = true;
+        crashes.enableCrashReporting();
         return this;
     }
 
@@ -657,24 +646,10 @@ public class CountlyConfig {
     /**
      * @param callback
      * @return Returns the same config object for convenient linking
-     * @deprecated This call is deprecated and will be removed in the future
+     * @deprecated This call is deprecated, please use <pre>crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)</pre> instead
      */
     public synchronized CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
-        globalCrashFilterCallback = crash -> {
-             if(callback.filterCrash(crash)) {
-                 return null;
-             }
-            return crash;
-        };
-        return this;
-    }
-
-    /**
-     * @param callback the callback that will be called for each crash, allowing you to filter it
-     * @return Returns the same config object for convenient linking
-     */
-    public synchronized CountlyConfig setGlobalCrashFilterCallback(GlobalCrashFilterCallback callback) {
-        globalCrashFilterCallback = callback;
+        crashes.setGlobalCrashFilterCallback(crash -> callback.filterCrash(crash.stackTrace));
         return this;
     }
 
@@ -698,9 +673,10 @@ public class CountlyConfig {
 
     /**
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.enableRecordAllThreadsWithCrash()</pre> instead
      */
     public synchronized CountlyConfig setRecordAllThreadsWithCrash() {
-        recordAllThreadsWithCrash = true;
+        crashes.enableRecordAllThreadsWithCrash();
         return this;
     }
 
@@ -792,20 +768,22 @@ public class CountlyConfig {
      *
      * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.setCustomCrashSegment(Map<String, Object>)</pre> instead
      */
     public synchronized CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
-        customCrashSegment = crashSegment;
+        crashes.setCustomCrashSegment(crashSegment);
         return this;
     }
 
     /**
      * For use during testing
      *
-     * @param checkForDumps
+     * @param checkForDumps whether to check for native crash dumps
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.checkForNativeCrashDumps(boolean)</pre> instead
      */
     protected synchronized CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
-        checkForNativeCrashDumps = checkForDumps;
+        crashes.checkForNativeCrashDumps(checkForDumps);
         return this;
     }
 
@@ -1065,4 +1043,9 @@ public class CountlyConfig {
      * APM configuration interface to be used with CountlyConfig
      */
     public final ConfigApm apm = new ConfigApm();
+
+    /**
+     * Crash Reporting configuration interface to be used with CountlyConfig
+     */
+    public final ConfigCrashes crashes = new ConfigCrashes();
 }

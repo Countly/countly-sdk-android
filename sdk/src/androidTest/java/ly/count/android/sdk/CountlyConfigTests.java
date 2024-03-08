@@ -65,9 +65,9 @@ public class CountlyConfigTests {
 
         String[] fn = { "ds dsd", "434f", "ngfhg" };
 
-        CrashFilterCallback callback = new CrashFilterCallback() {
+        GlobalCrashFilterCallback callback = new GlobalCrashFilterCallback() {
             @Override
-            public boolean filterCrash(String crash) {
+            public boolean filterCrash(CrashData crash) {
                 return false;
             }
         };
@@ -128,7 +128,7 @@ public class CountlyConfigTests {
         config.setConsentEnabled(fn);
         config.setHttpPostForced(true);
         config.enableTemporaryDeviceIdMode();
-        config.setCrashFilterCallback(callback);
+        config.crashes.setGlobalCrashFilterCallback(callback);
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
         config.setAutoTrackingExceptions(act);
@@ -161,7 +161,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(c, config.context);
         Assert.assertEquals(s[1], config.appKey);
         Assert.assertEquals(cs, config.countlyStore);
-        Assert.assertFalse(config.checkForNativeCrashDumps);
+        Assert.assertFalse(config.crashes.checkForNativeCrashDumps);
         Assert.assertEquals(s[2], config.deviceID);
         Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
@@ -169,7 +169,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(s[4], config.starRatingTextMessage);
         Assert.assertEquals(s[5], config.starRatingTextTitle);
         Assert.assertTrue(config.loggingEnabled);
-        Assert.assertTrue(config.enableUnhandledCrashReporting);
+        Assert.assertTrue(config.crashes.enableUnhandledCrashReporting);
         Assert.assertTrue(config.enableAutomaticViewTracking);
         Assert.assertTrue(config.autoTrackingUseShortName);
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
@@ -180,20 +180,20 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
         Assert.assertTrue(config.temporaryDeviceIdEnabled);
-        Assert.assertEquals(callback, config.crashFilterCallback);
+        Assert.assertEquals(callback, config.crashes.globalCrashFilterCallback);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.globalViewSegmentation);
         Assert.assertArrayEquals(act, config.automaticViewTrackingExceptions);
         Assert.assertFalse(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
         Assert.assertTrue(config.manualSessionControlEnabled);
-        Assert.assertTrue(config.recordAllThreadsWithCrash);
+        Assert.assertTrue(config.crashes.recordAllThreadsWithCrash);
         Assert.assertTrue(config.disableUpdateSessionRequests);
         Assert.assertTrue(config.shouldIgnoreAppCrawlers);
         Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
-        Assert.assertEquals(crashSegments, config.customCrashSegment);
+        Assert.assertEquals(crashSegments, config.crashes.customCrashSegment);
         Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
         Assert.assertTrue(config.starRatingDialogIsCancellable);
         Assert.assertTrue(config.starRatingShownAutomatically);
@@ -236,7 +236,7 @@ public class CountlyConfigTests {
         }
 
         Assert.assertNull(config.countlyStore);
-        Assert.assertTrue(config.checkForNativeCrashDumps);
+        Assert.assertTrue(config.crashes.checkForNativeCrashDumps);
         Assert.assertNull(config.deviceID);
         Assert.assertEquals(5, config.starRatingSessionLimit);
         Assert.assertNull(config.starRatingCallback);
@@ -244,7 +244,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.starRatingTextMessage);
         Assert.assertNull(config.starRatingTextTitle);
         Assert.assertFalse(config.loggingEnabled);
-        Assert.assertFalse(config.enableUnhandledCrashReporting);
+        Assert.assertFalse(config.crashes.enableUnhandledCrashReporting);
         Assert.assertFalse(config.enableAutomaticViewTracking);
         Assert.assertFalse(config.autoTrackingUseShortName);
         Assert.assertNull(config.customNetworkRequestHeaders);
@@ -255,19 +255,19 @@ public class CountlyConfigTests {
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);
         Assert.assertFalse(config.temporaryDeviceIdEnabled);
-        Assert.assertNull(config.crashFilterCallback);
+        Assert.assertNull(config.crashes.globalCrashFilterCallback);
         Assert.assertNull(config.tamperingProtectionSalt);
         Assert.assertNull(config.globalViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);
         Assert.assertTrue(config.trackOrientationChange);
         Assert.assertFalse(config.manualSessionControlEnabled);
-        Assert.assertFalse(config.recordAllThreadsWithCrash);
+        Assert.assertFalse(config.crashes.recordAllThreadsWithCrash);
         Assert.assertFalse(config.disableUpdateSessionRequests);
         Assert.assertFalse(config.shouldIgnoreAppCrawlers);
         Assert.assertNull(config.appCrawlerNames);
         Assert.assertNull(config.publicKeyPinningCertificates);
         Assert.assertNull(config.certificatePinningCertificates);
-        Assert.assertNull(config.customCrashSegment);
+        Assert.assertNull(config.crashes.customCrashSegment);
         Assert.assertNull(config.sessionUpdateTimerDelay);
         Assert.assertFalse(config.starRatingDialogIsCancellable);
         Assert.assertFalse(config.starRatingShownAutomatically);

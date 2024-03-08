@@ -397,34 +397,34 @@ public class Countly {
                 config.maxSegmentationValues = maxSegmentationValuesDefault;
             }
 
-            if (config.maxBreadcrumbCount != null) {
-                if (config.maxBreadcrumbCount < 1) {
-                    config.maxBreadcrumbCount = 1;
+            if (config.crashes.maxBreadcrumbCount != null) {
+                if (config.crashes.maxBreadcrumbCount < 1) {
+                    config.crashes.maxBreadcrumbCount = 1;
                     L.w("[Init] provided 'maxBreadcrumbCount' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxBreadcrumbCount' override:[" + config.maxBreadcrumbCount + "]");
+                L.i("[Init] provided 'maxBreadcrumbCount' override:[" + config.crashes.maxBreadcrumbCount + "]");
             } else {
-                config.maxBreadcrumbCount = maxBreadcrumbCountDefault;
+                config.crashes.maxBreadcrumbCount = maxBreadcrumbCountDefault;
             }
 
-            if (config.maxStackTraceLinesPerThread != null) {
-                if (config.maxStackTraceLinesPerThread < 1) {
-                    config.maxStackTraceLinesPerThread = 1;
+            if (config.crashes.maxStackTraceLinesPerThread != null) {
+                if (config.crashes.maxStackTraceLinesPerThread < 1) {
+                    config.crashes.maxStackTraceLinesPerThread = 1;
                     L.w("[Init] provided 'maxStackTraceLinesPerThread' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxStackTraceLinesPerThread' override:[" + config.maxStackTraceLinesPerThread + "]");
+                L.i("[Init] provided 'maxStackTraceLinesPerThread' override:[" + config.crashes.maxStackTraceLinesPerThread + "]");
             } else {
-                config.maxStackTraceLinesPerThread = maxStackTraceLinesPerThreadDefault;
+                config.crashes.maxStackTraceLinesPerThread = maxStackTraceLinesPerThreadDefault;
             }
 
-            if (config.maxStackTraceLineLength != null) {
-                if (config.maxStackTraceLineLength < 1) {
-                    config.maxStackTraceLineLength = 1;
+            if (config.crashes.maxStackTraceLineLength != null) {
+                if (config.crashes.maxStackTraceLineLength < 1) {
+                    config.crashes.maxStackTraceLineLength = 1;
                     L.w("[Init] provided 'maxStackTraceLineLength' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxStackTraceLineLength' override:[" + config.maxStackTraceLineLength + "]");
+                L.i("[Init] provided 'maxStackTraceLineLength' override:[" + config.crashes.maxStackTraceLineLength + "]");
             } else {
-                config.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
+                config.crashes.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
             }
 
             if (config.sessionUpdateTimerDelay != null) {

@@ -35,11 +35,11 @@ public class ModuleCrash extends ModuleBase {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
 
-        globalCrashFilterCallback = config.globalCrashFilterCallback;
+        globalCrashFilterCallback = config.crashes.globalCrashFilterCallback;
 
-        recordAllThreads = config.recordAllThreadsWithCrash;
+        recordAllThreads = config.crashes.recordAllThreadsWithCrash;
 
-        setCustomCrashSegmentsInternal(config.customCrashSegment);
+        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment);
 
         metricOverride = config.metricOverride;
 
@@ -182,9 +182,10 @@ public class ModuleCrash extends ModuleBase {
                         addAllThreadInformationToCrash(pw);
                     }
 
+                    String exceptionString = sw.toString();
+
                     //check if it passes the crash filter
-                    String exceptionString = crashFilterCheck(sw.toString());
-                    if (exceptionString != null) {
+                    if (!crashFilterCheck(exceptionString)) {
                         sendCrashReportToQueue(exceptionString, false, false, null);
                     }
                 }
@@ -207,15 +208,17 @@ public class ModuleCrash extends ModuleBase {
      * @param crash
      * @return true if a match was found
      */
-    String crashFilterCheck(String crash) {
+    boolean crashFilterCheck(String crash) {
         L.d("[ModuleCrash] Calling crashFilterCheck");
 
         if (globalCrashFilterCallback == null) {
             //no filter callback set, nothing to compare against
-            return crash;
+            return false;
         }
 
-        return globalCrashFilterCallback.filterCrash(crash);
+        CrashData crashData = new CrashData();
+        crashData.stackTrace = crash; //TODO: will move here
+        return globalCrashFilterCallback.filterCrash(crashData);
     }
 
     void addAllThreadInformationToCrash(PrintWriter pw) {
@@ -269,11 +272,10 @@ public class ModuleCrash extends ModuleBase {
             addAllThreadInformationToCrash(pw);
         }
 
-        String nonFilteredExceptionString = sw.toString();
-        String exceptionString = crashFilterCheck(nonFilteredExceptionString);
+        String exceptionString = sw.toString();
 
-        if (exceptionString == null) {
-            L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + nonFilteredExceptionString.substring(0, Math.min(nonFilteredExceptionString.length(), 60)) + "]");
+        if (crashFilterCheck(exceptionString)) {
+            L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
             //in case the exception needs to be recorded, truncate it
             //String[] splitRes = exceptionString.split("\n");
@@ -299,19 +301,19 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        DeviceInfo.addLog(breadcrumb, _cly.config_.maxBreadcrumbCount, _cly.config_.maxValueSize);
+        DeviceInfo.addLog(breadcrumb, _cly.config_.crashes.maxBreadcrumbCount, _cly.config_.maxValueSize);
         return _cly;
     }
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         //enable unhandled crash reporting
-        if (config.enableUnhandledCrashReporting) {
+        if (config.crashes.enableUnhandledCrashReporting) {
             enableCrashReporting();
         }
 
         //check for previous native crash dumps
-        if (config.checkForNativeCrashDumps) {
+        if (config.crashes.checkForNativeCrashDumps) {
             //flag so that this can be turned off during testing
             _cly.moduleCrash.checkForNativeCrashDumps(config.context);
         }
