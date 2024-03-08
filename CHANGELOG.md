@@ -1,3 +1,15 @@
+## XX.XX.XX
+* Added an extended way of crash filtering
+
+* Deprecated following functions from "CountlyConfig":
+    * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
+    * "setCrashFilterCallback(crashFilterCallback)" instead use "crashes.setGlobalCrashFilterCallback(globalCrashFilterCallback)"
+    * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegment(crashSegmentation)"
+    * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "crashes.setMaxBreadcrumbCount(maxBreadcrumbCount)"
+    * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
+    * "checkForNativeCrashDumps(checkForDumps)" instead use "crashes.checkForNativeCrashDumps(checkForDumps)"
+
+
 ## 24.1.1
 * Added a new metric for detecting whether or not a device has a hinge
 
