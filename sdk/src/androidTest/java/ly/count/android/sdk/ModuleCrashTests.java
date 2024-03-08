@@ -45,7 +45,7 @@ public class ModuleCrashTests {
         GlobalCrashFilterCallback callback = new GlobalCrashFilterCallback() {
             @Override
             public boolean filterCrash(CrashData crash) {
-                if (crash.stackTrace.contains("Secret")) {
+                if (crash.getStackTrace().contains("Secret")) {
                     return true;
                 }
                 return false;

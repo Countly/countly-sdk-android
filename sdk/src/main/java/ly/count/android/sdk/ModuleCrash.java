@@ -142,6 +142,43 @@ public class ModuleCrash extends ModuleBase {
         requestQueueProvider.sendCrashReport(crashData, nonfatal);
     }
 
+    public void sendCrashReportToQueueWFilterCallback(String error, boolean nonfatal, boolean isNativeCrash, @Nullable final Map<String, Object> customSegmentation) {
+        L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback");
+
+        Map<String, Object> combinedSegmentationValues = new HashMap<>();
+
+        if (customCrashSegments != null) {
+            combinedSegmentationValues.putAll(customCrashSegments);
+        }
+
+        if (customSegmentation != null) {
+            Utils.removeUnsupportedDataTypes(customSegmentation);
+            combinedSegmentationValues.putAll(customSegmentation);
+        }
+
+        //truncate crash segmentation
+        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueueWFilterCallback", L);
+
+        //limit the size of the crash report to 20k characters
+        if (!isNativeCrash) {
+            error = error.substring(0, Math.min(20_000, error.length()));
+        }
+
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogs());
+
+        if(globalCrashFilterCallback != null) {
+            if (globalCrashFilterCallback.filterCrash(crashData)) {
+                L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
+                return;
+            }
+        }
+
+        final String crash;
+        crash = deviceInfo.getCrashDataString(_cly.context_, crashData.getStackTrace(), nonfatal, isNativeCrash, crashData.getBreadcrumbs(), crashData.getCrashSegmentation(), deviceInfo, metricOverride);
+
+        requestQueueProvider.sendCrashReport(crash, nonfatal);
+    }
+
     /**
      * Sets custom segments to be reported with crash reports
      * In custom segments you can provide any string key values to segments crashes by
@@ -216,8 +253,7 @@ public class ModuleCrash extends ModuleBase {
             return false;
         }
 
-        CrashData crashData = new CrashData();
-        crashData.stackTrace = crash; //TODO: will move here
+        CrashData crashData = new CrashData(crash, null, null); //TODO move after approval
         return globalCrashFilterCallback.filterCrash(crashData);
     }
 

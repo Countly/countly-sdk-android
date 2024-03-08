@@ -649,7 +649,7 @@ public class CountlyConfig {
      * @deprecated This call is deprecated, please use <pre>crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)</pre> instead
      */
     public synchronized CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
-        crashes.setGlobalCrashFilterCallback(crash -> callback.filterCrash(crash.stackTrace));
+        crashes.setGlobalCrashFilterCallback(crash -> callback.filterCrash(crash.getStackTrace()));
         return this;
     }
 
