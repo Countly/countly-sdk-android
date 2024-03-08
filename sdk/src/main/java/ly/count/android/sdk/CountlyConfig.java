@@ -170,7 +170,7 @@ public class CountlyConfig {
 
     protected Integer sessionUpdateTimerDelay = null;
 
-    protected CrashFilterCallback crashFilterCallback;
+    protected GlobalCrashFilterCallback globalCrashFilterCallback;
 
     protected boolean starRatingDialogIsCancellable = false;
 
@@ -657,9 +657,24 @@ public class CountlyConfig {
     /**
      * @param callback
      * @return Returns the same config object for convenient linking
+     * @deprecated This call is deprecated and will be removed in the future
      */
     public synchronized CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
-        crashFilterCallback = callback;
+        globalCrashFilterCallback = crash -> {
+             if(callback.filterCrash(crash)) {
+                 return null;
+             }
+            return crash;
+        };
+        return this;
+    }
+
+    /**
+     * @param callback the callback that will be called for each crash, allowing you to filter it
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setGlobalCrashFilterCallback(GlobalCrashFilterCallback callback) {
+        globalCrashFilterCallback = callback;
         return this;
     }
 

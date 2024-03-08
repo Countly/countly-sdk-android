@@ -18,7 +18,7 @@ public class ModuleCrash extends ModuleBase {
     private static final String countlyNativeCrashFolderName = "CrashDumps";
 
     //crash filtering
-    CrashFilterCallback crashFilterCallback;
+    GlobalCrashFilterCallback globalCrashFilterCallback;
 
     boolean recordAllThreads = false;
 
@@ -35,7 +35,7 @@ public class ModuleCrash extends ModuleBase {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
 
-        setCrashFilterCallback(config.crashFilterCallback);
+        globalCrashFilterCallback = config.globalCrashFilterCallback;
 
         recordAllThreads = config.recordAllThreadsWithCrash;
 
@@ -182,10 +182,9 @@ public class ModuleCrash extends ModuleBase {
                         addAllThreadInformationToCrash(pw);
                     }
 
-                    String exceptionString = sw.toString();
-
                     //check if it passes the crash filter
-                    if (!crashFilterCheck(exceptionString)) {
+                    String exceptionString = crashFilterCheck(sw.toString());
+                    if (exceptionString != null) {
                         sendCrashReportToQueue(exceptionString, false, false, null);
                     }
                 }
@@ -201,10 +200,6 @@ public class ModuleCrash extends ModuleBase {
         Thread.setDefaultUncaughtExceptionHandler(handler);
     }
 
-    void setCrashFilterCallback(CrashFilterCallback callback) {
-        crashFilterCallback = callback;
-    }
-
     /**
      * Call to check if crash matches one of the filters
      * If it does, the crash should be ignored
@@ -212,15 +207,15 @@ public class ModuleCrash extends ModuleBase {
      * @param crash
      * @return true if a match was found
      */
-    boolean crashFilterCheck(String crash) {
+    String crashFilterCheck(String crash) {
         L.d("[ModuleCrash] Calling crashFilterCheck");
 
-        if (crashFilterCallback == null) {
+        if (globalCrashFilterCallback == null) {
             //no filter callback set, nothing to compare against
-            return false;
+            return crash;
         }
 
-        return crashFilterCallback.filterCrash(crash);
+        return globalCrashFilterCallback.filterCrash(crash);
     }
 
     void addAllThreadInformationToCrash(PrintWriter pw) {
@@ -274,10 +269,11 @@ public class ModuleCrash extends ModuleBase {
             addAllThreadInformationToCrash(pw);
         }
 
-        String exceptionString = sw.toString();
+        String nonFilteredExceptionString = sw.toString();
+        String exceptionString = crashFilterCheck(nonFilteredExceptionString);
 
-        if (crashFilterCheck(exceptionString)) {
-            L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
+        if (exceptionString == null) {
+            L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + nonFilteredExceptionString.substring(0, Math.min(nonFilteredExceptionString.length(), 60)) + "]");
         } else {
             //in case the exception needs to be recorded, truncate it
             //String[] splitRes = exceptionString.split("\n");
