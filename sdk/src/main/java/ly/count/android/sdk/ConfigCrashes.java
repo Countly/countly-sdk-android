@@ -4,12 +4,12 @@ import java.util.Map;
 
 public class ConfigCrashes {
 
-    protected GlobalCrashFilterCallback globalCrashFilterCallback;
+    protected GlobalCrashFilterCallback globalCrashFilterCallback = null;
     protected boolean checkForNativeCrashDumps = true;
-    protected Map<String,Object> customCrashSegment;
+    protected Map<String,Object> customCrashSegment = null;
     protected boolean recordAllThreadsWithCrash = false;
     protected boolean enableUnhandledCrashReporting = false;
-    protected Integer maxBreadcrumbCount;
+    protected Integer maxBreadcrumbCount = null;
     Integer maxStackTraceLinesPerThread;
     Integer maxStackTraceLineLength;
     int maxStackTraceThreadCount = 30;
