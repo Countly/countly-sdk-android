@@ -42,10 +42,10 @@ public class ModuleCrashTests {
 
     @Test
     public void setCrashFilters() {
-        GlobalCrashFilterCallback callback = new GlobalCrashFilterCallback() {
+        CrashFilterCallback callback = new CrashFilterCallback() {
             @Override
-            public boolean filterCrash(CrashData crash) {
-                if (crash.getStackTrace().contains("Secret")) {
+            public boolean filterCrash(String crash) {
+                if (crash.contains("Secret")) {
                     return true;
                 }
                 return false;
@@ -54,11 +54,11 @@ public class ModuleCrashTests {
 
         Countly countly = new Countly();
         CountlyConfig cConfig = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        cConfig.crashes.setGlobalCrashFilterCallback(callback);
+        cConfig.setCrashFilterCallback(callback);
 
         countly.init(cConfig);
 
-        Assert.assertEquals(callback, countly.moduleCrash.globalCrashFilterCallback);
+        Assert.assertEquals(callback, countly.moduleCrash.crashFilterCallback);
     }
 
     @Test
