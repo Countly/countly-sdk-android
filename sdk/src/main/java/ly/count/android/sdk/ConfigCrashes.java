@@ -26,7 +26,6 @@ public class ConfigCrashes {
     /**
      * For use during testing
      *
-     * @param checkForDumps whether to check for native crash dumps
      * @return Returns the same config object for convenient linking
      */
     protected synchronized ConfigCrashes checkForNativeCrashDumps(boolean checkForDumps) {
@@ -40,7 +39,7 @@ public class ConfigCrashes {
      * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
      * @return Returns the same config object for convenient linking
      */
-    public synchronized ConfigCrashes setCustomCrashSegment(Map<String, Object> crashSegment) {
+    public synchronized ConfigCrashes setCustomCrashSegmentation(Map<String, Object> crashSegment) {
         customCrashSegment = crashSegment;
         return this;
     }

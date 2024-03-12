@@ -768,10 +768,10 @@ public class CountlyConfig {
      *
      * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
      * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.setCustomCrashSegment(Map<String, Object>)</pre> instead
+     * @deprecated this call is deprecated, please use <pre>crashes.setCustomCrashSegmentation(Map<String, Object>)</pre> instead
      */
     public synchronized CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
-        crashes.setCustomCrashSegment(crashSegment);
+        crashes.setCustomCrashSegmentation(crashSegment);
         return this;
     }
 

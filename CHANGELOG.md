@@ -4,7 +4,7 @@
 * Deprecated following functions from "CountlyConfig":
     * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
     * "setCrashFilterCallback(crashFilterCallback)" instead use "crashes.setGlobalCrashFilterCallback(globalCrashFilterCallback)"
-    * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegment(crashSegmentation)"
+    * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
     * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "crashes.setMaxBreadcrumbCount(maxBreadcrumbCount)"
     * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
     * "checkForNativeCrashDumps(checkForDumps)" instead use "crashes.checkForNativeCrashDumps(checkForDumps)"
