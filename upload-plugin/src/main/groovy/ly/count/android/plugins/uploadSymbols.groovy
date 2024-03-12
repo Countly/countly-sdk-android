@@ -1,18 +1,12 @@
 package ly.count.android.plugins
 
+import okhttp3.*
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.StopActionException
 import org.gradle.api.tasks.StopExecutionException
 
-import static groovy.io.FileType.*
-
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody
-import okhttp3.Response
-import okhttp3.MultipartBody
-import okhttp3.MediaType
+import static groovy.io.FileType.FILES
 
 class UploadSymbolsPluginExtension {
   String app_key = ""
@@ -44,7 +38,7 @@ class UploadSymbolsPlugin implements Plugin<Project> {
         String buildVersion = project.android.defaultConfig.versionName
         String url = "${ext.server}/i/crash_symbols/upload_symbol"
         def filePath = "$project.buildDir/$ext.mappingFile"
-        logger.debug("Version name:[ {} ], Upload symbol url:[ {} ], Mapping file path:[ {} ]", buildVersion, url, filePath)
+        logger.debug("uploadJavaSymbols, Version name:[ {} ], Upload symbol url:[ {} ], Mapping file path:[ {} ]", buildVersion, url, filePath)
         File file = new File(filePath)
         if (!file.exists()) {
           logger.error("Mapping file not found")
@@ -61,7 +55,7 @@ class UploadSymbolsPlugin implements Plugin<Project> {
             .build()
         request = new Request.Builder().url(url).post(formBody).build()
       }
-      logger.debug("Generated request: {}", request.body().toString())
+      logger.debug("uploadJavaSymbols, Generated request: {}", request.body().toString())
       doLast {
         if (request == null) {
           logger.error("Request not constructed")
@@ -85,7 +79,6 @@ class UploadSymbolsPlugin implements Plugin<Project> {
         String buildVersion = project.android.defaultConfig.versionName
         String url = "${ext.server}/i/crash_symbols/upload_symbol"
         String breakpadVersion = "$ext.dumpSymsPath/dump_syms --version".execute().getText().trim()
-        // println breakpadVersion
 
         if (!(breakpadVersion =~ /^\d+\.\d+\+cly$/)) {
           breakpadVersion = "0.1+bpd"
@@ -94,6 +87,8 @@ class UploadSymbolsPlugin implements Plugin<Project> {
         def objectsDir = new File("$project.buildDir/$ext.nativeObjectFilesDir")
         def countlyDirStr = "$project.buildDir/intermediates/countly"
         def countlyDir = new File("$countlyDirStr")
+        logger.debug("uploadNativeSymbols, Version name:[ {} ], Upload symbol url:[ {} ], objectsDir:[ {} ], countlyDirStr:[ {} ], countlyDir:[ {} ], breakpadVersion:[ {} ]", buildVersion, url, objectsDir, countlyDirStr, countlyDir, breakpadVersion)
+
         countlyDir.deleteDir()
         countlyDir.mkdirs()
         // println "objectsDir=$objectsDir"
@@ -111,10 +106,8 @@ class UploadSymbolsPlugin implements Plugin<Project> {
           bwr.write(outputStream.toString())
           bwr.flush()
           bwr.close()
-          // println it
           def line = ""
           currentSymbolFile.withReader { line = it.readLine() }
-          // println line
           def words = line.split()
           File symbolDir = new File("$countlyDirStr/symbols/${words[-1]}/${words[-2]}")
           println symbolDir
@@ -138,15 +131,16 @@ class UploadSymbolsPlugin implements Plugin<Project> {
             .addFormDataPart("sym_tool_ver", breakpadVersion)
             .build()
         request = new Request.Builder().url(url).post(formBody).build()
+        logger.debug("uploadNativeSymbols, Generated request: {}", request.body().toString())
       }
       doLast {
         client = new OkHttpClient()
         Response response = client.newCall(request).execute()
 
         if (response.code() != 200) {
-          logger.error("An error occurred while uploading the symbols folder: {}", response.body().string())
+          logger.error("uploadNativeSymbols, An error occurred while uploading the symbols folder: {}", response.body().string())
         } else {
-          logger.debug("File upload successful")
+          logger.debug("uploadNativeSymbols, File upload successful")
         }
       }
     }
