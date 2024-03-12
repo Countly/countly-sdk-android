@@ -7,7 +7,7 @@
     * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
     * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "crashes.setMaxBreadcrumbCount(maxBreadcrumbCount)"
     * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
-    * "checkForNativeCrashDumps(checkForDumps)" instead use "crashes.checkForNativeCrashDumps(checkForDumps)"
+    * "checkForNativeCrashDumps(checkForDumps)" instead use "crashes.disableCheckingForNativeCrashDumps()"
 
 
 ## 24.1.1
