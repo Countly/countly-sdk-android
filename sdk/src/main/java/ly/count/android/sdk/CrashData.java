@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This class is used to store crash data.
@@ -9,10 +11,11 @@ public class CrashData {
 
     private String stackTrace;
     private Map<String,Object> crashSegmentation;
-    private String breadcrumbs;
+    private List<String> breadcrumbs;
     protected boolean crashChanged = false;
+    protected boolean breadcrumbsAdded = false;
 
-    public CrashData(String stackTrace, Map<String,Object> crashSegmentation, String breadcrumbs) {
+    public CrashData(String stackTrace, Map<String,Object> crashSegmentation, List<String> breadcrumbs) {
         this.stackTrace = stackTrace;
         this.crashSegmentation = crashSegmentation;
         this.breadcrumbs = breadcrumbs;
@@ -38,7 +41,7 @@ public class CrashData {
      * Get the breadcrumbs of the crash.
      * @return the breadcrumbs of the crash.
      */
-    public String getBreadcrumbs() {
+    public List<String> getBreadcrumbs() {
         return breadcrumbs;
     }
 
@@ -65,8 +68,25 @@ public class CrashData {
      * Set the breadcrumbs of the crash.
      * @param breadcrumbs the breadcrumbs of the crash.
      */
-    public void setBreadcrumbs(String breadcrumbs) {
+    public void setBreadcrumbs(List<String> breadcrumbs) {
+        if(this.breadcrumbs.size() < breadcrumbs.size()){
+            breadcrumbsAdded = true;
+        }
         this.breadcrumbs = breadcrumbs;
         crashChanged = true;
+    }
+
+    /**
+     * Get the breadcrumbs of the crash.
+     * @return the breadcrumbs of the crash.
+     */
+    public String getBreadcrumbsAsString() {
+        StringBuilder breadcrumbsString = new StringBuilder();
+
+        for(String breadcrumb: breadcrumbs){
+            breadcrumbsString.append(breadcrumb).append("\n");
+        }
+
+        return breadcrumbsString.toString();
     }
 }

@@ -164,17 +164,28 @@ public class ModuleCrash extends ModuleBase {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogs());
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsList());
 
         if(globalCrashFilterCallback != null) {
             if (globalCrashFilterCallback.filterCrash(crashData)) {
                 L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
                 return;
             }
+
+            if(crashData.breadcrumbsAdded){
+                L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: ["+ _cly.config_.crashes.maxBreadcrumbCount+"]");
+                if(crashData.getBreadcrumbs().size() > _cly.config_.crashes.maxBreadcrumbCount){
+                    L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, after filtering, breadcrumbs limit is exceeded. clipping from tail count:["+crashData.getBreadcrumbs().size()+"]");
+                    int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.crashes.maxBreadcrumbCount;
+                    if (gonnaClip > 0) {
+                        crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
+                    }
+                }
+            }
         }
 
         final String crash;
-        crash = deviceInfo.getCrashDataString(_cly.context_, crashData.getStackTrace(), nonfatal, isNativeCrash, crashData.getBreadcrumbs(), crashData.getCrashSegmentation(), deviceInfo, metricOverride);
+        crash = deviceInfo.getCrashDataString(_cly.context_, crashData.getStackTrace(), nonfatal, isNativeCrash, crashData.getBreadcrumbsAsString(), crashData.getCrashSegmentation(), deviceInfo, metricOverride);
 
         requestQueueProvider.sendCrashReport(crash, nonfatal);
     }

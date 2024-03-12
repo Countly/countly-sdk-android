@@ -48,6 +48,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -806,7 +807,7 @@ class DeviceInfo {
     }
 
     /**
-     * Returns the collected logs.
+     * Returns the collected logs as string.
      */
     @NonNull
     static String getLogs() {
@@ -817,6 +818,16 @@ class DeviceInfo {
         }
         logs.clear();
         return allLogs.toString();
+    }
+
+    /**
+     * Returns the collected logs.
+     */
+    @NonNull
+    static List<String> getLogsList() {
+        List<String> temp = new LinkedList<>(logs);
+        logs.clear();
+        return temp;
     }
 
     /**
