@@ -16,18 +16,15 @@ public class ModuleCrash extends ModuleBase {
     //native crash
     private static final String countlyFolderName = "Countly";
     private static final String countlyNativeCrashFolderName = "CrashDumps";
-
-    //crash filtering
-    GlobalCrashFilterCallback globalCrashFilterCallback;
-
-    boolean recordAllThreads = false;
-
-    @Nullable
-    Map<String, Object> customCrashSegments = null;
-
     //interface for SDK users
     final Crashes crashesInterface;
-
+    //crash filtering
+    GlobalCrashFilterCallback globalCrashFilterCallback;
+    //Deprecated, will be removed in the future
+    CrashFilterCallback crashFilterCallback;
+    boolean recordAllThreads = false;
+    @Nullable
+    Map<String, Object> customCrashSegments = null;
     @Nullable
     Map<String, String> metricOverride = null;
 
@@ -36,6 +33,7 @@ public class ModuleCrash extends ModuleBase {
         L.v("[ModuleCrash] Initialising");
 
         globalCrashFilterCallback = config.crashes.globalCrashFilterCallback;
+        crashFilterCallback = config.crashFilterCallback;
 
         recordAllThreads = config.crashes.recordAllThreadsWithCrash;
 
@@ -166,22 +164,24 @@ public class ModuleCrash extends ModuleBase {
 
         CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsList());
 
-        if(globalCrashFilterCallback != null) {
+        if (globalCrashFilterCallback != null) {
             if (globalCrashFilterCallback.filterCrash(crashData)) {
                 L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
                 return;
             }
 
-            if(crashData.breadcrumbsAdded){
-                L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: ["+ _cly.config_.crashes.maxBreadcrumbCount+"]");
-                if(crashData.getBreadcrumbs().size() > _cly.config_.crashes.maxBreadcrumbCount){
-                    L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, after filtering, breadcrumbs limit is exceeded. clipping from tail count:["+crashData.getBreadcrumbs().size()+"]");
+            if (crashData.breadcrumbsAdded) {
+                L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.crashes.maxBreadcrumbCount + "]");
+                if (crashData.getBreadcrumbs().size() > _cly.config_.crashes.maxBreadcrumbCount) {
+                    L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, after filtering, breadcrumbs limit is exceeded. clipping from tail count:[" + crashData.getBreadcrumbs().size() + "]");
                     int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.crashes.maxBreadcrumbCount;
                     if (gonnaClip > 0) {
                         crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
                     }
                 }
             }
+        } else if (crashFilterCallback != null) {
+
         }
 
         final String crash;
@@ -259,13 +259,12 @@ public class ModuleCrash extends ModuleBase {
     boolean crashFilterCheck(String crash) {
         L.d("[ModuleCrash] Calling crashFilterCheck");
 
-        if (globalCrashFilterCallback == null) {
+        if (crashFilterCallback == null) {
             //no filter callback set, nothing to compare against
             return false;
         }
 
-        CrashData crashData = new CrashData(crash, null, null); //TODO move after approval
-        return globalCrashFilterCallback.filterCrash(crashData);
+        return crashFilterCallback.filterCrash(crash);
     }
 
     void addAllThreadInformationToCrash(PrintWriter pw) {

@@ -65,9 +65,9 @@ public class CountlyConfigTests {
 
         String[] fn = { "ds dsd", "434f", "ngfhg" };
 
-        GlobalCrashFilterCallback callback = new GlobalCrashFilterCallback() {
+        CrashFilterCallback callback = new CrashFilterCallback() {
             @Override
-            public boolean filterCrash(CrashData crash) {
+            public boolean filterCrash(String crash) {
                 return false;
             }
         };
@@ -128,7 +128,7 @@ public class CountlyConfigTests {
         config.setConsentEnabled(fn);
         config.setHttpPostForced(true);
         config.enableTemporaryDeviceIdMode();
-        config.crashes.setGlobalCrashFilterCallback(callback);
+        config.setCrashFilterCallback(callback);
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
         config.setAutoTrackingExceptions(act);
@@ -180,7 +180,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
         Assert.assertTrue(config.temporaryDeviceIdEnabled);
-        Assert.assertEquals(callback, config.crashes.globalCrashFilterCallback);
+        Assert.assertEquals(callback, config.crashFilterCallback);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.globalViewSegmentation);
         Assert.assertArrayEquals(act, config.automaticViewTrackingExceptions);
