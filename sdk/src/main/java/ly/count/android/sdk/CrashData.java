@@ -71,7 +71,7 @@ public class CrashData {
      *
      * @return fatal info of a crash
      */
-    public Boolean getFatal() {
+    public boolean getFatal() {
         return fatal;
     }
 

@@ -132,6 +132,7 @@ public class CrashDataTests {
     public void setBreadcrumbs_null() {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
         crashData.setBreadcrumbs(null);
+
         Assert.assertEquals(crashData.getBreadcrumbs(), new ArrayList<>());
         Assert.assertEquals(crashData.crashBits, 0b00000);
     }
@@ -140,6 +141,7 @@ public class CrashDataTests {
     public void setCrashSegmentation_null() {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
         crashData.setCrashSegmentation(null);
+
         Assert.assertEquals(crashData.getCrashSegmentation(), new HashMap<>());
         Assert.assertEquals(crashData.crashBits, 0b00000);
     }
@@ -150,6 +152,7 @@ public class CrashDataTests {
         crashMetrics.put("key", "value");
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
         crashData.setCrashMetrics(null);
+
         Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
         Assert.assertEquals(crashData.crashBits, 0b00000);
     }
@@ -158,6 +161,7 @@ public class CrashDataTests {
     public void setStackTrace_null() {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
         crashData.setStackTrace(null);
+
         Assert.assertEquals(crashData.getStackTrace(), "ST");
         Assert.assertEquals(crashData.crashBits, 0b00000);
     }
@@ -166,6 +170,7 @@ public class CrashDataTests {
     public void setStackTrace_empty() {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
         crashData.setStackTrace("");
+
         Assert.assertEquals(crashData.getStackTrace(), "");
         Assert.assertEquals(crashData.crashBits, 0b00001);
     }
@@ -176,7 +181,92 @@ public class CrashDataTests {
         breadcrumbs.add("key");
         CrashData crashData = new CrashData("ST", new HashMap<>(), breadcrumbs, new JSONObject(), true);
         crashData.setBreadcrumbs(new ArrayList<>());
+
         Assert.assertEquals(crashData.getBreadcrumbs(), new ArrayList<>());
         Assert.assertEquals(crashData.crashBits, 0b00100);
+    }
+
+    @Test
+    public void setStackTrace_same() {
+        CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
+        crashData.setStackTrace("ST");
+
+        Assert.assertEquals(crashData.getStackTrace(), "ST");
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+    }
+
+    @Test
+    public void setCrashSegmentation_same() {
+        Map<String, Object> crashSegmentation = new HashMap<>();
+        crashSegmentation.put("key", "value");
+        CrashData crashData = new CrashData("ST", crashSegmentation, new ArrayList<>(), new JSONObject(), true);
+        crashData.setCrashSegmentation(crashSegmentation);
+
+        Assert.assertEquals(crashData.getCrashSegmentation(), crashSegmentation);
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+    }
+
+    @Test
+    public void setBreadcrumbs_same() {
+        List<String> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add("key");
+        CrashData crashData = new CrashData("ST", new HashMap<>(), breadcrumbs, new JSONObject(), true);
+        crashData.setBreadcrumbs(breadcrumbs);
+
+        Assert.assertEquals(crashData.getBreadcrumbs(), breadcrumbs);
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+    }
+
+    @Test
+    public void setCrashMetrics_same() throws JSONException {
+        JSONObject crashMetrics = new JSONObject();
+        crashMetrics.put("key", "value");
+        CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
+        crashData.setCrashMetrics(crashMetrics);
+
+        Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+    }
+
+    @Test
+    public void setFatal_same() {
+        CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
+        crashData.setFatal(true);
+
+        Assert.assertTrue(crashData.getFatal());
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+    }
+
+    @Test
+    public void setBreadcrumbs_withoutSetter() {
+        List<String> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add("key");
+        CrashData crashData = new CrashData("ST", new HashMap<>(), breadcrumbs, new JSONObject(), true);
+        crashData.getBreadcrumbs().add("value");
+
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+        Assert.assertEquals(crashData.getBreadcrumbsAsString(), "key\nvalue\n");
+    }
+
+    @Test
+    public void setCrashSegmentation_withoutSetter() {
+        Map<String, Object> crashSegmentation = new HashMap<>();
+        crashSegmentation.put("key", "value");
+        CrashData crashData = new CrashData("ST", crashSegmentation, new ArrayList<>(), new JSONObject(), true);
+        crashData.getCrashSegmentation().put("key2", "value2");
+
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+        Assert.assertEquals(crashData.getCrashSegmentation().get("key2"), "value2");
+    }
+
+    @Test
+    public void setCrashMetrics_withoutSetter() throws JSONException {
+        JSONObject crashMetrics = new JSONObject();
+        crashMetrics.put("key", "value");
+        CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
+        crashData.getCrashMetrics().put("key2", "value2");
+
+        Assert.assertEquals(crashData.crashBits, 0b00000);
+        Assert.assertEquals(crashData.getCrashMetrics().get("key2"), "value2");
     }
 }
