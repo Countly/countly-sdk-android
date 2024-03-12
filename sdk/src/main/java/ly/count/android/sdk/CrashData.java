@@ -39,7 +39,7 @@ public class CrashData {
      * @param stackTrace the stack trace of the crash.
      */
     public void setStackTrace(String stackTrace) {
-        if (!this.stackTrace.equals(stackTrace)) {
+        if (stackTrace != null && !this.stackTrace.equals(stackTrace)) {
             this.stackTrace = stackTrace;
             setChanged(CrashDataProps.STACK_TRACE.value);
         }
@@ -60,14 +60,14 @@ public class CrashData {
      * @param crashMetrics of a crash
      */
     public void setCrashMetrics(JSONObject crashMetrics) {
-        if (!this.crashMetrics.equals(crashMetrics)) {
+        if (crashMetrics != null && !this.crashMetrics.equals(crashMetrics)) {
             this.crashMetrics = crashMetrics;
             setChanged(CrashDataProps.METRICS.value);
         }
     }
 
     /**
-     * Get whether or not crash is fatal
+     * Get whether crash is fatal
      *
      * @return fatal info of a crash
      */
@@ -76,7 +76,7 @@ public class CrashData {
     }
 
     /**
-     * Set whether or not crash is fatal
+     * Set whether crash is fatal
      *
      * @param fatal info
      */
@@ -117,7 +117,7 @@ public class CrashData {
      * @param crashSegmentation the segmentation of the crash.
      */
     public void setCrashSegmentation(Map<String, Object> crashSegmentation) {
-        if (!this.crashSegmentation.equals(crashSegmentation)) {
+        if (crashSegmentation != null && !this.crashSegmentation.equals(crashSegmentation)) {
             this.crashSegmentation = crashSegmentation;
             setChanged(CrashDataProps.SEGMENTATION.value);
         }
@@ -138,6 +138,9 @@ public class CrashData {
      * @param breadcrumbs the breadcrumbs of the crash.
      */
     public void setBreadcrumbs(List<String> breadcrumbs) {
+        if (breadcrumbs == null) {
+            return;
+        }
         if (this.breadcrumbs.size() < breadcrumbs.size()) {
             breadcrumbsAdded = true;
         }
