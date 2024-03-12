@@ -162,7 +162,7 @@ public class ModuleCrash extends ModuleBase {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsList());
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsList(), null, !nonfatal);
 
         if (globalCrashFilterCallback != null) {
             if (globalCrashFilterCallback.filterCrash(crashData)) {
