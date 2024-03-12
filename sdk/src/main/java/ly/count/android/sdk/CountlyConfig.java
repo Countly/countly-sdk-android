@@ -157,6 +157,7 @@ public class CountlyConfig {
      * Set the maximum value size for values used internally. This affects things like: segmentation values
      * user property values, breadcrumb text.
      * If those values exceed the set limit, they will be truncated.
+     *
      * @param maxValueSize
      * @return Returns the same config object for convenient linking
      */
@@ -719,10 +720,10 @@ public class CountlyConfig {
      *
      * @param checkForDumps whether to check for native crash dumps
      * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.checkForNativeCrashDumps(boolean)</pre> instead
+     * @deprecated this call is deprecated, please use <pre>crashes.disableCheckingForNativeCrashDumps()</pre> instead
      */
     protected synchronized CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
-        crashes.checkForNativeCrashDumps(checkForDumps);
+        crashes.disableCheckingForNativeCrashDumps();
         return this;
     }
 

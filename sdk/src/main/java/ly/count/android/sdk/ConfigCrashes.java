@@ -6,7 +6,7 @@ public class ConfigCrashes {
 
     protected GlobalCrashFilterCallback globalCrashFilterCallback = null;
     protected boolean checkForNativeCrashDumps = true;
-    protected Map<String,Object> customCrashSegment = null;
+    protected Map<String, Object> customCrashSegment = null;
     protected boolean recordAllThreadsWithCrash = false;
     protected boolean enableUnhandledCrashReporting = false;
     protected Integer maxBreadcrumbCount = null;
@@ -28,8 +28,8 @@ public class ConfigCrashes {
      *
      * @return Returns the same config object for convenient linking
      */
-    protected synchronized ConfigCrashes checkForNativeCrashDumps(boolean checkForDumps) {
-        checkForNativeCrashDumps = checkForDumps;
+    protected synchronized ConfigCrashes disableCheckingForNativeCrashDumps() {
+        checkForNativeCrashDumps = false;
         return this;
     }
 
