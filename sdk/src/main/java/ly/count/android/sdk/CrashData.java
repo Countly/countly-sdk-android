@@ -8,8 +8,7 @@ import org.json.JSONObject;
  * This class is used to store crash data.
  */
 public class CrashData {
-
-    protected boolean crashChanged = false;
+    protected byte crashBits = 0b00000;
     protected boolean breadcrumbsAdded = false;
     private String stackTrace;
     private Map<String, Object> crashSegmentation;
@@ -40,8 +39,10 @@ public class CrashData {
      * @param stackTrace the stack trace of the crash.
      */
     public void setStackTrace(String stackTrace) {
-        this.stackTrace = stackTrace;
-        crashChanged = true;
+        if (!this.stackTrace.equals(stackTrace)) {
+            this.stackTrace = stackTrace;
+            setChanged(CrashDataProps.STACK_TRACE.value);
+        }
     }
 
     /**
@@ -59,7 +60,10 @@ public class CrashData {
      * @param crashMetrics of a crash
      */
     public void setCrashMetrics(JSONObject crashMetrics) {
-        this.crashMetrics = crashMetrics;
+        if (!this.crashMetrics.equals(crashMetrics)) {
+            this.crashMetrics = crashMetrics;
+            setChanged(CrashDataProps.METRICS.value);
+        }
     }
 
     /**
@@ -77,7 +81,10 @@ public class CrashData {
      * @param fatal info
      */
     public void setFatal(boolean fatal) {
-        this.fatal = fatal;
+        if (fatal != this.fatal) {
+            this.fatal = fatal;
+            setChanged(CrashDataProps.FATAL.value);
+        }
     }
 
     /**
@@ -110,8 +117,10 @@ public class CrashData {
      * @param crashSegmentation the segmentation of the crash.
      */
     public void setCrashSegmentation(Map<String, Object> crashSegmentation) {
-        this.crashSegmentation = crashSegmentation;
-        crashChanged = true;
+        if (!this.crashSegmentation.equals(crashSegmentation)) {
+            this.crashSegmentation = crashSegmentation;
+            setChanged(CrashDataProps.SEGMENTATION.value);
+        }
     }
 
     /**
@@ -132,7 +141,25 @@ public class CrashData {
         if (this.breadcrumbs.size() < breadcrumbs.size()) {
             breadcrumbsAdded = true;
         }
-        this.breadcrumbs = breadcrumbs;
-        crashChanged = true;
+        if (!this.breadcrumbs.equals(breadcrumbs)) {
+            this.breadcrumbs = breadcrumbs;
+            setChanged(CrashDataProps.BREADCRUMBS.value);
+        }
+    }
+
+    private void setChanged(byte value) {
+        if ((crashBits & value) != value) {
+            crashBits = (byte) (crashBits | value);
+        }
+    }
+
+    private enum CrashDataProps {
+        STACK_TRACE((byte) 0b00001), SEGMENTATION((byte) 0b00010), BREADCRUMBS((byte) 0b00100), FATAL((byte) 0b01000), METRICS((byte) 0b10000);
+
+        final byte value;
+
+        CrashDataProps(byte value) {
+            this.value = value;
+        }
     }
 }
