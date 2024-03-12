@@ -43,9 +43,8 @@ class UploadSymbolsPlugin implements Plugin<Project> {
         }
         String buildVersion = project.android.defaultConfig.versionName
         String url = "${ext.server}/i/crash_symbols/upload_symbol"
-        // println "URL = $url"
         def filePath = "$project.buildDir/$ext.mappingFile"
-        // logger.debug("mapping file to be uploaded = {}", filePath)
+        logger.debug("Version name:[ {} ], Upload symbol url:[ {} ], Mapping file path:[ {} ]", buildVersion, url, filePath)
         File file = new File(filePath)
         if (!file.exists()) {
           logger.error("Mapping file not found")
@@ -61,8 +60,8 @@ class UploadSymbolsPlugin implements Plugin<Project> {
             .addFormDataPart("note", ext.noteJava)
             .build()
         request = new Request.Builder().url(url).post(formBody).build()
-        // println("request constructed")
       }
+      logger.debug("Generated request: {}", request.body().toString())
       doLast {
         if (request == null) {
           logger.error("Request not constructed")
