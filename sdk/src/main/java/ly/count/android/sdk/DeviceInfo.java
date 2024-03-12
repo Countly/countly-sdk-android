@@ -65,10 +65,9 @@ class DeviceInfo {
     //crash related fields
     private static final LinkedList<String> logs = new LinkedList<>();
     private final static int startTime = UtilsTime.currentTimestampSeconds();
-    private boolean inBackground = true;
     private static long totalMemory = 0;
-
     MetricProvider mp;
+    private boolean inBackground = true;
 
     public DeviceInfo(MetricProvider mpOverride) {
         mp = mpOverride;
@@ -559,6 +558,77 @@ class DeviceInfo {
     }
 
     /**
+     * Adds a record in the log
+     */
+    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
+        int recordLength = record.length();
+        if (recordLength > maxBreadcrumbLength) {
+            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbLength + "]");
+            record = record.substring(0, maxBreadcrumbLength);
+        }
+
+        logs.add(record);
+
+        if (logs.size() > maxBreadcrumbCount) {
+            Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
+            logs.removeFirst();
+        }
+    }
+
+    /**
+     * Returns the collected logs as string.
+     */
+    @NonNull
+    static String getLogs() {
+        StringBuilder allLogs = new StringBuilder();
+
+        for (String s : logs) {
+            allLogs.append(s).append("\n");
+        }
+        logs.clear();
+        return allLogs.toString();
+    }
+
+    /**
+     * Returns the collected logs.
+     */
+    @NonNull
+    static List<String> getLogsList() {
+        List<String> temp = new LinkedList<>(logs);
+        logs.clear();
+        return temp;
+    }
+
+    /**
+     * Get custom segments json string from the provided map
+     */
+    static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {
+        if (customSegments == null || customSegments.isEmpty()) {
+            return null;
+        }
+
+        JSONObject returnedSegmentation = new JSONObject();
+        for (String k : customSegments.keySet()) {
+            if (k != null) {
+                try {
+                    returnedSegmentation.put(k, customSegments.get(k));
+                } catch (JSONException e) {
+                    Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
+                }
+            }
+        }
+
+        return returnedSegmentation;
+    }
+
+    /**
+     * Get app's running time before crashing.
+     */
+    static String getRunningTime() {
+        return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
+    }
+
+    /**
      * Returns the common metrics that would be shared with session, remote config and crash metrics
      * If metric override is provided, it will check for specific keys and override them
      *
@@ -774,7 +844,10 @@ class DeviceInfo {
     @NonNull
     String getCrashDataString(final CrashData crashData, boolean isNativeCrash) {
 
-        final JSONObject json = crashData.getCrashMetrics();
+        JSONObject json = crashData.getCrashMetrics();
+        if (json == null) {
+            json = new JSONObject();
+        }
 
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
@@ -832,76 +905,5 @@ class DeviceInfo {
      */
     String isInBackground() {
         return Boolean.toString(inBackground);
-    }
-
-    /**
-     * Adds a record in the log
-     */
-    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
-        int recordLength = record.length();
-        if (recordLength > maxBreadcrumbLength) {
-            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbLength + "]");
-            record = record.substring(0, maxBreadcrumbLength);
-        }
-
-        logs.add(record);
-
-        if (logs.size() > maxBreadcrumbCount) {
-            Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
-            logs.removeFirst();
-        }
-    }
-
-    /**
-     * Returns the collected logs as string.
-     */
-    @NonNull
-    static String getLogs() {
-        StringBuilder allLogs = new StringBuilder();
-
-        for (String s : logs) {
-            allLogs.append(s).append("\n");
-        }
-        logs.clear();
-        return allLogs.toString();
-    }
-
-    /**
-     * Returns the collected logs.
-     */
-    @NonNull
-    static List<String> getLogsList() {
-        List<String> temp = new LinkedList<>(logs);
-        logs.clear();
-        return temp;
-    }
-
-    /**
-     * Get custom segments json string from the provided map
-     */
-    static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {
-        if (customSegments == null || customSegments.isEmpty()) {
-            return null;
-        }
-
-        JSONObject returnedSegmentation = new JSONObject();
-        for (String k : customSegments.keySet()) {
-            if (k != null) {
-                try {
-                    returnedSegmentation.put(k, customSegments.get(k));
-                } catch (JSONException e) {
-                    Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
-                }
-            }
-        }
-
-        return returnedSegmentation;
-    }
-
-    /**
-     * Get app's running time before crashing.
-     */
-    static String getRunningTime() {
-        return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
     }
 }
