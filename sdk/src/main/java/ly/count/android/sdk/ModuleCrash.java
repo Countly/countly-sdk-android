@@ -166,7 +166,7 @@ public class ModuleCrash extends ModuleBase {
 
         if (globalCrashFilterCallback != null) {
             if (globalCrashFilterCallback.filterCrash(crashData)) {
-                L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
+                L.d("[ModuleCrash] Global Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
                 return;
             }
 
@@ -181,7 +181,10 @@ public class ModuleCrash extends ModuleBase {
                 }
             }
         } else if (crashFilterCallback != null) {
-
+            if (crashFilterCallback.filterCrash(error)) {
+                L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
+                return;
+            }
         }
 
         final String crash;
