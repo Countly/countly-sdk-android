@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* ! Minor breaking change ! Setting for enabling/disabling for native crash dumps will be always enabled
+
 * Added an extended way of crash filtering
 
 * Deprecated following functions from "CountlyConfig":
@@ -7,7 +9,7 @@
     * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
     * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "crashes.setMaxBreadcrumbCount(maxBreadcrumbCount)"
     * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
-    * "checkForNativeCrashDumps(checkForDumps)" instead use "crashes.disableCheckingForNativeCrashDumps()"
+    * "checkForNativeCrashDumps(checkForDumps)"
 
 
 ## 24.1.1

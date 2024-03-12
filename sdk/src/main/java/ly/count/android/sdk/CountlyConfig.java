@@ -720,10 +720,9 @@ public class CountlyConfig {
      *
      * @param checkForDumps whether to check for native crash dumps
      * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.disableCheckingForNativeCrashDumps()</pre> instead
+     * @deprecated this call is deprecated and will always be enabled
      */
     protected synchronized CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
-        crashes.disableCheckingForNativeCrashDumps();
         return this;
     }
 

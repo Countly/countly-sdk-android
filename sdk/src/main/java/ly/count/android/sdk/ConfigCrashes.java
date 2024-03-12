@@ -24,16 +24,6 @@ public class ConfigCrashes {
     }
 
     /**
-     * For use during testing
-     *
-     * @return Returns the same config object for convenient linking
-     */
-    protected synchronized ConfigCrashes disableCheckingForNativeCrashDumps() {
-        checkForNativeCrashDumps = false;
-        return this;
-    }
-
-    /**
      * Set custom crash segmentation which will be added to all recorded crashes
      *
      * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"

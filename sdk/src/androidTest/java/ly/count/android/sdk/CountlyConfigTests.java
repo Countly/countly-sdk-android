@@ -161,7 +161,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(c, config.context);
         Assert.assertEquals(s[1], config.appKey);
         Assert.assertEquals(cs, config.countlyStore);
-        Assert.assertFalse(config.crashes.checkForNativeCrashDumps);
+        Assert.assertTrue(config.crashes.checkForNativeCrashDumps); // this will always be true, SDK will always check for native crash dumps
         Assert.assertEquals(s[2], config.deviceID);
         Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
