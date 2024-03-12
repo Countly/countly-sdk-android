@@ -699,11 +699,34 @@ class DeviceInfo {
     JSONObject getCrashDataStringJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
         @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
 
-        final JSONObject json = getCommonMetrics(context, metricOverride);
+        final JSONObject json = getCrashMetrics(context, isNativeCrash, metricOverride);
 
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", error,
-            "_nonfatal", Boolean.toString(nonfatal),
+            "_nonfatal", Boolean.toString(nonfatal)
+        );
+
+        if (!isNativeCrash) {
+            //if is not a native crash
+            Utils.fillJSONIfValuesNotEmpty(json,
+                "_logs", crashBreadcrumbs
+            );
+        }
+
+        try {
+            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
+        } catch (JSONException e) {
+            //no custom segments
+        }
+
+        return json;
+    }
+
+    @NonNull
+    JSONObject getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride) {
+        final JSONObject json = getCommonMetrics(context, metricOverride);
+
+        Utils.fillJSONIfValuesNotEmpty(json,
             "_cpu", mp.getCpu(),
             "_opengl", mp.getOpenGL(context),
             "_root", mp.isRooted(),
@@ -714,7 +737,6 @@ class DeviceInfo {
         if (!isNativeCrash) {
             //if is not a native crash
             Utils.fillJSONIfValuesNotEmpty(json,
-                "_logs", crashBreadcrumbs,
                 "_ram_current", mp.getRamCurrent(context),
                 "_disk_current", mp.getDiskCurrent(),
                 "_bat", mp.getBatteryLevel(context),
@@ -732,12 +754,6 @@ class DeviceInfo {
             }
         }
 
-        try {
-            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
-        } catch (JSONException e) {
-            //no custom segments
-        }
-
         return json;
     }
 
@@ -748,6 +764,36 @@ class DeviceInfo {
     String getCrashDataString(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
         @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
         final JSONObject json = getCrashDataStringJSON(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, metricOverride);
+
+        return json.toString();
+    }
+
+    /**
+     * Returns a JSON string containing the device crash report
+     */
+    @NonNull
+    String getCrashDataString(final CrashData crashData, boolean isNativeCrash) {
+
+        final JSONObject json = crashData.getCrashMetrics();
+
+        Utils.fillJSONIfValuesNotEmpty(json,
+            "_error", crashData.getStackTrace(),
+            "_nonfatal", Boolean.toString(!crashData.getFatal()),
+            "_bits", Integer.toBinaryString(crashData.crashBits)
+        );
+
+        if (!isNativeCrash) {
+            //if is not a native crash
+            Utils.fillJSONIfValuesNotEmpty(json,
+                "_logs", crashData.getBreadcrumbsAsString()
+            );
+        }
+
+        try {
+            json.put("_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
+        } catch (JSONException e) {
+            //no custom segments
+        }
 
         return json.toString();
     }

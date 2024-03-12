@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONObject;
 
 public class ModuleCrash extends ModuleBase {
     //native crash
@@ -134,10 +135,8 @@ public class ModuleCrash extends ModuleBase {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
-        final String crashData;
-        crashData = deviceInfo.getCrashDataString(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, deviceInfo, metricOverride);
-
-        requestQueueProvider.sendCrashReport(crashData, nonfatal);
+        final JSONObject crashData = deviceInfo.getCrashDataStringJSON(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, metricOverride);
+        requestQueueProvider.sendCrashReport(crashData.toString(), nonfatal);
     }
 
     public void sendCrashReportToQueueWFilterCallback(String error, boolean nonfatal, boolean isNativeCrash, @Nullable final Map<String, Object> customSegmentation) {
@@ -150,19 +149,17 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (customSegmentation != null) {
-            Utils.removeUnsupportedDataTypes(customSegmentation);
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
         //truncate crash segmentation
-        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueueWFilterCallback", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsList(), null, !nonfatal);
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsList(), _cly.config_.deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
 
         if (globalCrashFilterCallback != null) {
             if (globalCrashFilterCallback.filterCrash(crashData)) {
@@ -187,10 +184,11 @@ public class ModuleCrash extends ModuleBase {
             }
         }
 
-        final String crash;
-        crash = deviceInfo.getCrashDataString(_cly.context_, crashData.getStackTrace(), nonfatal, isNativeCrash, crashData.getBreadcrumbsAsString(), crashData.getCrashSegmentation(), deviceInfo, metricOverride);
+        Utils.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
+        Utils.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueueWFilterCallback", L);
 
-        requestQueueProvider.sendCrashReport(crash, nonfatal);
+        final String crash = deviceInfo.getCrashDataString(crashData, isNativeCrash);
+        requestQueueProvider.sendCrashReport(crash, !crashData.getFatal());
     }
 
     /**
