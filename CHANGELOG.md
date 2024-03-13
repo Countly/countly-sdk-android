@@ -1,3 +1,10 @@
+## XX.XX.XX
+* Added SDK internal limits configuration interface
+
+* Deprecated the following calls from "CountlyConfig":
+  * "setMaxSegmentationValues(maxSegmentationValues)" instead use "sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues)"
+  * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount)"
+
 ## 24.1.1
 * Added a new metric for detecting whether or not a device has a hinge
 
