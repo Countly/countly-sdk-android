@@ -759,7 +759,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      *
      * @param eventsToRemove collection containing the events to remove from the local store
      */
-    public synchronized void removeEvents(final Collection<Event> eventsToRemove) {
+    public synchronized void removeEvents(final List<Event> eventsToRemove) {
         long tsStart = 0L;
         if (pcc != null) {
             tsStart = UtilsTime.getNanoTime();
@@ -785,13 +785,13 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param delimiter delimiter to use, should not be something that can be found in URL-encoded JSON string
      */
     @SuppressWarnings("SameParameterValue")
-    static String joinEvents(final Collection<Event> collection, final String delimiter, PerformanceCounterCollector pcc) {
+    static String joinEvents(final List<Event> collection, final String delimiter, PerformanceCounterCollector pcc) {
         long tsStart = 0L;
         if (pcc != null) {
             tsStart = UtilsTime.getNanoTime();
         }
 
-        final List<String> strings = new ArrayList<>();
+        final List<String> strings = new ArrayList<>(collection.size());
         for (Event e : collection) {
             strings.add(e.toJSON().toString());
         }

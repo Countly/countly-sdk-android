@@ -15,6 +15,7 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -37,30 +38,12 @@ public class Utils {
     }
 
     /**
-     * Joins objects with a separator
-     *
-     * @param objects objects to join
-     * @param separator separator to use
-     * @return resulting string
-     */
-    static <T> String join(final Collection<T> objects, @NonNull final String separator) {
-        StringBuilder sb = new StringBuilder();
-        Iterator<T> iter = objects.iterator();
-        while (iter.hasNext()) {
-            sb.append(iter.next());
-            if (iter.hasNext()) {
-                sb.append(separator);
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
      * Joins all the strings in the specified collection into a single string with the specified delimiter.
      * Used in countlyStore
      */
-    static String joinCountlyStore(final Collection<String> collection, final String delimiter) {
-        final StringBuilder builder = new StringBuilder();
+    static String joinCountlyStore(@NonNull final List<String> collection, @NonNull final String delimiter) {
+        int targetCapacity = collection.size() == 0 ? 0 : collection.size() * collection.get(0).length();
+        final StringBuilder builder = new StringBuilder(targetCapacity);
 
         int i = 0;
         for (String s : collection) {
