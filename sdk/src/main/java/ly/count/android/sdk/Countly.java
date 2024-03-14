@@ -29,9 +29,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -135,7 +133,7 @@ public class Countly {
     final int maxBreadcrumbCountDefault = 100;
     final int maxStackTraceLinesPerThreadDefault = 30;
     final int maxStackTraceLineLengthDefault = 200;
-    final int maxStackTraceThreadCountDefault = 30;
+    final int maxStackTraceThreadCountDefault = 50;
 
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
@@ -367,64 +365,64 @@ public class Countly {
             config_ = config;
 
             // Have a look at the SDK limit values
-            if (config.maxKeyLength != null) {
-                if (config.maxKeyLength < 1) {
-                    config.maxKeyLength = 1;
+            if (config.sdkInternalLimits.maxKeyLength != null) {
+                if (config.sdkInternalLimits.maxKeyLength < 1) {
+                    config.sdkInternalLimits.maxKeyLength = 1;
                     L.w("[Init] provided 'maxKeyLength' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxKeyLength' override:[" + config.maxKeyLength + "]");
+                L.i("[Init] provided 'maxKeyLength' override:[" + config.sdkInternalLimits.maxKeyLength + "]");
             } else {
-                config.maxKeyLength = maxKeyLengthDefault;
+                config.sdkInternalLimits.maxKeyLength = maxKeyLengthDefault;
             }
 
-            if (config.maxValueSize != null) {
-                if (config.maxValueSize < 1) {
-                    config.maxValueSize = 1;
+            if (config.sdkInternalLimits.maxValueSize != null) {
+                if (config.sdkInternalLimits.maxValueSize < 1) {
+                    config.sdkInternalLimits.maxValueSize = 1;
                     L.w("[Init] provided 'maxValueSize' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxValueSize' override:[" + config.maxValueSize + "]");
+                L.i("[Init] provided 'maxValueSize' override:[" + config.sdkInternalLimits.maxValueSize + "]");
             } else {
-                config.maxValueSize = maxValueSizeDefault;
+                config.sdkInternalLimits.maxValueSize = maxValueSizeDefault;
             }
 
-            if (config.maxSegmentationValues != null) {
-                if (config.maxSegmentationValues < 1) {
-                    config.maxSegmentationValues = 1;
+            if (config.sdkInternalLimits.maxSegmentationValues != null) {
+                if (config.sdkInternalLimits.maxSegmentationValues < 1) {
+                    config.sdkInternalLimits.maxSegmentationValues = 1;
                     L.w("[Init] provided 'maxSegmentationValues' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxSegmentationValues' override:[" + config.maxSegmentationValues + "]");
+                L.i("[Init] provided 'maxSegmentationValues' override:[" + config.sdkInternalLimits.maxSegmentationValues + "]");
             } else {
-                config.maxSegmentationValues = maxSegmentationValuesDefault;
+                config.sdkInternalLimits.maxSegmentationValues = maxSegmentationValuesDefault;
             }
 
-            if (config.maxBreadcrumbCount != null) {
-                if (config.maxBreadcrumbCount < 1) {
-                    config.maxBreadcrumbCount = 1;
+            if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
+                if (config.sdkInternalLimits.maxBreadcrumbCount < 1) {
+                    config.sdkInternalLimits.maxBreadcrumbCount = 1;
                     L.w("[Init] provided 'maxBreadcrumbCount' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxBreadcrumbCount' override:[" + config.maxBreadcrumbCount + "]");
+                L.i("[Init] provided 'maxBreadcrumbCount' override:[" + config.sdkInternalLimits.maxBreadcrumbCount + "]");
             } else {
-                config.maxBreadcrumbCount = maxBreadcrumbCountDefault;
+                config.sdkInternalLimits.maxBreadcrumbCount = maxBreadcrumbCountDefault;
             }
 
-            if (config.maxStackTraceLinesPerThread != null) {
-                if (config.maxStackTraceLinesPerThread < 1) {
-                    config.maxStackTraceLinesPerThread = 1;
+            if (config.sdkInternalLimits.maxStackTraceLinesPerThread != null) {
+                if (config.sdkInternalLimits.maxStackTraceLinesPerThread < 1) {
+                    config.sdkInternalLimits.maxStackTraceLinesPerThread = 1;
                     L.w("[Init] provided 'maxStackTraceLinesPerThread' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxStackTraceLinesPerThread' override:[" + config.maxStackTraceLinesPerThread + "]");
+                L.i("[Init] provided 'maxStackTraceLinesPerThread' override:[" + config.sdkInternalLimits.maxStackTraceLinesPerThread + "]");
             } else {
-                config.maxStackTraceLinesPerThread = maxStackTraceLinesPerThreadDefault;
+                config.sdkInternalLimits.maxStackTraceLinesPerThread = maxStackTraceLinesPerThreadDefault;
             }
 
-            if (config.maxStackTraceLineLength != null) {
-                if (config.maxStackTraceLineLength < 1) {
-                    config.maxStackTraceLineLength = 1;
+            if (config.sdkInternalLimits.maxStackTraceLineLength != null) {
+                if (config.sdkInternalLimits.maxStackTraceLineLength < 1) {
+                    config.sdkInternalLimits.maxStackTraceLineLength = 1;
                     L.w("[Init] provided 'maxStackTraceLineLength' is less than '1'. Setting it to '1'.");
                 }
-                L.i("[Init] provided 'maxStackTraceLineLength' override:[" + config.maxStackTraceLineLength + "]");
+                L.i("[Init] provided 'maxStackTraceLineLength' override:[" + config.sdkInternalLimits.maxStackTraceLineLength + "]");
             } else {
-                config.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
+                config.sdkInternalLimits.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
             }
 
             if (config.sessionUpdateTimerDelay != null) {
