@@ -16,10 +16,6 @@ public class BenchmarkUtil {
         random = new RandomUtil();
     }
 
-    protected Map<String, String> generateRequest(int eventSize, int segmentSize) throws JSONException {
-        return generateRequest(eventSize, segmentSize, null);
-    }
-
     protected Map<String, String> generateRequest(int eventSize, int segmentSize, Map<String, String> additionalParams) throws JSONException {
         Map<String, String> request = new ConcurrentHashMap<>();
         List<JSONObject> events = new ArrayList<>();
@@ -42,7 +38,12 @@ public class BenchmarkUtil {
         Map<String, Object> segment = new ConcurrentHashMap<>();
 
         for (int i = 0; i < segmentSize; i++) {
-            segment.put(random.generateRandomString(8), random.generateRandomImmutable());
+            String key = random.generateRandomString(8);
+
+            while (segment.containsKey(key)) {
+                key = random.generateRandomString(8);
+            }
+            segment.put(key, random.generateRandomImmutable());
         }
 
         return segment;

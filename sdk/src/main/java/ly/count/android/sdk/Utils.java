@@ -196,6 +196,7 @@ public class Utils {
             String key = entry.getKey();
             Object value = entry.getValue();
 
+            //todo add support for long
             if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
 
                 if (value instanceof Float) {
