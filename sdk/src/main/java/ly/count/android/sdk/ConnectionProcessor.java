@@ -328,7 +328,8 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // get first request in a separate variable to modify and keep the original intact
-            String requestData = storedRequests[0];//todo rework to another param approach
+            final String originalRequest = storedRequests[0];
+            String requestData = originalRequest;//todo rework to another param approach
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
@@ -605,13 +606,13 @@ public class ConnectionProcessor implements Runnable {
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
                 if (isRequestOld) {
-                    L.i("[Connection Processor] request is too old, removing request " + storedRequests[0]);
+                    L.i("[Connection Processor] request is too old, removing request " + originalRequest);
                 } else {
-                    L.i("[Connection Processor] Device identified as an app crawler, removing request " + storedRequests[0]);
+                    L.i("[Connection Processor] Device identified as an app crawler, removing request " + originalRequest);
                 }
 
                 //remove stored data
-                storageProvider_.removeRequest(storedRequests[0]);
+                storageProvider_.removeRequest(originalRequest);
             }
 
             if (pcc != null) {
