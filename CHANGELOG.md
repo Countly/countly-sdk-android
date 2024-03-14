@@ -2,15 +2,16 @@
 * ! Minor breaking change ! Setting for enabling/disabling for native crash dumps will be always enabled
 
 * Added an extended way of crash filtering
+* Added SDK internal limits configuration interface
 
 * Deprecated following functions from "CountlyConfig":
     * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
     * "setCrashFilterCallback(crashFilterCallback)" instead use "crashes.setGlobalCrashFilterCallback(globalCrashFilterCallback)"
     * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
-    * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "crashes.setMaxBreadcrumbCount(maxBreadcrumbCount)"
+    * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount)"
     * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
     * "checkForNativeCrashDumps(checkForDumps)"
-
+    * "setMaxSegmentationValues(maxSegmentationValues)" instead use "sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues)"
 
 ## 24.1.1
 * Added a new metric for detecting whether or not a device has a hinge

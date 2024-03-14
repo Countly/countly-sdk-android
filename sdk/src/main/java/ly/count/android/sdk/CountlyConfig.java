@@ -144,40 +144,42 @@ public class CountlyConfig {
     boolean explicitStorageModeEnabled = false;
     boolean serverConfigurationEnabled = false;
     boolean healthCheckEnabled = true;
-    //SDK internal limits
-    Integer maxKeyLength;
-    Integer maxValueSize;
 
-    //public synchronized CountlyConfig setMaxKeyLength(int maxKeyLength) {
-    //    this.maxKeyLength = maxKeyLength;
-    //    return this;
-    //}
-
-    /**
-     * Set the maximum value size for values used internally. This affects things like: segmentation values
-     * user property values, breadcrumb text.
-     * If those values exceed the set limit, they will be truncated.
-     *
-     * @param maxValueSize
-     * @return Returns the same config object for convenient linking
-     */
-    //public synchronized CountlyConfig setMaxValueSize(int maxValueSize) {
-    //    this.maxValueSize = maxValueSize;
-    //    return this;
-    //}
-    Integer maxSegmentationValues;
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
 
-    //public synchronized CountlyConfig setMaxStackTraceLinesPerThread(int maxStackTraceLinesPerThread) {
-    //    this.maxStackTraceLinesPerThread = maxStackTraceLinesPerThread;
-    //    return this;
-    //}
-    //
-    //public synchronized CountlyConfig setMaxStackTraceLineLength(int maxStackTraceLineLength) {
-    //    this.maxStackTraceLineLength = maxStackTraceLineLength;
-    //    return this;
-    //}
+    /**
+     * THIS VARIABLE SHOULD NOT BE USED
+     * IT IS ONLY FOR INTERNAL TESTING
+     * BREAKING CHANGES WILL BE DONE WITHOUT WARNING
+     */
+    public PerformanceCounterCollector pcc;
+
+    /**
+     * Sets how many segmentation values can be recorded when recording an event or view.
+     * Values exceeding this count will be ignored.
+     *
+     * @param maxSegmentationValues to set
+     * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxSegmentationValues(int)</pre> instead
+     */
+    public synchronized CountlyConfig setMaxSegmentationValues(int maxSegmentationValues) {
+        sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues);
+        return this;
+    }
+
+    /**
+     * Set the maximum amount of breadcrumbs that can be recorded.
+     * After exceeding the limit, the oldest values will be removed.
+     *
+     * @param maxBreadcrumbCount to set
+     * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxBreadcrumbCount(int)</pre> instead
+     */
+    public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
+        sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount);
+        return this;
+    }
 
     public CountlyConfig() {
     }
@@ -977,4 +979,14 @@ public class CountlyConfig {
         healthCheckEnabled = false;
         return this;
     }
+
+    /**
+     * APM configuration interface to be used with CountlyConfig
+     */
+    public final ConfigApm apm = new ConfigApm();
+
+    /**
+     * SDK Internal Limits configuration interface to be used with CountlyConfig
+     */
+    public final ConfigSdkInternalLimits sdkInternalLimits = new ConfigSdkInternalLimits();
 }

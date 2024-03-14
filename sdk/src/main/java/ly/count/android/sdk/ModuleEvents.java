@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import ly.count.android.sdk.messaging.ModulePush;
 
 public class ModuleEvents extends ModuleBase implements EventProvider {
@@ -441,7 +440,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
                 L.i("[Events] Calling recordEvent: [" + key + "]");
 
-                Utils.truncateSegmentationValues(segmentation, _cly.config_.maxSegmentationValues, "[Events] recordEvent,", L);
+                Utils.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
 
                 eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null, null);
             }

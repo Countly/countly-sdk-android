@@ -128,7 +128,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         //truncate crash segmentation
-        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
@@ -347,8 +347,8 @@ public class ModuleCrash extends ModuleBase {
             L.e("[Crashes] Can't add a null or empty crash breadcrumb");
             return _cly;
         }
-
-        DeviceInfo.addLog(breadcrumb, _cly.config_.crashes.maxBreadcrumbCount, _cly.config_.maxValueSize);
+      
+        DeviceInfo.addLog(breadcrumb, _cly.config_.sdkInternalLimits.maxBreadcrumbCount, _cly.config_.sdkInternalLimits.maxValueSize);
         return _cly;
     }
 
