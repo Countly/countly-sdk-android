@@ -572,11 +572,19 @@ public class ConnectionProcessor implements Runnable {
                         // warning was logged above, stop processing, let next tick take care of retrying
                         healthTracker.logFailedNetworkRequest(responseCode, responseString);//notify the health tracker of the issue
                         healthTracker.saveState();
+
+                        if (pcc != null) {
+                            pcc.TrackCounterTimeNs("ConnectionProcessorRun_12_FailedRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
+                        }
+
                         break;
                     }
                 } catch (Exception e) {
                     L.d("[Connection Processor] Got exception while trying to submit request data: [" + eventData + "] [" + e + "]");
                     // if exception occurred, stop processing, let next tick take care of retrying
+                    if (pcc != null) {
+                        pcc.TrackCounterTimeNs("ConnectionProcessorRun_11_NetworkWholeQueueException", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
+                    }
                     break;
                 } finally {
                     // free connection resources
