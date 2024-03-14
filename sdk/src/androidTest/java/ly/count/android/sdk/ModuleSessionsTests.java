@@ -131,6 +131,50 @@ public class ModuleSessionsTests {
         verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
+    /**
+     * Validating manual session flow
+     * a session hasn't been begun and we are trying to stop it or call update
+     * No session requests should be recorded
+     */
+    @Test
+    public void manualSessionsNoUpdateStopWithoutBegin() {
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
+        Countly mCountly = new Countly().init(config);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+
+        mCountly.sessions().updateSession();
+        mCountly.sessions().endSession();
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+    }
+
+    @Test
+    public void yy() {
+        CountlyConfig config = TestUtils.createBaseConfig().setApplication(null).setContext(getContext());
+        Countly mCountly = new Countly().init(config);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+
+        mCountly.onStop();
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+    }
+
     //TODO add tests that make sure that init time consent is handled correctly
     //todo react to receiving consent and removing consent
 }
