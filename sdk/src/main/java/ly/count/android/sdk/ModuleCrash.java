@@ -185,7 +185,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         Utils.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
-        Utils.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueueWFilterCallback", L);
+        Utils.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueueWFilterCallback", L);
 
         final String crash = deviceInfo.getCrashDataString(crashData, isNativeCrash);
         requestQueueProvider.sendCrashReport(crash, !crashData.getFatal());
@@ -347,7 +347,7 @@ public class ModuleCrash extends ModuleBase {
             L.e("[Crashes] Can't add a null or empty crash breadcrumb");
             return _cly;
         }
-      
+
         DeviceInfo.addLog(breadcrumb, _cly.config_.sdkInternalLimits.maxBreadcrumbCount, _cly.config_.sdkInternalLimits.maxValueSize);
         return _cly;
     }

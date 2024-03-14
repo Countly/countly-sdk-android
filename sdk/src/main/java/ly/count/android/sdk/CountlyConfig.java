@@ -9,20 +9,6 @@ import java.util.Map;
 public class CountlyConfig {
 
     /**
-     * APM configuration interface to be used with CountlyConfig
-     */
-    public final ConfigApm apm = new ConfigApm();
-    /**
-     * Crash Reporting configuration interface to be used with CountlyConfig
-     */
-    public final ConfigCrashes crashes = new ConfigCrashes();
-    /**
-     * THIS VARIABLE SHOULD NOT BE USED
-     * IT IS ONLY FOR INTERNAL TESTING
-     * BREAKING CHANGES WILL BE DONE WITHOUT WARNING
-     */
-    public PerformanceCounterCollector pcc;
-    /**
      * Internal fields and fields for testing
      */
     protected CountlyStore countlyStore = null;
@@ -155,32 +141,6 @@ public class CountlyConfig {
      */
     public PerformanceCounterCollector pcc;
 
-    /**
-     * Sets how many segmentation values can be recorded when recording an event or view.
-     * Values exceeding this count will be ignored.
-     *
-     * @param maxSegmentationValues to set
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxSegmentationValues(int)</pre> instead
-     */
-    public synchronized CountlyConfig setMaxSegmentationValues(int maxSegmentationValues) {
-        sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues);
-        return this;
-    }
-
-    /**
-     * Set the maximum amount of breadcrumbs that can be recorded.
-     * After exceeding the limit, the oldest values will be removed.
-     *
-     * @param maxBreadcrumbCount to set
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxBreadcrumbCount(int)</pre> instead
-     */
-    public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
-        sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount);
-        return this;
-    }
-
     public CountlyConfig() {
     }
 
@@ -205,11 +165,12 @@ public class CountlyConfig {
      * Sets how many segmentation values can be recorded when recording an event or view.
      * Values exceeding this count will be ignored.
      *
-     * @param maxSegmentationValues
+     * @param maxSegmentationValues to set
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxSegmentationValues(int)</pre> instead
      */
     public synchronized CountlyConfig setMaxSegmentationValues(int maxSegmentationValues) {
-        this.maxSegmentationValues = maxSegmentationValues;
+        sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues);
         return this;
     }
 
@@ -217,12 +178,12 @@ public class CountlyConfig {
      * Set the maximum amount of breadcrumbs that can be recorded.
      * After exceeding the limit, the oldest values will be removed.
      *
-     * @param maxBreadcrumbCount
+     * @param maxBreadcrumbCount to set
      * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.setMaxBreadcrumbCount(int)</pre> instead
+     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxBreadcrumbCount(int)</pre> instead
      */
     public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
-        crashes.setMaxBreadcrumbCount(maxBreadcrumbCount);
+        sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount);
         return this;
     }
 
@@ -989,4 +950,9 @@ public class CountlyConfig {
      * SDK Internal Limits configuration interface to be used with CountlyConfig
      */
     public final ConfigSdkInternalLimits sdkInternalLimits = new ConfigSdkInternalLimits();
+
+    /**
+     * Crash Reporting configuration interface to be used with CountlyConfig
+     */
+    public final ConfigCrashes crashes = new ConfigCrashes();
 }
