@@ -2,6 +2,8 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,6 +76,7 @@ public class UtilsSdkInternalLimits {
         L.d("[UtilsSdkInternalLimits] truncateMapKeys, map:[" + map + "]");
         // Replacing keys in a map is not safe, so we create a new map and put them after
         Map<String, T> gonnaReplace = new ConcurrentHashMap<>();
+        List<String> gonnaRemove = new ArrayList<>();
 
         for (Map.Entry<String, T> entry : map.entrySet()) {
             String truncatedKey = truncateKeyLength(entry.getKey(), limit, L);
@@ -81,9 +84,14 @@ public class UtilsSdkInternalLimits {
                 // add truncated key
                 gonnaReplace.put(truncatedKey, entry.getValue());
                 // remove not truncated key
-                map.remove(entry.getKey());
+                gonnaRemove.add(entry.getKey());
             }
         }
+
+        for (String key : gonnaRemove) {
+            map.remove(key);
+        }
+        
         map.putAll(gonnaReplace);
     }
 }

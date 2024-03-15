@@ -289,4 +289,56 @@ public class ModuleCrashTests {
     public void crashTest_5() {
         TestUtils.crashTest(4);
     }
+
+    /**
+     * Test that the segmentation given while initializing the SDK is truncated to the limit
+     * And that the segmentation given during the crash recording is also truncated to the limit
+     * One of the parameters are lost due to truncation because it has same key beginning as another parameter
+     */
+    @Test
+    public void provideCustomCrashSegment_DuringInitAndCall_truncateSegmentationKeys() throws JSONException {
+        Countly countly = new Countly();
+        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        cConfig.sdkInternalLimits.setMaxKeyLength(10);
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("anr_log_id_key", "76atda76bsdtahs78dasyd8");
+        segm.put("abr_log_id", "87abdb687astdna8s7dynas897ndaysnd");
+        segm.put("arf_log_ver", 1_675_987);
+
+        cConfig.setCustomCrashSegment(segm);
+
+        countly.init(cConfig);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
+
+        //validating values set by init
+        Map<String, Object> segm2 = new HashMap<>();
+        segm2.put("anr_log_id", "76atda76bsdtahs78dasyd8");
+        segm2.put("abr_log_id", "87abdb687astdna8s7dynas897ndaysnd");
+        segm2.put("arf_log_ve", 1_675_987);
+        Assert.assertEquals(segm2, countly.moduleCrash.customCrashSegments);
+
+        //prepare new segm to be provided during recording
+        Map<String, Object> segm3 = new HashMap<>();
+        segm3.put("anr_log_id_secret", "SECRET");
+        segm3.put("battery_percentage", 1234.55d);
+        segm3.put("ftl", true);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, segm3);
+        ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
+
+        String argVal = arg.getValue();
+
+        JSONObject jobj = new JSONObject(argVal);
+        Assert.assertTrue(jobj.getString("_error").startsWith("java.lang.Exception: Some message"));
+        JSONObject jCus = jobj.getJSONObject("_custom");
+        Assert.assertEquals(5, jCus.length());
+        Assert.assertEquals("SECRET", jCus.get("anr_log_id"));
+        Assert.assertEquals("87abdb687astdna8s7dynas897ndaysnd", jCus.get("abr_log_id"));
+        Assert.assertEquals(1_675_987, jCus.get("arf_log_ve"));
+        Assert.assertEquals(1234.55d, jCus.get("battery_pe"));
+        Assert.assertEquals(true, jCus.get("ftl"));
+    }
 }

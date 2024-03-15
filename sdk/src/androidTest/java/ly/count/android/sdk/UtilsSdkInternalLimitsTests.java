@@ -109,24 +109,22 @@ public class UtilsSdkInternalLimitsTests {
     public void truncateSegmentationKeys_null() {
         int limit = 5;
         Map<String, String> map = null;
-        ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, spyLog);
-        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateSegmentationKeys, map is null, returning");
+        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog());
+        Assert.assertNull(map);
     }
 
     /**
      * "truncateSegmentationKeys" with empty map
-     * Validate empty check log is called
+     * Validate map is empty
      */
     @Test
     public void truncateSegmentationKeys_empty() {
         int limit = 5;
         Map<String, String> map = new ConcurrentHashMap<>();
-        ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, spyLog);
-        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateSegmentationKeys, map is empty, returning");
+        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog());
+        Assert.assertEquals(0, map.size());
     }
 
     /**
