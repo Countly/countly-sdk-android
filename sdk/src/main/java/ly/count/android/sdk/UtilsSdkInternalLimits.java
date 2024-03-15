@@ -60,7 +60,7 @@ public class UtilsSdkInternalLimits {
      * @param L logger
      * @param <T> type of map value
      */
-    protected static <T> void truncateMapKeys(@Nullable Map<String, T> map, final int limit, @NonNull ModuleLog L) {
+    protected static <T> void truncateSegmentationKeys(@Nullable Map<String, T> map, final int limit, @NonNull ModuleLog L) {
         if (map == null) {
             L.d("[UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
             return;

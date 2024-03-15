@@ -104,7 +104,7 @@ public class ModuleAPM extends ModuleBase {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
-                    UtilsSdkInternalLimits.truncateMapKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L);
+                    UtilsSdkInternalLimits.truncateSegmentationKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L);
                 }
 
                 String metricString = customMetricsToString(customMetrics);

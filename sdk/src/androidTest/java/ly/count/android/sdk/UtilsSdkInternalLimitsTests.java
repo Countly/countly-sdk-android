@@ -81,7 +81,7 @@ public class UtilsSdkInternalLimitsTests {
     }
 
     /**
-     * "truncateMapKeys"
+     * "truncateSegmentationKeys"
      * Limit is 5
      * Test that the first key (test_test) is truncated
      * Expected result: "test_", Expected value: "value1"
@@ -89,55 +89,55 @@ public class UtilsSdkInternalLimitsTests {
      * Expected result: "test", Expected value: "value2"
      */
     @Test
-    public void truncateMapKeys() {
+    public void truncateSegmentationKeys() {
         int limit = 5;
         Map<String, String> map = new ConcurrentHashMap<>();
         map.put("test_test", "value1");
         map.put("test", "value2");
 
-        UtilsSdkInternalLimits.truncateMapKeys(map, limit, new ModuleLog());
+        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog());
 
         Assert.assertEquals("value1", map.get("test_"));
         Assert.assertEquals("value2", map.get("test"));
     }
 
     /**
-     * "truncateMapKeys" with null map
+     * "truncateSegmentationKeys" with null map
      * Validate null check log is called
      */
     @Test
-    public void truncateMapKeys_null() {
+    public void truncateSegmentationKeys_null() {
         int limit = 5;
         Map<String, String> map = null;
         ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        UtilsSdkInternalLimits.truncateMapKeys(map, limit, spyLog);
-        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
+        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, spyLog);
+        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateSegmentationKeys, map is null, returning");
     }
 
     /**
-     * "truncateMapKeys" with empty map
+     * "truncateSegmentationKeys" with empty map
      * Validate empty check log is called
      */
     @Test
-    public void truncateMapKeys_empty() {
+    public void truncateSegmentationKeys_empty() {
         int limit = 5;
         Map<String, String> map = new ConcurrentHashMap<>();
         ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        UtilsSdkInternalLimits.truncateMapKeys(map, limit, spyLog);
-        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
+        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, spyLog);
+        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateSegmentationKeys, map is empty, returning");
     }
 
     /**
-     * "truncateMapKeys" with same base keys
+     * "truncateSegmentationKeys" with same base keys
      * Limit is 4
      * Map has keys "test1", "test2", "test3", "test4", "test5"
      * Resulting map will be only one key, and it is "test"
      * All values are removed and only one value is kept which is the last one what map.entrySet() returns
      */
     @Test
-    public void truncateMapKeys_inconsistentKeys() {
+    public void truncateSegmentationKeys_inconsistentKeys() {
         int limit = 4;
         Map<String, String> map = new ConcurrentHashMap<>();
         map.put("test1", TestUtils.eKeys[0]);
@@ -147,7 +147,7 @@ public class UtilsSdkInternalLimitsTests {
         map.put("test5", TestUtils.eKeys[4]);
         ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        UtilsSdkInternalLimits.truncateMapKeys(map, limit, spyLog);
+        UtilsSdkInternalLimits.truncateSegmentationKeys(map, limit, spyLog);
         Assert.assertEquals(1, map.size());
         Assert.assertFalse(Objects.requireNonNull(map.get("test")).isEmpty());
     }
