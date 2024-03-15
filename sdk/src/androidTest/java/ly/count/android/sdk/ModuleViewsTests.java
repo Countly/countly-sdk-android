@@ -1,9 +1,9 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import android.app.Activity;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
@@ -1366,6 +1366,56 @@ public class ModuleViewsTests {
     }
 
     //test for sessions when consent removed
+
+    /**
+     * global seg : avu=4, avi=v1 after truncation: av=v1
+     * Test the truncation of view name and segmentation keys
+     * key length: 2
+     * Global view segmentation values will be truncated and merged to one because they have same start
+     * View name also will be truncated to expected name "VI"
+     * On stop view, global segmentation will not be overridden by the given segmentation after truncation
+     * on stop seg: satalite=hoho, avu=25 after truncation: sa=hoho, av=v1
+     * None of the countly view segmentation keys will be truncated nor overridden
+     */
+    @Test
+    public void recordViewsWithSegmentation_truncateKeys() {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("avu", 4);
+        globalSegm.put("avi", "v1");
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        cc.sdkInternalLimits.setMaxKeyLength(2);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
+        Map<String, Object> givenStartSegm = new HashMap<>();
+        givenStartSegm.put("sop", 4);
+
+        String viewID = mCountly.views().startView("VIEW", givenStartSegm);
+
+        Map<String, Object> segm = new HashMap<>();
+        ClearFillSegmentationViewStart(segm, "VI", true);
+        segm.put("av", "v1");
+        segm.put("so", 4);
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, viewID, 0, 1);
+        clearInvocations(ep);
+
+        Map<String, Object> endSegm = new HashMap<>();
+        endSegm.put("satellite", "hoho");
+        endSegm.put("avu", 25);
+        mCountly.views().stopViewWithID(viewID, endSegm);
+
+        segm.clear();
+        ClearFillSegmentationViewEnd(segm, "VI", null);
+        segm.put("av", "v1"); // global segm is not overridden
+        segm.put("sa", "hoho");
+
+        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, viewID, 0, 1);
+        clearInvocations(ep);
+    }
 
     //todo extract orientation tests
 }
