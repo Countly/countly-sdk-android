@@ -208,6 +208,8 @@ public class ModuleAPM extends ModuleBase {
             L.w("[ModuleAPM] validateAndModifyTraceKey, trace keys can't start with '$', it will be removed server side");
         }
 
+        traceKey = UtilsSdkInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L);
+
         if (traceKey.length() > 2048) {
             traceKey = traceKey.substring(0, 2047);
 
