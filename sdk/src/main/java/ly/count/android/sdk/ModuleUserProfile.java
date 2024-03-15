@@ -224,6 +224,8 @@ public class ModuleUserProfile extends ModuleBase {
                 return;
             }
 
+            String truncatedKey = UtilsSdkInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L);
+
             if (customMods == null) {
                 customMods = new HashMap<>();
             }
@@ -232,14 +234,14 @@ public class ModuleUserProfile extends ModuleBase {
                 ob = new JSONObject();
                 ob.put(mod, value);
             } else {
-                if (customMods.containsKey(key)) {
-                    ob = customMods.get(key);
+                if (customMods.containsKey(truncatedKey)) {
+                    ob = customMods.get(truncatedKey);
                 } else {
                     ob = new JSONObject();
                 }
                 ob.accumulate(mod, value);
             }
-            customMods.put(key, ob);
+            customMods.put(truncatedKey, ob);
             isSynced = false;
         } catch (JSONException e) {
             e.printStackTrace();
