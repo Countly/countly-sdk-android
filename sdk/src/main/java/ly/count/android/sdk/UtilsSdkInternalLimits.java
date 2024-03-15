@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +32,17 @@ public class UtilsSdkInternalLimits {
      * @param L logger
      * @return truncated key
      */
-    protected static String truncateKeyLength(String key, int limit, ModuleLog L) {
+    protected static String truncateKeyLength(@Nullable String key, final int limit, @NonNull ModuleLog L) {
+        if (key == null) {
+            L.d("[UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
+            return null;
+        }
+
+        if (key.isEmpty()) {
+            L.d("[UtilsSdkInternalLimits] truncateKeyLength, key is empty, returning");
+            return key;
+        }
+
         if (key.length() > limit) {
             String truncatedKey = key.substring(0, limit);
             L.d("[UtilsSdkInternalLimits] truncateKeyLength, Key length exceeds limit of " + limit + " characters. Truncating key to " + limit + " characters. Truncated to " + truncatedKey);
@@ -48,7 +60,7 @@ public class UtilsSdkInternalLimits {
      * @param L logger
      * @param <T> type of map value
      */
-    protected static <T> void truncateMapKeys(Map<String, T> map, int limit, ModuleLog L) {
+    protected static <T> void truncateMapKeys(@Nullable Map<String, T> map, final int limit, @NonNull ModuleLog L) {
         if (map == null) {
             L.d("[UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
             return;
