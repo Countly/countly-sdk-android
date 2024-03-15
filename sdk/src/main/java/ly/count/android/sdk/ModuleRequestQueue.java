@@ -179,20 +179,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     public void flushQueuesInternal() {
         CountlyStore store = _cly.countlyStore;
 
-        int count = 0;
+        final String[] storedRequests = store.getRequests();
+        store.replaceRequests(new String[] {});
 
-        while (true) {
-            final String[] storedEvents = store.getRequests();
-            if (storedEvents == null || storedEvents.length == 0) {
-                // currently no data to send, we are done for now
-                break;
-            }
-            //remove stored data
-            store.removeRequest(storedEvents[0]);
-            count++;
-        }
-
-        L.d("[ModuleRequestQueue] flushRequestQueues removed [" + count + "] requests");
+        L.d("[ModuleRequestQueue] flushRequestQueues removed [" + storedRequests.length + "] requests");
     }
 
     /**

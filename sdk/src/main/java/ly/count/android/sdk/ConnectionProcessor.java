@@ -554,7 +554,7 @@ public class ConnectionProcessor implements Runnable {
                     if (rRes == RequestResult.OK) {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
-                        storageProvider_.removeRequest(storedRequests[0]);
+                        storageProvider_.removeRequest(originalRequest);
 
                         if (deviceIdChange) {
                             if (newId != null && !newId.isEmpty()) {

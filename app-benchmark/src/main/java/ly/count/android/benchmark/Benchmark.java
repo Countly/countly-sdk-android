@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
+import ly.count.android.sdk.UtilsTime;
 import org.json.JSONException;
 
 public class Benchmark {
@@ -35,10 +36,16 @@ public class Benchmark {
 
     public void fillEventQueue(int eventSize, int segmentSize) {
         Countly.sharedInstance().requestQueue().flushQueues();
+
         print("[Benchmark] fillEventQueue, Filling event queue, rq is flushed");
         for (int i = 0; i < eventSize; i++) {
+            long tsStartGen = UtilsTime.getNanoTime();
             Object[] randomEvent = benchmarkUtil.generateRandomEventBase(segmentSize);
+            App.appPcc.TrackCounterTimeNs("Benchmark_genTime", UtilsTime.getNanoTime() - tsStartGen);
+
+            long tsStartAction = UtilsTime.getNanoTime();
             Countly.sharedInstance().events().recordEvent(randomEvent[0].toString(), (Map<String, Object>) randomEvent[1], (int) randomEvent[2], (double) randomEvent[3], (double) randomEvent[4]);
+            App.appPcc.TrackCounterTimeNs("Benchmark_recordEventTime", UtilsTime.getNanoTime() - tsStartAction);
         }
         print("[Benchmark] fillEventQueue, Request queue size: " + countlyStore.getRequests().length);
     }

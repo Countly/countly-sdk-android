@@ -196,7 +196,7 @@ public class CountlyStoreExplicitModeTests {
             sb.append(events[a]);
         }
 
-        store.setEventData(sb.toString());
+        store.writeEventDataToStorage(sb.toString());
     }
 
     void validateEQArrays(String[] targetRegArray, String[] targetESArray, CountlyStore storeRegular, CountlyStore storeExplicit) {

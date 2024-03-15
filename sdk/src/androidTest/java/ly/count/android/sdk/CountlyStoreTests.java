@@ -33,7 +33,6 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -731,7 +730,7 @@ public class CountlyStoreTests {
      */
     @Test
     public void getEventQueueSizeEmpty() {
-        store.setEventData("");
+        store.writeEventDataToStorage("");
         assertEquals(0, sp.getEventQueueSize());
     }
 
@@ -740,7 +739,7 @@ public class CountlyStoreTests {
      */
     @Test
     public void getEventQueueSizeSimple() {
-        store.setEventData("a" + CountlyStore.DELIMITER + "b");
+        store.writeEventDataToStorage("a" + CountlyStore.DELIMITER + "b");
         assertEquals(2, sp.getEventQueueSize());
     }
 
@@ -752,7 +751,7 @@ public class CountlyStoreTests {
      */
     @Test
     public void getEventsForRequestAndEmptyEventQueueWithNoEvents() throws UnsupportedEncodingException {
-        store.setEventData("");
+        store.writeEventDataToStorage("");
         final String expected = URLEncoder.encode("[]", "UTF-8");
         assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
         assertEquals(0, sp.getEventQueueSize());
