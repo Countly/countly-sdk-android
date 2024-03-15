@@ -133,7 +133,7 @@ public class UtilsSdkInternalLimitsTests {
      * "truncateSegmentationKeys" with same base keys
      * Limit is 4
      * Map has keys "test1", "test2", "test3", "test4", "test5"
-     * Resulting map will be only one key, and it is "test"
+     * Resulting map will have only one key, and it is "test"
      * All values are removed and only one value is kept which is the last one what map.entrySet() returns
      */
     @Test
