@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* ! Minor breaking change ! key length default limit is applied by default
+
 * Added SDK internal limits configuration interface
 
 * Deprecated the following calls from "CountlyConfig":
