@@ -438,4 +438,55 @@ public class ModuleUserProfileTests {
         Assert.assertTrue(req.contains("custom"));
         Assert.assertTrue(req.contains("byear"));
     }
+
+    /**
+     * Test that custom data keys are truncated to the maximum allowed length (10)
+     * Due to truncation, the keys "hair_color_id" and "hair_color_tone" will be merged into "hair_color"
+     * The value of "hair_color" will be the value of "hair_color_tone" since it was set last
+     * The value of "hair_skin_tone" will be truncated to "hair_skin_"
+     * Tha last value of "hair_color" will be "black"
+     */
+    @Test
+    public void testCustomData_truncateKeys() {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.sdkInternalLimits.setMaxKeyLength(10);
+        mCountly.init(config);
+
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("hair_color_id", 4567);
+        data.put("hair_color_tone", "bold");
+        mCountly.userProfile().setProperties(data);
+        assertEquals(1, mCountly.moduleUserProfile.custom.size());
+        assertEquals("bold", mCountly.moduleUserProfile.custom.get("hair_color"));
+
+        mCountly.userProfile().setProperty("hair_color", "black");
+        mCountly.userProfile().setProperty("hair_skin_tone", "yellow");
+        assertEquals(2, mCountly.moduleUserProfile.custom.size());
+        assertEquals("black", mCountly.moduleUserProfile.custom.get("hair_color"));
+        assertEquals("yellow", mCountly.moduleUserProfile.custom.get("hair_skin_"));
+    }
+
+    /**
+     * Test that custom data keys are truncated to the maximum allowed length (10)
+     * Due to truncation, for push keys, the keys "reminder" and "rock" will be merged into same key
+     */
+    @Test
+    public void testCustomModifiers_truncateKeys() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.sdkInternalLimits.setMaxKeyLength(10);
+        mCountly.init(config);
+
+        mCountly.moduleUserProfile.modifyCustomData("key_inc_with", 1, "$inc");
+        mCountly.moduleUserProfile.modifyCustomData("key_mul_width", 2, "$mul");
+        mCountly.userProfile().push("key_push_reminder", "test1");
+        mCountly.userProfile().push("key_push_rock", "test3");
+
+        assertEquals(1, mCountly.moduleUserProfile.customMods.get("key_inc_wi").getInt("$inc"));
+        assertEquals(2, mCountly.moduleUserProfile.customMods.get("key_mul_wi").getInt("$mul"));
+        assertEquals(2, mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").length());
+        assertEquals("test1", mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").getString(0));
+        assertEquals("test3", mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").getString(1));
+    }
 }
