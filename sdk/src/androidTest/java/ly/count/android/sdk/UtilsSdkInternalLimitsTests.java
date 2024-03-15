@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -126,5 +127,28 @@ public class UtilsSdkInternalLimitsTests {
 
         UtilsSdkInternalLimits.truncateMapKeys(map, limit, spyLog);
         Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
+    }
+
+    /**
+     * "truncateMapKeys" with same base keys
+     * Limit is 4
+     * Map has keys "test1", "test2", "test3", "test4", "test5"
+     * Resulting map will be only one key, and it is "test"
+     * All values are removed and only one value is kept which is the last one what map.entrySet() returns
+     */
+    @Test
+    public void truncateMapKeys_inconsistentKeys() {
+        int limit = 4;
+        Map<String, String> map = new ConcurrentHashMap<>();
+        map.put("test1", TestUtils.eKeys[0]);
+        map.put("test2", TestUtils.eKeys[1]);
+        map.put("test3", TestUtils.eKeys[2]);
+        map.put("test4", TestUtils.eKeys[3]);
+        map.put("test5", TestUtils.eKeys[4]);
+        ModuleLog spyLog = Mockito.spy(new ModuleLog());
+
+        UtilsSdkInternalLimits.truncateMapKeys(map, limit, spyLog);
+        Assert.assertEquals(1, map.size());
+        Assert.assertFalse(Objects.requireNonNull(map.get("test")).isEmpty());
     }
 }
