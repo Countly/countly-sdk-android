@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -172,6 +173,36 @@ public class ModuleAPMTests {
         Assert.assertEquals(keyTs, start.getValue());
         Assert.assertTrue(stop.getValue() > start.getValue());
         Assert.assertTrue((stop.getValue() - start.getValue()) < 100);
+    }
+
+    /**
+     * Test that custom trace key is truncated to the correct length
+     * Validate custom metrics are merged and truncated to the correct length
+     * Validate that the custom trace is sent to the server with correct values
+     */
+    @Test
+    public void customTrace_truncate() {
+        CountlyConfig mConfig = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        mConfig.sdkInternalLimits.setMaxKeyLength(5);
+        mCountly = new Countly().init(mConfig);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        String key = "a_trace_to_track";
+        mCountly.apm().startTrace(key);
+
+        Assert.assertTrue(mCountly.moduleAPM.codeTraces.containsKey(key));
+
+        Map<String, Integer> customMetrics = new HashMap<>();
+        customMetrics.put("a_trace_to_look", 1);
+        customMetrics.put("a_trace_to_inspect", 2);
+        customMetrics.put("look_here", 3);
+
+        mCountly.apm().endTrace(key, customMetrics);
+
+        customMetrics.clear();
+        customMetrics.put("look_", 3);
+        customMetrics.put("a_tra", 2);
+        verify(requestQueueProvider).sendAPMCustomTrace(eq("a_tra"), anyLong(), anyLong(), anyLong(), eq(ModuleAPM.customMetricsToString(customMetrics)));
     }
 
     @Test

@@ -109,6 +109,7 @@ public class ModuleAPM extends ModuleBase {
 
                 String metricString = customMetricsToString(customMetrics);
 
+                traceKey = UtilsSdkInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L);
                 traceKey = validateAndModifyTraceKey(traceKey);
 
                 requestQueueProvider.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp, metricString);
@@ -208,8 +209,6 @@ public class ModuleAPM extends ModuleBase {
         if (traceKey.charAt(0) == '$') {
             L.w("[ModuleAPM] validateAndModifyTraceKey, trace keys can't start with '$', it will be removed server side");
         }
-
-        traceKey = UtilsSdkInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L);
 
         if (traceKey.length() > 2048) {
             traceKey = traceKey.substring(0, 2047);

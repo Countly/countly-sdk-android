@@ -37,7 +37,7 @@ public class UtilsSdkInternalLimits {
     protected static String truncateKeyLength(@Nullable String key, final int limit, @NonNull ModuleLog L) {
         if (key == null) {
             L.d("[UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
-            return null;
+            return key;
         }
 
         if (key.isEmpty()) {
@@ -91,7 +91,7 @@ public class UtilsSdkInternalLimits {
         for (String key : gonnaRemove) {
             map.remove(key);
         }
-        
+
         map.putAll(gonnaReplace);
     }
 }
