@@ -150,7 +150,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             viewSegmentation.putAll(customViewSegmentation);
         }
 
-        viewSegmentation.put("name", vd.viewName);
+        viewSegmentation.put("name", UtilsSdkInternalLimits.truncateKeyLength(vd.viewName, _cly.config_.sdkInternalLimits.maxKeyLength, L));
         if (visit) {
             viewSegmentation.put("visit", "1");
         }
