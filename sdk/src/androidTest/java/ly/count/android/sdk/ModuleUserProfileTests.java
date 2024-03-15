@@ -445,6 +445,7 @@ public class ModuleUserProfileTests {
      * The value of "hair_color" will be the value of "hair_color_tone" since it was set last
      * The value of "hair_skin_tone" will be truncated to "hair_skin_"
      * Tha last value of "hair_color" will be "black"
+     * And predefined key "picturePath" is not truncated
      */
     @Test
     public void testCustomData_truncateKeys() {
@@ -462,7 +463,9 @@ public class ModuleUserProfileTests {
 
         mCountly.userProfile().setProperty("hair_color", "black");
         mCountly.userProfile().setProperty("hair_skin_tone", "yellow");
+        mCountly.userProfile().setProperty("picturePath", "Test Test");
         assertEquals(2, mCountly.moduleUserProfile.custom.size());
+        assertNull(ModuleUserProfile.picturePath);
         assertEquals("black", mCountly.moduleUserProfile.custom.get("hair_color"));
         assertEquals("yellow", mCountly.moduleUserProfile.custom.get("hair_skin_"));
     }
