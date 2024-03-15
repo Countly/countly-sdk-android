@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONObject;
 
 public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
@@ -32,6 +31,9 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     static final String CHECKSUM_KEY = "checksum";
     static final String CHECKSUM_256_KEY = "checksum256";
     String[] preDefinedKeys = { APP_KEY_KEY, HOUR_KEY, DOW_KEY, TZ_KEY, SDK_VERSION_KEY, SDK_NAME_KEY, DEVICE_ID_KEY, OVVERIDE_KEY, OLD_DEVICE_ID_KEY, CHECKSUM_KEY, CHECKSUM_256_KEY };
+    // flag to indicate if events should be sent even if the threshold is not reached
+    // internal use only for testing
+    boolean forceSendEvents = true;
 
     ModuleRequestQueue(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -148,7 +150,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         int eventsInEventQueue = storageProvider.getEventQueueSize();
         L.v("[ModuleRequestQueue] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
 
-        if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= Countly.EVENT_QUEUE_SIZE_THRESHOLD) {
+        if (forceSendEvents && ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= Countly.EVENT_QUEUE_SIZE_THRESHOLD)) {
             requestQueueProvider.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue());
         }
     }

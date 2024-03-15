@@ -4,6 +4,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -436,6 +438,82 @@ public class ModuleEventsTests {
         countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION);
         Assert.assertEquals(0, countly.countlyStore.getEventQueueSize());
         Assert.assertEquals(3, countly.countlyStore.getRequests().length);
+    }
+
+    /**
+     * Try to record events with internal keys
+     * validate they are not truncated
+     * disable force sending check for those who are enabled by default
+     * try one normal event with a key that is longer than the max allowed length
+     */
+    @Test
+    public void recordEvent_internalKeys_truncate() throws JSONException {
+        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxKeyLength(2);
+
+        Countly countly = new Countly().init(config);
+        countly.moduleRequestQueue.forceSendEvents = false; // disable force sending
+
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY); //force sending
+        validateEventInEQ(ModuleEvents.ACTION_EVENT_KEY, 0, countly);
+
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY); //force sending
+        validateEventInEQ(ModuleFeedback.NPS_EVENT_KEY, 1, countly);
+
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY); //force sending
+        validateEventInEQ(ModuleFeedback.SURVEY_EVENT_KEY, 2, countly);
+
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY);
+        validateEventInEQ(ModuleFeedback.RATING_EVENT_KEY, 3, countly);
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY);
+        validateEventInEQ(ModuleViews.VIEW_EVENT_KEY, 4, countly);
+
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY);
+        validateEventInEQ(ModuleViews.ORIENTATION_EVENT_KEY, 5, countly);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION);
+        validateEventInEQ(ModulePush.PUSH_EVENT_ACTION, 6, countly);
+
+        countly.events().recordEvent("ModuleEvents");
+        validateEventInEQ("Mo", 7, countly);
+    }
+
+    /**
+     * record event with segmentation
+     * validate that the segmentation is truncated and two same start keys is merged to one
+     */
+    @Test
+    public void recordEvent_segmentation_truncate() throws JSONException {
+        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        Countly countly = new Countly().init(config);
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("ModuleEvents", "ModuleEvents");
+        segmentation.put("ModuleFeedback", 567);
+
+        countly.events().recordEvent("TestMe", segmentation); //force sending
+
+        segmentation.clear();
+        segmentation.put("Mo", 567);
+        validateEventInEQ("Te", segmentation, 0, countly);
+    }
+
+    private JSONObject validateEventInEQ(String eventName, int idx, Countly countly) throws JSONException {
+        Assert.assertEquals(idx + 1, countly.countlyStore.getEventQueueSize());
+        String eventStr = countly.countlyStore.getEvents()[idx];
+        JSONObject event = new JSONObject(eventStr);
+        Assert.assertEquals(eventName, event.get("key"));
+        return event;
+    }
+
+    private void validateEventInEQ(String eventName, Map<String, Object> expectedSegmentation, int idx, Countly countly) throws JSONException {
+        JSONObject event = validateEventInEQ(eventName, idx, countly);
+        JSONObject segmentation = event.getJSONObject("segmentation");
+        Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
+        for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
+            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+        }
     }
 
 /*
