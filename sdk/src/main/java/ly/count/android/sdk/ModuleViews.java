@@ -147,6 +147,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, Map<String, Object> customViewSegmentation) {
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
+            UtilsSdkInternalLimits.truncateMapKeys(customViewSegmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L);
             viewSegmentation.putAll(customViewSegmentation);
         }
 

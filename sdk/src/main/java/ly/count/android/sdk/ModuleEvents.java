@@ -154,6 +154,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
                     String keyTruncated = UtilsSdkInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L);
+                    UtilsSdkInternalLimits.truncateMapKeys(segmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L);
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
