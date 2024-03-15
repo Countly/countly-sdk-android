@@ -1,5 +1,8 @@
 package ly.count.android.sdk;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class UtilsSdkInternalLimits {
 
     private UtilsSdkInternalLimits() {
@@ -24,6 +27,7 @@ public class UtilsSdkInternalLimits {
      *
      * @param key to truncate
      * @param limit to truncate to
+     * @param L logger
      * @return truncated key
      */
     protected static String truncateKeyLength(String key, int limit, ModuleLog L) {
@@ -33,5 +37,36 @@ public class UtilsSdkInternalLimits {
             return truncatedKey;
         }
         return key;
+    }
+
+    /**
+     * This function is intended to be used with truncating map keys
+     * Uses truncateKeyLength to truncate keys in a map to a certain limit.
+     *
+     * @param map to truncate keys
+     * @param limit to truncate keys to
+     * @param L logger
+     * @param <T> type of map value
+     */
+    protected static <T> void truncateMapKeys(Map<String, T> map, int limit, ModuleLog L) {
+        if (map.isEmpty()) {
+            L.d("[UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
+            return;
+        }
+
+        L.d("[UtilsSdkInternalLimits] truncateMapKeys, map:[" + map + "]");
+        // Replacing keys in a map is not safe, so we create a new map and put them after
+        Map<String, T> gonnaReplace = new ConcurrentHashMap<>();
+
+        for (Map.Entry<String, T> entry : map.entrySet()) {
+            String truncatedKey = truncateKeyLength(entry.getKey(), limit, L);
+            if (!truncatedKey.equals(entry.getKey())) {
+                // add truncated key
+                gonnaReplace.put(truncatedKey, entry.getValue());
+                // remove not truncated key
+                map.remove(entry.getKey());
+            }
+        }
+        map.putAll(gonnaReplace);
     }
 }

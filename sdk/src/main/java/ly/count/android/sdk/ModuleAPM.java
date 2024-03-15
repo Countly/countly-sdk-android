@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleAPM extends ModuleBase {
 
@@ -82,24 +81,6 @@ public class ModuleAPM extends ModuleBase {
         codeTraces.put(traceKey, currentTimestamp);
     }
 
-    void truncateCustomMetricsKeys(Map<String, Integer> customMetrics) {
-        L.d("[ModuleAPM] Calling 'truncateCustomMetricsKeys' customMetrics:[" + customMetrics + "]");
-        // Replacing keys in a map is not safe, so we create a new map and put them after
-        Map<String, Integer> gonnaReplace = new ConcurrentHashMap<>();
-
-        for (Map.Entry<String, Integer> entry : customMetrics.entrySet()) {
-            String truncatedKey = UtilsSdkInternalLimits.truncateKeyLength(entry.getKey(), _cly.config_.sdkInternalLimits.maxKeyLength, L);
-            if (!truncatedKey.equals(entry.getKey())) {
-                // add truncated key
-                gonnaReplace.put(truncatedKey, entry.getValue());
-                // remove not truncated key
-                customMetrics.remove(entry.getKey());
-            }
-        }
-
-        customMetrics.putAll(gonnaReplace);
-    }
-
     void endTraceInternal(String traceKey, Map<String, Integer> customMetrics) {
         //end time counting as fast as possible
         Long currentTimestamp = UtilsTime.currentTimestampMs();
@@ -123,7 +104,7 @@ public class ModuleAPM extends ModuleBase {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
-                    truncateCustomMetricsKeys(customMetrics);
+                    UtilsSdkInternalLimits.truncateMapKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L);
                 }
 
                 String metricString = customMetricsToString(customMetrics);

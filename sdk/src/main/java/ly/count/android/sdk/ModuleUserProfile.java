@@ -288,6 +288,8 @@ public class ModuleUserProfile extends ModuleBase {
         if (custom == null) {
             custom = new HashMap<>();
         }
+
+        UtilsSdkInternalLimits.truncateMapKeys(dataCustomFields, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L);
         custom.putAll(dataCustomFields);
 
         isSynced = false;
