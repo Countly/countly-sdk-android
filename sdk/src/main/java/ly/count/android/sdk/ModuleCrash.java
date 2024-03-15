@@ -125,6 +125,7 @@ public class ModuleCrash extends ModuleBase {
 
         if (customSegmentation != null) {
             Utils.removeUnsupportedDataTypes(customSegmentation);
+            UtilsSdkInternalLimits.truncateMapKeys(customSegmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L);
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
@@ -157,6 +158,7 @@ public class ModuleCrash extends ModuleBase {
 
         if (segments != null) {
             Utils.removeUnsupportedDataTypes(segments);
+            UtilsSdkInternalLimits.truncateMapKeys(segments, _cly.config_.sdkInternalLimits.maxKeyLength, L);
         }
         customCrashSegments = segments;
     }

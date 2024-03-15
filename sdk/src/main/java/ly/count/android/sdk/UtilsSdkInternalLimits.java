@@ -49,6 +49,11 @@ public class UtilsSdkInternalLimits {
      * @param <T> type of map value
      */
     protected static <T> void truncateMapKeys(Map<String, T> map, int limit, ModuleLog L) {
+        if (map == null) {
+            L.d("[UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
+            return;
+        }
+
         if (map.isEmpty()) {
             L.d("[UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
             return;
