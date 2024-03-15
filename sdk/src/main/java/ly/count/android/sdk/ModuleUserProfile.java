@@ -277,7 +277,8 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             if (!isNamed) {
-                dataCustomFields.put(key, value.toString());
+                String truncatedKey = UtilsSdkInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L);
+                dataCustomFields.put(truncatedKey, value.toString());
             }
         }
 
@@ -289,7 +290,6 @@ public class ModuleUserProfile extends ModuleBase {
             custom = new HashMap<>();
         }
 
-        UtilsSdkInternalLimits.truncateMapKeys(dataCustomFields, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L);
         custom.putAll(dataCustomFields);
 
         isSynced = false;
