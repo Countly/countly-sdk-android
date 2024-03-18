@@ -374,6 +374,7 @@ public class ModuleCrashTests {
         JSONObject crashJson = new JSONObject(RQ[0].get("crash"));
         JSONObject segmentation = crashJson.getJSONObject("_custom");
         Assert.assertEquals(error, crashJson.getString("_error"));
+        Assert.assertEquals(segm.size(), segmentation.length());
         for (Map.Entry<String, Object> entry : segm.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }

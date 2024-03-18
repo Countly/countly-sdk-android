@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -448,7 +449,7 @@ public class ModuleUserProfileTests {
      * And predefined key "picturePath" is not truncated
      */
     @Test
-    public void testCustomData_truncateKeys() {
+    public void internalLimit_testCustomData() {
         Countly mCountly = Countly.sharedInstance();
         CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.sdkInternalLimits.setMaxKeyLength(10);
@@ -475,7 +476,7 @@ public class ModuleUserProfileTests {
      * Due to truncation, for push keys, the keys "reminder" and "rock" will be merged into same key
      */
     @Test
-    public void testCustomModifiers_truncateKeys() throws JSONException {
+    public void internalLimit_testCustomModifiers() throws JSONException {
         Countly mCountly = Countly.sharedInstance();
         CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.sdkInternalLimits.setMaxKeyLength(10);
@@ -491,5 +492,64 @@ public class ModuleUserProfileTests {
         assertEquals(2, mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").length());
         assertEquals("test1", mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").getString(0));
         assertEquals("test3", mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").getString(1));
+    }
+
+    /**
+     * "setProperties" with both custom and predefined properties
+     * custom properties should be truncated but predefined properties should not be truncated
+     * validate that the predefined properties are not truncated
+     */
+    @Test
+    public void internalLimit_setProperties() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        mCountly.init(config);
+
+        Countly.sharedInstance().userProfile().setProperties(TestUtils.map(
+            ModuleUserProfile.BYEAR_KEY, 2000,
+            ModuleUserProfile.EMAIL_KEY, "email",
+            ModuleUserProfile.GENDER_KEY, "Male",
+            ModuleUserProfile.PHONE_KEY, "phone",
+            ModuleUserProfile.ORG_KEY, "org",
+            ModuleUserProfile.USERNAME_KEY, "username",
+            ModuleUserProfile.NAME_KEY, "name",
+            ModuleUserProfile.PICTURE_KEY, "picture",
+            "custom1", "value1",
+            "custom2", 23,
+            "hair", "black"
+        ));
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(mCountly, TestUtils.map(
+                ModuleUserProfile.BYEAR_KEY, 2000,
+                ModuleUserProfile.EMAIL_KEY, "email",
+                ModuleUserProfile.GENDER_KEY, "Male",
+                ModuleUserProfile.PHONE_KEY, "phone",
+                ModuleUserProfile.ORG_KEY, "org",
+                ModuleUserProfile.USERNAME_KEY, "username",
+                ModuleUserProfile.NAME_KEY, "name",
+                ModuleUserProfile.PICTURE_KEY, "picture"
+            ), TestUtils.map(
+                "cu", "23", // because in user profiles, all values are stored as strings
+                "ha", "black")
+        );
+    }
+
+    private void validateUserProfileRequest(Countly countly, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+        Assert.assertEquals(1, RQ.length);
+        JSONObject userDetails = new JSONObject(RQ[0].get("user_details"));
+        Assert.assertEquals(userDetails.length(), predefined.size() + 1);
+        JSONObject customData = userDetails.getJSONObject("custom");
+        Assert.assertEquals(customData.length(), custom.size());
+        userDetails.remove("custom");
+        for (Map.Entry<String, Object> entry : predefined.entrySet()) {
+            Assert.assertEquals(entry.getValue(), userDetails.get(entry.getKey()));
+        }
+
+        for (Map.Entry<String, Object> entry : custom.entrySet()) {
+            Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
+        }
     }
 }
