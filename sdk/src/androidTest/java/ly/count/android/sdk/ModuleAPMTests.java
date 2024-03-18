@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -181,8 +182,8 @@ public class ModuleAPMTests {
      * Validate that the custom trace is sent to the server with correct values
      */
     @Test
-    public void customTrace_truncate() {
-        CountlyConfig mConfig = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+    public void internalLimit_customTrace() {
+        CountlyConfig mConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mConfig.sdkInternalLimits.setMaxKeyLength(5);
         mCountly = new Countly().init(mConfig);
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
@@ -227,6 +228,30 @@ public class ModuleAPMTests {
         Assert.assertEquals(1, mCountly.moduleAPM.codeTraces.size());
         mCountly.apm().cancelTrace("112");
         Assert.assertEquals(0, mCountly.moduleAPM.codeTraces.size());
+    }
+
+    /**
+     * Test that custom trace key cancellability is working correctly
+     * and not broken due to key length truncation
+     * also validate that the truncated version of the key is not present because it is not truncated
+     */
+    @Test
+    public void internalLimit_cancelTrace() {
+        CountlyConfig mConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        mConfig.sdkInternalLimits.setMaxKeyLength(5);
+        mCountly = new Countly().init(mConfig);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        String key = "a_trace_to_track";
+        mCountly.apm().startTrace(key);
+
+        Assert.assertTrue(mCountly.moduleAPM.codeTraces.containsKey(key));
+
+        mCountly.apm().cancelTrace(key);
+
+        Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(key));
+        // also validate that the truncated version of the key is not present because it is not truncated
+        Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(UtilsInternalLimits.truncateKeyLength(key, 5, new ModuleLog(), "tag")));
     }
 
     @Test
