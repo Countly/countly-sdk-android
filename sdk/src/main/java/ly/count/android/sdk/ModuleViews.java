@@ -151,7 +151,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             viewSegmentation.putAll(customViewSegmentation);
         }
 
-        viewSegmentation.put("name", UtilsInternalLimits.truncateKeyLength(vd.viewName, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleViews] CreateViewEventSegmentation"));
+        String truncatedViewName = UtilsInternalLimits.truncateKeyLength(vd.viewName, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleViews] CreateViewEventSegmentation");
+        viewSegmentation.put("name", truncatedViewName);
         if (visit) {
             viewSegmentation.put("visit", "1");
         }
