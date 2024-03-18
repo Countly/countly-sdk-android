@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -445,8 +444,8 @@ public class ModuleEventsTests {
     /**
      * Try to record events with internal keys
      * validate they are not truncated
-     * disable force sending check for those who are enabled by default
      * try one normal event with a key that is longer than the max allowed length
+     * except normal event, all other internal events should not be truncated
      */
     @Test
     public void internalLimit_recordEvent_internalKeys() throws JSONException {
@@ -456,29 +455,29 @@ public class ModuleEventsTests {
 
         Countly countly = new Countly().init(config);
 
-        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY); //force sending
-        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, 0, countly);
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map("action_event", "ACTION", "no_truncate", 7687)); //force sending
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map("action_event", "ACTION", "no_truncate", 7687), 0, countly);
 
-        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY); //force sending
-        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, 1, countly);
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map("nps_event", "NPS", "no_truncate", 555)); //force sending
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map("nps_event", "NPS", "no_truncate", 555), 1, countly);
 
-        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY); //force sending
-        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, 2, countly);
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map("survey_event", "SURVEY", "no_truncate", 567)); //force sending
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map("survey_event", "SURVEY", "no_truncate", 567), 2, countly);
 
-        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY);
-        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, 3, countly);
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map("rating_event", "RATING", "no_truncate", 7475));
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map("rating_event", "RATING", "no_truncate", 7475), 3, countly);
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY);
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, 4, countly);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("view_event", "VIEW", "no_truncate", 124));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("view_event", "VIEW", "no_truncate", 124), 4, countly);
 
-        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY);
-        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, 5, countly);
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map("orientation_event", "ORIENTATION", "no_truncate", 23523));
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map("orientation_event", "ORIENTATION", "no_truncate", 23523), 5, countly);
 
-        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION);
-        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, 6, countly);
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "PUSH", "no_truncate", 567));
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "PUSH", "no_truncate", 567), 6, countly);
 
-        countly.events().recordEvent("ModuleEvents");
-        validateEventInRQ("Mo", 7, countly);
+        countly.events().recordEvent("ModuleEvents", TestUtils.map("normal_event", "boo", "no_truncate", 567));
+        validateEventInRQ("Mo", TestUtils.map("no", "boo"), 7, countly);
     }
 
     /**
@@ -499,22 +498,6 @@ public class ModuleEventsTests {
         segmentation.clear();
         segmentation.put("Mo", 567);
         validateEventInRQ("Te", segmentation, 0, countly);
-    }
-
-    /**
-     * Try to record push action event
-     * validate that name and segmentation are not truncated
-     */
-    @Test
-    public void internalLimit_recordEvent_pushEvent() throws JSONException {
-        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
-        config.sdkInternalLimits.setMaxKeyLength(2);
-        config.setEventQueueSizeToSend(1);
-
-        Countly countly = new Countly().init(config);
-
-        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "ModuleEvents", "no_truncate", 567));
-        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "ModuleEvents", "no_truncate", 567), 0, countly);
     }
 
     private JSONObject validateEventInRQ(String eventName, int idx, Countly countly) throws JSONException {
