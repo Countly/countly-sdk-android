@@ -500,7 +500,7 @@ public class ModuleEventsTests {
         validateEventInRQ("Te", segmentation, 0, countly);
     }
 
-    private JSONObject validateEventInRQ(String eventName, int idx, Countly countly) throws JSONException {
+    protected static JSONObject validateEventInRQ(String eventName, int idx, Countly countly) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
         Assert.assertEquals(idx + 1, RQ.length);
         JSONArray events = new JSONArray(RQ[idx].get("events"));
@@ -510,7 +510,7 @@ public class ModuleEventsTests {
         return event;
     }
 
-    private void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx, Countly countly) throws JSONException {
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx, Countly countly) throws JSONException {
         JSONObject event = validateEventInRQ(eventName, idx, countly);
         JSONObject segmentation = event.getJSONObject("segmentation");
         Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
