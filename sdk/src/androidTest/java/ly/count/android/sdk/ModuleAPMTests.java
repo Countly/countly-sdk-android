@@ -4,6 +4,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -294,5 +296,60 @@ public class ModuleAPMTests {
         mCountly.moduleAPM.clearNetworkTraces();
 
         Assert.assertEquals(0, mCountly.moduleAPM.networkTraces.size());
+    }
+
+    /**
+     * Test that tracing network keys are not affected by key length truncation
+     * Validate that the truncated version of the key is not present because it is not truncated
+     */
+    @Test
+    public void internalLimit_recordNetworkTrace() throws JSONException {
+        CountlyConfig mConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        mConfig.sdkInternalLimits.setMaxKeyLength(5);
+        mCountly = new Countly().init(mConfig);
+
+        String key = "a_trace_to_track";
+
+        mCountly.apm().recordNetworkTrace(key, 234, 123, 456, 7654, 8765);
+        Assert.assertFalse(mCountly.moduleAPM.networkTraces.containsKey(key)); // because it is sent to the request queue
+
+        Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(key));
+        // also validate that the truncated version of the key is not present because it is not truncated
+        Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(UtilsInternalLimits.truncateKeyLength(key, 5, new ModuleLog(), "tag")));
+        validateNetworkRequest(mCountly, 0, key, 8765 - 7654, 234, 123, 456);
+    }
+
+    /**
+     * Test that tracing network keys are not affected by key length truncation
+     * Validate that network trace is sent to the server with correct values
+     */
+    @Test
+    public void internalLimit_startNetworkTrace() throws JSONException {
+        CountlyConfig mConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        mConfig.sdkInternalLimits.setMaxKeyLength(5);
+        mCountly = new Countly().init(mConfig);
+
+        String key = "a_trace_to_track";
+
+        mCountly.apm().startNetworkRequest(key, "ID");
+        mCountly.apm().endNetworkRequest(key, "ID", 200, 123, 456);
+
+        validateNetworkRequest(mCountly, 0, key, -1, 200, 123, 456);
+    }
+
+    private void validateNetworkRequest(Countly countly, int rqIdx, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+        Assert.assertEquals(rqIdx + 1, RQ.length);
+
+        JSONObject apm = new JSONObject(RQ[rqIdx].get("apm"));
+        Assert.assertEquals(key, apm.getString("name"));
+        Assert.assertEquals("network", apm.getString("type"));
+        JSONObject metrics = apm.getJSONObject("apm_metrics");
+        if (duration > 0) {
+            Assert.assertEquals(duration, metrics.getLong("response_time"));
+        }
+        Assert.assertEquals(responseCode, metrics.getInt("response_code"));
+        Assert.assertEquals(requestPayloadSize, metrics.getInt("request_payload_size"));
+        Assert.assertEquals(responsePayloadSize, metrics.getInt("response_payload_size"));
     }
 }
