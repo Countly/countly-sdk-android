@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -448,7 +449,7 @@ public class ModuleEventsTests {
      * try one normal event with a key that is longer than the max allowed length
      */
     @Test
-    public void recordEvent_internalKeys_truncate() throws JSONException {
+    public void internalLimit_recordEvent_internalKeys() throws JSONException {
         CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
         config.sdkInternalLimits.setMaxKeyLength(2);
         config.setEventQueueSizeToSend(1);
@@ -485,7 +486,7 @@ public class ModuleEventsTests {
      * validate that the segmentation is truncated and two same start keys is merged to one
      */
     @Test
-    public void recordEvent_segmentation_truncate() throws JSONException {
+    public void internalLimit_recordEvent_segmentation() throws JSONException {
         CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
         config.sdkInternalLimits.setMaxKeyLength(2);
         Countly countly = new Countly().init(config);
@@ -500,12 +501,26 @@ public class ModuleEventsTests {
         validateEventInRQ("Te", segmentation, 0, countly);
     }
 
+    /**
+     * Try to record push action event
+     * validate that name and segmentation are not truncated
+     */
+    @Test
+    public void internalLimit_recordEvent_pushEvent() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, map("push_event", "ModuleEvents", "no_truncate", 567));
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, map("push_event", "ModuleEvents", "no_truncate", 567), 0, countly);
+    }
+
     private JSONObject validateEventInRQ(String eventName, int idx, Countly countly) throws JSONException {
-        String[] requests = countly.countlyStore.getRequests();
-        Assert.assertEquals(idx + 1, requests.length);
-        String requestStr = requests[idx];
-        JSONObject request = new JSONObject(requestStr);
-        JSONArray events = request.getJSONArray("events");
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+        Assert.assertEquals(idx + 1, RQ.length);
+        JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(1, events.length());
         JSONObject event = events.getJSONObject(0);
         Assert.assertEquals(eventName, event.get("key"));
@@ -519,6 +534,14 @@ public class ModuleEventsTests {
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
+    }
+
+    private Map<String, Object> map(Object... args) {
+        Map<String, Object> map = new HashMap<>();
+        for (int a = 0; a < args.length; a += 2) {
+            map.put((String) args[a], args[a + 1]);
+        }
+        return map;
     }
 
 /*

@@ -11,16 +11,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.mockito.ArgumentCaptor;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -497,5 +493,32 @@ public class TestUtils {
     public static void verifyCurrentPreviousViewID(ModuleViews mv, String current, String previous) {
         Assert.assertEquals(current, mv.getCurrentViewId());
         Assert.assertEquals(previous, mv.getPreviousViewId());
+    }
+
+    /**
+     * Get current request queue from target folder
+     *
+     * @param countly to get store from
+     * @return array of request params
+     */
+    protected static Map<String, String>[] getCurrentRQ(Countly countly) {
+
+        //get all request files from target folder
+        String[] requests = countly.countlyStore.getRequests();
+        //create array of request params
+        Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
+
+        for (int i = 0; i < requests.length; i++) {
+            String[] params = requests[i].split("&");
+
+            Map<String, String> paramMap = new ConcurrentHashMap<>();
+            for (String param : params) {
+                String[] pair = param.split("=");
+                paramMap.put(UtilsNetworking.urlDecodeString(pair[0]), pair.length == 1 ? "" : UtilsNetworking.urlDecodeString(pair[1]));
+            }
+            resultMapArray[i] = paramMap;
+        }
+
+        return resultMapArray;
     }
 }
