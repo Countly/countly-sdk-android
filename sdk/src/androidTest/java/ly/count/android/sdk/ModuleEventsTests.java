@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -449,33 +450,34 @@ public class ModuleEventsTests {
     @Test
     public void recordEvent_internalKeys_truncate() throws JSONException {
         CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
-        config.sdkInternalLimits.setMaxKeyLength(2); //todo use RQ for event testing
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
 
         Countly countly = new Countly().init(config);
 
         countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY); //force sending
-        validateEventInEQ(ModuleEvents.ACTION_EVENT_KEY, 0, countly);
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, 0, countly);
 
         countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY); //force sending
-        validateEventInEQ(ModuleFeedback.NPS_EVENT_KEY, 1, countly);
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, 1, countly);
 
         countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY); //force sending
-        validateEventInEQ(ModuleFeedback.SURVEY_EVENT_KEY, 2, countly);
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, 2, countly);
 
         countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY);
-        validateEventInEQ(ModuleFeedback.RATING_EVENT_KEY, 3, countly);
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, 3, countly);
 
         countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY);
-        validateEventInEQ(ModuleViews.VIEW_EVENT_KEY, 4, countly);
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, 4, countly);
 
         countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY);
-        validateEventInEQ(ModuleViews.ORIENTATION_EVENT_KEY, 5, countly);
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, 5, countly);
 
         countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION);
-        validateEventInEQ(ModulePush.PUSH_EVENT_ACTION, 6, countly);
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, 6, countly);
 
         countly.events().recordEvent("ModuleEvents");
-        validateEventInEQ("Mo", 7, countly);
+        validateEventInRQ("Mo", 7, countly);
     }
 
     /**
@@ -495,19 +497,23 @@ public class ModuleEventsTests {
 
         segmentation.clear();
         segmentation.put("Mo", 567);
-        validateEventInEQ("Te", segmentation, 0, countly);
+        validateEventInRQ("Te", segmentation, 0, countly);
     }
 
-    private JSONObject validateEventInEQ(String eventName, int idx, Countly countly) throws JSONException {
-        Assert.assertEquals(idx + 1, countly.countlyStore.getEventQueueSize());
-        String eventStr = countly.countlyStore.getEvents()[idx];
-        JSONObject event = new JSONObject(eventStr);
+    private JSONObject validateEventInRQ(String eventName, int idx, Countly countly) throws JSONException {
+        String[] requests = countly.countlyStore.getRequests();
+        Assert.assertEquals(idx + 1, requests.length);
+        String requestStr = requests[idx];
+        JSONObject request = new JSONObject(requestStr);
+        JSONArray events = request.getJSONArray("events");
+        Assert.assertEquals(1, events.length());
+        JSONObject event = events.getJSONObject(0);
         Assert.assertEquals(eventName, event.get("key"));
         return event;
     }
 
-    private void validateEventInEQ(String eventName, Map<String, Object> expectedSegmentation, int idx, Countly countly) throws JSONException {
-        JSONObject event = validateEventInEQ(eventName, idx, countly);
+    private void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx, Countly countly) throws JSONException {
+        JSONObject event = validateEventInRQ(eventName, idx, countly);
         JSONObject segmentation = event.getJSONObject("segmentation");
         Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
