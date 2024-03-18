@@ -39,7 +39,7 @@ public class UtilsInternalLimitsTests {
 
         String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertNull(truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
     }
 
     /**
@@ -56,7 +56,7 @@ public class UtilsInternalLimitsTests {
 
         String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertEquals("", truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateKeyLength, key is empty, returning");
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, key is empty, returning");
     }
 
     /**

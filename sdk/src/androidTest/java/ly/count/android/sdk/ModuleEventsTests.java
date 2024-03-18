@@ -488,6 +488,7 @@ public class ModuleEventsTests {
     public void internalLimit_recordEvent_segmentation() throws JSONException {
         CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
         config.sdkInternalLimits.setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(config);
         Map<String, Object> segmentation = new HashMap<>();
         segmentation.put("ModuleEvents", "ModuleEvents");
