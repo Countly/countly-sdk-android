@@ -521,4 +521,12 @@ public class TestUtils {
 
         return resultMapArray;
     }
+
+    protected static Map<String, Object> map(Object... args) {
+        Map<String, Object> map = new HashMap<>();
+        for (int a = 0; a < args.length; a += 2) {
+            map.put((String) args[a], args[a + 1]);
+        }
+        return map;
+    }
 }

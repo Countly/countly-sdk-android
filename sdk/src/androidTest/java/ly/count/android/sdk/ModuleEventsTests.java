@@ -513,8 +513,8 @@ public class ModuleEventsTests {
 
         Countly countly = new Countly().init(config);
 
-        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, map("push_event", "ModuleEvents", "no_truncate", 567));
-        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, map("push_event", "ModuleEvents", "no_truncate", 567), 0, countly);
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "ModuleEvents", "no_truncate", 567));
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "ModuleEvents", "no_truncate", 567), 0, countly);
     }
 
     private JSONObject validateEventInRQ(String eventName, int idx, Countly countly) throws JSONException {
@@ -534,14 +534,6 @@ public class ModuleEventsTests {
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
-    }
-
-    private Map<String, Object> map(Object... args) {
-        Map<String, Object> map = new HashMap<>();
-        for (int a = 0; a < args.length; a += 2) {
-            map.put((String) args[a], args[a + 1]);
-        }
-        return map;
     }
 
 /*
