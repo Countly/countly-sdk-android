@@ -1,6 +1,9 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONException;
@@ -296,9 +299,9 @@ public class ModuleCrashTests {
      * One of the parameters are lost due to truncation because it has same key beginning as another parameter
      */
     @Test
-    public void provideCustomCrashSegment_DuringInitAndCall_truncateSegmentationKeys() throws JSONException {
+    public void internalLimit_provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.sdkInternalLimits.setMaxKeyLength(10);
 
         Map<String, Object> segm = new HashMap<>();
@@ -340,5 +343,40 @@ public class ModuleCrashTests {
         Assert.assertEquals(1_675_987, jCus.get("arf_log_ve"));
         Assert.assertEquals(1234.55d, jCus.get("battery_pe"));
         Assert.assertEquals(true, jCus.get("ftl"));
+    }
+
+    /**
+     * Test that the segmentation given while initializing the SDK is truncated to the limit
+     * And that the segmentation given during the crash recording is also truncated to the limit
+     * Two of the parameters are lost due to truncation because it has same key beginning as another parameter
+     */
+    @Test
+    public void internalLimit_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
+        Countly countly = new Countly();
+        CountlyConfig cConfig = (new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        cConfig.sdkInternalLimits.setMaxKeyLength(5);
+        cConfig.setCustomCrashSegment(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
+
+        countly.init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception, TestUtils.map("below_one", false, "go_for_it", "go"));
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        exception.printStackTrace(pw);
+        validateCrash(countly, sw.toString(), TestUtils.map("test_", 1234, "below", false, "go_fo", "go"), false);
+    }
+
+    private void validateCrash(Countly countly, String error, Map<String, Object> segm, boolean handled) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+        Assert.assertEquals(1, RQ.length);
+        JSONObject crashJson = new JSONObject(RQ[0].get("crash"));
+        JSONObject segmentation = crashJson.getJSONObject("_custom");
+        Assert.assertEquals(error, crashJson.getString("_error"));
+        for (Map.Entry<String, Object> entry : segm.entrySet()) {
+            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+        }
+        Assert.assertEquals(handled, crashJson.getBoolean("_nonfatal"));
     }
 }
