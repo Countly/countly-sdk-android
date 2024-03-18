@@ -449,10 +449,9 @@ public class ModuleEventsTests {
     @Test
     public void recordEvent_internalKeys_truncate() throws JSONException {
         CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
-        config.sdkInternalLimits.setMaxKeyLength(2);
+        config.sdkInternalLimits.setMaxKeyLength(2); //todo use RQ for event testing
 
         Countly countly = new Countly().init(config);
-        countly.moduleRequestQueue.forceSendEvents = false; // disable force sending
 
         countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY); //force sending
         validateEventInEQ(ModuleEvents.ACTION_EVENT_KEY, 0, countly);
