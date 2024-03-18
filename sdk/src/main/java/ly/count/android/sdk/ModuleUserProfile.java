@@ -224,7 +224,7 @@ public class ModuleUserProfile extends ModuleBase {
                 return;
             }
 
-            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L);
+            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
 
             if (customMods == null) {
                 customMods = new HashMap<>();
@@ -279,7 +279,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             if (!isNamed) {
-                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L);
+                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 dataCustomFields.put(truncatedKey, value.toString());
             }
         }

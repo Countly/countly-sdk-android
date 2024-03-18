@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 @RunWith(AndroidJUnit4.class)
-public class UtilsSdkInternalLimitsTests {
+public class UtilsInternalLimitsTests {
 
     /**
      * "truncateKeyLength"
@@ -22,7 +22,7 @@ public class UtilsSdkInternalLimitsTests {
         String key = "test";
         int limit = 2;
 
-        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, new ModuleLog());
+        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, new ModuleLog(), "tag");
         Assert.assertEquals("te", truncatedKey);
     }
 
@@ -37,7 +37,7 @@ public class UtilsSdkInternalLimitsTests {
         int limit = 4;
         ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog);
+        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertNull(truncatedKey);
         Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
     }
@@ -54,7 +54,7 @@ public class UtilsSdkInternalLimitsTests {
         int limit = 4;
         ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog);
+        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertEquals("", truncatedKey);
         Mockito.verify(spyLog, Mockito.times(1)).d("[UtilsSdkInternalLimits] truncateKeyLength, key is empty, returning");
     }
@@ -73,8 +73,8 @@ public class UtilsSdkInternalLimitsTests {
         String secondKey = "test";
         int limit = 4;
 
-        String firstTruncatedKey = UtilsInternalLimits.truncateKeyLength(firstKey, limit, new ModuleLog());
-        String secondTruncatedKey = UtilsInternalLimits.truncateKeyLength(secondKey, limit, new ModuleLog());
+        String firstTruncatedKey = UtilsInternalLimits.truncateKeyLength(firstKey, limit, new ModuleLog(), "tag");
+        String secondTruncatedKey = UtilsInternalLimits.truncateKeyLength(secondKey, limit, new ModuleLog(), "tag");
 
         Assert.assertEquals("test", firstTruncatedKey);
         Assert.assertEquals(secondKey, secondTruncatedKey);
@@ -95,7 +95,7 @@ public class UtilsSdkInternalLimitsTests {
         map.put("test_test", "value1");
         map.put("test", "value2");
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog());
+        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog(), "tag");
 
         Assert.assertEquals("value1", map.get("test_"));
         Assert.assertEquals("value2", map.get("test"));
@@ -110,7 +110,7 @@ public class UtilsSdkInternalLimitsTests {
         int limit = 5;
         Map<String, String> map = null;
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog());
+        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog(), "tag");
         Assert.assertNull(map);
     }
 
@@ -123,7 +123,7 @@ public class UtilsSdkInternalLimitsTests {
         int limit = 5;
         Map<String, String> map = new ConcurrentHashMap<>();
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog());
+        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog(), "tag");
         Assert.assertEquals(0, map.size());
     }
 
@@ -145,7 +145,7 @@ public class UtilsSdkInternalLimitsTests {
         map.put("test5", TestUtils.eKeys[4]);
         ModuleLog spyLog = Mockito.spy(new ModuleLog());
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, spyLog);
+        UtilsInternalLimits.truncateSegmentationKeys(map, limit, spyLog, "tag");
         Assert.assertEquals(1, map.size());
         Assert.assertFalse(Objects.requireNonNull(map.get("test")).isEmpty());
     }
