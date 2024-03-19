@@ -17,15 +17,20 @@ public class ModuleCrash extends ModuleBase {
     //native crash
     private static final String countlyFolderName = "Countly";
     private static final String countlyNativeCrashFolderName = "CrashDumps";
-    //interface for SDK users
-    final Crashes crashesInterface;
+
     //crash filtering
     GlobalCrashFilterCallback globalCrashFilterCallback;
     //Deprecated, will be removed in the future
     CrashFilterCallback crashFilterCallback;
+
     boolean recordAllThreads = false;
+
     @Nullable
     Map<String, Object> customCrashSegments = null;
+
+    //interface for SDK users
+    final Crashes crashesInterface;
+
     @Nullable
     Map<String, String> metricOverride = null;
 

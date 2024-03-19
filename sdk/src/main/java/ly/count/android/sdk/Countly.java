@@ -394,6 +394,7 @@ public class Countly {
             } else {
                 config.sdkInternalLimits.maxSegmentationValues = maxSegmentationValuesDefault;
             }
+            
             if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
                 if (config.sdkInternalLimits.maxBreadcrumbCount < 1) {
                     config.sdkInternalLimits.maxBreadcrumbCount = 1;

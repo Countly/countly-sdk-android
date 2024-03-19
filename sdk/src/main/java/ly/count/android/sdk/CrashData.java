@@ -8,7 +8,6 @@ import org.json.JSONObject;
  * This class is used to store crash data.
  */
 public class CrashData {
-
     private String stackTrace;
     private Map<String, Object> crashSegmentation;
     private List<String> breadcrumbs;
@@ -137,7 +136,6 @@ public class CrashData {
         if (breadcrumbs == null) {
             return;
         }
-
         this.breadcrumbs = breadcrumbs;
     }
 

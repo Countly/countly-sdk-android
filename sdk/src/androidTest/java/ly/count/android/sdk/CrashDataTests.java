@@ -51,7 +51,6 @@ public class CrashDataTests {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
         crashData.setStackTrace("ST2");
         Assert.assertEquals(crashData.getStackTrace(), "ST2");
-
         validateChanged(crashData, true, false, false, false, false);
     }
 
@@ -62,7 +61,6 @@ public class CrashDataTests {
         crashSegmentation.put("key", "value");
         crashData.setCrashSegmentation(crashSegmentation);
         Assert.assertEquals(crashData.getCrashSegmentation(), crashSegmentation);
-
         validateChanged(crashData, false, true, false, false, false);
     }
 
@@ -74,7 +72,6 @@ public class CrashDataTests {
         breadcrumbs.add("value");
         crashData.setBreadcrumbs(breadcrumbs);
         Assert.assertEquals(crashData.getBreadcrumbs(), breadcrumbs);
-
         validateChanged(crashData, false, false, true, false, false);
     }
 
@@ -85,7 +82,6 @@ public class CrashDataTests {
         crashMetrics.put("key", "value");
         crashData.setCrashMetrics(crashMetrics);
         Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
-
         validateChanged(crashData, false, false, false, true, false);
     }
 
@@ -94,7 +90,6 @@ public class CrashDataTests {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
         crashData.setFatal(false);
         Assert.assertFalse(crashData.getFatal());
-
         validateChanged(crashData, false, false, false, false, true);
     }
 
@@ -112,7 +107,6 @@ public class CrashDataTests {
         crashMetrics.put("key", "value");
         crashData.setCrashMetrics(crashMetrics);
         crashData.setFatal(false);
-
         validateChanged(crashData, false, true, true, true, true);
     }
 
@@ -131,7 +125,6 @@ public class CrashDataTests {
         crashData.setCrashMetrics(crashMetrics);
         crashData.setFatal(false);
         crashData.setStackTrace("ST2");
-
         validateChanged(crashData, true, true, true, true, true);
     }
 
