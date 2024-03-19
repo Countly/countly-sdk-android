@@ -9,7 +9,7 @@
   * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
   * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
   * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
-  * "checkForNativeCrashDumps(checkForDumps)" will be removed
+  * "checkForNativeCrashDumps(checkForDumps)", it will be removed in the future, there is no replacement
 
 ## 24.1.1
 * Added a new metric for detecting whether or not a device has a hinge
