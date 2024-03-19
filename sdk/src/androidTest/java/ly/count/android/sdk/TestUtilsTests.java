@@ -6,6 +6,7 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -14,15 +15,18 @@ import static org.mockito.Mockito.mock;
 @RunWith(AndroidJUnit4.class)
 public class TestUtilsTests {
 
+    @Before
+    public void setUp() {
+        CountlyStore store = new CountlyStore(ApplicationProvider.getApplicationContext(), mock(ModuleLog.class), false);
+        store.clear(); // clear the store to make sure that there are no requests from previous tests
+    }
+
     /**
      * "getCurrentRQ" without countly initialization
      * Validate that RQ is empty
      */
     @Test
     public void getCurrentRQ() {
-        CountlyStore store = new CountlyStore(ApplicationProvider.getApplicationContext(), mock(ModuleLog.class), false);
-        store.clear(); // clear the store to make sure that there are no requests from previous tests
-        
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
     }
 
@@ -33,9 +37,6 @@ public class TestUtilsTests {
      */
     @Test
     public void getCurrentRQ_notEmpty() throws JSONException {
-        CountlyStore store = new CountlyStore(ApplicationProvider.getApplicationContext(), mock(ModuleLog.class), false);
-        store.clear(); // clear the store to make sure that there are no requests from previous tests
-
         CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "123", "https://test");
         Countly.sharedInstance().init(config);
         Countly.sharedInstance().crashes().recordUnhandledException(new Exception("test"));
@@ -54,7 +55,6 @@ public class TestUtilsTests {
     @Test
     public void getCurrentRQ_trashRequest() {
         CountlyStore store = new CountlyStore(ApplicationProvider.getApplicationContext(), mock(ModuleLog.class), false);
-        store.clear(); // clear the store to make sure that there are no requests from previous tests
         store.addRequest("This is not a request", true);
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertEquals("", TestUtils.getCurrentRQ()[0].get("This is not a request"));
@@ -69,7 +69,6 @@ public class TestUtilsTests {
     @Test
     public void getCurrentRQ_wrongStructure() {
         CountlyStore store = new CountlyStore(ApplicationProvider.getApplicationContext(), mock(ModuleLog.class), false);
-        store.clear(); // clear the store to make sure that there are no requests from previous tests
         store.addRequest("&s==1", true);
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertNull(TestUtils.getCurrentRQ()[0].get("="));
