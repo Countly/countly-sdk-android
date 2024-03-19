@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
 import org.json.JSONException;
@@ -10,14 +9,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.mockito.Mockito.mock;
-
 @RunWith(AndroidJUnit4.class)
 public class TestUtilsTests {
 
     @Before
     public void setUp() {
-        CountlyStore store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), false);
+        CountlyStore store = TestUtils.getCountyStore();
         store.clear(); // clear the store to make sure that there are no requests from previous tests
     }
 
@@ -37,7 +34,7 @@ public class TestUtilsTests {
      */
     @Test
     public void getCurrentRQ_notEmpty() throws JSONException {
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "123", "https://test");
+        CountlyConfig config = TestUtils.getBaseConfig();
         Countly.sharedInstance().init(config);
         Countly.sharedInstance().crashes().recordUnhandledException(new Exception("test"));
 
@@ -54,7 +51,7 @@ public class TestUtilsTests {
      */
     @Test
     public void getCurrentRQ_trashRequest() {
-        CountlyStore store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), false);
+        CountlyStore store = TestUtils.getCountyStore();
         store.addRequest("This is not a request", true);
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertEquals("", TestUtils.getCurrentRQ()[0].get("This is not a request"));
@@ -68,7 +65,7 @@ public class TestUtilsTests {
      */
     @Test
     public void getCurrentRQ_wrongStructure() {
-        CountlyStore store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), false);
+        CountlyStore store = TestUtils.getCountyStore();
         store.addRequest("&s==1", true);
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertNull(TestUtils.getCurrentRQ()[0].get("="));
