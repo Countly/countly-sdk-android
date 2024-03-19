@@ -37,9 +37,9 @@ public class ModuleCrash extends ModuleBase {
 
         setCrashFilterCallback(config.crashFilterCallback);
 
-        recordAllThreads = config.recordAllThreadsWithCrash;
+        recordAllThreads = config.crashes.recordAllThreadsWithCrash;
 
-        setCustomCrashSegmentsInternal(config.customCrashSegment);
+        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment);
 
         metricOverride = config.metricOverride;
 
@@ -312,12 +312,12 @@ public class ModuleCrash extends ModuleBase {
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         //enable unhandled crash reporting
-        if (config.enableUnhandledCrashReporting) {
+        if (config.crashes.enableUnhandledCrashReporting) {
             enableCrashReporting();
         }
 
         //check for previous native crash dumps
-        if (config.checkForNativeCrashDumps) {
+        if (config.crashes.checkForNativeCrashDumps) {
             //flag so that this can be turned off during testing
             _cly.moduleCrash.checkForNativeCrashDumps(config.context);
         }

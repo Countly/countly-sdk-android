@@ -13,7 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -26,7 +25,7 @@ public class ModuleUserProfileTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().halt();
-        store = new CountlyStore(getContext(), mock(ModuleLog.class));
+        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         store.clear();
     }
 
@@ -40,7 +39,7 @@ public class ModuleUserProfileTests {
     @Test
     public void setAndSaveValues() {
         Countly mCountly = Countly.sharedInstance();//todo move away from static init after static user profile has been removed
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         HashMap<String, Object> userProperties = new HashMap<>();
@@ -67,7 +66,7 @@ public class ModuleUserProfileTests {
     @Test
     public void SavingWritesEQIntoRQ() {
         Countly mCountly = Countly.sharedInstance();//todo move away from static init after static user profile has been removed
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         assertEquals(0, store.getEvents().length);
@@ -202,7 +201,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testSetData() {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         HashMap<String, Object> data = new HashMap<>();
@@ -235,7 +234,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testSetData_2() {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         assertAllValuesNull(mCountly.moduleUserProfile);
@@ -253,7 +252,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testCustomData() {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         HashMap<String, Object> data = new HashMap<>();
@@ -270,7 +269,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testCustomData_2() {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         HashMap<String, Object> data = createCustomSetData_1();
@@ -282,7 +281,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testCustomModifiers() throws JSONException {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         mCountly.moduleUserProfile.modifyCustomData("key_inc", 1, "$inc");
@@ -299,7 +298,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testClear() {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         mCountly.userProfile().clear();
@@ -326,7 +325,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testJSON() throws JSONException {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         HashMap<String, Object> data = new HashMap<>();
@@ -372,7 +371,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testJSON_2() throws JSONException {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         assertAllValuesNull(mCountly.moduleUserProfile);
@@ -400,7 +399,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testJSON_3() throws JSONException {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         assertAllValuesNull(mCountly.moduleUserProfile);
@@ -417,7 +416,7 @@ public class ModuleUserProfileTests {
     @Test
     public void testGetDataForRequest() {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         assertAllValuesNull(mCountly.moduleUserProfile);

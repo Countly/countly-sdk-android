@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
@@ -495,16 +496,23 @@ public class TestUtils {
         Assert.assertEquals(previous, mv.getPreviousViewId());
     }
 
+    protected static CountlyStore getCountyStore() {
+        return new CountlyStore(getContext(), mock(ModuleLog.class), false);
+    }
+
+    protected static CountlyConfig getBaseConfig() {
+        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
+    }
+
     /**
      * Get current request queue from target folder
      *
-     * @param countly to get store from
      * @return array of request params
      */
-    protected static Map<String, String>[] getCurrentRQ(Countly countly) {
+    protected static Map<String, String>[] getCurrentRQ() {
 
         //get all request files from target folder
-        String[] requests = countly.countlyStore.getRequests();
+        String[] requests = getCountyStore().getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 
@@ -523,10 +531,25 @@ public class TestUtils {
     }
 
     protected static Map<String, Object> map(Object... args) {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new ConcurrentHashMap<>();
+
+        if (args.length < 1) {
+            return map;
+        }
+
+        if (args.length % 2 != 0) {
+            return map;
+        }
+
         for (int a = 0; a < args.length; a += 2) {
-            map.put((String) args[a], args[a + 1]);
+            if (args[a] != null && args[a + 1] != null) {
+                map.put(args[a].toString(), args[a + 1]);
+            }
         }
         return map;
+    }
+  
+    public static Context getContext() {
+        return ApplicationProvider.getApplicationContext();
     }
 }

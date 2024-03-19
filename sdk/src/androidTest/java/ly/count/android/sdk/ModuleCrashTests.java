@@ -15,7 +15,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -29,11 +28,11 @@ public class ModuleCrashTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         mCountly = new Countly();
-        config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
@@ -56,7 +55,7 @@ public class ModuleCrashTests {
         };
 
         Countly countly = new Countly();
-        CountlyConfig cConfig = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.setCrashFilterCallback(callback);
 
         countly.init(cConfig);
@@ -67,7 +66,7 @@ public class ModuleCrashTests {
     @Test
     public void crashFilterTest() {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.setCrashFilterCallback(new CrashFilterCallback() {
             @Override
             public boolean filterCrash(String crash) {
@@ -108,7 +107,7 @@ public class ModuleCrashTests {
     @Test
     public void provideCustomCrashSegment_DuringInit() {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
@@ -138,7 +137,7 @@ public class ModuleCrashTests {
     @Test
     public void provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
@@ -198,7 +197,7 @@ public class ModuleCrashTests {
     //@Test
     //public void addCrashBreadcrumbLimits() {
     //    Countly countly = new Countly();
-    //    config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
+    //    config = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
     //        .setMaxBreadcrumbCount(2).setMaxValueSize(5);
     //    countly.init(config);
     //
