@@ -139,62 +139,6 @@ public class UtilsTests {
         Assert.assertEquals(false, segm.get("4"));
     }
 
-    /**
-     * Make sure that nothing bad happens when providing null segmentation
-     */
-    @Test
-    public void truncateSegmentationValues_null() {
-        Utils.truncateSegmentationValues(null, 10, "someTag", mock(ModuleLog.class));
-        Assert.assertTrue(true);
-    }
-
-    /**
-     * Make sure that nothing bad happens when providing empty segmentation
-     */
-    @Test
-    public void truncateSegmentationValues_empty() {
-        Map<String, Object> values = new HashMap<>();
-        Utils.truncateSegmentationValues(values, 10, "someTag", mock(ModuleLog.class));
-        Assert.assertTrue(true);
-    }
-
-    /**
-     * Make sure that nothing bad happens when providing segmentation with values under limit
-     */
-    @Test
-    public void truncateSegmentationValues_underLimit() {
-        Map<String, Object> values = new HashMap<>();
-        values.put("a1", "1");
-        values.put("a2", "2");
-        values.put("a3", "3");
-        values.put("a4", "4");
-        Utils.truncateSegmentationValues(values, 6, "someTag", mock(ModuleLog.class));
-
-        Assert.assertEquals(4, values.size());
-        Assert.assertEquals("1", values.get("a1"));
-        Assert.assertEquals("2", values.get("a2"));
-        Assert.assertEquals("3", values.get("a3"));
-        Assert.assertEquals("4", values.get("a4"));
-    }
-
-    /**
-     * Make sure that values are truncated when they are more then the limit
-     */
-    @Test
-    public void truncateSegmentationValues_aboveLimit() {
-        Map<String, Object> values = new HashMap<>();
-        values.put("a1", "1");
-        values.put("a2", "2");
-        values.put("a3", "3");
-        values.put("a4", "4");
-        Utils.truncateSegmentationValues(values, 2, "someTag", mock(ModuleLog.class));
-
-        Assert.assertEquals(2, values.size());
-        //after inspecting what is returned in the debugger, it should have the values of "a2" and "a4"
-        //Assert.assertEquals("2", values.get("a2"));
-        //Assert.assertEquals("4", values.get("a4"));
-    }
-
     @Test
     public void fillJSONIfValuesNotEmpty_noValues() {
         final JSONObject mockJSON = mock(JSONObject.class);

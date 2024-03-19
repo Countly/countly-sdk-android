@@ -129,7 +129,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         //truncate crash segmentation
-        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {

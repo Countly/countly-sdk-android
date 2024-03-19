@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,5 +94,32 @@ public class UtilsInternalLimits {
         }
 
         map.putAll(gonnaReplace);
+    }
+
+    /**
+     * Checks and transforms the provided Object if it does not
+     * comply with the key count limit.
+     *
+     * @param maxCount Int @NonNull - max number of keys allowed
+     * @param L ModuleLog @NonNull - Logger function
+     * @param messagePrefix String @NonNull - name of the module this function was called
+     * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
+     */
+    static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+        if (segmentation == null) {
+            return;
+        }
+
+        Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
+        while (iterator.hasNext()) {
+            if (segmentation.size() > maxCount) {
+                Map.Entry<String, Object> value = iterator.next();
+                String key = value.getKey();
+                L.w(messagePrefix + ", Value exceeded the maximum segmentation count key:[" + key + "]");
+                iterator.remove();
+            } else {
+                break;
+            }
+        }
     }
 }

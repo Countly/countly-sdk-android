@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,6 +9,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
 public class UtilsInternalLimitsTests {
@@ -148,5 +151,61 @@ public class UtilsInternalLimitsTests {
         UtilsInternalLimits.truncateSegmentationKeys(map, limit, spyLog, "tag");
         Assert.assertEquals(1, map.size());
         Assert.assertFalse(Objects.requireNonNull(map.get("test")).isEmpty());
+    }
+
+    /**
+     * Make sure that nothing bad happens when providing null segmentation
+     */
+    @Test
+    public void truncateSegmentationValues_null() {
+        UtilsInternalLimits.truncateSegmentationValues(null, 10, "someTag", mock(ModuleLog.class));
+        Assert.assertTrue(true);
+    }
+
+    /**
+     * Make sure that nothing bad happens when providing empty segmentation
+     */
+    @Test
+    public void truncateSegmentationValues_empty() {
+        Map<String, Object> values = new HashMap<>();
+        UtilsInternalLimits.truncateSegmentationValues(values, 10, "someTag", mock(ModuleLog.class));
+        Assert.assertTrue(true);
+    }
+
+    /**
+     * Make sure that nothing bad happens when providing segmentation with values under limit
+     */
+    @Test
+    public void truncateSegmentationValues_underLimit() {
+        Map<String, Object> values = new HashMap<>();
+        values.put("a1", "1");
+        values.put("a2", "2");
+        values.put("a3", "3");
+        values.put("a4", "4");
+        UtilsInternalLimits.truncateSegmentationValues(values, 6, "someTag", mock(ModuleLog.class));
+
+        Assert.assertEquals(4, values.size());
+        Assert.assertEquals("1", values.get("a1"));
+        Assert.assertEquals("2", values.get("a2"));
+        Assert.assertEquals("3", values.get("a3"));
+        Assert.assertEquals("4", values.get("a4"));
+    }
+
+    /**
+     * Make sure that values are truncated when they are more then the limit
+     */
+    @Test
+    public void truncateSegmentationValues_aboveLimit() {
+        Map<String, Object> values = new HashMap<>();
+        values.put("a1", "1");
+        values.put("a2", "2");
+        values.put("a3", "3");
+        values.put("a4", "4");
+        UtilsInternalLimits.truncateSegmentationValues(values, 2, "someTag", mock(ModuleLog.class));
+
+        Assert.assertEquals(2, values.size());
+        //after inspecting what is returned in the debugger, it should have the values of "a2" and "a4"
+        //Assert.assertEquals("2", values.get("a2"));
+        //Assert.assertEquals("4", values.get("a4"));
     }
 }
