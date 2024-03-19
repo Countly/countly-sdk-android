@@ -20,6 +20,9 @@ public class TestUtilsTests {
      */
     @Test
     public void getCurrentRQ() {
+        CountlyStore store = new CountlyStore(ApplicationProvider.getApplicationContext(), mock(ModuleLog.class), false);
+        store.clear(); // clear the store to make sure that there are no requests from previous tests
+        
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
     }
 
