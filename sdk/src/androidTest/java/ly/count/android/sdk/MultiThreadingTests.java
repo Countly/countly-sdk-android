@@ -11,8 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
-
 @RunWith(AndroidJUnit4.class)
 public class MultiThreadingTests {
     Countly mCountly;
@@ -23,9 +21,9 @@ public class MultiThreadingTests {
 
         mCountly = new Countly();
         mCountly.halt();
-        mCountly.init(new CountlyConfig(getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
         mCountly.halt();
-        mCountly.init(new CountlyConfig(getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @Test
