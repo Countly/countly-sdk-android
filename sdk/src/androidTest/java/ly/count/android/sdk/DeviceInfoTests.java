@@ -41,7 +41,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -75,9 +74,9 @@ public class DeviceInfoTests {
     @Test
     public void testGetResolution() {
         final DisplayMetrics metrics = new DisplayMetrics();
-        ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(metrics);
+        ((WindowManager) TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(metrics);
         final String expected = metrics.widthPixels + "x" + metrics.heightPixels;
-        assertEquals(expected, regularDeviceInfo.mp.getResolution(getContext()));
+        assertEquals(expected, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
     }
 
     @Test
@@ -219,18 +218,18 @@ public class DeviceInfoTests {
         json.put("_device", regularDeviceInfo.mp.getDevice());
         json.put("_os", regularDeviceInfo.mp.getOS());
         json.put("_os_version", regularDeviceInfo.mp.getOSVersion());
-        if (!"".equals(regularDeviceInfo.mp.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
-            json.put("_carrier", regularDeviceInfo.mp.getCarrier(getContext()));
+        if (!"".equals(regularDeviceInfo.mp.getCarrier(TestUtils.getContext()))) { // ensure tests pass on non-cellular devices
+            json.put("_carrier", regularDeviceInfo.mp.getCarrier(TestUtils.getContext()));
         }
-        json.put("_resolution", regularDeviceInfo.mp.getResolution(getContext()));
-        json.put("_density", regularDeviceInfo.mp.getDensity(getContext()));
+        json.put("_resolution", regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
+        json.put("_density", regularDeviceInfo.mp.getDensity(TestUtils.getContext()));
         json.put("_locale", regularDeviceInfo.mp.getLocale());
-        json.put("_app_version", regularDeviceInfo.mp.getAppVersion(getContext()));
+        json.put("_app_version", regularDeviceInfo.mp.getAppVersion(TestUtils.getContext()));
         json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
-        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(getContext()));
-        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
+        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(TestUtils.getContext()));
+        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(TestUtils.getContext()));
 
-        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), null), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), null), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -246,21 +245,21 @@ public class DeviceInfoTests {
         json.put("_device", regularDeviceInfo.mp.getDevice());
         json.put("_os", regularDeviceInfo.mp.getOS());
         json.put("_os_version", regularDeviceInfo.mp.getOSVersion());
-        if (!"".equals(regularDeviceInfo.mp.getCarrier(getContext()))) { // ensure tests pass on non-cellular devices
-            json.put("_carrier", regularDeviceInfo.mp.getCarrier(getContext()));
+        if (!"".equals(regularDeviceInfo.mp.getCarrier(TestUtils.getContext()))) { // ensure tests pass on non-cellular devices
+            json.put("_carrier", regularDeviceInfo.mp.getCarrier(TestUtils.getContext()));
         }
-        json.put("_resolution", regularDeviceInfo.mp.getResolution(getContext()));
-        json.put("_density", regularDeviceInfo.mp.getDensity(getContext()));
+        json.put("_resolution", regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
+        json.put("_density", regularDeviceInfo.mp.getDensity(TestUtils.getContext()));
         json.put("_locale", regularDeviceInfo.mp.getLocale());
-        json.put("_app_version", regularDeviceInfo.mp.getAppVersion(getContext()));
+        json.put("_app_version", regularDeviceInfo.mp.getAppVersion(TestUtils.getContext()));
         json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
-        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
-        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(getContext()));
+        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(TestUtils.getContext()));
+        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(TestUtils.getContext()));
         json.put("123", "bb");
         json.put("456", "cc");
         json.put("Test", "aa");
 
-        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), metricOverride), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -288,11 +287,11 @@ public class DeviceInfoTests {
         json.put("_locale", "d4");
         json.put("_app_version", "d5");
         json.put("_manufacturer", regularDeviceInfo.mp.getManufacturer());
-        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(getContext()));
-        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(getContext()));
+        json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(TestUtils.getContext()));
+        json.put("_device_type", regularDeviceInfo.mp.getDeviceType(TestUtils.getContext()));
         json.put("asd", "123");
 
-        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(getContext(), metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), metricOverride), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -301,14 +300,14 @@ public class DeviceInfoTests {
     public void getAppVersionWithOverride() {
         Map<String, String> metricOverride = new HashMap<>();
         metricOverride.put("_app_version", "d5");
-        Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(getContext(), null));
+        Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(TestUtils.getContext(), null));
 
-        assertEquals("d5", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
+        assertEquals("d5", regularDeviceInfo.getAppVersionWithOverride(TestUtils.getContext(), metricOverride));
 
         metricOverride.put("_app_version", null);
-        Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
+        Assert.assertNotNull(regularDeviceInfo.getAppVersionWithOverride(TestUtils.getContext(), metricOverride));
 
         metricOverride.put("_app_version", "");
-        assertEquals("", regularDeviceInfo.getAppVersionWithOverride(getContext(), metricOverride));
+        assertEquals("", regularDeviceInfo.getAppVersionWithOverride(TestUtils.getContext(), metricOverride));
     }
 }
