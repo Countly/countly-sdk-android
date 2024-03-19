@@ -123,7 +123,7 @@ public class CrashData {
      *
      * @return the breadcrumbs of the crash.
      */
-    public List<String> getBreadcrumbs() {
+    protected List<String> getBreadcrumbs() {
         return breadcrumbs;
     }
 
