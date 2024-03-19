@@ -167,11 +167,11 @@ public class ModuleCrash extends ModuleBase {
                 return;
             }
 
-            if (crashData.breadcrumbsAdded) {
-                L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.crashes.maxBreadcrumbCount + "]");
-                if (crashData.getBreadcrumbs().size() > _cly.config_.crashes.maxBreadcrumbCount) {
+            if (crashData.getChangedFields()[2]) {
+                L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
+                if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
                     L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, after filtering, breadcrumbs limit is exceeded. clipping from tail count:[" + crashData.getBreadcrumbs().size() + "]");
-                    int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.crashes.maxBreadcrumbCount;
+                    int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
                     if (gonnaClip > 0) {
                         crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
                     }
