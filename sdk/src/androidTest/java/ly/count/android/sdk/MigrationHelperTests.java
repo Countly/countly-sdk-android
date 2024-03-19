@@ -14,12 +14,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -33,10 +31,10 @@ public class MigrationHelperTests {
     public void setUp() {
         mockLog = mock(ModuleLog.class);
 
-        cs = new CountlyStore(getContext(), mockLog);
+        cs = new CountlyStore(TestUtils.getContext(), mockLog);
         sp = cs;
 
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mockLog);
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mockLog);
         countlyStore.clear();
     }
 

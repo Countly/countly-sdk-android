@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -18,7 +17,7 @@ import static org.mockito.Mockito.verify;
 public class ModuleSessionsTests {
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
     }
 
@@ -124,6 +123,50 @@ public class ModuleSessionsTests {
         mCountly.sessions().beginSession();
         mCountly.sessions().updateSession();
         mCountly.sessions().endSession();
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+    }
+
+    /**
+     * Validating manual session flow
+     * a session hasn't been begun and we are trying to stop it or call update
+     * No session requests should be recorded
+     */
+    @Test
+    public void manualSessionsNoUpdateStopWithoutBegin() {
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
+        Countly mCountly = new Countly().init(config);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+
+        mCountly.sessions().updateSession();
+        mCountly.sessions().endSession();
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+    }
+
+    @Test
+    public void yy() {
+        CountlyConfig config = TestUtils.createBaseConfig().setApplication(null).setContext(TestUtils.getContext());
+        Countly mCountly = new Countly().init(config);
+        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        verify(requestQueueProvider, never()).updateSession(anyInt());
+        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
+
+        mCountly.onStop();
 
         TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
         verify(requestQueueProvider, never()).updateSession(anyInt());

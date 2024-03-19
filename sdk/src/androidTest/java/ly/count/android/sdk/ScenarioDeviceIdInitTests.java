@@ -7,12 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -21,7 +15,7 @@ public class ScenarioDeviceIdInitTests {
 
     @Before
     public void setUp() {
-        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
     }
 
     @After
@@ -40,7 +34,7 @@ public class ScenarioDeviceIdInitTests {
     @Test
     public void firstInitProvidedNothing() {
         countlyStore.clear();
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         Countly countly = new Countly();
         countly.init(cc);
 
@@ -58,7 +52,7 @@ public class ScenarioDeviceIdInitTests {
     @Test
     public void firstInitProvidedCustomId() {
         countlyStore.clear();
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.setDeviceId("qwe123");
 
         Countly countly = new Countly();
@@ -78,7 +72,7 @@ public class ScenarioDeviceIdInitTests {
     @Test
     public void firstInitProvidedTempId() {
         countlyStore.clear();
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
 
         Countly countly = new Countly();
@@ -103,7 +97,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.setDeviceId("hjk");
 
         Countly cInitial = new Countly();
@@ -115,7 +109,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
 
         Countly countly = new Countly();
         countly.init(cc);
@@ -137,7 +131,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.setDeviceId("hjk");
 
         Countly cInitial = new Countly();
@@ -149,7 +143,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.setDeviceId("zxc");
 
         Countly countly = new Countly();
@@ -172,7 +166,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.setDeviceId("hjk");
 
         Countly cInitial = new Countly();
@@ -184,7 +178,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
 
         Countly countly = new Countly();
@@ -208,7 +202,7 @@ public class ScenarioDeviceIdInitTests {
 
         //setup initial state
         final String specificDeviceId = "hjk";
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.setDeviceId(specificDeviceId);
 
         Countly cInitial = new Countly();
@@ -220,7 +214,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
         cc.setDeviceId("890");
 
@@ -245,7 +239,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
 
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
@@ -256,7 +250,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.OPEN_UDID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
 
         Countly countly = new Countly();
         countly.init(cc);
@@ -278,7 +272,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
 
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
@@ -289,7 +283,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.OPEN_UDID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.setDeviceId("1qwe");
 
         Countly countly = new Countly();
@@ -312,7 +306,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
 
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
@@ -323,7 +317,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.OPEN_UDID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
 
         Countly countly = new Countly();
@@ -346,7 +340,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
 
         Countly cInitial = new Countly();
         cInitial.init(configInitial);
@@ -357,7 +351,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.OPEN_UDID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
 
         Countly countly = new Countly();
         countly.init(cc);
@@ -380,7 +374,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.enableTemporaryDeviceIdMode();
         configInitial.setLoggingEnabled(true);
 
@@ -393,7 +387,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.TEMPORARY_ID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.setLoggingEnabled(true);
 
         Countly countly = new Countly();
@@ -416,7 +410,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.enableTemporaryDeviceIdMode();
 
         Countly cInitial = new Countly();
@@ -426,7 +420,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.TEMPORARY_ID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.setDeviceId("uio");
 
         Countly countly = new Countly();
@@ -449,7 +443,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.enableTemporaryDeviceIdMode();
 
         Countly cInitial = new Countly();
@@ -461,7 +455,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.TEMPORARY_ID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
 
         Countly countly = new Countly();
@@ -484,7 +478,7 @@ public class ScenarioDeviceIdInitTests {
         countlyStore.clear();
 
         //setup initial state
-        CountlyConfig configInitial = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig configInitial = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         configInitial.enableTemporaryDeviceIdMode();
 
         Countly cInitial = new Countly();
@@ -496,7 +490,7 @@ public class ScenarioDeviceIdInitTests {
         Assert.assertEquals(DeviceIdType.TEMPORARY_ID, cInitial.deviceId().getType());
 
         //setup followup state
-        CountlyConfig cc = new CountlyConfig(getContext(), "aaa", "http://www.aa.bb");
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "aaa", "http://www.aa.bb");
         cc.enableTemporaryDeviceIdMode();
         cc.setDeviceId("frt");
 

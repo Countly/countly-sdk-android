@@ -4,14 +4,14 @@
 * Added an extended way of crash filtering
 * Added SDK internal limits configuration interface
 
-* Deprecated following functions from "CountlyConfig":
-    * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
-    * "setCrashFilterCallback(crashFilterCallback)" instead use "crashes.setGlobalCrashFilterCallback(globalCrashFilterCallback)"
-    * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
-    * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount)"
-    * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
-    * "checkForNativeCrashDumps(checkForDumps)"
-    * "setMaxSegmentationValues(maxSegmentationValues)" instead use "sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues)"
+* Deprecated the following calls from "CountlyConfig":
+  * "setMaxSegmentationValues(maxSegmentationValues)" instead use "sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues)"
+  * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount)"
+  * "setCrashFilterCallback(crashFilterCallback)" instead use "crashes.setGlobalCrashFilterCallback(globalCrashFilterCallback)"
+  * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
+  * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
+  * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
+  * "checkForNativeCrashDumps(checkForDumps)", it will be removed in the future, there is no replacement
 
 ## 24.1.1
 * Added a new metric for detecting whether or not a device has a hinge

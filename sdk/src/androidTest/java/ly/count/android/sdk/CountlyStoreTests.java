@@ -33,12 +33,10 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -63,7 +61,7 @@ public class CountlyStoreTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
-        store = new CountlyStore(getContext(), mock(ModuleLog.class));
+        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         sp = store;
         store.clear();
     }
@@ -260,7 +258,7 @@ public class CountlyStoreTests {
 
         //insert bad entry
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::blah:::" + event2.toJSON().toString();
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
+        final SharedPreferences prefs = TestUtils.getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
         final List<Event> expected = new ArrayList<>(2);
@@ -284,7 +282,7 @@ public class CountlyStoreTests {
 
         //insert null entry
         final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::{\"key\":null}:::" + event2.toJSON().toString();
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
+        final SharedPreferences prefs = TestUtils.getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
         final List<Event> expected = new ArrayList<>(2);
@@ -357,7 +355,7 @@ public class CountlyStoreTests {
 
     @Test
     public void testClear() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
+        final SharedPreferences prefs = TestUtils.getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         assertFalse(prefs.contains("EVENTS"));
         assertFalse(prefs.contains("CONNECTIONS"));
         store.addRequest("blah", false);
@@ -373,21 +371,21 @@ public class CountlyStoreTests {
 
     @Test
     public void setGetMessagingProvider() {
-        assertEquals(0, CountlyStore.getMessagingProvider(getContext()));
-        CountlyStore.storeMessagingProvider(1234, getContext());
-        assertEquals(1234, CountlyStore.getMessagingProvider(getContext()));
+        assertEquals(0, CountlyStore.getMessagingProvider(TestUtils.getContext()));
+        CountlyStore.storeMessagingProvider(1234, TestUtils.getContext());
+        assertEquals(1234, CountlyStore.getMessagingProvider(TestUtils.getContext()));
     }
 
     @Test
     public void setGetClearCachedPushData() {
-        final SharedPreferences prefs = getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
+        final SharedPreferences prefs = TestUtils.getContext().getSharedPreferences(countlyStoreNamePush, Context.MODE_PRIVATE);
         String keyX = "PUSH_ACTION_ID";
         String keyY = "PUSH_ACTION_INDEX";
         assertFalse(prefs.contains(keyX));
         assertFalse(prefs.contains(keyY));
 
         assertEquals(new String[] { null, null }, store.getCachedPushData());
-        CountlyStore.cachePushData("asdf", "1234", getContext());
+        CountlyStore.cachePushData("asdf", "1234", TestUtils.getContext());
         assertEquals(new String[] { "asdf", "1234" }, store.getCachedPushData());
 
         store.clearCachedPushData();
@@ -398,11 +396,11 @@ public class CountlyStoreTests {
 
     @Test
     public void setGetConsentPush() {
-        assertEquals(false, CountlyStore.getConsentPushNoInit(getContext()));
+        assertEquals(false, CountlyStore.getConsentPushNoInit(TestUtils.getContext()));
         assertEquals(false, store.getConsentPush());
         store.setConsentPush(true);
         assertEquals(true, store.getConsentPush());
-        assertEquals(true, CountlyStore.getConsentPushNoInit(getContext()));
+        assertEquals(true, CountlyStore.getConsentPushNoInit(TestUtils.getContext()));
         store.setConsentPush(false);
         assertEquals(false, store.getConsentPush());
     }
@@ -661,19 +659,19 @@ public class CountlyStoreTests {
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        CountlyStore.storeMessagingProvider(9623, getContext());
+        CountlyStore.storeMessagingProvider(9623, TestUtils.getContext());
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        CountlyStore.cachePushData("mnc", "uio", getContext());
+        CountlyStore.cachePushData("mnc", "uio", TestUtils.getContext());
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        CountlyStore.cachePushData(null, "uio", getContext());
+        CountlyStore.cachePushData(null, "uio", TestUtils.getContext());
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        CountlyStore.cachePushData("mnc", null, getContext());
+        CountlyStore.cachePushData("mnc", null, TestUtils.getContext());
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
@@ -716,10 +714,10 @@ public class CountlyStoreTests {
         sp.setDataSchemaVersion(44);
         assertTrue(sp.anythingSetInStorage());
 
-        CountlyStore.storeMessagingProvider(9623, getContext());
+        CountlyStore.storeMessagingProvider(9623, TestUtils.getContext());
         assertTrue(sp.anythingSetInStorage());
 
-        CountlyStore.cachePushData("mnc", "uio", getContext());
+        CountlyStore.cachePushData("mnc", "uio", TestUtils.getContext());
         assertTrue(sp.anythingSetInStorage());
 
         sp.setServerConfig("qwe");
@@ -731,7 +729,7 @@ public class CountlyStoreTests {
      */
     @Test
     public void getEventQueueSizeEmpty() {
-        store.setEventData("");
+        store.writeEventDataToStorage("");
         assertEquals(0, sp.getEventQueueSize());
     }
 
@@ -740,7 +738,7 @@ public class CountlyStoreTests {
      */
     @Test
     public void getEventQueueSizeSimple() {
-        store.setEventData("a" + CountlyStore.DELIMITER + "b");
+        store.writeEventDataToStorage("a" + CountlyStore.DELIMITER + "b");
         assertEquals(2, sp.getEventQueueSize());
     }
 
@@ -752,7 +750,7 @@ public class CountlyStoreTests {
      */
     @Test
     public void getEventsForRequestAndEmptyEventQueueWithNoEvents() throws UnsupportedEncodingException {
-        store.setEventData("");
+        store.writeEventDataToStorage("");
         final String expected = URLEncoder.encode("[]", "UTF-8");
         assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
         assertEquals(0, sp.getEventQueueSize());

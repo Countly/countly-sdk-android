@@ -78,6 +78,11 @@ public class MainActivity extends AppCompatActivity {
         benchmark.print(res);
     }
 
+    public void onClearStorage(View v) {
+        benchmark.print("[MainActivity] Clear Storage");
+        Countly.sharedInstance().requestQueue().flushQueues();
+    }
+
     protected void BENCHMARK(int loop, Runnable runnable) {
         benchmark.print("------------------------------------------------------------");
         benchmark.print("[MainActivity] BENCHMARK");
@@ -94,6 +99,9 @@ public class MainActivity extends AppCompatActivity {
         long endTime = System.currentTimeMillis();
         benchmark.print("[MainActivity] BENCHMARK, SENDING TOOK: " + (endTime - startTime) + "MS");
         benchmark.print("------------------------------------------------------------");
+
+        String res = App.appPcc.ReturnResults();
+        benchmark.print(res);
     }
 
     private void readLoopSegmentEventSize() {

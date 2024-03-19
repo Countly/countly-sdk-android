@@ -1,4 +1,4 @@
-package ly.count.android.sdk;
+package ly.count.android.benchmark;
 
 import java.util.Random;
 
@@ -38,8 +38,10 @@ public class RandomUtil {
                 value = random.nextBoolean();
                 break;
             case 2:
+                //todo put back in when there is long support
                 //value = random.nextLong();
-                //break;
+                value = generateRandomImmutable();
+                break;
             case 3:
                 value = random.nextFloat();
                 break;
@@ -54,44 +56,5 @@ public class RandomUtil {
         }
 
         return value;
-    }
-
-    public Object generateRandomObject() {
-        int randomInt = random.nextInt(8);
-        Object value;
-
-        //to give it a more chance to create a simple object rather than an array
-        switch (randomInt) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-            case 6:
-                value = generateRandomImmutable();
-                break;
-            //case 7:
-            //                value = generateRandomArray(this::generateRandomImmutable, random.nextInt(10) + 1);
-            //                break;
-            default:
-                value = generateRandomObject();
-        }
-
-        return value;
-    }
-
-    protected Object[] generateRandomArray(Supplier valueSupplier, int times) {
-        Object[] array = new Object[times];
-
-        for (int i = 0; i < times; i++) {
-            array[i] = valueSupplier.get();
-        }
-
-        return array;
-    }
-
-    protected interface Supplier {
-        Object get();
     }
 }

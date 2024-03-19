@@ -27,9 +27,11 @@ android {
     debug {
       //should be set to 'true' for jacoco code coverage
       testCoverageEnabled = false
+      multiDexEnabled true
     }
     release {
       minifyEnabled false
+      multiDexEnabled true
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
     }
   }
@@ -52,6 +54,8 @@ dependencies {
   implementation 'androidx.annotation:annotation:1.6.0'
   implementation 'androidx.lifecycle:lifecycle-common:2.6.1'
   implementation 'androidx.lifecycle:lifecycle-process:2.6.1'
+
+  implementation "androidx.multidex:multidex:2.0.1" //required for as long the min SDK version is smaller than 21
 
   androidTestImplementation 'androidx.test:runner:1.5.2'
   androidTestImplementation 'androidx.test:rules:1.5.0'

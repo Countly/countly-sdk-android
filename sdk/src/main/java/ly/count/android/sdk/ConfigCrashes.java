@@ -4,15 +4,12 @@ import java.util.Map;
 
 public class ConfigCrashes {
 
+
     protected GlobalCrashFilterCallback globalCrashFilterCallback = null;
     protected boolean checkForNativeCrashDumps = true;
     protected Map<String, Object> customCrashSegment = null;
     protected boolean recordAllThreadsWithCrash = false;
     protected boolean enableUnhandledCrashReporting = false;
-    protected Integer maxBreadcrumbCount = null;
-    Integer maxStackTraceLinesPerThread;
-    Integer maxStackTraceLineLength;
-    int maxStackTraceThreadCount = 30;
 
     /**
      * @param callback the callback that will be called for each crash, allowing you to filter it
@@ -49,18 +46,6 @@ public class ConfigCrashes {
      */
     public synchronized ConfigCrashes enableCrashReporting() {
         this.enableUnhandledCrashReporting = true;
-        return this;
-    }
-
-    /**
-     * Set the maximum amount of breadcrumbs that can be recorded.
-     * After exceeding the limit, the oldest values will be removed.
-     *
-     * @param maxBreadcrumbCount
-     * @return Returns the same config object for convenient linking
-     */
-    public synchronized ConfigCrashes setMaxBreadcrumbCount(int maxBreadcrumbCount) {
-        this.maxBreadcrumbCount = maxBreadcrumbCount;
         return this;
     }
 }

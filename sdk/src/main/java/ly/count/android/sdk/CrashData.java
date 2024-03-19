@@ -8,13 +8,13 @@ import org.json.JSONObject;
  * This class is used to store crash data.
  */
 public class CrashData {
-    protected byte crashBits = 0b00000;
-    protected boolean breadcrumbsAdded = false;
+
     private String stackTrace;
     private Map<String, Object> crashSegmentation;
     private List<String> breadcrumbs;
     private Boolean fatal;
     private JSONObject crashMetrics;
+    private final String[] checksums = new String[5];
 
     public CrashData(String stackTrace, Map<String, Object> crashSegmentation, List<String> breadcrumbs, JSONObject crashMetrics, Boolean fatal) {
         this.stackTrace = stackTrace;
@@ -22,6 +22,8 @@ public class CrashData {
         this.breadcrumbs = breadcrumbs;
         this.crashMetrics = crashMetrics;
         this.fatal = fatal;
+
+        calculateChecksums(checksums);
     }
 
     /**
@@ -39,9 +41,8 @@ public class CrashData {
      * @param stackTrace the stack trace of the crash.
      */
     public void setStackTrace(String stackTrace) {
-        if (stackTrace != null && !this.stackTrace.equals(stackTrace)) {
+        if (stackTrace != null) {
             this.stackTrace = stackTrace;
-            setChanged(CrashDataProps.STACK_TRACE.value);
         }
     }
 
@@ -60,9 +61,8 @@ public class CrashData {
      * @param crashMetrics of a crash
      */
     public void setCrashMetrics(JSONObject crashMetrics) {
-        if (crashMetrics != null && !this.crashMetrics.equals(crashMetrics)) {
+        if (crashMetrics != null) {
             this.crashMetrics = crashMetrics;
-            setChanged(CrashDataProps.METRICS.value);
         }
     }
 
@@ -81,10 +81,7 @@ public class CrashData {
      * @param fatal info
      */
     public void setFatal(boolean fatal) {
-        if (fatal != this.fatal) {
-            this.fatal = fatal;
-            setChanged(CrashDataProps.FATAL.value);
-        }
+        this.fatal = fatal;
     }
 
     /**
@@ -92,7 +89,7 @@ public class CrashData {
      *
      * @return the breadcrumbs of the crash.
      */
-    public String getBreadcrumbsAsString() {
+    protected String getBreadcrumbsAsString() {
         StringBuilder breadcrumbsString = new StringBuilder();
 
         for (String breadcrumb : breadcrumbs) {
@@ -117,9 +114,8 @@ public class CrashData {
      * @param crashSegmentation the segmentation of the crash.
      */
     public void setCrashSegmentation(Map<String, Object> crashSegmentation) {
-        if (crashSegmentation != null && !this.crashSegmentation.equals(crashSegmentation)) {
+        if (crashSegmentation != null) {
             this.crashSegmentation = crashSegmentation;
-            setChanged(CrashDataProps.SEGMENTATION.value);
         }
     }
 
@@ -141,28 +137,41 @@ public class CrashData {
         if (breadcrumbs == null) {
             return;
         }
-        if (this.breadcrumbs.size() < breadcrumbs.size()) {
-            breadcrumbsAdded = true;
-        }
-        if (!this.breadcrumbs.equals(breadcrumbs)) {
-            this.breadcrumbs = breadcrumbs;
-            setChanged(CrashDataProps.BREADCRUMBS.value);
-        }
+        
+        this.breadcrumbs = breadcrumbs;
     }
 
-    private void setChanged(byte value) {
-        if ((crashBits & value) != value) {
-            crashBits = (byte) (crashBits | value);
-        }
+    /**
+     * Get the changed information of crash data in order of:
+     * <pre>
+     * 0 - stackTrace
+     * 1 - crashSegmentation
+     * 2 - breadcrumbs
+     * 3 - crashMetrics
+     * 4 - fatal
+     * </pre>
+     *
+     * @return the checksums of the crash data.
+     */
+    protected boolean[] getChangedFields() {
+        boolean[] changedFields = new boolean[5];
+        String[] checksumsNew = new String[5];
+        calculateChecksums(checksumsNew);
+
+        changedFields[0] = !checksums[0].equals(checksumsNew[0]);
+        changedFields[1] = !checksums[1].equals(checksumsNew[1]);
+        changedFields[2] = !checksums[2].equals(checksumsNew[2]);
+        changedFields[3] = !checksums[3].equals(checksumsNew[3]);
+        changedFields[4] = !checksums[4].equals(checksumsNew[4]);
+
+        return changedFields;
     }
 
-    private enum CrashDataProps {
-        STACK_TRACE((byte) 0b00001), SEGMENTATION((byte) 0b00010), BREADCRUMBS((byte) 0b00100), FATAL((byte) 0b01000), METRICS((byte) 0b10000);
-
-        final byte value;
-
-        CrashDataProps(byte value) {
-            this.value = value;
-        }
+    private void calculateChecksums(String[] checksums) {
+        checksums[0] = UtilsNetworking.sha256Hash(stackTrace);
+        checksums[1] = UtilsNetworking.sha256Hash(crashSegmentation.toString());
+        checksums[2] = UtilsNetworking.sha256Hash(breadcrumbs.toString());
+        checksums[3] = UtilsNetworking.sha256Hash(crashMetrics.toString());
+        checksums[4] = UtilsNetworking.sha256Hash(fatal.toString());
     }
 }

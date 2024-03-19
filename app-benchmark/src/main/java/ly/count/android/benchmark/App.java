@@ -30,13 +30,30 @@ public class App extends Application {
         config.pcc = appPcc;
 
         Countly.sharedInstance().init(config);
+
+        //clear initial state to erase past data
+        Countly.sharedInstance().requestQueue().flushQueues();
+
         Benchmark.countlyStore = new CountlyStore(this, new ModuleLog());
     }
 
     /**
      * Benchmark scenario - 1
-     * EQ size 10
-     * 5 segm values
+     * Generate events and not requests: yes
+     * wait: yes
+     * EQ threshold: 10
+     * segm values per event: 5
+     * Generated request count: value doesn't matter
+     * Event count: 10000
      * Fill to 1000 requests which equals to 10000 events generated
+     *
+     * steps:
+     * 1) turn off internet
+     * 2) clear counters
+     * 3) Fill RQ/EQ
+     * 4) turn on internet
+     * 5) send requests
+     * 6) wait till all sent
+     * 7) print counters
      */
 }

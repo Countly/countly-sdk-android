@@ -49,20 +49,6 @@ public class UtilsTests {
     }
 
     /**
-     * A simple verification that 'join' is performing as expected
-     */
-    @Test
-    public void join() {
-        List<String> a = new ArrayList<>();
-        a.add("a");
-        a.add("b");
-        a.add("cd");
-        String res = Utils.join(a, "-");
-
-        Assert.assertEquals(res, "a-b-cd");
-    }
-
-    /**
      * A simple verification that 'joinCountlyStore' is performing as expected
      */
     @Test
