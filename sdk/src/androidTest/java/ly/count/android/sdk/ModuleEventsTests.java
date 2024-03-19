@@ -448,35 +448,35 @@ public class ModuleEventsTests {
      */
     @Test
     public void internalLimit_recordEvent_internalKeys() throws JSONException {
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        CountlyConfig config = TestUtils.getBaseConfig();
         config.sdkInternalLimits.setMaxKeyLength(2);
         config.setEventQueueSizeToSend(1);
 
         Countly countly = new Countly().init(config);
 
         countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map("action_event", "ACTION", "no_truncate", 7687)); //force sending
-        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map("action_event", "ACTION", "no_truncate", 7687), 0, countly);
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map("action_event", "ACTION", "no_truncate", 7687), 0);
 
         countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map("nps_event", "NPS", "no_truncate", 555)); //force sending
-        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map("nps_event", "NPS", "no_truncate", 555), 1, countly);
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map("nps_event", "NPS", "no_truncate", 555), 1);
 
         countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map("survey_event", "SURVEY", "no_truncate", 567)); //force sending
-        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map("survey_event", "SURVEY", "no_truncate", 567), 2, countly);
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map("survey_event", "SURVEY", "no_truncate", 567), 2);
 
         countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map("rating_event", "RATING", "no_truncate", 7475));
-        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map("rating_event", "RATING", "no_truncate", 7475), 3, countly);
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map("rating_event", "RATING", "no_truncate", 7475), 3);
 
         countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("view_event", "VIEW", "no_truncate", 124));
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("view_event", "VIEW", "no_truncate", 124), 4, countly);
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("view_event", "VIEW", "no_truncate", 124), 4);
 
         countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map("orientation_event", "ORIENTATION", "no_truncate", 23523));
-        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map("orientation_event", "ORIENTATION", "no_truncate", 23523), 5, countly);
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map("orientation_event", "ORIENTATION", "no_truncate", 23523), 5);
 
         countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "PUSH", "no_truncate", 567));
-        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "PUSH", "no_truncate", 567), 6, countly);
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "PUSH", "no_truncate", 567), 6);
 
         countly.events().recordEvent("ModuleEvents", TestUtils.map("normal_event", "boo", "no_truncate", 567));
-        validateEventInRQ("Mo", TestUtils.map("no", "boo"), 7, countly);
+        validateEventInRQ("Mo", TestUtils.map("no", "boo"), 7);
     }
 
     /**
@@ -485,7 +485,7 @@ public class ModuleEventsTests {
      */
     @Test
     public void internalLimit_recordEvent_segmentation() throws JSONException {
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        CountlyConfig config = TestUtils.getBaseConfig();
         config.sdkInternalLimits.setMaxKeyLength(2);
         config.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(config);
@@ -497,11 +497,11 @@ public class ModuleEventsTests {
 
         segmentation.clear();
         segmentation.put("Mo", 567);
-        validateEventInRQ("Te", segmentation, 0, countly);
+        validateEventInRQ("Te", segmentation, 0);
     }
 
-    protected static JSONObject validateEventInRQ(String eventName, int idx, Countly countly) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+    protected static JSONObject validateEventInRQ(String eventName, int idx) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(idx + 1, RQ.length);
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(1, events.length());
@@ -510,8 +510,8 @@ public class ModuleEventsTests {
         return event;
     }
 
-    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx, Countly countly) throws JSONException {
-        JSONObject event = validateEventInRQ(eventName, idx, countly);
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
+        JSONObject event = validateEventInRQ(eventName, idx);
         JSONObject segmentation = event.getJSONObject("segmentation");
         Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {

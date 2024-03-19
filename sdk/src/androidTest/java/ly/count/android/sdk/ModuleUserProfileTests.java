@@ -450,7 +450,7 @@ public class ModuleUserProfileTests {
     @Test
     public void internalLimit_testCustomData() {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.sdkInternalLimits.setMaxKeyLength(10);
         mCountly.init(config);
 
@@ -477,7 +477,7 @@ public class ModuleUserProfileTests {
     @Test
     public void internalLimit_testCustomModifiers() throws JSONException {
         Countly mCountly = Countly.sharedInstance();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.sdkInternalLimits.setMaxKeyLength(10);
         mCountly.init(config);
 
@@ -536,7 +536,7 @@ public class ModuleUserProfileTests {
     }
 
     private void validateUserProfileRequest(Countly countly, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
         JSONObject userDetails = new JSONObject(RQ[0].get("user_details"));
         Assert.assertEquals(userDetails.length(), predefined.size() + 1);

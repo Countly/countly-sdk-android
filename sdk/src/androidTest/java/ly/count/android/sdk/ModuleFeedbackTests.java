@@ -407,7 +407,7 @@ public class ModuleFeedbackTests {
         segm.put("widget_id", widgetInfo.widgetId);
         segm.putAll(TestUtils.map("key1", "value1", "key2", "value2", "key3", "value3"));
 
-        ModuleEventsTests.validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, segm, 0, countly);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, segm, 0);
     }
 
     /**
@@ -433,7 +433,7 @@ public class ModuleFeedbackTests {
         segm.put("app_version", "1.0");
         segm.put("widget_id", widgetInfo.widgetId);
         segm.put("rating", 10);
-        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, segm, 0, countly);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, segm, 0);
     }
 
     /**
@@ -461,6 +461,6 @@ public class ModuleFeedbackTests {
         segm.put("rating", 10);
         segm.put("comment", "huhu");
 
-        ModuleEventsTests.validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, segm, 0, countly);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, segm, 0);
     }
 }

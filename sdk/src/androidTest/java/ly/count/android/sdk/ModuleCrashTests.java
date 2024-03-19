@@ -364,11 +364,11 @@ public class ModuleCrashTests {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exception.printStackTrace(pw);
-        validateCrash(countly, sw.toString(), TestUtils.map("test_", 1234, "below", false, "go_fo", "go"), false);
+        validateCrash(sw.toString(), TestUtils.map("test_", 1234, "below", false, "go_fo", "go"), false);
     }
 
-    private void validateCrash(Countly countly, String error, Map<String, Object> segm, boolean handled) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+    private void validateCrash(String error, Map<String, Object> segm, boolean handled) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
         JSONObject crashJson = new JSONObject(RQ[0].get("crash"));
         JSONObject segmentation = crashJson.getJSONObject("_custom");

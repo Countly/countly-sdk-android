@@ -13,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -314,7 +315,7 @@ public class ModuleAPMTests {
         Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(key));
         // also validate that the truncated version of the key is not present because it is not truncated
         Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(UtilsInternalLimits.truncateKeyLength(key, 5, new ModuleLog(), "tag")));
-        validateNetworkRequest(mCountly, 0, key, 8765 - 7654, 234, 123, 456);
+        validateNetworkRequest(0, key, 8765 - 7654, 234, 123, 456);
     }
 
     /**
@@ -332,11 +333,11 @@ public class ModuleAPMTests {
         mCountly.apm().startNetworkRequest(key, "ID");
         mCountly.apm().endNetworkRequest(key, "ID", 200, 123, 456);
 
-        validateNetworkRequest(mCountly, 0, key, -1, 200, 123, 456);
+        validateNetworkRequest(0, key, -1, 200, 123, 456);
     }
 
-    private void validateNetworkRequest(Countly countly, int rqIdx, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ(countly);
+    private void validateNetworkRequest(int rqIdx, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(rqIdx + 1, RQ.length);
 
         JSONObject apm = new JSONObject(RQ[rqIdx].get("apm"));

@@ -1396,7 +1396,7 @@ public class ModuleViewsTests {
         ClearFillSegmentationViewStart(expectedSegm, "VI", true);
         expectedSegm.putAll(TestUtils.map("av", "v1", "so", 4));
 
-        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0, mCountly);
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0);
 
         mCountly.views().setGlobalViewSegmentation(TestUtils.map("sunburn", true, "sunflower", "huh"));
 
@@ -1407,7 +1407,7 @@ public class ModuleViewsTests {
         ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
         expectedSegm.putAll(TestUtils.map("av", 25, "sa", "hoho", "su", "huh"));
 
-        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1, mCountly);
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
     }
 
     //todo extract orientation tests
