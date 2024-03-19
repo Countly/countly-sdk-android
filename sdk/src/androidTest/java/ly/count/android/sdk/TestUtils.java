@@ -18,8 +18,6 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.mockito.ArgumentCaptor;
 
-import static androidx.test.InstrumentationRegistry.getContext;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
