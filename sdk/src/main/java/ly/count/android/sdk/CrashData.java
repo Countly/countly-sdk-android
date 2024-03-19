@@ -1,12 +1,5 @@
 package ly.count.android.sdk;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
@@ -177,22 +170,10 @@ public class CrashData {
     }
 
     private void calculateChecksums(String[] checksums) {
-        checksums[0] = getChecksum(stackTrace);
-        checksums[1] = getChecksum(crashSegmentation.toString());
-        checksums[2] = getChecksum(breadcrumbs.toString());
-        checksums[3] = getChecksum(crashMetrics.toString());
-        checksums[4] = getChecksum(fatal);
-    }
-
-    private String getChecksum(Serializable object) {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            oos.writeObject(object);
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] checksum = md.digest(baos.toByteArray());
-
-            return String.format("%032x", new BigInteger(1, checksum));
-        } catch (IOException | NoSuchAlgorithmException e) {
-            return "";
-        }
+        checksums[0] = UtilsNetworking.sha256Hash(stackTrace);
+        checksums[1] = UtilsNetworking.sha256Hash(crashSegmentation.toString());
+        checksums[2] = UtilsNetworking.sha256Hash(breadcrumbs.toString());
+        checksums[3] = UtilsNetworking.sha256Hash(crashMetrics.toString());
+        checksums[4] = UtilsNetworking.sha256Hash(fatal.toString());
     }
 }
