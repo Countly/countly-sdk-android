@@ -12,123 +12,193 @@ public class CountlyConfig {
      * Internal fields and fields for testing
      */
     protected CountlyStore countlyStore = null;
+
     /**
      * Used to pass the consent provider to all modules and features
      */
     protected ConsentProvider consentProvider = null;
+
     /**
      * Used to pass the storage provider to all modules and features
      */
     protected StorageProvider storageProvider = null;
+
     protected EventProvider eventProvider = null;
+
     protected EventQueueProvider eventQueueProvider = null;
+
     protected RequestQueueProvider requestQueueProvider = null;
+
     protected DeviceIdProvider deviceIdProvider = null;
+
     protected ViewIdProvider viewIdProvider = null;
+
     protected BaseInfoProvider baseInfoProvider = null;
+
     protected ConfigurationProvider configProvider = null;
+
     protected SafeIDGenerator safeViewIDGenerator = null;
+
     protected SafeIDGenerator safeEventIDGenerator = null;
+
     protected ImmediateRequestGenerator immediateRequestGenerator = null;
+
     protected HealthTracker healthTracker;
+
     protected MetricProvider metricProviderOverride = null;
+
     protected DeviceInfo deviceInfo = null;
+
     protected ModuleBase testModuleListener = null;
+
+    protected Map<String, Object> providedUserProperties = null;
+
+    protected Countly.LifecycleObserver lifecycleObserver = null;
 
     //used to deliver this object to connection queue
     //protected DeviceId deviceIdInstance = null;
 
     // Fields used for SDK configuration during init
-    protected Map<String, Object> providedUserProperties = null;
-    protected Countly.LifecycleObserver lifecycleObserver = null;
-    /**
-     * @deprecated This is deprecated, will be removed in the future
-     */
-    protected CrashFilterCallback crashFilterCallback = null;
+
     /**
      * Android context.
      * Mandatory field.
      */
     protected Context context = null;
+
     /**
      * URL of the Countly server to submit data to.
      * Mandatory field.
      */
     protected String serverURL = null;
+
     /**
      * app key for the application being tracked; find in the Countly Dashboard under Management &gt; Applications.
      * Mandatory field.
      */
     protected String appKey = null;
+
     /**
      * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
      */
     protected String deviceID = null;
+
     /**
      * sets the limit after how many sessions, for each apps version, the automatic star rating dialog is shown.
      */
     protected int starRatingSessionLimit = 5;
+
     /**
      * the callback function that will be called from the automatic star rating dialog.
      */
     protected StarRatingCallback starRatingCallback = null;
+
     /**
      * the shown title text for the star rating dialogs.
      */
     protected String starRatingTextTitle = null;
+
     /**
      * the shown message text for the star rating dialogs.
      */
     protected String starRatingTextMessage = null;
+
     /**
      * the shown dismiss button text for the shown star rating dialogs.
      */
     protected String starRatingTextDismiss = null;
+
     protected boolean loggingEnabled = false;
+
     protected boolean enableAutomaticViewTracking = false;
+
     protected boolean autoTrackingUseShortName = false;
+
     protected Class[] automaticViewTrackingExceptions = null;
+
     protected Map<String, Object> globalViewSegmentation = null;
+
     protected Map<String, String> customNetworkRequestHeaders = null;
+
     protected boolean pushIntentAddMetadata = false;
+
     protected boolean enableRemoteConfigAutomaticDownloadTriggers = false;
+
     protected boolean enableAutoEnrollFlag = false;
+
+    boolean enableRemoteConfigValueCaching = false;
     protected RemoteConfigCallback remoteConfigCallbackLegacy = null;
+
     protected List<RCDownloadCallback> remoteConfigGlobalCallbackList = new ArrayList<>(2);
+
     protected boolean shouldRequireConsent = false;
+
     protected boolean enableAllConsents = false;
     protected String[] enabledFeatureNames = null;
+
     protected boolean httpPostForced = false;
+
     protected boolean temporaryDeviceIdEnabled = false;
+
     protected String tamperingProtectionSalt = null;
+
     protected Integer eventQueueSizeThreshold = null;
+
     protected boolean trackOrientationChange = true;
+
     protected boolean manualSessionControlEnabled = false;
+
     protected boolean manualSessionControlHybridModeEnabled = false;
+
     protected boolean disableUpdateSessionRequests = false;
+
     protected boolean shouldIgnoreAppCrawlers = false;
+
     protected String[] appCrawlerNames = null;
+
     protected String[] publicKeyPinningCertificates = null;
+
     protected String[] certificatePinningCertificates = null;
+
     protected Integer sessionUpdateTimerDelay = null;
+
+    /**
+     * @deprecated This is deprecated, will be removed in the future
+     */
+    protected CrashFilterCallback crashFilterCallback;
+
     protected boolean starRatingDialogIsCancellable = false;
+
     protected boolean starRatingShownAutomatically = false;
+
     protected boolean starRatingDisableAskingForEachAppVersion = false;
+
     protected Application application = null;
-    boolean enableRemoteConfigValueCaching = false;
+
     boolean disableLocation = false;
+
     String locationCountyCode = null;
+
     String locationCity = null;
+
     String locationLocation = null;
+
     String locationIpAddress = null;
+
     Map<String, String> metricOverride = null;
+
     int maxRequestQueueSize = 1000;
+
     ModuleLog.LogCallback providedLogCallback;
+
     String daCampaignType = null;
     String daCampaignData = null;
     Map<String, String> iaAttributionValues = null;
+
     boolean explicitStorageModeEnabled = false;
+
     boolean serverConfigurationEnabled = false;
+
     boolean healthCheckEnabled = true;
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
@@ -140,26 +210,6 @@ public class CountlyConfig {
      * BREAKING CHANGES WILL BE DONE WITHOUT WARNING
      */
     public PerformanceCounterCollector pcc;
-
-    public CountlyConfig() {
-    }
-
-    /**
-     * @param context
-     * @param appKey
-     * @param serverURL
-     */
-    public CountlyConfig(Context context, String appKey, String serverURL) {
-        setContext(context);
-        setAppKey(appKey);
-        setServerURL(serverURL);
-    }
-
-    public CountlyConfig(Application application, String appKey, String serverURL) {
-        setAppKey(appKey);
-        setServerURL(serverURL);
-        setApplication(application);
-    }
 
     /**
      * Sets how many segmentation values can be recorded when recording an event or view.
@@ -185,6 +235,26 @@ public class CountlyConfig {
     public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
         sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount);
         return this;
+    }
+
+    public CountlyConfig() {
+    }
+
+    /**
+     * @param context
+     * @param appKey
+     * @param serverURL
+     */
+    public CountlyConfig(Context context, String appKey, String serverURL) {
+        setContext(context);
+        setAppKey(appKey);
+        setServerURL(serverURL);
+    }
+
+    public CountlyConfig(Application application, String appKey, String serverURL) {
+        setAppKey(appKey);
+        setServerURL(serverURL);
+        setApplication(application);
     }
 
     /**
