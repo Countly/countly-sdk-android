@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -18,7 +17,7 @@ import static org.mockito.Mockito.verify;
 public class ModuleSessionsTests {
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
     }
 
@@ -158,7 +157,7 @@ public class ModuleSessionsTests {
 
     @Test
     public void yy() {
-        CountlyConfig config = TestUtils.createBaseConfig().setApplication(null).setContext(getContext());
+        CountlyConfig config = TestUtils.createBaseConfig().setApplication(null).setContext(TestUtils.getContext());
         Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 

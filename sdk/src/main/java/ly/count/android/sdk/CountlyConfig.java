@@ -51,8 +51,6 @@ public class CountlyConfig {
 
     protected ModuleBase testModuleListener = null;
 
-    protected boolean checkForNativeCrashDumps = true;
-
     protected Map<String, Object> providedUserProperties = null;
 
     protected Countly.LifecycleObserver lifecycleObserver = null;
@@ -111,9 +109,7 @@ public class CountlyConfig {
     protected String starRatingTextDismiss = null;
 
     protected boolean loggingEnabled = false;
-
-    protected boolean enableUnhandledCrashReporting = false;
-
+    
     protected boolean enableAutomaticViewTracking = false;
 
     protected boolean autoTrackingUseShortName = false;
@@ -154,8 +150,6 @@ public class CountlyConfig {
 
     protected boolean manualSessionControlHybridModeEnabled = false;
 
-    protected boolean recordAllThreadsWithCrash = false;
-
     protected boolean disableUpdateSessionRequests = false;
 
     protected boolean shouldIgnoreAppCrawlers = false;
@@ -165,8 +159,6 @@ public class CountlyConfig {
     protected String[] publicKeyPinningCertificates = null;
 
     protected String[] certificatePinningCertificates = null;
-
-    protected Map<String, Object> customCrashSegment = null;
 
     protected Integer sessionUpdateTimerDelay = null;
 
@@ -380,9 +372,10 @@ public class CountlyConfig {
      * Call to enable uncaught crash reporting
      *
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.enableCrashReporting()</pre> instead
      */
     public synchronized CountlyConfig enableCrashReporting() {
-        this.enableUnhandledCrashReporting = true;
+        crashes.enableCrashReporting();
         return this;
     }
 
@@ -649,9 +642,10 @@ public class CountlyConfig {
 
     /**
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.enableRecordAllThreadsWithCrash()</pre> instead
      */
     public synchronized CountlyConfig setRecordAllThreadsWithCrash() {
-        recordAllThreadsWithCrash = true;
+        crashes.enableRecordAllThreadsWithCrash();
         return this;
     }
 
@@ -743,20 +737,21 @@ public class CountlyConfig {
      *
      * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated, please use <pre>crashes.setCustomCrashSegmentation(Map<String, Object>)</pre> instead
      */
     public synchronized CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
-        customCrashSegment = crashSegment;
+        crashes.setCustomCrashSegmentation(crashSegment);
         return this;
     }
 
     /**
      * For use during testing
      *
-     * @param checkForDumps
+     * @param checkForDumps whether to check for native crash dumps
      * @return Returns the same config object for convenient linking
+     * @deprecated this call is deprecated and will always be enabled
      */
     protected synchronized CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
-        checkForNativeCrashDumps = checkForDumps;
         return this;
     }
 
@@ -1021,4 +1016,9 @@ public class CountlyConfig {
      * SDK Internal Limits configuration interface to be used with CountlyConfig
      */
     public final ConfigSdkInternalLimits sdkInternalLimits = new ConfigSdkInternalLimits();
+
+    /**
+     * Crash Reporting configuration interface to be used with CountlyConfig
+     */
+    public final ConfigCrashes crashes = new ConfigCrashes();
 }

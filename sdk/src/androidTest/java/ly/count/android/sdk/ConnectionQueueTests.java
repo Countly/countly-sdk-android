@@ -33,7 +33,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -56,13 +55,13 @@ public class ConnectionQueueTests {
         Countly.sharedInstance().halt();
         Countly.sharedInstance().setLoggingEnabled(true);
         freshConnQ = new ConnectionQueue();
-        Countly.sharedInstance().init(new CountlyConfig(getContext(), appKey, "http://countly.coupons.com"));
+        Countly.sharedInstance().init(new CountlyConfig(TestUtils.getContext(), appKey, "http://countly.coupons.com"));
         connQ = Countly.sharedInstance().connectionQueue_;
 
         //connQ = new ConnectionQueue();
         //connQ.setAppKey("abcDeFgHiJkLmNoPQRstuVWxyz");
         //connQ.setServerURL("http://countly.coupons.com");
-        //connQ.setContext(getContext());
+        //connQ.setContext(TestUtils.getContext());
         CountlyStore cs = mock(CountlyStore.class);
         when(cs.getCachedAdvertisingId()).thenReturn("");
         connQ.storageProvider = cs;
@@ -85,8 +84,8 @@ public class ConnectionQueueTests {
 
     @Test
     public void testContext() {
-        freshConnQ.setContext(getContext());
-        assertSame(getContext(), freshConnQ.getContext());
+        freshConnQ.setContext(TestUtils.getContext());
+        assertSame(TestUtils.getContext(), freshConnQ.getContext());
     }
 
     @Test
@@ -97,7 +96,7 @@ public class ConnectionQueueTests {
 
     @Test
     public void testCountlyStore() {
-        final CountlyStore store = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         freshConnQ.storageProvider = store;
         assertSame(store, freshConnQ.storageProvider);
     }
@@ -213,7 +212,7 @@ public class ConnectionQueueTests {
         assertEquals("1", queryParams.get("begin_session"));
         // validate metrics
         final JSONObject actualMetrics = new JSONObject(queryParams.get("metrics"));
-        final String metricsJsonStr = URLDecoder.decode(DeviceInfo.getMetrics(getContext(), null), "UTF-8");
+        final String metricsJsonStr = URLDecoder.decode(DeviceInfo.getMetrics(TestUtils.getContext(), null), "UTF-8");
         final JSONObject expectedMetrics = new JSONObject(metricsJsonStr);
         assertEquals(expectedMetrics.length(), actualMetrics.length());
         final Iterator actualMetricsKeyIterator = actualMetrics.keys();

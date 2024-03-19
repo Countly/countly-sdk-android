@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
@@ -18,6 +19,7 @@ import org.junit.Assert;
 import org.mockito.ArgumentCaptor;
 
 import static androidx.test.InstrumentationRegistry.getContext;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -548,5 +550,9 @@ public class TestUtils {
             }
         }
         return map;
+    }
+  
+    public static Context getContext() {
+        return ApplicationProvider.getApplicationContext();
     }
 }
