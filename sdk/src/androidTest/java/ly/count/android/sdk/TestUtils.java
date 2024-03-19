@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
@@ -16,11 +17,6 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.mockito.ArgumentCaptor;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -497,5 +493,9 @@ public class TestUtils {
     public static void verifyCurrentPreviousViewID(ModuleViews mv, String current, String previous) {
         Assert.assertEquals(current, mv.getCurrentViewId());
         Assert.assertEquals(previous, mv.getPreviousViewId());
+    }
+
+    public static Context getContext() {
+        return ApplicationProvider.getApplicationContext();
     }
 }
