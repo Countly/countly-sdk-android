@@ -239,4 +239,71 @@ public class UtilsInternalLimitsTests {
         Assert.assertTrue(values.containsKey("b"));
         Assert.assertTrue(values.containsKey("c"));
     }
+
+    @Test
+    public void removeUnsupportedDataTypesNull() {
+        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(null));
+    }
+
+    @Test
+    public void removeUnsupportedDataTypes() {
+        Map<String, Object> segm = new HashMap<>();
+
+        segm.put("aa", "dd");
+        segm.put("aa1", "dda");
+        segm.put("1", 1234);
+        segm.put("2", 1234.55d);
+        segm.put("3", true);
+        segm.put("4", 45.4f);
+        segm.put("41", new Object());
+        segm.put("42", new int[] { 1, 2 });
+
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+
+        Assert.assertTrue(segm.containsKey("aa"));
+        Assert.assertTrue(segm.containsKey("aa1"));
+        Assert.assertTrue(segm.containsKey("1"));
+        Assert.assertTrue(segm.containsKey("2"));
+        Assert.assertTrue(segm.containsKey("3"));
+        Assert.assertTrue(segm.containsKey("4"));
+        Assert.assertFalse(segm.containsKey("41"));
+        Assert.assertFalse(segm.containsKey("42"));
+    }
+
+    @Test
+    public void removeUnsupportedDataTypes2() {
+        Map<String, Object> segm = new HashMap<>();
+
+        segm.put("", "dd");
+        segm.put(null, "dda");
+        segm.put("aa", null);
+
+        Assert.assertEquals(3, segm.size());
+
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+
+        Assert.assertEquals(0, segm.size());
+
+        segm.put(null, null);
+        segm.put("1", "dd");
+        segm.put("2", 123);
+        segm.put("", null);
+        segm.put("3", 345.33d);
+        segm.put("4", false);
+        segm.put("aa1", new String[] { "ff", "33" });
+
+        Assert.assertEquals(7, segm.size());
+
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+
+        Assert.assertEquals(4, segm.size());
+        Assert.assertTrue(segm.containsKey("1"));
+        Assert.assertTrue(segm.containsKey("2"));
+        Assert.assertTrue(segm.containsKey("3"));
+        Assert.assertTrue(segm.containsKey("4"));
+        Assert.assertEquals("dd", segm.get("1"));
+        Assert.assertEquals(123, segm.get("2"));
+        Assert.assertEquals(345.33d, segm.get("3"));
+        Assert.assertEquals(false, segm.get("4"));
+    }
 }

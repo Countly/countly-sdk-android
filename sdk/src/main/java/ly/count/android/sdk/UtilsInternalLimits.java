@@ -174,4 +174,43 @@ public class UtilsInternalLimits {
             }
         }
     }
+
+    /**
+     * Removes unsupported data types
+     *
+     * @param data
+     * @return returns true if any entry had been removed
+     */
+    static boolean removeUnsupportedDataTypes(Map<String, Object> data) {
+        if (data == null) {
+            return false;
+        }
+
+        boolean removed = false;
+
+        for (Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, Object> entry = it.next();
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            //todo add support for long
+            if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
+
+                if (value instanceof Float) {
+                    //transform to double
+                    data.put(key, ((Float) value).doubleValue());
+                } else {
+                    //found unsupported data type or null key or value, removing
+                    it.remove();
+                    removed = true;
+                }
+            }
+        }
+
+        if (removed) {
+            Countly.sharedInstance().L.w("[Utils] Unsupported data types were removed from provided segmentation");
+        }
+
+        return removed;
+    }
 }

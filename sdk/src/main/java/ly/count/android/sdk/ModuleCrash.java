@@ -124,7 +124,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (customSegmentation != null) {
-            Utils.removeUnsupportedDataTypes(customSegmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(customSegmentation);
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
@@ -156,7 +156,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (segments != null) {
-            Utils.removeUnsupportedDataTypes(segments);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segments);
         }
         customCrashSegments = segments;
     }

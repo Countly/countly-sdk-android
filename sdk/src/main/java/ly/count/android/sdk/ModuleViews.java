@@ -98,7 +98,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
             UtilsInternalLimits.removeReservedKeysFromSegmentation(segmentation, reservedSegmentationKeysViews, "[ModuleViews] setGlobalViewSegmentationInternal, ", L);
 
-            if (Utils.removeUnsupportedDataTypes(segmentation)) {
+            if (UtilsInternalLimits.removeUnsupportedDataTypes(segmentation)) {
                 //found an unsupported type, print warning
                 L.w("[ModuleViews] setGlobalViewSegmentationInternal, You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
             }
@@ -108,7 +108,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     }
 
     public void updateGlobalViewSegmentationInternal(@NonNull Map<String, Object> segmentation) {
-        if (Utils.removeUnsupportedDataTypes(segmentation)) {
+        if (UtilsInternalLimits.removeUnsupportedDataTypes(segmentation)) {
             //found an unsupported type, print warning
             L.w("[ModuleViews] updateGlobalViewSegmentationInternal, You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
         }

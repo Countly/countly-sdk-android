@@ -12,9 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -157,45 +155,6 @@ public class Utils {
         random.nextBytes(value);
         String b64Value = Base64.encodeToString(value, Base64.NO_WRAP);
         return b64Value + timestamp;
-    }
-
-    /**
-     * Removes unsupported data types
-     *
-     * @param data
-     * @return returns true if any entry had been removed
-     */
-    static boolean removeUnsupportedDataTypes(Map<String, Object> data) {
-        if (data == null) {
-            return false;
-        }
-
-        boolean removed = false;
-
-        for (Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<String, Object> entry = it.next();
-            String key = entry.getKey();
-            Object value = entry.getValue();
-
-            //todo add support for long
-            if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
-
-                if (value instanceof Float) {
-                    //transform to double
-                    data.put(key, ((Float) value).doubleValue());
-                } else {
-                    //found unsupported data type or null key or value, removing
-                    it.remove();
-                    removed = true;
-                }
-            }
-        }
-
-        if (removed) {
-            Countly.sharedInstance().L.w("[Utils] Unsupported data types were removed from provided segmentation");
-        }
-
-        return removed;
     }
 
     /**

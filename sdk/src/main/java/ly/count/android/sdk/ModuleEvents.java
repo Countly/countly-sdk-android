@@ -80,7 +80,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         }
 
         if (segmentation != null) {
-            Utils.removeUnsupportedDataTypes(segmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
         }
 
         //record the current event timestamps
