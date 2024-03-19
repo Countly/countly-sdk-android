@@ -137,7 +137,7 @@ public class CrashData {
         if (breadcrumbs == null) {
             return;
         }
-        
+
         this.breadcrumbs = breadcrumbs;
     }
 
@@ -165,6 +165,17 @@ public class CrashData {
         changedFields[4] = !checksums[4].equals(checksumsNew[4]);
 
         return changedFields;
+    }
+
+    protected String getChangedFieldsAsString() {
+        boolean[] changedFields = getChangedFields();
+        StringBuilder changedFieldsString = new StringBuilder();
+
+        for (boolean changedField : changedFields) {
+            changedFieldsString.append(changedField ? "1" : "0");
+        }
+
+        return changedFieldsString.toString();
     }
 
     private void calculateChecksums(String[] checksums) {

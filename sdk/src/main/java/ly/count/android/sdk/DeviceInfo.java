@@ -852,7 +852,7 @@ class DeviceInfo {
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
             "_nonfatal", Boolean.toString(!crashData.getFatal()),
-            "_bits", Integer.toBinaryString(crashData.crashBits)
+            "_bits", crashData.getChangedFieldsAsString()
         );
 
         if (!isNativeCrash) {
