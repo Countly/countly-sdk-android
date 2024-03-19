@@ -124,12 +124,12 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (customSegmentation != null) {
-            Utils.removeUnsupportedDataTypes(customSegmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(customSegmentation);
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
         //truncate crash segmentation
-        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
@@ -156,7 +156,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (segments != null) {
-            Utils.removeUnsupportedDataTypes(segments);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segments);
         }
         customCrashSegments = segments;
     }
