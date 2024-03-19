@@ -88,7 +88,7 @@ public class CrashData {
      *
      * @return the breadcrumbs of the crash.
      */
-    public String getBreadcrumbsAsString() {
+    protected String getBreadcrumbsAsString() {
         StringBuilder breadcrumbsString = new StringBuilder();
 
         for (String breadcrumb : breadcrumbs) {
@@ -123,7 +123,7 @@ public class CrashData {
      *
      * @return the breadcrumbs of the crash.
      */
-    protected List<String> getBreadcrumbs() {
+    public List<String> getBreadcrumbs() {
         return breadcrumbs;
     }
 
