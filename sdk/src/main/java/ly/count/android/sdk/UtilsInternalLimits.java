@@ -153,4 +153,25 @@ public class UtilsInternalLimits {
             }
         }
     }
+
+    /**
+     * Used to remove reserved keys from segmentation map
+     *
+     * @param segmentation
+     * @param reservedKeys
+     * @param messagePrefix
+     * @param L
+     */
+    static void removeReservedKeysFromSegmentation(@Nullable Map<String, Object> segmentation, @NonNull String[] reservedKeys, @NonNull String messagePrefix, @NonNull ModuleLog L) {
+        if (segmentation == null) {
+            return;
+        }
+
+        for (String rKey : reservedKeys) {
+            if (segmentation.containsKey(rKey)) {
+                L.w(messagePrefix + " provided segmentation contains protected key [" + rKey + "]");
+                segmentation.remove(rKey);
+            }
+        }
+    }
 }

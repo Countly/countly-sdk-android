@@ -6,7 +6,6 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -197,27 +196,6 @@ public class Utils {
         }
 
         return removed;
-    }
-
-    /**
-     * Used to remove reserved keys from segmentation map
-     *
-     * @param segmentation
-     * @param reservedKeys
-     * @param messagePrefix
-     * @param L
-     */
-    static void removeReservedKeysFromSegmentation(@Nullable Map<String, Object> segmentation, @NonNull String[] reservedKeys, @NonNull String messagePrefix, @NonNull ModuleLog L) {
-        if (segmentation == null) {
-            return;
-        }
-
-        for (String rKey : reservedKeys) {
-            if (segmentation.containsKey(rKey)) {
-                L.w(messagePrefix + " provided segmentation contains protected key [" + rKey + "]");
-                segmentation.remove(rKey);
-            }
-        }
     }
 
     /**

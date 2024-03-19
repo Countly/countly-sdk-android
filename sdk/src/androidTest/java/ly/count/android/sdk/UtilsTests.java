@@ -164,37 +164,6 @@ public class UtilsTests {
         Assert.assertEquals("value5", json.get("key5"));
     }
 
-    @Test
-    public void removeReservedKeysFromSegmentation() {
-        Map<String, Object> values = new HashMap<>();
-
-        Utils.removeReservedKeysFromSegmentation(values, new String[] {}, "", mock(ModuleLog.class));
-        Assert.assertEquals(0, values.size());
-
-        Utils.removeReservedKeysFromSegmentation(values, new String[] { "a", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(0, values.size());
-
-        values.put("b", 1);
-        Assert.assertEquals(1, values.size());
-        Utils.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(1, values.size());
-        Assert.assertTrue(values.containsKey("b"));
-
-        values.put("a", 2);
-        Assert.assertEquals(2, values.size());
-        Utils.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(1, values.size());
-        Assert.assertTrue(values.containsKey("b"));
-
-        values.put("a", 2);
-        values.put("c", 3);
-        Assert.assertEquals(3, values.size());
-        Utils.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(2, values.size());
-        Assert.assertTrue(values.containsKey("b"));
-        Assert.assertTrue(values.containsKey("c"));
-    }
-
     /**
      * For verifying if formatTimeDifference returns correct time information from milliseconds
      */
