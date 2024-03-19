@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -22,11 +21,11 @@ public class ModuleRatingsTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         mCountly = new Countly();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
     }
 
@@ -86,7 +85,7 @@ public class ModuleRatingsTests {
     @Test
     public void getAutomaticSessionLimit() {
         Countly countly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
+        CountlyConfig config = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
         countly.init(config);
         Assert.assertEquals(44, countly.ratings().getAutomaticStarRatingSessionLimit());
     }
@@ -97,8 +96,8 @@ public class ModuleRatingsTests {
 
         Assert.assertEquals(0, mCountly.ratings().getCurrentVersionsSessionCount());
 
-        mCountly.moduleRatings.registerAppSession(getContext(), null);
-        mCountly.moduleRatings.registerAppSession(getContext(), null);
+        mCountly.moduleRatings.registerAppSession(TestUtils.getContext(), null);
+        mCountly.moduleRatings.registerAppSession(TestUtils.getContext(), null);
 
         Assert.assertEquals(2, mCountly.ratings().getCurrentVersionsSessionCount());
 
@@ -112,7 +111,7 @@ public class ModuleRatingsTests {
         Assert.assertFalse(mCountly.moduleRatings.getIfStarRatingShouldBeShownAutomatically());
 
         Countly countly = new Countly();
-        CountlyConfig config = new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setIfStarRatingShownAutomatically(true);
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setIfStarRatingShownAutomatically(true);
         countly.init(config);
 
         Assert.assertTrue(countly.moduleRatings.getIfStarRatingShouldBeShownAutomatically());
@@ -143,7 +142,7 @@ public class ModuleRatingsTests {
      */
     //@Test
     //public void setAllFieldsDuringInit() {
-    //    CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
+    //    CountlyConfig config = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
     //    config.setStarRatingDisableAskingForEachAppVersion(true);
     //    config.setStarRatingSessionLimit(445);
     //    config.setIfStarRatingShownAutomatically(true);

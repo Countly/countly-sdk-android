@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -22,7 +21,7 @@ public class DeviceIdTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
-        store = new CountlyStore(getContext(), mock(ModuleLog.class));
+        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         store.clear();
 
         openUDIDProvider = new OpenUDIDProvider() {
