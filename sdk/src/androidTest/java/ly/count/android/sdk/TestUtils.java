@@ -17,6 +17,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.mockito.ArgumentCaptor;
 
+import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -495,6 +496,14 @@ public class TestUtils {
         Assert.assertEquals(previous, mv.getPreviousViewId());
     }
 
+    protected static CountlyStore getCountyStore() {
+        return new CountlyStore(getContext(), mock(ModuleLog.class), false);
+    }
+
+    protected static CountlyConfig getBaseConfig() {
+        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
+    }
+
     /**
      * Get current request queue from target folder
      *
@@ -503,8 +512,7 @@ public class TestUtils {
     protected static Map<String, String>[] getCurrentRQ() {
 
         //get all request files from target folder
-        CountlyStore store = new CountlyStore(ApplicationProvider.getApplicationContext(), mock(ModuleLog.class), false);
-        String[] requests = store.getRequests();
+        String[] requests = getCountyStore().getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 
