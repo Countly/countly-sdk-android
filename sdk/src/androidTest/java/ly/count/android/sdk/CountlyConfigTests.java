@@ -161,7 +161,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(c, config.context);
         Assert.assertEquals(s[1], config.appKey);
         Assert.assertEquals(cs, config.countlyStore);
-        Assert.assertFalse(config.checkForNativeCrashDumps);
+        Assert.assertTrue(config.crashes.checkForNativeCrashDumps); // this will always be true, SDK will always check for native crash dumps
         Assert.assertEquals(s[2], config.deviceID);
         Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
@@ -169,7 +169,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(s[4], config.starRatingTextMessage);
         Assert.assertEquals(s[5], config.starRatingTextTitle);
         Assert.assertTrue(config.loggingEnabled);
-        Assert.assertTrue(config.enableUnhandledCrashReporting);
+        Assert.assertTrue(config.crashes.enableUnhandledCrashReporting);
         Assert.assertTrue(config.enableAutomaticViewTracking);
         Assert.assertTrue(config.autoTrackingUseShortName);
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
@@ -187,13 +187,13 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
         Assert.assertTrue(config.manualSessionControlEnabled);
-        Assert.assertTrue(config.recordAllThreadsWithCrash);
+        Assert.assertTrue(config.crashes.recordAllThreadsWithCrash);
         Assert.assertTrue(config.disableUpdateSessionRequests);
         Assert.assertTrue(config.shouldIgnoreAppCrawlers);
         Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
-        Assert.assertEquals(crashSegments, config.customCrashSegment);
+        Assert.assertEquals(crashSegments, config.crashes.customCrashSegment);
         Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
         Assert.assertTrue(config.starRatingDialogIsCancellable);
         Assert.assertTrue(config.starRatingShownAutomatically);
@@ -236,7 +236,7 @@ public class CountlyConfigTests {
         }
 
         Assert.assertNull(config.countlyStore);
-        Assert.assertTrue(config.checkForNativeCrashDumps);
+        Assert.assertTrue(config.crashes.checkForNativeCrashDumps);
         Assert.assertNull(config.deviceID);
         Assert.assertEquals(5, config.starRatingSessionLimit);
         Assert.assertNull(config.starRatingCallback);
@@ -244,7 +244,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.starRatingTextMessage);
         Assert.assertNull(config.starRatingTextTitle);
         Assert.assertFalse(config.loggingEnabled);
-        Assert.assertFalse(config.enableUnhandledCrashReporting);
+        Assert.assertFalse(config.crashes.enableUnhandledCrashReporting);
         Assert.assertFalse(config.enableAutomaticViewTracking);
         Assert.assertFalse(config.autoTrackingUseShortName);
         Assert.assertNull(config.customNetworkRequestHeaders);
@@ -261,13 +261,13 @@ public class CountlyConfigTests {
         Assert.assertNull(config.eventQueueSizeThreshold);
         Assert.assertTrue(config.trackOrientationChange);
         Assert.assertFalse(config.manualSessionControlEnabled);
-        Assert.assertFalse(config.recordAllThreadsWithCrash);
+        Assert.assertFalse(config.crashes.recordAllThreadsWithCrash);
         Assert.assertFalse(config.disableUpdateSessionRequests);
         Assert.assertFalse(config.shouldIgnoreAppCrawlers);
         Assert.assertNull(config.appCrawlerNames);
         Assert.assertNull(config.publicKeyPinningCertificates);
         Assert.assertNull(config.certificatePinningCertificates);
-        Assert.assertNull(config.customCrashSegment);
+        Assert.assertNull(config.crashes.customCrashSegment);
         Assert.assertNull(config.sessionUpdateTimerDelay);
         Assert.assertFalse(config.starRatingDialogIsCancellable);
         Assert.assertFalse(config.starRatingShownAutomatically);
