@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -24,7 +23,7 @@ public class CountlyConfigTests {
 
     @Test
     public void constructor() {
-        Context ctx = getContext();
+        Context ctx = TestUtils.getContext();
         CountlyConfig config = new CountlyConfig(ctx, "Som345345", "fsdf7349374");
 
         Assert.assertEquals(ctx, config.context);
@@ -37,7 +36,7 @@ public class CountlyConfigTests {
     @Test
     public void settingAllValues() {
         String[] s = { "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd" };
-        Context c = getContext();
+        Context c = TestUtils.getContext();
         CountlyConfig config = new CountlyConfig();
         CountlyStore cs = new CountlyStore(c, mock(ModuleLog.class));
 
