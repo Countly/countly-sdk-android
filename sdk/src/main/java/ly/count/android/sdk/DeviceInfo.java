@@ -796,7 +796,9 @@ class DeviceInfo {
      */
     @NonNull
     static String getLogs() {
-        return Countly.sharedInstance().moduleCrash.breadcrumbHelper.getBreadcrumbs();
+        String logs = Countly.sharedInstance().moduleCrash.breadcrumbHelper.getBreadcrumbs();
+        Countly.sharedInstance().moduleCrash.breadcrumbHelper.clearBreadcrumbs();
+        return logs;
     }
 
     /**

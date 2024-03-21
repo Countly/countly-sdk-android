@@ -38,7 +38,6 @@ public class BreadcrumbHelper {
         for (String log : logs) {
             sb.append(log).append("\n");
         }
-        clearBreadcrumbs();
         return sb.toString();
     }
 
