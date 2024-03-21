@@ -729,7 +729,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             segmentationBoolean = new HashMap<>();
             Map<String, Object> segmentationReminder = new HashMap<>();
 
-            Utils.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
+            UtilsInternalLimits.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
         }
 
         final Event event = new Event();

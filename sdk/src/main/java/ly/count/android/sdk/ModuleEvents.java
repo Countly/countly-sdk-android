@@ -80,7 +80,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         }
 
         if (segmentation != null) {
-            Utils.removeUnsupportedDataTypes(segmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
         }
 
         //record the current event timestamps
@@ -442,7 +442,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
                 L.i("[Events] Calling recordEvent: [" + key + "]");
 
-                Utils.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
 
                 eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null, null);
             }

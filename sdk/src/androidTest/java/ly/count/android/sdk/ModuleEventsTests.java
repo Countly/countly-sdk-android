@@ -67,7 +67,7 @@ public class ModuleEventsTests {
         Map<String, Boolean> mB = new HashMap<>();
         Map<String, Object> mR = new HashMap<>();
 
-        Utils.fillInSegmentation(segm, mS, mI, mD, mB, mR);
+        UtilsInternalLimits.fillInSegmentation(segm, mS, mI, mD, mB, mR);
 
         Assert.assertEquals(2, mS.size());
         Assert.assertEquals(1, mI.size());
