@@ -18,6 +18,7 @@ public class CrashDetailsTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
+        Countly.sharedInstance().init(TestUtils.getBaseConfig());
 
         regularDeviceInfo = new DeviceInfo(null);
     }

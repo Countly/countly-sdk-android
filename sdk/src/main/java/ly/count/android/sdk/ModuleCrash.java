@@ -31,6 +31,8 @@ public class ModuleCrash extends ModuleBase {
     @Nullable
     Map<String, String> metricOverride = null;
 
+    BreadcrumbHelper breadcrumbHelper;
+
     ModuleCrash(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
@@ -44,6 +46,7 @@ public class ModuleCrash extends ModuleBase {
         metricOverride = config.metricOverride;
 
         crashesInterface = new Crashes();
+        breadcrumbHelper = new BreadcrumbHelper(config.sdkInternalLimits.maxBreadcrumbCount, L);
     }
 
     /**
@@ -298,12 +301,7 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        if (breadcrumb == null || breadcrumb.isEmpty()) {
-            L.e("[Crashes] Can't add a null or empty crash breadcrumb");
-            return _cly;
-        }
-
-        DeviceInfo.addLog(breadcrumb, _cly.config_.sdkInternalLimits.maxBreadcrumbCount, _cly.config_.sdkInternalLimits.maxValueSize);
+        breadcrumbHelper.addBreadcrumb(breadcrumb, _cly.config_.sdkInternalLimits.maxValueSize);
         return _cly;
     }
 
