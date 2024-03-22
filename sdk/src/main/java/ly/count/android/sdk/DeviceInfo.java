@@ -785,23 +785,6 @@ class DeviceInfo {
     }
 
     /**
-     * Adds a record in the log
-     */
-    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
-        Countly.sharedInstance().moduleCrash.breadcrumbHelper.addBreadcrumb(record, maxBreadcrumbLength);
-    }
-
-    /**
-     * Returns the collected logs.
-     */
-    @NonNull
-    static String getLogs() {
-        String logs = Countly.sharedInstance().moduleCrash.breadcrumbHelper.getBreadcrumbs();
-        Countly.sharedInstance().moduleCrash.breadcrumbHelper.clearBreadcrumbs();
-        return logs;
-    }
-
-    /**
      * Get custom segments json string from the provided map
      */
     static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {

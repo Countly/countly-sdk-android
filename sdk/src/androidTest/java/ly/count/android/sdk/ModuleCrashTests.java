@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONException;
@@ -178,35 +180,23 @@ public class ModuleCrashTests {
     }
 
     @Test
-    public void addCrashBreadcrumb() {
-        mCountly.crashes().addCrashBreadcrumb("Breadcrumb_1");
-        mCountly.crashes().addCrashBreadcrumb("Breadcrumb_2");
-        mCountly.crashes().addCrashBreadcrumb("Breadcrumb_3");
+    public void addCrashBreadcrumb() throws JSONException {
+        TestUtils.getCountyStore().clear();
 
-        String logs = DeviceInfo.getLogs();
+        Countly countly = new Countly().init(TestUtils.getBaseConfig());
 
-        Assert.assertEquals("Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", logs);
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_1");
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_2");
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_3");
+
+        Throwable throwable = new Throwable("Some message");
+        countly.crashes().recordUnhandledException(throwable);
+
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(1, RQ.length);
+        validateCrash(extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", false);
     }
 
-    /**
-     * Make sure that breadcrumbs are controlled by the count limit and the value length limit
-     */
-    //@Test
-    //public void addCrashBreadcrumbLimits() {
-    //    Countly countly = new Countly();
-    //    config = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting()
-    //        .setMaxBreadcrumbCount(2).setMaxValueSize(5);
-    //    countly.init(config);
-    //
-    //    countly.crashes().addCrashBreadcrumb("Brc_1_aaaa");
-    //    countly.crashes().addCrashBreadcrumb("Brc_2_aaaa");
-    //    countly.crashes().addCrashBreadcrumb("Brc_3_aaaa");
-    //    countly.crashes().addCrashBreadcrumb("Brc_4_aaaa");
-    //
-    //    String logs = CrashDetails.getLogs();
-    //
-    //    Assert.assertEquals("Brc_3\nBrc_4\n", logs);
-    //}
     @Test
     public void recordHandledExceptionException() {
         Exception exception = new Exception("Some message");
@@ -267,6 +257,25 @@ public class ModuleCrashTests {
         //todo improve this
         Assert.assertTrue(crash.contains("java.lang.Throwable: Some message\\n" +
             "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
+    }
+
+    private void validateCrash(String error, String breadcrumbs, boolean handled) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(1, RQ.length);
+
+        JSONObject crash = new JSONObject(RQ[0].get("crash"));
+
+        Assert.assertEquals(error, crash.getString("_error"));
+        Assert.assertEquals(breadcrumbs, crash.getString("_logs"));
+        Assert.assertEquals(handled, crash.getBoolean("_nonfatal"));
+        //todo validate all fields
+    }
+
+    private String extractStackTrace(Throwable throwable) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        throwable.printStackTrace(pw);
+        return sw.toString();
     }
 
     @Test(expected = StackOverflowError.class)
