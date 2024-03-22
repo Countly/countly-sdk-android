@@ -2,8 +2,6 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,18 +27,23 @@ public class TestUtilsTests {
 
     /**
      * "getCurrentRQ" with countly initialization
-     * Validate that RQ is not empty and crash request is present
-     * And crash object is valid
+     * Validate that RQ is not empty and request is present
+     * And request is parsed correctly
      */
     @Test
-    public void getCurrentRQ_notEmpty() throws JSONException {
-        CountlyConfig config = TestUtils.getBaseConfig();
-        Countly.sharedInstance().init(config);
-        Countly.sharedInstance().crashes().recordUnhandledException(new Exception("test"));
+    public void getCurrentRQ_notEmpty() {
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        TestUtils.getCountyStore().addRequest("a=b&c=d&hi=7628y9u0%C4%B1oh&fiyua=5765", true);
 
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
-        Assert.assertTrue(TestUtils.getCurrentRQ()[0].containsKey("crash"));
-        new JSONObject(TestUtils.getCurrentRQ()[0].get("crash"));
+        Map<String, String> request = TestUtils.getCurrentRQ()[0];
+
+        Assert.assertEquals(4, request.size());
+        Assert.assertEquals("b", request.get("a"));
+        Assert.assertEquals("d", request.get("c"));
+        Assert.assertEquals("7628y9u0ıoh", request.get("hi"));
+        Assert.assertEquals("5765", request.get("fiyua"));
     }
 
     /**
