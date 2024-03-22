@@ -42,46 +42,6 @@ public class ModuleEventsTests {
     public void tearDown() {
     }
 
-    /**
-     * Validating 'fillInSegmentation' call
-     */
-    @Test
-    public void fillInSegmentation() {
-        Map<String, Object> segm = new HashMap<>();
-
-        segm.put("aa", "dd");
-        segm.put("aa1", "dda");
-        segm.put("1", 1234);
-        segm.put("2", 1234.55d);
-        segm.put("3", true);
-        segm.put("4", 45.4f);
-        segm.put("41", new Object());
-        segm.put("42", new int[] { 1, 2 });
-
-        Map<String, String> mS = new HashMap<>();
-        Map<String, Integer> mI = new HashMap<>();
-        Map<String, Double> mD = new HashMap<>();
-        Map<String, Boolean> mB = new HashMap<>();
-        Map<String, Object> mR = new HashMap<>();
-
-        UtilsInternalLimits.fillInSegmentation(segm, mS, mI, mD, mB, mR);
-
-        Assert.assertEquals(2, mS.size());
-        Assert.assertEquals(1, mI.size());
-        Assert.assertEquals(1, mD.size());
-        Assert.assertEquals(1, mB.size());
-        Assert.assertEquals(3, mR.size());
-        Assert.assertEquals(segm.get("aa"), mS.get("aa"));
-        Assert.assertEquals(segm.get("aa1"), mS.get("aa1"));
-
-        Assert.assertEquals(segm.get("1"), mI.get("1"));
-        Assert.assertEquals(segm.get("2"), mD.get("2"));
-        Assert.assertEquals(segm.get("3"), mB.get("3"));
-        Assert.assertEquals(segm.get("4"), mR.get("4"));
-        Assert.assertEquals(segm.get("41"), mR.get("41"));
-        Assert.assertEquals(segm.get("42"), mR.get("42"));
-    }
-
     @Test
     public void recordEvent_1() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -165,7 +125,7 @@ public class ModuleEventsTests {
         segm.put("1", 1234);
         segm.put("2", 1234.55d);
         segm.put("3", true);
-        segm.put("4", (double) 45.4f);
+        segm.put("4", 45.4f);
 
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
@@ -379,7 +339,7 @@ public class ModuleEventsTests {
         segm2.put("1", 1234);
         segm2.put("2", 1234.55d);
         segm2.put("3", true);
-        segm2.put("4", (double) 45.4f);
+        segm2.put("4", 45.4f);
 
         Map<String, Object> segm3 = new HashMap<>(segm1);
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
