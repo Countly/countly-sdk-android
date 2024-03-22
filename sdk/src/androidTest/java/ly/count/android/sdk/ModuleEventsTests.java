@@ -4,6 +4,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -397,6 +400,58 @@ public class ModuleEventsTests {
         Assert.assertEquals(3, countly.countlyStore.getRequests().length);
     }
 
+    @Test
+    public void recordEvent_validateFromRQ() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.getBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "int", 1,
+            "double", 1.2d,
+            "string", "string",
+            "boolean", true,
+            "float", 1.5f,
+            "long", 1L,
+            "object", new Object(),
+            "array", new int[] { 1, 2, 3 },
+            "null", null
+        );
+
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "int", 1,
+            "double", 1.2,
+            "string", "string",
+            "boolean", true,
+            "float", 1.5
+        );
+
+        validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
+    protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(idx + 1, RQ.length);
+        JSONArray events = new JSONArray(RQ[idx].get("events"));
+        Assert.assertEquals(1, events.length());
+        JSONObject event = events.getJSONObject(0);
+        Assert.assertEquals(eventName, event.get("key"));
+        Assert.assertEquals(count, event.getInt("count"));
+        Assert.assertEquals(sum, event.getDouble("sum"), 0.0001);
+        Assert.assertEquals(duration, event.getDouble("dur"), 0.0001);
+        return event;
+    }
+
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
+        JSONObject event = validateEventInRQ(eventName, count, sum, duration, idx);
+        JSONObject segmentation = event.getJSONObject("segmentation");
+        Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
+        for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
+            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+        }
+    }
 /*
     //todo should be reworked
     @Test
