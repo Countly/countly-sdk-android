@@ -89,6 +89,9 @@ public class CrashData {
      * @return the breadcrumbs of the crash.
      */
     protected String getBreadcrumbsAsString() {
+        if (breadcrumbs == null) {
+            return null;
+        }
         StringBuilder breadcrumbsString = new StringBuilder();
 
         for (String breadcrumb : breadcrumbs) {
@@ -136,7 +139,7 @@ public class CrashData {
         if (breadcrumbs == null) {
             return;
         }
-        
+
         this.breadcrumbs = breadcrumbs;
     }
 
@@ -168,9 +171,9 @@ public class CrashData {
 
     private void calculateChecksums(String[] checksums) {
         checksums[0] = UtilsNetworking.sha256Hash(stackTrace);
-        checksums[1] = UtilsNetworking.sha256Hash(crashSegmentation.toString());
-        checksums[2] = UtilsNetworking.sha256Hash(breadcrumbs.toString());
-        checksums[3] = UtilsNetworking.sha256Hash(crashMetrics.toString());
-        checksums[4] = UtilsNetworking.sha256Hash(fatal.toString());
+        checksums[1] = UtilsNetworking.sha256Hash(crashSegmentation != null ? crashSegmentation.toString() : null);
+        checksums[2] = UtilsNetworking.sha256Hash(breadcrumbs != null ? breadcrumbs.toString() : null);
+        checksums[3] = UtilsNetworking.sha256Hash(crashMetrics != null ? crashMetrics.toString() : null);
+        checksums[4] = UtilsNetworking.sha256Hash(fatal != null ? fatal.toString() : null);
     }
 }
