@@ -761,17 +761,6 @@ class DeviceInfo {
      * Returns a JSON string containing the device crash report
      */
     @NonNull
-    String getCrashDataString(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = getCrashDataStringJSON(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, metricOverride);
-
-        return json.toString();
-    }
-
-    /**
-     * Returns a JSON string containing the device crash report
-     */
-    @NonNull
     String getCrashDataString(final CrashData crashData, boolean isNativeCrash) {
 
         JSONObject json = crashData.getCrashMetrics();
