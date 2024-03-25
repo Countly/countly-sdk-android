@@ -189,40 +189,6 @@ public class TestUtils {
         return rqp;
     }
 
-    public static Map<String, Object> combineSegmentation(Event event) {
-        return combineSegmentation(event.segmentation, event.segmentationInt, event.segmentationDouble, event.segmentationBoolean);
-    }
-
-    public static Map<String, Object> combineSegmentation(Map<String, String> sString, Map<String, Integer> sInteger, Map<String, Double> sDouble, Map<String, Boolean> sBoolean) {
-        Map<String, Object> res = new HashMap<>();
-
-        if (sString != null) {
-            for (Map.Entry<String, String> pair : sString.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sInteger != null) {
-            for (Map.Entry<String, Integer> pair : sInteger.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sDouble != null) {
-            for (Map.Entry<String, Double> pair : sDouble.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sBoolean != null) {
-            for (Map.Entry<String, Boolean> pair : sBoolean.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        return res;
-    }
-
     @SuppressWarnings("InfiniteRecursion")
     public static void stackOverflow() {
         stackOverflow();
@@ -549,7 +515,7 @@ public class TestUtils {
         }
         return map;
     }
-  
+
     public static Context getContext() {
         return ApplicationProvider.getApplicationContext();
     }

@@ -28,7 +28,7 @@ public class CrashDetailsTests {
         boolean nonfatal = false;
         boolean isNativeCrash = false;
         String cData = regularDeviceInfo.getCrashDataString(TestUtils.getContext(), errorText, nonfatal, isNativeCrash, "", null, regularDeviceInfo, null);
-
+      
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
 
@@ -144,7 +144,16 @@ public class CrashDetailsTests {
         Assert.assertEquals(metricOverride.get("_manufacturer"), cData2.getString("_manufacturer"));
     }
 
+    private JSONObject createCrashData(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
+        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal));
+    }
+
+    private String createCrashDataStr(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
+        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal)).toString();
+    }
+
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {
+        System.out.println(cData);
         Assert.assertTrue(cData.contains("\"_error\":\"" + error + "\""));
         Assert.assertTrue(cData.contains("\"_nonfatal\":\"" + nonfatal + "\""));
         Assert.assertTrue(cData.contains("\"_os\":\"Android\""));
