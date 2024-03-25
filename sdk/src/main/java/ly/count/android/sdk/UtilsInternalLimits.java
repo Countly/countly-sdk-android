@@ -124,37 +124,6 @@ public class UtilsInternalLimits {
     }
 
     /**
-     * Used for quickly sorting segments into their respective data type
-     *
-     * @param allSegm
-     * @param segmStr
-     * @param segmInt
-     * @param segmDouble
-     * @param segmBoolean
-     */
-    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Boolean> segmBoolean,
-        Map<String, Object> reminder) {
-        for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
-            String key = pair.getKey();
-            Object value = pair.getValue();
-
-            if (value instanceof Integer) {
-                segmInt.put(key, (Integer) value);
-            } else if (value instanceof Double) {
-                segmDouble.put(key, (Double) value);
-            } else if (value instanceof String) {
-                segmStr.put(key, (String) value);
-            } else if (value instanceof Boolean) {
-                segmBoolean.put(key, (Boolean) value);
-            } else {
-                if (reminder != null) {
-                    reminder.put(key, value);
-                }
-            }
-        }
-    }
-
-    /**
      * Used to remove reserved keys from segmentation map
      *
      * @param segmentation
@@ -193,17 +162,10 @@ public class UtilsInternalLimits {
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            //todo add support for long
-            if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
-
-                if (value instanceof Float) {
-                    //transform to double
-                    data.put(key, ((Float) value).doubleValue());
-                } else {
-                    //found unsupported data type or null key or value, removing
-                    it.remove();
-                    removed = true;
-                }
+            if (key == null || key.isEmpty() || !(isSupportedDataType(value))) {
+                //found unsupported data type or null key or value, removing
+                it.remove();
+                removed = true;
             }
         }
 
@@ -212,5 +174,9 @@ public class UtilsInternalLimits {
         }
 
         return removed;
+    }
+
+    static boolean isSupportedDataType(Object value) {
+        return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float;
     }
 }
