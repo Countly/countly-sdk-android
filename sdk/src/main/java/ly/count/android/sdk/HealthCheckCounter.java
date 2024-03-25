@@ -68,6 +68,18 @@ public class HealthCheckCounter implements HealthTracker {
         }
     }
 
+    @Override public void logSessionStartedWhileRunning() {
+        
+    }
+
+    @Override public void logSessionEndedWhileNotRunning() {
+
+    }
+
+    @Override public void logSessionUpdatedWhileNotRunning() {
+
+    }
+
     @Override public void clearAndSave() {
         clearValues();//clear values
         storageProvider.setHealthCheckCounterState("");//clear stored State

@@ -467,6 +467,10 @@ public class TestUtils {
     }
 
     public static void verifyBeginSessionNotCalled(RequestQueueProvider requestQueueProvider) {
+        verifyBeginSessionTimes(requestQueueProvider, 0);
+    }
+
+    public static void verifyBeginSessionTimes(RequestQueueProvider requestQueueProvider, int count) {
         ArgumentCaptor<Boolean> arg1 = ArgumentCaptor.forClass(Boolean.class);
         ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg3 = ArgumentCaptor.forClass(String.class);
@@ -474,7 +478,7 @@ public class TestUtils {
         ArgumentCaptor<String> arg5 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg6 = ArgumentCaptor.forClass(String.class);
 
-        verify(requestQueueProvider, never()).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+        verify(requestQueueProvider, count == 0 ? never() : times(count)).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
     }
 
     public static void verifyBeginSessionValues(RequestQueueProvider requestQueueProvider, Boolean v1, String v2, String v3, String v4, String v5) {

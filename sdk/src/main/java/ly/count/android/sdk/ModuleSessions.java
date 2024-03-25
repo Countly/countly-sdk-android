@@ -48,7 +48,9 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (sessionIsRunning()) {
-            L.d("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
+            L.w("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
+            healthTracker.logSessionStartedWhileRunning();
+            return;
         }
 
         //prepare metrics
@@ -66,7 +68,9 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!sessionIsRunning()) {
-            L.d("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
+            L.w("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
+            healthTracker.logSessionUpdatedWhileNotRunning();
+            return;
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
@@ -85,7 +89,9 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!sessionIsRunning()) {
-            L.d("[ModuleSessions] No session is running, this 'endSessionInternal' will be ignored");
+            L.w("[ModuleSessions] No session is running, this 'endSessionInternal' will be ignored");
+            healthTracker.logSessionEndedWhileNotRunning();
+            return;
         }
 
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
