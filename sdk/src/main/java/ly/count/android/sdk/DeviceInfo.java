@@ -48,6 +48,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -695,25 +696,21 @@ class DeviceInfo {
      * Returns a JSON object containing the device crash report
      */
     @NonNull
-    JSONObject getCrashDataJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
-
-        final JSONObject json = getCrashMetrics(context, isNativeCrash, metricOverride);
-
+    JSONObject getCrashDataJSON(CrashData crashData) {
+        JSONObject json = crashData.getCrashMetrics();
         Utils.fillJSONIfValuesNotEmpty(json,
-            "_error", error,
-            "_nonfatal", Boolean.toString(nonfatal)
+            "_error", crashData.getStackTrace(),
+            "_nonfatal", Boolean.toString(!crashData.getFatal())
         );
 
-        if (!isNativeCrash) {
-            //if is not a native crash
-            Utils.fillJSONIfValuesNotEmpty(json,
-                "_logs", crashBreadcrumbs
-            );
+        try {
+            json.put("_logs", crashData.getBreadcrumbsAsString());
+        } catch (JSONException e) {
+            //no logs
         }
 
         try {
-            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
+            json.put("_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
         } catch (JSONException e) {
             //no custom segments
         }
@@ -822,6 +819,12 @@ class DeviceInfo {
         }
         logs.clear();
         return allLogs.toString();
+    }
+
+    static @NonNull List<String> getLogsAsList() {
+        List<String> logsGonna = new LinkedList<>(DeviceInfo.logs);
+        logs.clear();
+        return logsGonna;
     }
 
     /**

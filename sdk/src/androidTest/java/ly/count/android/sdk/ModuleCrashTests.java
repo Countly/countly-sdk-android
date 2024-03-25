@@ -184,7 +184,7 @@ public class ModuleCrashTests {
         mCountly.crashes().addCrashBreadcrumb("Breadcrumb_3");
 
         String logs = DeviceInfo.getLogs();
-
+        
         Assert.assertEquals("Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", logs);
     }
 

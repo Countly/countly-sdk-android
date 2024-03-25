@@ -124,22 +124,22 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (customSegmentation != null) {
-            UtilsInternalLimits.removeUnsupportedDataTypes(customSegmentation);
             combinedSegmentationValues.putAll(customSegmentation);
         }
-
-        //truncate crash segmentation
-        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
-        final String crashData;
-        crashData = deviceInfo.getCrashDataJSON(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, metricOverride).toString();
+        //truncate crash segmentation
+        UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
-        requestQueueProvider.sendCrashReport(crashData, nonfatal);
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsAsList(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
+
+        String crashDataString = deviceInfo.getCrashDataJSON(crashData).toString();
+        requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
     }
 
     /**
