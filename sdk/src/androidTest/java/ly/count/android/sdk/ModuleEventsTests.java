@@ -4,6 +4,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,46 +43,6 @@ public class ModuleEventsTests {
 
     @After
     public void tearDown() {
-    }
-
-    /**
-     * Validating 'fillInSegmentation' call
-     */
-    @Test
-    public void fillInSegmentation() {
-        Map<String, Object> segm = new HashMap<>();
-
-        segm.put("aa", "dd");
-        segm.put("aa1", "dda");
-        segm.put("1", 1234);
-        segm.put("2", 1234.55d);
-        segm.put("3", true);
-        segm.put("4", 45.4f);
-        segm.put("41", new Object());
-        segm.put("42", new int[] { 1, 2 });
-
-        Map<String, String> mS = new HashMap<>();
-        Map<String, Integer> mI = new HashMap<>();
-        Map<String, Double> mD = new HashMap<>();
-        Map<String, Boolean> mB = new HashMap<>();
-        Map<String, Object> mR = new HashMap<>();
-
-        UtilsInternalLimits.fillInSegmentation(segm, mS, mI, mD, mB, mR);
-
-        Assert.assertEquals(2, mS.size());
-        Assert.assertEquals(1, mI.size());
-        Assert.assertEquals(1, mD.size());
-        Assert.assertEquals(1, mB.size());
-        Assert.assertEquals(3, mR.size());
-        Assert.assertEquals(segm.get("aa"), mS.get("aa"));
-        Assert.assertEquals(segm.get("aa1"), mS.get("aa1"));
-
-        Assert.assertEquals(segm.get("1"), mI.get("1"));
-        Assert.assertEquals(segm.get("2"), mD.get("2"));
-        Assert.assertEquals(segm.get("3"), mB.get("3"));
-        Assert.assertEquals(segm.get("4"), mR.get("4"));
-        Assert.assertEquals(segm.get("41"), mR.get("41"));
-        Assert.assertEquals(segm.get("42"), mR.get("42"));
     }
 
     @Test
@@ -165,7 +128,7 @@ public class ModuleEventsTests {
         segm.put("1", 1234);
         segm.put("2", 1234.55d);
         segm.put("3", true);
-        segm.put("4", (double) 45.4f);
+        segm.put("4", 45.4f);
 
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
@@ -379,7 +342,7 @@ public class ModuleEventsTests {
         segm2.put("1", 1234);
         segm2.put("2", 1234.55d);
         segm2.put("3", true);
-        segm2.put("4", (double) 45.4f);
+        segm2.put("4", 45.4f);
 
         Map<String, Object> segm3 = new HashMap<>(segm1);
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
@@ -437,6 +400,58 @@ public class ModuleEventsTests {
         Assert.assertEquals(3, countly.countlyStore.getRequests().length);
     }
 
+    @Test
+    public void recordEvent_validateFromRQ() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.getBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "int", 1,
+            "double", 1.2d,
+            "string", "string",
+            "boolean", true,
+            "float", 1.5f,
+            "long", 1L,
+            "object", new Object(),
+            "array", new int[] { 1, 2, 3 },
+            "null", null
+        );
+
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "int", 1,
+            "double", 1.2,
+            "string", "string",
+            "boolean", true,
+            "float", 1.5
+        );
+
+        validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
+    protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(idx + 1, RQ.length);
+        JSONArray events = new JSONArray(RQ[idx].get("events"));
+        Assert.assertEquals(1, events.length());
+        JSONObject event = events.getJSONObject(0);
+        Assert.assertEquals(eventName, event.get("key"));
+        Assert.assertEquals(count, event.getInt("count"));
+        Assert.assertEquals(sum, event.getDouble("sum"), 0.0001);
+        Assert.assertEquals(duration, event.getDouble("dur"), 0.0001);
+        return event;
+    }
+
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
+        JSONObject event = validateEventInRQ(eventName, count, sum, duration, idx);
+        JSONObject segmentation = event.getJSONObject("segmentation");
+        Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
+        for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
+            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+        }
+    }
 /*
     //todo should be reworked
     @Test
