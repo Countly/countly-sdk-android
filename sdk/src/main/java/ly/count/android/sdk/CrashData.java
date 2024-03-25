@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
@@ -17,7 +16,7 @@ public class CrashData {
     private JSONObject crashMetrics;
     private final String[] checksums = new String[5];
 
-    public CrashData(@NonNull String stackTrace, @Nullable Map<String, Object> crashSegmentation, @Nullable List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
+    public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
         this.stackTrace = stackTrace;
         this.crashSegmentation = crashSegmentation;
         this.breadcrumbs = breadcrumbs;
@@ -108,7 +107,7 @@ public class CrashData {
      *
      * @return the segmentation of the crash.
      */
-    public @Nullable Map<String, Object> getCrashSegmentation() {
+    public @NonNull Map<String, Object> getCrashSegmentation() {
         return crashSegmentation;
     }
 
@@ -117,7 +116,7 @@ public class CrashData {
      *
      * @param crashSegmentation the segmentation of the crash.
      */
-    public void setCrashSegmentation(@Nullable Map<String, Object> crashSegmentation) {
+    public void setCrashSegmentation(@NonNull Map<String, Object> crashSegmentation) {
         if (crashSegmentation != null) {
             this.crashSegmentation = crashSegmentation;
         }

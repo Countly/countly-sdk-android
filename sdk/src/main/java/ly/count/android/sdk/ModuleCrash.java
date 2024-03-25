@@ -132,14 +132,14 @@ public class ModuleCrash extends ModuleBase {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsAsList(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
-        // WILL FILTER HERE
-
         //truncate crash segmentation
-        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
-        UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
-        requestQueueProvider.sendCrashReport(deviceInfo.getCrashDataJSON(crashData).toString(), nonfatal);
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsAsList(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
+
+        String crashDataString = deviceInfo.getCrashDataJSON(crashData).toString();
+        requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
     }
 
     /**
