@@ -50,7 +50,7 @@
         android:ems="10"
         android:inputType="number"
         android:minHeight="48dp"
-        android:text="5"
+        android:text="6"
         />
     <TextView
         android:id="@+id/textView2"
@@ -82,7 +82,16 @@
         android:importantForAutofill="no"
         android:inputType="number"
         android:minHeight="48dp"
-        android:text="10000"
+        android:text="24000"
+        />
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onGenerateBenchmarkData"
+        android:text="Generate benchmark Data"
+        android:visibility="visible"
+        tools:visibility="visible"
         />
     <Button
         android:id="@+id/button9"
@@ -134,6 +143,7 @@
         android:id="@+id/button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:onClick="onClearStorage"
         android:text="Clear Storage"
         />
 
