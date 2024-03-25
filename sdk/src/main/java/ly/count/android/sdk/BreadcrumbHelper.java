@@ -1,21 +1,22 @@
 package ly.count.android.sdk;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import java.util.LinkedList;
+import java.util.List;
 
 public class BreadcrumbHelper {
 
-    private final LinkedList<String> logs = new LinkedList<>();
+    private final @NonNull LinkedList<String> logs = new LinkedList<>();
     private final int maxBreadcrumbs;
 
-    private final ModuleLog L;
+    private final @NonNull ModuleLog L;
 
-    protected BreadcrumbHelper(int maxBreadcrumbs, ModuleLog L) {
+    protected BreadcrumbHelper(int maxBreadcrumbs, @NonNull ModuleLog L) {
         this.maxBreadcrumbs = maxBreadcrumbs;
         this.L = L;
     }
 
-    protected void addBreadcrumb(@Nullable String breadcrumb, int valueSize) { // TODO when valuesize limit added delete this from here
+    protected void addBreadcrumb(@NonNull String breadcrumb, int valueSize) { // TODO when valuesize limit added delete this from here
         if (breadcrumb == null || breadcrumb.isEmpty()) {
             L.e("[BreadcrumbHelper] addBreadcrumb, Can't add a null or empty crash breadcrumb");
             return;
@@ -33,12 +34,8 @@ public class BreadcrumbHelper {
         logs.add(breadcrumb);
     }
 
-    protected String getBreadcrumbs() {
-        StringBuilder sb = new StringBuilder();
-        for (String log : logs) {
-            sb.append(log).append("\n");
-        }
-        return sb.toString();
+    protected @NonNull List<String> getBreadcrumbs() {
+        return logs;
     }
 
     protected void clearBreadcrumbs() {

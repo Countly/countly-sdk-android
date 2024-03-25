@@ -141,7 +141,7 @@ public class ModuleCrash extends ModuleBase {
 
         CrashData crashData = new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
         String crashDataString = deviceInfo.getCrashDataJSON(crashData).toString();
-      
+
         requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
     }
 

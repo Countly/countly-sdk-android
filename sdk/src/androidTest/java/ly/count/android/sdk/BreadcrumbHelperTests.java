@@ -1,6 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,7 +19,7 @@ public class BreadcrumbHelperTests {
     public void addBreadcrumb() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
         breadcrumbHelper.addBreadcrumb("test", 10);
-        Assert.assertEquals("test\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("test"), breadcrumbHelper.getBreadcrumbs());
     }
 
     /**
@@ -28,7 +31,7 @@ public class BreadcrumbHelperTests {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
         breadcrumbHelper.addBreadcrumb("Test", 10);
         breadcrumbHelper.addBreadcrumb("", 10);
-        Assert.assertEquals("Test\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("Test"), breadcrumbHelper.getBreadcrumbs());
     }
 
     /**
@@ -40,7 +43,7 @@ public class BreadcrumbHelperTests {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
         breadcrumbHelper.addBreadcrumb("Test", 10);
         breadcrumbHelper.addBreadcrumb(null, 10);
-        Assert.assertEquals("Test\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("Test"), breadcrumbHelper.getBreadcrumbs());
     }
 
     /**
@@ -51,7 +54,7 @@ public class BreadcrumbHelperTests {
     public void addBreadcrumb_exceedsCharacterLimit() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
         breadcrumbHelper.addBreadcrumb("Test", 2);
-        Assert.assertEquals("Te\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("Te"), breadcrumbHelper.getBreadcrumbs());
     }
 
     /**
@@ -62,11 +65,11 @@ public class BreadcrumbHelperTests {
     public void addBreadcrumb_exceedsLimit() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(2, new ModuleLog());
         breadcrumbHelper.addBreadcrumb("Test", 3);
-        Assert.assertEquals("Tes\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("Tes"), breadcrumbHelper.getBreadcrumbs());
         breadcrumbHelper.addBreadcrumb("Doggy", 3);
-        Assert.assertEquals("Tes\nDog\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("Tes", "Dog"), breadcrumbHelper.getBreadcrumbs());
         breadcrumbHelper.addBreadcrumb("Geralt", 3);
-        Assert.assertEquals("Dog\nGer\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("Dog", "Ger"), breadcrumbHelper.getBreadcrumbs());
     }
 
     /**
@@ -77,8 +80,15 @@ public class BreadcrumbHelperTests {
     public void clearBreadcrumbs() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(2, new ModuleLog());
         breadcrumbHelper.addBreadcrumb("Test", 3);
-        Assert.assertEquals("Tes\n", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list("Tes"), breadcrumbHelper.getBreadcrumbs());
         breadcrumbHelper.clearBreadcrumbs();
-        Assert.assertEquals("", breadcrumbHelper.getBreadcrumbs());
+        Assert.assertEquals(list(), breadcrumbHelper.getBreadcrumbs());
+    }
+
+    private List<String> list(String... breadcrumbs) {
+        if (breadcrumbs == null) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(breadcrumbs);
     }
 }
