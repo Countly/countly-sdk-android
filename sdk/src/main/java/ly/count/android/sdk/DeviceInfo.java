@@ -821,7 +821,7 @@ class DeviceInfo {
         return allLogs.toString();
     }
 
-    static List<String> getLogsAsList() {
+    static @NonNull List<String> getLogsAsList() {
         List<String> logsGonna = new LinkedList<>(DeviceInfo.logs);
         logs.clear();
         return logsGonna;
