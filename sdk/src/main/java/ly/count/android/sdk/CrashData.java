@@ -9,11 +9,11 @@ import org.json.JSONObject;
  * This class is used to store crash data.
  */
 public class CrashData {
-    private String stackTrace;
-    private Map<String, Object> crashSegmentation;
-    private List<String> breadcrumbs;
+    private @NonNull String stackTrace;
+    private @NonNull Map<String, Object> crashSegmentation;
+    private @NonNull List<String> breadcrumbs;
     private boolean fatal;
-    private JSONObject crashMetrics;
+    private @NonNull JSONObject crashMetrics;
     private final String[] checksums = new String[5];
 
     public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
