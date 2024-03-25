@@ -696,7 +696,7 @@ class DeviceInfo {
      * Returns a JSON object containing the device crash report
      */
     @NonNull
-    JSONObject getCrashDataStringJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
+    JSONObject getCrashDataJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
         @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
 
         final JSONObject json = getCrashMetrics(context, isNativeCrash, metricOverride);

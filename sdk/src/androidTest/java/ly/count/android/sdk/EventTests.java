@@ -620,7 +620,7 @@ public class EventTests {
         HashMap<String, Boolean> segmentsBoolean = new HashMap<>();
         HashMap<String, Object> segmentsReminder = new HashMap<>();
 
-        Utils.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
+        UtilsInternalLimits.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
 
         assertEquals(automaticViewSegmentation.size(), keys.length);
         assertEquals(segmentsInt.size(), 3);

@@ -128,17 +128,18 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (customSegmentation != null) {
-            Utils.removeUnsupportedDataTypes(customSegmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(customSegmentation);
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
         //truncate crash segmentation
-        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
+
 
         final JSONObject crashData = deviceInfo.getCrashDataStringJSON(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, metricOverride);
         requestQueueProvider.sendCrashReport(crashData.toString(), nonfatal);
@@ -152,6 +153,9 @@ public class ModuleCrash extends ModuleBase {
         if (customCrashSegments != null) {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
+
+        final String crashData;
+        crashData = deviceInfo.getCrashDataJSON(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, metricOverride).toString();
 
         if (customSegmentation != null) {
             combinedSegmentationValues.putAll(customSegmentation);
@@ -210,7 +214,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (segments != null) {
-            Utils.removeUnsupportedDataTypes(segments);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segments);
         }
         customCrashSegments = segments;
     }
