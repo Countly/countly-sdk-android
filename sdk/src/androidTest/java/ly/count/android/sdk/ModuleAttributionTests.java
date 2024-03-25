@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -39,7 +38,7 @@ public class ModuleAttributionTests {
 
     @Before
     public void setUp() {
-        countlyStore = new CountlyStore(InstrumentationRegistry.getInstrumentation().getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         cid_1 = "abc";

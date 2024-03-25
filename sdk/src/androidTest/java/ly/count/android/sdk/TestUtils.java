@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
@@ -11,16 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.mockito.ArgumentCaptor;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -190,40 +187,6 @@ public class TestUtils {
         countly.requestQueueProvider = rqp;
 
         return rqp;
-    }
-
-    public static Map<String, Object> combineSegmentation(Event event) {
-        return combineSegmentation(event.segmentation, event.segmentationInt, event.segmentationDouble, event.segmentationBoolean);
-    }
-
-    public static Map<String, Object> combineSegmentation(Map<String, String> sString, Map<String, Integer> sInteger, Map<String, Double> sDouble, Map<String, Boolean> sBoolean) {
-        Map<String, Object> res = new HashMap<>();
-
-        if (sString != null) {
-            for (Map.Entry<String, String> pair : sString.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sInteger != null) {
-            for (Map.Entry<String, Integer> pair : sInteger.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sDouble != null) {
-            for (Map.Entry<String, Double> pair : sDouble.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sBoolean != null) {
-            for (Map.Entry<String, Boolean> pair : sBoolean.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        return res;
     }
 
     @SuppressWarnings("InfiniteRecursion")
@@ -501,5 +464,63 @@ public class TestUtils {
     public static void verifyCurrentPreviousViewID(ModuleViews mv, String current, String previous) {
         Assert.assertEquals(current, mv.getCurrentViewId());
         Assert.assertEquals(previous, mv.getPreviousViewId());
+    }
+
+    protected static CountlyStore getCountyStore() {
+        return new CountlyStore(getContext(), mock(ModuleLog.class), false);
+    }
+
+    protected static CountlyConfig getBaseConfig() {
+        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
+    }
+
+    /**
+     * Get current request queue from target folder
+     *
+     * @return array of request params
+     */
+    protected static Map<String, String>[] getCurrentRQ() {
+
+        //get all request files from target folder
+        String[] requests = getCountyStore().getRequests();
+        //create array of request params
+        Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
+
+        for (int i = 0; i < requests.length; i++) {
+
+            String[] params = requests[i].split("&");
+
+            Map<String, String> paramMap = new ConcurrentHashMap<>();
+            for (String param : params) {
+                String[] pair = param.split("=");
+                paramMap.put(UtilsNetworking.urlDecodeString(pair[0]), pair.length == 1 ? "" : UtilsNetworking.urlDecodeString(pair[1]));
+            }
+            resultMapArray[i] = paramMap;
+        }
+
+        return resultMapArray;
+    }
+
+    protected static Map<String, Object> map(Object... args) {
+        Map<String, Object> map = new ConcurrentHashMap<>();
+
+        if (args.length < 1) {
+            return map;
+        }
+
+        if (args.length % 2 != 0) {
+            return map;
+        }
+
+        for (int a = 0; a < args.length; a += 2) {
+            if (args[a] != null && args[a + 1] != null) {
+                map.put(args[a].toString(), args[a + 1]);
+            }
+        }
+        return map;
+    }
+
+    public static Context getContext() {
+        return ApplicationProvider.getApplicationContext();
     }
 }

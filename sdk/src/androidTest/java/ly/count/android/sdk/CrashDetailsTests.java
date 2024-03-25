@@ -10,8 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
-
 @RunWith(AndroidJUnit4.class)
 public class CrashDetailsTests {
 
@@ -29,8 +27,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
-
+        String cData = createCrashDataStr(errorText, nonfatal, isNativeCrash, null, null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
 
@@ -39,7 +36,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
+        String cData = createCrashDataStr(errorText, nonfatal, isNativeCrash, null, null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -49,8 +46,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError65756";
         boolean nonfatal = true;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
-
+        String cData = createCrashDataStr(errorText, nonfatal, isNativeCrash, null, null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
 
@@ -59,8 +55,7 @@ public class CrashDetailsTests {
         String errorText = "SomeErrorsh454353";
         boolean nonfatal = false;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
-
+        String cData = createCrashDataStr(errorText, nonfatal, isNativeCrash, null, null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
 
@@ -69,7 +64,7 @@ public class CrashDetailsTests {
         String errorText = "fsdfdsfFFFDD";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
+        String cData = createCrashDataStr(errorText, nonfatal, isNativeCrash, null, null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
         Assert.assertFalse(cData.contains("\"logs\":"));
 
@@ -87,7 +82,7 @@ public class CrashDetailsTests {
             DeviceInfo.addLog(s, 100, 100);
         }
 
-        String cData2 = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
+        String cData2 = createCrashDataStr(errorText, nonfatal, isNativeCrash, null, null);
         assertCrashData(cData2, errorText, nonfatal, isNativeCrash);
         Assert.assertTrue(cData2.contains("\"_logs\":"));
     }
@@ -97,13 +92,13 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, regularDeviceInfo, null);
+        String cData = createCrashDataStr(errorText, nonfatal, isNativeCrash, null, null);
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Map<String, Object> cSeg = TestUtils.createMapString(5);
 
-        String cData2 = regularDeviceInfo.getCrashDataString(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), cSeg, regularDeviceInfo, null);
+        String cData2 = createCrashDataStr(errorText, nonfatal, isNativeCrash, cSeg, null);
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Assert.assertTrue(cData2.contains("_custom"));
@@ -145,12 +140,12 @@ public class CrashDetailsTests {
         boolean nonfatal = true;
         boolean isNativeCrash = false;
 
-        JSONObject cData = regularDeviceInfo.getCrashDataStringJSON(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, null);
+        JSONObject cData = createCrashData(errorText, nonfatal, isNativeCrash, null, null);
         Assert.assertEquals(regularDeviceInfo.mp.getDevice(), cData.getString("_device"));
         Assert.assertEquals(regularDeviceInfo.mp.getOS(), cData.getString("_os"));
         Assert.assertEquals(regularDeviceInfo.mp.getOSVersion(), cData.getString("_os_version"));
-        Assert.assertEquals(regularDeviceInfo.mp.getResolution(getContext()), cData.getString("_resolution"));
-        Assert.assertEquals(regularDeviceInfo.mp.getAppVersion(getContext()), cData.getString("_app_version"));
+        Assert.assertEquals(regularDeviceInfo.mp.getResolution(TestUtils.getContext()), cData.getString("_resolution"));
+        Assert.assertEquals(regularDeviceInfo.mp.getAppVersion(TestUtils.getContext()), cData.getString("_app_version"));
         Assert.assertEquals(regularDeviceInfo.mp.getManufacturer(), cData.getString("_manufacturer"));
 
         Map<String, String> metricOverride = new HashMap<>();
@@ -163,7 +158,7 @@ public class CrashDetailsTests {
         metricOverride.put("_app_version", "r12");
         metricOverride.put("_manufacturer", "t12");
 
-        JSONObject cData2 = regularDeviceInfo.getCrashDataStringJSON(getContext(), errorText, nonfatal, isNativeCrash, DeviceInfo.getLogs(), null, metricOverride);
+        JSONObject cData2 = createCrashData(errorText, nonfatal, isNativeCrash, null, metricOverride);
         Assert.assertFalse(cData2.has("a"));
         Assert.assertFalse(cData2.has("a1"));
         Assert.assertEquals(metricOverride.get("_device"), cData2.getString("_device"));
@@ -174,7 +169,16 @@ public class CrashDetailsTests {
         Assert.assertEquals(metricOverride.get("_manufacturer"), cData2.getString("_manufacturer"));
     }
 
+    private JSONObject createCrashData(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
+        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal));
+    }
+
+    private String createCrashDataStr(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
+        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal)).toString();
+    }
+
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {
+        System.out.println(cData);
         Assert.assertTrue(cData.contains("\"_error\":\"" + error + "\""));
         Assert.assertTrue(cData.contains("\"_nonfatal\":\"" + nonfatal + "\""));
         Assert.assertTrue(cData.contains("\"_os\":\"Android\""));

@@ -56,9 +56,6 @@ public class EventTests {
         final Event event = new Event();
         assertNull(event.key);
         assertNull(event.segmentation);
-        assertNull(event.segmentationInt);
-        assertNull(event.segmentationDouble);
-        assertNull(event.segmentationBoolean);
         assertNull(event.id);
         assertNull(event.cvid);
         assertNull(event.peid);
@@ -79,9 +76,6 @@ public class EventTests {
         final Event event = new Event("abc", 123L, 5, 7);
         assertEquals("abc", event.key);
         assertNull(event.segmentation);
-        assertNull(event.segmentationInt);
-        assertNull(event.segmentationDouble);
-        assertNull(event.segmentationBoolean);
         assertNull(event.id);
         assertNull(event.cvid);
         assertNull(event.peid);
@@ -230,9 +224,6 @@ public class EventTests {
 
         if (!jsonObj.isNull(Event.SEGMENTATION_KEY)) {
             assertEquals(expectedEvent.segmentation, parsedEvent.segmentation);
-            assertEquals(expectedEvent.segmentationDouble, parsedEvent.segmentationDouble);
-            assertEquals(expectedEvent.segmentationInt, parsedEvent.segmentationInt);
-            assertEquals(expectedEvent.segmentationBoolean, parsedEvent.segmentationBoolean);
         }
 
         //finally compare to the given expected event
@@ -448,12 +439,9 @@ public class EventTests {
         expected.key = "eventKey";
         expected.segmentation = new HashMap<>();
         expected.segmentation.put("sk1", "vall");
-        expected.segmentationDouble = new HashMap<>();
-        expected.segmentationDouble.put("sk2", 334.33d);
-        expected.segmentationInt = new HashMap<>();
-        expected.segmentationInt.put("segkey", 1234);
-        expected.segmentationBoolean = new HashMap<>();
-        expected.segmentationBoolean.put("sk3", true);
+        expected.segmentation.put("sk2", 334.33d);
+        expected.segmentation.put("segkey", 1234);
+        expected.segmentation.put("sk3", true);
 
         final Map<Object, Object> valueMap = new HashMap<>();
         valueMap.put("segkey", 1234);
@@ -480,9 +468,6 @@ public class EventTests {
         final JSONObject jsonObj = event.toJSON();
 
         assertNull(event.segmentation);
-        assertNull(event.segmentationBoolean);
-        assertNull(event.segmentationInt);
-        assertNull(event.segmentationDouble);
 
         assertEquals(6, jsonObj.length());
         assertEquals(event.key, jsonObj.getString(Event.KEY_KEY));
@@ -507,9 +492,6 @@ public class EventTests {
         final Event event = new Event();
         event.key = "eventKey";
         event.segmentation = new HashMap<>();
-        event.segmentationBoolean = new HashMap<>();
-        event.segmentationInt = new HashMap<>();
-        event.segmentationDouble = new HashMap<>();
         final JSONObject jsonObj = event.toJSON();
 
         assertEquals(6, jsonObj.length());
@@ -542,13 +524,10 @@ public class EventTests {
         event.cvid = "cvid";
         event.peid = "peid";
         event.segmentation = new HashMap<>();
-        event.segmentationInt = new HashMap<>();
-        event.segmentationDouble = new HashMap<>();
-        event.segmentationBoolean = new HashMap<>();
         event.segmentation.put("segkey", "segvalue");
-        event.segmentationInt.put("segkey1", 123);
-        event.segmentationDouble.put("segkey2", 544.43d);
-        event.segmentationBoolean.put("segkey3", true);
+        event.segmentation.put("segkey1", 123);
+        event.segmentation.put("segkey2", 544.43d);
+        event.segmentation.put("segkey3", true);
         final JSONObject jsonObj = event.toJSON();
         assertEquals(11, jsonObj.length());
         assertEquals(event.key, jsonObj.getString(Event.KEY_KEY));
@@ -559,9 +538,9 @@ public class EventTests {
         assertEquals(event.sum, jsonObj.getDouble(Event.SUM_KEY), 0.0000001);
         assertEquals(4, jsonObj.getJSONObject(Event.SEGMENTATION_KEY).length());
         assertEquals(event.segmentation.get("segkey"), jsonObj.getJSONObject(Event.SEGMENTATION_KEY).getString("segkey"));
-        assertEquals(event.segmentationInt.get("segkey1").intValue(), jsonObj.getJSONObject(Event.SEGMENTATION_KEY).getInt("segkey1"));
-        assertEquals(event.segmentationDouble.get("segkey2"), jsonObj.getJSONObject(Event.SEGMENTATION_KEY).getDouble("segkey2"), 0.0001d);
-        assertEquals(event.segmentationBoolean.get("segkey3"), jsonObj.getJSONObject(Event.SEGMENTATION_KEY).getBoolean("segkey3"));
+        assertEquals(event.segmentation.get("segkey1"), jsonObj.getJSONObject(Event.SEGMENTATION_KEY).get("segkey1"));
+        assertEquals((Double) event.segmentation.get("segkey2"), jsonObj.getJSONObject(Event.SEGMENTATION_KEY).getDouble("segkey2"), 0.0001d);
+        assertEquals(event.segmentation.get("segkey3"), jsonObj.getJSONObject(Event.SEGMENTATION_KEY).getBoolean("segkey3"));
         assertEquals(event.id, jsonObj.getString(Event.ID_KEY));
         assertEquals(event.pvid, jsonObj.getString(Event.PV_ID_KEY));
         assertEquals(event.cvid, jsonObj.getString(Event.CV_ID_KEY));
@@ -586,59 +565,5 @@ public class EventTests {
         assertEquals(event.hour, jsonObj.getInt(Event.HOUR_KEY));
         assertEquals(event.dow, jsonObj.getInt(Event.DAY_OF_WEEK_KEY));
         assertTrue(jsonObj.isNull(Event.SUM_KEY));//this is 'null' because it was not added due to it being NaN
-    }
-
-    /**
-     * Validating 'fillInSegmentation'
-     * Making sure all data types are sorted correctly,
-     * and that the reminder is also filled appropriately
-     */
-    @Test
-    public void segmentationSorterFull() {
-        String[] keys = { "a", "b", "c", "d", "e", "f", "l", "r", "q", "w", "m" };
-
-        Map<String, Object> automaticViewSegmentation = new HashMap<>();
-
-        Object obj = new Object();
-        int[] arr = { 1, 2, 3 };
-
-        automaticViewSegmentation.put(keys[0], 2);
-        automaticViewSegmentation.put(keys[1], 12);
-        automaticViewSegmentation.put(keys[2], 123);
-        automaticViewSegmentation.put(keys[3], 4.44d);
-        automaticViewSegmentation.put(keys[4], "Six");
-        automaticViewSegmentation.put(keys[5], "asdSix");
-        automaticViewSegmentation.put(keys[6], false);
-        automaticViewSegmentation.put(keys[7], true);
-        automaticViewSegmentation.put(keys[8], obj);
-        automaticViewSegmentation.put(keys[9], arr);
-        automaticViewSegmentation.put(keys[10], 12.2f);
-
-        HashMap<String, String> segmentsString = new HashMap<>();
-        HashMap<String, Integer> segmentsInt = new HashMap<>();
-        HashMap<String, Double> segmentsDouble = new HashMap<>();
-        HashMap<String, Boolean> segmentsBoolean = new HashMap<>();
-        HashMap<String, Object> segmentsReminder = new HashMap<>();
-
-        Utils.fillInSegmentation(automaticViewSegmentation, segmentsString, segmentsInt, segmentsDouble, segmentsBoolean, segmentsReminder);
-
-        assertEquals(automaticViewSegmentation.size(), keys.length);
-        assertEquals(segmentsInt.size(), 3);
-        assertEquals(segmentsDouble.size(), 1);
-        assertEquals(segmentsString.size(), 2);
-        assertEquals(segmentsBoolean.size(), 2);
-        assertEquals(segmentsReminder.size(), 3);
-
-        assertEquals(segmentsInt.get(keys[0]).intValue(), 2);
-        assertEquals(segmentsInt.get(keys[1]).intValue(), 12);
-        assertEquals(segmentsInt.get(keys[2]).intValue(), 123);
-        assertEquals(segmentsDouble.get(keys[3]), 4.44d, 0.000_01);
-        assertEquals(segmentsString.get(keys[4]), "Six");
-        assertEquals(segmentsString.get(keys[5]), "asdSix");
-        assertEquals(segmentsBoolean.get(keys[6]), false);
-        assertEquals(segmentsBoolean.get(keys[7]), true);
-        assertEquals(segmentsReminder.get(keys[8]), obj);
-        assertEquals(segmentsReminder.get(keys[9]), arr);
-        assertEquals(segmentsReminder.get(keys[10]), 12.2f);
     }
 }

@@ -37,9 +37,9 @@ public class ModuleCrash extends ModuleBase {
 
         setCrashFilterCallback(config.crashFilterCallback);
 
-        recordAllThreads = config.recordAllThreadsWithCrash;
+        recordAllThreads = config.crashes.recordAllThreadsWithCrash;
 
-        setCustomCrashSegmentsInternal(config.customCrashSegment);
+        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment);
 
         metricOverride = config.metricOverride;
 
@@ -124,22 +124,22 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (customSegmentation != null) {
-            Utils.removeUnsupportedDataTypes(customSegmentation);
             combinedSegmentationValues.putAll(customSegmentation);
         }
-
-        //truncate crash segmentation
-        Utils.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         //limit the size of the crash report to 20k characters
         if (!isNativeCrash) {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
-        final String crashData;
-        crashData = deviceInfo.getCrashDataString(_cly.context_, error, nonfatal, isNativeCrash, DeviceInfo.getLogs(), combinedSegmentationValues, deviceInfo, metricOverride);
+        //truncate crash segmentation
+        UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
-        requestQueueProvider.sendCrashReport(crashData, nonfatal);
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsAsList(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
+
+        String crashDataString = deviceInfo.getCrashDataJSON(crashData).toString();
+        requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
     }
 
     /**
@@ -156,7 +156,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (segments != null) {
-            Utils.removeUnsupportedDataTypes(segments);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segments);
         }
         customCrashSegments = segments;
     }
@@ -310,12 +310,12 @@ public class ModuleCrash extends ModuleBase {
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         //enable unhandled crash reporting
-        if (config.enableUnhandledCrashReporting) {
+        if (config.crashes.enableUnhandledCrashReporting) {
             enableCrashReporting();
         }
 
         //check for previous native crash dumps
-        if (config.checkForNativeCrashDumps) {
+        if (config.crashes.checkForNativeCrashDumps) {
             //flag so that this can be turned off during testing
             _cly.moduleCrash.checkForNativeCrashDumps(config.context);
         }
