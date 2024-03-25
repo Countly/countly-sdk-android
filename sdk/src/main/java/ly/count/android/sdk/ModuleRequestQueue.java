@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONObject;
 
 public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
@@ -148,7 +147,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         int eventsInEventQueue = storageProvider.getEventQueueSize();
         L.v("[ModuleRequestQueue] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
 
-        if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= Countly.EVENT_QUEUE_SIZE_THRESHOLD) {
+        if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= _cly.EVENT_QUEUE_SIZE_THRESHOLD) {
             requestQueueProvider.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue());
         }
     }
