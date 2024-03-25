@@ -129,7 +129,7 @@ public class ModuleCrashTests {
         segm2.put("1", 1234);
         segm2.put("2", 1234.55d);
         segm2.put("3", true);
-        segm2.put("4", (double) 45.4f);
+        segm2.put("4", 45.4f);
 
         Assert.assertEquals(segm2, countly.moduleCrash.customCrashSegments);
     }
@@ -187,7 +187,7 @@ public class ModuleCrashTests {
         mCountly.crashes().addCrashBreadcrumb("Breadcrumb_3");
 
         String logs = DeviceInfo.getLogs();
-
+        
         Assert.assertEquals("Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", logs);
     }
 

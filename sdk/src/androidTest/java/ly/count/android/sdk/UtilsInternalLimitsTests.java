@@ -306,4 +306,17 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(345.33d, segm.get("3"));
         Assert.assertEquals(false, segm.get("4"));
     }
+
+    @Test
+    public void isSupportedDataType() {
+        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType("string"));
+        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123));
+        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123.33d));
+        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123.33f));
+        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(true));
+        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(false));
+        Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new Object()));
+        Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new int[] { 1, 2 }));
+        Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(null));
+    }
 }

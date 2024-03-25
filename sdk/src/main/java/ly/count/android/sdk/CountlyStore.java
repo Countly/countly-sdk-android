@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -717,27 +716,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             tsStart = UtilsTime.getNanoTime();
         }
 
-        Map<String, String> segmentationString = null;
-        Map<String, Integer> segmentationInt = null;
-        Map<String, Double> segmentationDouble = null;
-        Map<String, Boolean> segmentationBoolean = null;
-
-        if (segmentation != null && segmentation.size() > 0) {
-            segmentationString = new HashMap<>();
-            segmentationInt = new HashMap<>();
-            segmentationDouble = new HashMap<>();
-            segmentationBoolean = new HashMap<>();
-            Map<String, Object> segmentationReminder = new HashMap<>();
-
-            UtilsInternalLimits.fillInSegmentation(segmentation, segmentationString, segmentationInt, segmentationDouble, segmentationBoolean, segmentationReminder);
-        }
+        UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
 
         final Event event = new Event();
         event.key = key;
-        event.segmentation = segmentationString;
-        event.segmentationDouble = segmentationDouble;
-        event.segmentationInt = segmentationInt;
-        event.segmentationBoolean = segmentationBoolean;
+        event.segmentation = segmentation;
         event.timestamp = timestamp;
         event.hour = hour;
         event.dow = dow;
