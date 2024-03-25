@@ -170,22 +170,22 @@ public class CrashData {
         return changedFields;
     }
 
-    protected String getChangedFieldsAsString() {
+    protected int getChangedFieldsAsInt() {
         boolean[] changedFields = getChangedFields();
-        StringBuilder changedFieldsString = new StringBuilder();
-
-        for (boolean changedField : changedFields) {
-            changedFieldsString.append(changedField ? "1" : "0");
+        int result = 0;
+        for (int i = changedFields.length - 1; i >= 0; i--) {
+            if (changedFields[i]) {
+                result |= (1 << (changedFields.length - 1 - i));
+            }
         }
-
-        return changedFieldsString.toString();
+        return result;
     }
 
     private void calculateChecksums(@NonNull String[] checksums) {
         checksums[0] = UtilsNetworking.sha256Hash(stackTrace);
-        checksums[1] = UtilsNetworking.sha256Hash(crashSegmentation != null ? crashSegmentation.toString() : null);
-        checksums[2] = UtilsNetworking.sha256Hash(breadcrumbs != null ? breadcrumbs.toString() : null);
-        checksums[3] = UtilsNetworking.sha256Hash(crashMetrics != null ? crashMetrics.toString() : null);
+        checksums[1] = UtilsNetworking.sha256Hash(crashSegmentation != null ? crashSegmentation.toString() : "");
+        checksums[2] = UtilsNetworking.sha256Hash(breadcrumbs != null ? breadcrumbs.toString() : "");
+        checksums[3] = UtilsNetworking.sha256Hash(crashMetrics != null ? crashMetrics.toString() : "");
         checksums[4] = UtilsNetworking.sha256Hash(fatal + "");
     }
 }

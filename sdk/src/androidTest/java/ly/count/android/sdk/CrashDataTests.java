@@ -276,14 +276,16 @@ public class CrashDataTests {
         Assert.assertEquals(crashData.getChangedFields()[2], breadcrumbsChanged);
         Assert.assertEquals(crashData.getChangedFields()[3], crashMetricsChanged);
         Assert.assertEquals(crashData.getChangedFields()[4], fatalChanged);
-        Assert.assertEquals(crashData.getChangedFieldsAsString(), getChangedFieldsAsString(new boolean[] { stackTraceChanged, crashSegmentationChanged, breadcrumbsChanged, crashMetricsChanged, fatalChanged }));
+        Assert.assertEquals(crashData.getChangedFieldsAsInt(), getChangedFieldsAsInt(new boolean[] { stackTraceChanged, crashSegmentationChanged, breadcrumbsChanged, crashMetricsChanged, fatalChanged }));
     }
 
-    private String getChangedFieldsAsString(boolean[] changedFields) {
-        StringBuilder changedFieldsString = new StringBuilder();
-        for (boolean changedField : changedFields) {
-            changedFieldsString.append(changedField ? "1" : "0");
+    private int getChangedFieldsAsInt(boolean[] changedFields) {
+        int result = 0;
+        for (int i = changedFields.length - 1; i >= 0; i--) {
+            if (changedFields[i]) {
+                result |= (1 << (changedFields.length - 1 - i));
+            }
         }
-        return changedFieldsString.toString();
+        return result;
     }
 }

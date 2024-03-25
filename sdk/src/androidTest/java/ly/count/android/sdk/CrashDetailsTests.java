@@ -170,11 +170,11 @@ public class CrashDetailsTests {
     }
 
     private JSONObject createCrashData(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
-        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal));
+        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal), isNativeCrash);
     }
 
     private String createCrashDataStr(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
-        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal)).toString();
+        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal), isNativeCrash).toString();
     }
 
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {
