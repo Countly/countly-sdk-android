@@ -42,7 +42,7 @@ public class DeviceIdTests {
      */
     @Test(expected = IllegalStateException.class)
     public void constructorCustom_fail_1() {
-        new DeviceId("", store, mock(ModuleLog.class), null);
+        new DeviceId("", store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
     }
 
     /**
@@ -51,7 +51,7 @@ public class DeviceIdTests {
      */
     @Test
     public void temporaryIdModeEnabled_1() {
-        DeviceId did = new DeviceId("dsd", store, mock(ModuleLog.class), null);
+        DeviceId did = new DeviceId("dsd", store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertFalse(did.isTemporaryIdModeEnabled());
 
         did.setId(DeviceIdType.OPEN_UDID, DeviceId.temporaryCountlyDeviceId);
@@ -81,7 +81,7 @@ public class DeviceIdTests {
      */
     @Test
     public void temporaryIdModeEnabled_2() {
-        DeviceId did2 = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
+        DeviceId did2 = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertTrue(did2.isTemporaryIdModeEnabled());
 
         //todo needs more work
@@ -92,10 +92,10 @@ public class DeviceIdTests {
      */
     @Test
     public void getType() {
-        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, new DeviceId("dsd", store, mock(ModuleLog.class), null).getType());
+        assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, new DeviceId("dsd", store, mock(ModuleLog.class), mock(OpenUDIDProvider.class)).getType());
         store.clear();
 
-        assertEquals(DeviceIdType.TEMPORARY_ID, new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null).getType());
+        assertEquals(DeviceIdType.TEMPORARY_ID, new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), mock(OpenUDIDProvider.class)).getType());
         store.clear();
 
         assertEquals(DeviceIdType.OPEN_UDID, new DeviceId(null, store, mock(ModuleLog.class), new OpenUDIDProvider() {
@@ -111,12 +111,12 @@ public class DeviceIdTests {
      */
     @Test
     public void getId() {
-        DeviceId did1 = new DeviceId("abc", store, mock(ModuleLog.class), null);
+        DeviceId did1 = new DeviceId("abc", store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertEquals("abc", did1.getCurrentId());
 
         store.clear();
 
-        DeviceId did2 = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
+        DeviceId did2 = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertEquals(DeviceId.temporaryCountlyDeviceId, did2.getCurrentId());
 
         store.clear();
@@ -131,7 +131,7 @@ public class DeviceIdTests {
      */
     @Test
     public void changeToCustomIdAndEnterTempIDMode() {
-        DeviceId did = new DeviceId("abc", store, mock(ModuleLog.class), null);
+        DeviceId did = new DeviceId("abc", store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
@@ -158,19 +158,19 @@ public class DeviceIdTests {
     public void initWithDifferentValuesStartingDevID() {
         store.clear();
 
-        DeviceId did = new DeviceId("abc", store, mock(ModuleLog.class), null);
+        DeviceId did = new DeviceId("abc", store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did = new DeviceId("123", store, mock(ModuleLog.class), null);
+        did = new DeviceId("123", store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did = new DeviceId(null, store, mock(ModuleLog.class), null);
+        did = new DeviceId(null, store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
 
-        did = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), null);
+        did = new DeviceId(DeviceId.temporaryCountlyDeviceId, store, mock(ModuleLog.class), mock(OpenUDIDProvider.class));
         assertEquals("abc", did.getCurrentId());
         assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, did.getType());
     }
