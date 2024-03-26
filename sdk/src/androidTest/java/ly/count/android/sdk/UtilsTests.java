@@ -30,20 +30,20 @@ public class UtilsTests {
 
     @Test
     public void isEmpty() {
-        Assert.assertTrue(Utils.isEmpty(""));
-        Assert.assertTrue(Utils.isEmpty(null));
+        Assert.assertTrue(Utils.isNullOrEmpty(""));
+        Assert.assertTrue(Utils.isNullOrEmpty(null));
 
-        Assert.assertFalse(Utils.isEmpty("aa"));
-        Assert.assertFalse(Utils.isEmpty("1123āšē"));
+        Assert.assertFalse(Utils.isNullOrEmpty("aa"));
+        Assert.assertFalse(Utils.isNullOrEmpty("1123āšē"));
     }
 
     @Test
     public void isNotEmpty() {
-        Assert.assertFalse(Utils.isNotEmpty(""));
-        Assert.assertFalse(Utils.isNotEmpty(null));
+        Assert.assertFalse(Utils.isNotNullOrEmpty(""));
+        Assert.assertFalse(Utils.isNotNullOrEmpty(null));
 
-        Assert.assertTrue(Utils.isNotEmpty("aa"));
-        Assert.assertTrue(Utils.isNotEmpty("1123āšē"));
+        Assert.assertTrue(Utils.isNotNullOrEmpty("aa"));
+        Assert.assertTrue(Utils.isNotNullOrEmpty("1123āšē"));
     }
 
     /**

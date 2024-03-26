@@ -31,7 +31,11 @@ class MigrationHelper {
 
     public static final String legacyCACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
 
-    public MigrationHelper(StorageProvider storage, ModuleLog moduleLog, Context context) {
+    public MigrationHelper(@NonNull StorageProvider storage, @NonNull ModuleLog moduleLog, @NonNull Context context) {
+        assert storage != null;
+        assert moduleLog != null;
+        assert context != null;
+
         this.storage = storage;
         L = moduleLog;
         cachedContext = context;
@@ -42,10 +46,13 @@ class MigrationHelper {
      * Called from SDK side to perform the required steps to check if the migration is required and then execute it if it is.
      */
     public void doWork(@NonNull Map<String, Object> migrationParams) {
+        assert migrationParams != null;
         assert !migrationParams.isEmpty();
 
         int currentVersion = getCurrentSchemaVersion();
         L.v("[MigrationHelper] doWork, current version:[" + currentVersion + "]");
+
+        assert currentVersion >= 0;
 
         if (currentVersion < 0) {
             L.e("[MigrationHelper] doWork, returned schema version is negative, encountered serious issue");
@@ -85,6 +92,7 @@ class MigrationHelper {
     void performMigrationStep(int currentVersion, @NonNull Map<String, Object> migrationParams) {
         assert currentVersion >= 0;
         assert currentVersion <= DATA_SCHEMA_VERSIONS;
+        assert migrationParams != null;
 
         int newVersion = currentVersion;
 

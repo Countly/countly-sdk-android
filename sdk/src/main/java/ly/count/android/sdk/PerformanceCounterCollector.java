@@ -20,8 +20,8 @@ public class PerformanceCounterCollector {
     }
 
     public void TrackCounter(String key, double value) {
-        assert Utils.isNotEmpty(key);
-        
+        assert Utils.isNotNullOrEmpty(key);
+
         if (value < 0) {
             Log.w("Countly", "Problem, we should only log positive values");
         }
