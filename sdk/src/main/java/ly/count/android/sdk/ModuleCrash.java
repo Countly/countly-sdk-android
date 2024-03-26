@@ -31,6 +31,8 @@ public class ModuleCrash extends ModuleBase {
     @Nullable
     Map<String, String> metricOverride = null;
 
+    BreadcrumbHelper breadcrumbHelper;
+
     ModuleCrash(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
@@ -44,6 +46,9 @@ public class ModuleCrash extends ModuleBase {
         metricOverride = config.metricOverride;
 
         crashesInterface = new Crashes();
+        breadcrumbHelper = new BreadcrumbHelper(config.sdkInternalLimits.maxBreadcrumbCount, L);
+
+        assert breadcrumbHelper != null;
     }
 
     /**
@@ -136,9 +141,9 @@ public class ModuleCrash extends ModuleBase {
         UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
         UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsAsList(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
-
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
         String crashDataString = deviceInfo.getCrashDataJSON(crashData).toString();
+
         requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
     }
 
@@ -299,11 +304,11 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (breadcrumb == null || breadcrumb.isEmpty()) {
-            L.e("[Crashes] Can't add a null or empty crash breadcrumb");
+            L.w("[ModuleCrash] addBreadcrumbInternal, Can't add a null or empty crash breadcrumb");
             return _cly;
         }
 
-        DeviceInfo.addLog(breadcrumb, _cly.config_.sdkInternalLimits.maxBreadcrumbCount, _cly.config_.sdkInternalLimits.maxValueSize);
+        breadcrumbHelper.addBreadcrumb(breadcrumb, _cly.config_.sdkInternalLimits.maxValueSize);
         return _cly;
     }
 

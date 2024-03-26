@@ -47,8 +47,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -62,8 +60,6 @@ import org.json.JSONObject;
  * the current device and operating environment.
  */
 class DeviceInfo {
-    //crash related fields
-    private static final LinkedList<String> logs = new LinkedList<>();
     private final static int startTime = UtilsTime.currentTimestampSeconds();
     private boolean inBackground = true;
     private static long totalMemory = 0;
@@ -787,44 +783,6 @@ class DeviceInfo {
      */
     String isInBackground() {
         return Boolean.toString(inBackground);
-    }
-
-    /**
-     * Adds a record in the log
-     */
-    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
-        int recordLength = record.length();
-        if (recordLength > maxBreadcrumbLength) {
-            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbLength + "]");
-            record = record.substring(0, maxBreadcrumbLength);
-        }
-
-        logs.add(record);
-
-        if (logs.size() > maxBreadcrumbCount) {
-            Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
-            logs.removeFirst();
-        }
-    }
-
-    /**
-     * Returns the collected logs.
-     */
-    @NonNull
-    static String getLogs() {
-        StringBuilder allLogs = new StringBuilder();
-
-        for (String s : logs) {
-            allLogs.append(s).append("\n");
-        }
-        logs.clear();
-        return allLogs.toString();
-    }
-
-    static @NonNull List<String> getLogsAsList() {
-        List<String> logsGonna = new LinkedList<>(DeviceInfo.logs);
-        logs.clear();
-        return logsGonna;
     }
 
     /**
