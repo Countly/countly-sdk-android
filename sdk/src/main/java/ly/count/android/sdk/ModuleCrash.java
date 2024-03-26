@@ -47,6 +47,8 @@ public class ModuleCrash extends ModuleBase {
 
         crashesInterface = new Crashes();
         breadcrumbHelper = new BreadcrumbHelper(config.sdkInternalLimits.maxBreadcrumbCount, L);
+
+        assert breadcrumbHelper != null;
     }
 
     /**
@@ -298,6 +300,11 @@ public class ModuleCrash extends ModuleBase {
 
     Countly addBreadcrumbInternal(@Nullable String breadcrumb) {
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
+            return _cly;
+        }
+
+        if (breadcrumb == null || breadcrumb.isEmpty()) {
+            L.w("[ModuleCrash] addBreadcrumbInternal, Can't add a null or empty crash breadcrumb");
             return _cly;
         }
 

@@ -12,11 +12,18 @@ public class BreadcrumbHelper {
     private final @NonNull ModuleLog L;
 
     protected BreadcrumbHelper(int maxBreadcrumbs, @NonNull ModuleLog L) {
+        assert maxBreadcrumbs > 0;
+        assert L != null;
+
         this.maxBreadcrumbs = maxBreadcrumbs;
         this.L = L;
     }
 
     protected void addBreadcrumb(@NonNull String breadcrumb, int valueSize) { // TODO when valuesize limit added delete this from here
+        assert breadcrumb != null;
+        assert !breadcrumb.isEmpty();
+        assert valueSize > 0;
+
         if (breadcrumb == null || breadcrumb.isEmpty()) {
             L.e("[BreadcrumbHelper] addBreadcrumb, Can't add a null or empty crash breadcrumb");
             return;
@@ -32,6 +39,8 @@ public class BreadcrumbHelper {
             logs.removeFirst();
         }
         logs.add(breadcrumb);
+
+        assert logs.size() <= maxBreadcrumbs;
     }
 
     protected @NonNull List<String> getBreadcrumbs() {

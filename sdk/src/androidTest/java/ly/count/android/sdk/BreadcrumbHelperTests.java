@@ -21,31 +21,7 @@ public class BreadcrumbHelperTests {
         breadcrumbHelper.addBreadcrumb("test", 10);
         Assert.assertEquals(list("test"), breadcrumbHelper.getBreadcrumbs());
     }
-
-    /**
-     * "addBreadcrumb" with empty string
-     * should not add an empty string to the breadcrumb list.
-     */
-    @Test
-    public void addBreadcrumb_emptyString() {
-        BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("Test", 10);
-        breadcrumbHelper.addBreadcrumb("", 10);
-        Assert.assertEquals(list("Test"), breadcrumbHelper.getBreadcrumbs());
-    }
-
-    /**
-     * "addBreadcrumb" with null
-     * should not add a null string to the breadcrumb list.
-     */
-    @Test
-    public void addBreadcrumb_null() {
-        BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("Test", 10);
-        breadcrumbHelper.addBreadcrumb(null, 10);
-        Assert.assertEquals(list("Test"), breadcrumbHelper.getBreadcrumbs());
-    }
-
+    
     /**
      * "addBreadcrumb" with a string that exceeds the character limit
      * should add the string to the breadcrumb list, but only the first n characters.

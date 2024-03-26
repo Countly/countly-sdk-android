@@ -198,6 +198,26 @@ public class ModuleCrashTests {
     }
 
     @Test
+    public void addCrashBreadcrumbNullEmpty() throws JSONException {
+        TestUtils.getCountyStore().clear();
+
+        Countly countly = new Countly().init(TestUtils.getBaseConfig());
+
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_4");
+        countly.crashes().addCrashBreadcrumb(null);
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_5");
+        countly.crashes().addCrashBreadcrumb("");
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_6");
+
+        Throwable throwable = new Throwable("Some message");
+        countly.crashes().recordUnhandledException(throwable);
+
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(1, RQ.length);
+        validateCrash(extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", false);
+    }
+
+    @Test
     public void recordHandledExceptionException() {
         Exception exception = new Exception("Some message");
 
