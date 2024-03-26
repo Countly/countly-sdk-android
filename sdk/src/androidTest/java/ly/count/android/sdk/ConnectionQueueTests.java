@@ -489,7 +489,7 @@ public class ConnectionQueueTests {
                         break;
                     case "sdk_version":
                         if (a == 0) {
-                            assertEquals("24.1.1", pair[1]);
+                            assertEquals("24.1.2-RC1", pair[1]);
                         } else {
                             assertEquals("123sdf.v-213", pair[1]);
                         }

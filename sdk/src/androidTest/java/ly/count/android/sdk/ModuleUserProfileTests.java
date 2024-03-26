@@ -73,7 +73,7 @@ public class ModuleUserProfileTests {
         assertEquals(0, store.getRequests().length);
 
         mCountly.events().recordEvent("a");
-        assertEquals(1, store.getEvents().length);
+        assertEquals(1, store.getEvents().length);//todo test fails with this being 0
         assertEquals(0, store.getRequests().length);
 
         mCountly.userProfile().setProperty("name", "Test Test");

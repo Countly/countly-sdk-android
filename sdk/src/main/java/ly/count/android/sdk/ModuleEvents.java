@@ -65,6 +65,11 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param eventIdOverride
      */
     public void recordEventInternal(@NonNull final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
+        Long pccTsStartRecordEventInternal = 0L;
+        if (pcc != null) {
+            pccTsStartRecordEventInternal = UtilsTime.getNanoTime();
+        }
+
         L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
             throw new IllegalArgumentException("Valid Countly event key is required");
@@ -111,6 +116,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             pvid = viewIdProvider.getPreviousViewId();
         } else {
             cvid = viewIdProvider.getCurrentViewId();
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ModuleEvents_recordEventInternalGenID", UtilsTime.getNanoTime() - pccTsStartRecordEventInternal);
         }
 
         switch (key) {
@@ -160,6 +169,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ModuleEvents_recordEventInternal", UtilsTime.getNanoTime() - pccTsStartRecordEventInternal);
         }
     }
 

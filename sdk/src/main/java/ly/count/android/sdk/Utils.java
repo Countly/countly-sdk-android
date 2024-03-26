@@ -52,6 +52,75 @@ public class Utils {
         return builder.toString();
     }
 
+    static String joinCountlyStore_reworked(@NonNull final List<String> collection, @NonNull final String delimiter) {
+        return joinCountlyStore_reworked(collection, delimiter, 0);
+    }
+
+    /**
+     * Joins all the strings in the specified collection into a single string with the specified delimiter.
+     * Used in countlyStore
+     * todo: Add tests for this
+     */
+    static String joinCountlyStore_reworked(@NonNull final List<String> collection, @NonNull final String delimiter, int startingEntry) {
+        int cSize = collection.size();
+        int targetCapacity;
+        if (cSize == 0) {
+            targetCapacity = 0;
+        } else if (cSize == 1) {
+            targetCapacity = cSize * collection.get(0).length();
+        } else {
+            targetCapacity = cSize * collection.get(0).length() + (cSize * delimiter.length());
+        }
+
+        final StringBuilder builder = new StringBuilder(targetCapacity);
+
+        int i = startingEntry;
+        for (int a = startingEntry; a < cSize; a++) {
+            builder.append(collection.get(a));
+            if (++i < cSize) {
+                builder.append(delimiter);
+            }
+        }
+
+        return builder.toString();
+    }
+
+    static String joinCountlyStoreArray_reworked(@NonNull final String[] collection, @NonNull final String delimiter) {
+        return joinCountlyStoreArray_reworked(collection, delimiter, 0);
+    }
+
+    /**
+     * todo: Add tests for this
+     *
+     * @param collection
+     * @param delimiter
+     * @param startingEntry
+     * @return
+     */
+    static String joinCountlyStoreArray_reworked(@NonNull final String[] collection, @NonNull final String delimiter, int startingEntry) {
+        int cSize = collection.length;
+        int targetCapacity;
+        if (cSize == 0) {
+            targetCapacity = 0;
+        } else if (cSize == 1) {
+            targetCapacity = cSize * collection[0].length();
+        } else {
+            targetCapacity = cSize * collection[0].length() + (cSize * delimiter.length());
+        }
+
+        final StringBuilder builder = new StringBuilder(targetCapacity);
+
+        int i = startingEntry;
+        for (int a = startingEntry; a < cSize; a++) {
+            builder.append(collection[a]);
+            if (++i < cSize) {
+                builder.append(delimiter);
+            }
+        }
+
+        return builder.toString();
+    }
+
     /**
      * StringUtils.isEmpty replacement.
      *

@@ -226,6 +226,11 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * Send request data after removing the predefined keys
      */
     synchronized public void addDirectRequestInternal(@NonNull Map<String, String> requestMap) {
+        Long pccTsStartAddDirectRequest = 0L;
+        if (pcc != null) {
+            pccTsStartAddDirectRequest = UtilsTime.getNanoTime();
+        }
+
         L.i("[ModuleRequestQueue] Calling addDirectRequestInternal");
         if (!_cly.isInitialized()) {
             L.e("Countly.sharedInstance().init must be called before adding direct request, returning");
@@ -275,6 +280,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
             L.w("[ModuleRequestQueue] addDirectRequest, [" + delta + "] restricted keys are removed");
         }
         requestQueueProvider.sendDirectRequest(filteredRequestMap);
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ModuleRequestQueue_addDirectRequestInternal", UtilsTime.getNanoTime() - pccTsStartAddDirectRequest);
+        }
     }
 
     void esWriteCachesToPersistenceInternal(@Nullable ExplicitStorageCallback callback) {
