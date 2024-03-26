@@ -70,8 +70,15 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         try {
             List<String> filteredRequests = new ArrayList<>();
 
-            if (storedRequests == null || targetAppKey == null) {
+            if (storedRequests == null) {
                 //early abort
+                L.w("[ModuleRequestQueue] requestQueueReplaceWithAppKey, stopping replacing due to stored requests being 'null'");
+                return filteredRequests;
+            }
+
+            if (targetAppKey == null || targetAppKey.isEmpty()) {
+                //early abort
+                L.w("[ModuleRequestQueue] requestQueueReplaceWithAppKey, stopping replacing due to target app key being 'null' or empty string");
                 return filteredRequests;
             }
 
