@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -26,6 +25,9 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
 
     @Override
     public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, InternalImmediateRequestCallback callback, ModuleLog log) {
+        assert Utils.isNotEmpty(requestData);
+        assert cp != null;
+
         this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
     }
 

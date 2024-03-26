@@ -13,12 +13,18 @@ public class UtilsTime {
         public final int dow; //0-Sunday, 1-Monday, 2-Tuesday, 3-Wednesday, 4-Thursday, 5-Friday, 6-Saturday
 
         protected Instant(long timestampInMillis, int hour, int dow) {
+            //assert timestampInMillis >= 0L;
+            //assert hour >= 0 && hour <= 23;
+            //assert dow >= 0 && dow <= 6;
+
             this.timestampMs = timestampInMillis;
             this.hour = hour;
             this.dow = dow;
         }
 
         public static Instant get(long timestampInMillis) {
+            //assert timestampInMillis >= 0L;
+
             if (timestampInMillis < 0L) {
                 throw new IllegalArgumentException("timestampInMillis must be greater than or equal to zero");
             }

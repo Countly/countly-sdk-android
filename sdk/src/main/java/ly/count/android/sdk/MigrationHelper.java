@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
@@ -43,6 +42,8 @@ class MigrationHelper {
      * Called from SDK side to perform the required steps to check if the migration is required and then execute it if it is.
      */
     public void doWork(@NonNull Map<String, Object> migrationParams) {
+        assert !migrationParams.isEmpty();
+
         int currentVersion = getCurrentSchemaVersion();
         L.v("[MigrationHelper] doWork, current version:[" + currentVersion + "]");
 
@@ -82,6 +83,9 @@ class MigrationHelper {
      * @param currentVersion
      */
     void performMigrationStep(int currentVersion, @NonNull Map<String, Object> migrationParams) {
+        assert currentVersion >= 0;
+        assert currentVersion <= DATA_SCHEMA_VERSIONS;
+
         int newVersion = currentVersion;
 
         switch (currentVersion) {

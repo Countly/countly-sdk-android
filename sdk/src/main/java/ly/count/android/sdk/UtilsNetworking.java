@@ -10,6 +10,8 @@ public class UtilsNetworking {
     final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
     protected static String urlEncodeString(String givenValue) {
+        //assert Utils.isNotEmpty(givenValue);
+
         String result = "";
 
         try {
@@ -22,6 +24,8 @@ public class UtilsNetworking {
     }
 
     protected static String encodedArrayBuilder(String[] args) {
+        //assert args != null && args.length > 0;
+
         StringBuilder encodedUrlBuilder = new StringBuilder();
 
         encodedUrlBuilder.append("[");
@@ -39,6 +43,8 @@ public class UtilsNetworking {
     }
 
     protected static String urlDecodeString(String givenValue) {
+        //assert Utils.isNotEmpty(givenValue);
+
         String decodedResult = "";
 
         try {
@@ -51,6 +57,8 @@ public class UtilsNetworking {
     }
 
     protected static String sha256Hash(String toHash) {
+        //assert Utils.isNotEmpty(toHash);
+
         String hash = null;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -73,6 +81,8 @@ public class UtilsNetworking {
      * @return hex string of the byte array in lower case
      */
     public static String bytesToHex(byte[] bytes) {
+        //assert bytes != null && bytes.length > 0;
+
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
             int v = bytes[j] & 0xFF;
@@ -87,6 +97,8 @@ public class UtilsNetworking {
      */
     @SuppressWarnings("ConstantConditions")
     static boolean isValidURL(final String urlStr) {
+        //assert Utils.isNotEmpty(urlStr);
+
         boolean validURL = false;
         if (urlStr != null && urlStr.length() > 0) {
             try {
