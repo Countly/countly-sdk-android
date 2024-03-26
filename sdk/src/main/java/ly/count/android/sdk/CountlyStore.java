@@ -315,7 +315,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         final String joinedConnStr = storageReadRequestQueue();
-        L.v("[CountlyStore] getRequests, size:" + joinedConnStr.length());
+        //L.v("[CountlyStore] getRequests, size:" + joinedConnStr.length());
 
         String[] ret = joinedConnStr.length() == 0 ? new String[0] : joinedConnStr.split(DELIMITER);
 
@@ -509,6 +509,24 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
     }
 
+    synchronized void deleteOldestRequest_reworked() {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.getNanoTime();
+        }
+
+        //todo rework to not need an array and joining by removing the first substring until the delimiter
+        String[] requests = getRequests();
+
+        L.i("[CountlyStore] deleteOldestRequest, Will remove the oldest request");
+
+        storageWriteRequestQueue(Utils.joinCountlyStoreArray_reworked(requests, DELIMITER, 1), false);
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("CountlyStore_deleteOldestRequest", UtilsTime.getNanoTime() - tsStart);
+        }
+    }
+
     /**
      * Removes too old requests from the queue:
      * 1. Checks if there is a request age limit set
@@ -595,6 +613,21 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         if (newRequests != null) {
             final List<String> requests = new ArrayList<>(Arrays.asList(newRequests));
             replaceRequestList(requests);
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("CountlyStore_replaceRequests", UtilsTime.getNanoTime() - tsStart);
+        }
+    }
+
+    public synchronized void replaceRequests_reworked(@NonNull final String[] newRequests) {
+        long tsStart = 0L;
+        if (pcc != null) {
+            tsStart = UtilsTime.getNanoTime();
+        }
+
+        if (newRequests != null) {
+            storageWriteRequestQueue(Utils.joinCountlyStoreArray_reworked(newRequests, DELIMITER), false);
         }
 
         if (pcc != null) {

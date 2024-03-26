@@ -21,6 +21,8 @@ abstract class ModuleBase {
 
     DeviceInfo deviceInfo;
 
+    PerformanceCounterCollector pcc;
+
     ModuleBase(@NonNull Countly cly, @NonNull CountlyConfig config) {
         _cly = cly;
         L = cly.L;
@@ -35,6 +37,8 @@ abstract class ModuleBase {
         healthTracker = config.healthTracker;
 
         deviceInfo = config.deviceInfo;
+
+        pcc = config.pcc;
     }
 
     void halt() {
