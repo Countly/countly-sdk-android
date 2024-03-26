@@ -17,6 +17,11 @@ public class CrashData {
     private final String[] checksums = new String[5];
 
     public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
+        assert stackTrace != null;
+        assert crashSegmentation != null;
+        assert breadcrumbs != null;
+        assert crashMetrics != null;
+
         this.stackTrace = stackTrace;
         this.crashSegmentation = crashSegmentation;
         this.breadcrumbs = breadcrumbs;
@@ -32,6 +37,7 @@ public class CrashData {
      * @return the stack trace of the crash.
      */
     public @NonNull String getStackTrace() {
+        assert stackTrace != null;
         return stackTrace;
     }
 
@@ -52,6 +58,7 @@ public class CrashData {
      * @return crash as a JSONObject instance
      */
     public @NonNull JSONObject getCrashMetrics() {
+        assert crashMetrics != null;
         return crashMetrics;
     }
 
@@ -90,9 +97,8 @@ public class CrashData {
      * @return the breadcrumbs of the crash.
      */
     protected @NonNull String getBreadcrumbsAsString() {
-        if (breadcrumbs == null) {
-            return "";
-        }
+        assert breadcrumbs != null;
+
         StringBuilder breadcrumbsString = new StringBuilder();
 
         for (String breadcrumb : breadcrumbs) {
@@ -108,6 +114,7 @@ public class CrashData {
      * @return the segmentation of the crash.
      */
     public @NonNull Map<String, Object> getCrashSegmentation() {
+        assert crashSegmentation != null;
         return crashSegmentation;
     }
 
@@ -128,6 +135,7 @@ public class CrashData {
      * @return the breadcrumbs of the crash.
      */
     public @NonNull List<String> getBreadcrumbs() {
+        assert breadcrumbs != null;
         return breadcrumbs;
     }
 
@@ -157,6 +165,9 @@ public class CrashData {
      * @return the checksums of the crash data.
      */
     protected @NonNull boolean[] getChangedFields() {
+        assert checksums != null;
+        assert checksums.length == 5;
+
         boolean[] changedFields = new boolean[5];
         String[] checksumsNew = new String[5];
         calculateChecksums(checksumsNew);
@@ -170,11 +181,18 @@ public class CrashData {
         return changedFields;
     }
 
-    private void calculateChecksums(@NonNull String[] checksums) {
-        checksums[0] = UtilsNetworking.sha256Hash(stackTrace);
-        checksums[1] = UtilsNetworking.sha256Hash(crashSegmentation != null ? crashSegmentation.toString() : null);
-        checksums[2] = UtilsNetworking.sha256Hash(breadcrumbs != null ? breadcrumbs.toString() : null);
-        checksums[3] = UtilsNetworking.sha256Hash(crashMetrics != null ? crashMetrics.toString() : null);
-        checksums[4] = UtilsNetworking.sha256Hash(fatal + "");
+    private void calculateChecksums(@NonNull String[] checksumArrayToSet) {
+        assert checksumArrayToSet != null;
+        assert checksumArrayToSet.length == 5;
+        assert stackTrace != null;
+        assert crashSegmentation != null;
+        assert breadcrumbs != null;
+        assert crashMetrics != null;
+
+        checksumArrayToSet[0] = UtilsNetworking.sha256Hash(stackTrace);
+        checksumArrayToSet[1] = UtilsNetworking.sha256Hash(crashSegmentation != null ? crashSegmentation.toString() : null);
+        checksumArrayToSet[2] = UtilsNetworking.sha256Hash(breadcrumbs != null ? breadcrumbs.toString() : null);
+        checksumArrayToSet[3] = UtilsNetworking.sha256Hash(crashMetrics != null ? crashMetrics.toString() : null);
+        checksumArrayToSet[4] = UtilsNetworking.sha256Hash(fatal + "");
     }
 }

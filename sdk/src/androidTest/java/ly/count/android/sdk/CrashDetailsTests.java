@@ -1,6 +1,9 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +31,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, null, null, null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -38,7 +41,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, null, null, null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -48,7 +51,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError65756";
         boolean nonfatal = true;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, null, null, null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -58,7 +61,7 @@ public class CrashDetailsTests {
         String errorText = "SomeErrorsh454353";
         boolean nonfatal = false;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, null, null, null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -68,13 +71,13 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, TestUtils.createMapString(5), null, null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, TestUtils.createMapString(5), new ArrayList<>(), null, isNativeCrash)).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Map<String, Object> cSeg = TestUtils.createMapString(5);
 
-        String cData2 = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, cSeg, null, null, isNativeCrash)).toString();
+        String cData2 = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, cSeg, new ArrayList<>(), null, isNativeCrash)).toString();
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Assert.assertTrue(cData2.contains("_custom"));
@@ -104,7 +107,7 @@ public class CrashDetailsTests {
         }
     }
 
-    private CrashData createCrashData(String errorText, boolean nonfatal, Map<String, Object> crashSegmentation, List<String> breadcrumbs, Map<String, String> metricOverride, boolean isNativeCrash) {
+    private CrashData createCrashData(String errorText, boolean nonfatal, Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @Nullable Map<String, String> metricOverride, boolean isNativeCrash) {
         return new CrashData(errorText, crashSegmentation, breadcrumbs, regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal);
     }
 

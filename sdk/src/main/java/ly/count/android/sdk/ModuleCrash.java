@@ -119,7 +119,7 @@ public class ModuleCrash extends ModuleBase {
         sendCrashReportToQueue(dumpString, false, true, null);
     }
 
-    public void sendCrashReportToQueue(String error, boolean nonfatal, boolean isNativeCrash, @Nullable final Map<String, Object> customSegmentation) {
+    public void sendCrashReportToQueue(@NonNull String error, boolean nonfatal, boolean isNativeCrash, @Nullable final Map<String, Object> customSegmentation) {
         L.d("[ModuleCrash] sendCrashReportToQueue");
 
         Map<String, Object> combinedSegmentationValues = new HashMap<>();
@@ -254,12 +254,8 @@ public class ModuleCrash extends ModuleBase {
      * @param itIsHandled If the exception is handled or not (fatal)
      * @return Returns link to Countly for call chaining
      */
-    Countly recordExceptionInternal(final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
+    Countly recordExceptionInternal(@Nullable final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
         L.i("[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
-
-        if (!_cly.isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recording exceptions");
-        }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return _cly;
@@ -267,7 +263,6 @@ public class ModuleCrash extends ModuleBase {
 
         if (exception == null) {
             L.d("[ModuleCrash] recordException, provided exception was null, returning");
-
             return _cly;
         }
 
