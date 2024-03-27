@@ -201,9 +201,9 @@ public class CrashData {
         assert crashMetrics != null;
 
         checksumArrayToSet[0] = UtilsNetworking.sha256Hash(stackTrace);
-        checksumArrayToSet[1] = UtilsNetworking.sha256Hash(crashSegmentation != null ? crashSegmentation.toString() : "");
-        checksumArrayToSet[2] = UtilsNetworking.sha256Hash(breadcrumbs != null ? breadcrumbs.toString() : "");
-        checksumArrayToSet[3] = UtilsNetworking.sha256Hash(crashMetrics != null ? crashMetrics.toString() : "");
-        checksumArrayToSet[4] = UtilsNetworking.sha256Hash(handled + "");
+        checksumArrayToSet[1] = UtilsNetworking.sha256Hash(crashSegmentation.toString());
+        checksumArrayToSet[2] = UtilsNetworking.sha256Hash(breadcrumbs.toString());
+        checksumArrayToSet[3] = UtilsNetworking.sha256Hash(crashMetrics.toString());
+        checksumArrayToSet[4] = UtilsNetworking.sha256Hash(fatal + "");
     }
 }
