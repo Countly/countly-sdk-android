@@ -618,7 +618,7 @@ public class MigrationHelperTests {
 
     /**
      * 3 requests in queue, temp ID
-     * nothing should change
+     * probably all requests should get temp ID device ID
      */
     @Test
     public void performMigration3To4_5() {
