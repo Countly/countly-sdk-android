@@ -14,6 +14,13 @@ public class CrashData {
     private @NonNull List<String> breadcrumbs;
     private boolean fatal;
     private @NonNull JSONObject crashMetrics;
+    /**
+     * 0 - stackTrace
+     * 1 - crashSegmentation
+     * 2 - breadcrumbs
+     * 3 - crashMetrics
+     * 4 - fatal
+     */
     private final String[] checksums = new String[5];
 
     public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
