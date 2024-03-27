@@ -295,7 +295,7 @@ public class Utils {
      * @param dropAgeHours oldness threshold (in hours)
      * @return true if old, false if not
      */
-    public static boolean isRequestTooOld(@NonNull final String request, @NonNull final int dropAgeHours, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+    public static boolean isRequestTooOld(@NonNull final String request, final int dropAgeHours, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
         if (dropAgeHours <= 0) {
             L.v(messagePrefix + " isRequestTooOld, No request drop age set. Request will bypass age checks");
             return false;
