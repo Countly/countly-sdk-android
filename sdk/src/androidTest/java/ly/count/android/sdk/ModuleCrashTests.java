@@ -305,6 +305,24 @@ public class ModuleCrashTests {
         validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, null, 0, null, null);
     }
 
+    /**
+     * "recordHandledException" with global crash filter
+     * Global crash filter is set to filter out crashes that contain "Secret" in the stack trace
+     * and to set "fatal" to true for all crashes
+     * and to add "secret" key to the crash metrics
+     * and to remove "_ram_total" key from the crash metrics
+     * and to remove "secret" key from the crash segmentation
+     * and to remove crashes that contain "sphinx_no_1" in the crash segmentation
+     * Validate that first call to the "recordHandledException" is filtered out by the global crash filter because contains "Secret" in the stack trace
+     * Validate that second call to the "recordHandledException" is filtered out by the global crash filter because contains "sphinx_no_1" in the crash segmentation
+     * Validate that third call to the "recordHandledException" is not filtered out by the global crash filter
+     * Validate third call creates a request in the queue and validate all crash data, fatal is set to true
+     * Validate that crash segmentation contains all custom segmentation except "secret"
+     * Validate that crash metrics contains all custom metrics except "_ram_total" plus "secret"
+     * Validate that crash logs contains all breadcrumbs
+     *
+     * @throws JSONException if JSON parsing fails
+     */
     @Test
     public void recordHandledException_globalCrashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();

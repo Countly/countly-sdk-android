@@ -554,7 +554,7 @@ public class TestUtils {
     /**
      * Ignore JSONException thrown by JSONObject.put
      *
-     * @param jObj target json object
+     * @param json target json object
      * @param key key to put
      * @param value value to put
      */
