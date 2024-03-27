@@ -144,29 +144,27 @@ public class ModuleCrash extends ModuleBase {
         UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
         UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsAsList(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
+        CrashData crashData = new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
 
         if (globalCrashFilterCallback != null) {
             if (globalCrashFilterCallback.filterCrash(crashData)) {
-                L.d("[ModuleCrash] Global Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
+                L.d("[ModuleCrash] sendCrashReportToQueue, Global Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
                 return;
             }
 
             if (crashData.getChangedFields()[2]) {
-                L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
+                L.d("[ModuleCrash] sendCrashReportToQueue, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
                 if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
-                    L.d("[ModuleCrash] sendCrashReportToQueueWFilterCallback, after filtering, breadcrumbs limit is exceeded. clipping from tail count:[" + crashData.getBreadcrumbs().size() + "]");
+                    L.d("[ModuleCrash] sendCrashReportToQueue, after filtering, breadcrumbs limit is exceeded. clipping from tail count:[" + crashData.getBreadcrumbs().size() + "]");
                     int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
                     if (gonnaClip > 0) {
                         crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
                     }
                 }
             }
-        } else if (crashFilterCallback != null) {
-            if (crashFilterCallback.filterCrash(error)) {
-                L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
-                return;
-            }
+
+            UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
+            UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
         }
 
         String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();

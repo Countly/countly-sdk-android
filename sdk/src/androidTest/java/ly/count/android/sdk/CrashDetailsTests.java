@@ -31,7 +31,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -41,7 +41,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -51,7 +51,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError65756";
         boolean nonfatal = true;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -61,7 +61,7 @@ public class CrashDetailsTests {
         String errorText = "SomeErrorsh454353";
         boolean nonfatal = false;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -71,13 +71,13 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, TestUtils.createMapString(5), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, TestUtils.createMapString(5), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Map<String, Object> cSeg = TestUtils.createMapString(5);
 
-        String cData2 = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, cSeg, new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData2 = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, cSeg, new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Assert.assertTrue(cData2.contains("_custom"));
@@ -89,26 +89,6 @@ public class CrashDetailsTests {
             Assert.assertTrue(cData2.contains(key));
             Assert.assertTrue(cData2.contains(value));
         }
-    }
-
-    @Test
-    public void getCustomSegmentsJson() throws JSONException {
-        Map<String, Object> cSeg = TestUtils.createMapString(5);
-
-        JSONObject jobj = DeviceInfo.getCustomSegmentsJson(cSeg);
-
-        Assert.assertEquals(cSeg.size(), jobj.length());
-
-        for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
-            String key = entry.getKey();
-            String value = (String) entry.getValue();
-
-            Assert.assertEquals(value, jobj.get(key));
-        }
-    }
-
-    private CrashData createCrashData(String errorText, boolean nonfatal, Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @Nullable Map<String, String> metricOverride, boolean isNativeCrash) {
-        return new CrashData(errorText, crashSegmentation, breadcrumbs, regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal);
     }
 
     /**
@@ -150,12 +130,8 @@ public class CrashDetailsTests {
         Assert.assertEquals(metricOverride.get("_manufacturer"), cData2.getString("_manufacturer"));
     }
 
-    private JSONObject createCrashData(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
-        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal), isNativeCrash);
-    }
-
-    private String createCrashDataStr(String errorText, boolean nonfatal, boolean isNativeCrash, Map<String, Object> customSegmentation, Map<String, String> metricOverride) {
-        return regularDeviceInfo.getCrashDataJSON(new CrashData(errorText, customSegmentation, DeviceInfo.getLogsAsList(), regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal), isNativeCrash).toString();
+    private CrashData createCrashData(String errorText, boolean nonfatal, Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @Nullable Map<String, String> metricOverride, boolean isNativeCrash) {
+        return new CrashData(errorText, crashSegmentation, breadcrumbs, regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal);
     }
 
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {

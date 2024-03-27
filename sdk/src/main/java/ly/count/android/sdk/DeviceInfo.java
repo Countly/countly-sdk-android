@@ -816,14 +816,4 @@ class DeviceInfo {
     static String getRunningTime() {
         return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
     }
-
-    /**
-     * Returns the collected logs.
-     */
-    @NonNull
-    static List<String> getLogsList() {
-        List<String> temp = new LinkedList<>(logs);
-        logs.clear();
-        return temp;
-    }
 }
