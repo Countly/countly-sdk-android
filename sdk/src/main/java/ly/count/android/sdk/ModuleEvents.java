@@ -65,12 +65,12 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param instant
      * @param eventIdOverride
      */
-    public void recordEventInternal(@NonNull final String key, @Nullable final Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
-        assert key != null;
+    public void recordEventInternal(@Nullable final String key, @Nullable final Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
+        //assert key != null;
         assert count >= 1;
         assert _cly.isInitialized();
 
-        Long pccTsStartRecordEventInternal = 0L;
+        long pccTsStartRecordEventInternal = 0L;
         if (pcc != null) {
             pccTsStartRecordEventInternal = UtilsTime.getNanoTime();
         }

@@ -166,7 +166,7 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param callback called after the fetch is done
      * @param shouldFetchExperimentInfo if true this call would fetch experiment information including the variants
      */
-    void testingFetchVariantInformationInternal(@NonNull final RCVariantCallback callback, @NonNull final boolean shouldFetchExperimentInfo) {
+    void testingFetchVariantInformationInternal(@NonNull final RCVariantCallback callback, final boolean shouldFetchExperimentInfo) {
         try {
             L.d("[ModuleRemoteConfig] Fetching all A/B test variants/info");
 

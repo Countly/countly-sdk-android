@@ -21,6 +21,11 @@ public class UtilsTimeTests {
     public void tearDown() {
     }
 
+    @Test(expected = AssertionError.class)
+    public void invalidGet() {
+        UtilsTime.Instant.get(-1L);
+    }
+
     @Test
     public void testInstant() {
         UtilsTime.Instant i1 = UtilsTime.Instant.get(1_579_463_653_876L);

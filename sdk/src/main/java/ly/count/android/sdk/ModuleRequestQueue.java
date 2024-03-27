@@ -233,7 +233,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * Send request data after removing the predefined keys
      */
     synchronized public void addDirectRequestInternal(@NonNull Map<String, String> requestMap) {
-        Long pccTsStartAddDirectRequest = 0L;
+        long pccTsStartAddDirectRequest = 0L;
         if (pcc != null) {
             pccTsStartAddDirectRequest = UtilsTime.getNanoTime();
         }
