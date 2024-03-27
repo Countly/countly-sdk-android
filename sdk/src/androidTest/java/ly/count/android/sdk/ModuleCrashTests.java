@@ -3,7 +3,9 @@ package ly.count.android.sdk;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -194,7 +196,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", true, false, null, 0);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", true, false, null, 0, null, null);
     }
 
     @Test
@@ -214,7 +216,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", true, false, null, 0);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", true, false, null, 0, null, null);
     }
 
     @Test
@@ -279,14 +281,14 @@ public class ModuleCrashTests {
             "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
     }
 
-    private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean fatal, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits) throws JSONException {
+    private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean fatal, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits, Map<String, Object> customMetrics, List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
 
         TestUtils.validateRequiredParams(RQ[0]);
 
         JSONObject crash = new JSONObject(RQ[0].get("crash"));
-        int paramCount = validateCrashMetrics(deviceInfo, crash, nativeCrash);
+        int paramCount = validateCrashMetrics(deviceInfo, crash, nativeCrash, customMetrics, baseMetricsExclude);
 
         paramCount += 2;
         Assert.assertEquals(error, crash.getString("_error"));
@@ -309,42 +311,53 @@ public class ModuleCrashTests {
         Assert.assertEquals(paramCount, crash.length());
     }
 
-    private int validateCrashMetrics(DeviceInfo di, JSONObject crash, boolean nativeCrash) throws JSONException {
+    private int validateCrashMetrics(DeviceInfo di, JSONObject crash, boolean nativeCrash, Map<String, Object> customMetrics, List<String> metricsToExclude) throws JSONException {
         int metricCount = 12;
-        Assert.assertEquals(di.mp.getDevice(), crash.get("_device"));
-        Assert.assertEquals(di.mp.getOS(), crash.get("_os"));
-        Assert.assertEquals(di.mp.getOSVersion(), crash.get("_os_version"));
-        Assert.assertEquals(di.mp.getResolution(TestUtils.getContext()), crash.get("_resolution"));
-        Assert.assertEquals(di.mp.getAppVersion(TestUtils.getContext()), crash.get("_app_version"));
-        Assert.assertEquals(di.mp.getManufacturer(), crash.get("_manufacturer"));
-        Assert.assertEquals(di.mp.hasHinge(TestUtils.getContext()), crash.get("_has_hinge"));
-        Assert.assertEquals(di.mp.getCpu(), crash.get("_cpu"));
-        Assert.assertEquals(di.mp.getOpenGL(TestUtils.getContext()), crash.get("_opengl"));
-        Assert.assertEquals(di.mp.isRooted(), crash.get("_root"));
-        Assert.assertTrue(crash.getInt("_ram_total") >= 0);
-        Assert.assertTrue(crash.getInt("_disk_total") >= 0);
+        if (metricsToExclude == null) {
+            metricsToExclude = Collections.emptyList();
+        }
+        metricCount -= metricsToExclude.size();
+        Assert.assertTrue(metricsToExclude.contains("_device") || di.mp.getDevice().equals(crash.get("_device")));
+        Assert.assertTrue(metricsToExclude.contains("_os") || di.mp.getOS().equals(crash.get("_os")));
+        Assert.assertTrue(metricsToExclude.contains("_os_version") || di.mp.getOSVersion().equals(crash.get("_os_version")));
+        Assert.assertTrue(metricsToExclude.contains("_resolution") || di.mp.getResolution(TestUtils.getContext()).equals(crash.get("_resolution")));
+        Assert.assertTrue(metricsToExclude.contains("_app_version") || di.mp.getAppVersion(TestUtils.getContext()).equals(crash.get("_app_version")));
+        Assert.assertTrue(metricsToExclude.contains("_manufacturer") || di.mp.getManufacturer().equals(crash.get("_manufacturer")));
+        Assert.assertTrue(metricsToExclude.contains("_cpu") || di.mp.getCpu().equals(crash.get("_cpu")));
+        Assert.assertTrue(metricsToExclude.contains("_opengl") || di.mp.getOpenGL(TestUtils.getContext()).equals(crash.get("_opengl")));
+        Assert.assertTrue(metricsToExclude.contains("_root") || di.mp.isRooted().equals(crash.get("_root")));
+        Assert.assertTrue(metricsToExclude.contains("_has_hinge") || di.mp.isRooted().equals(crash.get("_has_hinge")));
+        Assert.assertTrue(metricsToExclude.contains("_ram_total") || crash.getInt("_ram_total") >= 0);
+        Assert.assertTrue(metricsToExclude.contains("_disk_total") || crash.getInt("_disk_total") >= 0);
+
         if (!nativeCrash) {
             metricCount += 5;
-            Assert.assertTrue(crash.getInt("_ram_current") >= 0);
-            Assert.assertTrue(crash.getInt("_disk_current") >= 0);
-            Assert.assertTrue(crash.getDouble("_run") >= 0);
-            Assert.assertEquals(di.mp.isMuted(TestUtils.getContext()), crash.get("_muted"));
-            Assert.assertEquals(di.isInBackground(), crash.get("_background"));
+            Assert.assertTrue(metricsToExclude.contains("_ram_current") || crash.getInt("_ram_current") >= 0);
+            Assert.assertTrue(metricsToExclude.contains("_disk_current") || crash.getInt("_disk_current") >= 0);
+            Assert.assertTrue(metricsToExclude.contains("_run") || crash.getDouble("_run") >= 0);
+            Assert.assertTrue(metricsToExclude.contains("_background") || di.isInBackground().equals(crash.get("_background")));
+            Assert.assertTrue(metricsToExclude.contains("_muted") || di.mp.isMuted(TestUtils.getContext()).equals(crash.get("_muted")));
             if (di.mp.getOrientation(TestUtils.getContext()) != null) {
-                Assert.assertEquals(di.mp.getOrientation(TestUtils.getContext()), crash.get("_orientation"));
+                Assert.assertTrue(metricsToExclude.contains("_orientation") || di.mp.getOrientation(TestUtils.getContext()).equals(crash.get("_orientation")));
                 metricCount++;
             }
             if (di.mp.isOnline(TestUtils.getContext()) != null) {
-                Assert.assertEquals(di.mp.isOnline(TestUtils.getContext()), crash.get("_online"));
+                Assert.assertTrue(metricsToExclude.contains("_online") || di.mp.isOnline(TestUtils.getContext()).equals(crash.get("_online")));
                 metricCount++;
             }
             if (di.mp.getBatteryLevel(TestUtils.getContext()) != null) {
-                Assert.assertTrue(crash.getDouble("_bat") >= 0);
+                Assert.assertTrue(metricsToExclude.contains("_bat") || crash.getDouble("_bat") >= 0);
                 metricCount++;
             }
         } else {
-            Assert.assertEquals("true", crash.get("_native_cpp"));
+            Assert.assertTrue(metricsToExclude.contains("_native_cpp") || "true".equals(crash.get("_native_cpp")));
             metricCount++;
+        }
+        if (customMetrics != null) {
+            for (Map.Entry<String, Object> entry : customMetrics.entrySet()) {
+                Assert.assertEquals(entry.getValue(), crash.get(entry.getKey()));
+            }
+            metricCount += customMetrics.size();
         }
         return metricCount;
     }
