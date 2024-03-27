@@ -142,7 +142,7 @@ public class ModuleCrash extends ModuleBase {
         UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         CrashData crashData = new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
-        String crashDataString = deviceInfo.getCrashDataJSON(crashData).toString();
+        String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();
 
         requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
     }
