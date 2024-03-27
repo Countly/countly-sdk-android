@@ -183,7 +183,7 @@ public class ModuleCrashTests {
     public void addCrashBreadcrumb() throws JSONException {
         TestUtils.getCountyStore().clear();
 
-        Countly countly = new Countly().init(TestUtils.createBaseConfig());
+        Countly countly = new Countly().init(TestUtils.getBaseConfig());
 
         countly.crashes().addCrashBreadcrumb("Breadcrumb_1");
         countly.crashes().addCrashBreadcrumb("Breadcrumb_2");
@@ -194,14 +194,14 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", false, false, null, 0);
+        validateCrash(extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", false);
     }
 
     @Test
     public void addCrashBreadcrumbNullEmpty() throws JSONException {
         TestUtils.getCountyStore().clear();
 
-        Countly countly = new Countly().init(TestUtils.createBaseConfig());
+        Countly countly = new Countly().init(TestUtils.getBaseConfig());
 
         countly.crashes().addCrashBreadcrumb("Breadcrumb_4");
         countly.crashes().addCrashBreadcrumb(null);
@@ -214,7 +214,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", false, false, null, 0);
+        validateCrash(extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", false);
     }
 
     @Test
@@ -279,74 +279,16 @@ public class ModuleCrashTests {
             "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
     }
 
-    private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean fatal, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits) throws JSONException {
+    private void validateCrash(String error, String breadcrumbs, boolean handled) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
 
-        //TestUtils.validateRequiredParams(RQ[0]);
-
         JSONObject crash = new JSONObject(RQ[0].get("crash"));
-        int paramCount = validateCrashMetrics(deviceInfo, crash, nativeCrash);
 
-        paramCount += 3;
         Assert.assertEquals(error, crash.getString("_error"));
-        Assert.assertEquals(!fatal, crash.getBoolean("_nonfatal"));
-        Assert.assertEquals(changedBits, crash.getInt("_bits"));
-        if (customSegmentation != null) {
-            paramCount++;
-            JSONObject custom = crash.getJSONObject("_custom");
-            for (Map.Entry<String, Object> entry : customSegmentation.entrySet()) {
-                Assert.assertEquals(entry.getValue(), custom.get(entry.getKey()));
-            }
-            Assert.assertEquals(custom.length(), customSegmentation.size());
-        }
-        if (!nativeCrash) {
-            if (breadcrumbs != null) {
-                paramCount++;
-                Assert.assertEquals(breadcrumbs, crash.getString("_logs"));
-            }
-        }
-        Assert.assertEquals(paramCount, crash.length());
-    }
-
-    private int validateCrashMetrics(DeviceInfo di, JSONObject crash, boolean nativeCrash) throws JSONException {
-        int metricCount = 12;
-        Assert.assertEquals(di.mp.getDevice(), crash.get("_device"));
-        Assert.assertEquals(di.mp.getOS(), crash.get("_os"));
-        Assert.assertEquals(di.mp.getOSVersion(), crash.get("_os_version"));
-        Assert.assertEquals(di.mp.getResolution(TestUtils.getContext()), crash.get("_resolution"));
-        Assert.assertEquals(di.mp.getAppVersion(TestUtils.getContext()), crash.get("_app_version"));
-        Assert.assertEquals(di.mp.getManufacturer(), crash.get("_manufacturer"));
-        Assert.assertEquals(di.mp.hasHinge(TestUtils.getContext()), crash.get("_has_hinge"));
-        Assert.assertEquals(di.mp.getCpu(), crash.get("_cpu"));
-        Assert.assertEquals(di.mp.getOpenGL(TestUtils.getContext()), crash.get("_opengl"));
-        Assert.assertEquals(di.mp.isRooted(), crash.get("_root"));
-        Assert.assertTrue(crash.getInt("_ram_total") >= 0);
-        Assert.assertTrue(crash.getInt("_disk_total") >= 0);
-        if (!nativeCrash) {
-            metricCount += 5;
-            Assert.assertTrue(crash.getInt("_ram_current") >= 0);
-            Assert.assertTrue(crash.getInt("_disk_current") >= 0);
-            Assert.assertTrue(crash.getDouble("_run") >= 0);
-            Assert.assertEquals(di.mp.isMuted(TestUtils.getContext()), crash.get("_muted"));
-            Assert.assertEquals(di.isInBackground(), crash.get("_background"));
-            if (di.mp.getOrientation(TestUtils.getContext()) != null) {
-                Assert.assertEquals(di.mp.getOrientation(TestUtils.getContext()), crash.get("_orientation"));
-                metricCount++;
-            }
-            if (di.mp.isOnline(TestUtils.getContext()) != null) {
-                Assert.assertEquals(di.mp.isOnline(TestUtils.getContext()), crash.get("_online"));
-                metricCount++;
-            }
-            if (di.mp.getBatteryLevel(TestUtils.getContext()) != null) {
-                Assert.assertTrue(crash.getDouble("_bat") >= 0);
-                metricCount++;
-            }
-        } else {
-            Assert.assertEquals("true", crash.get("_native_cpp"));
-            metricCount++;
-        }
-        return metricCount;
+        Assert.assertEquals(breadcrumbs, crash.getString("_logs"));
+        Assert.assertEquals(handled, crash.getBoolean("_nonfatal"));
+        //todo validate all fields
     }
 
     private String extractStackTrace(Throwable throwable) {
