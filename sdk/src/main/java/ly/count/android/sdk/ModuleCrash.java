@@ -118,12 +118,16 @@ public class ModuleCrash extends ModuleBase {
         //convert to base64
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
-        //record crash
-        sendCrashReportToQueue(dumpString, false, true, null);
+        CrashData crashData = prepareCrashData(dumpString, false, true, null);
+        if (!crashFilterCheck(crashData)) {
+            sendCrashReportToQueue(crashData, true);
+        }
     }
 
-    public void sendCrashReportToQueue(@NonNull String error, boolean nonfatal, boolean isNativeCrash, @Nullable final Map<String, Object> customSegmentation) {
-        L.d("[ModuleCrash] sendCrashReportToQueue");
+    private CrashData prepareCrashData(String error, boolean handled, boolean isNativeCrash, Map<String, Object> customSegmentation) {
+        if (!isNativeCrash) {
+            error = error.substring(0, Math.min(20_000, error.length()));
+        }
 
         Map<String, Object> combinedSegmentationValues = new HashMap<>();
 
@@ -135,40 +139,17 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
-        //limit the size of the crash report to 20k characters
-        if (!isNativeCrash) {
-            error = error.substring(0, Math.min(20_000, error.length()));
-        }
-
-        //truncate crash segmentation
         UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
-        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
+        return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), handled);
+    }
 
-        if (globalCrashFilterCallback != null) {
-            if (globalCrashFilterCallback.filterCrash(crashData)) {
-                L.d("[ModuleCrash] sendCrashReportToQueue, Global Crash filter found a match, exception will be ignored, [" + error.substring(0, Math.min(error.length(), 60)) + "]");
-                return;
-            }
-
-            if (crashData.getChangedFields()[2]) {
-                L.d("[ModuleCrash] sendCrashReportToQueue, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
-                if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
-                    L.d("[ModuleCrash] sendCrashReportToQueue, after filtering, breadcrumbs limit is exceeded. clipping from tail count:[" + crashData.getBreadcrumbs().size() + "]");
-                    int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
-                    if (gonnaClip > 0) {
-                        crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
-                    }
-                }
-            }
-
-            UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
-            UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
-        }
+    private void sendCrashReportToQueue(@NonNull CrashData crashData, boolean isNativeCrash) {
+        L.d("[ModuleCrash] sendCrashReportToQueue");
 
         String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();
-        requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
+        requestQueueProvider.sendCrashReport(crashDataString, crashData.getHandled());
     }
 
     /**
@@ -213,9 +194,10 @@ public class ModuleCrash extends ModuleBase {
 
                     String exceptionString = sw.toString();
 
+                    CrashData crashData = prepareCrashData(exceptionString, false, false, null);
                     //check if it passes the crash filter
-                    if (!crashFilterCheck(exceptionString)) {
-                        sendCrashReportToQueue(exceptionString, false, false, null);
+                    if (!crashFilterCheck(crashData)) {
+                        sendCrashReportToQueue(crashData, false);
                     }
                 }
 
@@ -234,18 +216,38 @@ public class ModuleCrash extends ModuleBase {
      * Call to check if crash matches one of the filters
      * If it does, the crash should be ignored
      *
-     * @param crash
+     * @param crashData CrashData object to check
      * @return true if a match was found
      */
-    boolean crashFilterCheck(String crash) {
+    boolean crashFilterCheck(CrashData crashData) {
         L.d("[ModuleCrash] Calling crashFilterCheck");
 
-        if (crashFilterCallback == null) {
-            //no filter callback set, nothing to compare against
-            return false;
+        if (crashFilterCallback != null) {
+            return crashFilterCallback.filterCrash(crashData.getStackTrace());
         }
 
-        return crashFilterCallback.filterCrash(crash);
+        if (globalCrashFilterCallback != null) {
+            if (globalCrashFilterCallback.filterCrash(crashData)) {
+                L.d("[ModuleCrash] crashFilterCheck, Global Crash filter found a match, exception will be ignored, [" + crashData.getStackTrace().substring(0, Math.min(crashData.getStackTrace().length(), 60)) + "]");
+                return true;
+            }
+
+            if (crashData.getChangedFields()[2]) {
+                L.d("[ModuleCrash] crashFilterCheck, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
+                if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
+                    L.d("[ModuleCrash] crashFilterCheck, after filtering, breadcrumbs limit is exceeded. clipping oldest count:[" + crashData.getBreadcrumbs().size() + "]");
+                    int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
+                    if (gonnaClip > 0) {
+                        crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
+                    }
+                }
+            }
+
+            UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
+            UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        }
+
+        return false;
     }
 
     void addAllThreadInformationToCrash(PrintWriter pw) {
@@ -296,7 +298,8 @@ public class ModuleCrash extends ModuleBase {
 
         String exceptionString = sw.toString();
 
-        if (crashFilterCheck(exceptionString)) {
+        CrashData crashData = prepareCrashData(exceptionString, itIsHandled, false, customSegmentation);
+        if (crashFilterCheck(crashData)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
             //in case the exception needs to be recorded, truncate it
@@ -308,7 +311,7 @@ public class ModuleCrash extends ModuleBase {
             //    sb.append(splitRes[a].substring(0, Math.min(splitRes[a].length(), _cly.config_.maxStackTraceLineLength)));
             //}
             //sendCrashReportToQueue(sb.toString(), itIsHandled, false, customSegmentation);
-            sendCrashReportToQueue(exceptionString, itIsHandled, false, customSegmentation);
+            sendCrashReportToQueue(crashData, false);
         }
         return _cly;
     }

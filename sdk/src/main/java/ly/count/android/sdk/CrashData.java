@@ -12,11 +12,11 @@ public class CrashData {
     private @NonNull String stackTrace;
     private @NonNull Map<String, Object> crashSegmentation;
     private @NonNull List<String> breadcrumbs;
-    private boolean fatal;
+    private boolean handled;
     private @NonNull JSONObject crashMetrics;
     private final String[] checksums = new String[5];
 
-    public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
+    public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean handled) {
         assert stackTrace != null;
         assert crashSegmentation != null;
         assert breadcrumbs != null;
@@ -26,7 +26,7 @@ public class CrashData {
         this.crashSegmentation = crashSegmentation;
         this.breadcrumbs = breadcrumbs;
         this.crashMetrics = crashMetrics;
-        this.fatal = fatal;
+        this.handled = handled;
 
         calculateChecksums(checksums);
     }
@@ -78,8 +78,8 @@ public class CrashData {
      *
      * @return fatal info of a crash
      */
-    public boolean getFatal() {
-        return fatal;
+    public boolean getHandled() {
+        return handled;
     }
 
     /**
@@ -87,8 +87,8 @@ public class CrashData {
      *
      * @param fatal info
      */
-    public void setFatal(boolean fatal) {
-        this.fatal = fatal;
+    public void setHandled(boolean fatal) {
+        this.handled = fatal;
     }
 
     /**
@@ -204,6 +204,6 @@ public class CrashData {
         checksumArrayToSet[1] = UtilsNetworking.sha256Hash(crashSegmentation != null ? crashSegmentation.toString() : "");
         checksumArrayToSet[2] = UtilsNetworking.sha256Hash(breadcrumbs != null ? breadcrumbs.toString() : "");
         checksumArrayToSet[3] = UtilsNetworking.sha256Hash(crashMetrics != null ? crashMetrics.toString() : "");
-        checksumArrayToSet[4] = UtilsNetworking.sha256Hash(fatal + "");
+        checksumArrayToSet[4] = UtilsNetworking.sha256Hash(handled + "");
     }
 }

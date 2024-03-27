@@ -32,7 +32,7 @@ public class CrashDataTests {
         Assert.assertEquals(crashData.getCrashSegmentation(), crashSegmentation);
         Assert.assertEquals(crashData.getBreadcrumbs(), breadcrumbs);
         Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
-        Assert.assertTrue(crashData.getFatal());
+        Assert.assertTrue(crashData.getHandled());
     }
 
     @Test
@@ -86,10 +86,10 @@ public class CrashDataTests {
     }
 
     @Test
-    public void setFatal() {
+    public void setHandled() {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
-        crashData.setFatal(false);
-        Assert.assertFalse(crashData.getFatal());
+        crashData.setHandled(false);
+        Assert.assertFalse(crashData.getHandled());
         validateChanged(crashData, false, false, false, false, true);
     }
 
@@ -106,7 +106,7 @@ public class CrashDataTests {
         JSONObject crashMetrics = new JSONObject();
         crashMetrics.put("key", "value");
         crashData.setCrashMetrics(crashMetrics);
-        crashData.setFatal(false);
+        crashData.setHandled(false);
         validateChanged(crashData, false, true, true, true, true);
     }
 
@@ -123,7 +123,7 @@ public class CrashDataTests {
         JSONObject crashMetrics = new JSONObject();
         crashMetrics.put("key", "value");
         crashData.setCrashMetrics(crashMetrics);
-        crashData.setFatal(false);
+        crashData.setHandled(false);
         crashData.setStackTrace("ST2");
         validateChanged(crashData, true, true, true, true, true);
     }
@@ -229,11 +229,11 @@ public class CrashDataTests {
     }
 
     @Test
-    public void setFatal_same() {
+    public void setHandled_same() {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
-        crashData.setFatal(true);
+        crashData.setHandled(true);
 
-        Assert.assertTrue(crashData.getFatal());
+        Assert.assertTrue(crashData.getHandled());
         validateChanged(crashData, false, false, false, false, false);
     }
 
@@ -270,13 +270,13 @@ public class CrashDataTests {
         Assert.assertEquals(crashData.getCrashMetrics().get("key2"), "value2");
     }
 
-    private void validateChanged(CrashData crashData, boolean stackTraceChanged, boolean crashSegmentationChanged, boolean breadcrumbsChanged, boolean crashMetricsChanged, boolean fatalChanged) {
+    private void validateChanged(CrashData crashData, boolean stackTraceChanged, boolean crashSegmentationChanged, boolean breadcrumbsChanged, boolean crashMetricsChanged, boolean handledChanged) {
         Assert.assertEquals(crashData.getChangedFields()[0], stackTraceChanged);
         Assert.assertEquals(crashData.getChangedFields()[1], crashSegmentationChanged);
         Assert.assertEquals(crashData.getChangedFields()[2], breadcrumbsChanged);
         Assert.assertEquals(crashData.getChangedFields()[3], crashMetricsChanged);
-        Assert.assertEquals(crashData.getChangedFields()[4], fatalChanged);
-        Assert.assertEquals(crashData.getChangedFieldsAsInt(), getChangedFieldsAsInt(new boolean[] { stackTraceChanged, crashSegmentationChanged, breadcrumbsChanged, crashMetricsChanged, fatalChanged }));
+        Assert.assertEquals(crashData.getChangedFields()[4], handledChanged);
+        Assert.assertEquals(crashData.getChangedFieldsAsInt(), getChangedFieldsAsInt(new boolean[] { stackTraceChanged, crashSegmentationChanged, breadcrumbsChanged, crashMetricsChanged, handledChanged }));
     }
 
     private int getChangedFieldsAsInt(boolean[] changedFields) {
