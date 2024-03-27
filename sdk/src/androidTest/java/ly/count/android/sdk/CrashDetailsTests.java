@@ -31,7 +31,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError";
         boolean nonfatal = false;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -41,7 +41,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -51,7 +51,7 @@ public class CrashDetailsTests {
         String errorText = "SomeError65756";
         boolean nonfatal = true;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -61,7 +61,7 @@ public class CrashDetailsTests {
         String errorText = "SomeErrorsh454353";
         boolean nonfatal = false;
         boolean isNativeCrash = true;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, new HashMap<>(), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
     }
@@ -71,13 +71,13 @@ public class CrashDetailsTests {
         String errorText = "SomeError!@##";
         boolean nonfatal = true;
         boolean isNativeCrash = false;
-        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, TestUtils.createMapString(5), new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, TestUtils.createMapString(5), new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
 
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Map<String, Object> cSeg = TestUtils.createMapString(5);
 
-        String cData2 = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, cSeg, new ArrayList<>(), null, isNativeCrash)).toString();
+        String cData2 = regularDeviceInfo.getCrashDataJSON(createCrashData(errorText, nonfatal, cSeg, new ArrayList<>(), null, isNativeCrash), isNativeCrash).toString();
         assertCrashData(cData, errorText, nonfatal, isNativeCrash);
 
         Assert.assertTrue(cData2.contains("_custom"));
