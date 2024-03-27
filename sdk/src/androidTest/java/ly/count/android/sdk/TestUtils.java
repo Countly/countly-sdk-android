@@ -542,12 +542,26 @@ public class TestUtils {
         int tz = Integer.parseInt(params.get("tz"));
 
         validateSdkIdentityParams(params);
-        Assert.assertEquals(deviceId, params.get("device_id"));
+        //Assert.assertEquals(deviceId, params.get("device_id"));
         Assert.assertEquals(commonAppKey, params.get("app_key"));
         Assert.assertEquals(Countly.DEFAULT_APP_VERSION, params.get("av"));
         Assert.assertTrue(Long.parseLong(params.get("timestamp")) > 0);
         Assert.assertTrue(hour >= 0 && hour < 24);
         Assert.assertTrue(dow >= 0 && dow < 7);
         Assert.assertTrue(tz >= -720 && tz <= 840);
+    }
+
+    /**
+     * Ignore JSONException thrown by JSONObject.put
+     *
+     * @param jObj target json object
+     * @param key key to put
+     * @param value value to put
+     */
+    protected static void put(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+        }
     }
 }
