@@ -149,7 +149,7 @@ public class ModuleCrash extends ModuleBase {
         L.d("[ModuleCrash] sendCrashReportToQueue");
 
         String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();
-        requestQueueProvider.sendCrashReport(crashDataString, crashData.getHandled());
+        requestQueueProvider.sendCrashReport(crashDataString, !crashData.getFatal());
     }
 
     /**

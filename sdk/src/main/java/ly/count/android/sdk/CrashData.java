@@ -12,11 +12,11 @@ public class CrashData {
     private @NonNull String stackTrace;
     private @NonNull Map<String, Object> crashSegmentation;
     private @NonNull List<String> breadcrumbs;
-    private boolean handled;
+    private boolean fatal;
     private @NonNull JSONObject crashMetrics;
     private final String[] checksums = new String[5];
 
-    public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean handled) {
+    public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
         assert stackTrace != null;
         assert crashSegmentation != null;
         assert breadcrumbs != null;
@@ -26,7 +26,7 @@ public class CrashData {
         this.crashSegmentation = crashSegmentation;
         this.breadcrumbs = breadcrumbs;
         this.crashMetrics = crashMetrics;
-        this.handled = handled;
+        this.fatal = fatal;
 
         calculateChecksums(checksums);
     }
@@ -78,8 +78,8 @@ public class CrashData {
      *
      * @return fatal info of a crash
      */
-    public boolean getHandled() {
-        return handled;
+    public boolean getFatal() {
+        return fatal;
     }
 
     /**
@@ -87,8 +87,8 @@ public class CrashData {
      *
      * @param fatal info
      */
-    public void setHandled(boolean fatal) {
-        this.handled = fatal;
+    public void setFatal(boolean fatal) {
+        this.fatal = fatal;
     }
 
     /**

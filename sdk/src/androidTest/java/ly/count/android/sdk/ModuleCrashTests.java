@@ -295,7 +295,7 @@ public class ModuleCrashTests {
         validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", true, false, null, 0);
     }
 
-    private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean handled, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits) throws JSONException {
+    private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean fatal, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
 
@@ -306,7 +306,7 @@ public class ModuleCrashTests {
 
         paramCount += 3;
         Assert.assertEquals(error, crash.getString("_error"));
-        Assert.assertEquals(handled, crash.getBoolean("_nonfatal"));
+        Assert.assertEquals(!fatal, crash.getBoolean("_nonfatal"));
         Assert.assertEquals(changedBits, crash.getInt("_bits"));
         if (customSegmentation != null) {
             paramCount++;

@@ -696,7 +696,7 @@ class DeviceInfo {
         JSONObject json = crashData.getCrashMetrics();
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
-            "_nonfatal", Boolean.toString(crashData.getHandled()),
+            "_nonfatal", Boolean.toString(!crashData.getFatal()),
             "_bits", Integer.toBinaryString(crashData.getChangedFieldsAsInt())
         );
 
