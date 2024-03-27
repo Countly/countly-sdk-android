@@ -549,4 +549,18 @@ public class TestUtils {
         Assert.assertTrue(dow >= 0 && dow < 7);
         Assert.assertTrue(tz >= -720 && tz <= 840);
     }
+
+    /**
+     * Ignore JSONException thrown by JSONObject.put
+     *
+     * @param json target json object
+     * @param key key to put
+     * @param value value to put
+     */
+    protected static void put(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+        }
+    }
 }
