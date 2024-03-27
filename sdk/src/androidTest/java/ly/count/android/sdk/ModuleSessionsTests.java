@@ -155,23 +155,23 @@ public class ModuleSessionsTests {
         verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
+    /**
+     * Validating manual session flow
+     * If a session has been started, starting another session should do nothing
+     * Only a single begin session request should be recorded
+     */
     @Test
-    public void yy() {
-        CountlyConfig config = TestUtils.createBaseConfig().setApplication(null).setContext(TestUtils.getContext());
+    public void manualSessionsNoReactionStartingSessionAgain() {
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
         Countly mCountly = new Countly().init(config);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
         TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
-        verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
-        verify(requestQueueProvider, never()).endSession(anyInt());
 
-        mCountly.onStop();
+        mCountly.sessions().beginSession();
+        mCountly.sessions().beginSession();
 
-        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
-        verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        TestUtils.verifyBeginSessionTimes(requestQueueProvider, 1);
     }
 
     //TODO add tests that make sure that init time consent is handled correctly

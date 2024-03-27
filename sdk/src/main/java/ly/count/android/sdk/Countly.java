@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.1.1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.1.2-RC1";
 
     /**
      * Used as request meta data on every request
@@ -92,7 +92,7 @@ public class Countly {
      * Determines how many custom events can be queued locally before
      * an attempt is made to submit them to a Count.ly server.
      */
-    static int EVENT_QUEUE_SIZE_THRESHOLD = 100;
+    int EVENT_QUEUE_SIZE_THRESHOLD = 100;
 
     /**
      * How often onTimer() is called. This is the default value.

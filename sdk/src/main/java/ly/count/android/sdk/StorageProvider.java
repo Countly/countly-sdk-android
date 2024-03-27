@@ -62,7 +62,7 @@ interface StorageProvider {
 
     boolean anythingSetInStorage();
 
-    String getHealthCheckCounterState();
+    @NonNull String getHealthCheckCounterState();
 
     void setHealthCheckCounterState(String counterState);
 }

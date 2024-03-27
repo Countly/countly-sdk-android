@@ -1,4 +1,7 @@
 ## XX.XX.XX
+* ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "UpdateSession"
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "EndSession"
 * ! Minor breaking change ! Setting for enabling/disabling for native crash dumps will be always enabled
 
 * Added an extended way of crash filtering

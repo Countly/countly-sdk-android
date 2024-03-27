@@ -245,7 +245,7 @@ public class ConnectionProcessor implements Runnable {
      * @throws IOException if there is an error while reading the file
      */
     int addFileMultipart(OutputStream output, PrintWriter writer, final String filePath, final String boundary) throws IOException {
-        if (Utils.isEmpty(filePath)) {
+        if (Utils.isNullOrEmpty(filePath)) {
             return 0;
         }
         writer.append("--").append(boundary).append(CRLF);

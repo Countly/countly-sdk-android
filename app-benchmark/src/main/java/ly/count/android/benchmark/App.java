@@ -23,7 +23,7 @@ public class App extends Application {
             .setLoggingEnabled(true)
             .giveAllConsents()
             .setRequestDropAgeHours(10)//to trigger the age blocks
-            .setEventQueueSizeToSend(10)//for testing the main use case
+            .setEventQueueSizeToSend(100)//for testing the main use case
             .setParameterTamperingProtectionSalt("test-benchmark-salt");
 
         appPcc = new PerformanceCounterCollector();
@@ -55,5 +55,17 @@ public class App extends Application {
      * 5) send requests
      * 6) wait till all sent
      * 7) print counters
+     */
+
+    /**
+     * Scenario 2
+     * RQ size 1000
+     * Generate a mix of 1200 requests
+     * EQ threshold 100
+     * 4 direct requests : 1 event request
+     * direct requests - 960
+     * event requests - 240
+     * events generated - 24000
+     * segm values per event: 6
      */
 }

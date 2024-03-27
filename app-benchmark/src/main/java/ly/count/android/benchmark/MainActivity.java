@@ -83,6 +83,18 @@ public class MainActivity extends AppCompatActivity {
         Countly.sharedInstance().requestQueue().flushQueues();
     }
 
+    public void onGenerateBenchmarkData(View v) {
+        benchmark.print("[MainActivity] Generate benchmark data");
+
+        readLoopSegmentEventSize();
+
+        futureWrapper(() -> benchmark.GenerateBenchmarkDataset(eventSize, segmentSize));
+        
+        if (getSwitchValue(R.id.wait)) {
+            futureWrapper(this::standByForOnTimer);
+        }
+    }
+
     protected void BENCHMARK(int loop, Runnable runnable) {
         benchmark.print("------------------------------------------------------------");
         benchmark.print("[MainActivity] BENCHMARK");

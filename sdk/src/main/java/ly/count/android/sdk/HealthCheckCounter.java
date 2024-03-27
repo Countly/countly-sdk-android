@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import java.io.UnsupportedEncodingException;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -23,13 +24,18 @@ public class HealthCheckCounter implements HealthTracker {
     StorageProvider storageProvider;
     ModuleLog L;
 
-    public HealthCheckCounter(StorageProvider sp, ModuleLog L) {
+    public HealthCheckCounter(@NonNull StorageProvider sp, @NonNull ModuleLog L) {
+        assert sp != null;
+        assert L != null;
+
         this.L = L;
         storageProvider = sp;
         setupInitialCounters(storageProvider.getHealthCheckCounterState());
     }
 
-    void setupInitialCounters(String initialState) {
+    void setupInitialCounters(@NonNull String initialState) {
+        assert initialState != null;
+
         if (initialState == null || initialState.isEmpty()) {
             return;
         }
@@ -57,7 +63,11 @@ public class HealthCheckCounter implements HealthTracker {
         countLogError++;
     }
 
-    @Override public void logFailedNetworkRequest(int statusCode, String errorResponse) {
+    @Override public void logFailedNetworkRequest(int statusCode, @NonNull String errorResponse) {
+        assert statusCode > 0;
+        assert statusCode < 1000;
+        assert errorResponse != null;
+        
         this.statusCode = statusCode;
 
         if (errorResponse.length() > 1000) {
@@ -66,6 +76,18 @@ public class HealthCheckCounter implements HealthTracker {
         } else {
             this.errorMessage = errorResponse;
         }
+    }
+
+    @Override public void logSessionStartedWhileRunning() {
+
+    }
+
+    @Override public void logSessionEndedWhileNotRunning() {
+
+    }
+
+    @Override public void logSessionUpdatedWhileNotRunning() {
+
     }
 
     @Override public void clearAndSave() {
@@ -95,7 +117,7 @@ public class HealthCheckCounter implements HealthTracker {
         errorMessage = "";
     }
 
-    String createRequestParam() {
+    @NonNull String createRequestParam() {
         StringBuilder sb = new StringBuilder(100);
         sb.append("&hc=");
 
