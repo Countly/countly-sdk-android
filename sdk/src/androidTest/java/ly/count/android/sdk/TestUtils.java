@@ -123,12 +123,16 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig() {
-        CountlyConfig cc = new CountlyConfig(getContext(), commonAppKey, commonURL)
+        CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
         return cc;
+    }
+
+    protected static CountlyConfig getBaseConfig() {
+        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
     }
 
     public static String[] createStringArray(int count) {
@@ -477,8 +481,7 @@ public class TestUtils {
      *
      * @return array of request params
      */
-    protected static Map<String, String>[] getCurrentRQ() {
-
+    protected static @NonNull Map<String, String>[] getCurrentRQ() {
         //get all request files from target folder
         String[] requests = getCountyStore().getRequests();
         //create array of request params
@@ -522,6 +525,10 @@ public class TestUtils {
         return ApplicationProvider.getApplicationContext();
     }
 
+    public static Application getApplication() {
+        return (Application) getContext();
+    }
+
     /**
      * Validate sdk identity params which are sdk version and name
      *
@@ -532,7 +539,7 @@ public class TestUtils {
         Assert.assertEquals(SDK_NAME, params.get("sdk_name"));
     }
 
-    public static void validateRequiredParams(Map<String, String> params) {
+    public static void validateRequiredParams(@NonNull Map<String, String> params) {
         validateRequiredParams(params, commonDeviceId);
     }
 
