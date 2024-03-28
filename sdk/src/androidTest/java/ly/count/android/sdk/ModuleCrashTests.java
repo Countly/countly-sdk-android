@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -29,7 +30,6 @@ public class ModuleCrashTests {
     Countly mCountly;
     CountlyConfig config;
     RequestQueueProvider requestQueueProvider;
-
     MockedMetricProvider mmp = new MockedMetricProvider();
 
     @Before
@@ -296,6 +296,7 @@ public class ModuleCrashTests {
     @Test
     public void recordHandledException_crashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
         cConfig.setCrashFilterCallback(crash -> crash.contains("Secret"));
         Countly countly = new Countly().init(cConfig);
 
@@ -306,7 +307,7 @@ public class ModuleCrashTests {
 
         exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), null, false, false, null, 0, null, null);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -330,6 +331,7 @@ public class ModuleCrashTests {
     @Test
     public void recordHandledException_globalCrashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             if (crash.getStackTrace().contains("Secret")) {
@@ -375,6 +377,7 @@ public class ModuleCrashTests {
     @Test
     public void recordHandledException_globalCrashFilter_allFieldsEmpty() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             crash.setStackTrace("");
             crash.setCrashSegmentation(new HashMap<>());
@@ -392,7 +395,7 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
-        validateCrash(countly.config_.deviceInfo, null, null, true, false, TestUtils.map(), 31, null,
+        validateCrash(countly.config_.deviceInfo, "", "", true, false, TestUtils.map(), 31, new ConcurrentHashMap<>(),
             Arrays.asList("_device", "_os", "_os_version", "_resolution", "_app_version", "_manufacturer", "_cpu", "_opengl", "_root", "_has_hinge", "_ram_total", "_disk_total", "_ram_current", "_disk_current", "_run", "_background", "_muted", "_orientation", "_online", "_bat"));
     }
 
@@ -407,6 +410,7 @@ public class ModuleCrashTests {
     @Test
     public void recordException_globalCrashFilter_dropFatal() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(CrashData::getFatal);
 
         Countly countly = new Countly().init(cConfig);
@@ -417,7 +421,7 @@ public class ModuleCrashTests {
 
         exception = new Exception("Some message 2");
         countly.crashes().recordHandledException(exception);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), null, false, false, null, 0, null, null);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -432,6 +436,7 @@ public class ModuleCrashTests {
     @Test
     public void recordHandledException_globalCrashFilter_allFieldsNull() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             crash.setStackTrace(null);
             crash.setCrashSegmentation(null);
@@ -449,7 +454,7 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false, TestUtils.map("sphinx_no", 324), 1, null, null);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false, TestUtils.map("sphinx_no", 324), 1, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -465,6 +470,7 @@ public class ModuleCrashTests {
     @Test
     public void recordException_crashFilter_globalCrashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
         cConfig.setCrashFilterCallback(crash -> crash.contains("secret"));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getCrashSegmentation().containsKey("secret"));
 
@@ -479,11 +485,11 @@ public class ModuleCrashTests {
 
         exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("secret", "secret"));
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), null, false, false, TestUtils.map("secret", "secret"), 0, null, null);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
 
         TestUtils.getCountyStore().clear();
         countly.crashes().recordUnhandledException(exception, TestUtils.map("secret", "secret"));
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), null, true, false, TestUtils.map("secret", "secret"), 0, null, null);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", true, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     private void validateCrash(@NonNull DeviceInfo deviceInfo, @NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
@@ -494,7 +500,8 @@ public class ModuleCrashTests {
         TestUtils.validateRequiredParams(RQ[0]);
 
         JSONObject crash = new JSONObject(RQ[0].get("crash"));
-        int paramCount = validateCrashMetrics(deviceInfo, crash, nativeCrash, customMetrics, baseMetricsExclude);
+
+        int paramCount = validateCrashMetrics(crash, nativeCrash, customMetrics, baseMetricsExclude);
 
         if (!error.isEmpty()) {
             paramCount++;
@@ -521,31 +528,31 @@ public class ModuleCrashTests {
         Assert.assertEquals(paramCount, crash.length());
     }
 
-    private int validateCrashMetrics(@NonNull DeviceInfo di, @NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
+    private int validateCrashMetrics(@NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
         int metricCount = 0;
 
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_device", di.mp.getDevice(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os", di.mp.getOS(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os_version", di.mp.getOSVersion(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_resolution", di.mp.getResolution(TestUtils.getContext()), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_app_version", di.mp.getAppVersion(TestUtils.getContext()), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_manufacturer", di.mp.getManufacturer(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_cpu", di.mp.getCpu(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_opengl", di.mp.getOpenGL(TestUtils.getContext()), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_root", di.mp.isRooted(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_has_hinge", di.mp.hasHinge(TestUtils.getContext()), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_total", di.mp.getRamTotal(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_total", di.mp.getDiskTotal(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_device", "C", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os", "A", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os_version", "B", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_resolution", "E", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_app_version", Countly.DEFAULT_APP_VERSION, crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_manufacturer", "D", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_cpu", "N", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_opengl", "O", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_root", "T", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_has_hinge", "Z", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_total", "48", crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_total", "45", crash);
 
         if (!nativeCrash) {
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_current", di.mp.getRamCurrent(TestUtils.getContext()), crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_current", di.mp.getDiskCurrent(), crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_run", di.mp.getRunningTime(), crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_background", di.isInBackground(), crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_muted", di.mp.isMuted(TestUtils.getContext()), crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_orientation", di.mp.getOrientation(TestUtils.getContext()), crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_online", di.mp.isOnline(TestUtils.getContext()), crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_bat", di.mp.getBatteryLevel(TestUtils.getContext()), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_current", "12", crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_current", "23", crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_run", "88", crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_background", "true", crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_muted", "V", crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_orientation", "S", crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_online", "U", crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_bat", "6", crash);
         } else {
             metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_native_cpp", "true", crash);
         }

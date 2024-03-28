@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,7 +41,6 @@ public class TestUtils {
     public final static String commonURL = "http://test.count.ly";
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
-    public final static String commonApplicationVersion = "1.0";
     public final static String SDK_NAME = "java-native-android";
     public final static String SDK_VERSION = "24.1.2-RC1";
 
