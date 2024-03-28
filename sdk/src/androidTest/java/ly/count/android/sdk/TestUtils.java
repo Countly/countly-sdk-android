@@ -539,7 +539,7 @@ public class TestUtils {
         Assert.assertEquals(SDK_NAME, params.get("sdk_name"));
     }
 
-    public static void validateRequiredParams(Map<String, String> params) {
+    public static void validateRequiredParams(@NonNull Map<String, String> params) {
         validateRequiredParams(params, commonDeviceId);
     }
 
