@@ -360,7 +360,7 @@ public class ModuleCrashTests {
                 "double", Double.MAX_VALUE,
                 "bool", true,
                 "float", 1.1,
-                "sphinx_no", 324), 1011, TestUtils.map("secret", "Minato"), Collections.singletonList("_ram_total"));
+                "sphinx_no", 324), 11, TestUtils.map("secret", "Minato"), Collections.singletonList("_ram_total"));
     }
 
     /**
@@ -390,7 +390,7 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
-        validateCrash(countly.config_.deviceInfo, null, null, true, false, TestUtils.map(), 11111, null,
+        validateCrash(countly.config_.deviceInfo, null, null, true, false, TestUtils.map(), 31, null,
             Arrays.asList("_device", "_os", "_os_version", "_resolution", "_app_version", "_manufacturer", "_cpu", "_opengl", "_root", "_has_hinge", "_ram_total", "_disk_total", "_ram_current", "_disk_current", "_run", "_background", "_muted", "_orientation", "_online", "_bat"));
     }
 
@@ -499,7 +499,7 @@ public class ModuleCrashTests {
             Assert.assertEquals(error, crash.getString("_error"));
         }
         Assert.assertEquals(!fatal, crash.getBoolean("_nonfatal"));
-        Assert.assertEquals(changedBits, crash.getInt("_bits"));
+        Assert.assertEquals(changedBits, crash.getInt("_ob"));
         if (customSegmentation != null && !customSegmentation.isEmpty()) {
             paramCount++;
             JSONObject custom = crash.getJSONObject("_custom");

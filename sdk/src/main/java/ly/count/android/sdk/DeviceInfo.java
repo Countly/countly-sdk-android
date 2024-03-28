@@ -694,13 +694,12 @@ class DeviceInfo {
     @NonNull
     JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
         JSONObject json = crashData.getCrashMetrics();
+        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
+
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
-            "_nonfatal", Boolean.toString(!crashData.getFatal()),
-            "_bits", Integer.toBinaryString(crashData.getChangedFieldsAsInt())
+            "_nonfatal", Boolean.toString(!crashData.getFatal())
         );
-
-        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
 
         if (!isNativeCrash) {
             String breadcrumbs = crashData.getBreadcrumbsAsString();
