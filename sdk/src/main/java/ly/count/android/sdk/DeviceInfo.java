@@ -702,7 +702,10 @@ class DeviceInfo {
         putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
 
         if (!isNativeCrash) {
-            putToJson(json, "_logs", crashData.getBreadcrumbsAsString());
+            String breadcrumbs = crashData.getBreadcrumbsAsString();
+            if (!breadcrumbs.isEmpty()) {
+                putToJson(json, "_logs", crashData.getBreadcrumbsAsString());
+            }
         }
 
         putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
