@@ -91,6 +91,22 @@ public class CrashDetailsTests {
         }
     }
 
+    @Test
+    public void getCustomSegmentsJson() throws JSONException {
+        Map<String, Object> cSeg = TestUtils.createMapString(5);
+
+        JSONObject jobj = DeviceInfo.getCustomSegmentsJson(cSeg);
+
+        Assert.assertEquals(cSeg.size(), jobj.length());
+
+        for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
+            String key = entry.getKey();
+            String value = (String) entry.getValue();
+
+            Assert.assertEquals(value, jobj.get(key));
+        }
+    }
+
     /**
      * Making sure that retrieving crash metrics takes into account the provided metric overrides
      * It should only set the common values and not any other
