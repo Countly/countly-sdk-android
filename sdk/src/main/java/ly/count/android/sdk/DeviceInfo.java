@@ -700,21 +700,26 @@ class DeviceInfo {
             //"_bits", Integer.toBinaryString(crashData.getChangedFieldsAsInt())
         );
 
-        try {
-            if (!isNativeCrash) {
-                json.put("_logs", crashData.getBreadcrumbsAsString());
+        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
+
+        if (!isNativeCrash) {
+            String breadcrumbs = crashData.getBreadcrumbsAsString();
+            if (!breadcrumbs.isEmpty()) {
+                putToJson(json, "_logs", crashData.getBreadcrumbsAsString());
             }
-        } catch (JSONException e) {
-            //no logs
         }
 
-        try {
-            json.put("_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
-        } catch (JSONException e) {
-            //no custom segments
-        }
-
+        putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
+        
         return json;
+    }
+
+    private void putToJson(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+
+        }
     }
 
     @NonNull

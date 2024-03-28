@@ -107,10 +107,6 @@ public class CrashDetailsTests {
         }
     }
 
-    private CrashData createCrashData(String errorText, boolean nonfatal, Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @Nullable Map<String, String> metricOverride, boolean isNativeCrash) {
-        return new CrashData(errorText, crashSegmentation, breadcrumbs, regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal);
-    }
-
     /**
      * Making sure that retrieving crash metrics takes into account the provided metric overrides
      * It should only set the common values and not any other
@@ -148,6 +144,10 @@ public class CrashDetailsTests {
         Assert.assertEquals(metricOverride.get("_resolution"), cData2.getString("_resolution"));
         Assert.assertEquals(metricOverride.get("_app_version"), cData2.getString("_app_version"));
         Assert.assertEquals(metricOverride.get("_manufacturer"), cData2.getString("_manufacturer"));
+    }
+
+    private CrashData createCrashData(String errorText, boolean nonfatal, Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @Nullable Map<String, String> metricOverride, boolean isNativeCrash) {
+        return new CrashData(errorText, crashSegmentation, breadcrumbs, regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal);
     }
 
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {
