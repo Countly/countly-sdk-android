@@ -328,7 +328,7 @@ public class ModuleCrashTests {
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_cpu", di.mp.getCpu(), crash);
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_opengl", di.mp.getOpenGL(TestUtils.getContext()), crash);
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_root", di.mp.isRooted(), crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_has_hinge", di.mp.isRooted(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_has_hinge", di.mp.hasHinge(TestUtils.getContext()), crash);
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_total", null, crash);
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_total", null, crash);
 

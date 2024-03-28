@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -122,12 +123,16 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig() {
-        CountlyConfig cc = new CountlyConfig(getContext(), commonAppKey, commonURL)
+        CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
         return cc;
+    }
+
+    protected static CountlyConfig getBaseConfig() {
+        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
     }
 
     public static String[] createStringArray(int count) {
@@ -519,6 +524,10 @@ public class TestUtils {
 
     public static Context getContext() {
         return ApplicationProvider.getApplicationContext();
+    }
+
+    public static Application getApplication() {
+        return (Application) getContext();
     }
 
     /**
