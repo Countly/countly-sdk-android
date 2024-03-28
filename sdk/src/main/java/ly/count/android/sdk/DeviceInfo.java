@@ -702,7 +702,10 @@ class DeviceInfo {
 
         try {
             if (!isNativeCrash) {
-                json.put("_logs", crashData.getBreadcrumbsAsString());
+                String breadcrumbs = crashData.getBreadcrumbsAsString();
+                if (!breadcrumbs.isEmpty()) {
+                    json.put("_logs", crashData.getBreadcrumbsAsString());
+                }
             }
         } catch (JSONException e) {
             //no logs
