@@ -3,6 +3,8 @@ package ly.count.android.sdk;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -361,6 +363,69 @@ public class ModuleCrashTests {
                 "sphinx_no", 324), 1011, TestUtils.map("secret", "Minato"), Collections.singletonList("_ram_total"));
     }
 
+    /**
+     * "recordHandledException" with global crash filter setting all fields empty
+     * Validate that after filtering out the crash, all fields are empty
+     * and saved as empty in the request
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordHandledException_globalCrashFilter_allFieldsEmpty() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            crash.setStackTrace("");
+            crash.setCrashSegmentation(new HashMap<>());
+            crash.setCrashMetrics(new JSONObject());
+            crash.setBreadcrumbs(new ArrayList<>());
+            crash.setFatal(!crash.getFatal());
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_1");
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_2");
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
+
+        validateCrash(countly.config_.deviceInfo, "", "", true, false, TestUtils.map(), 11111, null,
+            Arrays.asList("_device", "_os", "_os_version", "_resolution", "_app_version", "_manufacturer", "_cpu", "_opengl", "_root", "_has_hinge", "_ram_total", "_disk_total", "_ram_current", "_disk_current", "_run", "_background", "_muted", "_orientation", "_online", "_bat"));
+    }
+
+    /**
+     * "recordHandledException" with global crash filter setting all fields null
+     * Setting null does not have effects on the crash data,
+     * Crash data has null protection
+     * Validate that after filtering out the crash, all fields should be changed except fatal
+     * because we are negating it
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordHandledException_globalCrashFilter_allFieldsNull() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            crash.setStackTrace(null);
+            crash.setCrashSegmentation(null);
+            crash.setCrashMetrics(null);
+            crash.setBreadcrumbs(null);
+            crash.setFatal(!crash.getFatal());
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_1");
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_2");
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
+
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false, TestUtils.map("sphinx_no", 324), 1, null, null);
+    }
+
     private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean fatal, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits, Map<String, Object> customMetrics, List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
@@ -371,10 +436,14 @@ public class ModuleCrashTests {
         int paramCount = validateCrashMetrics(deviceInfo, crash, nativeCrash, customMetrics, baseMetricsExclude);
 
         paramCount += 3;
-        Assert.assertEquals(error, crash.getString("_error"));
+        if (Utils.isNullOrEmpty(error)) {
+            Assert.assertFalse(crash.has("_error"));
+        } else {
+            Assert.assertEquals(error, crash.getString("_error"));
+        }
         Assert.assertEquals(!fatal, crash.getBoolean("_nonfatal"));
         Assert.assertEquals(changedBits, crash.getInt("_bits"));
-        if (customSegmentation != null) {
+        if (customSegmentation != null && !customSegmentation.isEmpty()) {
             paramCount++;
             JSONObject custom = crash.getJSONObject("_custom");
             for (Map.Entry<String, Object> entry : customSegmentation.entrySet()) {
