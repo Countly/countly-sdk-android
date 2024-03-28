@@ -697,7 +697,6 @@ class DeviceInfo {
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
             "_nonfatal", Boolean.toString(!crashData.getFatal())
-            //"_bits", Integer.toBinaryString(crashData.getChangedFieldsAsInt())
         );
 
         putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
@@ -710,7 +709,7 @@ class DeviceInfo {
         }
 
         putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
-        
+
         return json;
     }
 

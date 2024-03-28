@@ -56,7 +56,9 @@ public class ModuleCrash extends ModuleBase {
      *
      * @param context android context
      */
-    void checkForNativeCrashDumps(Context context) {
+    void checkForNativeCrashDumps(@NonNull Context context) {
+        assert context != null;
+
         L.d("[ModuleCrash] Checking for native crash dumps");
 
         String basePath = context.getCacheDir().getAbsolutePath();
@@ -90,7 +92,9 @@ public class ModuleCrash extends ModuleBase {
         }
     }
 
-    private void recordNativeException(File dumpFile) {
+    private void recordNativeException(@NonNull File dumpFile) {
+        assert dumpFile != null;
+
         L.d("[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
 
         //check for consent
@@ -123,6 +127,8 @@ public class ModuleCrash extends ModuleBase {
     }
 
     private CrashData prepareCrashData(@NonNull String error, final boolean handled, final boolean isNativeCrash, @Nullable Map<String, Object> customSegmentation) {
+        assert error != null;
+
         if (!isNativeCrash) {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
@@ -142,6 +148,8 @@ public class ModuleCrash extends ModuleBase {
     }
 
     public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
+        assert crashData != null;
+
         L.d("[ModuleCrash] sendCrashReportToQueue");
 
         String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();
@@ -211,16 +219,18 @@ public class ModuleCrash extends ModuleBase {
      * If it does, the crash should be ignored
      *
      * @param crashData crash data to check
-     * @return true if a match was found
+     * @return true if a match was found and crash should be ignored
      */
     boolean crashFilterCheck(@NonNull CrashData crashData) {
+        assert crashData != null;
+
         L.d("[ModuleCrash] crashFilterCheck");
 
         if (crashFilterCallback != null) {
-            //no filter callback set, nothing to compare against
             return crashFilterCallback.filterCrash(crashData.getStackTrace());
         }
 
+        //no filter callback set, nothing to compare against
         return false;
     }
 
