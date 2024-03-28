@@ -692,26 +692,33 @@ class DeviceInfo {
      * Returns a JSON object containing the device crash report
      */
     @NonNull
-    JSONObject getCrashDataJSON(CrashData crashData) {
+    JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
         JSONObject json = crashData.getCrashMetrics();
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
             "_nonfatal", Boolean.toString(!crashData.getFatal())
         );
 
-        try {
-            json.put("_logs", crashData.getBreadcrumbsAsString());
-        } catch (JSONException e) {
-            //no logs
+        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
+
+        if (!isNativeCrash) {
+            String breadcrumbs = crashData.getBreadcrumbsAsString();
+            if (!breadcrumbs.isEmpty()) {
+                putToJson(json, "_logs", crashData.getBreadcrumbsAsString());
+            }
         }
 
-        try {
-            json.put("_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
-        } catch (JSONException e) {
-            //no custom segments
-        }
+        putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
 
         return json;
+    }
+
+    private void putToJson(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+
+        }
     }
 
     @NonNull
