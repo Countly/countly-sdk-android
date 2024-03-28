@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 interface MetricProvider {
     String getOS();
@@ -43,15 +44,17 @@ interface MetricProvider {
 
     String getDiskTotal();
 
-    String getBatteryLevel(Context context);
+    @Nullable String getBatteryLevel(Context context);
 
-    String getOrientation(Context context);
+    @Nullable String getOrientation(Context context);
 
     String isRooted();
 
-    String isOnline(Context context);
+    @Nullable String isOnline(Context context);
 
     String isMuted(Context context);
 
     String hasHinge(Context context);
+
+    String getRunningTime();
 }

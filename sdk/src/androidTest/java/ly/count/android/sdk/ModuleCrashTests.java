@@ -1,9 +1,13 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -25,10 +29,11 @@ public class ModuleCrashTests {
     CountlyConfig config;
     RequestQueueProvider requestQueueProvider;
 
+    MockedMetricProvider mmp = new MockedMetricProvider();
+
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
-        countlyStore.clear();
+        TestUtils.getCountyStore().clear();
 
         mCountly = new Countly();
         config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
@@ -181,9 +186,9 @@ public class ModuleCrashTests {
 
     @Test
     public void addCrashBreadcrumb() throws JSONException {
-        TestUtils.getCountyStore().clear();
-
-        Countly countly = new Countly().init(TestUtils.getBaseConfig());
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.metricProviderOverride = mmp;
+        Countly countly = new Countly().init(config);
 
         countly.crashes().addCrashBreadcrumb("Breadcrumb_1");
         countly.crashes().addCrashBreadcrumb("Breadcrumb_2");
@@ -194,14 +199,14 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", false);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 
     @Test
     public void addCrashBreadcrumbNullEmpty() throws JSONException {
-        TestUtils.getCountyStore().clear();
-
-        Countly countly = new Countly().init(TestUtils.getBaseConfig());
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.metricProviderOverride = mmp;
+        Countly countly = new Countly().init(config);
 
         countly.crashes().addCrashBreadcrumb("Breadcrumb_4");
         countly.crashes().addCrashBreadcrumb(null);
@@ -214,7 +219,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", false);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 
     @Test
@@ -279,16 +284,85 @@ public class ModuleCrashTests {
             "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
     }
 
-    private void validateCrash(String error, String breadcrumbs, boolean handled) throws JSONException {
+    private void validateCrash(@NonNull DeviceInfo deviceInfo, @NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
+        @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
 
-        JSONObject crash = new JSONObject(RQ[0].get("crash"));
+        TestUtils.validateRequiredParams(RQ[0]);
 
-        Assert.assertEquals(error, crash.getString("_error"));
-        Assert.assertEquals(breadcrumbs, crash.getString("_logs"));
-        Assert.assertEquals(handled, crash.getBoolean("_nonfatal"));
-        //todo validate all fields
+        JSONObject crash = new JSONObject(RQ[0].get("crash"));
+        int paramCount = validateCrashMetrics(deviceInfo, crash, nativeCrash, customMetrics, baseMetricsExclude);
+
+        if (!error.isEmpty()) {
+            paramCount++;
+            Assert.assertEquals(error, crash.getString("_error"));
+        }
+
+        paramCount += 2;//for nonFatal and ob
+        Assert.assertEquals(!fatal, crash.getBoolean("_nonfatal"));
+        Assert.assertEquals(changedBits, crash.getInt("_ob"));
+
+        if (!customSegmentation.isEmpty()) {
+            paramCount++;
+            JSONObject custom = crash.getJSONObject("_custom");
+            for (Map.Entry<String, Object> entry : customSegmentation.entrySet()) {
+                Assert.assertEquals(entry.getValue(), custom.get(entry.getKey()));
+            }
+            Assert.assertEquals(custom.length(), customSegmentation.size());
+        }
+
+        if (!nativeCrash && !breadcrumbs.isEmpty()) {
+            paramCount++;
+            Assert.assertEquals(breadcrumbs, crash.getString("_logs"));
+        }
+        Assert.assertEquals(paramCount, crash.length());
+    }
+
+    private int validateCrashMetrics(@NonNull DeviceInfo di, @NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
+        int metricCount = 0;
+
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_device", di.mp.getDevice(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os", di.mp.getOS(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os_version", di.mp.getOSVersion(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_resolution", di.mp.getResolution(TestUtils.getContext()), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_app_version", di.mp.getAppVersion(TestUtils.getContext()), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_manufacturer", di.mp.getManufacturer(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_cpu", di.mp.getCpu(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_opengl", di.mp.getOpenGL(TestUtils.getContext()), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_root", di.mp.isRooted(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_has_hinge", di.mp.hasHinge(TestUtils.getContext()), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_total", di.mp.getRamTotal(), crash);
+        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_total", di.mp.getDiskTotal(), crash);
+
+        if (!nativeCrash) {
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_current", di.mp.getRamCurrent(TestUtils.getContext()), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_current", di.mp.getDiskCurrent(), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_run", di.mp.getRunningTime(), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_background", di.isInBackground(), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_muted", di.mp.isMuted(TestUtils.getContext()), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_orientation", di.mp.getOrientation(TestUtils.getContext()), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_online", di.mp.isOnline(TestUtils.getContext()), crash);
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_bat", di.mp.getBatteryLevel(TestUtils.getContext()), crash);
+        } else {
+            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_native_cpp", "true", crash);
+        }
+
+        for (Map.Entry<String, Object> entry : customMetrics.entrySet()) {
+            Assert.assertEquals(entry.getValue(), crash.get(entry.getKey()));
+        }
+        metricCount += customMetrics.size();
+
+        return metricCount;
+    }
+
+    private int assertEqualsMetricIfNotExcluded(List<String> metricsToExclude, String metric, Object value, JSONObject crash) throws JSONException {
+        if (metricsToExclude.contains(metric)) {
+            Assert.assertFalse(crash.has(metric));
+            return 0;
+        }
+        Assert.assertEquals("assertEqualsMetricIfNotExcluded,  " + metric + " metric assertion failed in crashes expected:[" + value + "]" + "was:[" + crash.get(metric) + "]", value, crash.get(metric));
+        return 1;
     }
 
     private String extractStackTrace(Throwable throwable) {

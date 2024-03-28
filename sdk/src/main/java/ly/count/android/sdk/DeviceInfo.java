@@ -430,7 +430,7 @@ class DeviceInfo {
                 /**
                  * Returns the current device battery level.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getBatteryLevel(Context context) {
                     try {
@@ -459,7 +459,7 @@ class DeviceInfo {
                 /**
                  * Returns the current device orientation.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getOrientation(Context context) {
                     int orientation = context.getResources().getConfiguration().orientation;
@@ -497,7 +497,7 @@ class DeviceInfo {
                  * Checks if device is online.
                  */
                 @SuppressLint("MissingPermission")
-                @NonNull
+                @Nullable
                 @Override
                 public String isOnline(Context context) {
                     try {
@@ -549,6 +549,13 @@ class DeviceInfo {
                         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE) + "";
                     }
                     return "false";
+                }
+
+                /**
+                 * Get app's running time before crashing.
+                 */
+                @Override public String getRunningTime() {
+                    return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
                 }
             };
         }
@@ -694,12 +701,14 @@ class DeviceInfo {
     @NonNull
     JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
         JSONObject json = crashData.getCrashMetrics();
+
+        //setting this first so the followup are not picked up as "dev changes" in the change field
+        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
+
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
             "_nonfatal", Boolean.toString(!crashData.getFatal())
         );
-
-        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
 
         if (!isNativeCrash) {
             String breadcrumbs = crashData.getBreadcrumbsAsString();
@@ -739,7 +748,7 @@ class DeviceInfo {
                 "_ram_current", mp.getRamCurrent(context),
                 "_disk_current", mp.getDiskCurrent(),
                 "_bat", mp.getBatteryLevel(context),
-                "_run", getRunningTime(),
+                "_run", mp.getRunningTime(),
                 "_orientation", mp.getOrientation(context),
                 "_online", mp.isOnline(context),
                 "_muted", mp.isMuted(context),
@@ -812,12 +821,5 @@ class DeviceInfo {
         }
 
         return returnedSegmentation;
-    }
-
-    /**
-     * Get app's running time before crashing.
-     */
-    static String getRunningTime() {
-        return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
     }
 }

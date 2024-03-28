@@ -539,15 +539,21 @@ public class ModuleViewsTests {
 
     /**
      * Make sure automatic session related calls don't do anything if automatic view tracking is disabled
+     * This is explicitly with the manual onStart, onStop callbacks
      */
     @Test
     public void recordViewWithActivitiesAfterwardsAutoDisabled() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
+        //disable application class so the manual callbacks work
+        cc.setApplication(null);
+        cc.setContext(TestUtils.getContext());
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.views().recordView("abcd");
+        //record a view manually and validate the it is recorded
+        mCountly.views().startView("abcd");
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY);
+        mCountly.views().stopViewWithName("abcd");
         clearInvocations(ep);
 
         @NonNull Activity act = mock(Activity.class);
