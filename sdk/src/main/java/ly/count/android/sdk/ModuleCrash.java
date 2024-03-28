@@ -59,7 +59,9 @@ public class ModuleCrash extends ModuleBase {
      *
      * @param context android context
      */
-    void checkForNativeCrashDumps(Context context) {
+    void checkForNativeCrashDumps(@NonNull Context context) {
+        assert context != null;
+
         L.d("[ModuleCrash] Checking for native crash dumps");
 
         String basePath = context.getCacheDir().getAbsolutePath();
@@ -93,7 +95,9 @@ public class ModuleCrash extends ModuleBase {
         }
     }
 
-    private void recordNativeException(File dumpFile) {
+    private void recordNativeException(@NonNull File dumpFile) {
+        assert dumpFile != null;
+
         L.d("[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
 
         //check for consent
@@ -124,17 +128,17 @@ public class ModuleCrash extends ModuleBase {
         }
     }
 
-    private CrashData prepareCrashData(String error, boolean handled, boolean isNativeCrash, Map<String, Object> customSegmentation) {
+    private CrashData prepareCrashData(@NonNull String error, final boolean handled, final boolean isNativeCrash, @Nullable Map<String, Object> customSegmentation) {
+        assert error != null;
+
         if (!isNativeCrash) {
             error = error.substring(0, Math.min(20_000, error.length()));
         }
 
         Map<String, Object> combinedSegmentationValues = new HashMap<>();
-
         if (customCrashSegments != null) {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
-
         if (customSegmentation != null) {
             combinedSegmentationValues.putAll(customSegmentation);
         }
@@ -145,7 +149,8 @@ public class ModuleCrash extends ModuleBase {
         return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !handled);
     }
 
-    private void sendCrashReportToQueue(@NonNull CrashData crashData, boolean isNativeCrash) {
+    public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
+        assert crashData != null;
         L.d("[ModuleCrash] sendCrashReportToQueue");
 
         String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();
@@ -192,10 +197,9 @@ public class ModuleCrash extends ModuleBase {
                         addAllThreadInformationToCrash(pw);
                     }
 
-                    String exceptionString = sw.toString();
 
-                    CrashData crashData = prepareCrashData(exceptionString, false, false, null);
                     //check if it passes the crash filter
+                    CrashData crashData = prepareCrashData(sw.toString(), false, false, null);
                     if (!crashFilterCheck(crashData)) {
                         sendCrashReportToQueue(crashData, false);
                     }
@@ -220,6 +224,8 @@ public class ModuleCrash extends ModuleBase {
      * @return true if a match was found
      */
     boolean crashFilterCheck(CrashData crashData) {
+       assert crashData != null;
+      
         L.d("[ModuleCrash] Calling crashFilterCheck");
 
         if (crashFilterCallback != null) {

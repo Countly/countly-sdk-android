@@ -710,7 +710,7 @@ class DeviceInfo {
         }
 
         putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
-        
+
         return json;
     }
 
