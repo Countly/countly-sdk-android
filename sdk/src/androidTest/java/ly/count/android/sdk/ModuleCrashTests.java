@@ -450,6 +450,40 @@ public class ModuleCrashTests {
         validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false, TestUtils.map("sphinx_no", 324), 1, null, null);
     }
 
+    /**
+     * Two crash filter is registered, deprecated and global, because deprecated is registered, global crash filter will not work
+     * First crash filter is set to filter out crashes that contain "secret" in the stack trace
+     * Global crash filter is set to filter out crashes that contain "secret" in the crash segmentation
+     * Validate that first call to the "recordHandledException" and "recordUnhandledException" is filtered out by the crash filter
+     * Validate that second call to the "recordHandledException" and "recordUnhandledException" is not filtered out by the global crash filter
+     * because we have registered the deprecated crash filter first
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordException_crashFilter_globalCrashFilter() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.setCrashFilterCallback(crash -> crash.contains("secret"));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getCrashSegmentation().containsKey("secret"));
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("secret");
+        countly.crashes().recordHandledException(exception);
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.crashes().recordUnhandledException(exception);
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, TestUtils.map("secret", "secret"));
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), null, false, false, TestUtils.map("secret", "secret"), 0, null, null);
+
+        TestUtils.getCountyStore().clear();
+        countly.crashes().recordUnhandledException(exception, TestUtils.map("secret", "secret"));
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), null, true, false, TestUtils.map("secret", "secret"), 0, null, null);
+    }
+
     private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean fatal, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits, Map<String, Object> customMetrics, List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
