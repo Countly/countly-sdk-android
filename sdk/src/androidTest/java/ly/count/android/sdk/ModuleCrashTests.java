@@ -200,7 +200,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 
     @Test
@@ -220,7 +220,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 
     @Test
@@ -307,7 +307,7 @@ public class ModuleCrashTests {
 
         exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -359,7 +359,7 @@ public class ModuleCrashTests {
         exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false,
+        validateCrash(extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false,
             TestUtils.map("int", Integer.MAX_VALUE,
                 "double", Double.MAX_VALUE,
                 "bool", true,
@@ -395,7 +395,7 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
-        validateCrash(countly.config_.deviceInfo, "", "", true, false, TestUtils.map(), 31, new ConcurrentHashMap<>(),
+        validateCrash("", "", true, false, TestUtils.map(), 31, new ConcurrentHashMap<>(),
             Arrays.asList("_device", "_os", "_os_version", "_resolution", "_app_version", "_manufacturer", "_cpu", "_opengl", "_root", "_has_hinge", "_ram_total", "_disk_total", "_ram_current", "_disk_current", "_run", "_background", "_muted", "_orientation", "_online", "_bat"));
     }
 
@@ -421,7 +421,7 @@ public class ModuleCrashTests {
 
         exception = new Exception("Some message 2");
         countly.crashes().recordHandledException(exception);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -454,7 +454,7 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false, TestUtils.map("sphinx_no", 324), 1, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", true, false, TestUtils.map("sphinx_no", 324), 1, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -485,14 +485,67 @@ public class ModuleCrashTests {
 
         exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("secret", "secret"));
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
 
         TestUtils.getCountyStore().clear();
         countly.crashes().recordUnhandledException(exception, TestUtils.map("secret", "secret"));
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", true, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
-    private void validateCrash(@NonNull DeviceInfo deviceInfo, @NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
+    /**
+     * validate that adding breadcrumbs that exceeds max breadcrumb count greater than one should clip
+     * oldest breadcrumbs and keep the latest ones that is limited by the max breadcrumb count
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordException_globalCrashFilter_exceedMaxBreadcrumb() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxBreadcrumbCount(2);
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            crash.getBreadcrumbs().add("5");
+            crash.getBreadcrumbs().add("6");
+            crash.getBreadcrumbs().add("7");
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        countly.crashes().addCrashBreadcrumb("1");
+        countly.crashes().addCrashBreadcrumb("2");
+        countly.crashes().addCrashBreadcrumb("3");
+
+        Exception exception = new Exception("secret");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception), "6\n7\n", true, false, new ConcurrentHashMap<>(), 4, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * validate that adding invalid custom segmentation data while filtering out the crash
+     * must be eliminated from the crash data
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordException_globalCrashFilter_invalidCustomSegmentations() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            crash.getCrashSegmentation().put("5", new Object());
+            crash.getCrashSegmentation().put("6", new int[] { 1, 2 });
+            crash.getCrashSegmentation().put("7", "7");
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("secret");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("7", "7"), 8, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
@@ -529,32 +582,34 @@ public class ModuleCrashTests {
     }
 
     private int validateCrashMetrics(@NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
-        int metricCount = 0;
+        int metricCount = 12 - metricsToExclude.size();
 
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_device", "C", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os", "A", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os_version", "B", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_resolution", "E", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_app_version", Countly.DEFAULT_APP_VERSION, crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_manufacturer", "D", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_cpu", "N", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_opengl", "O", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_root", "T", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_has_hinge", "Z", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_total", "48", crash);
-        metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_total", "45", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_device", "C", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_os", "A", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_os_version", "B", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_resolution", "E", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_app_version", Countly.DEFAULT_APP_VERSION, crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_manufacturer", "D", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_cpu", "N", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_opengl", "O", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_root", "T", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_has_hinge", "Z", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_ram_total", "48", crash);
+        assertMetricIfNotExcluded(metricsToExclude, "_disk_total", "45", crash);
 
         if (!nativeCrash) {
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_ram_current", "12", crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_disk_current", "23", crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_run", "88", crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_background", "true", crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_muted", "V", crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_orientation", "S", crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_online", "U", crash);
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_bat", "6", crash);
+            metricCount += 8;
+            assertMetricIfNotExcluded(metricsToExclude, "_ram_current", "12", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_disk_current", "23", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_run", "88", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_background", "true", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_muted", "V", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_orientation", "S", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_online", "U", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_bat", "6", crash);
         } else {
-            metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_native_cpp", "true", crash);
+            metricCount++;
+            assertMetricIfNotExcluded(metricsToExclude, "_native_cpp", "true", crash);
         }
 
         for (Map.Entry<String, Object> entry : customMetrics.entrySet()) {
@@ -565,13 +620,12 @@ public class ModuleCrashTests {
         return metricCount;
     }
 
-    private int assertEqualsMetricIfNotExcluded(List<String> metricsToExclude, String metric, Object value, JSONObject crash) throws JSONException {
+    private void assertMetricIfNotExcluded(List<String> metricsToExclude, String metric, Object value, JSONObject crash) throws JSONException {
         if (metricsToExclude.contains(metric)) {
             Assert.assertFalse(crash.has(metric));
-            return 0;
+        } else {
+            Assert.assertEquals("assertEqualsMetricIfNotExcluded,  " + metric + " metric assertion failed in crashes expected:[" + value + "]" + "was:[" + crash.get(metric) + "]", value, crash.get(metric));
         }
-        Assert.assertEquals("assertEqualsMetricIfNotExcluded,  " + metric + " metric assertion failed in crashes expected:[" + value + "]" + "was:[" + crash.get(metric) + "]", value, crash.get(metric));
-        return 1;
     }
 
     private String extractStackTrace(Throwable throwable) {
