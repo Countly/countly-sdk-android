@@ -481,8 +481,7 @@ public class TestUtils {
      *
      * @return array of request params
      */
-    protected static Map<String, String>[] getCurrentRQ() {
-
+    protected static @NonNull Map<String, String>[] getCurrentRQ() {
         //get all request files from target folder
         String[] requests = getCountyStore().getRequests();
         //create array of request params

@@ -1,8 +1,10 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -196,7 +198,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", true, false, null, 0, null, null);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_1\nBreadcrumb_2\nBreadcrumb_3\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 
     @Test
@@ -216,7 +218,7 @@ public class ModuleCrashTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", true, false, null, 0, null, null);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(throwable), "Breadcrumb_4\nBreadcrumb_5\nBreadcrumb_6\n", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 
     @Test
@@ -281,7 +283,8 @@ public class ModuleCrashTests {
             "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
     }
 
-    private void validateCrash(DeviceInfo deviceInfo, String error, String breadcrumbs, boolean fatal, boolean nativeCrash, Map<String, Object> customSegmentation, int changedBits, Map<String, Object> customMetrics, List<String> baseMetricsExclude) throws JSONException {
+    private void validateCrash(@NonNull DeviceInfo deviceInfo, @NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
+        @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
 
@@ -306,7 +309,7 @@ public class ModuleCrashTests {
             Assert.assertEquals(custom.length(), customSegmentation.size());
         }
         if (!nativeCrash) {
-            if (breadcrumbs != null) {
+            if (!breadcrumbs.isEmpty()) {
                 paramCount++;
                 Assert.assertEquals(breadcrumbs, crash.getString("_logs"));
             }
@@ -314,11 +317,9 @@ public class ModuleCrashTests {
         Assert.assertEquals(paramCount, crash.length());
     }
 
-    private int validateCrashMetrics(DeviceInfo di, JSONObject crash, boolean nativeCrash, Map<String, Object> customMetrics, List<String> metricsToExclude) throws JSONException {
+    private int validateCrashMetrics(@NonNull DeviceInfo di, @NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
         int metricCount = 0;
-        if (metricsToExclude == null) {
-            metricsToExclude = Collections.emptyList();
-        }
+
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_device", di.mp.getDevice(), crash);
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os", di.mp.getOS(), crash);
         metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_os_version", di.mp.getOSVersion(), crash);
@@ -350,12 +351,12 @@ public class ModuleCrashTests {
         } else {
             metricCount += assertEqualsMetricIfNotExcluded(metricsToExclude, "_native_cpp", "true", crash);
         }
-        if (customMetrics != null) {
-            for (Map.Entry<String, Object> entry : customMetrics.entrySet()) {
-                Assert.assertEquals(entry.getValue(), crash.get(entry.getKey()));
-            }
-            metricCount += customMetrics.size();
+
+        for (Map.Entry<String, Object> entry : customMetrics.entrySet()) {
+            Assert.assertEquals(entry.getValue(), crash.get(entry.getKey()));
         }
+        metricCount += customMetrics.size();
+
         return metricCount;
     }
 
