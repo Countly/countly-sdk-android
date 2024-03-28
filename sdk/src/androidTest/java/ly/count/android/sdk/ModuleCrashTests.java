@@ -291,10 +291,14 @@ public class ModuleCrashTests {
         int paramCount = validateCrashMetrics(deviceInfo, crash, nativeCrash, customMetrics, baseMetricsExclude);
 
         paramCount += 2;
-        Assert.assertEquals(error, crash.getString("_error"));
+        if (Utils.isNullOrEmpty(error)) {
+            Assert.assertFalse(crash.has("_error"));
+        } else {
+            Assert.assertEquals(error, crash.getString("_error"));
+        }
         Assert.assertEquals(!fatal, crash.getBoolean("_nonfatal"));
         //Assert.assertEquals(changedBits, crash.getInt("_bits")); +1 TODO enable this when merged
-        if (customSegmentation != null) {
+        if (customSegmentation != null && !customSegmentation.isEmpty()) {
             paramCount++;
             JSONObject custom = crash.getJSONObject("_custom");
             for (Map.Entry<String, Object> entry : customSegmentation.entrySet()) {
