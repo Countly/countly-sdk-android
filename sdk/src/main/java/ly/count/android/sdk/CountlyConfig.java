@@ -109,7 +109,7 @@ public class CountlyConfig {
     protected String starRatingTextDismiss = null;
 
     protected boolean loggingEnabled = false;
-    
+
     protected boolean enableAutomaticViewTracking = false;
 
     protected boolean autoTrackingUseShortName = false;
@@ -162,6 +162,9 @@ public class CountlyConfig {
 
     protected Integer sessionUpdateTimerDelay = null;
 
+    /**
+     * @deprecated This is deprecated, will be removed in the future
+     */
     protected CrashFilterCallback crashFilterCallback;
 
     protected boolean starRatingDialogIsCancellable = false;
@@ -616,6 +619,7 @@ public class CountlyConfig {
     /**
      * @param callback
      * @return Returns the same config object for convenient linking
+     * @deprecated This call is deprecated, please use <pre>crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)</pre> instead
      */
     public synchronized CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
         crashFilterCallback = callback;

@@ -254,7 +254,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);
         Assert.assertFalse(config.temporaryDeviceIdEnabled);
-        Assert.assertNull(config.crashFilterCallback);
+        Assert.assertNull(config.crashes.globalCrashFilterCallback);
         Assert.assertNull(config.tamperingProtectionSalt);
         Assert.assertNull(config.globalViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);

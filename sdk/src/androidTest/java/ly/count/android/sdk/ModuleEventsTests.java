@@ -402,7 +402,7 @@ public class ModuleEventsTests {
 
     @Test
     public void recordEvent_validateFromRQ() throws JSONException {
-        CountlyConfig countlyConfig = TestUtils.getBaseConfig();
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
         countlyConfig.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(countlyConfig);
 
