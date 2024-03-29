@@ -429,6 +429,69 @@ public class ModuleCrashTests {
     }
 
     /**
+     * Global crash filter adds unsupported data types to the crash metrics
+     * Unsupported data types are eliminated from the crash metrics while filtering out the crash
+     * Validate that unsupported data types are eliminated from the crash metrics
+     * And because one of the base metrics is overridden with unsupported data type, it is eliminated from the crash metrics
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordException_globalCrashFilter_eliminateUnsupportedTypesFromCrashMetrics() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            crash.getCrashMetrics().put("5", new Object());
+            crash.getCrashMetrics().put("6", new int[] { 1, 2 });
+            crash.getCrashMetrics().put("7", "7");
+            crash.getCrashMetrics().put("8", 8);
+            crash.getCrashMetrics().put("9", 9.9d);
+            crash.getCrashMetrics().put("10", true);
+            crash.getCrashMetrics().put("11", 11.1f);
+            crash.getCrashMetrics().put("_device", new Object());
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception), "", true, false, new ConcurrentHashMap<>(), 2, TestUtils.map(
+            "7", "7",
+            "8", 8,
+            "9", 9.9,
+            "10", true,
+            "11", 11.1), Collections.singletonList("_device"));
+    }
+
+    /**
+     * Global crash filter adds unsupported data types to the crash metrics
+     * Unsupported data types are eliminated from the crash metrics while filtering out the crash
+     * Validate that unsupported data types are eliminated from the crash metrics
+     * And because one of the base metrics is overridden with unsupported data type, it is eliminated from the crash metrics
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordException_globalCrashFilter_unsupportedTypesMetrics_noChange() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            crash.getCrashMetrics().put("5", new Object());
+            crash.getCrashMetrics().put("6", new int[] { 1, 2 });
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception), "", true, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
      * "recordHandledException" with global crash filter setting all fields null
      * Setting null does not have effects on the crash data,
      * Crash data has null protection

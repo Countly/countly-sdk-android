@@ -197,7 +197,6 @@ public class ModuleCrash extends ModuleBase {
                         addAllThreadInformationToCrash(pw);
                     }
 
-
                     //check if it passes the crash filter
                     CrashData crashData = prepareCrashData(sw.toString(), false, false, null);
                     if (!crashFilterCheck(crashData)) {
@@ -224,8 +223,8 @@ public class ModuleCrash extends ModuleBase {
      * @return true if a match was found
      */
     boolean crashFilterCheck(CrashData crashData) {
-       assert crashData != null;
-      
+        assert crashData != null;
+
         L.d("[ModuleCrash] Calling crashFilterCheck");
 
         if (crashFilterCallback != null) {
@@ -250,6 +249,7 @@ public class ModuleCrash extends ModuleBase {
             }
 
             UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
+            UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics());
             UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
         }
 
