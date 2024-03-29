@@ -1,9 +1,10 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
 
 /**
@@ -165,11 +166,14 @@ public class CrashData {
     }
 
     protected Map<String, Object> convertJSONToMap(JSONObject json) {
-        Map<String, Object> map = new ConcurrentHashMap<>();
-
-        while (json.keys().hasNext()) {
-            String key = json.keys().next();
-            map.put(key, json.opt(key));
+        Map<String, Object> map = new HashMap<>();
+        Iterator<String> keys = json.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            Object value = json.opt(key);
+            if (value != null) {
+                map.put(key, value);
+            }
         }
         return map;
     }

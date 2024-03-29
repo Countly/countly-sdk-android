@@ -31,7 +31,7 @@ public class CrashDataTests {
         Assert.assertEquals(crashData.getStackTrace(), "ST");
         Assert.assertEquals(crashData.getCrashSegmentation(), crashSegmentation);
         Assert.assertEquals(crashData.getBreadcrumbs(), breadcrumbs);
-        Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
+        Assert.assertEquals(crashData.getCrashMetrics(), crashData.convertJSONToMap(crashMetrics));
         Assert.assertTrue(crashData.getFatal());
     }
 
@@ -153,7 +153,7 @@ public class CrashDataTests {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
         crashData.setCrashMetrics(null);
 
-        Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
+        Assert.assertEquals(crashData.getCrashMetrics(), crashData.convertJSONToMap(crashMetrics));
         validateChanged(crashData, false, false, false, false, false);
     }
 
@@ -224,7 +224,7 @@ public class CrashDataTests {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
         crashData.setCrashMetrics(crashData.convertJSONToMap(crashMetrics));
 
-        Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
+        Assert.assertEquals(crashData.getCrashMetrics(), crashData.convertJSONToMap(crashMetrics));
         validateChanged(crashData, false, false, false, false, false);
     }
 
@@ -263,7 +263,11 @@ public class CrashDataTests {
     public void setCrashMetrics_withoutSetter() throws JSONException {
         JSONObject crashMetrics = new JSONObject();
         crashMetrics.put("key", "value");
+        System.out.println("AAAA");
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
+        System.out.println("BBBB");
+
+        System.out.println(crashData.getCrashMetrics());
         crashData.getCrashMetrics().put("key2", "value2");
 
         validateChanged(crashData, false, false, false, true, false);
