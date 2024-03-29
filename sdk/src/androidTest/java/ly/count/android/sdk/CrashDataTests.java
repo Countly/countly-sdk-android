@@ -76,9 +76,9 @@ public class CrashDataTests {
     }
 
     @Test
-    public void setCrashMetrics() throws JSONException {
+    public void setCrashMetrics() {
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), new JSONObject(), true);
-        JSONObject crashMetrics = new JSONObject();
+        Map<String, Object> crashMetrics = new HashMap<>();
         crashMetrics.put("key", "value");
         crashData.setCrashMetrics(crashMetrics);
         Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
@@ -103,7 +103,7 @@ public class CrashDataTests {
         breadcrumbs.add("key");
         breadcrumbs.add("value");
         crashData.setBreadcrumbs(breadcrumbs);
-        JSONObject crashMetrics = new JSONObject();
+        Map<String, Object> crashMetrics = new HashMap<>();
         crashMetrics.put("key", "value");
         crashData.setCrashMetrics(crashMetrics);
         crashData.setFatal(false);
@@ -120,7 +120,7 @@ public class CrashDataTests {
         breadcrumbs.add("key");
         breadcrumbs.add("value");
         crashData.setBreadcrumbs(breadcrumbs);
-        JSONObject crashMetrics = new JSONObject();
+        HashMap<String, Object> crashMetrics = new HashMap<>();
         crashMetrics.put("key", "value");
         crashData.setCrashMetrics(crashMetrics);
         crashData.setFatal(false);
@@ -222,7 +222,7 @@ public class CrashDataTests {
         JSONObject crashMetrics = new JSONObject();
         crashMetrics.put("key", "value");
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
-        crashData.setCrashMetrics(crashMetrics);
+        crashData.setCrashMetrics(crashData.convertJSONToMap(crashMetrics));
 
         Assert.assertEquals(crashData.getCrashMetrics(), crashMetrics);
         validateChanged(crashData, false, false, false, false, false);

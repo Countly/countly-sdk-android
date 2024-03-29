@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
 
 /**
@@ -13,7 +14,7 @@ public class CrashData {
     private @NonNull Map<String, Object> crashSegmentation;
     private @NonNull List<String> breadcrumbs;
     private boolean fatal;
-    private @NonNull JSONObject crashMetrics;
+    private @NonNull Map<String, Object> crashMetrics;
     /**
      * 0 - stackTrace
      * 1 - crashSegmentation
@@ -23,7 +24,7 @@ public class CrashData {
      */
     private final String[] checksums = new String[5];
 
-    public CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
+    protected CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
         assert stackTrace != null;
         assert crashSegmentation != null;
         assert breadcrumbs != null;
@@ -32,7 +33,7 @@ public class CrashData {
         this.stackTrace = stackTrace;
         this.crashSegmentation = crashSegmentation;
         this.breadcrumbs = breadcrumbs;
-        this.crashMetrics = crashMetrics;
+        this.crashMetrics = convertJSONToMap(crashMetrics);
         this.fatal = fatal;
 
         calculateChecksums(checksums);
@@ -64,7 +65,7 @@ public class CrashData {
      *
      * @return crash as a JSONObject instance
      */
-    public @NonNull JSONObject getCrashMetrics() {
+    public @NonNull Map<String, Object> getCrashMetrics() {
         assert crashMetrics != null;
         return crashMetrics;
     }
@@ -74,7 +75,7 @@ public class CrashData {
      *
      * @param crashMetrics of a crash
      */
-    public void setCrashMetrics(@NonNull JSONObject crashMetrics) {
+    public void setCrashMetrics(@NonNull Map<String, Object> crashMetrics) {
         if (crashMetrics != null) {
             this.crashMetrics = crashMetrics;
         }
@@ -157,6 +158,20 @@ public class CrashData {
         }
 
         this.breadcrumbs = breadcrumbs;
+    }
+
+    protected JSONObject getCrashMetricsJSON() {
+        return new JSONObject(crashSegmentation);
+    }
+
+    protected Map<String, Object> convertJSONToMap(JSONObject json) {
+        Map<String, Object> map = new ConcurrentHashMap<>();
+
+        while (json.keys().hasNext()) {
+            String key = json.keys().next();
+            map.put(key, json.opt(key));
+        }
+        return map;
     }
 
     /**
