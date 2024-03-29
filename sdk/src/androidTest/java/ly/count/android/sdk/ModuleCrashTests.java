@@ -628,17 +628,20 @@ public class ModuleCrashTests {
     }
 
     /**
-     *
+     * Validate that 2 native crash dumps are sent when the global crash filter set to be eliminated
+     * only the crash that contains "secret" in the stack trace
      */
     @Test
-    public void recordException_globalCrashFilter_nativeCrash() {
+    public void recordException_globalCrashFilter_nativeCrash() throws JSONException {
         createNativeDumFiles();
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains(Base64.getEncoder().encodeToString("secret".getBytes())));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains(extractNativeCrash("secret")));
 
         new Countly().init(cConfig);
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        validateCrash(extractNativeCrash("dump1"), "", true, true, 2, 0, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractNativeCrash("dump2"), "", true, true, 2, 1, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     private void createNativeDumFiles() {
@@ -668,12 +671,17 @@ public class ModuleCrashTests {
 
     private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
+        validateCrash(error, breadcrumbs, fatal, nativeCrash, 1, 0, customSegmentation, changedBits, customMetrics, baseMetricsExclude);
+    }
+
+    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, int rqSize, int idx,
+        @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(1, RQ.length);
+        Assert.assertEquals(rqSize, RQ.length);
 
-        TestUtils.validateRequiredParams(RQ[0]);
+        TestUtils.validateRequiredParams(RQ[idx]);
 
-        JSONObject crash = new JSONObject(RQ[0].get("crash"));
+        JSONObject crash = new JSONObject(RQ[idx].get("crash"));
 
         int paramCount = validateCrashMetrics(crash, nativeCrash, customMetrics, baseMetricsExclude);
 
@@ -730,7 +738,7 @@ public class ModuleCrashTests {
             assertMetricIfNotExcluded(metricsToExclude, "_bat", "6", crash);
         } else {
             metricCount++;
-            assertMetricIfNotExcluded(metricsToExclude, "_native_cpp", "true", crash);
+            assertMetricIfNotExcluded(metricsToExclude, "_native_cpp", true, crash);
         }
 
         for (Map.Entry<String, Object> entry : customMetrics.entrySet()) {
@@ -754,6 +762,10 @@ public class ModuleCrashTests {
         PrintWriter pw = new PrintWriter(sw);
         throwable.printStackTrace(pw);
         return sw.toString();
+    }
+
+    private String extractNativeCrash(String crash) {
+        return Base64.getEncoder().encodeToString(crash.getBytes());
     }
 
     @Test(expected = StackOverflowError.class)
