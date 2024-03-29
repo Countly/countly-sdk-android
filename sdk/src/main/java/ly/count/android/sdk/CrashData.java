@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -162,7 +163,14 @@ public class CrashData {
     }
 
     protected JSONObject getCrashMetricsJSON() {
-        return new JSONObject(crashSegmentation);
+        JSONObject crashMetrics = new JSONObject();
+        for (Map.Entry<String, Object> entry : this.crashMetrics.entrySet()) {
+            try {
+                crashMetrics.put(entry.getKey(), entry.getValue());
+            } catch (JSONException ignored) {
+            }
+        }
+        return crashMetrics;
     }
 
     protected Map<String, Object> convertJSONToMap(JSONObject json) {
