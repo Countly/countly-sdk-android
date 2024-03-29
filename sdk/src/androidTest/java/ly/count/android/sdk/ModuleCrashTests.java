@@ -415,7 +415,6 @@ public class ModuleCrashTests {
     public void recordException_globalCrashFilter_dropFatal() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.crashes.enableCrashReporting();
         cConfig.crashes.setGlobalCrashFilterCallback(CrashData::getFatal);
 
         Countly countly = new Countly().init(cConfig);
@@ -427,15 +426,6 @@ public class ModuleCrashTests {
         exception = new Exception("Some message 2");
         countly.crashes().recordHandledException(exception);
         validateCrash(extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
-
-        exception = new IOException("Some message 3");
-        sneakyThrow(exception);
-    }
-
-    // Method to perform sneaky throw
-    @SuppressWarnings("unchecked")
-    private static <T extends Throwable> void sneakyThrow(Throwable throwable) throws T {
-        throw (T) throwable;
     }
 
     /**
