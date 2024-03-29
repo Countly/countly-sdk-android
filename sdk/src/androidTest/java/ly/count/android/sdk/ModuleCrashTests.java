@@ -415,6 +415,7 @@ public class ModuleCrashTests {
     public void recordException_globalCrashFilter_dropFatal() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.enableCrashReporting();
         cConfig.crashes.setGlobalCrashFilterCallback(CrashData::getFatal);
 
         Countly countly = new Countly().init(cConfig);
@@ -426,6 +427,15 @@ public class ModuleCrashTests {
         exception = new Exception("Some message 2");
         countly.crashes().recordHandledException(exception);
         validateCrash(extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+
+        exception = new IOException("Some message 3");
+        sneakyThrow(exception);
+    }
+
+    // Method to perform sneaky throw
+    @SuppressWarnings("unchecked")
+    private static <T extends Throwable> void sneakyThrow(Throwable throwable) throws T {
+        throw (T) throwable;
     }
 
     /**
@@ -637,6 +647,38 @@ public class ModuleCrashTests {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains(extractNativeCrash("secret")));
+
+        new Countly().init(cConfig);
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        validateCrash(extractNativeCrash("dump1"), "", true, true, 2, 0, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractNativeCrash("dump2"), "", true, true, 2, 1, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Validate that deprecated crash filter, filters out all native crash dumps
+     * Validate RQ is empty after initialization of the SDK
+     */
+    @Test
+    public void recordException_crashFilter_nativeCrash_eliminateAll() {
+        createNativeDumFiles();
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.setCrashFilterCallback(crash -> true);
+
+        new Countly().init(cConfig);
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * Validate that deprecated crash filter, filters out only the crash that contains "secret" in the stack trace
+     * Validate that 2 native crash dumps are sent when the crash filter set to be eliminated
+     */
+    @Test
+    public void recordException_crashFilter_nativeCrash() throws JSONException {
+        createNativeDumFiles();
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.setCrashFilterCallback(crash -> crash.contains(extractNativeCrash("secret")));
 
         new Countly().init(cConfig);
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
