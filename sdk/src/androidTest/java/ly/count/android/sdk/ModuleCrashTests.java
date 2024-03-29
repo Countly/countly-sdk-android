@@ -343,7 +343,7 @@ public class ModuleCrashTests {
             }
             crash.getCrashSegmentation().remove("secret");
             crash.setFatal(true);
-            TestUtils.put(crash.getCrashMetrics(), "secret", "Minato");
+            crash.getCrashMetrics().put("secret", "Minato");
             crash.getCrashMetrics().remove("_ram_total");
 
             return crash.getCrashSegmentation().containsKey("sphinx_no_1");
@@ -385,7 +385,7 @@ public class ModuleCrashTests {
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             crash.setStackTrace("");
             crash.setCrashSegmentation(new HashMap<>());
-            crash.setCrashMetrics(new JSONObject());
+            crash.setCrashMetrics(new HashMap<>());
             crash.setBreadcrumbs(new ArrayList<>());
             crash.setFatal(!crash.getFatal());
 
