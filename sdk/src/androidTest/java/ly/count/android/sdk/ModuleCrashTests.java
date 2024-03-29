@@ -2,10 +2,14 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -543,6 +547,60 @@ public class ModuleCrashTests {
         Exception exception = new Exception("secret");
         countly.crashes().recordUnhandledException(exception);
         validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("7", "7"), 8, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * validate that native crash dumps are not sent when global crash filter is set to filter out all crashes
+     * Validate RQ is empty after initialization of the SDK
+     */
+    @Test
+    public void recordException_globalCrashFilter_nativeCrash_filterAll() {
+        createNativeDumFiles();
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> true);
+
+        new Countly().init(cConfig);
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void recordException_globalCrashFilter_nativeCrash() {
+        createNativeDumFiles();
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains(Base64.getEncoder().encodeToString("secret".getBytes())));
+
+        new Countly().init(cConfig);
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+    }
+
+    private void createNativeDumFiles() {
+        TestUtils.getCountyStore().clear();
+
+        String finalPath = TestUtils.getContext().getCacheDir().getAbsolutePath() + File.separator + "Countly" + File.separator + "CrashDumps";
+
+        createFile(finalPath, File.separator + "dump1.dmp", "dump1");
+        createFile(finalPath, File.separator + "dump2.dmp", "dump2");
+        createFile(finalPath, File.separator + "dump3.dmp", "secret");
+    }
+
+    private void createFile(String filePath, String fileName, String data) {
+        try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                file.mkdirs();
+            }
+            file = new File(filePath + fileName);
+
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(data.getBytes());
+            fos.close();
+        } catch (IOException ignored) {
+        }
     }
 
     private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
