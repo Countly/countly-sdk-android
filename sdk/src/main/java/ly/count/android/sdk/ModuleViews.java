@@ -117,7 +117,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         UtilsInternalLimits.removeReservedKeysFromSegmentation(segmentation, reservedSegmentationKeysViews, "[ModuleViews] updateGlobalViewSegmentationInternal, ", L);
 
         automaticViewSegmentation.putAll(segmentation);
-        UtilsInternalLimits.truncateSegmentationValues(automaticViewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] setGlobalViewSegmentationInternal", L);
+        UtilsInternalLimits.truncateSegmentationValues(automaticViewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] updateGlobalViewSegmentationInternal", L);
     }
 
     /**
@@ -425,7 +425,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        UtilsInternalLimits.truncateSegmentationValues(viewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] addSegmentationToViewWithID", L);
+        UtilsInternalLimits.truncateSegmentationValues(viewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] addSegmentationToViewWithIDInternal", L);
         UtilsInternalLimits.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] addSegmentationToViewWithID, ", L);
 
         if (vd.viewSegmentation == null) {
