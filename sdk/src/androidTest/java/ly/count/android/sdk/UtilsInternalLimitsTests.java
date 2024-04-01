@@ -42,7 +42,7 @@ public class UtilsInternalLimitsTests {
 
         String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertNull(truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, value is null, returning");
     }
 
     /**
@@ -59,7 +59,7 @@ public class UtilsInternalLimitsTests {
 
         String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertEquals("", truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, key is empty, returning");
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, value is empty, returning");
     }
 
     /**
@@ -385,5 +385,29 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals("12", segmentation.get("abcde"));
         Assert.assertEquals("va", segmentation.get("test_"));
         Assert.assertEquals(45.678f, segmentation.get("map_t"));
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation_null() {
+        Map<String, Object> segmentation = null;
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(5)
+            .setMaxValueSize(2)
+            .setMaxSegmentationValues(3);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertNull(segmentation);
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation_empty() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(5)
+            .setMaxValueSize(2)
+            .setMaxSegmentationValues(3);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(0, segmentation.size());
     }
 }
