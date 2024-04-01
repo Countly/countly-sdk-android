@@ -24,7 +24,6 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -871,6 +870,7 @@ class ConnectionQueue implements RequestQueueProvider {
      */
     void ensureExecutor() {
         if (executor_ == null) {
+            L.v("[ConnectionQueue] ensureExecutor, Creating new executor");
             executor_ = Executors.newSingleThreadExecutor();
         }
     }
@@ -880,19 +880,22 @@ class ConnectionQueue implements RequestQueueProvider {
      * process the local connection queue data.
      * Does nothing if there is connection queue data or if a ConnectionProcessor
      * is already running.
-     *
+     * <br>
      * Should only be called if SDK is initialized
      */
     public void tick() {
-        L.v("[Connection Queue] tick, Not empty:[" + !isRequestQueueEmpty() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
-            || connectionProcessorFuture_.isDone()) + "]");
+        boolean rqEmpty = isRequestQueueEmpty(); // this is a heavy operation, do it only once. Why heavy? reading storage
+        boolean cpDoneIfOngoing = connectionProcessorFuture_ != null && connectionProcessorFuture_.isDone();
+        L.v("[ConnectionQueue] tick, IsRQEmpty:[" + rqEmpty + "], HasOngoingProcess:[" + (connectionProcessorFuture_ == null) + "], OngoingProcess_Done:[" + cpDoneIfOngoing + "]");
 
         if (!Countly.sharedInstance().isInitialized()) {
+            L.e("[ConnectionQueue] tick, SDK is not initialized");
             //attempting to tick when the SDK is not initialized
             return;
         }
 
-        if (!isRequestQueueEmpty() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
+        if (!rqEmpty && (connectionProcessorFuture_ == null || cpDoneIfOngoing)) {
+            L.d("[ConnectionQueue] tick, Starting ConnectionProcessor");
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
         }
