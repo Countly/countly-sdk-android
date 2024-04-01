@@ -431,6 +431,45 @@ public class ModuleEventsTests {
         validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
     }
 
+    /**
+     * Validate that only normal events' segmentation values are clipped to the maximum allowed values
+     * EQ size is 1 to trigger request generation
+     */
+    @Test
+    public void internalLimits_recordEventInternal_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Map<String, Object> threeSegmentation = TestUtils.map("a", 1, "b", 2, "c", 3);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7), 1, 1.1d, 1.1d);
+        validateEventInRQ("rnd_key", TestUtils.map("f", 6, "g", 7), 1, 1.1d, 1.1d, 0);
+
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 1);
+
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 3);
+
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 4);
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 6);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, threeSegmentation);
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, threeSegmentation, 1, 0.0d, 0.0d, 7);
+    }
+
     protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(idx + 1, RQ.length);
@@ -439,8 +478,8 @@ public class ModuleEventsTests {
         JSONObject event = events.getJSONObject(0);
         Assert.assertEquals(eventName, event.get("key"));
         Assert.assertEquals(count, event.getInt("count"));
-        Assert.assertEquals(sum, event.getDouble("sum"), 0.0001);
-        Assert.assertEquals(duration, event.getDouble("dur"), 0.0001);
+        Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
+        Assert.assertEquals(duration, event.optDouble("dur", 0.0d), 0.0001);
         return event;
     }
 

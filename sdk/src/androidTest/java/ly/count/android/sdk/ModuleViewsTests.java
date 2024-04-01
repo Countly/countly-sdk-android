@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1370,6 +1371,72 @@ public class ModuleViewsTests {
         clearInvocations(ep);
     }
 
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_setGlobalSegmentation_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+        config.setGlobalViewSegmentation(TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5));
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a");
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        ClearFillSegmentationViewStart(viewStartSegm, "a", true, TestUtils.map("d", 4, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+    }
+
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_startEvent_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a", TestUtils.map("d", 4, "e", 5, "f", 6));
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        ClearFillSegmentationViewStart(viewStartSegm, "a", true, TestUtils.map("f", 6, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+    }
+
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation
+     * Also validate that the global segmentation is updated correctly
+     * when the view is stopped
+     * "setGlobalViewSegmentation" call from the views interface is used
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_setGlobalSegmentation_maxSegmentationValues_interface() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a");
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        ClearFillSegmentationViewStart(viewStartSegm, "a", true);
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+
+        countly.views().setGlobalViewSegmentation(TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5));
+        countly.views().stopViewWithName("a");
+        Map<String, Object> viewEndSegm = TestUtils.map();
+        ClearFillSegmentationViewEnd(viewEndSegm, "a", TestUtils.map("d", 4, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewEndSegm, 1, 0.0d, 0.0d, 1);
+    }
     //test for sessions when consent removed
 
     //todo extract orientation tests
