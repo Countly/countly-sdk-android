@@ -319,4 +319,71 @@ public class UtilsInternalLimitsTests {
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new int[] { 1, 2 }));
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(null));
     }
+
+    @Test
+    public void truncateValueSize() {
+        String value = "test";
+        int limit = 2;
+
+        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, new ModuleLog(), "tag");
+        Assert.assertEquals("te", truncatedValue);
+    }
+
+    @Test
+    public void truncateValueSize_null() {
+        String value = null;
+        int limit = 4;
+        ModuleLog spyLog = Mockito.spy(new ModuleLog());
+
+        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, spyLog, "tag");
+        Assert.assertNull(truncatedValue);
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateValueSize, value is null, returning");
+    }
+
+    @Test
+    public void truncateValueSize_empty() {
+        String value = "";
+        int limit = 4;
+        ModuleLog spyLog = Mockito.spy(new ModuleLog());
+
+        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, spyLog, "tag");
+        Assert.assertEquals("", truncatedValue);
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateValueSize, value is empty, returning");
+    }
+
+    @Test
+    public void truncateValueSize_multiple() {
+        String firstValue = "test_test";
+        String secondValue = "test";
+        int limit = 4;
+
+        String firstTruncatedValue = UtilsInternalLimits.truncateValueSize(firstValue, limit, new ModuleLog(), "tag");
+        String secondTruncatedValue = UtilsInternalLimits.truncateValueSize(secondValue, limit, new ModuleLog(), "tag");
+
+        Assert.assertEquals("test", firstTruncatedValue);
+        Assert.assertEquals(secondValue, secondTruncatedValue);
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        segmentation.put("test_test", "value1");
+        segmentation.put("test", "value2");
+        segmentation.put("hobbit", 456789);
+        segmentation.put("map_to", 45.678f);
+        segmentation.put("map_too", TestUtils.map("a", 1));
+        segmentation.put("abcdefg", "12345");
+
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(5)
+            .setMaxValueSize(2)
+            .setMaxSegmentationValues(3);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+
+        Assert.assertEquals(3, segmentation.size());
+        Assert.assertEquals("12", segmentation.get("abcde"));
+        Assert.assertEquals("va", segmentation.get("test_"));
+        Assert.assertEquals(45.678f, segmentation.get("map_t"));
+    }
 }
