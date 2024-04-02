@@ -384,7 +384,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(3, segmentation.size());
         Assert.assertEquals("12", segmentation.get("abcde"));
         Assert.assertEquals("va", segmentation.get("test_"));
-        Assert.assertEquals(45.678f, segmentation.get("map_t"));
+        Assert.assertEquals(TestUtils.map("a", 1), segmentation.get("map_t"));
     }
 
     @Test

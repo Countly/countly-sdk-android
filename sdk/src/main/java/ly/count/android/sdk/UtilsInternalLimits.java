@@ -153,7 +153,7 @@ public class UtilsInternalLimits {
     }
 
     /**
-     * This function removes unsupported data types then applies following internal limits to the provided segmentation map:
+     * Applies following internal limits to the provided segmentation map:
      * - max key length
      * - max value size
      * - max number of keys
@@ -174,7 +174,6 @@ public class UtilsInternalLimits {
             return;
         }
 
-        removeUnsupportedDataTypes(segmentation);
         truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
         truncateSegmentationKeysValues(segmentation, limitsConfig, L, tag);
     }
