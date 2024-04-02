@@ -561,8 +561,8 @@ public class ModuleEventsTests {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
         Assert.assertEquals(count, event.getInt("count"));
-        Assert.assertEquals(sum, event.getDouble("sum"), 0.0001);
-        Assert.assertEquals(duration, event.getDouble("dur"), 0.0001);
+        Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
+        Assert.assertEquals(duration, event.optDouble("dur", 0.0d), 0.0001);
     }
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
