@@ -870,7 +870,9 @@ class ConnectionQueue implements RequestQueueProvider {
      */
     void ensureExecutor() {
         if (executor_ == null) {
-            L.v("[ConnectionQueue] ensureExecutor, Creating new executor");
+            if (L != null) {
+                L.v("[ConnectionQueue] ensureExecutor, Creating new executor");
+            }
             executor_ = Executors.newSingleThreadExecutor();
         }
     }
