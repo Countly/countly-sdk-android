@@ -41,6 +41,8 @@ public class TestUtils {
     public final static String commonURL = "http://test.count.ly";
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
+    public final static String SDK_NAME = "java-native-android";
+    public final static String SDK_VERSION = "24.1.2-RC1";
 
     public static class Activity2 extends Activity {
     }
@@ -121,12 +123,16 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig() {
-        CountlyConfig cc = new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL)
+        CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
         return cc;
+    }
+
+    protected static CountlyConfig getBaseConfig() {
+        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
     }
 
     public static String[] createStringArray(int count) {
@@ -470,17 +476,12 @@ public class TestUtils {
         return new CountlyStore(getContext(), mock(ModuleLog.class), false);
     }
 
-    protected static CountlyConfig getBaseConfig() {
-        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
-    }
-
     /**
      * Get current request queue from target folder
      *
      * @return array of request params
      */
-    protected static Map<String, String>[] getCurrentRQ() {
-
+    protected static @NonNull Map<String, String>[] getCurrentRQ() {
         //get all request files from target folder
         String[] requests = getCountyStore().getRequests();
         //create array of request params
@@ -521,5 +522,52 @@ public class TestUtils {
 
     public static Context getContext() {
         return ApplicationProvider.getApplicationContext();
+    }
+
+    public static Application getApplication() {
+        return (Application) getContext();
+    }
+
+    /**
+     * Validate sdk identity params which are sdk version and name
+     *
+     * @param params params to validate
+     */
+    public static void validateSdkIdentityParams(Map<String, String> params) {
+        Assert.assertEquals(SDK_VERSION, params.get("sdk_version"));
+        Assert.assertEquals(SDK_NAME, params.get("sdk_name"));
+    }
+
+    public static void validateRequiredParams(@NonNull Map<String, String> params) {
+        validateRequiredParams(params, commonDeviceId);
+    }
+
+    public static void validateRequiredParams(Map<String, String> params, String deviceId) {
+        int hour = Integer.parseInt(params.get("hour"));
+        int dow = Integer.parseInt(params.get("dow"));
+        int tz = Integer.parseInt(params.get("tz"));
+
+        validateSdkIdentityParams(params);
+        //Assert.assertEquals(deviceId, params.get("device_id"));
+        Assert.assertEquals(commonAppKey, params.get("app_key"));
+        Assert.assertEquals(Countly.DEFAULT_APP_VERSION, params.get("av"));
+        Assert.assertTrue(Long.parseLong(params.get("timestamp")) > 0);
+        Assert.assertTrue(hour >= 0 && hour < 24);
+        Assert.assertTrue(dow >= 0 && dow < 7);
+        Assert.assertTrue(tz >= -720 && tz <= 840);
+    }
+
+    /**
+     * Ignore JSONException thrown by JSONObject.put
+     *
+     * @param json target json object
+     * @param key key to put
+     * @param value value to put
+     */
+    protected static void put(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+        }
     }
 }

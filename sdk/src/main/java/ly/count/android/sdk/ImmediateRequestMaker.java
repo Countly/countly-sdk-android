@@ -1,12 +1,13 @@
 package ly.count.android.sdk;
 
 import android.os.AsyncTask;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -25,7 +26,12 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
     ModuleLog L;
 
     @Override
-    public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, InternalImmediateRequestCallback callback, ModuleLog log) {
+    public void doWork(@NonNull String requestData, @Nullable String customEndpoint, @NonNull ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, @NonNull InternalImmediateRequestCallback callback, @NonNull ModuleLog log) {
+        assert Utils.isNotNullOrEmpty(requestData);
+        assert cp != null;
+        assert log != null;
+        assert callback != null;
+
         this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
     }
 

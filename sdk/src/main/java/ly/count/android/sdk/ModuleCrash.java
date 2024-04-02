@@ -31,11 +31,13 @@ public class ModuleCrash extends ModuleBase {
     @Nullable
     Map<String, String> metricOverride = null;
 
+    BreadcrumbHelper breadcrumbHelper;
+
     ModuleCrash(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
 
-        setCrashFilterCallback(config.crashFilterCallback);
+        crashFilterCallback = config.crashFilterCallback;
 
         recordAllThreads = config.crashes.recordAllThreadsWithCrash;
 
@@ -44,6 +46,9 @@ public class ModuleCrash extends ModuleBase {
         metricOverride = config.metricOverride;
 
         crashesInterface = new Crashes();
+        breadcrumbHelper = new BreadcrumbHelper(config.sdkInternalLimits.maxBreadcrumbCount, L);
+
+        assert breadcrumbHelper != null;
     }
 
     /**
@@ -51,7 +56,9 @@ public class ModuleCrash extends ModuleBase {
      *
      * @param context android context
      */
-    void checkForNativeCrashDumps(Context context) {
+    void checkForNativeCrashDumps(@NonNull Context context) {
+        assert context != null;
+
         L.d("[ModuleCrash] Checking for native crash dumps");
 
         String basePath = context.getCacheDir().getAbsolutePath();
@@ -85,7 +92,9 @@ public class ModuleCrash extends ModuleBase {
         }
     }
 
-    private void recordNativeException(File dumpFile) {
+    private void recordNativeException(@NonNull File dumpFile) {
+        assert dumpFile != null;
+
         L.d("[ModuleCrash] Recording native crash dump: [" + dumpFile.getName() + "]");
 
         //check for consent
@@ -111,36 +120,41 @@ public class ModuleCrash extends ModuleBase {
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         //record crash
-        sendCrashReportToQueue(dumpString, false, true, null);
+        CrashData crashData = prepareCrashData(dumpString, false, true, null);
+        if (!crashFilterCheck(crashData)) {
+            sendCrashReportToQueue(crashData, true);
+        }
     }
 
-    public void sendCrashReportToQueue(String error, boolean nonfatal, boolean isNativeCrash, @Nullable final Map<String, Object> customSegmentation) {
-        L.d("[ModuleCrash] sendCrashReportToQueue");
+    private CrashData prepareCrashData(@NonNull String error, final boolean handled, final boolean isNativeCrash, @Nullable Map<String, Object> customSegmentation) {
+        assert error != null;
+
+        if (!isNativeCrash) {
+            error = error.substring(0, Math.min(20_000, error.length()));
+        }
 
         Map<String, Object> combinedSegmentationValues = new HashMap<>();
-
         if (customCrashSegments != null) {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
-
         if (customSegmentation != null) {
             UtilsInternalLimits.truncateSegmentationKeys(customSegmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleCrash] sendCrashReportToQueue");
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
-        //limit the size of the crash report to 20k characters
-        if (!isNativeCrash) {
-            error = error.substring(0, Math.min(20_000, error.length()));
-        }
-
-        //truncate crash segmentation
         UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
-        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
 
-        CrashData crashData = new CrashData(error, combinedSegmentationValues, DeviceInfo.getLogsAsList(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !nonfatal);
+        return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !handled);
+    }
 
-        String crashDataString = deviceInfo.getCrashDataJSON(crashData).toString();
-        requestQueueProvider.sendCrashReport(crashDataString, nonfatal);
+    public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
+        assert crashData != null;
+
+        L.d("[ModuleCrash] sendCrashReportToQueue");
+
+        String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();
+        requestQueueProvider.sendCrashReport(crashDataString, !crashData.getFatal());
     }
 
     /**
@@ -184,11 +198,10 @@ public class ModuleCrash extends ModuleBase {
                         addAllThreadInformationToCrash(pw);
                     }
 
-                    String exceptionString = sw.toString();
-
                     //check if it passes the crash filter
-                    if (!crashFilterCheck(exceptionString)) {
-                        sendCrashReportToQueue(exceptionString, false, false, null);
+                    CrashData crashData = prepareCrashData(sw.toString(), false, false, null);
+                    if (!crashFilterCheck(crashData)) {
+                        sendCrashReportToQueue(crashData, false);
                     }
                 }
 
@@ -203,26 +216,24 @@ public class ModuleCrash extends ModuleBase {
         Thread.setDefaultUncaughtExceptionHandler(handler);
     }
 
-    void setCrashFilterCallback(CrashFilterCallback callback) {
-        crashFilterCallback = callback;
-    }
-
     /**
      * Call to check if crash matches one of the filters
      * If it does, the crash should be ignored
      *
-     * @param crash
-     * @return true if a match was found
+     * @param crashData crash data to check
+     * @return true if a match was found and crash should be ignored
      */
-    boolean crashFilterCheck(String crash) {
-        L.d("[ModuleCrash] Calling crashFilterCheck");
+    boolean crashFilterCheck(@NonNull CrashData crashData) {
+        assert crashData != null;
 
-        if (crashFilterCallback == null) {
-            //no filter callback set, nothing to compare against
-            return false;
+        L.d("[ModuleCrash] crashFilterCheck");
+
+        if (crashFilterCallback != null) {
+            return crashFilterCallback.filterCrash(crashData.getStackTrace());
         }
 
-        return crashFilterCallback.filterCrash(crash);
+        //no filter callback set, nothing to compare against
+        return false;
     }
 
     void addAllThreadInformationToCrash(PrintWriter pw) {
@@ -251,12 +262,8 @@ public class ModuleCrash extends ModuleBase {
      * @param itIsHandled If the exception is handled or not (fatal)
      * @return Returns link to Countly for call chaining
      */
-    Countly recordExceptionInternal(final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
+    Countly recordExceptionInternal(@Nullable final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
         L.i("[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
-
-        if (!_cly.isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recording exceptions");
-        }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return _cly;
@@ -264,7 +271,6 @@ public class ModuleCrash extends ModuleBase {
 
         if (exception == null) {
             L.d("[ModuleCrash] recordException, provided exception was null, returning");
-
             return _cly;
         }
 
@@ -277,8 +283,8 @@ public class ModuleCrash extends ModuleBase {
         }
 
         String exceptionString = sw.toString();
-
-        if (crashFilterCheck(exceptionString)) {
+        CrashData crashData = prepareCrashData(exceptionString, itIsHandled, false, customSegmentation);
+        if (crashFilterCheck(crashData)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
             //in case the exception needs to be recorded, truncate it
@@ -290,7 +296,7 @@ public class ModuleCrash extends ModuleBase {
             //    sb.append(splitRes[a].substring(0, Math.min(splitRes[a].length(), _cly.config_.maxStackTraceLineLength)));
             //}
             //sendCrashReportToQueue(sb.toString(), itIsHandled, false, customSegmentation);
-            sendCrashReportToQueue(exceptionString, itIsHandled, false, customSegmentation);
+            sendCrashReportToQueue(crashData, false);
         }
         return _cly;
     }
@@ -301,11 +307,11 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (breadcrumb == null || breadcrumb.isEmpty()) {
-            L.e("[Crashes] Can't add a null or empty crash breadcrumb");
+            L.w("[ModuleCrash] addBreadcrumbInternal, Can't add a null or empty crash breadcrumb");
             return _cly;
         }
 
-        DeviceInfo.addLog(breadcrumb, _cly.config_.sdkInternalLimits.maxBreadcrumbCount, _cly.config_.sdkInternalLimits.maxValueSize);
+        breadcrumbHelper.addBreadcrumb(breadcrumb, _cly.config_.sdkInternalLimits.maxValueSize);
         return _cly;
     }
 

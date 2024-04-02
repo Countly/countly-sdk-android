@@ -742,7 +742,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param sum sum associated with the custom event, if not used, pass zero.
      * NaN and infinity values will be quietly ignored.
      */
-    public void recordEventToEventQueue(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
+    public void recordEventToEventQueue(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
         final @Nullable String currentViewId, final @Nullable String previousEventId) {
         long tsStart = 0L;
         if (pcc != null) {

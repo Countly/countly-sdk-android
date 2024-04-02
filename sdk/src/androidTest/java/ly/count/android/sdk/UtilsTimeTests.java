@@ -21,10 +21,7 @@ public class UtilsTimeTests {
     public void tearDown() {
     }
 
-    /**
-     * Test an improper get usage
-     */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AssertionError.class)
     public void invalidGet() {
         UtilsTime.Instant.get(-1L);
     }

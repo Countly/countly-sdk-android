@@ -245,7 +245,7 @@ public class ConnectionProcessor implements Runnable {
      * @throws IOException if there is an error while reading the file
      */
     int addFileMultipart(OutputStream output, PrintWriter writer, final String filePath, final String boundary) throws IOException {
-        if (Utils.isEmpty(filePath)) {
+        if (Utils.isNullOrEmpty(filePath)) {
             return 0;
         }
         writer.append("--").append(boundary).append(CRLF);
@@ -280,15 +280,15 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         while (true) {
-            Long pccTsStartWholeQueue = 0L;
-            Long pccTsStartOnlyInternet = 0L;
-            Long pccTsStartTempIdCheck = 0L;
-            Long pccTsStartEndpointCheck = 0L;
-            Long pccTsStartOldRCheck = 0L;
-            Long pccTsStartGetURLConnection = 0L;
-            Long pccTsStartDeviceIDOverride = 0L;
-            Long pccTsStartRemainingRequests = 0L;
-            Long pccTsStartHandlingResponse = 0L;
+            long pccTsStartWholeQueue = 0L;
+            long pccTsStartOnlyInternet = 0L;
+            long pccTsStartTempIdCheck = 0L;
+            long pccTsStartEndpointCheck = 0L;
+            long pccTsStartOldRCheck = 0L;
+            long pccTsStartGetURLConnection = 0L;
+            long pccTsStartDeviceIDOverride = 0L;
+            long pccTsStartRemainingRequests = 0L;
+            long pccTsStartHandlingResponse = 0L;
 
             if (!configProvider_.getNetworkingEnabled()) {
                 L.w("[Connection Processor] run, Networking config is disabled, request queue skipped");

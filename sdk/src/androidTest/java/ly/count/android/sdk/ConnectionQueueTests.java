@@ -489,14 +489,14 @@ public class ConnectionQueueTests {
                         break;
                     case "sdk_version":
                         if (a == 0) {
-                            assertEquals("24.1.2-RC1", pair[1]);
+                            assertEquals(TestUtils.SDK_VERSION, pair[1]);
                         } else {
                             assertEquals("123sdf.v-213", pair[1]);
                         }
                         break;
                     case "sdk_name":
                         if (a == 0) {
-                            assertEquals("java-native-android", pair[1]);
+                            assertEquals(TestUtils.SDK_NAME, pair[1]);
                         } else {
                             assertEquals("someBigNew123-+name", pair[1]);
                         }

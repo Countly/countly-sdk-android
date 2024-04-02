@@ -47,8 +47,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -62,8 +60,6 @@ import org.json.JSONObject;
  * the current device and operating environment.
  */
 class DeviceInfo {
-    //crash related fields
-    private static final LinkedList<String> logs = new LinkedList<>();
     private final static int startTime = UtilsTime.currentTimestampSeconds();
     private boolean inBackground = true;
     private static long totalMemory = 0;
@@ -434,7 +430,7 @@ class DeviceInfo {
                 /**
                  * Returns the current device battery level.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getBatteryLevel(Context context) {
                     try {
@@ -463,7 +459,7 @@ class DeviceInfo {
                 /**
                  * Returns the current device orientation.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getOrientation(Context context) {
                     int orientation = context.getResources().getConfiguration().orientation;
@@ -501,7 +497,7 @@ class DeviceInfo {
                  * Checks if device is online.
                  */
                 @SuppressLint("MissingPermission")
-                @NonNull
+                @Nullable
                 @Override
                 public String isOnline(Context context) {
                     try {
@@ -553,6 +549,13 @@ class DeviceInfo {
                         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE) + "";
                     }
                     return "false";
+                }
+
+                /**
+                 * Get app's running time before crashing.
+                 */
+                @Override public String getRunningTime() {
+                    return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
                 }
             };
         }
@@ -696,26 +699,35 @@ class DeviceInfo {
      * Returns a JSON object containing the device crash report
      */
     @NonNull
-    JSONObject getCrashDataJSON(CrashData crashData) {
+    JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
         JSONObject json = crashData.getCrashMetrics();
+
+        //setting this first so the followup are not picked up as "dev changes" in the change field
+        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
+
         Utils.fillJSONIfValuesNotEmpty(json,
             "_error", crashData.getStackTrace(),
             "_nonfatal", Boolean.toString(!crashData.getFatal())
         );
 
-        try {
-            json.put("_logs", crashData.getBreadcrumbsAsString());
-        } catch (JSONException e) {
-            //no logs
+        if (!isNativeCrash) {
+            String breadcrumbs = crashData.getBreadcrumbsAsString();
+            if (!breadcrumbs.isEmpty()) {
+                putToJson(json, "_logs", crashData.getBreadcrumbsAsString());
+            }
         }
 
-        try {
-            json.put("_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
-        } catch (JSONException e) {
-            //no custom segments
-        }
+        putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
 
         return json;
+    }
+
+    private void putToJson(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+
+        }
     }
 
     @NonNull
@@ -736,7 +748,7 @@ class DeviceInfo {
                 "_ram_current", mp.getRamCurrent(context),
                 "_disk_current", mp.getDiskCurrent(),
                 "_bat", mp.getBatteryLevel(context),
-                "_run", getRunningTime(),
+                "_run", mp.getRunningTime(),
                 "_orientation", mp.getOrientation(context),
                 "_online", mp.isOnline(context),
                 "_muted", mp.isMuted(context),
@@ -790,44 +802,6 @@ class DeviceInfo {
     }
 
     /**
-     * Adds a record in the log
-     */
-    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
-        int recordLength = record.length();
-        if (recordLength > maxBreadcrumbLength) {
-            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbLength + "]");
-            record = record.substring(0, maxBreadcrumbLength);
-        }
-
-        logs.add(record);
-
-        if (logs.size() > maxBreadcrumbCount) {
-            Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
-            logs.removeFirst();
-        }
-    }
-
-    /**
-     * Returns the collected logs.
-     */
-    @NonNull
-    static String getLogs() {
-        StringBuilder allLogs = new StringBuilder();
-
-        for (String s : logs) {
-            allLogs.append(s).append("\n");
-        }
-        logs.clear();
-        return allLogs.toString();
-    }
-
-    static @NonNull List<String> getLogsAsList() {
-        List<String> logsGonna = new LinkedList<>(DeviceInfo.logs);
-        logs.clear();
-        return logsGonna;
-    }
-
-    /**
      * Get custom segments json string from the provided map
      */
     static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {
@@ -847,12 +821,5 @@ class DeviceInfo {
         }
 
         return returnedSegmentation;
-    }
-
-    /**
-     * Get app's running time before crashing.
-     */
-    static String getRunningTime() {
-        return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
     }
 }
