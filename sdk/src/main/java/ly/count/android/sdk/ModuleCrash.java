@@ -138,11 +138,11 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
         if (customSegmentation != null) {
-            UtilsInternalLimits.truncateSegmentationKeys(customSegmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleCrash] sendCrashReportToQueue");
+            UtilsInternalLimits.removeUnsupportedDataTypes(customSegmentation);
+            UtilsInternalLimits.truncateSegmentationKeysValues(customSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
-        UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
         UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
 
         return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !handled);
@@ -172,7 +172,7 @@ public class ModuleCrash extends ModuleBase {
 
         if (segments != null) {
             UtilsInternalLimits.removeUnsupportedDataTypes(segments);
-            UtilsInternalLimits.truncateSegmentationKeys(segments, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
+            UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
         }
         customCrashSegments = segments;
     }

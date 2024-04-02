@@ -102,19 +102,21 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 //found an unsupported type, print warning
                 L.w("[ModuleViews] setGlobalViewSegmentationInternal, You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
             }
-            UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] setGlobalViewSegmentationInternal", L);
+            UtilsInternalLimits.truncateSegmentationKeysValues(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] setGlobalViewSegmentationInternal");
 
             automaticViewSegmentation.putAll(segmentation);
+            UtilsInternalLimits.truncateSegmentationValues(automaticViewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] setGlobalViewSegmentationInternal", L);
         }
     }
 
     public void updateGlobalViewSegmentationInternal(@NonNull Map<String, Object> segmentation) {
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(segmentation, reservedSegmentationKeysViews, "[ModuleViews] updateGlobalViewSegmentationInternal, ", L);
+
         if (UtilsInternalLimits.removeUnsupportedDataTypes(segmentation)) {
             //found an unsupported type, print warning
             L.w("[ModuleViews] updateGlobalViewSegmentationInternal, You have provided an unsupported data type in your View Segmentation. Removing the unsupported values.");
         }
-
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(segmentation, reservedSegmentationKeysViews, "[ModuleViews] updateGlobalViewSegmentationInternal, ", L);
+        UtilsInternalLimits.truncateSegmentationKeysValues(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] updateGlobalViewSegmentationInternal");
 
         automaticViewSegmentation.putAll(segmentation);
         UtilsInternalLimits.truncateSegmentationValues(automaticViewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] updateGlobalViewSegmentationInternal", L);
@@ -149,7 +151,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, Map<String, Object> customViewSegmentation) {
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
-            UtilsInternalLimits.truncateSegmentationKeys(customViewSegmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleViews] CreateViewEventSegmentation");
             viewSegmentation.putAll(customViewSegmentation);
         }
 
@@ -177,12 +178,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        if (viewsToRemove.size() > 0) {
+        if (!viewsToRemove.isEmpty()) {
             L.d("[ModuleViews] autoCloseRequiredViews, about to close [" + viewsToRemove.size() + "] views");
         }
-
-        // todo: move to stopViewWithIDInternal?
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
 
         for (int a = 0; a < viewsToRemove.size(); a++) {
             stopViewWithIDInternal(viewsToRemove.get(a), customViewSegmentation);
@@ -210,11 +208,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return null;
         }
 
-        // if segmentation is null this just returns so no null check necessary
-        UtilsInternalLimits.truncateSegmentationValues(customViewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] startViewInternal", L);
-
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
-
         if (L.logEnabled()) {
             int segmCount = 0;
             if (customViewSegmentation != null) {
@@ -239,6 +232,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         Map<String, Object> accumulatedEventSegm = new HashMap<>(automaticViewSegmentation);
         if (customViewSegmentation != null) {
+            UtilsInternalLimits.removeUnsupportedDataTypes(customViewSegmentation);
+            UtilsInternalLimits.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] startViewInternal, ", L);
+            UtilsInternalLimits.truncateSegmentationKeysValues(customViewSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] startViewInternal");
             accumulatedEventSegm.putAll(customViewSegmentation);
         }
 
@@ -302,15 +298,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        // if segmentation is null this just returns so no null check necessary
-        UtilsInternalLimits.truncateSegmentationValues(customViewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] stopViewWithIDInternal", L);
-
         recordViewEndEvent(vd, customViewSegmentation, "stopViewWithIDInternal");
 
         viewDataMap.remove(vd.viewID);
     }
 
-    void recordViewEndEvent(ViewData vd, @Nullable Map<String, Object> filteredCustomViewSegmentation, String viewRecordingSource) {
+    void recordViewEndEvent(ViewData vd, @Nullable Map<String, Object> customViewSegmentation, String viewRecordingSource) {
         long lastElapsedDurationSeconds = 0;
         //we sanity check the time component and print error in case of problem
         if (vd.viewStartTimeSeconds < 0) {
@@ -328,8 +321,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         Map<String, Object> accumulatedEventSegm = new HashMap<String, Object>(automaticViewSegmentation);
-        if (filteredCustomViewSegmentation != null) {
-            accumulatedEventSegm.putAll(filteredCustomViewSegmentation);
+        if (customViewSegmentation != null) {
+            UtilsInternalLimits.removeUnsupportedDataTypes(customViewSegmentation);
+            UtilsInternalLimits.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] recordViewEndEvent, ", L);
+            UtilsInternalLimits.truncateSegmentationKeysValues(customViewSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] recordViewEndEvent");
+            accumulatedEventSegm.putAll(customViewSegmentation);
         }
         // add view segmentation too
         if (vd.viewSegmentation != null) {
@@ -342,7 +338,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, accumulatedEventSegm);
         eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, viewDurationSeconds, null, vd.viewID);
     }
-
+    
     void pauseViewWithIDInternal(String viewID, boolean pausedAutomatically) {
         if (viewID == null || viewID.isEmpty()) {
             L.e("[ModuleViews] pauseViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
@@ -427,14 +423,17 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        UtilsInternalLimits.truncateSegmentationValues(viewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] addSegmentationToViewWithIDInternal", L);
+        UtilsInternalLimits.removeUnsupportedDataTypes(viewSegmentation);
         UtilsInternalLimits.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] addSegmentationToViewWithID, ", L);
+        UtilsInternalLimits.truncateSegmentationKeysValues(viewSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] addSegmentationToViewWithID");
 
         if (vd.viewSegmentation == null) {
             vd.viewSegmentation = new HashMap<>(viewSegmentation);
         } else {
             vd.viewSegmentation.putAll(viewSegmentation);
         }
+
+        UtilsInternalLimits.truncateSegmentationValues(vd.viewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] addSegmentationToViewWithIDInternal", L);
     }
 
     public void addSegmentationToViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
