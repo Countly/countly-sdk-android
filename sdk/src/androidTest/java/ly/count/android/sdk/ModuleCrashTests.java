@@ -372,6 +372,99 @@ public class ModuleCrashTests {
     }
 
     /**
+     * Validate that after clipping segmentation values, it will be same as the original segmentation values
+     * but the flag is set to true because the developer added segmentation values to the crash data
+     */
+    @Test
+    public void internalLimits_recordException_globalCrashFilter_maxSegmentationValues() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.sdkInternalLimits.setMaxSegmentationValues(2);
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            Assert.assertEquals(TestUtils.map("int", Integer.MAX_VALUE, "double", Double.MAX_VALUE), crash.getCrashSegmentation());
+            crash.getCrashSegmentation().put("secret", "Minato");
+            return false;
+        });
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
+
+        validateCrash(extractStackTrace(exception), "", false, false,
+            TestUtils.map("int", Integer.MAX_VALUE, "double", Double.MAX_VALUE), 8, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Validate that after clipping unsupported values from crash metrics, it will be same as the original segmentation values
+     * but the flag is set to true because the developer added values to the crash metrics
+     * Before filtering validate that crash metrics are same as the original crash metrics
+     */
+    @Test
+    public void recordException_globalCrashFilter_unsupportedDataType_crashMetrics() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.sdkInternalLimits.setMaxSegmentationValues(2);
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            try {
+                validateCrashMetrics(crash.getCrashMetricsJSON(), false, new HashMap<>(), new ArrayList<>());
+            } catch (JSONException e) {
+                Assert.fail(e.getMessage());
+            }
+
+            Assert.assertEquals(20, crash.getCrashMetrics().size());
+
+            crash.getCrashMetrics().put("5", new Object());
+            crash.getCrashMetrics().put("6", new int[] { 1, 2 });
+            return false;
+        });
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception);
+
+        validateCrash(extractStackTrace(exception), "", false, false, new HashMap<>(), 2, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * "recordHandledException" with global crash filter
+     * Global crash filter is set to filter out crashes that contain "Secret" in the stack trace
+     * and to set "fatal" to true for all crashes
+     * and to add "secret" key to the crash metrics
+     * and to remove "_ram_total" key from the crash metrics
+     * and to remove "secret" key from the crash segmentation
+     * and to remove crashes that contain "sphinx_no_1" in the crash segmentation
+     * Validate that call to the "recordHandledException" is not filtered out by the global crash filter
+     * Validate call creates a request in the queue and validate all crash data, fatal is set to true
+     * Validate that crash segmentation contains all custom segmentation
+     * Validate that crash logs contains all breadcrumbs
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void recordHandledException_basic() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> false);
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_1");
+        countly.crashes().addCrashBreadcrumb("Breadcrumb_2");
+        countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
+
+        validateCrash(extractStackTrace(exception), "Breadcrumb_1\nBreadcrumb_2\n", false, false,
+            TestUtils.map("int", Integer.MAX_VALUE,
+                "secret", "Minato",
+                "double", Double.MAX_VALUE,
+                "bool", true,
+                "float", 1.1,
+                "sphinx_no", 324), 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
      * "recordHandledException" with global crash filter setting all fields empty
      * Validate that after filtering out the crash, all fields are empty
      * and saved as empty in the request
@@ -469,7 +562,7 @@ public class ModuleCrashTests {
      * Global crash filter adds unsupported data types to the crash metrics
      * Unsupported data types are eliminated from the crash metrics while filtering out the crash
      * Validate that unsupported data types are eliminated from the crash metrics
-     * And because one of the base metrics is overridden with unsupported data type, it is eliminated from the crash metrics
+     * And adding unsupported data types to the crash segmentation affects changed bits flag
      *
      * @throws JSONException if JSON parsing fails
      */
@@ -488,7 +581,7 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception);
-        validateCrash(extractStackTrace(exception), "", true, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", true, false, new ConcurrentHashMap<>(), 2, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**

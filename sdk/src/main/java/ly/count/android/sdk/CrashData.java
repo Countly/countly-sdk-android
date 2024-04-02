@@ -25,6 +25,8 @@ public class CrashData {
      * 4 - fatal
      */
     private final String[] checksums = new String[5];
+    private final boolean[] changedFields = new boolean[5];
+    private boolean calculatedFields = false;
 
     protected CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
         assert stackTrace != null;
@@ -202,7 +204,10 @@ public class CrashData {
         assert checksums != null;
         assert checksums.length == 5;
 
-        boolean[] changedFields = new boolean[5];
+        if (calculatedFields) {
+            return changedFields;
+        }
+        calculatedFields = true;
         String[] checksumsNew = new String[5];
         calculateChecksums(checksumsNew);
 
@@ -216,7 +221,9 @@ public class CrashData {
     }
 
     protected int getChangedFieldsAsInt() {
-        boolean[] changedFields = getChangedFields();
+        if (!calculatedFields) {
+            getChangedFields();
+        }
         int result = 0;
         for (int i = changedFields.length - 1; i >= 0; i--) {
             if (changedFields[i]) {
