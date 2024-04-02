@@ -36,22 +36,48 @@ public class UtilsInternalLimits {
      * @return truncated key
      */
     protected static String truncateKeyLength(@Nullable String key, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
-        if (key == null) {
-            L.w(tag + ": [UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
-            return key;
+        return truncateString(key, limit, L, tag + ": [UtilsSdkInternalLimits] truncateKeyLength");
+    }
+
+    /**
+     * Limits the size of all values in our key-value pairs.
+     * "Value" fields include:
+     * <pre>
+     * - segmentation value in case of strings (for all features)
+     * - custom user property string value
+     * - user profile named key (username, email, etc) string values. Except the "picture" field, which has a limit of 4096 chars
+     * - custom user property modifier string values. For example, for modifiers like "push," "pull," "setOnce", etc.
+     * - breadcrumb text
+     * - manual feedback widget reporting fields (reported as an event)
+     * - rating widget response (reported as an event)
+     * </pre>
+     *
+     * @param value to truncate
+     * @param limit to truncate to
+     * @param L logger
+     * @return truncated key
+     */
+    protected static String truncateValueSize(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        return truncateString(value, limit, L, tag + ": [UtilsSdkInternalLimits] truncateValueSize");
+    }
+
+    private static String truncateString(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        if (value == null) {
+            L.w(tag + ", value is null, returning");
+            return value;
         }
 
-        if (key.isEmpty()) {
-            L.w(tag + ": [UtilsSdkInternalLimits] truncateKeyLength, key is empty, returning");
-            return key;
+        if (value.isEmpty()) {
+            L.w(tag + ", value is empty, returning");
+            return value;
         }
 
-        if (key.length() > limit) {
-            String truncatedKey = key.substring(0, limit);
-            L.w(tag + ": [UtilsSdkInternalLimits] truncateKeyLength, Key length exceeds limit of " + limit + " characters. Truncating key to " + limit + " characters. Truncated to " + truncatedKey);
-            return truncatedKey;
+        if (value.length() > limit) {
+            String truncatedValue = value.substring(0, limit);
+            L.w(tag + ", Value length exceeds limit of " + limit + " characters. Truncating value to " + limit + " characters. Truncated to " + truncatedValue);
+            return truncatedValue;
         }
-        return key;
+        return value;
     }
 
     /**
@@ -94,6 +120,62 @@ public class UtilsInternalLimits {
         }
 
         map.putAll(gonnaReplace);
+    }
+
+    private static void truncateSegmentationKeysValues(@NonNull Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, segmentation:[" + segmentation + "]");
+        // Replacing keys in a map is not safe, so we create a new map and put them after
+        Map<String, Object> gonnaReplace = new ConcurrentHashMap<>();
+        List<String> gonnaRemove = new ArrayList<>();
+
+        for (Map.Entry<String, Object> entry : segmentation.entrySet()) {
+            String truncatedKey = truncateKeyLength(entry.getKey(), limitsConfig.maxKeyLength, L, tag);
+            Object value = entry.getValue();
+            if (value instanceof String) {
+                value = truncateValueSize((String) value, limitsConfig.maxValueSize, L, tag);
+            }
+            if (!truncatedKey.equals(entry.getKey())) {
+                // add truncated key
+                gonnaReplace.put(truncatedKey, value);
+                // remove not truncated key
+                gonnaRemove.add(entry.getKey());
+            } else if (value instanceof String && !value.equals(entry.getValue())) {
+                // update truncated value
+                segmentation.put(truncatedKey, value);
+            }
+        }
+
+        for (String key : gonnaRemove) {
+            segmentation.remove(key);
+        }
+
+        segmentation.putAll(gonnaReplace);
+    }
+
+    /**
+     * Applies following internal limits to the provided segmentation map:
+     * - max key length
+     * - max value size
+     * - max number of keys
+     *
+     * @param segmentation Map<String, Object> @Nullable - segmentation map to apply limits to
+     * @param limitsConfig ConfigSdkInternalLimits @NonNull - limits configuration
+     * @param L ModuleLog @NonNull - logger
+     * @param tag String @NonNull - tag to use in logs
+     */
+    protected static void applySdkInternalLimitsToSegmentation(@Nullable Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        if (segmentation == null) {
+            L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is null, returning");
+            return;
+        }
+
+        if (segmentation.isEmpty()) {
+            L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is empty, returning");
+            return;
+        }
+
+        truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
+        truncateSegmentationKeysValues(segmentation, limitsConfig, L, tag);
     }
 
     /**

@@ -1439,5 +1439,48 @@ public class ModuleViewsTests {
     }
     //test for sessions when consent removed
 
+    /**
+     * global seg : avu=4, avi=v1 after truncation: av=v1
+     * Test the truncation of view name and segmentation keys
+     * key length: 2
+     * Global view segmentation values will be truncated and merged to one because they have same start
+     * View name also will be truncated to expected name "VI"
+     * On stop view, global segmentation will not be overridden by the given segmentation after truncation
+     * on stop seg: satalite=hoho, avu=25 after truncation: sa=hoho, av=v1
+     * None of the countly view segmentation keys will be truncated nor overridden
+     */
+    @Test
+    public void internalLimit_recordViewsWithSegmentation() throws JSONException {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("avu", 4);
+        globalSegm.put("avi", "v1");
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        cc.sdkInternalLimits.setMaxKeyLength(2);
+        cc.setEventQueueSizeToSend(1);
+        Countly mCountly = new Countly().init(cc);
+
+        Map<String, Object> givenStartSegm = new HashMap<>();
+        givenStartSegm.put("sop", 4);
+        String viewID = mCountly.views().startView("VIEW", givenStartSegm);
+
+        Map<String, Object> expectedSegm = new HashMap<>();
+        ClearFillSegmentationViewStart(expectedSegm, "VI", true);
+        expectedSegm.putAll(TestUtils.map("av", "v1", "so", 4));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0);
+
+        mCountly.views().setGlobalViewSegmentation(TestUtils.map("sunburn", true, "sunflower", "huh"));
+
+        Map<String, Object> endSegm = new HashMap<>();
+        endSegm.put("satellite", "hoho");
+        endSegm.put("avu", 25);
+        mCountly.views().stopViewWithID(viewID, endSegm);
+        ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
+        expectedSegm.putAll(TestUtils.map("av", 25, "sa", "hoho", "su", "huh"));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
+    }
+
     //todo extract orientation tests
 }

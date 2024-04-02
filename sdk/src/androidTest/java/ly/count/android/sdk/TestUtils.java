@@ -488,7 +488,6 @@ public class TestUtils {
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 
         for (int i = 0; i < requests.length; i++) {
-
             String[] params = requests[i].split("&");
 
             Map<String, String> paramMap = new ConcurrentHashMap<>();
