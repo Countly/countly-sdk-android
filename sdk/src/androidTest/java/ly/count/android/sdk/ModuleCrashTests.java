@@ -6,10 +6,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -283,6 +283,45 @@ public class ModuleCrashTests {
         //todo improve this
         Assert.assertTrue(crash.contains("java.lang.Throwable: Some message\\n" +
             "\\tat ly.count.android.sdk.ModuleCrashTests.recordUnhandledExceptionThrowable(ModuleCrashTests.java:"));
+    }
+
+    /**
+     * Validate that custom crash segmentation is truncated to the maximum allowed length
+     * Because length is 2 all global crash segmentation values are dropped and only the last 2
+     * of the custom segmentation values are kept
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.metricProviderOverride = mmp;
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.crashes.setCustomCrashSegmentation(TestUtils.map("a", "1", "b", "2", "c", "3"));
+        Countly countly = new Countly().init(config);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, TestUtils.map("d", "4", "e", "5", "f", "6"));
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("e", "5", "f", "6"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Validate that custom crash segmentation is truncated to the maximum allowed length
+     * Because length is 2 only last 2 of the global crash segmentation values are kept
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_maxSegmentationValues_global() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.metricProviderOverride = mmp;
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.crashes.setCustomCrashSegmentation(TestUtils.map("a", "1", "b", "2", "c", "3"));
+        Countly countly = new Countly().init(config);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception);
+        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("b", "2", "c", "3"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     private void validateCrash(@NonNull DeviceInfo deviceInfo, @NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
