@@ -382,7 +382,7 @@ public class UtilsInternalLimitsTests {
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
 
         Assert.assertEquals(3, segmentation.size());
-        Assert.assertEquals("12", segmentation.get("abcde"));
+        Assert.assertEquals(456789, segmentation.get("hobbi"));
         Assert.assertEquals("va", segmentation.get("test_"));
         Assert.assertEquals(TestUtils.map("a", 1), segmentation.get("map_t"));
     }
