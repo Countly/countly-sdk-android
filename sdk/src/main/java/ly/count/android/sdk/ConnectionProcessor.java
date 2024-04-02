@@ -328,7 +328,14 @@ public class ConnectionProcessor implements Runnable {
             final String[] storedRequests = storageProvider_.getRequests();
             int storedRequestCount = storedRequests == null ? 0 : storedRequests.length;
 
+            String msg = "[ConnectionProcessor] Starting to run, there are [" + storedRequestCount + "] requests stored";
             if (storedRequestCount == 0) {
+                L.v(msg);
+            } else {
+                L.i(msg);
+            }
+
+            if (storedRequests == null || storedRequestCount == 0) {
                 L.i("[ConnectionProcessor] No requests in the queue, request queue skipped");
                 // currently no data to send, we are done for now
                 break;
