@@ -174,8 +174,8 @@ public class UtilsInternalLimits {
             return;
         }
 
-        truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
         truncateSegmentationKeysValues(segmentation, limitsConfig, L, tag);
+        truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
     }
 
     /**
