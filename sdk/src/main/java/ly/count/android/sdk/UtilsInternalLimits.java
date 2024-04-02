@@ -122,7 +122,7 @@ public class UtilsInternalLimits {
         map.putAll(gonnaReplace);
     }
 
-    private static void truncateSegmentationKeysValues(@NonNull Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+    protected static void truncateSegmentationKeysValues(@NonNull Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
         L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, segmentation:[" + segmentation + "]");
         // Replacing keys in a map is not safe, so we create a new map and put them after
         Map<String, Object> gonnaReplace = new ConcurrentHashMap<>();
@@ -174,8 +174,8 @@ public class UtilsInternalLimits {
             return;
         }
 
-        truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
         truncateSegmentationKeysValues(segmentation, limitsConfig, L, tag);
+        truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
     }
 
     /**
