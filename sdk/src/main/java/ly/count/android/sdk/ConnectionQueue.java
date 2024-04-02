@@ -130,6 +130,15 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     boolean checkInternalState() {
+        //todo enable later
+        //assert context_ != null;
+        //assert baseInfoProvider.getAppKey() != null;
+        //assert baseInfoProvider.getAppKey().length() != 0;
+        //assert baseInfoProvider.getServerURL() != null;
+        //assert UtilsNetworking.isValidURL(baseInfoProvider.getServerURL());
+        //assert storageProvider != null;
+        //assert Countly.publicKeyPinCertificates != null && baseInfoProvider.getServerURL().startsWith("https");
+
         if (context_ == null) {
             if (L != null) {
                 L.e("[Connection Queue] context has not been set");
@@ -886,6 +895,9 @@ class ConnectionQueue implements RequestQueueProvider {
      * Should only be called if SDK is initialized
      */
     public void tick() {
+        //todo enable later
+        //assert storageProvider != null;
+
         boolean rqEmpty = isRequestQueueEmpty(); // this is a heavy operation, do it only once. Why heavy? reading storage
         boolean cpDoneIfOngoing = connectionProcessorFuture_ != null && connectionProcessorFuture_.isDone();
         L.v("[ConnectionQueue] tick, IsRQEmpty:[" + rqEmpty + "], HasOngoingProcess:[" + (connectionProcessorFuture_ == null) + "], OngoingProcess_Done:[" + cpDoneIfOngoing + "]");
