@@ -293,7 +293,7 @@ public class ConnectionProcessor implements Runnable {
                 }
             } catch (IOException ex) {
                 for (StackTraceElement e : ex.getStackTrace()) {
-                    L.e("[Connection Processor] addMultipart, error: " + e);
+                    L.e("[ConnectionProcessor] addMultipart, error: " + e);
                 }
             }
         }
