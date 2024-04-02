@@ -263,11 +263,8 @@ public class CrashDataTests {
     public void setCrashMetrics_withoutSetter() throws JSONException {
         JSONObject crashMetrics = new JSONObject();
         crashMetrics.put("key", "value");
-        System.out.println("AAAA");
         CrashData crashData = new CrashData("ST", new HashMap<>(), new ArrayList<>(), crashMetrics, true);
-        System.out.println("BBBB");
 
-        System.out.println(crashData.getCrashMetrics());
         crashData.getCrashMetrics().put("key2", "value2");
 
         validateChanged(crashData, false, false, false, true, false);
