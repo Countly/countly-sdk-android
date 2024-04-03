@@ -22,10 +22,10 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -50,10 +50,7 @@ class Event {
     protected static final String PE_ID_KEY = "peid";
 
     public String key;
-    public Map<String, String> segmentation;
-    public Map<String, Integer> segmentationInt;
-    public Map<String, Double> segmentationDouble;
-    public Map<String, Boolean> segmentationBoolean;
+    public Map<String, Object> segmentation;
     public int count;
     public double sum;
     public double dur;
@@ -109,33 +106,12 @@ class Event {
 
             JSONObject jobj = new JSONObject();
             if (segmentation != null) {
-                for (Map.Entry<String, String> pair : segmentation.entrySet()) {
+                for (Map.Entry<String, Object> pair : segmentation.entrySet()) {
                     jobj.put(pair.getKey(), pair.getValue());
                 }
             }
 
-            if (segmentationInt != null) {
-                for (Map.Entry<String, Integer> pair : segmentationInt.entrySet()) {
-                    jobj.put(pair.getKey(), pair.getValue());
-                }
-            }
-
-            if (segmentationDouble != null) {
-                for (Map.Entry<String, Double> pair : segmentationDouble.entrySet()) {
-                    jobj.put(pair.getKey(), pair.getValue());
-                }
-            }
-
-            if (segmentationBoolean != null) {
-                for (Map.Entry<String, Boolean> pair : segmentationBoolean.entrySet()) {
-                    jobj.put(pair.getKey(), pair.getValue());
-                }
-            }
-
-            if ((segmentation != null && !segmentation.isEmpty()) ||
-                (segmentationInt != null && !segmentationInt.isEmpty()) ||
-                (segmentationDouble != null && !segmentationDouble.isEmpty()) ||
-                (segmentationBoolean != null && !segmentationBoolean.isEmpty())) {
+            if (segmentation != null && !segmentation.isEmpty()) {
                 //we only write to the segmentation key if it contains at least one entry
                 //we don't want to write an empty object
                 json.put(SEGMENTATION_KEY, jobj);
@@ -197,55 +173,31 @@ class Event {
                 JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
 
                 //we only create these objects if we would write to them
-                HashMap<String, String> segmentation = null;
-                HashMap<String, Integer> segmentationInt = null;
-                HashMap<String, Double> segmentationDouble = null;
-                HashMap<String, Boolean> segmentationBoolean = null;
+                Map<String, Object> segmentation = null;
 
-                final Iterator nameItr = segm.keys();
+                final Iterator<String> nameItr = segm.keys();
                 while (nameItr.hasNext()) {
-                    final String key = (String) nameItr.next();
+                    final String key = nameItr.next();
                     if (!segm.isNull(key)) {
                         Object obj = segm.opt(key);
 
-                        if (obj instanceof Double) {
+                        if (UtilsInternalLimits.isSupportedDataType(obj)) {
                             //in case it's a double
-                            if (segmentationDouble == null) {
-                                segmentationDouble = new HashMap<>();
-                            }
-                            segmentationDouble.put(key, segm.getDouble(key));
-                        } else if (obj instanceof Integer) {
-                            //in case it's a integer
-                            if (segmentationInt == null) {
-                                segmentationInt = new HashMap<>();
-                            }
-                            segmentationInt.put(key, segm.getInt(key));
-                        } else if (obj instanceof Boolean) {
-                            //in case it's a boolean
-                            if (segmentationBoolean == null) {
-                                segmentationBoolean = new HashMap<>();
-                            }
-                            segmentationBoolean.put(key, segm.getBoolean(key));
-                        } else if (obj instanceof String) {
-                            //in case it's a String
                             if (segmentation == null) {
-                                segmentation = new HashMap<>();
+                                segmentation = new ConcurrentHashMap<>();
                             }
-                            segmentation.put(key, segm.getString(key));
+                            segmentation.put(key, segm.get(key));
                         }
                     }
                 }
                 event.segmentation = segmentation;
-                event.segmentationDouble = segmentationDouble;
-                event.segmentationInt = segmentationInt;
-                event.segmentationBoolean = segmentationBoolean;
             }
         } catch (JSONException e) {
             Countly.sharedInstance().L.w("Got exception converting JSON to an Event", e);
             event = null;
         }
 
-        if (event != null && event.key != null && event.key.length() > 0) {
+        if (event != null && event.key != null && !event.key.isEmpty()) {
             //in case the event has a key, it counts as a valid event
             return event;
         } else {
@@ -262,7 +214,7 @@ class Event {
 
         final Event e = (Event) o;
 
-        return (Objects.equals(key, e.key)) &&
+        return Objects.equals(key, e.key) &&
             timestamp == e.timestamp &&
             hour == e.hour &&
             dow == e.dow &&
@@ -270,7 +222,7 @@ class Event {
             Objects.equals(pvid, e.pvid) &&
             Objects.equals(cvid, e.cvid) &&
             Objects.equals(peid, e.peid) &&
-            (Objects.equals(segmentation, e.segmentation));
+            Objects.equals(segmentation, e.segmentation);
     }
 
     @Override

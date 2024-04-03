@@ -78,6 +78,23 @@ public class MainActivity extends AppCompatActivity {
         benchmark.print(res);
     }
 
+    public void onClearStorage(View v) {
+        benchmark.print("[MainActivity] Clear Storage");
+        Countly.sharedInstance().requestQueue().flushQueues();
+    }
+
+    public void onGenerateBenchmarkData(View v) {
+        benchmark.print("[MainActivity] Generate benchmark data");
+
+        readLoopSegmentEventSize();
+
+        futureWrapper(() -> benchmark.GenerateBenchmarkDataset(eventSize, segmentSize));
+        
+        if (getSwitchValue(R.id.wait)) {
+            futureWrapper(this::standByForOnTimer);
+        }
+    }
+
     protected void BENCHMARK(int loop, Runnable runnable) {
         benchmark.print("------------------------------------------------------------");
         benchmark.print("[MainActivity] BENCHMARK");
@@ -94,6 +111,9 @@ public class MainActivity extends AppCompatActivity {
         long endTime = System.currentTimeMillis();
         benchmark.print("[MainActivity] BENCHMARK, SENDING TOOK: " + (endTime - startTime) + "MS");
         benchmark.print("------------------------------------------------------------");
+
+        String res = App.appPcc.ReturnResults();
+        benchmark.print(res);
     }
 
     private void readLoopSegmentEventSize() {

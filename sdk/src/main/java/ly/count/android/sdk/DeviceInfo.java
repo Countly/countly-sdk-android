@@ -47,7 +47,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -61,8 +60,6 @@ import org.json.JSONObject;
  * the current device and operating environment.
  */
 class DeviceInfo {
-    //crash related fields
-    private static final LinkedList<String> logs = new LinkedList<>();
     private final static int startTime = UtilsTime.currentTimestampSeconds();
     private boolean inBackground = true;
     private static long totalMemory = 0;
@@ -401,13 +398,13 @@ class DeviceInfo {
                 public String getDiskCurrent() {
                     if (android.os.Build.VERSION.SDK_INT < 18) {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
-                        long free = ((long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize());
+                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
+                        long free = (long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize();
                         return Long.toString((total - free) / 1_048_576L);
                     } else {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
-                        long free = (statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong());
+                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
+                        long free = statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong();
                         return Long.toString((total - free) / 1048576L);
                     }
                 }
@@ -421,11 +418,11 @@ class DeviceInfo {
                 public String getDiskTotal() {
                     if (android.os.Build.VERSION.SDK_INT < 18) {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
+                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
                         return Long.toString(total / 1048576L);
                     } else {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
                         return Long.toString(total / 1048576L);
                     }
                 }
@@ -433,7 +430,7 @@ class DeviceInfo {
                 /**
                  * Returns the current device battery level.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getBatteryLevel(Context context) {
                     try {
@@ -462,7 +459,7 @@ class DeviceInfo {
                 /**
                  * Returns the current device orientation.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getOrientation(Context context) {
                     int orientation = context.getResources().getConfiguration().orientation;
@@ -500,7 +497,7 @@ class DeviceInfo {
                  * Checks if device is online.
                  */
                 @SuppressLint("MissingPermission")
-                @NonNull
+                @Nullable
                 @Override
                 public String isOnline(Context context) {
                     try {
@@ -552,6 +549,13 @@ class DeviceInfo {
                         return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE) + "";
                     }
                     return "false";
+                }
+
+                /**
+                 * Get app's running time before crashing.
+                 */
+                @Override public String getRunningTime() {
+                    return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
                 }
             };
         }
@@ -695,14 +699,42 @@ class DeviceInfo {
      * Returns a JSON object containing the device crash report
      */
     @NonNull
-    JSONObject getCrashDataStringJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
+    JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
+        JSONObject json = crashData.getCrashMetricsJSON();
 
+        //setting this first so the followup are not picked up as "dev changes" in the change field
+        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
+
+        Utils.fillJSONIfValuesNotEmpty(json,
+            "_error", crashData.getStackTrace(),
+            "_nonfatal", Boolean.toString(!crashData.getFatal())
+        );
+
+        if (!isNativeCrash) {
+            String breadcrumbs = crashData.getBreadcrumbsAsString();
+            if (!breadcrumbs.isEmpty()) {
+                putToJson(json, "_logs", crashData.getBreadcrumbsAsString());
+            }
+        }
+
+        putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
+
+        return json;
+    }
+
+    private void putToJson(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+
+        }
+    }
+
+    @NonNull
+    JSONObject getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride) {
         final JSONObject json = getCommonMetrics(context, metricOverride);
 
         Utils.fillJSONIfValuesNotEmpty(json,
-            "_error", error,
-            "_nonfatal", Boolean.toString(nonfatal),
             "_cpu", mp.getCpu(),
             "_opengl", mp.getOpenGL(context),
             "_root", mp.isRooted(),
@@ -713,11 +745,10 @@ class DeviceInfo {
         if (!isNativeCrash) {
             //if is not a native crash
             Utils.fillJSONIfValuesNotEmpty(json,
-                "_logs", crashBreadcrumbs,
                 "_ram_current", mp.getRamCurrent(context),
                 "_disk_current", mp.getDiskCurrent(),
                 "_bat", mp.getBatteryLevel(context),
-                "_run", getRunningTime(),
+                "_run", mp.getRunningTime(),
                 "_orientation", mp.getOrientation(context),
                 "_online", mp.isOnline(context),
                 "_muted", mp.isMuted(context),
@@ -731,24 +762,7 @@ class DeviceInfo {
             }
         }
 
-        try {
-            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
-        } catch (JSONException e) {
-            //no custom segments
-        }
-
         return json;
-    }
-
-    /**
-     * Returns a JSON string containing the device crash report
-     */
-    @NonNull
-    String getCrashDataString(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = getCrashDataStringJSON(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, metricOverride);
-
-        return json.toString();
     }
 
     @NonNull
@@ -788,38 +802,6 @@ class DeviceInfo {
     }
 
     /**
-     * Adds a record in the log
-     */
-    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
-        int recordLength = record.length();
-        if (recordLength > maxBreadcrumbLength) {
-            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbLength + "]");
-            record = record.substring(0, maxBreadcrumbLength);
-        }
-
-        logs.add(record);
-
-        if (logs.size() > maxBreadcrumbCount) {
-            Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
-            logs.removeFirst();
-        }
-    }
-
-    /**
-     * Returns the collected logs.
-     */
-    @NonNull
-    static String getLogs() {
-        StringBuilder allLogs = new StringBuilder();
-
-        for (String s : logs) {
-            allLogs.append(s).append("\n");
-        }
-        logs.clear();
-        return allLogs.toString();
-    }
-
-    /**
      * Get custom segments json string from the provided map
      */
     static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {
@@ -839,12 +821,5 @@ class DeviceInfo {
         }
 
         return returnedSegmentation;
-    }
-
-    /**
-     * Get app's running time before crashing.
-     */
-    static String getRunningTime() {
-        return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
     }
 }

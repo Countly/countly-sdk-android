@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONObject;
 
 public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
@@ -71,8 +70,15 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         try {
             List<String> filteredRequests = new ArrayList<>();
 
-            if (storedRequests == null || targetAppKey == null) {
+            if (storedRequests == null) {
                 //early abort
+                L.w("[ModuleRequestQueue] requestQueueReplaceWithAppKey, stopping replacing due to stored requests being 'null'");
+                return filteredRequests;
+            }
+
+            if (targetAppKey == null || targetAppKey.isEmpty()) {
+                //early abort
+                L.w("[ModuleRequestQueue] requestQueueReplaceWithAppKey, stopping replacing due to target app key being 'null' or empty string");
                 return filteredRequests;
             }
 
@@ -148,7 +154,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         int eventsInEventQueue = storageProvider.getEventQueueSize();
         L.v("[ModuleRequestQueue] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
 
-        if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= Countly.EVENT_QUEUE_SIZE_THRESHOLD) {
+        if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= _cly.EVENT_QUEUE_SIZE_THRESHOLD) {
             requestQueueProvider.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue());
         }
     }
@@ -179,20 +185,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     public void flushQueuesInternal() {
         CountlyStore store = _cly.countlyStore;
 
-        int count = 0;
+        final String[] storedRequests = store.getRequests();
+        store.replaceRequests(new String[] {});
 
-        while (true) {
-            final String[] storedEvents = store.getRequests();
-            if (storedEvents == null || storedEvents.length == 0) {
-                // currently no data to send, we are done for now
-                break;
-            }
-            //remove stored data
-            store.removeRequest(storedEvents[0]);
-            count++;
-        }
-
-        L.d("[ModuleRequestQueue] flushRequestQueues removed [" + count + "] requests");
+        L.d("[ModuleRequestQueue] flushRequestQueues removed [" + storedRequests.length + "] requests");
     }
 
     /**
@@ -237,6 +233,11 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * Send request data after removing the predefined keys
      */
     synchronized public void addDirectRequestInternal(@NonNull Map<String, String> requestMap) {
+        long pccTsStartAddDirectRequest = 0L;
+        if (pcc != null) {
+            pccTsStartAddDirectRequest = UtilsTime.getNanoTime();
+        }
+
         L.i("[ModuleRequestQueue] Calling addDirectRequestInternal");
         if (!_cly.isInitialized()) {
             L.e("Countly.sharedInstance().init must be called before adding direct request, returning");
@@ -286,6 +287,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
             L.w("[ModuleRequestQueue] addDirectRequest, [" + delta + "] restricted keys are removed");
         }
         requestQueueProvider.sendDirectRequest(filteredRequestMap);
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ModuleRequestQueue_addDirectRequestInternal", UtilsTime.getNanoTime() - pccTsStartAddDirectRequest);
+        }
     }
 
     void esWriteCachesToPersistenceInternal(@Nullable ExplicitStorageCallback callback) {

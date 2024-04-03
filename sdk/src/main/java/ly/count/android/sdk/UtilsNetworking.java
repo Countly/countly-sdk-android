@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -9,7 +11,9 @@ public class UtilsNetworking {
     // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
     final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
 
-    protected static String urlEncodeString(String givenValue) {
+    protected static @NonNull String urlEncodeString(@NonNull String givenValue) {
+        assert Utils.isNotNullOrEmpty(givenValue);
+
         String result = "";
 
         try {
@@ -21,7 +25,9 @@ public class UtilsNetworking {
         return result;
     }
 
-    protected static String encodedArrayBuilder(String[] args) {
+    protected static @NonNull String encodedArrayBuilder(@NonNull String[] args) {
+        assert args != null && args.length > 0;
+
         StringBuilder encodedUrlBuilder = new StringBuilder();
 
         encodedUrlBuilder.append("[");
@@ -38,7 +44,9 @@ public class UtilsNetworking {
         return encodedUrlBuilder.toString();
     }
 
-    protected static String urlDecodeString(String givenValue) {
+    protected static @NonNull String urlDecodeString(@NonNull String givenValue) {
+        assert givenValue != null;
+
         String decodedResult = "";
 
         try {
@@ -50,8 +58,10 @@ public class UtilsNetworking {
         return decodedResult;
     }
 
-    protected static String sha256Hash(String toHash) {
-        String hash = null;
+    protected static @NonNull String sha256Hash(@NonNull String toHash) {
+        assert toHash != null;
+
+        String hash;
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] bytes = toHash.getBytes("UTF-8");
@@ -61,6 +71,7 @@ public class UtilsNetworking {
             // This is ~55x faster than looping and String.formating()
             hash = bytesToHex(bytes);
         } catch (Throwable e) {
+            hash = "";
             Countly.sharedInstance().L.e("Cannot tamper-protect params", e);
         }
         return hash;
@@ -72,7 +83,9 @@ public class UtilsNetworking {
      * @param bytes array of bytes to convert
      * @return hex string of the byte array in lower case
      */
-    public static String bytesToHex(byte[] bytes) {
+    public static @NonNull String bytesToHex(@NonNull byte[] bytes) {
+        assert bytes != null && bytes.length > 0;
+
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
             int v = bytes[j] & 0xFF;
@@ -86,7 +99,7 @@ public class UtilsNetworking {
      * Utility method for testing validity of a URL.
      */
     @SuppressWarnings("ConstantConditions")
-    static boolean isValidURL(final String urlStr) {
+    static boolean isValidURL(@Nullable final String urlStr) {
         boolean validURL = false;
         if (urlStr != null && urlStr.length() > 0) {
             try {

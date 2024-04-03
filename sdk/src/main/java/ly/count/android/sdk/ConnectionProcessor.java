@@ -99,7 +99,7 @@ public class ConnectionProcessor implements Runnable {
 
         // determine whether or not request has a binary image file, if it has request will be sent as POST request
         boolean hasPicturePath = requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
-        boolean usingHttpPost = (requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced()) || hasPicturePath;
+        boolean usingHttpPost = requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced() || hasPicturePath;
 
         long approximateDateSize = 0L;
         String urlStr = serverURL_ + urlEndpoint;
@@ -110,14 +110,14 @@ public class ConnectionProcessor implements Runnable {
             if (!hasPicturePath) {
                 String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
                 requestData += "&checksum256=" + checksum;
-                L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+                L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
                 approximateDateSize += requestData.length(); // add request data to the estimated data size
             }
         } else {
             urlStr += "?" + requestData;
             String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
             urlStr += "&checksum256=" + checksum;
-            L.v("[Connection Processor] The following checksum was added:[" + checksum + "]");
+            L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
         }
         approximateDateSize += urlStr.length();
 
@@ -138,7 +138,7 @@ public class ConnectionProcessor implements Runnable {
 
         if (requestHeaderCustomValues_ != null) {
             //if there are custom header values, add them
-            L.v("[Connection Processor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
+            L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
             for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue();
@@ -148,7 +148,7 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        L.v("[Connection Processor] Has picturePath [" + hasPicturePath + "]");
+        L.v("[ConnectionProcessor] Has picturePath [" + hasPicturePath + "]");
 
         if (hasPicturePath) {
             String boundary = Long.toHexString(System.currentTimeMillis());// Just generate some unique random value as the boundary
@@ -192,7 +192,7 @@ public class ConnectionProcessor implements Runnable {
                 writer.close();
                 os.close();
             } else {
-                L.v("[Connection Processor] Using HTTP GET");
+                L.v("[ConnectionProcessor] Using HTTP GET");
                 conn.setDoOutput(false);
             }
         }
@@ -215,7 +215,7 @@ public class ConnectionProcessor implements Runnable {
             L.e("[ConnectionProcessor] urlConnectionForServerRequest, exception while calculating header field size: " + e);
         }
 
-        L.v("[Connection Processor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
+        L.v("[ConnectionProcessor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
             + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
     }
@@ -245,7 +245,7 @@ public class ConnectionProcessor implements Runnable {
      * @throws IOException if there is an error while reading the file
      */
     int addFileMultipart(OutputStream output, PrintWriter writer, final String filePath, final String boundary) throws IOException {
-        if (Utils.isEmpty(filePath)) {
+        if (Utils.isNullOrEmpty(filePath)) {
             return 0;
         }
         writer.append("--").append(boundary).append(CRLF);
@@ -280,18 +280,18 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         while (true) {
-            Long pccTsStartWholeQueue = 0L;
-            Long pccTsStartOnlyInternet = 0L;
-            Long pccTsStartTempIdCheck = 0L;
-            Long pccTsStartEndpointCheck = 0L;
-            Long pccTsStartOldRCheck = 0L;
-            Long pccTsStartGetURLConnection = 0L;
-            Long pccTsStartDeviceIDOverride = 0L;
-            Long pccTsStartRemainingRequests = 0L;
-            Long pccTsStartHandlingResponse = 0L;
+            long pccTsStartWholeQueue = 0L;
+            long pccTsStartOnlyInternet = 0L;
+            long pccTsStartTempIdCheck = 0L;
+            long pccTsStartEndpointCheck = 0L;
+            long pccTsStartOldRCheck = 0L;
+            long pccTsStartGetURLConnection = 0L;
+            long pccTsStartDeviceIDOverride = 0L;
+            long pccTsStartRemainingRequests = 0L;
+            long pccTsStartHandlingResponse = 0L;
 
             if (!configProvider_.getNetworkingEnabled()) {
-                L.w("[Connection Processor] run, Networking config is disabled, request queue skipped");
+                L.w("[ConnectionProcessor] run, Networking config is disabled, request queue skipped");
                 break;
             }
 
@@ -306,7 +306,7 @@ public class ConnectionProcessor implements Runnable {
             int storedRequestCount = storedRequests == null ? 0 : storedRequests.length;
 
             if (L.logEnabled()) {
-                String msg = "[Connection Processor] Starting to run, there are [" + storedRequestCount + "] requests stored";
+                String msg = "[ConnectionProcessor] Starting to run, there are [" + storedRequestCount + "] requests stored";
                 if (storedRequestCount == 0) {
                     L.v(msg);
                 } else {
@@ -315,7 +315,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             if (storedRequests == null || storedRequestCount == 0) {
-                L.i("[Connection Processor] No requests in the queue, request queue skipped");
+                L.i("[ConnectionProcessor] No requests in the queue, request queue skipped");
                 // currently no data to send, we are done for now
                 break;
             }
@@ -323,12 +323,13 @@ public class ConnectionProcessor implements Runnable {
             if (deviceIdProvider_.getDeviceId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
                 // In some cases it might take time for them to initialize. So, just wait for it.
-                L.i("[Connection Processor] No Device ID available yet, skipping request " + storedRequests[0]);
+                L.i("[ConnectionProcessor] No Device ID available yet, skipping request " + storedRequests[0]);
                 break;
             }
 
             // get first request in a separate variable to modify and keep the original intact
-            String eventData = storedRequests[0];//todo rework to another param approach
+            final String originalRequest = storedRequests[0];
+            String requestData = originalRequest;//todo rework to another param approach
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
@@ -340,8 +341,8 @@ public class ConnectionProcessor implements Runnable {
                 pccTsStartOldRCheck = UtilsTime.getNanoTime();
             }
 
-            L.i("[Connection Processor] Checking if the request is older than:[" + requestInfoProvider_.getRequestDropAgeHours() + "] hours");
-            boolean isRequestOld = Utils.isRequestTooOld(eventData, requestInfoProvider_.getRequestDropAgeHours(), "[Connection Processor]", L);
+            L.i("[ConnectionProcessor] Checking if the request is older than:[" + requestInfoProvider_.getRequestDropAgeHours() + "] hours");
+            boolean isRequestOld = Utils.isRequestTooOld(requestData, requestInfoProvider_.getRequestDropAgeHours(), "[ConnectionProcessor]", L);
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_02_NetworkOldReq", UtilsTime.getNanoTime() - pccTsStartOldRCheck);
@@ -355,14 +356,14 @@ public class ConnectionProcessor implements Runnable {
             // temp ID checks
             String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            boolean containsTemporaryIdOverride = eventData.contains(temporaryIdOverrideTag);
-            boolean containsTemporaryId = eventData.contains(temporaryIdTag);
+            boolean containsTemporaryIdOverride = requestData.contains(temporaryIdOverrideTag);
+            boolean containsTemporaryId = requestData.contains(temporaryIdTag);
             if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
 
                 //abort and wait for exiting temporary mode
-                L.i("[Connection Processor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
+                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
                 break;
             }
             if (pcc != null) {
@@ -378,14 +379,14 @@ public class ConnectionProcessor implements Runnable {
             String customEndpoint = null;
 
             // checks if endPointOverrideTag exists in the eventData, and if so, extracts the endpoint and removes the tag from the evenData
-            String[] extractionResult = Utils.extractValueFromString(eventData, endPointOverrideTag, "&");
+            String[] extractionResult = Utils.extractValueFromString(requestData, endPointOverrideTag, "&");
             if (extractionResult[1] != null) {
-                eventData = extractionResult[0];
+                requestData = extractionResult[0];
 
                 if (!extractionResult[1].equals("")) {
                     customEndpoint = extractionResult[1];
                 }
-                L.v("[Connection Processor] Custom end point detected for the request:[" + customEndpoint + "]");
+                L.v("[ConnectionProcessor] Custom end point detected for the request:[" + customEndpoint + "]");
             }
 
             if (pcc != null) {
@@ -399,8 +400,8 @@ public class ConnectionProcessor implements Runnable {
             }
 
             //add the device_id to the created request
-            boolean deviceIdOverride = eventData.contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = eventData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
+            boolean deviceIdOverride = requestData.contains("&override_id="); //if the sendable data contains a override tag
+            boolean deviceIdChange = requestData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
 
             final String newId;
 
@@ -410,15 +411,15 @@ public class ConnectionProcessor implements Runnable {
                 // this is indicated by having the "override_id" tag. This just means that we
                 // don't use the id provided in the deviceId variable as this might have changed already.
 
-                eventData = eventData.replace("&override_id=", "&device_id=");
+                requestData = requestData.replace("&override_id=", "&device_id=");
                 newId = null;
             } else {
                 if (deviceIdChange) {
                     // this branch will be used if a new device_id is provided
                     // and a device_id merge on server has to be performed
 
-                    final int endOfDeviceIdTag = eventData.indexOf("&device_id=") + "&device_id=".length();
-                    newId = UtilsNetworking.urlDecodeString(eventData.substring(endOfDeviceIdTag));
+                    final int endOfDeviceIdTag = requestData.indexOf("&device_id=") + "&device_id=".length();
+                    newId = UtilsNetworking.urlDecodeString(requestData.substring(endOfDeviceIdTag));
 
                     if (newId.equals(deviceIdProvider_.getDeviceId())) {
                         // If the new device_id is the same as previous,
@@ -426,17 +427,17 @@ public class ConnectionProcessor implements Runnable {
 
                         deviceIdChange = false;
 
-                        L.d("[Connection Processor] Provided device_id is the same as the previous one used, nothing will be merged");
+                        L.d("[ConnectionProcessor] Provided device_id is the same as the previous one used, nothing will be merged");
                     } else {
                         //new device_id provided, make sure it will be merged
-                        eventData = eventData + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                        requestData = requestData + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                     }
                 } else {
                     // this branch will be used in almost all requests.
                     // This just adds the device_id to them
 
                     newId = null;
-                    eventData = eventData + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
+                    requestData = requestData + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
                 }
             }
 
@@ -451,7 +452,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // add the remaining request count
-            eventData = eventData + "&rr=" + (storedRequestCount - 1);
+            requestData = requestData + "&rr=" + (storedRequestCount - 1);
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_06_remainingRequests", UtilsTime.getNanoTime() - pccTsStartRemainingRequests);
@@ -469,7 +470,7 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     // initialize and open connection
-                    conn = urlConnectionForServerRequest(eventData, customEndpoint);
+                    conn = urlConnectionForServerRequest(requestData, customEndpoint);
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_07_SetupServerRequest", UtilsTime.getNanoTime() - pccTsStartGetURLConnection);
                         pccTsStartOnlyInternet = UtilsTime.getNanoTime();
@@ -498,14 +499,14 @@ public class ConnectionProcessor implements Runnable {
                         responseString = Utils.inputStreamToString(connInputStream);
                     }
 
-                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + eventData + ", url: " + serverURL_);
+                    L.d("[ConnectionProcessor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + requestData + ", url: " + serverURL_);
 
                     final RequestResult rRes;
 
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {
-                            L.v("[Connection Processor] Response was empty, will retry");
+                            L.v("[ConnectionProcessor] Response was empty, will retry");
                             rRes = RequestResult.RETRY;
                         } else {
                             JSONObject jsonObject;
@@ -514,37 +515,37 @@ public class ConnectionProcessor implements Runnable {
                             } catch (JSONException ex) {
                                 //failed to parse, so not a valid json
                                 jsonObject = null;
-                                L.e("[Connection Processor] Failed to parse response [" + responseString + "].");
+                                L.e("[ConnectionProcessor] Failed to parse response [" + responseString + "].");
                             }
 
                             if (jsonObject == null) {
                                 //received unparseable response, retrying
-                                L.v("[Connection Processor] Response was a unknown, will retry");
+                                L.v("[ConnectionProcessor] Response was a unknown, will retry");
                                 rRes = RequestResult.RETRY;
                             } else {
                                 if (jsonObject.has("result")) {
                                     //contains result entry
-                                    L.v("[Connection Processor] Response was a success");
+                                    L.v("[ConnectionProcessor] Response was a success");
                                     rRes = RequestResult.OK;
                                 } else {
-                                    L.v("[Connection Processor] Response does not contain 'result', will retry");
+                                    L.v("[ConnectionProcessor] Response does not contain 'result', will retry");
                                     rRes = RequestResult.RETRY;
                                 }
                             }
                         }
                     } else if (responseCode >= 300 && responseCode < 400) {
                         //assume redirect
-                        L.d("[Connection Processor] Encountered redirect, will retry");
+                        L.d("[ConnectionProcessor] Encountered redirect, will retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode == 400 || responseCode == 404) {
-                        L.w("[Connection Processor] Bad request, will still retry");
+                        L.w("[ConnectionProcessor] Bad request, will still retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode > 400) {
                         //server down, try again later
-                        L.d("[Connection Processor] Server is down, will retry");
+                        L.d("[ConnectionProcessor] Server is down, will retry");
                         rRes = RequestResult.RETRY;
                     } else {
-                        L.d("[Connection Processor] Bad response code, will retry");
+                        L.d("[ConnectionProcessor] Bad response code, will retry");
                         rRes = RequestResult.RETRY;
                     }
 
@@ -553,29 +554,38 @@ public class ConnectionProcessor implements Runnable {
                     if (rRes == RequestResult.OK) {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
-                        storageProvider_.removeRequest(storedRequests[0]);
+                        storageProvider_.removeRequest(originalRequest);
 
                         if (deviceIdChange) {
                             if (newId != null && !newId.isEmpty()) {
                                 deviceIdProvider_.getDeviceIdInstance().changeToCustomId(newId);//todo needs to be refactored
                             } else {
-                                L.e("[Connection Processor] Failed to change device ID with merging because the new ID was empty or null. [" + newId + "]");
+                                L.e("[ConnectionProcessor] Failed to change device ID with merging because the new ID was empty or null. [" + newId + "]");
                             }
                         }
 
                         if (deviceIdChange || deviceIdOverride) {
-                            L.v("[Connection Processor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
+                            L.v("[ConnectionProcessor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
                             Countly.sharedInstance().notifyDeviceIdChange();//todo needs to be removed at some point
                         }
                     } else {
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
                         healthTracker.logFailedNetworkRequest(responseCode, responseString);//notify the health tracker of the issue
+                        healthTracker.saveState();
+
+                        if (pcc != null) {
+                            pcc.TrackCounterTimeNs("ConnectionProcessorRun_12_FailedRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
+                        }
+
                         break;
                     }
                 } catch (Exception e) {
-                    L.d("[Connection Processor] Got exception while trying to submit request data: [" + eventData + "] [" + e + "]");
+                    L.d("[ConnectionProcessor] Got exception while trying to submit request data: [" + requestData + "] [" + e + "]");
                     // if exception occurred, stop processing, let next tick take care of retrying
+                    if (pcc != null) {
+                        pcc.TrackCounterTimeNs("ConnectionProcessorRun_11_NetworkWholeQueueException", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
+                    }
                     break;
                 } finally {
                     // free connection resources
@@ -596,13 +606,13 @@ public class ConnectionProcessor implements Runnable {
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
                 if (isRequestOld) {
-                    L.i("[Connection Processor] request is too old, removing request " + storedRequests[0]);
+                    L.i("[ConnectionProcessor] request is too old, removing request " + originalRequest);
                 } else {
-                    L.i("[Connection Processor] Device identified as an app crawler, removing request " + storedRequests[0]);
+                    L.i("[ConnectionProcessor] Device identified as an app crawler, removing request " + originalRequest);
                 }
 
                 //remove stored data
-                storageProvider_.removeRequest(storedRequests[0]);
+                storageProvider_.removeRequest(originalRequest);
             }
 
             if (pcc != null) {

@@ -7,14 +7,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -25,7 +19,7 @@ public class TemporaryIDTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
-        store = new CountlyStore(getContext(), mock(ModuleLog.class), false);
+        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), false);
         sp = store;
         store.clear();
     }
@@ -70,7 +64,7 @@ public class TemporaryIDTests {
         String[] ret = CreateInitialTmpIDState("abc", DeviceIdType.OPEN_UDID, "abc", store);
 
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setLoggingEnabled(true));
+        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setLoggingEnabled(true));
 
         String[] reqs = store.getRequests();
         assertArrayEquals(ret, reqs);
@@ -88,7 +82,7 @@ public class TemporaryIDTests {
         String[] ret = CreateInitialTmpIDState("abc", DeviceIdType.OPEN_UDID, "abc", store);
 
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setLoggingEnabled(true).enableTemporaryDeviceIdMode());
+        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setLoggingEnabled(true).enableTemporaryDeviceIdMode());
 
         String[] reqs = store.getRequests();
         assertArrayEquals(ret, reqs);
@@ -99,7 +93,7 @@ public class TemporaryIDTests {
         String[] ret = CreateInitialTmpIDState("abc", DeviceIdType.OPEN_UDID, "abc", store);
 
         Countly mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setLoggingEnabled(true).setDeviceId("a123d"));
+        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setLoggingEnabled(true).setDeviceId("a123d"));
 
         String[] reqs = store.getRequests();
         assertArrayEquals(ret, reqs);

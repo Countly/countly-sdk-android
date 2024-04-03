@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import ly.count.android.sdk.RandomUtil;
 import ly.count.android.sdk.UtilsTime;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,10 +14,6 @@ public class BenchmarkUtil {
 
     protected BenchmarkUtil() {
         random = new RandomUtil();
-    }
-
-    protected Map<String, String> generateRequest(int eventSize, int segmentSize) throws JSONException {
-        return generateRequest(eventSize, segmentSize, null);
     }
 
     protected Map<String, String> generateRequest(int eventSize, int segmentSize, Map<String, String> additionalParams) throws JSONException {
@@ -43,7 +38,12 @@ public class BenchmarkUtil {
         Map<String, Object> segment = new ConcurrentHashMap<>();
 
         for (int i = 0; i < segmentSize; i++) {
-            segment.put(random.generateRandomString(8), random.generateRandomObject());
+            String key = random.generateRandomString(8);
+
+            while (segment.containsKey(key)) {
+                key = random.generateRandomString(8);
+            }
+            segment.put(key, random.generateRandomImmutable());
         }
 
         return segment;

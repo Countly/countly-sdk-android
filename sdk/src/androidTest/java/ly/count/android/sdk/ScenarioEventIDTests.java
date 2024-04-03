@@ -4,7 +4,6 @@ import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
-import ly.count.android.sdk.messaging.ModulePush;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -12,8 +11,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-import static androidx.test.InstrumentationRegistry.getContext;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,7 +35,7 @@ public class ScenarioEventIDTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         act = mock(Activity.class);

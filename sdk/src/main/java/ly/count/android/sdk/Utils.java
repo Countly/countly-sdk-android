@@ -6,16 +6,13 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,35 +34,86 @@ public class Utils {
     }
 
     /**
-     * Joins objects with a separator
-     *
-     * @param objects objects to join
-     * @param separator separator to use
-     * @return resulting string
-     */
-    static <T> String join(final Collection<T> objects, @NonNull final String separator) {
-        StringBuilder sb = new StringBuilder();
-        Iterator<T> iter = objects.iterator();
-        while (iter.hasNext()) {
-            sb.append(iter.next());
-            if (iter.hasNext()) {
-                sb.append(separator);
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
      * Joins all the strings in the specified collection into a single string with the specified delimiter.
      * Used in countlyStore
      */
-    static String joinCountlyStore(final Collection<String> collection, final String delimiter) {
-        final StringBuilder builder = new StringBuilder();
+    static String joinCountlyStore(@NonNull final List<String> collection, @NonNull final String delimiter) {
+        int targetCapacity = collection.size() == 0 ? 0 : collection.size() * collection.get(0).length();
+        final StringBuilder builder = new StringBuilder(targetCapacity);
 
         int i = 0;
         for (String s : collection) {
             builder.append(s);
             if (++i < collection.size()) {
+                builder.append(delimiter);
+            }
+        }
+
+        return builder.toString();
+    }
+
+    static String joinCountlyStore_reworked(@NonNull final List<String> collection, @NonNull final String delimiter) {
+        return joinCountlyStore_reworked(collection, delimiter, 0);
+    }
+
+    /**
+     * Joins all the strings in the specified collection into a single string with the specified delimiter.
+     * Used in countlyStore
+     * todo: Add tests for this
+     */
+    static String joinCountlyStore_reworked(@NonNull final List<String> collection, @NonNull final String delimiter, int startingEntry) {
+        int cSize = collection.size();
+        int targetCapacity;
+        if (cSize == 0) {
+            targetCapacity = 0;
+        } else if (cSize == 1) {
+            targetCapacity = cSize * collection.get(0).length();
+        } else {
+            targetCapacity = cSize * collection.get(0).length() + (cSize * delimiter.length());
+        }
+
+        final StringBuilder builder = new StringBuilder(targetCapacity);
+
+        int i = startingEntry;
+        for (int a = startingEntry; a < cSize; a++) {
+            builder.append(collection.get(a));
+            if (++i < cSize) {
+                builder.append(delimiter);
+            }
+        }
+
+        return builder.toString();
+    }
+
+    static String joinCountlyStoreArray_reworked(@NonNull final String[] collection, @NonNull final String delimiter) {
+        return joinCountlyStoreArray_reworked(collection, delimiter, 0);
+    }
+
+    /**
+     * todo: Add tests for this
+     *
+     * @param collection
+     * @param delimiter
+     * @param startingEntry
+     * @return
+     */
+    static String joinCountlyStoreArray_reworked(@NonNull final String[] collection, @NonNull final String delimiter, int startingEntry) {
+        int cSize = collection.length;
+        int targetCapacity;
+        if (cSize == 0) {
+            targetCapacity = 0;
+        } else if (cSize == 1) {
+            targetCapacity = cSize * collection[0].length();
+        } else {
+            targetCapacity = cSize * collection[0].length() + (cSize * delimiter.length());
+        }
+
+        final StringBuilder builder = new StringBuilder(targetCapacity);
+
+        int i = startingEntry;
+        for (int a = startingEntry; a < cSize; a++) {
+            builder.append(collection[a]);
+            if (++i < cSize) {
                 builder.append(delimiter);
             }
         }
@@ -79,7 +127,7 @@ public class Utils {
      * @param str string to check
      * @return true if null or empty string, false otherwise
      */
-    public static boolean isEmpty(String str) {
+    public static boolean isNullOrEmpty(String str) {
         return str == null || "".equals(str);
     }
 
@@ -89,8 +137,8 @@ public class Utils {
      * @param str string to check
      * @return false if null or empty string, true otherwise
      */
-    public static boolean isNotEmpty(String str) {
-        return !isEmpty(str);
+    public static boolean isNotNullOrEmpty(String str) {
+        return !isNullOrEmpty(str);
     }
 
     /**
@@ -179,96 +227,6 @@ public class Utils {
     }
 
     /**
-     * Removes unsupported data types
-     *
-     * @param data
-     * @return returns true if any entry had been removed
-     */
-    static boolean removeUnsupportedDataTypes(Map<String, Object> data) {
-        if (data == null) {
-            return false;
-        }
-
-        boolean removed = false;
-
-        for (Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<String, Object> entry = it.next();
-            String key = entry.getKey();
-            Object value = entry.getValue();
-
-            if (key == null || key.isEmpty() || !(value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean)) {
-
-                if (value instanceof Float) {
-                    //transform to double
-                    data.put(key, ((Float) value).doubleValue());
-                } else {
-                    //found unsupported data type or null key or value, removing
-                    it.remove();
-                    removed = true;
-                }
-            }
-        }
-
-        if (removed) {
-            Countly.sharedInstance().L.w("[Utils] Unsupported data types were removed from provided segmentation");
-        }
-
-        return removed;
-    }
-
-    /**
-     * Used to remove reserved keys from segmentation map
-     *
-     * @param segmentation
-     * @param reservedKeys
-     * @param messagePrefix
-     * @param L
-     */
-    static void removeReservedKeysFromSegmentation(@Nullable Map<String, Object> segmentation, @NonNull String[] reservedKeys, @NonNull String messagePrefix, @NonNull ModuleLog L) {
-        if (segmentation == null) {
-            return;
-        }
-
-        for (String rKey : reservedKeys) {
-            if (segmentation.containsKey(rKey)) {
-                L.w(messagePrefix + " provided segmentation contains protected key [" + rKey + "]");
-                segmentation.remove(rKey);
-            }
-        }
-    }
-
-    /**
-     * Used for quickly sorting segments into their respective data type
-     *
-     * @param allSegm
-     * @param segmStr
-     * @param segmInt
-     * @param segmDouble
-     * @param segmBoolean
-     */
-    protected static synchronized void fillInSegmentation(Map<String, Object> allSegm, Map<String, String> segmStr, Map<String, Integer> segmInt, Map<String, Double> segmDouble, Map<String, Boolean> segmBoolean,
-        Map<String, Object> reminder) {
-        for (Map.Entry<String, Object> pair : allSegm.entrySet()) {
-            String key = pair.getKey();
-            Object value = pair.getValue();
-
-            if (value instanceof Integer) {
-                segmInt.put(key, (Integer) value);
-            } else if (value instanceof Double) {
-                segmDouble.put(key, (Double) value);
-            } else if (value instanceof String) {
-                segmStr.put(key, (String) value);
-            } else if (value instanceof Boolean) {
-                segmBoolean.put(key, (Boolean) value);
-            } else {
-                if (reminder != null) {
-                    reminder.put(key, value);
-                }
-            }
-        }
-    }
-
-    /**
      * Utility method to fill JSONObject with supplied objects for supplied keys.
      * Fills json only with non-null and non-empty key/value pairs.
      *
@@ -330,33 +288,6 @@ public class Utils {
     }
 
     /**
-     * Checks and transforms the provided Object if it does not
-     * comply with the key count limit.
-     *
-     * @param maxCount Int @NonNull - max number of keys allowed
-     * @param L ModuleLog @NonNull - Logger function
-     * @param messagePrefix String @NonNull - name of the module this function was called
-     * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
-     */
-    static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
-        if (segmentation == null) {
-            return;
-        }
-
-        Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
-        while (iterator.hasNext()) {
-            if (segmentation.size() > maxCount) {
-                Map.Entry<String, Object> value = iterator.next();
-                String key = value.getKey();
-                L.w(messagePrefix + ", Value exceeded the maximum segmentation count key:[" + key + "]");
-                iterator.remove();
-            } else {
-                break;
-            }
-        }
-    }
-
-    /**
      * This function checks if a request is older than an accepted duration.
      * As the expected duration you should use the developer provided 'dropAgeHours'
      *
@@ -364,7 +295,7 @@ public class Utils {
      * @param dropAgeHours oldness threshold (in hours)
      * @return true if old, false if not
      */
-    public static boolean isRequestTooOld(@NonNull final String request, @NonNull final int dropAgeHours, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+    public static boolean isRequestTooOld(@NonNull final String request, final int dropAgeHours, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
         if (dropAgeHours <= 0) {
             L.v(messagePrefix + " isRequestTooOld, No request drop age set. Request will bypass age checks");
             return false;

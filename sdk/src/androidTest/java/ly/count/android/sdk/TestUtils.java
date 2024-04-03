@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
@@ -11,16 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.mockito.ArgumentCaptor;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -44,6 +41,8 @@ public class TestUtils {
     public final static String commonURL = "http://test.count.ly";
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
+    public final static String SDK_NAME = "java-native-android";
+    public final static String SDK_VERSION = "24.4.0";
 
     public static class Activity2 extends Activity {
     }
@@ -124,12 +123,16 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig() {
-        CountlyConfig cc = (new CountlyConfig((Application) ApplicationProvider.getApplicationContext(), commonAppKey, commonURL))
+        CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
         return cc;
+    }
+
+    protected static CountlyConfig getBaseConfig() {
+        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
     }
 
     public static String[] createStringArray(int count) {
@@ -190,40 +193,6 @@ public class TestUtils {
         countly.requestQueueProvider = rqp;
 
         return rqp;
-    }
-
-    public static Map<String, Object> combineSegmentation(Event event) {
-        return combineSegmentation(event.segmentation, event.segmentationInt, event.segmentationDouble, event.segmentationBoolean);
-    }
-
-    public static Map<String, Object> combineSegmentation(Map<String, String> sString, Map<String, Integer> sInteger, Map<String, Double> sDouble, Map<String, Boolean> sBoolean) {
-        Map<String, Object> res = new HashMap<>();
-
-        if (sString != null) {
-            for (Map.Entry<String, String> pair : sString.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sInteger != null) {
-            for (Map.Entry<String, Integer> pair : sInteger.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sDouble != null) {
-            for (Map.Entry<String, Double> pair : sDouble.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        if (sBoolean != null) {
-            for (Map.Entry<String, Boolean> pair : sBoolean.entrySet()) {
-                res.put(pair.getKey(), pair.getValue());
-            }
-        }
-
-        return res;
     }
 
     @SuppressWarnings("InfiniteRecursion")
@@ -467,6 +436,10 @@ public class TestUtils {
     }
 
     public static void verifyBeginSessionNotCalled(RequestQueueProvider requestQueueProvider) {
+        verifyBeginSessionTimes(requestQueueProvider, 0);
+    }
+
+    public static void verifyBeginSessionTimes(RequestQueueProvider requestQueueProvider, int count) {
         ArgumentCaptor<Boolean> arg1 = ArgumentCaptor.forClass(Boolean.class);
         ArgumentCaptor<String> arg2 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg3 = ArgumentCaptor.forClass(String.class);
@@ -474,7 +447,7 @@ public class TestUtils {
         ArgumentCaptor<String> arg5 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg6 = ArgumentCaptor.forClass(String.class);
 
-        verify(requestQueueProvider, never()).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
+        verify(requestQueueProvider, count == 0 ? never() : times(count)).beginSession(arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture());
     }
 
     public static void verifyBeginSessionValues(RequestQueueProvider requestQueueProvider, Boolean v1, String v2, String v3, String v4, String v5) {
@@ -497,5 +470,105 @@ public class TestUtils {
     public static void verifyCurrentPreviousViewID(ModuleViews mv, String current, String previous) {
         Assert.assertEquals(current, mv.getCurrentViewId());
         Assert.assertEquals(previous, mv.getPreviousViewId());
+    }
+
+    protected static CountlyStore getCountyStore() {
+        return new CountlyStore(getContext(), mock(ModuleLog.class), false);
+    }
+
+    /**
+     * Get current request queue from target folder
+     *
+     * @return array of request params
+     */
+    protected static @NonNull Map<String, String>[] getCurrentRQ() {
+        //get all request files from target folder
+        String[] requests = getCountyStore().getRequests();
+        //create array of request params
+        Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
+
+        for (int i = 0; i < requests.length; i++) {
+
+            String[] params = requests[i].split("&");
+
+            Map<String, String> paramMap = new ConcurrentHashMap<>();
+            for (String param : params) {
+                String[] pair = param.split("=");
+                paramMap.put(UtilsNetworking.urlDecodeString(pair[0]), pair.length == 1 ? "" : UtilsNetworking.urlDecodeString(pair[1]));
+            }
+            resultMapArray[i] = paramMap;
+        }
+
+        return resultMapArray;
+    }
+
+    protected static Map<String, Object> map(Object... args) {
+        Map<String, Object> map = new ConcurrentHashMap<>();
+
+        if (args.length < 1) {
+            return map;
+        }
+
+        if (args.length % 2 != 0) {
+            return map;
+        }
+
+        for (int a = 0; a < args.length; a += 2) {
+            if (args[a] != null && args[a + 1] != null) {
+                map.put(args[a].toString(), args[a + 1]);
+            }
+        }
+        return map;
+    }
+
+    public static Context getContext() {
+        return ApplicationProvider.getApplicationContext();
+    }
+
+    public static Application getApplication() {
+        return (Application) getContext();
+    }
+
+    /**
+     * Validate sdk identity params which are sdk version and name
+     *
+     * @param params params to validate
+     */
+    public static void validateSdkIdentityParams(Map<String, String> params) {
+        Assert.assertEquals(SDK_VERSION, params.get("sdk_version"));
+        Assert.assertEquals(SDK_NAME, params.get("sdk_name"));
+    }
+
+    public static void validateRequiredParams(@NonNull Map<String, String> params) {
+        validateRequiredParams(params, commonDeviceId);
+    }
+
+    public static void validateRequiredParams(Map<String, String> params, String deviceId) {
+        int hour = Integer.parseInt(params.get("hour"));
+        int dow = Integer.parseInt(params.get("dow"));
+        int tz = Integer.parseInt(params.get("tz"));
+
+        validateSdkIdentityParams(params);
+        //Assert.assertEquals(deviceId, params.get("device_id"));
+        Assert.assertEquals(commonAppKey, params.get("app_key"));
+        Assert.assertEquals(Countly.DEFAULT_APP_VERSION, params.get("av"));
+        Assert.assertTrue(Long.parseLong(params.get("timestamp")) > 0);
+        Assert.assertTrue(hour >= 0 && hour < 24);
+        Assert.assertTrue(dow >= 0 && dow < 7);
+        Assert.assertTrue(tz >= -720 && tz <= 840);
+    }
+
+    /**
+     * Ignore JSONException thrown by JSONObject.put
+     *
+     * @param json target json object
+     * @param key key to put
+     * @param value value to put
+     */
+    protected static void put(JSONObject json, String key, Object value) {
+        try {
+            json.put(key, value);
+        } catch (JSONException ignored) {
+        }
     }
 }

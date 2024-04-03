@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -19,7 +18,7 @@ public class ModuleConfigurationTests {
 
     @Before
     public void setUp() {
-        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
     }
 
@@ -147,7 +146,7 @@ public class ModuleConfigurationTests {
 
         //third init is lacking a connection but still has the previously saved values
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
-        countly = (new Countly()).init(config);
+        countly = new Countly().init(config);
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
 

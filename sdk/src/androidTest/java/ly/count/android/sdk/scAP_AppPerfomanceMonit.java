@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -18,7 +17,7 @@ public class scAP_AppPerfomanceMonit {
     Activity act2;
 
     CountlyConfig createAPMConfig() {
-        CountlyConfig config = (new CountlyConfig(getContext(), TestUtils.commonAppKey, TestUtils.commonURL)).setDeviceId(TestUtils.commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), TestUtils.commonAppKey, TestUtils.commonURL).setDeviceId(TestUtils.commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
         config.setRequiresConsent(true);
         config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.location });
         return config;
@@ -26,7 +25,7 @@ public class scAP_AppPerfomanceMonit {
 
     @Before
     public void setUp() {
-        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         act = mock(TestUtils.Activity2.class);
@@ -40,7 +39,7 @@ public class scAP_AppPerfomanceMonit {
 
         Assert.assertEquals(0, countlyStore.getRequests().length);
 
-        Countly countly = (new Countly()).init(config);
+        Countly countly = new Countly().init(config);
 
         //enter foreground
         countly.apm().setAppIsLoaded();

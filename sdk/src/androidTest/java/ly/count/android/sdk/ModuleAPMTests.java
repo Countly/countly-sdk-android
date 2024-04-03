@@ -10,7 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,11 +22,11 @@ public class ModuleAPMTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
 
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
     }
@@ -109,19 +108,22 @@ public class ModuleAPMTests {
     public void recordNetworkTraceBasic() {
         //ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
         mCountly.apm().recordNetworkTrace("aaa", 234, 123, 456, 7654, 8765);
-        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", (8765L - 7654L), 234, 123, 456, 7654L, 8765L);
+        // value 1111 has gotten by subtraction of values (8765 - 7654)
+        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", 1111L, 234, 123, 456, 7654L, 8765L);
     }
 
     @Test
     public void recordNetworkTraceFalseValues_1() {
         mCountly.apm().recordNetworkTrace("aaa", -100, -123, 456, 7654, 8765);
-        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", (8765L - 7654L), 0, 0, 456, 7654L, 8765L);
+        // value 1111 has gotten by subtraction of values (8765 - 7654)
+        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", 1111L, 0, 0, 456, 7654L, 8765L);
     }
 
     @Test
     public void recordNetworkTraceFalseValues_2() {
         mCountly.apm().recordNetworkTrace("aaa", 999, 123, -456, 8765, 7654);
-        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", (8765L - 7654L), 0, 123, 0, 7654L, 8765L);
+        // value 1111 has gotten by subtraction of values (8765 - 7654)
+        verify(requestQueueProvider).sendAPMNetworkTrace("aaa", 1111L, 0, 123, 0, 7654L, 8765L);
     }
 
     @Test

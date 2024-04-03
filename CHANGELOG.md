@@ -1,3 +1,21 @@
+## 24.4.0
+* ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "UpdateSession"
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "EndSession"
+* ! Minor breaking change ! Setting for enabling/disabling for native crash dumps will be always enabled
+
+* Added an extended way of crash filtering
+* Added SDK internal limits configuration interface
+
+* Deprecated the following calls from "CountlyConfig":
+  * "setMaxSegmentationValues(maxSegmentationValues)" instead use "sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues)"
+  * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount)"
+  * "setCrashFilterCallback(crashFilterCallback)" instead use "crashes.setGlobalCrashFilterCallback(globalCrashFilterCallback)"
+  * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
+  * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
+  * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
+  * "checkForNativeCrashDumps(checkForDumps)", it will be removed in the future, there is no replacement
+
 ## 24.1.1
 * Added a new metric for detecting whether or not a device has a hinge
 

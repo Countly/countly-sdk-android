@@ -1,9 +1,9 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import android.app.Activity;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
@@ -12,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -40,7 +39,7 @@ public class ModuleViewsTests {
 
     @Before
     public void setUp() {
-        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
         idx = 0;//reset the index for the view ID generator
         safeViewIDGenerator = new SafeIDGenerator() {
@@ -540,15 +539,21 @@ public class ModuleViewsTests {
 
     /**
      * Make sure automatic session related calls don't do anything if automatic view tracking is disabled
+     * This is explicitly with the manual onStart, onStop callbacks
      */
     @Test
     public void recordViewWithActivitiesAfterwardsAutoDisabled() {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null);
+        //disable application class so the manual callbacks work
+        cc.setApplication(null);
+        cc.setContext(TestUtils.getContext());
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.views().recordView("abcd");
+        //record a view manually and validate the it is recorded
+        mCountly.views().startView("abcd");
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY);
+        mCountly.views().stopViewWithName("abcd");
         clearInvocations(ep);
 
         @NonNull Activity act = mock(Activity.class);

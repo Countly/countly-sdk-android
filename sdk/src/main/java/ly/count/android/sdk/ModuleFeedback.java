@@ -568,9 +568,7 @@ public class ModuleFeedback extends ModuleBase {
         } else {
             //widget was filled out
             //merge given segmentation
-            for (Map.Entry<String, Object> entry : widgetResult.entrySet()) {
-                segm.put(entry.getKey(), entry.getValue());
-            }
+            segm.putAll(widgetResult);
         }
 
         eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null, null);
