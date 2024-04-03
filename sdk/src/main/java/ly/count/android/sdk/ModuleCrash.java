@@ -240,14 +240,14 @@ public class ModuleCrash extends ModuleBase {
             return true;
         }
 
-        if (crashData.getChangedFields()[2]) {
-            L.d("[ModuleCrash] crashFilterCheck, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
-            if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
-                L.d("[ModuleCrash] crashFilterCheck, after filtering, breadcrumbs limit is exceeded. clipping oldest count:[" + crashData.getBreadcrumbs().size() + "]");
-                int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
-                if (gonnaClip > 0) {
-                    crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
-                }
+        crashData.calculateChangedFields();
+
+        L.d("[ModuleCrash] crashFilterCheck, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
+        if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
+            L.d("[ModuleCrash] crashFilterCheck, after filtering, breadcrumbs limit is exceeded. clipping oldest count:[" + crashData.getBreadcrumbs().size() + "]");
+            int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
+            if (gonnaClip > 0) {
+                crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
             }
         }
 
