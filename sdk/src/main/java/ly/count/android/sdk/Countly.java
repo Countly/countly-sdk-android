@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.4.0-RC1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.4.0";
 
     /**
      * Used as request meta data on every request
@@ -394,7 +394,7 @@ public class Countly {
             } else {
                 config.sdkInternalLimits.maxSegmentationValues = maxSegmentationValuesDefault;
             }
-            
+
             if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
                 if (config.sdkInternalLimits.maxBreadcrumbCount < 1) {
                     config.sdkInternalLimits.maxBreadcrumbCount = 1;
