@@ -25,6 +25,7 @@ public class CrashData {
      * 4 - fatal
      */
     private final String[] checksums = new String[5];
+    private final boolean[] changedFields = new boolean[5];
 
     protected CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
         assert stackTrace != null;
@@ -187,22 +188,14 @@ public class CrashData {
     }
 
     /**
-     * Get the changed information of crash data in order of:
-     * <pre>
-     * 0 - stackTrace
-     * 1 - crashSegmentation
-     * 2 - breadcrumbs
-     * 3 - crashMetrics
-     * 4 - fatal
-     * </pre>
+     * Trigger checksum recalculation
      *
      * @return the checksums of the crash data.
      */
-    protected @NonNull boolean[] getChangedFields() {
+    protected void calculateChangedFields() {
         assert checksums != null;
         assert checksums.length == 5;
 
-        boolean[] changedFields = new boolean[5];
         String[] checksumsNew = new String[5];
         calculateChecksums(checksumsNew);
 
@@ -211,12 +204,9 @@ public class CrashData {
         changedFields[2] = !checksums[2].equals(checksumsNew[2]);
         changedFields[3] = !checksums[3].equals(checksumsNew[3]);
         changedFields[4] = !checksums[4].equals(checksumsNew[4]);
-
-        return changedFields;
     }
 
     protected int getChangedFieldsAsInt() {
-        boolean[] changedFields = getChangedFields();
         int result = 0;
         for (int i = changedFields.length - 1; i >= 0; i--) {
             if (changedFields[i]) {
