@@ -306,7 +306,7 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("d", "4", "e", "5", "f", "6"));
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("e", "5", "f", "6"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("e", "5", "f", "6"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -314,7 +314,7 @@ public class ModuleCrashTests {
      * Validate that first call to the "recordHandledException" is filtered out by the crash filter
      * Validate that second call to the "recordHandledException" is not filtered out by the crash filter
      * Validate second call creates a request in the queue and validate all crash data
-    */
+     */
     public void recordHandledException_crashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
@@ -602,11 +602,9 @@ public class ModuleCrashTests {
     }
 
     /**
-     * "recordHandledException" with global crash filter setting all fields null
-     * Setting null does not have effects on the crash data,
-     * Crash data has null protection
-     * Validate that after filtering out the crash, all fields should be changed except fatal
-     * because we are negating it
+     * Validate that custom crash segmentation is truncated to the maximum allowed length
+     * Because length is 2 all global crash segmentation values are dropped and only the last 2
+     * of the custom segmentation values are kept
      *
      * @throws JSONException if JSON parsing fails
      */
@@ -620,11 +618,18 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("b", "2", "c", "3"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("b", "2", "c", "3"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
-    private void validateCrash(@NonNull DeviceInfo deviceInfo, @NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
-
+    /**
+     * "recordHandledException" with global crash filter setting all fields null
+     * Setting null does not have effects on the crash data,
+     * Crash data has null protection
+     * Validate that after filtering out the crash, all fields should be changed except fatal
+     * because we are negating it
+     *
+     * @throws JSONException if JSON parsing fails
+     */
     public void recordHandledException_globalCrashFilter_allFieldsNull() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
