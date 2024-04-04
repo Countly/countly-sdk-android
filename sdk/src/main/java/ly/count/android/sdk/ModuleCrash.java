@@ -170,9 +170,8 @@ public class ModuleCrash extends ModuleBase {
             return;
         }
 
-        if (segments != null) {
-            UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
-        }
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
+
         customCrashSegments = segments;
     }
 
