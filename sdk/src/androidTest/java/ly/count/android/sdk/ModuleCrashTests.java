@@ -411,7 +411,7 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
         validateCrash(extractStackTrace(exception), "", false, false,
-            TestUtils.map("int", Integer.MAX_VALUE, "sphinx_no", 324), 8, new HashMap<>(), new ArrayList<>());
+            TestUtils.map("int", Integer.MAX_VALUE, "secret", "Minato"), 8, new HashMap<>(), new ArrayList<>());
     }
 
     /**
