@@ -700,7 +700,7 @@ class DeviceInfo {
      */
     @NonNull
     JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
-        JSONObject json = crashData.getCrashMetrics();
+        JSONObject json = crashData.getCrashMetricsJSON();
 
         //setting this first so the followup are not picked up as "dev changes" in the change field
         putToJson(json, "_ob", crashData.getChangedFieldsAsInt());

@@ -151,7 +151,6 @@ public class CrashDetailsTests {
     }
 
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {
-        System.out.println(cData);
         Assert.assertTrue(cData.contains("\"_error\":\"" + error + "\""));
         Assert.assertTrue(cData.contains("\"_nonfatal\":\"" + nonfatal + "\""));
         Assert.assertTrue(cData.contains("\"_os\":\"Android\""));
