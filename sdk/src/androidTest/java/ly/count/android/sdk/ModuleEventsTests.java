@@ -460,16 +460,6 @@ public class ModuleEventsTests {
         validateEventInRQ("Te", segmentation, 0);
     }
 
-    protected static JSONObject validateEventInRQ(String eventName, int idx) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(idx + 1, RQ.length);
-        JSONArray events = new JSONArray(RQ[idx].get("events"));
-        Assert.assertEquals(1, events.length());
-        JSONObject event = events.getJSONObject(0);
-        Assert.assertEquals(eventName, event.get("key"));
-        return event;
-    }
-
     @Test
     public void recordEvent_validateFromRQ() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
@@ -538,6 +528,42 @@ public class ModuleEventsTests {
 
         countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, threeSegmentation);
         validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, threeSegmentation, 1, 0.0d, 0.0d, 7);
+    }
+
+    /**
+     * "recordEvent" max value size limit
+     * Validate that all "String" values are clipped to the maximum allowed length
+     * EQ size is 1 to trigger request generation
+     */
+    @Test
+    public void internalLimits_recordEventInternal_maxValueSize() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "b", "bbb", "c", "ccc"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rnd_key", TestUtils.map("a", 1, "b", "bb", "c", "cc"), 1, 1.1d, 1.1d, 0);
+    }
+
+    /**
+     * "recordEvent" max value size limit and key length
+     * Validate that clipped values clashes with same keys and overridden each other
+     * "bb" key should have value from the second of the last value which is "dd"
+     */
+    @Test
+    public void internalLimits_recordEventInternal_maxValueSizeKeyLength() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2).setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "bbb", "bbb", "bbc", "ccc", "bbd", "ddd", "bbe", "eee"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
     }
 
     protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {

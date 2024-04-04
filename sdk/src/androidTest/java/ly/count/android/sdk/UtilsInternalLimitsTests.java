@@ -486,4 +486,21 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals("ma", breadcrumbs.get(1));
         Assert.assertEquals("ji", breadcrumbs.get(2));
     }
+
+    /**
+     * "applySdkInternalLimitsToSegmentation" with key length limit and value size of 2
+     * Validate that clipped values clashes with same keys and overridden each other
+     * "bb" key should have value from the second of the last value which is "dd"
+     */
+    @Test
+    public void applySdkInternalLimitsToSegmentation_clashingKeys() {
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits();
+        limitsConfig.setMaxValueSize(2).setMaxKeyLength(2).setMaxSegmentationValues(10);
+
+        Map<String, Object> segmentation = TestUtils.map("a", 1, "bbb", "bbb", "bbc", "ccc", "bbd", "ddd", "bbe", "eee");
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(2, segmentation.size());
+        Assert.assertEquals(1, segmentation.get("a"));
+        Assert.assertEquals("dd", segmentation.get("bb"));
+    }
 }
