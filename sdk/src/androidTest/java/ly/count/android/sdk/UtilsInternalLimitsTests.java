@@ -1,449 +1,309 @@
 package ly.count.android.sdk;
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
-import static org.mockito.Mockito.mock;
+public class UtilsInternalLimits {
 
-@RunWith(AndroidJUnit4.class)
-public class UtilsInternalLimitsTests {
-
-    /**
-     * "truncateKeyLength"
-     * Test that the key (test) is truncated to the limit (2)
-     * Expected result: "te"
-     */
-    @Test
-    public void truncateKeyLength() {
-        String key = "test";
-        int limit = 2;
-
-        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, new ModuleLog(), "tag");
-        Assert.assertEquals("te", truncatedKey);
+    private UtilsInternalLimits() {
     }
 
     /**
-     * "truncateKeyLength"
-     * Test that the key (null) is not truncated
-     * Expected result: null
+     * This function is intended to be used to truncate the length of a key to a certain limit.
+     * It is used to ensure that the key length does not exceed the limit set by the SDK.
+     * If the key length exceeds the limit, the key is truncated to the limit.
+     * If the key length is less than or equal to the limit, the key is returned as is.
+     * Used truncate method is substring. from 0 to limit.
+     * <pre>
+     * Intended to be used for those:
+     * - event names
+     * - view names
+     * - custom trace key name (APM)
+     * - custom metric key (APM)
+     * - segmentation key (for all features)
+     * - custom user property
+     * - custom user property keys that are used for property modifiers (mul, push, pull, set, increment, etc)
+     * </pre>
+     *
+     * @param key to truncate
+     * @param limit to truncate to
+     * @param L logger
+     * @return truncated key
      */
-    @Test
-    public void truncateKeyLength_null() {
-        String key = null;
-        int limit = 4;
-        ModuleLog spyLog = Mockito.spy(new ModuleLog());
-
-        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
-        Assert.assertNull(truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, value is null, returning");
+    protected static String truncateKeyLength(@Nullable String key, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        return truncateString(key, limit, L, tag + ": [UtilsSdkInternalLimits] truncateKeyLength");
     }
 
     /**
-     * "truncateKeyLength"
-     * Test that the key (empty) is not truncated
-     * Expected result: empty string
-     * Validate empty check log is called
+     * Limits the size of all values in our key-value pairs.
+     * "Value" fields include:
+     * <pre>
+     * - segmentation value in case of strings (for all features)
+     * - custom user property string value
+     * - user profile named key (username, email, etc) string values. Except the "picture" field, which has a limit of 4096 chars
+     * - custom user property modifier string values. For example, for modifiers like "push," "pull," "setOnce", etc.
+     * - breadcrumb text
+     * - manual feedback widget reporting fields (reported as an event)
+     * - rating widget response (reported as an event)
+     * </pre>
+     *
+     * @param value to truncate
+     * @param limit to truncate to
+     * @param L logger
+     * @return truncated key
      */
-    @Test
-    public void truncateKeyLength_empty() {
-        String key = "";
-        int limit = 4;
-        ModuleLog spyLog = Mockito.spy(new ModuleLog());
+    protected static String truncateValueSize(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        return truncateString(value, limit, L, tag + ": [UtilsSdkInternalLimits] truncateValueSize");
+    }
 
-        String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
-        Assert.assertEquals("", truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, value is empty, returning");
+    private static String truncateString(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        if (value == null) {
+            L.w(tag + ", value is null, returning");
+            return value;
+        }
+
+        if (value.isEmpty()) {
+            L.w(tag + ", value is empty, returning");
+            return value;
+        }
+
+        if (value.length() > limit) {
+            String truncatedValue = value.substring(0, limit);
+            L.w(tag + ", Value length exceeds limit of " + limit + " characters. Truncating value to " + limit + " characters. Truncated to " + truncatedValue);
+            return truncatedValue;
+        }
+        return value;
     }
 
     /**
-     * "truncateKeyLength"
-     * Limit is 4
-     * Test that the first key (test_test) is truncated
-     * Expected result: "test"
-     * Test that the second key (test) is not truncated
-     * Expected result: "test"
+     * This function is intended to be used with truncating map keys
+     * Uses truncateKeyLength to truncate keys in a map to a certain limit.
+     *
+     * @param map to truncate keys
+     * @param limit to truncate keys to
+     * @param L logger
+     * @param <T> type of map value
      */
-    @Test
-    public void truncateKeyLength_multiple() {
-        String firstKey = "test_test";
-        String secondKey = "test";
-        int limit = 4;
+    protected static <T> void truncateSegmentationKeys(@Nullable Map<String, T> map, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        if (map == null) {
+            L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
+            return;
+        }
 
-        String firstTruncatedKey = UtilsInternalLimits.truncateKeyLength(firstKey, limit, new ModuleLog(), "tag");
-        String secondTruncatedKey = UtilsInternalLimits.truncateKeyLength(secondKey, limit, new ModuleLog(), "tag");
+        if (map.isEmpty()) {
+            L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
+            return;
+        }
 
-        Assert.assertEquals("test", firstTruncatedKey);
-        Assert.assertEquals(secondKey, secondTruncatedKey);
+        L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map:[" + map + "]");
+        // Replacing keys in a map is not safe, so we create a new map and put them after
+        Map<String, T> gonnaReplace = new ConcurrentHashMap<>();
+        List<String> gonnaRemove = new ArrayList<>();
+
+        for (Map.Entry<String, T> entry : map.entrySet()) {
+            String truncatedKey = truncateKeyLength(entry.getKey(), limit, L, tag);
+            if (!truncatedKey.equals(entry.getKey())) {
+                // add truncated key
+                gonnaReplace.put(truncatedKey, entry.getValue());
+                // remove not truncated key
+                gonnaRemove.add(entry.getKey());
+            }
+        }
+
+        for (String key : gonnaRemove) {
+            map.remove(key);
+        }
+
+        map.putAll(gonnaReplace);
+    }
+
+    protected static void truncateSegmentationKeysValues(@NonNull Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, segmentation:[" + segmentation + "]");
+        // Replacing keys in a map is not safe, so we create a new map and put them after
+        Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
+        Map<String, Object> gonnaReplace = new ConcurrentHashMap<>();
+
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> entry = iterator.next();
+            String truncatedKey = truncateKeyLength(entry.getKey(), limitsConfig.maxKeyLength, L, tag);
+            Object value = entry.getValue();
+
+            if (!isSupportedDataType(value)) {
+                iterator.remove();
+                continue;
+            }
+
+            if (value instanceof String) {
+                value = truncateValueSize((String) value, limitsConfig.maxValueSize, L, tag);
+            }
+            if (!truncatedKey.equals(entry.getKey())) {
+                iterator.remove(); // Removes the current entry from the original map
+                gonnaReplace.put(truncatedKey, value); // Store the new entry to be replaced later
+            } else if (value instanceof String && !value.equals(entry.getValue())) {
+                segmentation.put(truncatedKey, value); // Update value directly
+            }
+        }
+
+        segmentation.putAll(gonnaReplace);
     }
 
     /**
-     * "truncateSegmentationKeys"
-     * Limit is 5
-     * Test that the first key (test_test) is truncated
-     * Expected result: "test_", Expected value: "value1"
-     * Test that the second key (test) is not truncated
-     * Expected result: "test", Expected value: "value2"
+     * Removes unsupported data types and applies following internal limits to the provided segmentation map:
+     * - max key length
+     * - max value size
+     * - max number of keys
+     *
+     * @param segmentation Map<String, Object> @Nullable - segmentation map to apply limits to
+     * @param limitsConfig ConfigSdkInternalLimits @NonNull - limits configuration
+     * @param L ModuleLog @NonNull - logger
+     * @param tag String @NonNull - tag to use in logs
      */
-    @Test
-    public void truncateSegmentationKeys() {
-        int limit = 5;
-        Map<String, String> map = new ConcurrentHashMap<>();
-        map.put("test_test", "value1");
-        map.put("test", "value2");
+    protected static void applySdkInternalLimitsToSegmentation(@Nullable Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        assert limitsConfig != null;
+        assert L != null;
+        assert tag != null;
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog(), "tag");
+        if (segmentation == null) {
+            L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is null, returning");
+            return;
+        }
 
-        Assert.assertEquals("value1", map.get("test_"));
-        Assert.assertEquals("value2", map.get("test"));
+        if (segmentation.isEmpty()) {
+            L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is empty, returning");
+            return;
+        }
+
+        truncateSegmentationKeysValues(segmentation, limitsConfig, L, tag);
+        truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
     }
 
     /**
-     * "truncateSegmentationKeys" with null map
-     * Validate null check log is called
+     * Applies the following internal limits to the provided breadcrumbs:
+     * - max value size
+     * - max number of breadcrumbs
+     *
+     * @param breadcrumbs List<String> @NonNull - breadcrumbs to apply limits to
+     * @param limitsConfig ConfigSdkInternalLimits @NonNull - limits configuration
+     * @param L ModuleLog @NonNull - logger
+     * @param tag String @NonNull - tag to use in logs
      */
-    @Test
-    public void truncateSegmentationKeys_null() {
-        int limit = 5;
-        Map<String, String> map = null;
+    static void applyInternalLimitsToBreadcrumbs(@NonNull List<String> breadcrumbs, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        assert breadcrumbs != null;
+        assert limitsConfig != null;
+        assert L != null;
+        assert tag != null;
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog(), "tag");
-        Assert.assertNull(map);
+        if (breadcrumbs.isEmpty()) {
+            L.w(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, breadcrumbs is empty, returning");
+            return;
+        }
+
+        Iterator<String> iterator = breadcrumbs.iterator();
+        while (iterator.hasNext()) {
+            if (breadcrumbs.size() > limitsConfig.maxBreadcrumbCount) {
+                String breadcrumb = iterator.next();
+                L.w(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, breadcrumb:[" + breadcrumb + "]");
+                iterator.remove();
+            } else {
+                break;
+            }
+        }
+
+        for (int i = 0; i < breadcrumbs.size(); i++) {
+            String breadcrumb = breadcrumbs.get(i);
+            String truncatedBreadcrumb = truncateValueSize(breadcrumb, limitsConfig.maxValueSize, L, tag);
+            if (!truncatedBreadcrumb.equals(breadcrumb)) {
+                breadcrumbs.set(i, truncatedBreadcrumb);
+            }
+        }
     }
 
     /**
-     * "truncateSegmentationKeys" with empty map
-     * Validate map is empty
+     * Checks and transforms the provided Object if it does not
+     * comply with the key count limit.
+     *
+     * @param maxCount Int @NonNull - max number of keys allowed
+     * @param L ModuleLog @NonNull - Logger function
+     * @param messagePrefix String @NonNull - name of the module this function was called
+     * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
      */
-    @Test
-    public void truncateSegmentationKeys_empty() {
-        int limit = 5;
-        Map<String, String> map = new ConcurrentHashMap<>();
+    static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+        if (segmentation == null) {
+            return;
+        }
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, new ModuleLog(), "tag");
-        Assert.assertEquals(0, map.size());
+        Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
+        while (iterator.hasNext()) {
+            if (segmentation.size() > maxCount) {
+                Map.Entry<String, Object> value = iterator.next();
+                String key = value.getKey();
+                L.w(messagePrefix + ", Value exceeded the maximum segmentation count key:[" + key + "]");
+                iterator.remove();
+            } else {
+                break;
+            }
+        }
     }
 
     /**
-     * "truncateSegmentationKeys" with same base keys
-     * Limit is 4
-     * Map has keys "test1", "test2", "test3", "test4", "test5"
-     * Resulting map will have only one key, and it is "test"
-     * All values are removed and only one value is kept which is the last one what map.entrySet() returns
+     * Used to remove reserved keys from segmentation map
+     *
+     * @param segmentation
+     * @param reservedKeys
+     * @param messagePrefix
+     * @param L
      */
-    @Test
-    public void truncateSegmentationKeys_inconsistentKeys() {
-        int limit = 4;
-        Map<String, String> map = new ConcurrentHashMap<>();
-        map.put("test1", TestUtils.eKeys[0]);
-        map.put("test2", TestUtils.eKeys[1]);
-        map.put("test3", TestUtils.eKeys[2]);
-        map.put("test4", TestUtils.eKeys[3]);
-        map.put("test5", TestUtils.eKeys[4]);
-        ModuleLog spyLog = Mockito.spy(new ModuleLog());
+    static void removeReservedKeysFromSegmentation(@Nullable Map<String, Object> segmentation, @NonNull String[] reservedKeys, @NonNull String messagePrefix, @NonNull ModuleLog L) {
+        if (segmentation == null) {
+            return;
+        }
 
-        UtilsInternalLimits.truncateSegmentationKeys(map, limit, spyLog, "tag");
-        Assert.assertEquals(1, map.size());
-        Assert.assertFalse(Objects.requireNonNull(map.get("test")).isEmpty());
+        for (String rKey : reservedKeys) {
+            if (segmentation.containsKey(rKey)) {
+                L.w(messagePrefix + " provided segmentation contains protected key [" + rKey + "]");
+                segmentation.remove(rKey);
+            }
+        }
     }
 
     /**
-     * Make sure that nothing bad happens when providing null segmentation
+     * Removes unsupported data types
+     *
+     * @param data
+     * @return returns true if any entry had been removed
      */
-    @Test
-    public void truncateSegmentationValues_null() {
-        UtilsInternalLimits.truncateSegmentationValues(null, 10, "someTag", mock(ModuleLog.class));
-        Assert.assertTrue(true);
+    static boolean removeUnsupportedDataTypes(Map<String, Object> data) {
+        if (data == null) {
+            return false;
+        }
+
+        boolean removed = false;
+
+        for (Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<String, Object> entry = it.next();
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (key == null || key.isEmpty() || !(isSupportedDataType(value))) {
+                //found unsupported data type or null key or value, removing
+                it.remove();
+                removed = true;
+            }
+        }
+
+        if (removed) {
+            Countly.sharedInstance().L.w("[Utils] Unsupported data types were removed from provided segmentation");
+        }
+
+        return removed;
     }
 
-    /**
-     * Make sure that nothing bad happens when providing empty segmentation
-     */
-    @Test
-    public void truncateSegmentationValues_empty() {
-        Map<String, Object> values = new HashMap<>();
-        UtilsInternalLimits.truncateSegmentationValues(values, 10, "someTag", mock(ModuleLog.class));
-        Assert.assertTrue(true);
-    }
-
-    /**
-     * Make sure that nothing bad happens when providing segmentation with values under limit
-     */
-    @Test
-    public void truncateSegmentationValues_underLimit() {
-        Map<String, Object> values = new HashMap<>();
-        values.put("a1", "1");
-        values.put("a2", "2");
-        values.put("a3", "3");
-        values.put("a4", "4");
-        UtilsInternalLimits.truncateSegmentationValues(values, 6, "someTag", mock(ModuleLog.class));
-
-        Assert.assertEquals(4, values.size());
-        Assert.assertEquals("1", values.get("a1"));
-        Assert.assertEquals("2", values.get("a2"));
-        Assert.assertEquals("3", values.get("a3"));
-        Assert.assertEquals("4", values.get("a4"));
-    }
-
-    /**
-     * Make sure that values are truncated when they are more then the limit
-     */
-    @Test
-    public void truncateSegmentationValues_aboveLimit() {
-        Map<String, Object> values = new HashMap<>();
-        values.put("a1", "1");
-        values.put("a2", "2");
-        values.put("a3", "3");
-        values.put("a4", "4");
-        UtilsInternalLimits.truncateSegmentationValues(values, 2, "someTag", mock(ModuleLog.class));
-
-        Assert.assertEquals(2, values.size());
-        //after inspecting what is returned in the debugger, it should have the values of "a2" and "a4"
-        //Assert.assertEquals("2", values.get("a2"));
-        //Assert.assertEquals("4", values.get("a4"));
-    }
-
-    @Test
-    public void removeReservedKeysFromSegmentation() {
-        Map<String, Object> values = new HashMap<>();
-
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] {}, "", mock(ModuleLog.class));
-        Assert.assertEquals(0, values.size());
-
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(0, values.size());
-
-        values.put("b", 1);
-        Assert.assertEquals(1, values.size());
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(1, values.size());
-        Assert.assertTrue(values.containsKey("b"));
-
-        values.put("a", 2);
-        Assert.assertEquals(2, values.size());
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(1, values.size());
-        Assert.assertTrue(values.containsKey("b"));
-
-        values.put("a", 2);
-        values.put("c", 3);
-        Assert.assertEquals(3, values.size());
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
-        Assert.assertEquals(2, values.size());
-        Assert.assertTrue(values.containsKey("b"));
-        Assert.assertTrue(values.containsKey("c"));
-    }
-
-    @Test
-    public void removeUnsupportedDataTypesNull() {
-        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(null));
-    }
-
-    @Test
-    public void removeUnsupportedDataTypes() {
-        Map<String, Object> segm = new HashMap<>();
-
-        segm.put("aa", "dd");
-        segm.put("aa1", "dda");
-        segm.put("1", 1234);
-        segm.put("2", 1234.55d);
-        segm.put("3", true);
-        segm.put("4", 45.4f);
-        segm.put("41", new Object());
-        segm.put("42", new int[] { 1, 2 });
-
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
-
-        Assert.assertTrue(segm.containsKey("aa"));
-        Assert.assertTrue(segm.containsKey("aa1"));
-        Assert.assertTrue(segm.containsKey("1"));
-        Assert.assertTrue(segm.containsKey("2"));
-        Assert.assertTrue(segm.containsKey("3"));
-        Assert.assertTrue(segm.containsKey("4"));
-        Assert.assertFalse(segm.containsKey("41"));
-        Assert.assertFalse(segm.containsKey("42"));
-    }
-
-    @Test
-    public void removeUnsupportedDataTypes2() {
-        Map<String, Object> segm = new HashMap<>();
-
-        segm.put("", "dd");
-        segm.put(null, "dda");
-        segm.put("aa", null);
-
-        Assert.assertEquals(3, segm.size());
-
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
-
-        Assert.assertEquals(0, segm.size());
-
-        segm.put(null, null);
-        segm.put("1", "dd");
-        segm.put("2", 123);
-        segm.put("", null);
-        segm.put("3", 345.33d);
-        segm.put("4", false);
-        segm.put("aa1", new String[] { "ff", "33" });
-
-        Assert.assertEquals(7, segm.size());
-
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
-
-        Assert.assertEquals(4, segm.size());
-        Assert.assertTrue(segm.containsKey("1"));
-        Assert.assertTrue(segm.containsKey("2"));
-        Assert.assertTrue(segm.containsKey("3"));
-        Assert.assertTrue(segm.containsKey("4"));
-        Assert.assertEquals("dd", segm.get("1"));
-        Assert.assertEquals(123, segm.get("2"));
-        Assert.assertEquals(345.33d, segm.get("3"));
-        Assert.assertEquals(false, segm.get("4"));
-    }
-
-    @Test
-    public void isSupportedDataType() {
-        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType("string"));
-        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123));
-        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123.33d));
-        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123.33f));
-        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(true));
-        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(false));
-        Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new Object()));
-        Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new int[] { 1, 2 }));
-        Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(null));
-    }
-
-    @Test
-    public void truncateValueSize() {
-        String value = "test";
-        int limit = 2;
-
-        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, new ModuleLog(), "tag");
-        Assert.assertEquals("te", truncatedValue);
-    }
-
-    @Test
-    public void truncateValueSize_null() {
-        String value = null;
-        int limit = 4;
-        ModuleLog spyLog = Mockito.spy(new ModuleLog());
-
-        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, spyLog, "tag");
-        Assert.assertNull(truncatedValue);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateValueSize, value is null, returning");
-    }
-
-    @Test
-    public void truncateValueSize_empty() {
-        String value = "";
-        int limit = 4;
-        ModuleLog spyLog = Mockito.spy(new ModuleLog());
-
-        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, spyLog, "tag");
-        Assert.assertEquals("", truncatedValue);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateValueSize, value is empty, returning");
-    }
-
-    @Test
-    public void truncateValueSize_multiple() {
-        String firstValue = "test_test";
-        String secondValue = "test";
-        int limit = 4;
-
-        String firstTruncatedValue = UtilsInternalLimits.truncateValueSize(firstValue, limit, new ModuleLog(), "tag");
-        String secondTruncatedValue = UtilsInternalLimits.truncateValueSize(secondValue, limit, new ModuleLog(), "tag");
-
-        Assert.assertEquals("test", firstTruncatedValue);
-        Assert.assertEquals(secondValue, secondTruncatedValue);
-    }
-
-    @Test
-    public void applySdkInternalLimitsToSegmentation() {
-        Map<String, Object> segmentation = new ConcurrentHashMap<>();
-        segmentation.put("test_test", "value1");
-        segmentation.put("test", "value2");
-        segmentation.put("hobbit", 456789);
-        segmentation.put("map_to", 45.678f);
-        segmentation.put("map_too", TestUtils.map("a", 1));
-        segmentation.put("abcdefg", "12345");
-
-        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
-            .setMaxKeyLength(5)
-            .setMaxValueSize(2)
-            .setMaxSegmentationValues(3);
-
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
-
-        Assert.assertEquals(3, segmentation.size());
-        Assert.assertEquals(456789, segmentation.get("hobbi"));
-        Assert.assertEquals("va", segmentation.get("test_"));
-        Assert.assertEquals(45.678f, segmentation.get("map_t"));
-    }
-
-    @Test
-    public void applySdkInternalLimitsToSegmentation_removeUnsupportedDataTypes() {
-        Map<String, Object> segmentation = new ConcurrentHashMap<>();
-        segmentation.put("test_test", new int[] { 1, 2, 3 });
-        segmentation.put("test", new ArrayList<>());
-        segmentation.put("map_too", TestUtils.map("a", 1));
-
-        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
-            .setMaxKeyLength(10)
-            .setMaxValueSize(10)
-            .setMaxSegmentationValues(10);
-
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
-
-        Assert.assertEquals(0, segmentation.size());
-    }
-
-    @Test
-    public void applySdkInternalLimitsToSegmentation_clipSegmentationValues() {
-        Map<String, Object> segmentation = new ConcurrentHashMap<>();
-        segmentation.put("test_test", "value1");
-        segmentation.put("test", new ArrayList<>());
-        segmentation.put("map_too", TestUtils.map("a", 1));
-
-        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
-            .setMaxKeyLength(20)
-            .setMaxValueSize(1)
-            .setMaxSegmentationValues(10);
-
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
-
-        Assert.assertEquals(1, segmentation.size());
-        Assert.assertEquals("v", segmentation.get("test_test"));
-    }
-
-    @Test
-    public void applySdkInternalLimitsToSegmentation_null() {
-        Map<String, Object> segmentation = null;
-        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
-            .setMaxKeyLength(5)
-            .setMaxValueSize(2)
-            .setMaxSegmentationValues(3);
-
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
-        Assert.assertNull(segmentation);
-    }
-
-    @Test
-    public void applySdkInternalLimitsToSegmentation_empty() {
-        Map<String, Object> segmentation = new ConcurrentHashMap<>();
-        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
-            .setMaxKeyLength(5)
-            .setMaxValueSize(2)
-            .setMaxSegmentationValues(3);
-
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
-        Assert.assertEquals(0, segmentation.size());
+    static boolean isSupportedDataType(Object value) {
+        return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float;
     }
 }
