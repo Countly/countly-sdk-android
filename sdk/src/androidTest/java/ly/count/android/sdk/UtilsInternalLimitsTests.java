@@ -406,6 +406,24 @@ public class UtilsInternalLimitsTests {
     }
 
     @Test
+    public void applySdkInternalLimitsToSegmentation_clipSegmentationValues() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        segmentation.put("test_test", "value1");
+        segmentation.put("test", new ArrayList<>());
+        segmentation.put("map_too", TestUtils.map("a", 1));
+
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(20)
+            .setMaxValueSize(1)
+            .setMaxSegmentationValues(10);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+
+        Assert.assertEquals(1, segmentation.size());
+        Assert.assertEquals("v", segmentation.get("test_test"));
+    }
+
+    @Test
     public void applySdkInternalLimitsToSegmentation_null() {
         Map<String, Object> segmentation = null;
         ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
