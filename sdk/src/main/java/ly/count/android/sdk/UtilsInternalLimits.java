@@ -125,35 +125,35 @@ public class UtilsInternalLimits {
     protected static void truncateSegmentationKeysValues(@NonNull Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
         L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, segmentation:[" + segmentation + "]");
         // Replacing keys in a map is not safe, so we create a new map and put them after
+        Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
         Map<String, Object> gonnaReplace = new ConcurrentHashMap<>();
-        List<String> gonnaRemove = new ArrayList<>();
 
-        for (Map.Entry<String, Object> entry : segmentation.entrySet()) {
+        while (iterator.hasNext()) {
+            Map.Entry<String, Object> entry = iterator.next();
             String truncatedKey = truncateKeyLength(entry.getKey(), limitsConfig.maxKeyLength, L, tag);
             Object value = entry.getValue();
+
+            if (!isSupportedDataType(value)) {
+                iterator.remove();
+                continue;
+            }
+
             if (value instanceof String) {
                 value = truncateValueSize((String) value, limitsConfig.maxValueSize, L, tag);
             }
             if (!truncatedKey.equals(entry.getKey())) {
-                // add truncated key
-                gonnaReplace.put(truncatedKey, value);
-                // remove not truncated key
-                gonnaRemove.add(entry.getKey());
+                iterator.remove(); // Removes the current entry from the original map
+                gonnaReplace.put(truncatedKey, value); // Store the new entry to be replaced later
             } else if (value instanceof String && !value.equals(entry.getValue())) {
-                // update truncated value
-                segmentation.put(truncatedKey, value);
+                segmentation.put(truncatedKey, value); // Update value directly
             }
-        }
-
-        for (String key : gonnaRemove) {
-            segmentation.remove(key);
         }
 
         segmentation.putAll(gonnaReplace);
     }
 
     /**
-     * Applies following internal limits to the provided segmentation map:
+     * Removes unsupported data types and applies following internal limits to the provided segmentation map:
      * - max key length
      * - max value size
      * - max number of keys
