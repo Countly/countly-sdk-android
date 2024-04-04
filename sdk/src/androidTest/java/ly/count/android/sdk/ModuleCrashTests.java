@@ -307,18 +307,16 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("d", "4", "e", "5", "f", "6"));
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("e", "5", "f", "6"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("e", "5", "f", "6"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
-     * Validate that custom crash segmentation is truncated to the maximum allowed length
-     * Because length is 2 only last 2 of the global crash segmentation values are kept
      * "recordHandledException" with crash filter
      * Validate that first call to the "recordHandledException" is filtered out by the crash filter
      * Validate that second call to the "recordHandledException" is not filtered out by the crash filter
      * Validate second call creates a request in the queue and validate all crash data
      */
-  @Test
+    @Test
     public void recordHandledException_crashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
@@ -403,7 +401,7 @@ public class ModuleCrashTests {
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
-            Assert.assertEquals(TestUtils.map("int", Integer.MAX_VALUE, "double", Double.MAX_VALUE), crash.getCrashSegmentation());
+            Assert.assertEquals(TestUtils.map("int", Integer.MAX_VALUE, "sphinx_no", 324), crash.getCrashSegmentation());
             crash.getCrashSegmentation().put("secret", "Minato");
             return false;
         });
@@ -413,7 +411,7 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
         validateCrash(extractStackTrace(exception), "", false, false,
-            TestUtils.map("int", Integer.MAX_VALUE, "double", Double.MAX_VALUE), 8, new HashMap<>(), new ArrayList<>());
+            TestUtils.map("int", Integer.MAX_VALUE, "sphinx_no", 324), 8, new HashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -604,8 +602,15 @@ public class ModuleCrashTests {
         countly.crashes().recordUnhandledException(exception);
         validateCrash(extractStackTrace(exception), "", true, false, new ConcurrentHashMap<>(), 2, new ConcurrentHashMap<>(), new ArrayList<>());
     }
-  @Test
-      public void internalLimits_recordException_maxSegmentationValues_global() throws JSONException {
+
+    /**
+     * Validate that custom crash segmentation is truncated to the maximum allowed length
+     * Because length is 2 only last 2 of the global crash segmentation values are kept
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_maxSegmentationValues_global() throws JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.metricProviderOverride = mmp;
         config.sdkInternalLimits.setMaxSegmentationValues(2);
@@ -614,7 +619,7 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception);
-        validateCrash(countly.config_.deviceInfo, extractStackTrace(exception), "", false, false, TestUtils.map("b", "2", "c", "3"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("b", "2", "c", "3"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -686,7 +691,7 @@ public class ModuleCrashTests {
     }
 
     /**
-     * validate that adding breadcrumbs that exceeds max breadcrumb count greater than one should clip
+     * validate that adding breadcrumbs that exceeds max breadcrumb count greater than one should clip,
      * oldest breadcrumbs and keep the latest ones that is limited by the max breadcrumb count
      *
      * @throws JSONException if JSON parsing fails
@@ -832,7 +837,7 @@ public class ModuleCrashTests {
         validateCrash(error, breadcrumbs, fatal, nativeCrash, 1, 0, customSegmentation, changedBits, customMetrics, baseMetricsExclude);
     }
 
-    private void validateCrash(@NonNull DeviceInfo deviceInfo, @NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
+    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, final int rqSize, final int idx,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(rqSize, RQ.length);
@@ -1007,6 +1012,7 @@ public class ModuleCrashTests {
     public void internalLimit_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
         Countly countly = new Countly();
         CountlyConfig cConfig = (new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        cConfig.metricProviderOverride = mmp;
         cConfig.sdkInternalLimits.setMaxKeyLength(5);
         cConfig.setCustomCrashSegment(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
 
@@ -1015,22 +1021,6 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception, TestUtils.map("below_one", false, "go_for_it", "go"));
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        exception.printStackTrace(pw);
-        validateCrash(sw.toString(), TestUtils.map("test_", 1234, "below", false, "go_fo", "go"), false);
-    }
-
-    private void validateCrash(String error, Map<String, Object> segm, boolean handled) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(1, RQ.length);
-        JSONObject crashJson = new JSONObject(RQ[0].get("crash"));
-        JSONObject segmentation = crashJson.getJSONObject("_custom");
-        Assert.assertEquals(error, crashJson.getString("_error"));
-        Assert.assertEquals(segm.size(), segmentation.length());
-        for (Map.Entry<String, Object> entry : segm.entrySet()) {
-            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
-        }
-        Assert.assertEquals(handled, crashJson.getBoolean("_nonfatal"));
+        validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("test_", 1234, "below", false, "go_fo", "go"), 0, new HashMap<>(), new ArrayList<>());
     }
 }
