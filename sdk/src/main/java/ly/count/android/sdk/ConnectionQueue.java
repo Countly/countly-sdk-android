@@ -24,7 +24,6 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -131,6 +130,15 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     boolean checkInternalState() {
+        //todo enable later
+        //assert context_ != null;
+        //assert baseInfoProvider.getAppKey() != null;
+        //assert baseInfoProvider.getAppKey().length() != 0;
+        //assert baseInfoProvider.getServerURL() != null;
+        //assert UtilsNetworking.isValidURL(baseInfoProvider.getServerURL());
+        //assert storageProvider != null;
+        //assert Countly.publicKeyPinCertificates != null && baseInfoProvider.getServerURL().startsWith("https");
+
         if (context_ == null) {
             if (L != null) {
                 L.e("[Connection Queue] context has not been set");
@@ -871,6 +879,9 @@ class ConnectionQueue implements RequestQueueProvider {
      */
     void ensureExecutor() {
         if (executor_ == null) {
+            if (L != null) {
+                L.v("[ConnectionQueue] ensureExecutor, Creating new executor");
+            }
             executor_ = Executors.newSingleThreadExecutor();
         }
     }
@@ -880,19 +891,25 @@ class ConnectionQueue implements RequestQueueProvider {
      * process the local connection queue data.
      * Does nothing if there is connection queue data or if a ConnectionProcessor
      * is already running.
-     *
+     * <br>
      * Should only be called if SDK is initialized
      */
     public void tick() {
-        L.v("[Connection Queue] tick, Not empty:[" + !isRequestQueueEmpty() + "], Has processor:[" + (connectionProcessorFuture_ == null) + "], Done or null:[" + (connectionProcessorFuture_ == null
-            || connectionProcessorFuture_.isDone()) + "]");
+        //todo enable later
+        //assert storageProvider != null;
+
+        boolean rqEmpty = isRequestQueueEmpty(); // this is a heavy operation, do it only once. Why heavy? reading storage
+        boolean cpDoneIfOngoing = connectionProcessorFuture_ != null && connectionProcessorFuture_.isDone();
+        L.v("[ConnectionQueue] tick, IsRQEmpty:[" + rqEmpty + "], HasOngoingProcess:[" + (connectionProcessorFuture_ == null) + "], OngoingProcess_Done:[" + cpDoneIfOngoing + "]");
 
         if (!Countly.sharedInstance().isInitialized()) {
+            L.e("[ConnectionQueue] tick, SDK is not initialized");
             //attempting to tick when the SDK is not initialized
             return;
         }
 
-        if (!isRequestQueueEmpty() && (connectionProcessorFuture_ == null || connectionProcessorFuture_.isDone())) {
+        if (!rqEmpty && (connectionProcessorFuture_ == null || cpDoneIfOngoing)) {
+            L.d("[ConnectionQueue] tick, Starting ConnectionProcessor");
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
         }

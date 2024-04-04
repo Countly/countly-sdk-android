@@ -18,6 +18,8 @@ public class ModuleCrash extends ModuleBase {
     private static final String countlyNativeCrashFolderName = "CrashDumps";
 
     //crash filtering
+    GlobalCrashFilterCallback globalCrashFilterCallback;
+    //Deprecated, will be removed in the future
     CrashFilterCallback crashFilterCallback;
 
     boolean recordAllThreads = false;
@@ -37,6 +39,7 @@ public class ModuleCrash extends ModuleBase {
         super(cly, config);
         L.v("[ModuleCrash] Initialising");
 
+        globalCrashFilterCallback = config.crashes.globalCrashFilterCallback;
         crashFilterCallback = config.crashFilterCallback;
 
         recordAllThreads = config.crashes.recordAllThreadsWithCrash;
@@ -119,7 +122,6 @@ public class ModuleCrash extends ModuleBase {
         //convert to base64
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
-        //record crash
         CrashData crashData = prepareCrashData(dumpString, false, true, null);
         if (!crashFilterCheck(crashData)) {
             sendCrashReportToQueue(crashData, true);
@@ -150,7 +152,6 @@ public class ModuleCrash extends ModuleBase {
 
     public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
         assert crashData != null;
-
         L.d("[ModuleCrash] sendCrashReportToQueue");
 
         String crashDataString = deviceInfo.getCrashDataJSON(crashData, isNativeCrash).toString();
@@ -220,19 +221,42 @@ public class ModuleCrash extends ModuleBase {
      * Call to check if crash matches one of the filters
      * If it does, the crash should be ignored
      *
-     * @param crashData crash data to check
-     * @return true if a match was found and crash should be ignored
+     * @param crashData CrashData object to check
+     * @return true if a match was found
      */
     boolean crashFilterCheck(@NonNull CrashData crashData) {
         assert crashData != null;
 
-        L.d("[ModuleCrash] crashFilterCheck");
+        L.d("[ModuleCrash] Calling crashFilterCheck");
 
         if (crashFilterCallback != null) {
             return crashFilterCallback.filterCrash(crashData.getStackTrace());
         }
 
-        //no filter callback set, nothing to compare against
+        if (globalCrashFilterCallback == null) {
+            return false;
+        }
+
+        if (globalCrashFilterCallback.filterCrash(crashData)) {
+            L.d("[ModuleCrash] crashFilterCheck, Global Crash filter found a match, exception will be ignored, [" + crashData.getStackTrace().substring(0, Math.min(crashData.getStackTrace().length(), 60)) + "]");
+            return true;
+        }
+
+        crashData.calculateChangedFields();
+
+        L.d("[ModuleCrash] crashFilterCheck, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
+        if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
+            L.d("[ModuleCrash] crashFilterCheck, after filtering, breadcrumbs limit is exceeded. clipping oldest count:[" + crashData.getBreadcrumbs().size() + "]");
+            int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
+            if (gonnaClip > 0) {
+                crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
+            }
+        }
+
+        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
+        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics());
+        UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+
         return false;
     }
 
@@ -283,6 +307,7 @@ public class ModuleCrash extends ModuleBase {
         }
 
         String exceptionString = sw.toString();
+
         CrashData crashData = prepareCrashData(exceptionString, itIsHandled, false, customSegmentation);
         if (crashFilterCheck(crashData)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
