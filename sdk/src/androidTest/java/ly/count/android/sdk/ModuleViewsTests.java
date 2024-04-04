@@ -1482,5 +1482,58 @@ public class ModuleViewsTests {
         ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
     }
 
+    /**
+     * global seg : avu=4, avi=v1 after truncation: av=v1
+     * Test the truncation of view name and segmentation keys and values
+     * key length: 2
+     * value size: 2
+     * segment values: 4
+     * Global view segmentation values will be truncated and merged to one because they have same start
+     * View name also will be truncated to expected name "VI"
+     * Because key-value deletion is not exact for the max segmentation values, expected segmentation for view start
+     * taken from the first run of the test and it is "yo"="wo", "so"="ma", "av"="v1", "i_"="i_"
+     * In here global segmentation values are not gone but in the end view global view segmentation values are gone due to
+     * the max segmentation values
+     */
+    @Test
+    public void internalLimit_recordViewsWithSegmentation_maxValueSize() throws JSONException {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("avu", 4);
+        globalSegm.put("avi", "v1");
+
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        cc.sdkInternalLimits.setMaxKeyLength(2).setMaxValueSize(2).setMaxSegmentationValues(4);
+        cc.setEventQueueSizeToSend(1);
+        Countly mCountly = new Countly().init(cc);
+
+        Map<String, Object> givenStartSegm = new HashMap<>();
+        givenStartSegm.put("sop", 4);
+        givenStartSegm.put("sophie", "macaroni");
+        givenStartSegm.put("dont", "give_up");
+        givenStartSegm.put("i_wish", "i_could");
+        givenStartSegm.put("you", "would");
+        String viewID = mCountly.views().startView("VIEW", givenStartSegm);
+
+        Map<String, Object> expectedSegm = new HashMap<>();
+        ClearFillSegmentationViewStart(expectedSegm, "VI", true);
+        expectedSegm.putAll(TestUtils.map("yo", "wo", "so", "ma", "av", "v1", "i_", "i_"));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0);
+
+        mCountly.views().setGlobalViewSegmentation(TestUtils.map("go", 45, "gone", 567.78f));
+
+        Map<String, Object> endSegm = new HashMap<>();
+        endSegm.put("satellite", "hoho");
+        endSegm.put("avu", 25);
+        endSegm.put("harakiri", true);
+        endSegm.put("happy_life", false);
+        endSegm.put("nope", 123);
+        mCountly.views().stopViewWithID(viewID, endSegm);
+        ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
+        expectedSegm.putAll(TestUtils.map("av", 25, "no", 123, "sa", "ho", "ha", true));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
+    }
+
     //todo extract orientation tests
 }
