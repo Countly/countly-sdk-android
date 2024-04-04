@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -445,5 +446,44 @@ public class UtilsInternalLimitsTests {
 
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
         Assert.assertEquals(0, segmentation.size());
+    }
+
+    @Test
+    public void applySdkInternalLimitsToBreadcrumbs_valueSize() {
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits();
+        limitsConfig.setMaxBreadcrumbCount(3).setMaxValueSize(2);
+
+        List<String> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add("test_test");
+        breadcrumbs.add("test");
+        breadcrumbs.add("hobbit");
+
+        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(breadcrumbs, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(3, breadcrumbs.size());
+        Assert.assertEquals("te", breadcrumbs.get(0));
+        Assert.assertEquals("te", breadcrumbs.get(1));
+        Assert.assertEquals("ho", breadcrumbs.get(2));
+    }
+
+    @Test
+    public void applySdkInternalLimitsToBreadcrumb_breadcrumbCount() {
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits();
+        limitsConfig.setMaxBreadcrumbCount(3).setMaxValueSize(2);
+
+        List<String> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add("mikasa");
+        breadcrumbs.add("eren");
+        breadcrumbs.add("jinwoo");
+        breadcrumbs.add("sung");
+        breadcrumbs.add("sasuke");
+        breadcrumbs.add("itachi");
+        breadcrumbs.add("madara");
+        breadcrumbs.add("jiraiya");
+
+        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(breadcrumbs, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(3, breadcrumbs.size());
+        Assert.assertEquals("it", breadcrumbs.get(0));
+        Assert.assertEquals("ma", breadcrumbs.get(1));
+        Assert.assertEquals("ji", breadcrumbs.get(2));
     }
 }

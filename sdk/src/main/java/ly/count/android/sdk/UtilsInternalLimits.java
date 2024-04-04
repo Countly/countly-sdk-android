@@ -164,6 +164,10 @@ public class UtilsInternalLimits {
      * @param tag String @NonNull - tag to use in logs
      */
     protected static void applySdkInternalLimitsToSegmentation(@Nullable Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        assert limitsConfig != null;
+        assert L != null;
+        assert tag != null;
+
         if (segmentation == null) {
             L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is null, returning");
             return;
@@ -176,6 +180,47 @@ public class UtilsInternalLimits {
 
         truncateSegmentationKeysValues(segmentation, limitsConfig, L, tag);
         truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
+    }
+
+    /**
+     * Applies the following internal limits to the provided breadcrumbs:
+     * - max value size
+     * - max number of breadcrumbs
+     *
+     * @param breadcrumbs List<String> @NonNull - breadcrumbs to apply limits to
+     * @param limitsConfig ConfigSdkInternalLimits @NonNull - limits configuration
+     * @param L ModuleLog @NonNull - logger
+     * @param tag String @NonNull - tag to use in logs
+     */
+    static void applyInternalLimitsToBreadcrumbs(@NonNull List<String> breadcrumbs, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        assert breadcrumbs != null;
+        assert limitsConfig != null;
+        assert L != null;
+        assert tag != null;
+
+        if (breadcrumbs.isEmpty()) {
+            L.w(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, breadcrumbs is empty, returning");
+            return;
+        }
+
+        Iterator<String> iterator = breadcrumbs.iterator();
+        while (iterator.hasNext()) {
+            if (breadcrumbs.size() > limitsConfig.maxBreadcrumbCount) {
+                String breadcrumb = iterator.next();
+                L.w(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, breadcrumb:[" + breadcrumb + "]");
+                iterator.remove();
+            } else {
+                break;
+            }
+        }
+
+        for (int i = 0; i < breadcrumbs.size(); i++) {
+            String breadcrumb = breadcrumbs.get(i);
+            String truncatedBreadcrumb = truncateValueSize(breadcrumb, limitsConfig.maxValueSize, L, tag);
+            if (!truncatedBreadcrumb.equals(breadcrumb)) {
+                breadcrumbs.set(i, truncatedBreadcrumb);
+            }
+        }
     }
 
     /**

@@ -140,8 +140,7 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
         if (customSegmentation != null) {
-            UtilsInternalLimits.removeUnsupportedDataTypes(customSegmentation);
-            UtilsInternalLimits.truncateSegmentationKeysValues(customSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
+            UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
@@ -172,7 +171,6 @@ public class ModuleCrash extends ModuleBase {
         }
 
         if (segments != null) {
-            UtilsInternalLimits.removeUnsupportedDataTypes(segments);
             UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
         }
         customCrashSegments = segments;
@@ -244,18 +242,9 @@ public class ModuleCrash extends ModuleBase {
 
         crashData.calculateChangedFields();
 
-        L.d("[ModuleCrash] crashFilterCheck, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
-        if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
-            L.d("[ModuleCrash] crashFilterCheck, after filtering, breadcrumbs limit is exceeded. clipping oldest count:[" + crashData.getBreadcrumbs().size() + "]");
-            int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
-            if (gonnaClip > 0) {
-                crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
-            }
-        }
-
-        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
+        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(crashData.getBreadcrumbs(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
         UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics());
-        UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
 
         return false;
     }

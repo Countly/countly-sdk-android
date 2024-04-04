@@ -403,9 +403,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         assert source != null;
         assert function != null;
 
-        UtilsInternalLimits.removeUnsupportedDataTypes(viewSegmentation);
         UtilsInternalLimits.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] " + function + ", ", L);
-        UtilsInternalLimits.truncateSegmentationKeysValues(viewSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] " + function);
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(viewSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] " + function);
         source.putAll(viewSegmentation);
         UtilsInternalLimits.truncateSegmentationValues(source, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] " + function, L);
     }
