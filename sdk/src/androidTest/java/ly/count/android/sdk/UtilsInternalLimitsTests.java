@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -382,9 +383,26 @@ public class UtilsInternalLimitsTests {
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
 
         Assert.assertEquals(3, segmentation.size());
-        Assert.assertEquals("12", segmentation.get("abcde"));
+        Assert.assertEquals(456789, segmentation.get("hobbi"));
         Assert.assertEquals("va", segmentation.get("test_"));
-        Assert.assertEquals(TestUtils.map("a", 1), segmentation.get("map_t"));
+        Assert.assertEquals(45.678f, segmentation.get("map_t"));
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation_removeUnsupportedDataTypes() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        segmentation.put("test_test", new int[] { 1, 2, 3 });
+        segmentation.put("test", new ArrayList<>());
+        segmentation.put("map_too", TestUtils.map("a", 1));
+
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(10)
+            .setMaxValueSize(10)
+            .setMaxSegmentationValues(10);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+
+        Assert.assertEquals(0, segmentation.size());
     }
 
     @Test
