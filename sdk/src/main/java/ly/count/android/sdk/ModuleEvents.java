@@ -430,7 +430,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             synchronized (_cly) {
                 L.i("[Events] Calling recordEvent: [" + key + "]");
 
-                UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                if (segmentation != null) {
+                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                }
 
                 eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null, null);
             }
