@@ -409,10 +409,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         UtilsInternalLimits.truncateSegmentationValues(source, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] " + function, L);
     }
 
-    private interface ViewSegmentationConsumer {
-        void accept(Map<String, Object> viewSegmentation);
-    }
-
     public void addSegmentationToViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
         String viewID = null;
 
