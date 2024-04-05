@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +44,7 @@ public class UtilsInternalLimitsTests {
 
         String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertNull(truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, key is null, returning");
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, value is null, returning");
     }
 
     /**
@@ -59,7 +61,7 @@ public class UtilsInternalLimitsTests {
 
         String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, limit, spyLog, "tag");
         Assert.assertEquals("", truncatedKey);
-        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, key is empty, returning");
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateKeyLength, value is empty, returning");
     }
 
     /**
@@ -318,5 +320,187 @@ public class UtilsInternalLimitsTests {
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new Object()));
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new int[] { 1, 2 }));
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(null));
+    }
+
+    @Test
+    public void truncateValueSize() {
+        String value = "test";
+        int limit = 2;
+
+        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, new ModuleLog(), "tag");
+        Assert.assertEquals("te", truncatedValue);
+    }
+
+    @Test
+    public void truncateValueSize_null() {
+        String value = null;
+        int limit = 4;
+        ModuleLog spyLog = Mockito.spy(new ModuleLog());
+
+        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, spyLog, "tag");
+        Assert.assertNull(truncatedValue);
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateValueSize, value is null, returning");
+    }
+
+    @Test
+    public void truncateValueSize_empty() {
+        String value = "";
+        int limit = 4;
+        ModuleLog spyLog = Mockito.spy(new ModuleLog());
+
+        String truncatedValue = UtilsInternalLimits.truncateValueSize(value, limit, spyLog, "tag");
+        Assert.assertEquals("", truncatedValue);
+        Mockito.verify(spyLog, Mockito.times(1)).w("tag: [UtilsSdkInternalLimits] truncateValueSize, value is empty, returning");
+    }
+
+    @Test
+    public void truncateValueSize_multiple() {
+        String firstValue = "test_test";
+        String secondValue = "test";
+        int limit = 4;
+
+        String firstTruncatedValue = UtilsInternalLimits.truncateValueSize(firstValue, limit, new ModuleLog(), "tag");
+        String secondTruncatedValue = UtilsInternalLimits.truncateValueSize(secondValue, limit, new ModuleLog(), "tag");
+
+        Assert.assertEquals("test", firstTruncatedValue);
+        Assert.assertEquals(secondValue, secondTruncatedValue);
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        segmentation.put("test_test", "value1");
+        segmentation.put("test", "value2");
+        segmentation.put("hobbit", 456789);
+        segmentation.put("map_to", 45.678f);
+        segmentation.put("map_too", TestUtils.map("a", 1));
+        segmentation.put("abcdefg", "12345");
+
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(5)
+            .setMaxValueSize(2)
+            .setMaxSegmentationValues(3);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+
+        Assert.assertEquals(3, segmentation.size());
+        Assert.assertEquals(456789, segmentation.get("hobbi"));
+        Assert.assertEquals("va", segmentation.get("test_"));
+        Assert.assertEquals(45.678f, segmentation.get("map_t"));
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation_removeUnsupportedDataTypes() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        segmentation.put("test_test", new int[] { 1, 2, 3 });
+        segmentation.put("test", new ArrayList<>());
+        segmentation.put("map_too", TestUtils.map("a", 1));
+
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(10)
+            .setMaxValueSize(10)
+            .setMaxSegmentationValues(10);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+
+        Assert.assertEquals(0, segmentation.size());
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation_clipSegmentationValues() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        segmentation.put("test_test", "value1");
+        segmentation.put("test", new ArrayList<>());
+        segmentation.put("map_too", TestUtils.map("a", 1));
+
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(20)
+            .setMaxValueSize(1)
+            .setMaxSegmentationValues(10);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+
+        Assert.assertEquals(1, segmentation.size());
+        Assert.assertEquals("v", segmentation.get("test_test"));
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation_null() {
+        Map<String, Object> segmentation = null;
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(5)
+            .setMaxValueSize(2)
+            .setMaxSegmentationValues(3);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertNull(segmentation);
+    }
+
+    @Test
+    public void applySdkInternalLimitsToSegmentation_empty() {
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
+            .setMaxKeyLength(5)
+            .setMaxValueSize(2)
+            .setMaxSegmentationValues(3);
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(0, segmentation.size());
+    }
+
+    @Test
+    public void applySdkInternalLimitsToBreadcrumbs_valueSize() {
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits();
+        limitsConfig.setMaxBreadcrumbCount(3).setMaxValueSize(2);
+
+        List<String> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add("test_test");
+        breadcrumbs.add("test");
+        breadcrumbs.add("hobbit");
+
+        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(breadcrumbs, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(3, breadcrumbs.size());
+        Assert.assertEquals("te", breadcrumbs.get(0));
+        Assert.assertEquals("te", breadcrumbs.get(1));
+        Assert.assertEquals("ho", breadcrumbs.get(2));
+    }
+
+    @Test
+    public void applySdkInternalLimitsToBreadcrumb_breadcrumbCount() {
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits();
+        limitsConfig.setMaxBreadcrumbCount(3).setMaxValueSize(2);
+
+        List<String> breadcrumbs = new ArrayList<>();
+        breadcrumbs.add("mikasa");
+        breadcrumbs.add("eren");
+        breadcrumbs.add("jinwoo");
+        breadcrumbs.add("sung");
+        breadcrumbs.add("sasuke");
+        breadcrumbs.add("itachi");
+        breadcrumbs.add("madara");
+        breadcrumbs.add("jiraiya");
+
+        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(breadcrumbs, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(3, breadcrumbs.size());
+        Assert.assertEquals("it", breadcrumbs.get(0));
+        Assert.assertEquals("ma", breadcrumbs.get(1));
+        Assert.assertEquals("ji", breadcrumbs.get(2));
+    }
+
+    /**
+     * "applySdkInternalLimitsToSegmentation" with key length limit and value size of 2
+     * Validate that clipped values clashes with same keys and overridden each other
+     * "bb" key should have value from the second of the last value which is "dd"
+     */
+    @Test
+    public void applySdkInternalLimitsToSegmentation_clashingKeys() {
+        ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits();
+        limitsConfig.setMaxValueSize(2).setMaxKeyLength(2).setMaxSegmentationValues(10);
+
+        Map<String, Object> segmentation = TestUtils.map("a", 1, "bbb", "bbb", "bbc", "ccc", "bbd", "ddd", "bbe", "eee");
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
+        Assert.assertEquals(2, segmentation.size());
+        Assert.assertEquals(1, segmentation.get("a"));
+        Assert.assertEquals("dd", segmentation.get("bb"));
     }
 }
