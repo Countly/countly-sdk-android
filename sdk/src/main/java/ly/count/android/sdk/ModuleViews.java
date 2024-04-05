@@ -162,7 +162,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         return viewSegmentation;
     }
 
-    void autoCloseRequiredViews(boolean closeAllViews, Map<String, Object> customViewSegmentation) {
+    void autoCloseRequiredViews(boolean closeAllViews, @Nullable Map<String, Object> customViewSegmentation) {
         L.d("[ModuleViews] autoCloseRequiredViews");
         List<String> viewsToRemove = new ArrayList<>(1);
 
@@ -175,6 +175,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (viewsToRemove.size() > 0) {
             L.d("[ModuleViews] autoCloseRequiredViews, about to close [" + viewsToRemove.size() + "] views");
+        }
+
+        if (customViewSegmentation == null) {
+            customViewSegmentation = new HashMap<>();
         }
 
         // todo: move to stopViewWithIDInternal?
@@ -207,6 +211,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         // if segmentation is null this just returns so no null check necessary
+        if (customViewSegmentation == null) {
+            customViewSegmentation = new HashMap<>();
+        }
         UtilsInternalLimits.truncateSegmentationValues(customViewSegmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] startViewInternal", L);
 
         UtilsInternalLimits.removeReservedKeysFromSegmentation(customViewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] autoCloseRequiredViews, ", L);
@@ -294,6 +301,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
             return;
+        }
+
+        if (customViewSegmentation == null) {
+            customViewSegmentation = new HashMap<>();
         }
 
         // if segmentation is null this just returns so no null check necessary
