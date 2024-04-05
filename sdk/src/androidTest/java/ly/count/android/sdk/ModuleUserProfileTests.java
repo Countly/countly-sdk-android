@@ -520,7 +520,7 @@ public class ModuleUserProfileTests {
         ));
         Countly.sharedInstance().userProfile().save();
 
-        validateUserProfileRequest(mCountly, TestUtils.map(
+        validateUserProfileRequest(TestUtils.map(
                 ModuleUserProfile.BYEAR_KEY, 2000,
                 ModuleUserProfile.EMAIL_KEY, "email",
                 ModuleUserProfile.GENDER_KEY, "Male",
@@ -535,7 +535,102 @@ public class ModuleUserProfileTests {
         );
     }
 
-    private void validateUserProfileRequest(Countly countly, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+    /**
+     * Given max value size truncates the values of the:
+     * - Custom user property values
+     * - user property values
+     * Validate all values are truncated to the max value size that is 2
+     * And validate non-String values are not clipped
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_setProperties_maxValueSize() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        mCountly.init(config);
+
+        Object obj = new Object();
+        Countly.sharedInstance().userProfile().setProperties(TestUtils.map(
+            ModuleUserProfile.BYEAR_KEY, 2000,
+            ModuleUserProfile.EMAIL_KEY, "email",
+            ModuleUserProfile.GENDER_KEY, "Male",
+            ModuleUserProfile.PHONE_KEY, "phone",
+            ModuleUserProfile.ORG_KEY, "org",
+            ModuleUserProfile.USERNAME_KEY, "username",
+            ModuleUserProfile.NAME_KEY, "name",
+            ModuleUserProfile.PICTURE_KEY, "picture",
+            ModuleUserProfile.PICTURE_PATH_KEY, "TestTest",
+            "custom1", "value1",
+            "custom2", 23,
+            "hair", "black",
+            "custom3", 1234,
+            "custom4", 1234.5,
+            "custom5", true,
+            "custom6", obj
+        ));
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(
+                ModuleUserProfile.BYEAR_KEY, 2000,
+                ModuleUserProfile.EMAIL_KEY, "em",
+                ModuleUserProfile.GENDER_KEY, "Ma",
+                ModuleUserProfile.PHONE_KEY, "ph",
+                ModuleUserProfile.ORG_KEY, "or",
+                ModuleUserProfile.USERNAME_KEY, "us",
+                ModuleUserProfile.NAME_KEY, "na",
+                ModuleUserProfile.PICTURE_KEY, "pi"
+            ), TestUtils.map(
+                "custom1", "va", // because in user profiles, all values are stored as strings
+                "custom2", "23",
+                "hair", "bl",
+                "custom3", "1234",
+                "custom4", "1234.5",
+                "custom5", "true",
+                "custom6", obj.toString()) // toString() is called on non-String values
+        );
+    }
+
+    /**
+     * Given max value size truncates the values of the:
+     * - Custom user property values
+     * - user property values
+     * Validate all values are truncated to the max value size that is 2
+     * And validate non-String values are not clipped
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_testCustomModifiers_setMaxValueSize() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        mCountly.init(config);
+
+        mCountly.userProfile().incrementBy("inc", 1);
+        mCountly.userProfile().multiply("mul", 2456789);
+        mCountly.userProfile().push("rem", "ORIELY");
+        mCountly.userProfile().push("rem", "HUH");
+        mCountly.userProfile().pull("pll", "PULL");
+        mCountly.userProfile().pushUnique("pshu", "PUSH");
+        mCountly.userProfile().saveMax("sm", 455);
+        mCountly.userProfile().saveMin("smi", 6789);
+        mCountly.userProfile().setOnce("stc", "ONCE");
+
+        assertEquals(1, mCountly.moduleUserProfile.customMods.get("inc").getInt("$inc"));
+        assertEquals(2456789, mCountly.moduleUserProfile.customMods.get("mul").getInt("$mul"));
+        assertEquals(2, mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").length());
+        assertEquals("OR", mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").getString(0));
+        assertEquals("HU", mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").getString(1));
+        assertEquals("PU", mCountly.moduleUserProfile.customMods.get("pll").getString("$pull"));
+        assertEquals("PU", mCountly.moduleUserProfile.customMods.get("pshu").getString("$addToSet"));
+        assertEquals("455", mCountly.moduleUserProfile.customMods.get("sm").getString("$max"));
+        assertEquals("6789", mCountly.moduleUserProfile.customMods.get("smi").getString("$min"));
+        assertEquals("ON", mCountly.moduleUserProfile.customMods.get("stc").getString("$setOnce"));
+    }
+
+    private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
         JSONObject userDetails = new JSONObject(RQ[0].get("user_details"));
