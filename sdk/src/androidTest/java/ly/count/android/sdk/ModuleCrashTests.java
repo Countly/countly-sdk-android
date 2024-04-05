@@ -1053,4 +1053,48 @@ public class ModuleCrashTests {
             0, new HashMap<>(),
             new ArrayList<>());
     }
+
+    /**
+     * Validate all 4 limits are applied after crash filtering:
+     * - Max value size 5
+     * - Max key length 2
+     * - Max segmentation values 5
+     * - Max breadcrumb count 2
+     * Validate that all values are truncated to their limits
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_globalCrashFilter_maxValueSize_maxSegmentationValues_maxKeyLength_maxBreadcrumbCount() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxValueSize(5).setMaxKeyLength(2).setMaxSegmentationValues(5).setMaxBreadcrumbCount(2);
+
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            Assert.assertTrue(crash.getCrashSegmentation().isEmpty());
+            Assert.assertTrue(crash.getBreadcrumbs().isEmpty());
+
+            crash.getCrashSegmentation().put("aftermath", "Snowrunner");
+            crash.getCrashSegmentation().put("beforemath", "Mudrunner");
+            crash.getCrashSegmentation().put("premath", "Spintires");
+            crash.getCrashSegmentation().put("postmath", "DirtRally");
+            crash.getCrashSegmentation().put("midmath", "WRCRally");
+            crash.getCrashSegmentation().put("oldmath", "AssettoCorsa");
+            crash.getCrashSegmentation().put("ancientmath", "EuroTruckSimulator2");
+
+            crash.getBreadcrumbs().add("VolvoFH750");
+            crash.getBreadcrumbs().add("ScaniaR730");
+            crash.getBreadcrumbs().add("MercedesActros");
+            crash.getBreadcrumbs().add("VVolvoV90");
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception), "Merce\nVVolv\n", true, false, TestUtils.map("an", "EuroT", "ol", "Asset", "po", "DirtR", "af", "Snowr", "mi", "WRCRa"),
+            12, new HashMap<>(), new ArrayList<>());
+    }
 }
