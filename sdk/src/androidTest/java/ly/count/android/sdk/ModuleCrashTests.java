@@ -957,7 +957,7 @@ public class ModuleCrashTests {
      * One of the parameters are lost due to truncation because it has same key beginning as another parameter
      */
     @Test
-    public void internalLimit_provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
+    public void internalLimits_provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
         Countly countly = new Countly();
         CountlyConfig cConfig = (new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.sdkInternalLimits.setMaxKeyLength(10);
@@ -1009,7 +1009,7 @@ public class ModuleCrashTests {
      * Two of the parameters are lost due to truncation because it has same key beginning as another parameter
      */
     @Test
-    public void internalLimit_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
+    public void internalLimits_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
         Countly countly = new Countly();
         CountlyConfig cConfig = (new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.metricProviderOverride = mmp;
@@ -1022,5 +1022,35 @@ public class ModuleCrashTests {
         countly.crashes().recordUnhandledException(exception, TestUtils.map("below_one", false, "go_for_it", "go"));
 
         validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("test_", 1234, "below", false, "go_fo", "go"), 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Given max value size truncates the values of the:
+     * - Crash segmentation
+     * - Custom crash segmentation
+     * - Breadcrumbs
+     * Validate all values are truncated to the max value size that is 5
+     * And validate non-String values are not clipped
+     * This also includes clipping unsupported data types
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_maxValueSize() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxValueSize(5);
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("test", "123456", "integer", Integer.MAX_VALUE, "arr", new int[] { 1, 2, 3, 4, 5 }, "double", Double.MAX_VALUE, "bool", true, "float", 1.1, "object", new Object()));
+        Countly countly = new Countly().init(cConfig);
+
+        countly.crashes().addCrashBreadcrumb("Surpass");
+        countly.crashes().addCrashBreadcrumb("YourLimits");
+        countly.crashes().addCrashBreadcrumb("RightNow");
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception, TestUtils.map("case", "o the great one", "have", "dinosaur", "int1", Integer.MIN_VALUE, "double1", Double.MIN_VALUE, "bool", false));
+
+        validateCrash(extractStackTrace(exception), "Surpa\nYourL\nRight\n", true, false, TestUtils.map("test", "12345", "integer", Integer.MAX_VALUE, "int1", Integer.MIN_VALUE, "double", Double.MAX_VALUE, "double1", Double.MIN_VALUE, "bool", false, "float", 1.1, "have", "dinos", "case", "o the"),
+            0, new HashMap<>(),
+            new ArrayList<>());
     }
 }
