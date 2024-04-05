@@ -202,7 +202,7 @@ public class ModuleEventsTests {
         ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
+        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), any(Map.class), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
 
         Assert.assertEquals(startEvent.timestamp, (long) arg1.getValue());
         Assert.assertEquals(startEvent.hour, (int) arg2.getValue());

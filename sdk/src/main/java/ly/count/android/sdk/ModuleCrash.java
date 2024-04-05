@@ -163,13 +163,17 @@ public class ModuleCrash extends ModuleBase {
      *
      * @param segments Map&lt;String, Object&gt; key segments and their values
      */
-    void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
+    void setCustomCrashSegmentsInternal(@Nullable Map<String, Object> segments) {
         L.d("[ModuleCrash] Calling setCustomCrashSegmentsInternal");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return;
         }
 
+        if (segments == null) {
+            segments = new HashMap<>();
+        }
+        
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
 
         customCrashSegments = segments;
