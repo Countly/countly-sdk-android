@@ -315,6 +315,7 @@ public class ModuleCrashTests {
      * Validate that second call to the "recordHandledException" is not filtered out by the crash filter
      * Validate second call creates a request in the queue and validate all crash data
      */
+    @Test
     public void recordHandledException_crashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
@@ -630,6 +631,7 @@ public class ModuleCrashTests {
      *
      * @throws JSONException if JSON parsing fails
      */
+    @Test
     public void recordHandledException_globalCrashFilter_allFieldsNull() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
