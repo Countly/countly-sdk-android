@@ -569,6 +569,7 @@ public class ModuleEventsTests {
     protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(idx + 1, RQ.length);
+        TestUtils.validateRequiredParams(RQ[idx]);
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(1, events.length());
         JSONObject event = events.getJSONObject(0);
