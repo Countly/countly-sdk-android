@@ -158,7 +158,7 @@ public class UtilsInternalLimitsTests {
     /**
      * Make sure that nothing bad happens when providing null segmentation
      */
-    @Test
+    @Test(expected = AssertionError.class)
     public void truncateSegmentationValues_null() {
         UtilsInternalLimits.truncateSegmentationValues(null, 10, "someTag", mock(ModuleLog.class));
         Assert.assertTrue(true);
@@ -242,7 +242,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertTrue(values.containsKey("c"));
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void removeUnsupportedDataTypesNull() {
         Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(null));
     }
@@ -424,7 +424,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals("v", segmentation.get("test_test"));
     }
 
-    @Test
+    @Test(expected = AssertionError.class)
     public void applySdkInternalLimitsToSegmentation_null() {
         Map<String, Object> segmentation = null;
         ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
